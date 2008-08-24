@@ -553,10 +553,10 @@ removesocket = function( tbl, socket, len )    -- this function removes sockets 
 end
 
 closeall = function( )
-    for _, handler in pairs( socketlist ) do
+    for sock, handler in pairs( socketlist ) do
         handler.shutdown( )
         handler.close( )
-        socketlist[ _ ] = nil
+        socketlist[ sock ] = nil
     end
     writelist, readlist, socketlist = { }, { }, { }
 end
