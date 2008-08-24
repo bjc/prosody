@@ -6,7 +6,7 @@ local setmetatable  =  setmetatable;
 local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
-
+local s_gsub        =   string.gsub;
 module "stanza"
 
 stanza_mt = {};
@@ -78,10 +78,21 @@ function stanza_mt:childtags()
 	                                    
 end
 
+do
+	local xml_entities = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
+	function xml_escape(s) return s_gsub(s, "['&<>\"]", xml_entities); end
+end
+
+local xml_escape = xml_escape;
+
 function stanza_mt.__tostring(t)
 	local children_text = "";
 	for n, child in ipairs(t) do
-		children_text = children_text .. tostring(child);
+		if type(child) == "string" then	
+			children_text = children_text .. xml_escape(child);
+		else
+			children_text = children_text .. tostring(child);
+		end
 	end
 
 	local attr_string = "";

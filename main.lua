@@ -132,6 +132,12 @@ function handler(conn, data, err)
 			session.parser = lxp.new(session.xml_handlers, ":");
 			
 			function session.disconnect(err)
+				if session.last_presence.attr.type ~= "unavailable" then
+					local pres = st.presence{ type = "unavailable" };
+					if err == "closed" then err = "connection closed"; end
+					pres:tag("status"):text("Disconnected: "..err);
+					session.stanza_dispatch(pres);
+				end
 				hosts[session.host].sessions[session.username] = nil;
 				session = nil;
 				print("Disconnected: "..err);
@@ -154,8 +160,9 @@ setmetatable(_G, { __index = function (t, k) print("WARNING: ATTEMPT TO READ A N
 
 
 local protected_handler = function (...) local success, ret = pcall(handler, ...); if not success then print("ERROR on "..tostring((select(1, ...)))..": "..ret); end end;
+local protected_disconnect = function (...) local success, ret = pcall(disconnect, ...); if not success then print("ERROR on "..tostring((select(1, ...))).." disconnect: "..ret); end end;
 
-print( server.add( { listener = protected_handler, disconnect = disconnect }, 5222, "*", 1, nil ) )    -- server.add will send a status message
-print( server.add( { listener = protected_handler, disconnect = disconnect }, 5223, "*", 1, ssl_ctx ) )    -- server.add will send a status message
+print( server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5222, "*", 1, nil ) )    -- server.add will send a status message
+print( server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5223, "*", 1, ssl_ctx ) )    -- server.add will send a status message
 
 server.loop();

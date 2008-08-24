@@ -106,7 +106,7 @@ function init_stanza_dispatcher(session)
 						--local probe = st.presence { from = broadcast.attr.from, type = "probe" };
 
 						for child in stanza:childtags() do
-							broadcast:text(tostring(child));
+							broadcast:add_child(child);
 						end
 						for contact_jid in pairs(session.roster) do
 							broadcast.attr.to = contact_jid;
