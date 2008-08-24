@@ -1,0 +1,9 @@
+- SASL login support
+- Roster manipulation support
+- On-the-fly code updates
+- S2S \o/
+
+Further down the line:
+- Clustering
+- Pubsub/PEP
+- Plugins!
