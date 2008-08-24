@@ -1,0 +1,8 @@
+The easiest way to install dependencies is using the luarocks tool.
+
+Rocks:
+luaexpat
+luasocket
+
+Non-rocks:
+LuaSec for SSL connections

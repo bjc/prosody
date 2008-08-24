@@ -42,7 +42,7 @@ function init_xmlhandlers(session)
 			                        session.streamid = m_random(1000000, 99999999);
 			                        print(session, session.host, "Client opened stream");
 			                        send("<?xml version='1.0'?>");
-			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' >", session.streamid, session.host));
+			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
 			                        --send("<stream:features>");
 			                        --send("<mechanism>PLAIN</mechanism>");
         			                --send [[<register xmlns="http://jabber.org/features/iq-register"/> ]]
