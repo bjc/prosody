@@ -15,5 +15,12 @@ local datamanager = datamanager;
 module "rostermanager"
 
 function getroster(username, host)
-	return datamanager.load(username, host, "roster") or {};
+	return { 
+			["mattj@localhost"] = true,
+			["tobias@getjabber.ath.cx"] = true,
+			["waqas@getjabber.ath.cx"] = true,
+			["thorns@getjabber.ath.cx"] = true, 
+			["idw@getjabber.ath.cx"] = true, 
+		}
+--	return datamanager.load(username, host, "roster") or {};
 end
