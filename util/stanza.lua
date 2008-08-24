@@ -1,10 +1,11 @@
-local t_insert  =   table.insert;
-local t_remove  =   table.remove;
-local format    =  string.format;
-local tostring  =       tostring;
-local setmetatable= setmetatable;
-local pairs     =          pairs;
-local ipairs    =         ipairs;
+local t_insert      =  table.insert;
+local t_remove      =  table.remove;
+local format        = string.format;
+local tostring      =      tostring;
+local setmetatable  =  setmetatable;
+local pairs         =         pairs;
+local ipairs        =        ipairs;
+local type          =          type;
 
 module "stanza"
 
@@ -12,7 +13,7 @@ stanza_mt = {};
 stanza_mt.__index = stanza_mt;
 
 function stanza(name, attr)
-	local stanza = { name = name, attr = attr or {}, last_add = {}};
+	local stanza = { name = name, attr = attr or {}, tags = {}, last_add = {}};
 	return setmetatable(stanza, stanza_mt);
 end
 
@@ -46,6 +47,9 @@ function stanza_mt:up()
 end
 
 function stanza_mt:add_child(child)
+	if type(child) == "table" then
+		t_insert(self.tags, child);
+	end
 	t_insert(self, child);
 end
 
@@ -53,6 +57,16 @@ function stanza_mt:child_with_name(name)
 	for _, child in ipairs(self) do	
 		if child.name == name then return child; end
 	end
+end
+
+function stanza_mt:children()
+	local i = 0;
+	return function (a)
+			i = i + 1
+			local v = a[i]
+			if v then return v; end
+		end, self, i;
+	                                    
 end
 
 function stanza_mt.__tostring(t)
@@ -63,14 +77,14 @@ function stanza_mt.__tostring(t)
 
 	local attr_string = "";
 	if t.attr then
-		for k, v in pairs(t.attr) do attr_string = attr_string .. format(" %s='%s'", k, tostring(v)); end
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. format(" %s='%s'", k, tostring(v)); end end
 	end
 
 	return format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
 
 function stanza_mt.__add(s1, s2)
-	return s:add_child(s2);
+	return s1:add_child(s2);
 end
 
 
