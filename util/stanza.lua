@@ -68,6 +68,15 @@ function stanza_mt:children()
 		end, self, i;
 	                                    
 end
+function stanza_mt:childtags()
+	local i = 0;
+	return function (a)
+			i = i + 1
+			local v = self.tags[i]
+			if v then return v; end
+		end, self.tags[1], i;
+	                                    
+end
 
 function stanza_mt.__tostring(t)
 	local children_text = "";

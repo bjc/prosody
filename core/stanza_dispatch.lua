@@ -39,6 +39,7 @@ function init_stanza_dispatcher(session)
 					-- Authentication successful!
 					session.username = username;
 					session.resource = resource;
+					session.full_jid = username.."@"..session.host.."/"..session.resource;
 					if not hosts[session.host].sessions[username] then
 						hosts[session.host].sessions[username] = { sessions = {} };
 					end
@@ -97,25 +98,40 @@ function init_stanza_dispatcher(session)
 					end
 				elseif stanza.name == "presence" then
 					if session.roster then
+						local initial_presence = not session.last_presence;
+						session.last_presence = stanza;
+						
 						-- Broadcast presence and probes
-						local broadcast = st.presence({ from = session.username.."@"..session.host.."/"..session.resource });
-						local probe = st.presence { from = broadcast.attr.from, type = "probe" };
+						local broadcast = st.presence({ from = session.full_jid, type = stanza.attr.type });
+						--local probe = st.presence { from = broadcast.attr.from, type = "probe" };
 
-						for child in stanza:children() do
-							broadcast:tag(child.name, child.attr);
+						for child in stanza:childtags() do
+							broadcast:text(tostring(child));
 						end
-						for contact in pairs(session.roster) do
-							broadcast.attr.to = contact;
-							send_to(contact, broadcast);
-							--local host = jid.host(contact);
-							--if hosts[host] and hosts[host].type == "local" then
-								--local node, host = jid.split(contact);
-								--if host[host].sessions[node]
-								--local pres = st.presence { from = con
-							--else
-							--	probe.attr.to = contact;
-							--	send_to(contact, probe);
-							--end
+						for contact_jid in pairs(session.roster) do
+							broadcast.attr.to = contact_jid;
+							send_to(contact_jid, broadcast);
+							if initial_presence then
+								print("Initital presence");
+								local node, host = jid.split(contact_jid);
+								if hosts[host] and hosts[host].type == "local" then
+									local contact = hosts[host].sessions[node]
+									if contact then
+										local pres = st.presence { to = session.full_jid };
+										for resource, contact_session in pairs(contact.sessions) do
+											if contact_session.last_presence then
+												pres.tags = contact_session.last_presence.tags;
+												pres.attr.from = contact_session.full_jid;
+												send(pres);
+											end
+										end
+									end
+									--FIXME: Do we send unavailable if they are offline?
+								else
+									probe.attr.to = contact;
+									send_to(contact, probe);
+								end
+							end
 						end
 						
 						-- Probe for our contacts' presence

@@ -132,6 +132,8 @@ function handler(conn, data, err)
 			session.parser = lxp.new(session.xml_handlers, ":");
 			
 			function session.disconnect(err)
+				hosts[session.host].sessions[session.username] = nil;
+				session = nil;
 				print("Disconnected: "..err);
 			end
 		end
