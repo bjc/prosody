@@ -32,7 +32,6 @@ function init_stanza_dispatcher(session)
 				return true;			
 			else
 				username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
-				print(username, password, resource)
 				local reply = st.reply(stanza);
 				require "core.usermanager"
 				if usermanager.validate_credentials(session.host, username, password) then
@@ -96,7 +95,9 @@ function init_stanza_dispatcher(session)
 						send(format("<iq type='error' id='%s'><error type='cancel'><service-unavailable/></error></iq>", stanza.attr.id));
 						return;
 					end
-				elseif stanza.name == "presence" then
+				end
+				if not session.username then log("warn", "Attempt to use an unauthed stream!"); return; end
+				if stanza.name == "presence" then
 					if session.roster then
 						local initial_presence = not session.last_presence;
 						session.last_presence = stanza;
@@ -112,7 +113,6 @@ function init_stanza_dispatcher(session)
 							broadcast.attr.to = contact_jid;
 							send_to(contact_jid, broadcast);
 							if initial_presence then
-								print("Initital presence");
 								local node, host = jid.split(contact_jid);
 								if hosts[host] and hosts[host].type == "local" then
 									local contact = hosts[host].sessions[node]
@@ -137,7 +137,7 @@ function init_stanza_dispatcher(session)
 						-- Probe for our contacts' presence
 					end
 				end
-			else
+			elseif session.username then
 			--end				
 			--if stanza.attr.to and ((not hosts[stanza.attr.to]) or hosts[stanza.attr.to].type ~= "local") then
 				-- Need to route stanza
@@ -147,4 +147,3 @@ function init_stanza_dispatcher(session)
 		end
 
 end
-

@@ -10,7 +10,7 @@ function log(type, area, message)
 end
 
 require "core.stanza_dispatch"
-init_xmlhandlers = require "core.xmlhandlers"
+local init_xmlhandlers = require "core.xmlhandlers"
 require "core.rostermanager"
 require "core.offlinemessage"
 require "core.usermanager"
@@ -103,7 +103,7 @@ end
 
 function handler(conn, data, err)
 	local session = sessions[conn];
-	
+
 	if not session then
 		sessions[conn] = { conn = conn, notopen = true, priority = 0 };
 		session = sessions[conn];
@@ -114,6 +114,7 @@ function handler(conn, data, err)
 		do
 			local conn_name = tostring(conn):match("%w+$");
 			log = function (type, area, message) mainlog(type, conn_name, message); end
+			--log = function () end
 		end
 		local print = function (...) log("info", "core", t_concatall({...}, "\t")); end
 		session.log = log;
@@ -125,24 +126,27 @@ function handler(conn, data, err)
 		local send = function (data) print("Sending...", tostring(data)); conn.write(tostring(data)); end;
 		session.send, session.send_to = send, send_to;
 
-			print("Client connected");
+		print("Client connected");
 		
-			session.stanza_dispatch = init_stanza_dispatcher(session);
-			session.xml_handlers = init_xmlhandlers(session);
-			session.parser = lxp.new(session.xml_handlers, ":");
+		session.stanza_dispatch = init_stanza_dispatcher(session);
+		session.xml_handlers = init_xmlhandlers(session);
+		session.parser = lxp.new(session.xml_handlers, ":");
 			
-			function session.disconnect(err)
-				if session.last_presence.attr.type ~= "unavailable" then
-					local pres = st.presence{ type = "unavailable" };
-					if err == "closed" then err = "connection closed"; end
-					pres:tag("status"):text("Disconnected: "..err);
-					session.stanza_dispatch(pres);
-				end
-				hosts[session.host].sessions[session.username] = nil;
-				session = nil;
-				print("Disconnected: "..err);
+		function session.disconnect(err)
+			if session.last_presence and session.last_presence.attr.type ~= "unavailable" then
+				local pres = st.presence{ type = "unavailable" };
+				if err == "closed" then err = "connection closed"; end
+				pres:tag("status"):text("Disconnected: "..err);
+				session.stanza_dispatch(pres);
 			end
+			if session.username then
+				hosts[session.host].sessions[session.username] = nil;
+			end
+			session = nil;
+			print("Disconnected: "..err);
+			collectgarbage("collect");
 		end
+	end
 	if data then
 		session.parser:parse(data);
 	end
