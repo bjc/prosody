@@ -1,6 +1,8 @@
 --[[
 
-        server.lua by blastbeat
+        server.lua by blastbeat of the luadch project
+        
+        re-used here under the MIT/X Consortium License
 
         - this script contains the server loop of the program
         - other scripts can reg a server here
