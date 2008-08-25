@@ -1,0 +1,25 @@
+No 'to' attribute:
+	IQ:			Pass to appropriate handler
+	Presence:		Broadcast to contacts
+				- if initial presence, also send out presence probes
+					- if probe would be to local user, generate presence stanza for them
+	Message:		Route as if it is addressed to the bare JID of the sender
+
+To a local host:
+	IQ:			Pass to appropriate handler
+	Presence:		-
+	Message:		Deliver to admin?
+
+To local contact:
+	Bare JID:
+		IQ:		Pass to appropriate handler
+		Presence:	Broadcast to all resources
+		Message:	Route to 'best' resource
+	Full JID:
+		IQ:		Send to resource
+		Presence:	Send to resource
+		Message:	Send to resource
+
+To remote contact:
+	Initiate s2s connection if necessary
+	Send stanza across

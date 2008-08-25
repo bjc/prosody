@@ -1,6 +1,6 @@
 require "luarocks.require"
 
-server = require "server"
+server = require "net.server"
 require "socket"
 require "ssl"
 require "lxp"
