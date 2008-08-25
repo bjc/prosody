@@ -42,12 +42,6 @@ hosts = 	{
 
 local hosts, users = hosts, users;
 
---local ssl_ctx, msg = ssl.newcontext { mode = "server", protocol = "sslv23", key = "/home/matthew/ssl_cert/server.key",
---    certificate = "/home/matthew/ssl_cert/server.crt", capath = "/etc/ssl/certs", verify = "none", }
---        
---if not ssl_ctx then error("Failed to initialise SSL/TLS support: "..tostring(msg)); end
-
-
 local ssl_ctx = { mode = "server", protocol = "sslv23", key = "/home/matthew/ssl_cert/server.key",
     certificate = "/home/matthew/ssl_cert/server.crt", capath = "/etc/ssl/certs", verify = "none", }
 
