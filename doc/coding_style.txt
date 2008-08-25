@@ -1,0 +1,33 @@
+This file describes some coding styles to try and adhere to when contributing to this project.
+Please try to follow, and feel free to fix code you see not following this standard.
+
+== Indentation ==
+
+	1 tab indentation for all blocks
+
+== Spacing ==
+
+No space between function names and parenthesis and parenthesis and paramters:
+
+		function foo(bar, baz)
+
+Single space between braces and key/value pairs in table constructors:
+
+		{ foo = "bar", bar = "foo" }
+
+== Local variable naming ==
+
+In this project there are many places where use of globals is restricted, and locals used for faster access.
+
+Local versions of standard functions should follow the below form:
+
+	math.random -> m_random
+	string.char -> s_char	
+
+== Miscellaneous ==
+
+Single-statement blocks may be written on one line when short
+	
+	if foo then bar(); end
+
+'do' and 'then' keywords should be placed at the end of the line, and never on a line by themself.
