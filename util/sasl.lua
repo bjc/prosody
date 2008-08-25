@@ -8,7 +8,7 @@ function sasl:new_plain(onAuth, onSuccess, onFail, onWrite)
 	object.feed = 	function(self, stanza)
 						if (stanza.name ~= "response") then self.onFail() end
 						if (stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl") then self.onFail() end
-						local response = stanza.tag[1]
+						local response = base64.decode(stanza.tag[1])
 						local authorization = string.match(response, [[([^&\0]+)]])
 						local authentication = string.match(response, [[\0([^&\0]+)\0]])
 						local password = string.match(response, [[\0[^&\0]+\0([^&\0]+)]])
