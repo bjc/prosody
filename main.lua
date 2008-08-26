@@ -8,7 +8,7 @@ require "lxp"
 function log(type, area, message)
 	print(type, area, message);
 end
-
+ 
 require "core.stanza_dispatch"
 local init_xmlhandlers = require "core.xmlhandlers"
 require "core.rostermanager"
@@ -16,7 +16,7 @@ require "core.offlinemessage"
 require "core.usermanager"
 require "util.stanza"
 require "util.jid"
-
+ 
 -- Locals for faster access --
 local t_insert = table.insert;
 local t_concat = table.concat;
@@ -48,6 +48,19 @@ local ssl_ctx = { mode = "server", protocol = "sslv23", key = "/home/matthew/ssl
 
 function connect_host(host)
 	hosts[host] = { type = "remote", sendbuffer = {} };
+end
+
+local function route_stanza(stanza)
+	if not stanza.attr.to then
+		-- Has no 'to' attribute, handle internally
+	end
+	local node, host, resource = jid.split(stanza.attr.to);
+	if host and hosts[host] and hosts[host].type == "local" then
+			-- Is a local host, handle internally
+			
+	else
+		-- Is not for us or a local user, route accordingly
+	end
 end
 
 local function send_to(session, to, stanza)
