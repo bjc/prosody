@@ -1,4 +1,5 @@
 require "base64"
+sasl = {}
 
 function sasl:new_plain(onAuth, onSuccess, onFail, onWrite)
 	local object = { mechanism = "PLAIN", onAuth = onAuth, onSuccess = onSuccess, onFail = onFail,
