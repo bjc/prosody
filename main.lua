@@ -10,7 +10,7 @@ function log(type, area, message)
 end
  
 require "core.stanza_dispatch"
-local init_xmlhandlers = require "core.xmlhandlers"
+require "core.xmlhandlers"
 require "core.rostermanager"
 require "core.offlinemessage"
 require "core.usermanager"
@@ -24,6 +24,7 @@ local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_
 local m_random = math.random;
 local format = string.format;
 local st = stanza;
+local init_xmlhandlers = xmlhandlers.init_xmlhandlers;
 ------------------------------
 
 sessions = {};
@@ -165,15 +166,13 @@ function disconnect(conn, err)
 	sessions[conn].disconnect(err);
 end
 
-print("ssl_ctx:", type(ssl_ctx));
-
 setmetatable(_G, { __index = function (t, k) print("WARNING: ATTEMPT TO READ A NIL GLOBAL!!!", k); error("Attempt to read a non-existent global. Naughty boy.", 2); end, __newindex = function (t, k, v) print("ATTEMPT TO SET A GLOBAL!!!!", tostring(k).." = "..tostring(v)); error("Attempt to set a global. Naughty boy.", 2); end }) --]][][[]][];
 
 
-local protected_handler = function (...) local success, ret = pcall(handler, ...); if not success then print("ERROR on "..tostring((select(1, ...)))..": "..ret); end end;
-local protected_disconnect = function (...) local success, ret = pcall(disconnect, ...); if not success then print("ERROR on "..tostring((select(1, ...))).." disconnect: "..ret); end end;
+local protected_handler = function (conn, data, err) local success, ret = pcall(handler, conn, data, err); if not success then print("ERROR on "..tostring(conn)..": "..ret); conn:close(); end end;
+local protected_disconnect = function (conn, err) local success, ret = pcall(disconnect, conn, err); if not success then print("ERROR on "..tostring(conn).." disconnect: "..ret); conn:close(); end end;
 
-print( server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5222, "*", 1, nil ) )    -- server.add will send a status message
-print( server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5223, "*", 1, ssl_ctx ) )    -- server.add will send a status message
+server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5222, "*", 1, nil ) -- server.add will send a status message
+server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5223, "*", 1, ssl_ctx ) -- server.add will send a status message
 
 server.loop();
