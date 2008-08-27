@@ -19,6 +19,10 @@ To local contact:
 		IQ:		Send to resource
 		Presence:	Send to resource
 		Message:	Send to resource
+	Full JID but resource not connected:
+		IQ:		Return service-unavailable
+		Message:	Handle same as if to bare JID
+		Presence:	Drop (unless type=subscribe[ed])
 
 To remote contact:
 	Initiate s2s connection if necessary
