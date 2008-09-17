@@ -27,3 +27,4 @@ To local contact:
 To remote contact:
 	Initiate s2s connection if necessary
 	Send stanza across
+
