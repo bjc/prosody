@@ -1,6 +1,6 @@
 local t_insert      =  table.insert;
 local t_remove      =  table.remove;
-local format        = string.format;
+local s_format      = string.format;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
 local pairs         =         pairs;
@@ -97,10 +97,10 @@ function stanza_mt.__tostring(t)
 
 	local attr_string = "";
 	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. format(" %s='%s'", k, tostring(v)); end end
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
 	end
 
-	return format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
+	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
 
 function stanza_mt.__add(s1, s2)
