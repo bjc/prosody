@@ -10,9 +10,9 @@ function sasl:new_plain(onAuth, onSuccess, onFail, onWrite)
 						if (stanza.name ~= "response") then self.onFail() end
 						if (stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl") then self.onFail() end
 						local response = base64.decode(stanza.tag[1])
-						local authorization = string.match(response, [[([^&\0]+)]])
-						local authentication = string.match(response, [[\0([^&\0]+)\0]])
-						local password = string.match(response, [[\0[^&\0]+\0([^&\0]+)]])
+						local authorization = string.match(response, "([^&\0]+)")
+						local authentication = string.match(response, "\0([^&\0]+)\0")
+						local password = string.match(response, "\0[^&\0]+\0([^&\0]+)")
 						if self.onAuth(authorization, password) == true then
 							self.onWrite(stanza.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
 							self.onSuccess()
