@@ -136,3 +136,4 @@ function presence(attr)
 	return stanza("presence", attr);
 end
 
+return _M;
