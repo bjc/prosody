@@ -13,7 +13,10 @@ require "core.stanza_dispatch"
 require "core.xmlhandlers"
 require "core.rostermanager"
 require "core.offlinemessage"
+require "core.modulemanager"
 require "core.usermanager"
+require "core.sessionmanager"
+require "core.stanza_router"
 require "util.stanza"
 require "util.jid"
  
@@ -113,7 +116,7 @@ function handler(conn, data, err)
 	local session = sessions[conn];
 
 	if not session then
-		sessions[conn] = { conn = conn, notopen = true, priority = 0 };
+		sessions[conn] = sessionmanager.new_session(conn);
 		session = sessions[conn];
 
 		-- Logging functions --
@@ -127,16 +130,9 @@ function handler(conn, data, err)
 		local print = function (...) log("info", "core", t_concatall({...}, "\t")); end
 		session.log = log;
 
-		--	--	--
-
-		-- Send buffers --
-
-		local send = function (data) print("Sending...", tostring(data)); conn.write(tostring(data)); end;
-		session.send, session.send_to = send, send_to;
-
 		print("Client connected");
 		
-		session.stanza_dispatch = init_stanza_dispatcher(session);
+		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
 		session.xml_handlers = init_xmlhandlers(session);
 		session.parser = lxp.new(session.xml_handlers, ":");
 			
@@ -168,6 +164,7 @@ end
 
 setmetatable(_G, { __index = function (t, k) print("WARNING: ATTEMPT TO READ A NIL GLOBAL!!!", k); error("Attempt to read a non-existent global. Naughty boy.", 2); end, __newindex = function (t, k, v) print("ATTEMPT TO SET A GLOBAL!!!!", tostring(k).." = "..tostring(v)); error("Attempt to set a global. Naughty boy.", 2); end }) --]][][[]][];
 
+modulemanager.loadall();
 
 local protected_handler = function (conn, data, err) local success, ret = pcall(handler, conn, data, err); if not success then print("ERROR on "..tostring(conn)..": "..ret); conn:close(); end end;
 local protected_disconnect = function (conn, err) local success, ret = pcall(disconnect, conn, err); if not success then print("ERROR on "..tostring(conn).." disconnect: "..ret); conn:close(); end end;
