@@ -28,12 +28,11 @@ function init_xmlhandlers(session)
 		local stanza
 		function xml_handlers:StartElement(name, attr)
 			if stanza and #chardata > 0 then
+				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
-				print("Char data:", t_concat(chardata));
 				chardata = {};
 			end
 			curr_ns,name = name:match("^(.+):(%w+)$");
-			print("Tag received:", name, tostring(curr_ns));
 			if not stanza then
 				if session.notopen then
 					if name == "stream" then
@@ -70,15 +69,13 @@ function init_xmlhandlers(session)
 		end
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+):(%w+)$");
-			--print("<"..name.."/>", tostring(stanza), tostring(#stanza.last_add < 1), tostring(stanza.last_add[#stanza.last_add].name));
 			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then error("XML parse error in client stream"); end
 			if stanza and #chardata > 0 then
+				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
-				print("Char data:", t_concat(chardata));
 				chardata = {};
 			end
 			-- Complete stanza
-			print(name, tostring(#stanza.last_add));
 			if #stanza.last_add == 0 then
 				session.stanza_dispatch(stanza);
 				stanza = nil;

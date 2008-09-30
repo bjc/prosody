@@ -34,7 +34,6 @@ function core_handle_stanza(origin, stanza)
 		
 		-- Stanza is to this server, or a user on this server
 		log("debug", "Routing stanza to local");
-		print(type(origin), type(stanza));
 		handle_stanza(session, stanza);
 	end	
 end
