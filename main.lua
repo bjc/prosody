@@ -42,64 +42,6 @@ function connect_host(host)
 	hosts[host] = { type = "remote", sendbuffer = {} };
 end
 
-local function route_stanza(stanza)
-	if not stanza.attr.to then
-		-- Has no 'to' attribute, handle internally
-	end
-	local node, host, resource = jid.split(stanza.attr.to);
-	if host and hosts[host] and hosts[host].type == "local" then
-			-- Is a local host, handle internally
-			
-	else
-		-- Is not for us or a local user, route accordingly
-	end
-end
-
-local function send_to(session, to, stanza)
-	local node, host, resource = jid.split(to);
-	if not hosts[host] then
-		-- s2s
-	elseif hosts[host].type == "local" then
-		print("   ...is to a local user")
-		local destuser = hosts[host].sessions[node];
-		if destuser and destuser.sessions then
-			if not destuser.sessions[resource] then
-				local best_session;
-				for resource, session in pairs(destuser.sessions) do
-					if not best_session then best_session = session;
-					elseif session.priority >= best_session.priority and session.priority >= 0 then
-						best_session = session;
-					end
-				end
-				if not best_session then
-					offlinemessage.new(node, host, stanza);
-				else
-					print("resource '"..resource.."' was not online, have chosen to send to '"..best_session.username.."@"..best_session.host.."/"..best_session.resource.."'");
-					resource = best_session.resource;
-				end
-			end
-			if destuser.sessions[resource] == session then
-				log("warn", "core", "Attempt to send stanza to self, dropping...");
-			else
-				print("...sending...", tostring(stanza));
-				--destuser.sessions[resource].conn.write(tostring(data));
-				print("   to conn ", destuser.sessions[resource].conn);
-				destuser.sessions[resource].conn.write(tostring(stanza));
-				print("...sent")
-			end
-		elseif stanza.name == "message" then
-			print("   ...will be stored offline");
-			offlinemessage.new(node, host, stanza);
-		elseif stanza.name == "iq" then
-			print("   ...is an iq");
-			session.send(st.reply(stanza)
-				:tag("error", { type = "cancel" })
-					:tag("service-unavailable", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }));
-		end
-		print("   ...done routing");
-	end
-end
-
 function handler(conn, data, err)
 	local session = sessions[conn];
 
