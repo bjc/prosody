@@ -8,6 +8,10 @@ require "lxp"
 function log(type, area, message)
 	print(type, area, message);
 end
+
+dofile "lxmppd.cfg"
+ 
+sessions = {};
  
 require "core.stanza_dispatch"
 require "core.xmlhandlers"
@@ -30,25 +34,9 @@ local st = stanza;
 local init_xmlhandlers = xmlhandlers.init_xmlhandlers;
 ------------------------------
 
-sessions = {};
-hosts = 	{ 
-			["localhost"] = 	{
-							type = "local";
-							connected = true;
-							sessions = {};
-						};
-			["getjabber.ath.cx"] = 	{
-							type = "local";
-							connected = true;
-							sessions = {};
-						};
-		}
+
 
 local hosts, users = hosts, users;
-
-local ssl_ctx = { mode = "server", protocol = "sslv23", key = "/home/matthew/ssl_cert/server.key",
-    certificate = "/home/matthew/ssl_cert/server.crt", capath = "/etc/ssl/certs", verify = "none", }
-
 
 function connect_host(host)
 	hosts[host] = { type = "remote", sendbuffer = {} };
