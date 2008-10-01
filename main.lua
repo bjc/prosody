@@ -160,6 +160,7 @@ end
 
 function disconnect(conn, err)
 	sessions[conn].disconnect(err);
+	sessions[conn] = nil;
 end
 
 modulemanager.loadall();
