@@ -23,19 +23,25 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 	if not handlers[origin_type].iq[xmlns] then
 		handlers[origin_type].iq[xmlns]= handler;
 		handler_info[handler] = getfenv(2).module;
-		log("debug", "mod_%s now handles iq,%s", getfenv(2).module.name, xmlns);
+		log("debug", "mod_%s now handles tag 'iq' with query namespace '%s'", getfenv(2).module.name, xmlns);
 	else
-		log("warning", "mod_%s wants to handle iq,%s but mod_%s already handles that", getfenv(2).module.name, xmlns, handler_info[handlers[origin_type].iq[xmlns]].module.name);
+		log("warning", "mod_%s wants to handle tag 'iq' with query namespace '%s' but mod_%s already handles that", getfenv(2).module.name, xmlns, handler_info[handlers[origin_type].iq[xmlns]].module.name);
 	end
 end
 
-function modulehelpers.add_presence_handler(origin_type, handler)
-end
-
-function modulehelpers.add_message_handler(origin_type, handler)
+function modulehelpers.add_handler(origin_type, tag, handler)
+	handlers[origin_type] = handlers[origin_type] or {};
+	if not handlers[origin_type][tag] then
+		handlers[origin_type][tag]= handler;
+		handler_info[handler] = getfenv(2).module;
+		log("debug", "mod_%s now handles tag '%s'", getfenv(2).module.name, tag);
+	elseif handler_info[handlers[origin_type][tag]] then
+		log("warning", "mod_%s wants to handle tag '%s' but mod_%s already handles that", getfenv(2).module.name, tag, handler_info[handlers[origin_type][tag]].module.name);
+	end
 end
 					
 function loadall()
+	load("saslauth");
 	load("legacyauth");
 	load("roster");
 end
@@ -58,9 +64,9 @@ function load(name)
 end
 
 function handle_stanza(origin, stanza)
-	local name, origin_type = stanza.name, origin.type;
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
 	
-	if name == "iq" then
+	if name == "iq" and xmlns == "jabber:client" and handlers[origin_type] then
 		log("debug", "Stanza is an <iq/>");
 		local child = stanza.tags[1];
 		if child then
@@ -72,6 +78,13 @@ function handle_stanza(origin, stanza)
 				return handler(origin, stanza) or true;
 			end
 
+		end
+		--FIXME: All iq's must be replied to, here we should return service-unavailable I think
+	elseif handlers[origin_type] then
+		local handler = handlers[origin_type][name];
+		if  handler then
+			log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
+			return handler(origin, stanza) or true;
 		end
 	end
 	log("debug", "Stanza unhandled by any modules");

@@ -9,3 +9,5 @@ function validate_credentials(host, username, password)
 	if password == credentials.password then return true; end
 	return false;
 end
+
+return _M;

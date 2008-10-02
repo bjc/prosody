@@ -21,6 +21,7 @@ require "core.modulemanager"
 require "core.usermanager"
 require "core.sessionmanager"
 require "core.stanza_router"
+require "net.connhandlers"
 require "util.stanza"
 require "util.jid"
  
@@ -31,7 +32,6 @@ local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_
 local m_random = math.random;
 local format = string.format;
 local st = stanza;
-local init_xmlhandlers = xmlhandlers.init_xmlhandlers;
 ------------------------------
 
 
@@ -63,8 +63,8 @@ function handler(conn, data, err)
 		print("Client connected");
 		
 		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
-		session.xml_handlers = init_xmlhandlers(session);
-		session.parser = lxp.new(session.xml_handlers, ":");
+		
+		session.connhandler = connhandlers.new("xmpp-client", session);
 			
 		function session.disconnect(err)
 			if session.last_presence and session.last_presence.attr.type ~= "unavailable" then
@@ -82,7 +82,7 @@ function handler(conn, data, err)
 		end
 	end
 	if data then
-		session.parser:parse(data);
+		session.connhandler:data(data);
 	end
 	
 	--log("info", "core", "Client disconnected, connection closed");
