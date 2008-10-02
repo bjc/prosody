@@ -21,16 +21,27 @@ add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 				require "core.usermanager"
 				if usermanager.validate_credentials(session.host, username, password) then
 					-- Authentication successful!
-					session.username = username;
-					session.resource = resource;
-					session.full_jid = username.."@"..session.host.."/"..session.resource;
-					if session.type == "c2s_unauthed" then
-						session.type = "c2s";
+					local success, err = sessionmanager.make_authenticated(session, username);
+					if success then
+						success, err = sessionmanager.bind_resource(session, resource);
+						--FIXME: Reply with error
+						if not success then
+							local reply = st.reply(stanza);
+							reply.attr.type = "error";
+							if err == "conflict" then
+								reply:tag("error", { code = "409", type = "cancel" })
+									:tag("conflict", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
+							elseif err == "constraint" then
+								reply:tag("error", { code = "409", type = "cancel" })
+									:tag("already-bound", { xmlns = "x-lxmppd:extensions:legacyauth" });
+							elseif err == "auth" then
+								reply:tag("error", { code = "401", type = "auth" })
+									:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
+							end
+							dispatch_stanza(reply);
+							return true;
+						end
 					end
-					if not hosts[session.host].sessions[username] then
-						hosts[session.host].sessions[username] = { sessions = {} };
-					end
-					hosts[session.host].sessions[username].sessions[resource] = session;
 					send(session, st.reply(stanza));
 					return true;
 				else

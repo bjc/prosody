@@ -27,6 +27,7 @@ function init_xmlhandlers(session)
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
+				log("info", "xmlhandlers", "Start element: " .. name);
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
@@ -41,21 +42,28 @@ function init_xmlhandlers(session)
 			                        session.streamid = m_random(1000000, 99999999);
 			                        print(session, session.host, "Client opened stream");
 			                        send("<?xml version='1.0'?>");
-			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s'>", session.streamid, session.host));
-			                        --send("<stream:features>");
-			                        --send("<mechanism>PLAIN</mechanism>");
+			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+						send("<stream:features>");
+						if not session.username then
+							send("<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
+								send("<mechanism>PLAIN</mechanism>");
+							send("</mechanisms>");
+						else
+							send("<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
+						end
         			                --send [[<register xmlns="http://jabber.org/features/iq-register"/> ]]
-        			                --send("</stream:features>");
+        			                send("</stream:features>");
 						log("info", "core", "Stream opened successfully");
 						session.notopen = nil;
 						return;
 					end
 					error("Client failed to open stream successfully");
 				end
-				if name ~= "iq" and name ~= "presence" and name ~= "message" then
+				if curr_ns == "jabber:client" and name ~= "iq" and name ~= "presence" and name ~= "message" then
 					error("Client sent invalid top-level stanza");
 				end
-				stanza = st.stanza(name, { to = attr.to, type = attr.type, id = attr.id, xmlns = curr_ns });
+				attr.xmlns = curr_ns;
+				stanza = st.stanza(name, attr); --{ to = attr.to, type = attr.type, id = attr.id, xmlns = curr_ns });
 				curr_tag = stanza;
 			else
 				attr.xmlns = curr_ns;
