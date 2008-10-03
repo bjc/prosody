@@ -1,4 +1,5 @@
 
+local sessionmanager_streamopened = require "core.sessionmanager".streamopened;
 require "util.stanza"
 
 local st = stanza;
@@ -27,7 +28,6 @@ function init_xmlhandlers(session)
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
-				log("info", "xmlhandlers", "Start element: " .. name);
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
@@ -37,24 +37,7 @@ function init_xmlhandlers(session)
 			if not stanza then
 				if session.notopen then
 					if name == "stream" then
-						session.host = attr.to or error("Client failed to specify destination hostname");
-			                        session.version = attr.version or 0;
-			                        session.streamid = m_random(1000000, 99999999);
-			                        print(session, session.host, "Client opened stream");
-			                        send("<?xml version='1.0'?>");
-			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
-						send("<stream:features>");
-						if not session.username then
-							send("<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
-								send("<mechanism>PLAIN</mechanism>");
-							send("</mechanisms>");
-						else
-							send("<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
-						end
-        			                --send [[<register xmlns="http://jabber.org/features/iq-register"/> ]]
-        			                send("</stream:features>");
-						log("info", "core", "Stream opened successfully");
-						session.notopen = nil;
+						sessionmanager_streamopened(session, attr);
 						return;
 					end
 					error("Client failed to open stream successfully");

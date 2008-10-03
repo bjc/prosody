@@ -1,11 +1,17 @@
 
-local tostring = tostring;
+local tonumber, tostring = tonumber, tostring;
+local ipairs = ipairs;
+
+local m_random = math.random;
+local format = string.format;
 
 local print = print;
 
 local hosts = hosts;
 
+local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("sessionmanager");
+local error = error;
 
 module "sessionmanager"
 
@@ -52,6 +58,29 @@ function bind_resource(session, resource)
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	
 	return true;
+end
+
+function streamopened(session, attr)
+						local send = session.send;
+						session.host = attr.to or error("Client failed to specify destination hostname");
+			                        session.version = tonumber(attr.version) or 0;
+			                        session.streamid = m_random(1000000, 99999999);
+			                        print(session, session.host, "Client opened stream");
+			                        send("<?xml version='1.0'?>");
+			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+						
+						local features = {};
+						modulemanager.fire_event("stream-features", session, features);
+						
+						send("<stream:features>");
+						
+						for _, feature in ipairs(features) do
+							send_to_session(session, tostring(features));
+						end
+ 
+        			                send("</stream:features>");
+						log("info", "core", "Stream opened successfully");
+						session.notopen = nil;
 end
 
 return _M;
