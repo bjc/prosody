@@ -75,7 +75,7 @@ function streamopened(session, attr)
 						send("<stream:features>");
 						
 						for _, feature in ipairs(features) do
-							send_to_session(session, tostring(features));
+							send_to_session(session, tostring(feature));
 						end
  
         			                send("</stream:features>");
