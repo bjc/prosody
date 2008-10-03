@@ -4,6 +4,7 @@ local log = require "util.logger".init("modulemanager")
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
+local t_insert = table.insert;
 local type = type;
 
 local tostring, print = tostring, print;
@@ -90,3 +91,25 @@ function handle_stanza(origin, stanza)
 	log("debug", "Stanza unhandled by any modules");
 	return false; -- we didn't handle it
 end
+
+do
+	local event_handlers = {};
+	
+	function modulehelpers.add_event_hook(name, handler)
+		if not event_handlers[name] then
+			event_handlers[name] = {};
+		end
+		t_insert(event_handlers[name] , handler);
+	end
+	
+	function fire_event(name, ...)
+		local event_handlers = event_handlers[name];
+		if event_handlers then
+			for name, handler in ipairs(event_handlers) do
+				handler(...);
+			end
+		end
+	end
+end
+
+return _M;
