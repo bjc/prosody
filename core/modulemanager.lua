@@ -48,6 +48,7 @@ function loadall()
 	load("saslauth");
 	load("legacyauth");
 	load("roster");
+	load("InBandRegistration");
 end
 
 function load(name)
