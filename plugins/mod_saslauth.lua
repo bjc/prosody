@@ -16,7 +16,7 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 local new_connhandler = require "net.connhandlers".new;
 local new_sasl = require "util.sasl".new;
 
-add_handler("c2s_unauthed", "auth",
+add_handler("c2s_unauthed", "auth", xmlns_sasl,
 		function (session, stanza)
 			if not session.sasl_handler then
 				session.sasl_handler = new_sasl(stanza.attr.mechanism, 
