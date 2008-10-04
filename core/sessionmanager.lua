@@ -12,7 +12,7 @@ local hosts = hosts;
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("sessionmanager");
 local error = error;
-
+local uuid_generate = require "util.uuid".uuid_generate;
 module "sessionmanager"
 
 function new_session(conn)
@@ -41,7 +41,7 @@ end
 function bind_resource(session, resource)
 	if not session.username then return false, "auth"; end
 	if session.resource then return false, "constraint"; end -- We don't support binding multiple resources
-	resource = resource or math.random(100000, 99999999); -- FIXME: Clearly we have issues :)
+	resource = resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	
 	if not hosts[session.host].sessions[session.username] then
