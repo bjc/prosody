@@ -19,7 +19,7 @@ local function new_plain(onAuth, onSuccess, onFail, onWrite)
 						local authorization = s_match(response, "([^&%z]+)")
 						local authentication = s_match(response, "%z([^&%z]+)%z")
 						local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
-						if self.onAuth(authorization, password) == true then
+						if self.onAuth(authentication, password) == true then
 							self.onWrite(st.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
 							self.onSuccess(authentication)
 						else
