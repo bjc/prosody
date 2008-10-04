@@ -33,6 +33,7 @@ add_handler("c2s_unauthed", "auth", xmlns_sasl,
 						local success, err = sessionmanager.make_authenticated(session, username);
 						if not success then
 							sessionmanager.destroy_session(session);
+							return;
 						end
 						session.sasl_handler = nil;
 						session.connhandler = new_connhandler("xmpp-client", session);
