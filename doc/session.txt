@@ -1,0 +1,19 @@
+
+Structure of a session:
+
+
+session {
+	-- properties --
+	conn -- the tcp connection
+	notopen -- true if stream has not been initiated, removed after receiving <stream:steam>
+	priority -- the resource priority, default: 0
+	type -- the connection type. Valid values include:
+			-- "c2s_unauthed" - connection has not been authenticated yet
+			-- "c2s" - from a local client to the server
+	username -- the node part of the client's jid (not defined before auth)
+	host -- the host part of the client's jid (not defined before stream initiation)
+	resource -- the resource part of the client's full jid (not defined before resource binding)
+	
+	-- methods --
+	send(x) -- converts x to a string, and writes it to the connection
+}
