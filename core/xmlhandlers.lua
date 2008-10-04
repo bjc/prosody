@@ -1,4 +1,5 @@
 
+local sessionmanager_streamopened = require "core.sessionmanager".streamopened;
 require "util.stanza"
 
 local st = stanza;
@@ -9,6 +10,7 @@ local t_insert = table.insert;
 local t_remove = table.remove;
 local t_concat = table.concat;
 local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
+local sm_destroy_session = import("core.sessionmanager", "destroy_session");
 
 local error = error;
 
@@ -27,7 +29,6 @@ function init_xmlhandlers(session)
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
-				log("info", "xmlhandlers", "Start element: " .. name);
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
@@ -37,24 +38,7 @@ function init_xmlhandlers(session)
 			if not stanza then
 				if session.notopen then
 					if name == "stream" then
-						session.host = attr.to or error("Client failed to specify destination hostname");
-			                        session.version = attr.version or 0;
-			                        session.streamid = m_random(1000000, 99999999);
-			                        print(session, session.host, "Client opened stream");
-			                        send("<?xml version='1.0'?>");
-			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
-						send("<stream:features>");
-						if not session.username then
-							send("<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
-								send("<mechanism>PLAIN</mechanism>");
-							send("</mechanisms>");
-						else
-							send("<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
-						end
-        			                --send [[<register xmlns="http://jabber.org/features/iq-register"/> ]]
-        			                send("</stream:features>");
-						log("info", "core", "Stream opened successfully");
-						session.notopen = nil;
+						sessionmanager_streamopened(session, attr);
 						return;
 					end
 					error("Client failed to open stream successfully");
@@ -77,7 +61,15 @@ function init_xmlhandlers(session)
 		end
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+):(%w+)$");
-			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then error("XML parse error in client stream"); end
+			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
+				if name == "stream" then
+					log("debug", "Stream closed");
+					sm_destroy_session(session);
+					return;
+				else
+					error("XML parse error in client stream");
+				end
+			end
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
