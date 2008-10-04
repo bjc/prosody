@@ -17,15 +17,6 @@ function stanza(name, attr)
 	return setmetatable(stanza, stanza_mt);
 end
 
-function stanza_mt:iq(attrs)
-	return self + stanza("iq", attrs)
-end
-function stanza_mt:message(attrs)
-	return self + stanza("message", attrs)
-end
-function stanza_mt:presence(attrs)
-	return self + stanza("presence", attrs)
-end
 function stanza_mt:query(xmlns)
 	return self:tag("query", { xmlns = xmlns });
 end
