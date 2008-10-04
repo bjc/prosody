@@ -66,7 +66,6 @@ end
 
 function make_authenticated(session, username)
 	session.username = username;
-	session.resource = resource;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s";
 	end
