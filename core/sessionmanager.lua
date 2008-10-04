@@ -1,11 +1,9 @@
 
 local tonumber, tostring = tonumber, tostring;
-local ipairs = ipairs;
+local ipairs, print= ipairs, print;
 
-local m_random = math.random;
-local format = string.format;
-
-local print = print;
+local m_random = import("math", "random");
+local format = import("string", "format");
 
 local hosts = hosts;
 
@@ -79,7 +77,7 @@ function streamopened(session, attr)
 						end
  
         			                send("</stream:features>");
-						log("info", "core", "Stream opened successfully");
+						log("info", "Stream opened successfully");
 						session.notopen = nil;
 end
 

@@ -13,6 +13,7 @@ dofile "lxmppd.cfg"
  
 sessions = {};
  
+require "util.import"
 require "core.stanza_dispatch"
 require "core.xmlhandlers"
 require "core.rostermanager"
@@ -24,6 +25,7 @@ require "core.stanza_router"
 require "net.connhandlers"
 require "util.stanza"
 require "util.jid"
+
  
 -- Locals for faster access --
 local t_insert = table.insert;
