@@ -33,6 +33,7 @@ local t_concat = table.concat;
 local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
 local m_random = math.random;
 local format = string.format;
+local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session; --import("core.sessionmanager", "new_session", "destroy_session");
 local st = stanza;
 ------------------------------
 
@@ -48,7 +49,7 @@ function handler(conn, data, err)
 	local session = sessions[conn];
 
 	if not session then
-		sessions[conn] = sessionmanager.new_session(conn);
+		sessions[conn] = sm_new_session(conn);
 		session = sessions[conn];
 
 		-- Logging functions --
@@ -75,11 +76,8 @@ function handler(conn, data, err)
 				pres:tag("status"):text("Disconnected: "..err);
 				session.stanza_dispatch(pres);
 			end
-			if session.username then
-				hosts[session.host].sessions[session.username] = nil;
-			end
 			session = nil;
-			print("Disconnected: "..err);
+			print("Disconnected: "..tostring(err));
 			collectgarbage("collect");
 		end
 	end
@@ -91,7 +89,7 @@ function handler(conn, data, err)
 end
 
 function disconnect(conn, err)
-	sessions[conn].disconnect(err);
+	sm_destroy_session(sessions[conn]);
 	sessions[conn] = nil;
 end
 
