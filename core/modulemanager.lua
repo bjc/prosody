@@ -35,14 +35,15 @@ function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
 	if not (origin_type and tag and xmlns and handler) then return false; end
 	handlers[origin_type] = handlers[origin_type] or {};
 	if not handlers[origin_type][tag] then
-		handlers[origin_type][tag]= handler;
+		handlers[origin_type][tag] = handlers[origin_type][tag] or {};
+		handlers[origin_type][tag][xmlns]= handler;
 		handler_info[handler] = getfenv(2).module;
 		log("debug", "mod_%s now handles tag '%s'", getfenv(2).module.name, tag);
 	elseif handler_info[handlers[origin_type][tag]] then
 		log("warning", "mod_%s wants to handle tag '%s' but mod_%s already handles that", getfenv(2).module.name, tag, handler_info[handlers[origin_type][tag]].module.name);
 	end
 end
-					
+
 function loadall()
 	load("saslauth");
 	load("legacyauth");
@@ -85,11 +86,14 @@ function handle_stanza(origin, stanza)
 	elseif handlers[origin_type] then
 		local handler = handlers[origin_type][name];
 		if  handler then
-			log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
-			return handler(origin, stanza) or true;
+			handler = handler[xmlns];
+			if handler then
+				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
+				return handler(origin, stanza) or true;
+			end
 		end
 	end
-	log("debug", "Stanza unhandled by any modules");
+	log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns);
 	return false; -- we didn't handle it
 end
 
