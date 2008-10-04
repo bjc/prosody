@@ -1,0 +1,20 @@
+
+Structure of a stanza:
+
+
+stanza {
+	--- properties ---
+	tags -- array of tags
+	
+	--- static methods ---
+	iq(attrs) -- 
+	
+	--- read-only methods ---
+	reply -- return new stanza with attributes of current stanza
+	child_with_name(string name) -- return the first child of the current tag with the matching name
+	
+	--- write methods ---
+	tag(name, sttrs) -- create a new child of the current tag, and set the child as current
+	up() -- move to the parent of the current tag
+	text(string) -- append a new text node to the current tag
+}
