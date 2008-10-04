@@ -10,6 +10,7 @@ local t_insert = table.insert;
 local t_remove = table.remove;
 local t_concat = table.concat;
 local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
+local sm_destroy_session = import("core.sessionmanager", "destroy_session");
 
 local error = error;
 
@@ -60,7 +61,15 @@ function init_xmlhandlers(session)
 		end
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+):(%w+)$");
-			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then error("XML parse error in client stream"); end
+			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
+				if name == "stream" then
+					log("debug", "Stream closed");
+					sm_destroy_session(session);
+					return;
+				else
+					error("XML parse error in client stream");
+				end
+			end
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
