@@ -19,6 +19,7 @@ local handlers = {};
 local modulehelpers = setmetatable({}, { __index = _G });
 
 function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
+	if not (origin_type and handler and xmlns) then return false; end
 	handlers[origin_type] = handlers[origin_type] or {};
 	handlers[origin_type].iq = handlers[origin_type].iq or {};
 	if not handlers[origin_type].iq[xmlns] then
@@ -30,7 +31,8 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 	end
 end
 
-function modulehelpers.add_handler(origin_type, tag, handler)
+function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
+	if not (origin_type and tag and xmlns and handler) then return false; end
 	handlers[origin_type] = handlers[origin_type] or {};
 	if not handlers[origin_type][tag] then
 		handlers[origin_type][tag]= handler;
@@ -80,7 +82,6 @@ function handle_stanza(origin, stanza)
 			end
 
 		end
-		--FIXME: All iq's must be replied to, here we should return service-unavailable I think
 	elseif handlers[origin_type] then
 		local handler = handlers[origin_type][name];
 		if  handler then
