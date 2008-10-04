@@ -12,4 +12,12 @@ function validate_credentials(host, username, password)
 	return false;
 end
 
+function user_exists(username, host)
+	return datamanager.load(username, host, "accounts") ~= nil;
+end
+
+function create_user(username, password, host)
+	return datamanager.store(username, host, "accounts", {password = password});
+end
+
 return _M;
