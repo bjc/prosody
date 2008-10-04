@@ -4,6 +4,7 @@ local log = require "util.logger".init("modulemanager")
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
+local t_insert = table.insert;
 local type = type;
 
 local tostring, print = tostring, print;
@@ -18,6 +19,7 @@ local handlers = {};
 local modulehelpers = setmetatable({}, { __index = _G });
 
 function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
+	if not (origin_type and handler and xmlns) then return false; end
 	handlers[origin_type] = handlers[origin_type] or {};
 	handlers[origin_type].iq = handlers[origin_type].iq or {};
 	if not handlers[origin_type].iq[xmlns] then
@@ -29,17 +31,19 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 	end
 end
 
-function modulehelpers.add_handler(origin_type, tag, handler)
+function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
+	if not (origin_type and tag and xmlns and handler) then return false; end
 	handlers[origin_type] = handlers[origin_type] or {};
 	if not handlers[origin_type][tag] then
-		handlers[origin_type][tag]= handler;
+		handlers[origin_type][tag] = handlers[origin_type][tag] or {};
+		handlers[origin_type][tag][xmlns]= handler;
 		handler_info[handler] = getfenv(2).module;
 		log("debug", "mod_%s now handles tag '%s'", getfenv(2).module.name, tag);
 	elseif handler_info[handlers[origin_type][tag]] then
 		log("warning", "mod_%s wants to handle tag '%s' but mod_%s already handles that", getfenv(2).module.name, tag, handler_info[handlers[origin_type][tag]].module.name);
 	end
 end
-					
+
 function loadall()
 	load("saslauth");
 	load("legacyauth");
@@ -79,14 +83,38 @@ function handle_stanza(origin, stanza)
 			end
 
 		end
-		--FIXME: All iq's must be replied to, here we should return service-unavailable I think
 	elseif handlers[origin_type] then
 		local handler = handlers[origin_type][name];
 		if  handler then
-			log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
-			return handler(origin, stanza) or true;
+			handler = handler[xmlns];
+			if handler then
+				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
+				return handler(origin, stanza) or true;
+			end
 		end
 	end
-	log("debug", "Stanza unhandled by any modules");
+	log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns);
 	return false; -- we didn't handle it
 end
+
+do
+	local event_handlers = {};
+	
+	function modulehelpers.add_event_hook(name, handler)
+		if not event_handlers[name] then
+			event_handlers[name] = {};
+		end
+		t_insert(event_handlers[name] , handler);
+	end
+	
+	function fire_event(name, ...)
+		local event_handlers = event_handlers[name];
+		if event_handlers then
+			for name, handler in ipairs(event_handlers) do
+				handler(...);
+			end
+		end
+	end
+end
+
+return _M;
