@@ -11,6 +11,7 @@ require "util.jid"
 local jid_split = jid.split;
 
 function core_process_stanza(origin, stanza)
+	log("debug", "Received: "..tostring(stanza))
 	local to = stanza.attr.to;
 	
 	if not to or (hosts[to] and hosts[to].type == "local") then
