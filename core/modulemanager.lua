@@ -49,6 +49,7 @@ function loadall()
 	load("legacyauth");
 	load("roster");
 	load("register");
+	load("tls");
 end
 
 function load(name)
