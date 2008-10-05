@@ -41,7 +41,21 @@ end
 
 function core_route_stanza(origin, stanza)
 	-- Hooks
+	--- ...later
+	
 	-- Deliver
+	local node, host, resource = jid_split(stanza.attr.to);
+	local host_session = hosts[host]
+	if host_session and host_session.type == "local" then
+		-- Local host
+	else
+		-- Remote host
+		if host_session then
+			-- Send to session
+		else
+			-- Need to establish the connection
+		end
+	end
 end
 
 function handle_stanza_nodest(stanza)
