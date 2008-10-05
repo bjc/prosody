@@ -446,7 +446,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			local count = #data * STAT_UNIT
 			rstat = rstat + count
 			receivestat = receivestat + count
-			out_put( "server.lua: read data '", data, "', error: ", err )
+			--out_put( "server.lua: read data '", data, "', error: ", err )
 			return dispatch( handler, data, err )
 		else    -- connections was closed or fatal error
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
@@ -470,7 +470,10 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			writelen = removesocket( writelist, socket, writelen )    -- delete socket from writelist
 			if handler.need_tls then
 				out_put("server.lua: connection is ready for tls handshake");
-				handler.need_tls = not handler.starttls(true);
+				handler.starttls(true);
+				if handler.need_tls then
+					out_put("server.lua: uh-oh... we still want tls, something must be wrong");
+				end
 			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
@@ -499,7 +502,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	local wrote, read
 	
 	handler.starttls = function (now)
-		if not now then handler.need_tls = true; return; end
+		if not now then out_put("server.lua: we need to do tls, but delaying until later"); handler.need_tls = true; return; end
 		out_put( "server.lua: attempting to start tls on "..tostring(socket) )
 		socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
 		out_put("sslwrapped socket is "..tostring(socket));
@@ -511,9 +514,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		send = socket.send
 		receive = socket.receive
 		close = socket.close
-		print(readlen, writelen)
-		for _, s in ipairs(readlist) do print("R:", tostring(s)) end
-		for _, s in ipairs(writelist) do print("W:", tostring(s)) end
 		handler.ssl = function( )
 			return true
 		end
@@ -523,42 +523,46 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		handler.receive = function( pattern, prefix )
 			return receive( socket, pattern, prefix )
 		end
-	
-		handler.handshake = function (conn)
-							local succ, msg
-							out_put("ssl handshaking on socket "..tostring(conn))
-							conn:settimeout()
-							while not succ do
-								succ, msg = conn:dohandshake()
-								out_put("msg: "..tostring(msg))
-								if msg == 'wantread' then
-									socket_select({conn}, nil)
-								elseif msg == 'wantwrite' then
-									socket_select(nil, {conn})
-								elseif not succ then
-									-- other error
-									_ = err ~= "closed" and close( socket )
-									handler.close( )
-									disconnect( handler, err )
-									writequeue = nil
-									handler = nil
-									out_error("server.lua: ssl handshake failed");
-									return false    -- handshake failed
-								end
-					
-							end
-							out_put("server.lua: ssl handshake succeeded!");
-							handler.receivedata = handler._receivedata;
-							handler.dispatchdata = handler._dispatchdata;
-							return true;
-						end
 		
-		handler.receivedata = handler.handshake
-		handler.dispatchdata = handler.handshake
+			handler.handshake = coroutine_wrap( function( client )
+					local err
+					for i = 1, 10 do    -- 10 handshake attemps
+						_, err = client:dohandshake( )
+						if not err then
+							out_put( "server.lua: ssl handshake done" )
+							writelen = ( wrote and removesocket( writelist, socket, writelen ) ) or writelen
+							handler.receivedata = handler._receivedata    -- when handshake is done, replace the handshake function with regular functions
+							handler.dispatchdata = handler._dispatchdata
+							handler.need_tls = nil
+							socketlist[ client ] = handler
+							readlen = readlen + 1
+							readlist[ readlen ] = client												
+							return true;
+						else
+							out_put( "server.lua: error during ssl handshake: ", err )
+							if err == "wantwrite" then
+								if wrote == nil then
+									writelen = writelen + 1
+									writelist[ writelen ] = client
+									wrote = true
+								end
+							end
+							coroutine_yield( handler, nil, err )    -- handshake not finished
+						end
+					end
+					_ = err ~= "closed" and close( socket )
+					handler.close( )
+					disconnect( handler, err )
+					writequeue = nil
+					handler = nil
+					return false    -- handshake failed
+				end
+			)
+			handler.receivedata = handler.handshake
+			handler.dispatchdata = handler.handshake
 
-		return handler.handshake( socket )    -- do handshake
-	end
-	
+			handler.handshake( socket )    -- do handshake
+		end
 	socketlist[ socket ] = handler
 	readlen = readlen + 1
 	readlist[ readlen ] = socket
@@ -785,7 +789,10 @@ end
 loop = function( )    -- this is the main loop of the program
 	--signal_set( "hub", "run" )
 	repeat
-		out_put("select()")
+		--[[print(readlen, writelen)
+		for _, s in ipairs(readlist) do print("R:", tostring(s)) end
+		for _, s in ipairs(writelist) do print("W:", tostring(s)) end
+		out_put("select()"..os.time())]]
 		local read, write, err = socket_select( readlist, writelist, 1 )    -- 1 sec timeout, nice for timers
 		for i, socket in ipairs( write ) do    -- send data waiting in writequeues
 			local handler = socketlist[ socket ]
