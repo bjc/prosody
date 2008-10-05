@@ -123,6 +123,16 @@ function reply(orig)
 	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or nil) });
 end
 
+function error_reply(orig, type, condition, message, clone)
+	local r = reply(orig);
+	t.attr.type = "error";
+	-- TODO use clone
+	t:tag("error", {type = type})
+		:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
+	if (message) then t:tag("text"):text(message):up(); end
+	return t; -- stanza ready for adding app-specific errors
+end
+
 function presence(attr)
 	return stanza("presence", attr);
 end
