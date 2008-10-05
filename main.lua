@@ -101,7 +101,7 @@ setmetatable(_G, { __index = function (t, k) print("WARNING: ATTEMPT TO READ A N
 local protected_handler = function (conn, data, err) local success, ret = pcall(handler, conn, data, err); if not success then print("ERROR on "..tostring(conn)..": "..ret); conn:close(); end end;
 local protected_disconnect = function (conn, err) local success, ret = pcall(disconnect, conn, err); if not success then print("ERROR on "..tostring(conn).." disconnect: "..ret); conn:close(); end end;
 
-server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5222, "*", 1, nil ) -- server.add will send a status message
-server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5223, "*", 1, ssl_ctx ) -- server.add will send a status message
+server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5222, "*", 1, ssl_ctx ) -- server.add will send a status message
+--server.add( { listener = protected_handler, disconnect = protected_disconnect }, 5223, "*", 1, ssl_ctx ) -- server.add will send a status message
 
 server.loop();
