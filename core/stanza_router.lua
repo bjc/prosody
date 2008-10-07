@@ -7,19 +7,24 @@ require "core.servermanager"
 
 local log = require "util.logger".init("stanzarouter")
 
+local st = require "util.stanza";
+local send = require "core.sessionmanager".send_to_session;
+
 require "util.jid"
 local jid_split = jid.split;
 
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
+	-- TODO verify validity of stanza
+	
 	local to = stanza.attr.to;
+	stanza.attr.from = origin.full_jid -- quick fix to prevent impersonation
 	
 	if not to or (hosts[to] and hosts[to].type == "local") then
 		core_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
 		core_route_stanza(origin, stanza);
 	end
-		
 end
 
 function core_handle_stanza(origin, stanza)
@@ -36,7 +41,7 @@ function core_handle_stanza(origin, stanza)
 		-- Stanza is to this server, or a user on this server
 		log("debug", "Routing stanza to local");
 		handle_stanza(session, stanza);
-	end	
+	end
 end
 
 function core_route_stanza(origin, stanza)
@@ -48,6 +53,27 @@ function core_route_stanza(origin, stanza)
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
 		-- Local host
+		local user = host_session.sessions[node];
+		if user then
+			local res = nil;
+			if resource then
+				res = user.sessions[resource];
+			end
+			-- TODO do something about presence broadcast
+			if not res then
+				-- if we get here, resource was not specified or was unavailable
+				for k in pairs(user.sessions) do
+					res = user.sessions[k];
+					break;
+				end
+				-- TODO find resource with greatest priority
+			end
+			stanza.attr.to = res.full_jid;
+			send(res, stanza); -- Yay \o/
+		else
+			-- user not found
+			send(origin, st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
 	else
 		-- Remote host
 		if host_session then
