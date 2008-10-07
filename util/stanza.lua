@@ -124,7 +124,7 @@ function reply(orig)
 end
 
 function error_reply(orig, type, condition, message, clone)
-	local r = reply(orig);
+	local t = reply(orig);
 	t.attr.type = "error";
 	-- TODO use clone
 	t:tag("error", {type = type})
