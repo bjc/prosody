@@ -6,6 +6,7 @@ local setmetatable  =  setmetatable;
 local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
+local unpack        =        unpack;
 local s_gsub        =   string.gsub;
 module "stanza"
 
@@ -105,6 +106,40 @@ do
                 id = id + 1;
                 return "lx"..id;
         end
+end
+
+function preserialize(stanza)
+	local s = { name = stanza.name, attr = stanza.attr };
+	for _, child in ipairs(stanza) do
+		if type(child) == "table" then
+			t_insert(s, preserialize(child));
+		else
+			t_insert(s, child);
+		end
+	end
+	return s;
+end
+
+function deserialize(stanza)
+	-- Set metatable
+	setmetatable(stanza, stanza_mt);
+	for _, child in ipairs(stanza) do
+		if type(child) == "table" then
+			deserialize(child);
+		end
+	end
+	if not stanza.tags then
+		-- Rebuild tags
+		local tags = {};
+		for _, child in ipairs(stanza) do
+			if type(child) == "table" then
+				t_insert(tags, child);
+			end
+		end
+		stanza.tags = tags;
+	end
+	
+	return stanza;
 end
 
 function message(attr, body)
