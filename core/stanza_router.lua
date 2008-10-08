@@ -16,9 +16,12 @@ local jid_split = jid.split;
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
 	-- TODO verify validity of stanza (as well as JID validity)
+	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
+		error("Invalid IQ");
+	end
 
 	if origin.type == "c2s" and not origin.full_jid
-		and not(stanza.name == "iq" and stanza.tags[1] and stanza.tags[1].name == "bind"
+		and not(stanza.name == "iq" and stanza.tags[1].name == "bind"
 				and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
 		error("Client MUST bind resource after auth");
 	end
@@ -28,6 +31,8 @@ function core_process_stanza(origin, stanza)
 	stanza.attr.from = origin.full_jid -- quick fix to prevent impersonation
 	
 	if not to or (hosts[to] and hosts[to].type == "local") then
+		core_handle_stanza(origin, stanza);
+	elseif to and stanza.name == "iq" and not select(3, jid_split(to)) then
 		core_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
 		core_route_stanza(origin, stanza);
