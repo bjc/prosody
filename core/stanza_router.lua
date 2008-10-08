@@ -55,10 +55,7 @@ function core_route_stanza(origin, stanza)
 		-- Local host
 		local user = host_session.sessions[node];
 		if user then
-			local res = nil;
-			if resource then
-				res = user.sessions[resource];
-			end
+			local res = user.sessions[resource];
 			-- TODO do something about presence broadcast
 			if not res then
 				-- if we get here, resource was not specified or was unavailable
