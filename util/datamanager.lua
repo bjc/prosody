@@ -5,6 +5,7 @@ local char = string.char;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 local log = log;
 local io_open = io.open;
+local tostring = tostring;
 
 module "datamanager"
 
@@ -30,7 +31,7 @@ local function basicSerialize (o)
   if type(o) == "number" or type(o) == "boolean" then
     return tostring(o)
   else -- assume it is a string
-    return string.format("%q", tostring(o))
+    return format("%q", tostring(o))
   end
 end
 
