@@ -15,7 +15,7 @@ local jid_split = jid.split;
 
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
-	-- TODO verify validity of stanza
+	-- TODO verify validity of stanza (as well as JID validity)
 	
 	local to = stanza.attr.to;
 	stanza.attr.from = origin.full_jid -- quick fix to prevent impersonation
