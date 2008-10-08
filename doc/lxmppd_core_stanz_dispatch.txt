@@ -24,3 +24,4 @@ function init_stanza_dispatcher(session)
 	
 	function (stanza)
 		Validates the stanza and calls the required handler
+
