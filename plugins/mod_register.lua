@@ -29,7 +29,8 @@ add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 						if usermanager_create_user(username, password, session.host) then -- password change -- TODO is this the right way?
 							send(session, st.reply(stanza));
 						else
-							-- TODO internal error, unable to write file, file may be locked, etc
+							-- TODO unable to write file, file may be locked, etc, what's the correct error?
+							send(session, st.error_reply(stanza, "wait", "internal-server-error"));
 						end
 					else
 						send(session, st.error_reply(stanza, "modify", "bad-request"));
@@ -70,7 +71,8 @@ add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
 						if usermanager_create_user(username, password, session.host) then
 							send(session, st.reply(stanza)); -- user created!
 						else
-							-- TODO internal error, unable to write file, file may be locked, etc
+							-- TODO unable to write file, file may be locked, etc, what's the correct error?
+							send(session, st.error_reply(stanza, "wait", "internal-server-error"));
 						end
 					end
 				else
