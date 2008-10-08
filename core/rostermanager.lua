@@ -24,3 +24,5 @@ function getroster(username, host)
 		}
 --	return datamanager.load(username, host, "roster") or {};
 end
+
+return _M;
