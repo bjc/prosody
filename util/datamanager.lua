@@ -43,7 +43,7 @@ local function simplesave (f, o)
       elseif type(o) == "table" then
         f:write("{\n")
         for k,v in pairs(o) do
-          f:write(" [", format("%q", k), "] = ")
+          f:write(" [", basicSerialize(k), "] = ")
           simplesave(f, v)
           f:write(",\n")
         end
