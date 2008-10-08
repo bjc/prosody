@@ -18,10 +18,10 @@ add_iq_handler("c2s", "vcard-temp",
 					if to then
 						local node, host = jid_split(to);
 						if hosts[host] and hosts[host].type == "local" then
-							vCard = datamanager.load(node, host, "vCard"); -- load vCard for user or server
+							vCard = st.deserialize(datamanager.load(node, host, "vCard")); -- load vCard for user or server
 						end
 					else
-						vCard = datamanager.load(session.username, session.host, "vCard");-- load user's own vCard
+						vCard = st.deserialize(datamanager.load(session.username, session.host, "vCard"));-- load user's own vCard
 					end
 					if vCard then
 						local iq = st.reply(stanza);
@@ -32,7 +32,7 @@ add_iq_handler("c2s", "vcard-temp",
 					end
 				elseif stanza.attr.type == "set" then
 					if not to or to == session.username.."@"..session.host then
-						if datamanager.store(session.username, session.host, "vCard", stanza.tags[1]) then
+						if datamanager.store(session.username, session.host, "vCard", st.preserialize(stanza.tags[1])) then
 							send(session, st.reply(stanza));
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
