@@ -48,7 +48,7 @@ add_iq_handler("c2s", "vcard-temp",
 
 add_event_hook("stream-features", 
 					function (session, features)												
-						if session.full_jid then
+						if session.type == "c2s" then
 							t_insert(features, "<feature var='vcard-temp'/>");
 						end
 					end);
