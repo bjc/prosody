@@ -16,6 +16,13 @@ local jid_split = jid.split;
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
 	-- TODO verify validity of stanza (as well as JID validity)
+
+	if origin.type == "c2s" and not origin.full_jid
+		and not(stanza.name == "iq" and stanza.tags[1] and stanza.tags[1].name == "bind"
+				and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
+		error("Client MUST bind resource after auth");
+	end
+
 	
 	local to = stanza.attr.to;
 	stanza.attr.from = origin.full_jid -- quick fix to prevent impersonation
