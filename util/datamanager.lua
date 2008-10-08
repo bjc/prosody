@@ -56,7 +56,13 @@ local function simplesave (f, o)
 ------- API -------------
 
 function getpath(username, host, datastore)
-	return format("data/%s/%s/%s.dat", encode(host), datastore, encode(username));
+	if username then
+		return format("data/%s/%s/%s.dat", encode(host), datastore, encode(username));
+	elseif host then
+		return format("data/%s/%s.dat", encode(host), datastore);
+	else
+		return format("data/%s.dat", datastore);
+	end
 end
 
 function load(username, host, datastore)
