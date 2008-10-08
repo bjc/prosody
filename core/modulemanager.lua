@@ -50,6 +50,7 @@ function loadall()
 	load("roster");
 	load("register");
 	load("tls");
+	load("vcard");
 end
 
 function load(name)
