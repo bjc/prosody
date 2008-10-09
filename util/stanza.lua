@@ -122,21 +122,23 @@ end
 
 function deserialize(stanza)
 	-- Set metatable
-	setmetatable(stanza, stanza_mt);
-	for _, child in ipairs(stanza) do
-		if type(child) == "table" then
-			deserialize(child);
-		end
-	end
-	if not stanza.tags then
-		-- Rebuild tags
-		local tags = {};
+	if stanza then
+		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
 			if type(child) == "table" then
-				t_insert(tags, child);
+				deserialize(child);
 			end
 		end
-		stanza.tags = tags;
+		if not stanza.tags then
+			-- Rebuild tags
+			local tags = {};
+			for _, child in ipairs(stanza) do
+				if type(child) == "table" then
+					t_insert(tags, child);
+				end
+			end
+			stanza.tags = tags;
+		end
 	end
 	
 	return stanza;
