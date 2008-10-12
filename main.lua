@@ -1,6 +1,6 @@
 require "luarocks.require"
 
-server = require "net.server"
+local server = require "net.server"
 require "socket"
 require "ssl"
 require "lxp"
@@ -39,7 +39,7 @@ local st = stanza;
 
 
 
-local hosts, users = hosts, users;
+local hosts, sessions = hosts, sessions;
 
 function connect_host(host)
 	hosts[host] = { type = "remote", sendbuffer = {} };
