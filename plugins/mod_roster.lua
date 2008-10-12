@@ -8,7 +8,15 @@ add_iq_handler("c2s", "jabber:iq:roster",
 				local roster = st.reply(stanza)
 							:query("jabber:iq:roster");
 				for jid in pairs(session.roster) do
-					roster:tag("item", { jid = jid, subscription = "none" }):up();
+					local item = st.stanza("item", {
+						jid = jid,
+						subscription = session.roster[jid].subscription,
+						name = session.roster[jid].name,
+					});
+					for group in pairs(session.roster[jid].groups) do
+						item:tag("group"):text(group):up();
+					end
+					roster:add_child(item);
 				end
 				send(session, roster);
 				return true;
