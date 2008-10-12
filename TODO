@@ -1,11 +1,11 @@
-- SASL login support
 - Roster manipulation support
+- Private XML
 - On-the-fly code updates
 - S2S \o/
 - Control/statistics interface
+- External components
 
 Further down the line:
 - Ad-hoc commands
 - Clustering
 - Pubsub/PEP
-- Plugins!
