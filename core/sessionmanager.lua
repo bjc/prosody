@@ -12,7 +12,7 @@ local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("sessionmanager");
 local error = error;
 local uuid_generate = require "util.uuid".uuid_generate;
-local rm_getroster = require "core.rostermanager".getroster
+local rm_load_roster = require "core.rostermanager".load_roster;
 
 local newproxy = newproxy;
 local getmetatable = getmetatable;
@@ -92,7 +92,7 @@ function bind_resource(session, resource)
 	session.full_jid = session.username .. '@' .. session.host .. '/' .. resource;
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	
-	session.roster = rm_getroster(session.username, session.host);
+	session.roster = rm_load_roster(session.username, session.host);
 	
 	return true;
 end
