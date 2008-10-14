@@ -10,3 +10,5 @@ function split(jid)
 	local resource = match(jid, "/(.+)$");
 	return node, server, resource;
 end
+
+return _M;
