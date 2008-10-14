@@ -8,6 +8,8 @@ local setmetatable = setmetatable;
 local format = string.format;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 
+local hosts = hosts;
+
 require "util.datamanager"
 
 local datamanager = datamanager;
@@ -35,18 +37,19 @@ function remove_from_roster(roster, jid)
 	-- TODO implement
 end
 
-function load_roster(host, username)
+function load_roster(username, host)
 	if hosts[host] and hosts[host].sessions[username] then
 		local roster = hosts[host].sessions[username].roster;
 		if not roster then
-			return hosts[host].sessions[username].roster = datamanger.load(username, host, "roster") or {};
+			roster = datamanager.load(username, host, "roster") or {};
+			hosts[host].sessions[username].roster = roster;
 		end
 		return roster;
 	end
 	error("Attempt to load roster for non-loaded user"); --return nil;
 end
 
-function save_roster(host, username)
+function save_roster(username, host)
 	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
 		return datamanager.save(username, host, "roster", hosts[host].sessions[username].roster);
 	end
