@@ -10,8 +10,7 @@ local log = require "util.logger".init("stanzarouter")
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
 
-require "util.jid"
-local jid_split = jid.split;
+local jid_split = require "util.jid".split;
 
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
