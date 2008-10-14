@@ -67,17 +67,33 @@ function core_route_stanza(origin, stanza)
 		local user = host_session.sessions[node];
 		if user then
 			local res = user.sessions[resource];
-			-- TODO do something about presence broadcast
 			if not res then
 				-- if we get here, resource was not specified or was unavailable
-				for k in pairs(user.sessions) do
-					res = user.sessions[k];
-					break;
+				if stanza.name == "presence" then
+					for k in pairs(user.sessions) do -- presence broadcast to all user resources
+						if user.sessions[k].full_jid then
+							stanza.attr.to = user.sessions[k].full_jid;
+							send(user.sessions[k], stanza);
+						end
+					end
+				else if stanza.name == "message" then -- select a resource to recieve message
+					for k in pairs(user.sessions) do
+						if user.sessions[k].full_jid then
+							res = user.sessions[k];
+							break;
+						end
+					end
+					-- TODO find resource with greatest priority
+				else
+					error("IQs should't get here");
 				end
-				-- TODO find resource with greatest priority
 			end
-			stanza.attr.to = res.full_jid;
-			send(res, stanza); -- Yay \o/
+			if res then
+				stanza.attr.to = res.full_jid;
+				send(res, stanza); -- Yay \o/
+			elseif stanza.name == "message" then
+				-- TODO return message error
+			end
 		else
 			-- user not found
 			send(origin, st.error_reply(stanza, "cancel", "service-unavailable"));
