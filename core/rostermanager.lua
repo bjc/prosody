@@ -13,6 +13,8 @@ local hosts = hosts;
 require "util.datamanager"
 
 local datamanager = datamanager;
+local st = require "util.stanza";
+local send = require "core.sessionmanager".send_to_session;
 
 module "rostermanager"
 
@@ -27,14 +29,59 @@ module "rostermanager"
 	--return datamanager.load(username, host, "roster") or {};
 end]]
 
-function add_to_roster(roster, jid, item)
-	roster[jid] = item;
-	-- TODO implement
+function add_to_roster(session, jid, item)
+	if session.roster then
+		local old_item = session.roster[jid];
+		session.roster[jid] = item;
+		if save_roster(session.username, session.host) then
+			return true;
+		else
+			session.roster[jid] = old_item;
+			return nil, "wait", "internal-server-error", "Unable to save roster";
+		end
+	else
+		return nil, "auth", "not-authorized", "Session's roster not loaded";
+	end
 end
 
-function remove_from_roster(roster, jid)
-	roster[jid] = nil;
-	-- TODO implement
+function remove_from_roster(session, jid)
+	if session.roster then
+		local old_item = session.roster[jid];
+		session.roster[jid] = nil;
+		if save_roster(session.username, session.host) then
+			return true;
+		else
+			session.roster[jid] = old_item;
+			return nil, "wait", "internal-server-error", "Unable to save roster";
+		end
+	else
+		return nil, "auth", "not-authorized", "Session's roster not loaded";
+	end
+end
+
+function roster_push(username, host, jid)
+	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
+		local item = hosts[host].sessions[username].roster[jid];
+		local stanza = st.iq({type="set"});
+		stanza:tag("query", {xmlns = "jabber:iq:roster"});
+		if item then
+			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name});
+		else
+			stanza:tag("item", {jid = jid, subscription = "remove"});
+		end
+		for group in item.groups do
+			stanza:tag("group"):text(group):up();
+		end
+		stanza:up();
+		stanza:up();
+		-- stanza ready
+		for _, session in ipairs(hosts[host].sessions[username].sessions) do
+			if session.full_jid then
+				-- FIXME do we need to set stanza.attr.to?
+				send(session, stanza);
+			end
+		end
+	end
 end
 
 function load_roster(username, host)
@@ -46,7 +93,7 @@ function load_roster(username, host)
 		end
 		return roster;
 	end
-	error("Attempt to load roster for non-loaded user"); --return nil;
+	-- Attempt to load roster for non-loaded user
 end
 
 function save_roster(username, host)
