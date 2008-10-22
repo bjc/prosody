@@ -1,5 +1,4 @@
 
-local sessionmanager_streamopened = require "core.sessionmanager".streamopened;
 require "util.stanza"
 
 local st = stanza;
@@ -16,7 +15,7 @@ local error = error;
 
 module "xmlhandlers"
 
-function init_xmlhandlers(session)
+function init_xmlhandlers(session, streamopened)
 		local ns_stack = { "" };
 		local curr_ns = "";
 		local curr_tag;
@@ -38,7 +37,7 @@ function init_xmlhandlers(session)
 			if not stanza then
 				if session.notopen then
 					if name == "stream" then
-						sessionmanager_streamopened(session, attr);
+						streamopened(session, attr);
 						return;
 					end
 					error("Client failed to open stream successfully");

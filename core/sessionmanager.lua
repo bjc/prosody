@@ -20,7 +20,7 @@ local getmetatable = getmetatable;
 module "sessionmanager"
 
 function new_session(conn)
-	local session = { conn = conn, notopen = true, priority = 0, type = "c2s_unauthed" };
+	local session = { conn = conn,  priority = 0, type = "c2s_unauthed" };
 	if true then
 		session.trace = newproxy(true);
 		getmetatable(session.trace).__gc = function () print("Session got collected") end;

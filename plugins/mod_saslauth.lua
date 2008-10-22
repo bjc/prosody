@@ -36,8 +36,7 @@ add_handler("c2s_unauthed", "auth", xmlns_sasl,
 							return;
 						end
 						session.sasl_handler = nil;
-						session.connhandler = new_connhandler("xmpp-client", session);
-						session.notopen = true;
+						session:reset_stream();
 					end,
 					function (reason)
 						-- onFail
