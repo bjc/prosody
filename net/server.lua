@@ -43,7 +43,7 @@ local out_error = print;
 
 --// extern libs //--
 
-local luasec = require "ssl"
+local luasec = select(2, pcall(require, "ssl"))
 local luasocket = require "socket"
 
 --// extern lib methods //--
@@ -722,7 +722,7 @@ addserver = function( listeners, port, addr, mode, sslctx )    -- this function 
 	else
 		for name, func in pairs( listeners ) do
 			if type( func ) ~= "function" then
-				err = "invalid listener function"
+				--err = "invalid listener function"
 				break
 			end
 		end
