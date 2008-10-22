@@ -84,7 +84,7 @@ function bind_resource(session, resource)
 	else
 		if hosts[session.host].sessions[session.username].sessions[resource] then
 			-- Resource conflict
-			return false, "conflict";
+			return false, "conflict"; -- TODO kick old resource
 		end
 	end
 	
