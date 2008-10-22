@@ -26,6 +26,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 						end
 					end
 					send(session, roster);
+					session.interested = true; -- resource is interested in roster updates
 					return true;
 				elseif stanza.attr.type == "set" then
 					local query = stanza.tags[1];
