@@ -14,8 +14,14 @@ session {
 	resource -- the resource part of the client's full jid (not defined before resource binding)
 	full_jid -- convenience for the above 3 as string in username@host/resource form (not defined before resource binding)
 	priority -- the resource priority, default: 0 (not defined before initial presence)
+	presence -- the last non-directed presence. initially nil.
+	interested -- true if the resource requested the roster. Interested resources recieve roster updates. Initially nil.
 	
 	-- methods --
 	send(x) -- converts x to a string, and writes it to the connection
 	disconnect(x) -- Disconnect the user and clean up the session, best call sessionmanager.destroy_session() instead of this in most cases
 }
+
+A session is a "connected resource"
+if session.presence then this is an "available resource"
+if session.interested then this is an "interested resource"
