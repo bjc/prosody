@@ -6,6 +6,7 @@ local jid_split = require "util.jid".split;
 local t_concat = table.concat;
 
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
+local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
 
 add_iq_handler("c2s", "jabber:iq:roster", 
@@ -15,15 +16,14 @@ add_iq_handler("c2s", "jabber:iq:roster",
 					local roster = st.reply(stanza)
 								:query("jabber:iq:roster");
 					for jid in pairs(session.roster) do
-						local item = st.stanza("item", {
+						roster:tag("item", {
 							jid = jid,
 							subscription = session.roster[jid].subscription,
 							name = session.roster[jid].name,
 						});
 						for group in pairs(session.roster[jid].groups) do
-							item:tag("group"):text(group):up();
+							roster:tag("group"):text(group):up();
 						end
-						roster:add_child(item);
 					end
 					send(session, roster);
 					return true;
@@ -52,7 +52,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 									local r_item = {name = item.attr.name, groups = {}};
 									if r_item.name == "" then r_item.name = nil; end
 									if session.roster[item.attr.jid] then
-										r_item.subscription = session.roster[item.attr.jid];
+										r_item.subscription = session.roster[item.attr.jid].subscription;
 									else
 										r_item.subscription = "none";
 									end
