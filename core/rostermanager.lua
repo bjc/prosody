@@ -7,6 +7,7 @@ end
 local setmetatable = setmetatable;
 local format = string.format;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
+local pairs, ipairs = pairs, ipairs;
 
 local hosts = hosts;
 
@@ -14,7 +15,6 @@ require "util.datamanager"
 
 local datamanager = datamanager;
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
 
 module "rostermanager"
 
@@ -66,19 +66,19 @@ function roster_push(username, host, jid)
 		stanza:tag("query", {xmlns = "jabber:iq:roster"});
 		if item then
 			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name});
+			for group in pairs(item.groups) do
+				stanza:tag("group"):text(group):up();
+			end
 		else
 			stanza:tag("item", {jid = jid, subscription = "remove"});
-		end
-		for group in item.groups do
-			stanza:tag("group"):text(group):up();
 		end
 		stanza:up();
 		stanza:up();
 		-- stanza ready
-		for _, session in ipairs(hosts[host].sessions[username].sessions) do
+		for _, session in pairs(hosts[host].sessions[username].sessions) do
 			if session.full_jid then
 				-- FIXME do we need to set stanza.attr.to?
-				send(session, stanza);
+				session.send(stanza);
 			end
 		end
 	end
@@ -98,7 +98,7 @@ end
 
 function save_roster(username, host)
 	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
-		return datamanager.save(username, host, "roster", hosts[host].sessions[username].roster);
+		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
 	end
 	return nil;
 end
