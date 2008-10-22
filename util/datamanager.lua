@@ -68,16 +68,25 @@ end
 
 function load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore));
-	if not data then log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..username.."@"..host); return nil; end
+	if not data then
+		log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or nil).."@"..(host or nil));
+		return nil;
+	end
 	setfenv(data, {});
 	local success, ret = pcall(data);
-	if not success then log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..username.."@"..host); return nil; end
+	if not success then
+		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or nil).."@"..(host or nil));
+		return nil;
+	end
 	return ret;
 end
 
 function store(username, host, datastore, data)
 	local f, msg = io_open(getpath(username, host, datastore), "w+");
-	if not f then log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..username.."@"..host); return nil; end
+	if not f then
+		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or nil).."@"..(host or nil));
+		return nil;
+	end
 	f:write("return ");
 	simplesave(f, data);
 	f:close();
