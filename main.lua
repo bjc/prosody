@@ -1,4 +1,4 @@
-require "luarocks.require"
+pcall(require, "luarocks.require")
 
 local server = require "net.server"
 require "lxp"
@@ -31,7 +31,7 @@ require "util.stanza"
 require "util.jid"
 
 ------------------------------------------------------------------------
- 
+
 -- Locals for faster access --
 local t_insert = table.insert;
 local t_concat = table.concat;
