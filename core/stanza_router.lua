@@ -56,7 +56,7 @@ function core_handle_stanza(origin, stanza)
 		local session = origin;
 		
 		if stanza.name == "presence" and origin.roster then
-			if stanza.attr.type == nil or stanza.attr.type == "available" or stanza.attr.type == "unavailable" then
+			if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
 				for jid in pairs(origin.roster) do -- broadcast to all interested contacts
 					local subscription = origin.roster[jid].subscription;
 					if subscription == "both" or subscription == "from" then
@@ -65,26 +65,26 @@ function core_handle_stanza(origin, stanza)
 					end
 				end
 				local node, host = jid_split(stanza.attr.from);
-				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources and from resources
-					if res ~= origin then
-						if res.full_jid then -- to resource. FIXME is this check correct? Maybe it should be res.presence
-							stanza.attr.to = res.full_jid;
-							core_route_stanza(origin, stanza);
-						end
-						if res.presence then -- from all resources for which we have presence
-							res.presence.attr.to = origin.full_jid;
-							core_route_stanza(res, res.presence);
-							res.presence.attr.to = nil;
-						end
+				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
+					if res ~= origin and res.full_jid then -- to resource. FIXME is res.full_jid the correct check? Maybe it should be res.presence
+						stanza.attr.to = res.full_jid;
+						core_route_stanza(origin, stanza);
 					end
 				end
 				if not origin.presence then -- presence probes on initial presence
 					local probe = st.presence({from = origin.full_jid, type = "probe"});
-					for jid in pairs(origin.roster) do
+					for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
 						local subscription = origin.roster[jid].subscription;
 						if subscription == "both" or subscription == "to" then
 							probe.attr.to = jid;
 							core_route_stanza(origin, probe);
+						end
+					end
+					for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all resources
+						if res ~= origin and stanza.attr.type ~= "unavailable" and res.presence then -- FIXME does unavailable qualify as initial presence?
+							res.presence.attr.to = origin.full_jid;
+							core_route_stanza(res, res.presence);
+							res.presence.attr.to = nil;
 						end
 					end
 					-- TODO resend subscription requests
