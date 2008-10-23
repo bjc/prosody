@@ -87,6 +87,7 @@ function core_handle_stanza(origin, stanza)
 							core_route_stanza(origin, probe);
 						end
 					end
+					-- TODO resend subscription requests
 				end
 				origin.presence = stanza;
 				stanza.attr.to = nil; -- reset it
