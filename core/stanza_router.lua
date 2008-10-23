@@ -9,6 +9,7 @@ local log = require "util.logger".init("stanzarouter")
 
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
+-- local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
 local jid_split = require "util.jid".split;

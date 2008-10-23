@@ -19,30 +19,27 @@ local getmetatable = getmetatable;
 
 module "sessionmanager"
 
+local open_sessions = 0;
+
 function new_session(conn)
 	local session = { conn = conn,  priority = 0, type = "c2s_unauthed" };
 	if true then
 		session.trace = newproxy(true);
-		getmetatable(session.trace).__gc = function () print("Session got collected") end;
+		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("Session got collected, now "..open_sessions.." sessions are allocated") end;
 	end
+	open_sessions = open_sessions + 1;
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
 	return session;
 end
 
 function destroy_session(session)
-	if not (session and session.disconnect) then return; end 
-	log("debug", "Destroying session...");
-	session.disconnect();
+	session.log("info", "Destroying session");
 	if session.username then
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		end
-		local nomore = true;
-		for res, ssn in pairs(hosts[session.host].sessions[session.username]) do
-			nomore = false;
-		end
-		if nomore then
+		if not next(hosts[session.host].sessions[session.username], nil) then
 			hosts[session.host].sessions[session.username] = nil;
 		end
 	end
@@ -53,11 +50,6 @@ function destroy_session(session)
 			session[k] = nil;
 		end
 	end
-	collectgarbage("collect");
-	collectgarbage("collect");
-	collectgarbage("collect");
-	collectgarbage("collect");
-	collectgarbage("collect");
 end
 
 function send_to_session(session, data)
