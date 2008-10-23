@@ -93,3 +93,4 @@ function store(username, host, datastore, data)
 	return true;
 end
 
+return _M;
