@@ -69,6 +69,19 @@ function xmppclient.listener(conn, data)
 end
 	
 function xmppclient.disconnect(conn)
+	local session = sessions[conn];
+	if session then
+		if session.last_presence and session.last_presence.attr.type ~= "unavailable" then
+			local pres = st.presence{ type = "unavailable" };
+			if err == "closed" then err = "connection closed"; end
+			pres:tag("status"):text("Disconnected: "..err);
+			session.stanza_dispatch(pres);
+		end
+		sm_destroy_session(session);
+		sessions[conn]  = nil;
+		session = nil;
+		collectgarbage("collect");
+	end
 end
 
 connlisteners_register("xmppclient", xmppclient);
