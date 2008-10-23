@@ -13,7 +13,6 @@ local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
-local new_connhandler = require "net.connhandlers".new;
 local new_sasl = require "util.sasl".new;
 
 add_handler("c2s_unauthed", "auth", xmlns_sasl,

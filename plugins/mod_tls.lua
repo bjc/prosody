@@ -13,8 +13,6 @@ local log = require "util.logger".init("mod_starttls");
 
 local xmlns_starttls ='urn:ietf:params:xml:ns:xmpp-tls';
 
-local new_connhandler = require "net.connhandlers".new;
-
 add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls then
