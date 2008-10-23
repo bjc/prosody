@@ -1,6 +1,6 @@
 
 local tonumber, tostring = tonumber, tostring;
-local ipairs, pairs, print= ipairs, pairs, print;
+local ipairs, pairs, print, next= ipairs, pairs, print, next;
 local collectgarbage = collectgarbage;
 local m_random = import("math", "random");
 local format = import("string", "format");
@@ -39,7 +39,9 @@ function destroy_session(session)
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		end
-		if not next(hosts[session.host].sessions[session.username], nil) then
+		
+		if not next(hosts[session.host].sessions[session.username].sessions) then
+			log("debug", "All resources of %s are now offline", session.username);
 			hosts[session.host].sessions[session.username] = nil;
 		end
 	end
