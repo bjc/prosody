@@ -93,6 +93,7 @@ function core_handle_stanza(origin, stanza)
 	end
 end
 
+-- TODO: Does this function belong here?
 function is_authorized_to_see_presence(origin, username, host)
 	local roster = datamanager.load(username, host, "roster") or {};
 	local item = roster[origin.username.."@"..origin.host];
@@ -186,11 +187,7 @@ function core_route_stanza(origin, stanza)
 		end
 	else
 		-- Remote host
-		if host_session then
-			-- Send to session
-		else
-			-- Need to establish the connection
-		end
+		send_s2s(origin.host, host, stanza);
 	end
 	stanza.attr.to = to; -- reset
 end
