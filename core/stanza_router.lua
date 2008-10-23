@@ -9,7 +9,6 @@ local log = require "util.logger".init("stanzarouter")
 
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
-local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
 local jid_split = require "util.jid".split;
@@ -118,22 +117,32 @@ function core_route_stanza(origin, stanza)
 			if not res then
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
-					if stanza.attr.type == "probe" then
-						if is_authorized_to_see_presence(origin, node, host) then
-							for k in pairs(user.sessions) do -- return presence for all resources
-								if user.sessions[k].presence then
-									local pres = user.sessions[k].presence;
-									pres.attr.to = origin.full_jid;
-									pres.attr.from = user.sessions[k].full_jid;
-									send(origin, pres);
-									pres.attr.to = nil;
-									pres.attr.from = nil;
+					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+						if stanza.attr.type == "probe" then
+							if is_authorized_to_see_presence(origin, node, host) then
+								for k in pairs(user.sessions) do -- return presence for all resources
+									if user.sessions[k].presence then
+										local pres = user.sessions[k].presence;
+										pres.attr.to = origin.full_jid;
+										pres.attr.from = user.sessions[k].full_jid;
+										send(origin, pres);
+										pres.attr.to = nil;
+										pres.attr.from = nil;
+									end
 								end
+							else
+								send(origin, st.presence({from=user.."@"..host, to=origin.username.."@"..origin.host, type="unsubscribed"}));
 							end
-						else
-							send(origin, st.presence({from = user.."@"..host, to = origin.username.."@"..origin.host, type = "unsubscribed"}));
-						end
-					else
+						elseif stanza.attr.type == "subscribe" then
+							-- TODO
+						elseif stanza.attr.type == "unsubscribe" then
+							-- TODO
+						elseif stanza.attr.type == "subscribed" then
+							-- TODO
+						elseif stanza.attr.type == "unsubscribed" then
+							-- TODO
+						end -- discard any other type
+					else -- sender is available or unavailable
 						for k in pairs(user.sessions) do -- presence broadcast to all user resources
 							if user.sessions[k].full_jid then
 								stanza.attr.to = user.sessions[k].full_jid;
