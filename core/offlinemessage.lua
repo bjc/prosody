@@ -11,3 +11,5 @@ function new(user, host, stanza)
 	t_insert(offlinedata, stanza);
 	return datamanager.store(user, host, "offlinemsg", offlinedata);
 end
+
+return _M;
