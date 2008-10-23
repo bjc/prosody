@@ -23,14 +23,20 @@ function deregister(name)
 	listeners[name] = nil;
 end
 
-function start(name, udata)
-	local h = listeners[name]
+function get(name)
+	local h = listeners[name];
 	if not h then
 		pcall(dofile, "net/"..name:gsub("[^%w%-]", "_").."_listener.lua");
 		h = listeners[name];
-		if not h then
-			error("No such connection module: "..name, 0);
-		end
+		
+	end
+	return h;
+end
+
+function start(name, udata)
+	local h = get(name);
+	if not h then
+		error("No such connection module: "..name, 0);
 	end
 	return server_add(h, 
 			udata.port or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
