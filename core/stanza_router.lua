@@ -64,13 +64,20 @@ function core_handle_stanza(origin, stanza)
 						core_route_stanza(origin, stanza);
 					end
 				end
-				--[[local node, host = jid_split(stanza.attr.from);
-				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
-					if res.full_jid then
-						res = user.sessions[k];
-						break;
+				local node, host = jid_split(stanza.attr.from);
+				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources and from resources
+					if res ~= origin then
+						if res.full_jid then -- to resource. FIXME is this check correct? Maybe it should be res.presence
+							stanza.attr.to = res.full_jid;
+							core_route_stanza(origin, stanza);
+						end
+						if res.presence then -- from all resources for which we have presence
+							res.presence.attr.to = origin.full_jid;
+							core_route_stanza(res, res.presence);
+							res.presence.attr.to = nil;
+						end
 					end
-				end]]
+				end
 				if not origin.presence then -- presence probes on initial presence
 					local probe = st.presence({from = origin.full_jid, type = "probe"});
 					for jid in pairs(origin.roster) do
@@ -80,6 +87,7 @@ function core_handle_stanza(origin, stanza)
 							core_route_stanza(origin, probe);
 						end
 					end
+					-- TODO resend subscription requests
 				end
 				origin.presence = stanza;
 				stanza.attr.to = nil; -- reset it
@@ -107,7 +115,7 @@ function core_route_stanza(origin, stanza)
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
 
-	if stanza.name == "presence" and stanza.attr.type == "probe" then resource = nil; end
+	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
@@ -118,22 +126,32 @@ function core_route_stanza(origin, stanza)
 			if not res then
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
-					if stanza.attr.type == "probe" then
-						if is_authorized_to_see_presence(origin, node, host) then
-							for k in pairs(user.sessions) do -- return presence for all resources
-								if user.sessions[k].presence then
-									local pres = user.sessions[k].presence;
-									pres.attr.to = origin.full_jid;
-									pres.attr.from = user.sessions[k].full_jid;
-									send(origin, pres);
-									pres.attr.to = nil;
-									pres.attr.from = nil;
+					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+						if stanza.attr.type == "probe" then
+							if is_authorized_to_see_presence(origin, node, host) then
+								for k in pairs(user.sessions) do -- return presence for all resources
+									if user.sessions[k].presence then
+										local pres = user.sessions[k].presence;
+										pres.attr.to = origin.full_jid;
+										pres.attr.from = user.sessions[k].full_jid;
+										send(origin, pres);
+										pres.attr.to = nil;
+										pres.attr.from = nil;
+									end
 								end
+							else
+								send(origin, st.presence({from=user.."@"..host, to=origin.username.."@"..origin.host, type="unsubscribed"}));
 							end
-						else
-							send(origin, st.presence({from = user.."@"..host, to = origin.username.."@"..origin.host, type = "unsubscribed"}));
-						end
-					else
+						elseif stanza.attr.type == "subscribe" then
+							-- TODO
+						elseif stanza.attr.type == "unsubscribe" then
+							-- TODO
+						elseif stanza.attr.type == "subscribed" then
+							-- TODO
+						elseif stanza.attr.type == "unsubscribed" then
+							-- TODO
+						end -- discard any other type
+					else -- sender is available or unavailable
 						for k in pairs(user.sessions) do -- presence broadcast to all user resources
 							if user.sessions[k].full_jid then
 								stanza.attr.to = user.sessions[k].full_jid;
