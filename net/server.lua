@@ -827,5 +827,5 @@ return {
 	stats = stats,
 	closeall = closeall,
 	addtimer = addtimer,
-
+	wraptlsclient = wraptlsclient,
 }
