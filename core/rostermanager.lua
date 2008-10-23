@@ -18,17 +18,6 @@ local st = require "util.stanza";
 
 module "rostermanager"
 
---[[function getroster(username, host)
-	return { 
-			["mattj@localhost"] = true,
-			["tobias@getjabber.ath.cx"] = true,
-			["waqas@getjabber.ath.cx"] = true,
-			["thorns@getjabber.ath.cx"] = true, 
-			["idw@getjabber.ath.cx"] = true, 
-		}
-	--return datamanager.load(username, host, "roster") or {};
-end]]
-
 function add_to_roster(session, jid, item)
 	if session.roster then
 		local old_item = session.roster[jid];
@@ -65,7 +54,7 @@ function roster_push(username, host, jid)
 		local stanza = st.iq({type="set"});
 		stanza:tag("query", {xmlns = "jabber:iq:roster"});
 		if item then
-			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name});
+			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name, ask = item.ask});
 			for group in pairs(item.groups) do
 				stanza:tag("group"):text(group):up();
 			end
@@ -94,6 +83,7 @@ function load_roster(username, host)
 		return roster;
 	end
 	-- Attempt to load roster for non-loaded user
+	-- TODO also support loading for offline user
 end
 
 function save_roster(username, host)
