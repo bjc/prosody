@@ -19,6 +19,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 						roster:tag("item", {
 							jid = jid,
 							subscription = session.roster[jid].subscription,
+							ask = session.roster[jid].ask,
 							name = session.roster[jid].name,
 						});
 						for group in pairs(session.roster[jid].groups) do
@@ -54,6 +55,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 									if r_item.name == "" then r_item.name = nil; end
 									if session.roster[item.attr.jid] then
 										r_item.subscription = session.roster[item.attr.jid].subscription;
+										r_item.ask = session.roster[item.attr.jid].ask;
 									else
 										r_item.subscription = "none";
 									end
