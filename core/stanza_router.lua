@@ -37,9 +37,23 @@ function core_process_stanza(origin, stanza)
 	
 	-- TODO presence subscriptions
 	if not to then
+			core_handle_stanza(origin, stanza);
+	elseif hosts[to] and hosts[to].type == "local" then
+		core_handle_stanza(origin, stanza);
+	elseif stanza.name == "iq" and not select(3, jid_split(to)) then
+		core_handle_stanza(origin, stanza);
+	elseif origin.type == "c2s" then
+		core_route_stanza(origin, stanza);
+	end
+end
+
+function core_handle_stanza(origin, stanza)
+	-- Handlers
+	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
+		local session = origin;
+		
 		if stanza.name == "presence" and origin.roster then
 			if stanza.attr.type == nil or stanza.attr.type == "available" or stanza.attr.type == "unavailable" then
-				--stanza.attr.from = origin.full_jid;
 				for jid in pairs(origin.roster) do -- broadcast to all interested contacts
 					local subscription = origin.roster[jid].subscription;
 					if subscription == "both" or subscription == "from" then
@@ -70,30 +84,9 @@ function core_process_stanza(origin, stanza)
 				-- TODO error, bad type
 			end
 		else
-			core_handle_stanza(origin, stanza);
+			log("debug", "Routing stanza to local");
+			handle_stanza(session, stanza);
 		end
-	elseif hosts[to] and hosts[to].type == "local" then
-		core_handle_stanza(origin, stanza);
-	elseif stanza.name == "iq" and not select(3, jid_split(to)) then
-		core_handle_stanza(origin, stanza);
-	elseif origin.type == "c2s" then
-		core_route_stanza(origin, stanza);
-	end
-end
-
-function core_handle_stanza(origin, stanza)
-	-- Handlers
-	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
-		local session = origin;
-		
-		log("debug", "Routing stanza");
-		-- Stanza has no to attribute
-		--local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-		--if not to_host then error("Invalid destination JID: "..string.format("{ %q, %q, %q } == %q", to_node or "", to_host or "", to_resource or "", stanza.attr.to or "nil")); end
-		
-		-- Stanza is to this server, or a user on this server
-		log("debug", "Routing stanza to local");
-		handle_stanza(session, stanza);
 	end
 end
 
