@@ -12,7 +12,7 @@ local send = require "core.sessionmanager".send_to_session;
 local user_exists = require "core.usermanager".user_exists;
 
 local jid_split = require "util.jid".split;
-local print = print;
+local print, debug = print, debug;
 
 function core_process_stanza(origin, stanza)
 	log("debug", "Received: "..tostring(stanza))
@@ -63,13 +63,20 @@ function core_handle_stanza(origin, stanza)
 						core_route_stanza(origin, stanza);
 					end
 				end
-				--[[local node, host = jid_split(stanza.attr.from);
-				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
-					if res.full_jid then
-						res = user.sessions[k];
-						break;
+				local node, host = jid_split(stanza.attr.from);
+				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources and from resources
+					if res ~= origin then
+						if res.full_jid then -- to resource. FIXME is this check correct? Maybe it should be res.presence
+							stanza.attr.to = res.full_jid;
+							core_route_stanza(origin, stanza);
+						end
+						if res.presence then -- from all resources for which we have presence
+							res.presence.attr.to = origin.full_jid;
+							core_route_stanza(res, res.presence);
+							res.presence.attr.to = nil;
+						end
 					end
-				end]]
+				end
 				if not origin.presence then -- presence probes on initial presence
 					local probe = st.presence({from = origin.full_jid, type = "probe"});
 					for jid in pairs(origin.roster) do
@@ -106,7 +113,7 @@ function core_route_stanza(origin, stanza)
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
 
-	if stanza.name == "presence" and stanza.attr.type == "probe" then resource = nil; end
+	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
