@@ -39,12 +39,7 @@ function destroy_session(session)
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		end
-		local nomore = true;
-		for res, ssn in pairs(hosts[session.host].sessions[session.username]) do
-			nomore = false;
-			break;
-		end
-		if nomore then
+		if not next(hosts[session.host].sessions[session.username], nil) then
 			hosts[session.host].sessions[session.username] = nil;
 		end
 	end
