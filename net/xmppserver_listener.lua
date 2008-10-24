@@ -5,6 +5,7 @@ local init_xmlhandlers = require "core.xmlhandlers"
 local sm_new_session = require "core.sessionmanager".new_session;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
+local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local connlisteners_register = require "net.connlisteners".register;
 
@@ -70,6 +71,13 @@ function xmppserver.listener(conn, data)
 end
 	
 function xmppserver.disconnect(conn)
+	local session = sessions[conn];
+	if session then
+		s2s_destroy_session(session);
+		sessions[conn]  = nil;
+		session = nil;
+		collectgarbage("collect");
+	end
 end
 
 function xmppserver.register_outgoing(conn, session)
