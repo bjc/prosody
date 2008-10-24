@@ -13,6 +13,7 @@ local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
+local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local format = string.format;
 local tostring = tostring;
 
@@ -108,6 +109,15 @@ function core_handle_stanza(origin, stanza)
 				type = "valid"
 			end
 			origin.send(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
+		end
+	elseif origin.type == "s2sout_unauthed" then
+		if stanza.name == "result" and stanza.attr.xmlns == "jabber:server:dialback" then
+			if stanza.attr.type == "valid" then
+				s2s_make_authenticated(origin);
+			else
+				-- FIXME
+				error("dialback failed!");
+			end
 		end
 	else
 		log("warn", "Unhandled origin: %s", origin.type);
@@ -208,6 +218,8 @@ function core_route_stanza(origin, stanza)
 		end
 	else
 		-- Remote host
+		log("debug", "sending s2s stanza: %s", tostring(stanza));
+		stanza.attr.xmlns = "jabber:server";
 		send_s2s(origin.host, host, stanza);
 	end
 	stanza.attr.to = to; -- reset
