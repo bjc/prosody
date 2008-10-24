@@ -171,10 +171,12 @@ function mark_connected(session)
 	local sendq, send = session.sendq, session.send;
 	if sendq then
 		session.log("debug", "sending queued stanzas across new connection");
-		for _, data in ipairs(sendq) do
+		for i, data in ipairs(sendq) do
 			session.log("debug", "sending: %s", tostring(data));
 			send(data);
+			sendq[i] = nil;
 		end
+		session.sendq = nil;
 	end
 end
 
