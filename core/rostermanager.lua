@@ -121,4 +121,18 @@ function process_inbound_subscription_cancellation(username, host, jid)
 	end
 end
 
+function process_inbound_unsubscribe(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	if item and (item.subscription == "from" or item.subscription == "both") then
+		if item.subscription == "from" then
+			item.subscription = "none";
+		else
+			item.subscription = "to";
+		end
+		item.ask = nil;
+		return datamanager.store(username, host, "roster", roster);
+	end
+end
+
 return _M;

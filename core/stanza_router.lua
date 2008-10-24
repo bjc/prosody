@@ -209,7 +209,9 @@ function core_route_stanza(origin, stanza)
 						elseif stanza.attr.type == "subscribe" then
 							-- TODO
 						elseif stanza.attr.type == "unsubscribe" then
-							-- TODO
+							if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
+								rostermanager.roster_push(node, host, from_bare);
+							end
 						elseif stanza.attr.type == "subscribed" then
 							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
 								rostermanager.roster_push(node, host, from_bare);
