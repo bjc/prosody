@@ -211,7 +211,6 @@ function core_route_stanza(origin, stanza)
 						elseif stanza.attr.type == "unsubscribe" then
 							-- TODO
 						elseif stanza.attr.type == "subscribed" then
-							-- TODO
 							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
 								rostermanager.roster_push(node, host, from_bare);
 								for k in pairs(user.sessions) do -- return presence for all resources
@@ -226,7 +225,9 @@ function core_route_stanza(origin, stanza)
 								pres.attr.from = nil;
 							end
 						elseif stanza.attr.type == "unsubscribed" then
-							-- TODO
+							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+								rostermanager.roster_push(node, host, from_bare);
+							end
 						end -- discard any other type
 					else -- sender is available or unavailable
 						for k in pairs(user.sessions) do -- presence broadcast to all user resources

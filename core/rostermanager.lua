@@ -107,4 +107,18 @@ function process_inbound_subscription_approval(username, host, jid)
 	end
 end
 
+function process_inbound_subscription_cancellation(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	if item and (item.subscription == "to" or item.subscription == "both") then
+		if item.subscription == "to" then
+			item.subscription = "none";
+		else
+			item.subscription = "from";
+		end
+		-- FIXME do we need to item.ask = nil;?
+		return datamanager.store(username, host, "roster", roster);
+	end
+end
+
 return _M;
