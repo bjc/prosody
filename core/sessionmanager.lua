@@ -34,7 +34,7 @@ function new_session(conn)
 end
 
 function destroy_session(session)
-	session.log("info", "Destroying session");
+	(session.log or log)("info", "Destroying session");
 	if session.host and session.username then
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
