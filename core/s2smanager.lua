@@ -20,6 +20,8 @@ local md5_hash = require "util.hashes".md5;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
+local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.controlezvous.ca" };
+
 module "s2smanager"
 
 function connect_host(from_host, to_host)
@@ -64,6 +66,7 @@ function new_outgoing(from_host, to_host)
 		
 		local conn, handler = socket.tcp()
 		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
+		to_host = srvmap[to_host] or to_host;
 		conn:connect(to_host, 5269);
 		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
 		host_session.conn = conn;
