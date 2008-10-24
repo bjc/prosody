@@ -35,7 +35,6 @@ function init_xmlhandlers(session, streamopened)
 				stanza:text(t_concat(chardata));
 				chardata = {};
 			end
-			log("debug", "Start element: %s", tostring(name));
 			curr_ns,name = name:match("^(.+):([%w%-]+)$");
 			attr.xmlns = curr_ns;
 			
