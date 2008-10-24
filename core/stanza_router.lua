@@ -198,7 +198,7 @@ function core_route_stanza(origin, stanza)
 									end
 								end
 							else
-								send(origin, st.presence({from=user.."@"..host, to=origin.username.."@"..origin.host, type="unsubscribed"}));
+								send(origin, st.presence({from=user.."@"..host, to=stanza.attr.from, type="unsubscribed"}));
 							end
 						elseif stanza.attr.type == "subscribe" then
 							-- TODO
