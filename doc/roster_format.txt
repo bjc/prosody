@@ -9,6 +9,7 @@ table roster_item {
   string subscription = "none" | "to" | "from" | "both"
   string name = Opaque string set by client. (optional)
   set groups = a set of opaque strings set by the client
+  boolean ask = nil | "subscribe" - a value of true indicates subscription is pending
 }
 
 The roster is available as

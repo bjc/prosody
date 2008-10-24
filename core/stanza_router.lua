@@ -151,7 +151,6 @@ function core_handle_stanza(origin, stanza)
 	end
 end
 
--- TODO: Does this function belong here?
 function is_authorized_to_see_presence(origin, username, host)
 	local roster = datamanager.load(username, host, "roster") or {};
 	local item = roster[origin.username.."@"..origin.host];
