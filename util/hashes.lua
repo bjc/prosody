@@ -1,5 +1,6 @@
 
 local softreq = function (...) return select(2, pcall(require, ...)); end
+local error = error;
 
 module "hashes"
 
