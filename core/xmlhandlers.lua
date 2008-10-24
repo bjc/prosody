@@ -69,7 +69,7 @@ function init_xmlhandlers(session, streamopened)
 						streamopened(session, attr);
 						return;
 					end
-					error("Client failed to open stream successfully");
+					error("Client failed to open stream successfully, it sent tag "..name);
 				end
 				if curr_ns == "jabber:client" and name ~= "iq" and name ~= "presence" and name ~= "message" then
 					error("Client sent invalid top-level stanza");
