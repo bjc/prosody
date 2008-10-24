@@ -12,6 +12,8 @@ local send = require "core.sessionmanager".send_to_session;
 local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
+local rostermanager = require "core.rostermanager";
+
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local format = string.format;
@@ -194,15 +196,15 @@ function core_route_stanza(origin, stanza)
 								for k in pairs(user.sessions) do -- return presence for all resources
 									local pres = user.sessions[k].presence;
 									if pres then
-										pres.attr.to = from; -- FIXME use from_bare?
+										pres.attr.to = from; -- FIXME use from_bare or from?
 										pres.attr.from = user.sessions[k].full_jid;
 										send(origin, pres);
-										pres.attr.to = nil;
-										pres.attr.from = nil;
 									end
 								end
+								pres.attr.to = nil;
+								pres.attr.from = nil;
 							else
-								send(origin, st.presence({from=to_bare, to=origin.username.."@"..origin.host, type="unsubscribed"}));
+								send(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
 							end
 						elseif stanza.attr.type == "subscribe" then
 							-- TODO
@@ -210,9 +212,19 @@ function core_route_stanza(origin, stanza)
 							-- TODO
 						elseif stanza.attr.type == "subscribed" then
 							-- TODO
-							-- sender.roster[recipient.bare_jid]. subscription = from or both
-							-- sender.rosterpush recipient
-							-- send presence for all sender resources to recipient.bare_jid
+							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+								rostermanager.roster_push(node, host, from_bare);
+								for k in pairs(user.sessions) do -- return presence for all resources
+									local pres = user.sessions[k].presence;
+									if pres then
+										pres.attr.to = from; -- FIXME use from_bare or from?
+										pres.attr.from = user.sessions[k].full_jid;
+										send(origin, pres);
+									end
+								end
+								pres.attr.to = nil;
+								pres.attr.from = nil;
+							end
 						elseif stanza.attr.type == "unsubscribed" then
 							-- TODO
 						end -- discard any other type

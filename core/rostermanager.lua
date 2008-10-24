@@ -83,7 +83,7 @@ function load_roster(username, host)
 		return roster;
 	end
 	-- Attempt to load roster for non-loaded user
-	-- TODO also support loading for offline user
+	return datamanager.load(username, host, "roster") or {};
 end
 
 function save_roster(username, host)
@@ -91,6 +91,20 @@ function save_roster(username, host)
 		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
 	end
 	return nil;
+end
+
+function process_inbound_subscription_approval(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	if item and item.ask and (item.subscription == "none" or item.subscription == "from") then
+		if item.subscription == "none" then
+			item.subscription = "to";
+		else
+			item.subscription = "both";
+		end
+		item.ask = nil;
+		return datamanager.store(username, host, "roster", roster);
+	end
 end
 
 return _M;
