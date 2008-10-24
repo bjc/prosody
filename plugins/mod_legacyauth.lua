@@ -49,7 +49,7 @@ add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 					reply.attr.type = "error";
 					reply:tag("error", { code = "401", type = "auth" })
 						:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-					dispatch_stanza(reply);
+					send(session, reply);
 					return true;
 				end
 			end
