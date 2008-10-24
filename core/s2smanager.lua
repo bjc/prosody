@@ -179,4 +179,18 @@ function mark_connected(session)
 	end
 end
 
+function destroy_session(session)
+	(session.log or log)("info", "Destroying session");
+	if session.direction == "outgoing" then
+		hosts[session.to_host] = nil;
+	end
+	session.conn = nil;
+	session.disconnect = nil;
+	for k in pairs(session) do
+		if k ~= "trace" then
+			session[k] = nil;
+		end
+	end
+end
+
 return _M;
