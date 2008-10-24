@@ -6,7 +6,7 @@ local tostring = tostring;
 module "logger"
 
 function init(name)
-	name = nil; -- While this line is not commented, will automatically fill in file/line number info
+	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	return 	function (level, message, ...)
 				if not name then
 					local inf = debug.getinfo(3, 'Snl');

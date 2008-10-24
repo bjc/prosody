@@ -54,5 +54,6 @@ local protected_handler = function (conn, data, err) local success, ret = pcall(
 local protected_disconnect = function (conn, err) local success, ret = pcall(disconnect, conn, err); if not success then print("ERROR on "..tostring(conn).." disconnect: "..ret); conn:close(); end end;
 
 start("xmppclient", { ssl = ssl_ctx })
+start("xmppserver", { ssl = ssl_ctx })
 
 server.loop();
