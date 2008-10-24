@@ -3,6 +3,10 @@ require "util.stanza"
 
 local st = stanza;
 local tostring = tostring;
+local pairs = pairs;
+local ipairs = ipairs;
+local type = type;
+local print = print;
 local format = string.format;
 local m_random = math.random;
 local t_insert = table.insert;
@@ -14,6 +18,10 @@ local sm_destroy_session = import("core.sessionmanager", "destroy_session");
 local error = error;
 
 module "xmlhandlers"
+
+local ns_prefixes = {
+						["http://www.w3.org/XML/1998/namespace"] = "xml";
+				}
 
 function init_xmlhandlers(session, streamopened)
 		local ns_stack = { "" };
