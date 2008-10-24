@@ -207,7 +207,16 @@ function core_route_stanza(origin, stanza)
 								send(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
 							end
 						elseif stanza.attr.type == "subscribe" then
-							-- TODO
+							if rostermanager.is_contact_subscribed(node, host, from_bare) then
+								send(origin, st.presence(from=to_bare, to=from_bare, type="subscribed")); -- already subscribed
+							else
+								local pres = st.presence({from=from_bare}, type="subscribe");
+								for k in pairs(user.sessions) do -- return presence for all resources
+									if user.sessions[k].presence then
+										send(user.sessions[k], pres);
+									end
+								end
+							end
 						elseif stanza.attr.type == "unsubscribe" then
 							if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
 								rostermanager.roster_push(node, host, from_bare);

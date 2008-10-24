@@ -135,4 +135,10 @@ function process_inbound_unsubscribe(username, host, jid)
 	end
 end
 
+function is_contact_subscribed(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	return item and (item.subscription == "from" or item.subscription == "both");
+end
+
 return _M;
