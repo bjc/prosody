@@ -11,7 +11,7 @@ local sessions = sessions;
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("sessionmanager");
 local error = error;
-local uuid_generate = require "util.uuid".uuid_generate;
+local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 
 local newproxy = newproxy;

@@ -12,6 +12,10 @@ local send = require "core.sessionmanager".send_to_session;
 local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
+local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
+local format = string.format;
+local tostring = tostring;
+
 local jid_split = require "util.jid".split;
 local print = print;
 
@@ -33,10 +37,11 @@ function core_process_stanza(origin, stanza)
 	end
 
 	local to = stanza.attr.to;
-	stanza.attr.from = origin.full_jid; -- quick fix to prevent impersonation (FIXME this would be incorrect when the origin is not c2s)
 	-- TODO also, stazas should be returned to their original state before the function ends
+	if origin.type == "c2s" then
+		stanza.attr.from = origin.full_jid; -- quick fix to prevent impersonation (FIXME this would be incorrect when the origin is not c2s)
+	end
 	
-	-- TODO presence subscriptions
 	if not to then
 			core_handle_stanza(origin, stanza);
 	elseif hosts[to] and hosts[to].type == "local" then
@@ -90,6 +95,22 @@ function core_handle_stanza(origin, stanza)
 			log("debug", "Routing stanza to local");
 			handle_stanza(session, stanza);
 		end
+	elseif origin.type == "s2sin_unauthed" then
+		if stanza.name == "verify" and stanza.attr.xmlns == "jabber:server:dialback" then
+			log("debug", "verifying dialback key...");
+			local attr = stanza.attr;
+			print(tostring(attr.to), tostring(attr.from))
+			print(tostring(origin.to_host), tostring(origin.from_host))
+			-- FIXME: Grr, ejabberd breaks this one too?? it is black and white in XEP-220 example 34
+			--if attr.from ~= origin.to_host then error("invalid-from"); end
+			local type = "invalid";
+			if s2s_verify_dialback(attr.id, attr.from, attr.to, stanza[1]) then
+				type = "valid"
+			end
+			origin.send(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
+		end
+	else
+		log("warn", "Unhandled origin: %s", origin.type);
 	end
 end
 

@@ -6,8 +6,14 @@ local setmetatable  =  setmetatable;
 local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
+local next          =          next;
+local print          =          print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
+
+local debug = debug;
+local log = require "util.logger".init("stanza");
+
 module "stanza"
 
 stanza_mt = {};
@@ -91,7 +97,6 @@ function stanza_mt.__tostring(t)
 	if t.attr then
 		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
 	end
-
 	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
 

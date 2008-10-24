@@ -28,7 +28,6 @@ function get(name)
 	if not h then
 		pcall(dofile, "net/"..name:gsub("[^%w%-]", "_").."_listener.lua");
 		h = listeners[name];
-		
 	end
 	return h;
 end
