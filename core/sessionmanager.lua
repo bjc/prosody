@@ -35,14 +35,15 @@ end
 
 function destroy_session(session)
 	session.log("info", "Destroying session");
-	if session.username then
+	if session.host and session.username then
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		end
-		
-		if not next(hosts[session.host].sessions[session.username].sessions) then
-			log("debug", "All resources of %s are now offline", session.username);
-			hosts[session.host].sessions[session.username] = nil;
+		if hosts[session.host] and hosts[session.host].sessions[session.username] then
+			if not next(hosts[session.host].sessions[session.username].sessions) then
+				log("debug", "All resources of %s are now offline", session.username);
+				hosts[session.host].sessions[session.username] = nil;
+			end
 		end
 	end
 	session.conn = nil;

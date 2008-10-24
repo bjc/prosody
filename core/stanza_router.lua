@@ -21,7 +21,7 @@ function core_process_stanza(origin, stanza)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
 		if stanza.attr.type == "set" or stanza.attr.type == "get" then
 			error("Invalid IQ");
-		elseif #stanza.tags > 1 or not(stanza.attr.type == "error" or stanza.attr.type == "result") then
+		elseif #stanza.tags > 1 and not(stanza.attr.type == "error" or stanza.attr.type == "result") then
 			error("Invalid IQ");
 		end
 	end
