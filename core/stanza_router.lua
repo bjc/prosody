@@ -44,7 +44,7 @@ function core_process_stanza(origin, stanza)
 	end
 	
 	if not to then
-			core_handle_stanza(origin, stanza);
+		core_handle_stanza(origin, stanza);
 	elseif hosts[to] and hosts[to].type == "local" then
 		core_handle_stanza(origin, stanza);
 	elseif stanza.name == "iq" and not select(3, jid_split(to)) then
@@ -172,6 +172,10 @@ function core_route_stanza(origin, stanza)
 	-- Deliver
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
+	local to_bare = node and (node.."@"..host) or host; -- bare JID
+	local from = stanza.attr.from;
+	local from_node, from_host, from_resource = jid_split(from);
+	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 
 	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
@@ -188,9 +192,9 @@ function core_route_stanza(origin, stanza)
 						if stanza.attr.type == "probe" then
 							if is_authorized_to_see_presence(origin, node, host) then
 								for k in pairs(user.sessions) do -- return presence for all resources
-									if user.sessions[k].presence then
-										local pres = user.sessions[k].presence;
-										pres.attr.to = origin.full_jid;
+									local pres = user.sessions[k].presence;
+									if pres then
+										pres.attr.to = from; -- FIXME use from_bare?
 										pres.attr.from = user.sessions[k].full_jid;
 										send(origin, pres);
 										pres.attr.to = nil;
@@ -198,7 +202,7 @@ function core_route_stanza(origin, stanza)
 									end
 								end
 							else
-								send(origin, st.presence({from=user.."@"..host, to=origin.username.."@"..origin.host, type="unsubscribed"}));
+								send(origin, st.presence({from=to_bare, to=origin.username.."@"..origin.host, type="unsubscribed"}));
 							end
 						elseif stanza.attr.type == "subscribe" then
 							-- TODO
@@ -206,13 +210,16 @@ function core_route_stanza(origin, stanza)
 							-- TODO
 						elseif stanza.attr.type == "subscribed" then
 							-- TODO
+							-- sender.roster[recipient.bare_jid]. subscription = from or both
+							-- sender.rosterpush recipient
+							-- send presence for all sender resources to recipient.bare_jid
 						elseif stanza.attr.type == "unsubscribed" then
 							-- TODO
 						end -- discard any other type
 					else -- sender is available or unavailable
 						for k in pairs(user.sessions) do -- presence broadcast to all user resources
 							if user.sessions[k].full_jid then
-								stanza.attr.to = user.sessions[k].full_jid;
+								stanza.attr.to = user.sessions[k].full_jid; -- reset at the end of function
 								send(user.sessions[k], stanza);
 							end
 						end
@@ -231,7 +238,7 @@ function core_route_stanza(origin, stanza)
 				end
 			else
 				-- User + resource is online...
-				stanza.attr.to = res.full_jid;
+				stanza.attr.to = res.full_jid; -- reset at the end of function
 				send(res, stanza); -- Yay \o/
 			end
 		else
@@ -239,7 +246,7 @@ function core_route_stanza(origin, stanza)
 			if user_exists(node, host) then
 				if stanza.name == "presence" then
 					if stanza.attr.type == "probe" and is_authorized_to_see_presence(origin, node, host) then -- FIXME what to do for not c2s?
-						-- TODO send last recieved unavailable presence
+						-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 					else
 						-- TODO send unavailable presence
 					end
@@ -252,7 +259,7 @@ function core_route_stanza(origin, stanza)
 				-- TODO we would get here for nodeless JIDs too. Do something fun maybe? Echo service? Let plugins use xmpp:server/resource addresses?
 				if stanza.name == "presence" then
 					if stanza.attr.type == "probe" then
-						send(origin, st.presence({from = stanza.attr.to, to = stanza.attr.from, type = "unsubscribed"}));
+						send(origin, st.presence({from = to_bare, to = from_bare, type = "unsubscribed"}));
 					end
 					-- else ignore
 				else
@@ -262,10 +269,12 @@ function core_route_stanza(origin, stanza)
 		end
 	elseif origin.type == "c2s" then
 		-- Remote host
+		local xmlns = stanza.attr.xmlns;
 		--stanza.attr.xmlns = "jabber:server";
 		stanza.attr.xmlns = nil;
 		log("debug", "sending s2s stanza: %s", tostring(stanza));
-		send_s2s(origin.host, host, stanza);
+		send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
+		stanza.attr.xmlns = xmlns; -- reset
 	else
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
