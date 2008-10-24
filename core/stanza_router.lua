@@ -198,7 +198,7 @@ function core_route_stanza(origin, stanza)
 									end
 								end
 							else
-								send(origin, st.presence({from=user.."@"..host, to=stanza.attr.from, type="unsubscribed"}));
+								send(origin, st.presence({from=user.."@"..host, to=origin.username.."@"..origin.host, type="unsubscribed"}));
 							end
 						elseif stanza.attr.type == "subscribe" then
 							-- TODO
@@ -252,7 +252,7 @@ function core_route_stanza(origin, stanza)
 				-- TODO we would get here for nodeless JIDs too. Do something fun maybe? Echo service? Let plugins use xmpp:server/resource addresses?
 				if stanza.name == "presence" then
 					if stanza.attr.type == "probe" then
-						send(origin, st.presence({from = node.."@"..host, to = origin.username.."@"..origin.host, type = "unsubscribed"}));
+						send(origin, st.presence({from = stanza.attr.to, to = stanza.attr.from, type = "unsubscribed"}));
 					end
 					-- else ignore
 				else
