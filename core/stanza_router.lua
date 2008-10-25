@@ -114,9 +114,12 @@ function core_handle_stanza(origin, stanza)
 				print(tostring(origin.to_host), tostring(origin.from_host))
 				-- FIXME: Grr, ejabberd breaks this one too?? it is black and white in XEP-220 example 34
 				--if attr.from ~= origin.to_host then error("invalid-from"); end
-				local type = "invalid";
+				local type;
 				if s2s_verify_dialback(attr.id, attr.from, attr.to, stanza[1]) then
 					type = "valid"
+				else
+					type = "invalid"
+					log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 				end
 				origin.send(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
 			elseif stanza.name == "result" and origin.type == "s2sin_unauthed" then
