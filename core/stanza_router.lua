@@ -8,11 +8,24 @@ require "core.servermanager"
 local log = require "util.logger".init("stanzarouter")
 
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
+local _send = require "core.sessionmanager".send_to_session;
 local send_s2s = require "core.s2smanager".send_to_host;
+function send(session, stanza)
+	if session.type == "c2s" then
+		_send(session, stanza);
+	else
+		local xmlns = stanza.attr.xmlns;
+		--stanza.attr.xmlns = "jabber:server";
+		stanza.attr.xmlns = nil;
+		log("debug", "sending s2s stanza: %s", tostring(stanza));
+		send_s2s(session.host, host, stanza); -- TODO handle remote routing errors
+		stanza.attr.xmlns = xmlns; -- reset
+	end
+end
 local user_exists = require "core.usermanager".user_exists;
 
 local rostermanager = require "core.rostermanager";
+local sessionmanager = require "core.sessionmanager";
 
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
@@ -79,7 +92,7 @@ function core_handle_stanza(origin, stanza)
 						core_route_stanza(origin, stanza);
 					end
 				end
-				if not origin.presence then -- presence probes on initial presence
+				if not origin.presence then -- presence probes on initial presence -- FIXME does unavailable qualify as initial presence?
 					local probe = st.presence({from = origin.full_jid, type = "probe"});
 					for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
 						local subscription = origin.roster[jid].subscription;
@@ -161,10 +174,59 @@ function core_handle_stanza(origin, stanza)
 	end
 end
 
-function is_authorized_to_see_presence(origin, username, host)
-	local roster = datamanager.load(username, host, "roster") or {};
-	local item = roster[origin.username.."@"..origin.host];
-	return item and (item.subscription == "both" or item.subscription == "from");
+function send_presence_of_available_resources(user, host, jid, recipient_session)
+	local h = hosts[host];
+	local count = 0;
+	if h and h.type == "local" then
+		local u = h.sessions[user];
+		if u then
+			for k, session in pairs(u.sessions) do
+				local pres = session.presence;
+				if pres then
+					pres.attr.to = jid;
+					pres.attr.from = session.full_jid;
+					send(recipient_session, pres);
+					pres.attr.to = nil;
+					pres.attr.from = nil;
+					count = count + 1;
+				end
+			end
+		end
+	end
+	return count;
+end
+
+function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
+	local node, host = jid_split(to_bare);
+	if stanza.attr.type == "probe" then
+		if rostermanager.is_contact_subscribed(node, host, from_bare) then
+			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
+				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
+			end
+		else
+			send(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
+		end
+	elseif stanza.attr.type == "subscribe" then
+		if rostermanager.is_contact_subscribed(node, host, from_bare) then
+			send(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
+		else
+			sessionmanager.send_to_available_resources(node, host, st.presence({from=from_bare, type="subscribe"}));
+			-- TODO store when no resources online
+		end
+	elseif stanza.attr.type == "unsubscribe" then
+		if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+		end
+	elseif stanza.attr.type == "subscribed" then
+		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+			send_presence_of_available_resources(node, host, from_bare, origin);
+		end
+	elseif stanza.attr.type == "unsubscribed" then
+		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+		end
+	end -- discard any other type
 end
 
 function core_route_stanza(origin, stanza)
@@ -191,57 +253,9 @@ function core_route_stanza(origin, stanza)
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-						if stanza.attr.type == "probe" then
-							if is_authorized_to_see_presence(origin, node, host) then
-								for k in pairs(user.sessions) do -- return presence for all resources
-									local pres = user.sessions[k].presence;
-									if pres then
-										pres.attr.to = from; -- FIXME use from_bare or from?
-										pres.attr.from = user.sessions[k].full_jid;
-										send(origin, pres);
-									end
-								end
-								pres.attr.to = nil;
-								pres.attr.from = nil;
-							else
-								send(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
-							end
-						elseif stanza.attr.type == "subscribe" then
-							if rostermanager.is_contact_subscribed(node, host, from_bare) then
-								send(origin, st.presence(from=to_bare, to=from_bare, type="subscribed")); -- already subscribed
-							else
-								local pres = st.presence({from=from_bare}, type="subscribe");
-								for k in pairs(user.sessions) do -- return presence for all resources
-									if user.sessions[k].presence then
-										send(user.sessions[k], pres);
-									end
-								end
-							end
-						elseif stanza.attr.type == "unsubscribe" then
-							if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
-								rostermanager.roster_push(node, host, from_bare);
-							end
-						elseif stanza.attr.type == "subscribed" then
-							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
-								rostermanager.roster_push(node, host, from_bare);
-								for k in pairs(user.sessions) do -- return presence for all resources
-									local pres = user.sessions[k].presence;
-									if pres then
-										pres.attr.to = from; -- FIXME use from_bare or from?
-										pres.attr.from = user.sessions[k].full_jid;
-										send(origin, pres);
-									end
-								end
-								pres.attr.to = nil;
-								pres.attr.from = nil;
-							end
-						elseif stanza.attr.type == "unsubscribed" then
-							if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
-								rostermanager.roster_push(node, host, from_bare);
-							end
-						end -- discard any other type
+						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
 					else -- sender is available or unavailable
-						for k in pairs(user.sessions) do -- presence broadcast to all user resources
+						for k in pairs(user.sessions) do -- presence broadcast to all user resources. FIXME should this be just for available resources? Do we need to check subscription?
 							if user.sessions[k].full_jid then
 								stanza.attr.to = user.sessions[k].full_jid; -- reset at the end of function
 								send(user.sessions[k], stanza);
@@ -269,10 +283,10 @@ function core_route_stanza(origin, stanza)
 			-- user not online
 			if user_exists(node, host) then
 				if stanza.name == "presence" then
-					if stanza.attr.type == "probe" and is_authorized_to_see_presence(origin, node, host) then -- FIXME what to do for not c2s?
-						-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
+					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
 					else
-						-- TODO send unavailable presence
+						-- TODO send unavailable presence or unsubscribed
 					end
 				elseif stanza.name == "message" then
 					-- TODO send message error, or store offline messages
