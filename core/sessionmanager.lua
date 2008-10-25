@@ -116,6 +116,7 @@ function streamopened(session, attr)
 end
 
 function send_to_available_resources(user, host, stanza)
+	local count = 0;
 	local to = stanza.attr.to;
 	stanza.attr.to = nil;
 	local h = hosts[host];
@@ -125,11 +126,13 @@ function send_to_available_resources(user, host, stanza)
 			for k, session in pairs(u.sessions) do
 				if session.presence then
 					session.send(stanza);
+					count = count + 1;
 				end
 			end
 		end
 	end
 	stanza.attr.to = to;
+	return count;
 end
 
 return _M;
