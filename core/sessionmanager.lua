@@ -115,4 +115,21 @@ function streamopened(session, attr)
 						session.notopen = nil;
 end
 
+function send_to_available_resources(user, host, stanza)
+	local to = stanza.attr.to;
+	stanza.attr.to = nil;
+	local h = hosts[host];
+	if h and h.type == "local" then
+		local u = h.sessions[user];
+		if u then
+			for k, session in pairs(u.sessions) do
+				if session.presence then
+					session.send(stanza);
+				end
+			end
+		end
+	end
+	stanza.attr.to = to;
+end
+
 return _M;
