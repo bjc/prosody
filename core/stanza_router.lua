@@ -196,6 +196,41 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 	return count;
 end
 
+function handle_outbound_presence_subscriptions(origin, stanza, from_bare, to_bare)
+	local node, host = jid_split(to_bare);
+	if stanza.attr.type == "subscribe" then
+		-- 1. route stanza
+		-- 2. roster push (subscription = none, ask = subscribe)
+		if rostermanager.set_contact_pending_out(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+		end -- else file error
+		core_route_stanza(origin, st.presence({from=from_bare, to=to_bare, type="subscribe"}));
+	elseif stanza.attr.type == "unsubscribe" then
+		-- 1. route stanza
+		-- 2. roster push (subscription = none or from)
+		if rostermanager.unsubscribe(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare); -- FIXME do roster push when roster has in fact not changed?
+		end -- else file error
+		core_route_stanza(origin, st.presence({from=from_bare, to=to_bare, type="unsubscribe"}));
+	elseif stanza.attr.type == "subscribed" then
+		-- 1. route stanza
+		-- 2. roster_push ()
+		-- 3. send_presence_of_available_resources
+		if rostermanager.subscribed(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+			core_route_stanza(origin, st.presence({from=from_bare, to=to_bare, type="subscribed"}));
+			send_presence_of_available_resources(user, host, from_bare, origin);
+		end
+	elseif stanza.attr.type == "unsubscribed" then
+		-- 1. route stanza
+		-- 2. roster push (subscription = none or to)
+		if rostermanager.unsubscribed(node, host, from_bare) then
+			rostermanager.roster_push(node, host, from_bare);
+			core_route_stanza(origin, st.presence({from=from_bare, to=to_bare, type="unsubscribed"}));
+		end
+	end
+end
+
 function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
 	local node, host = jid_split(to_bare);
 	if stanza.attr.type == "probe" then
@@ -210,8 +245,11 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			send(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
 		else
-			sessionmanager.send_to_available_resources(node, host, st.presence({from=from_bare, type="subscribe"}));
-			-- TODO store when no resources online
+			if not rostermanager.is_contact_pending(node, host, from_bare) then
+				if rostermanager.set_contact_pending(node, host, from_bare) then
+					sessionmanager.send_to_available_resources(node, host, st.presence({from=from_bare, type="subscribe"}));
+				end -- TODO else return error, unable to save
+			end
 		end
 	elseif stanza.attr.type == "unsubscribe" then
 		if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
