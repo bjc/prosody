@@ -111,11 +111,6 @@ function streamopened(session, attr)
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
 		send(format("<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s'>", session.streamid, session.to_host));
-		if session.from_host then
-			-- Need to perform dialback to check identity
-			print("to: "..tostring(attr.to).." from: "..tostring(attr.from));
-			print("Need to do dialback here you know!!");
-		end
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not session.dialback_verifying then
