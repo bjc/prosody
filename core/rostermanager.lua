@@ -49,7 +49,7 @@ function remove_from_roster(session, jid)
 end
 
 function roster_push(username, host, jid)
-	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
+	if jid ~= "pending" and hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
 		local item = hosts[host].sessions[username].roster[jid];
 		local stanza = st.iq({type="set"});
 		stanza:tag("query", {xmlns = "jabber:iq:roster"});
@@ -74,19 +74,23 @@ function roster_push(username, host, jid)
 end
 
 function load_roster(username, host)
+	log("debug", "load_roster: asked for: "..username.."@"..host);
 	if hosts[host] and hosts[host].sessions[username] then
 		local roster = hosts[host].sessions[username].roster;
 		if not roster then
+			log("debug", "load_roster: loading for new user: "..username.."@"..host);
 			roster = datamanager.load(username, host, "roster") or {};
 			hosts[host].sessions[username].roster = roster;
 		end
 		return roster;
 	end
 	-- Attempt to load roster for non-loaded user
+	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	return datamanager.load(username, host, "roster") or {};
 end
 
 function save_roster(username, host)
+	log("debug", "save_roster: saving roster for "..username.."@"..host);
 	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
 		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
 	end
@@ -159,7 +163,7 @@ end
 
 function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
-	return roster.pending or roster.pending[jid];
+	return roster.pending and roster.pending[jid];
 end
 function set_contact_pending_in(username, host, jid, pending)
 	local roster = load_roster(username, host);
@@ -183,10 +187,11 @@ function set_contact_pending_out(username, host, jid) -- subscribe
 		return true;
 	end
 	if not item then
-		item = {subscription = "none"};
+		item = {subscription = "none", groups = {}};
 		roster[jid] = item;
 	end
 	item.ask = "subscribe";
+	log("debug", "set_contact_pending_out: saving roster; set "..username.."@"..host..".roster["..jid.."].ask=subscribe");
 	return datamanager.store(username, host, "roster", roster);
 end
 function unsubscribe(username, host, jid)
@@ -211,7 +216,7 @@ function subscribed(username, host, jid)
 		if item.subscription == "none" then
 			item.subscription = "from";
 		else -- subscription == to
-			item.subsctiption = "both";
+			item.subscription = "both";
 		end
 		roster.pending[jid] = nil;
 		-- TODO maybe remove roster.pending if empty
