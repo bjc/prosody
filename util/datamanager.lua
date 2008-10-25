@@ -6,6 +6,7 @@ local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 local log = log;
 local io_open = io.open;
 local tostring = tostring;
+local error = error;
 
 module "datamanager"
 
@@ -49,6 +50,8 @@ local function simplesave (f, o)
           f:write(",\n")
         end
         f:write("}\n")
+      elseif type(o) == "boolean" then
+        f:write(o and "true" or "false");
       else
         error("cannot serialize a " .. type(o))
       end
