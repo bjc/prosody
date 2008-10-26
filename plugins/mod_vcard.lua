@@ -24,9 +24,7 @@ add_iq_handler("c2s", "vcard-temp",
 						vCard = st.deserialize(datamanager.load(session.username, session.host, "vCard"));-- load user's own vCard
 					end
 					if vCard then
-						local iq = st.reply(stanza);
-						iq:add_child(vCard);
-						send(session, iq); -- send vCard!
+						send(session, st.reply(stanza):add_child(vCard)); -- send vCard!
 					else
 						send(session, st.error_reply(stanza, "cancel", "item-not-found"));
 					end
