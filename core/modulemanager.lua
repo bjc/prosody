@@ -51,6 +51,7 @@ function loadall()
 	load("register");
 	load("tls");
 	load("vcard");
+	load("private");
 end
 
 function load(name)
