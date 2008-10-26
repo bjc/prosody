@@ -29,13 +29,13 @@ function stanza_mt:query(xmlns)
 end
 function stanza_mt:tag(name, attrs)
 	local s = stanza(name, attrs);
-	(self.last_add[#self.last_add] or self):add_child(s);
+	(self.last_add[#self.last_add] or self):add_direct_child(s);
 	t_insert(self.last_add, s);
 	return self;
 end
 
 function stanza_mt:text(text)
-	(self.last_add[#self.last_add] or self):add_child(text);
+	(self.last_add[#self.last_add] or self):add_direct_child(text);
 	return self; 
 end
 
@@ -44,11 +44,17 @@ function stanza_mt:up()
 	return self;
 end
 
-function stanza_mt:add_child(child)
+function stanza_mt:add_direct_child(child)
 	if type(child) == "table" then
 		t_insert(self.tags, child);
 	end
 	t_insert(self, child);
+end
+
+function stanza_mt:add_child(child)
+	(self.last_add[#self.last_add] or self):add_direct_child(child);
+	t_insert(self.last_add, s);
+	return self;
 end
 
 function stanza_mt:child_with_name(name)
@@ -101,7 +107,7 @@ function stanza_mt.__tostring(t)
 end
 
 function stanza_mt.__add(s1, s2)
-	return s1:add_child(s2);
+	return s1:add_direct_child(s2);
 end
 
 
