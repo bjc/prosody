@@ -8,6 +8,12 @@ local io_open = io.open;
 local tostring = tostring;
 local error = error;
 
+local indent = function(f, i)
+	for n = 1, i do
+		f:write("\t");
+	end
+end
+
 module "datamanager"
 
 
@@ -29,34 +35,36 @@ do
 end
 
 local function basicSerialize (o)
-  if type(o) == "number" or type(o) == "boolean" then
-    return tostring(o)
-  else -- assume it is a string
-    return format("%q", tostring(o))
-  end
+	if type(o) == "number" or type(o) == "boolean" then
+		return tostring(o);
+	else -- assume it is a string -- FIXME make sure it's a string. throw an error otherwise.
+		return (format("%q", tostring(o)):gsub("\\\n", "\\n"));
+	end
 end
 
 
-local function simplesave (f, o)
-      if type(o) == "number" then
-        f:write(o)
-      elseif type(o) == "string" then
-        f:write(format("%q", o))
-      elseif type(o) == "table" then
-        f:write("{\n")
-        for k,v in pairs(o) do
-          f:write(" [", basicSerialize(k), "] = ")
-          simplesave(f, v)
-          f:write(",\n")
-        end
-        f:write("}\n")
-      elseif type(o) == "boolean" then
-        f:write(o and "true" or "false");
-      else
-        error("cannot serialize a " .. type(o))
-      end
-    end
-  
+local function simplesave (f, o, ind)
+	if type(o) == "number" then
+		f:write(o)
+	elseif type(o) == "string" then
+		f:write((format("%q", o):gsub("\\\n", "\\n")))
+	elseif type(o) == "table" then
+		f:write("{\n")
+		for k,v in pairs(o) do
+			indent(f, ind);
+			f:write("[", basicSerialize(k), "] = ")
+			simplesave(f, v, ind+1)
+			f:write(",\n")
+		end
+		indent(f, ind-1);
+		f:write("}")
+	elseif type(o) == "boolean" then
+		f:write(o and "true" or "false");
+	else
+		error("cannot serialize a " .. type(o))
+	end
+end
+
 ------- API -------------
 
 function getpath(username, host, datastore)
@@ -72,13 +80,13 @@ end
 function load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore));
 	if not data then
-		log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or nil).."@"..(host or nil));
+		log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 		return nil;
 	end
 	setfenv(data, {});
 	local success, ret = pcall(data);
 	if not success then
-		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or nil).."@"..(host or nil));
+		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 		return nil;
 	end
 	return ret;
@@ -87,11 +95,11 @@ end
 function store(username, host, datastore, data)
 	local f, msg = io_open(getpath(username, host, datastore), "w+");
 	if not f then
-		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or nil).."@"..(host or nil));
+		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
 		return nil;
 	end
 	f:write("return ");
-	simplesave(f, data);
+	simplesave(f, data, 1);
 	f:close();
 	return true;
 end
