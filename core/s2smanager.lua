@@ -175,7 +175,7 @@ function mark_connected(session)
 end
 
 function destroy_session(session)
-	(session.log or log)("info", "Destroying session");
+	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	if session.direction == "outgoing" then
 		hosts[session.to_host] = nil;
 	end
