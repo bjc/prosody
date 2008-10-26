@@ -11,9 +11,7 @@ local pairs, ipairs = pairs, ipairs;
 
 local hosts = hosts;
 
-require "util.datamanager"
-
-local datamanager = datamanager;
+local datamanager = require "util.datamanager"
 local st = require "util.stanza";
 
 module "rostermanager"
