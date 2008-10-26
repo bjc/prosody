@@ -164,8 +164,9 @@ end
 
 function mark_connected(session)
 	local sendq, send = session.sendq, session.send;
+	session.log("debug", session.direction.." s2s connection "..session.from_host.."->"..session.to_host.." is now complete");
 	if sendq then
-		session.log("debug", "sending queued stanzas across new connection");
+		session.log("debug", "sending queued stanzas across new outgoing connection");
 		for i, data in ipairs(sendq) do
 			send(data);
 			sendq[i] = nil;
