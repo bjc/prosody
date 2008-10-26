@@ -53,7 +53,6 @@ end
 
 function stanza_mt:add_child(child)
 	(self.last_add[#self.last_add] or self):add_direct_child(child);
-	t_insert(self.last_add, s);
 	return self;
 end
 
