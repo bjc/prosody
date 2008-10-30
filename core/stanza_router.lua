@@ -8,20 +8,7 @@ require "core.servermanager"
 local log = require "util.logger".init("stanzarouter")
 
 local st = require "util.stanza";
-local _send = require "core.sessionmanager".send_to_session;
-local send_s2s = require "core.s2smanager".send_to_host;
-function send(session, stanza)
-	if session.type == "c2s" then
-		_send(session, stanza);
-	else
-		local xmlns = stanza.attr.xmlns;
-		--stanza.attr.xmlns = "jabber:server";
-		stanza.attr.xmlns = nil;
-		log("debug", "sending s2s stanza: %s", tostring(stanza));
-		send_s2s(session.host, host, stanza); -- TODO handle remote routing errors
-		stanza.attr.xmlns = xmlns; -- reset
-	end
-end
+
 local user_exists = require "core.usermanager".user_exists;
 
 local rostermanager = require "core.rostermanager";
@@ -142,7 +129,7 @@ function core_handle_stanza(origin, stanza)
 					type = "invalid"
 					log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 				end
-				origin.send(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
+				origin.sends2s(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
 			elseif stanza.name == "result" and origin.type == "s2sin_unauthed" then
 				-- he wants to be identified through dialback
 				-- We need to check the key with the Authoritative server
@@ -175,7 +162,7 @@ function core_handle_stanza(origin, stanza)
 					log("warn", "dialback for "..(origin.dialback_verifying.from_host or "(unknown)").." failed");
 					valid = "invalid";
 				end
-				origin.dialback_verifying.send(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>", attr.from, attr.to, attr.id, valid, origin.dialback_verifying.dialback_key));
+				origin.dialback_verifying.sends2s(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>", attr.from, attr.to, attr.id, valid, origin.dialback_verifying.dialback_key));
 			end
 		end
 	else
@@ -194,7 +181,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 				if pres then
 					pres.attr.to = jid;
 					pres.attr.from = session.full_jid;
-					send(recipient_session, pres);
+					recipient_session.send(pres);
 					pres.attr.to = nil;
 					pres.attr.from = nil;
 					count = count + 1;
@@ -318,7 +305,7 @@ function core_route_stanza(origin, stanza)
 						for k in pairs(user.sessions) do -- presence broadcast to all user resources. FIXME should this be just for available resources? Do we need to check subscription?
 							if user.sessions[k].full_jid then
 								stanza.attr.to = user.sessions[k].full_jid; -- reset at the end of function
-								send(user.sessions[k], stanza);
+								user.sessions[k].send(stanza);
 							end
 						end
 					end
@@ -330,14 +317,14 @@ function core_route_stanza(origin, stanza)
 						end
 					end
 					-- TODO find resource with greatest priority
-					send(res, stanza);
+					res.send(stanza);
 				else
 					-- TODO send IQ error
 				end
 			else
 				-- User + resource is online...
 				stanza.attr.to = res.full_jid; -- reset at the end of function
-				send(res, stanza); -- Yay \o/
+				res.send(stanza); -- Yay \o/
 			end
 		else
 			-- user not online
@@ -357,11 +344,11 @@ function core_route_stanza(origin, stanza)
 				-- TODO we would get here for nodeless JIDs too. Do something fun maybe? Echo service? Let plugins use xmpp:server/resource addresses?
 				if stanza.name == "presence" then
 					if stanza.attr.type == "probe" then
-						send(origin, st.presence({from = to_bare, to = from_bare, type = "unsubscribed"}));
+						origin.send(st.presence({from = to_bare, to = from_bare, type = "unsubscribed"}));
 					end
 					-- else ignore
 				else
-					send(origin, st.error_reply(stanza, "cancel", "service-unavailable"));
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
 			end
 		end

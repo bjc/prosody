@@ -30,7 +30,7 @@ end
 function send_to_host(from_host, to_host, data)
 	if hosts[to_host] then
 		-- Write to connection
-		hosts[to_host].send(data);
+		hosts[to_host].sends2s(data);
 		log("debug", "stanza sent over s2s");
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
@@ -54,7 +54,7 @@ function new_incoming(conn)
 	end
 	open_sessions = open_sessions + 1;
 	local w = conn.write;
-	session.send = function (t) w(tostring(t)); end
+	session.sends2s = function (t) w(tostring(t)); end
 	return session;
 end
 
@@ -81,7 +81,7 @@ function new_outgoing(from_host, to_host)
 		end
 		
 		local w = conn.write;
-		host_session.send = function (t) w(tostring(t)); end
+		host_session.sends2s = function (t) w(tostring(t)); end
 		
 		conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 		 
@@ -90,7 +90,7 @@ end
 
 function streamopened(session, attr)
 	session.log("debug", "s2s stream opened");
-	local send = session.send;
+	local send = session.sends2s;
 	
 	session.version = tonumber(attr.version) or 0;
 	if session.version >= 1.0 and not (attr.to and attr.from) then
@@ -118,7 +118,7 @@ function streamopened(session, attr)
 			if not attr.id then error("stream response did not give us a streamid!!!"); end
 			session.streamid = attr.id;
 			session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
-			session.send(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
+			session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
 			session.log("info", "sent dialback key on outgoing s2s stream");
 		else
 			mark_connected(session);
@@ -163,10 +163,17 @@ function make_authenticated(session)
 end
 
 function mark_connected(session)
-	local sendq, send = session.sendq, session.send;
+	local sendq, send = session.sendq, session.sends2s;
+	
+	local from, to = session.from_host, session.to_host;
+	
 	session.log("debug", session.direction.." s2s connection "..session.from_host.."->"..session.to_host.." is now complete");
+	
+	local send_to_host = send_to_host;
+	function session.send(data) send_to_host(from, to, data); end
+	
 	if sendq then
-		session.log("debug", "sending queued stanzas across new outgoing connection");
+		session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
 		for i, data in ipairs(sendq) do
 			send(data);
 			sendq[i] = nil;
