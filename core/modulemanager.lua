@@ -52,6 +52,7 @@ function loadall()
 	load("tls");
 	load("vcard");
 	load("private");
+	load("version");
 end
 
 function load(name)
