@@ -23,7 +23,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received: "..tostring(stanza))
+	log("debug", "Received["..origin.type.."]: "..tostring(stanza))
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
 		if stanza.attr.type == "set" or stanza.attr.type == "get" then
@@ -137,9 +137,9 @@ function core_handle_stanza(origin, stanza)
 				origin.from_host = attr.from;
 				origin.to_host = attr.to;
 				origin.dialback_key = stanza[1];
-				log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
-				send_s2s(attr.to, attr.from, format("<db:verify from='%s' to='%s' id='%s'>%s</db:verify>", attr.to, attr.from, origin.streamid, stanza[1]));
-				hosts[attr.from].dialback_verifying = origin;
+				log("debug", "asking %s if key %s belongs to them", origin.from_host, origin.dialback_key);
+				send_s2s(origin.to_host, origin.from_host, format("<db:verify from='%s' to='%s' id='%s'>%s</db:verify>", origin.to_host, origin.from_host, origin.streamid, origin.dialback_key));
+				hosts[origin.from_host].dialback_verifying = origin;
 			end
 		end
 	elseif origin.type == "s2sout_unauthed" or origin.type == "s2sout" then
