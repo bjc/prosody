@@ -17,4 +17,4 @@ local function handle_version_request(session, stanza)
 end
 
 add_iq_handler("c2s", xmlns_version, handle_version_request);
-add_iq_handler("s2s", xmlns_version, handle_version_request);
+add_iq_handler("s2sin", xmlns_version, handle_version_request);
