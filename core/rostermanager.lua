@@ -59,8 +59,8 @@ function roster_push(username, host, jid)
 		else
 			stanza:tag("item", {jid = jid, subscription = "remove"});
 		end
-		stanza:up();
-		stanza:up();
+		stanza:up(); -- move out from item
+		stanza:up(); -- move out from stanza
 		-- stanza ready
 		for _, session in pairs(hosts[host].sessions[username].sessions) do
 			if session.interested then

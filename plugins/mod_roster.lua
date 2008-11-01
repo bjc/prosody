@@ -26,6 +26,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 							for group in pairs(session.roster[jid].groups) do
 								roster:tag("group"):text(group):up();
 							end
+							roster:up(); -- move out from item
 						end
 					end
 					send(session, roster);
