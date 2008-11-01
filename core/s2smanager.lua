@@ -3,6 +3,7 @@ local hosts = hosts;
 local sessions = sessions;
 local socket = require "socket";
 local format = string.format;
+local t_insert = table.insert;
 local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
     = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
 
@@ -20,7 +21,7 @@ local md5_hash = require "util.hashes".md5;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
-local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.controlezvous.ca" };
+local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
 
 module "s2smanager"
 
@@ -28,10 +29,19 @@ function connect_host(from_host, to_host)
 end
 
 function send_to_host(from_host, to_host, data)
-	if hosts[to_host] then
+	local host = hosts[to_host];
+	if host then
 		-- Write to connection
-		hosts[to_host].sends2s(data);
-		log("debug", "stanza sent over s2s");
+		if host.type == "s2sout_unauthed" and not host.notopen and not host.dialback_key then
+			log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
+			initiate_dialback(host);
+			if not host.sendq then host.sendq = { data };
+			else t_insert(host.sendq, data); end
+		else
+			log("debug", "going to send stanza to "..to_host.." from "..from_host);
+			hosts[to_host].sends2s(data);
+			log("debug", "stanza sent over "..hosts[to_host].type);
+		end
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = new_outgoing(from_host, to_host);
@@ -61,7 +71,6 @@ end
 function new_outgoing(from_host, to_host)
 		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
 		hosts[to_host] = host_session;
-
 		local cl = connlisteners_get("xmppserver");
 		
 		local conn, handler = socket.tcp()
@@ -113,13 +122,11 @@ function streamopened(session, attr)
 		send(format("<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s'>", session.streamid, session.to_host));
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
+		if not attr.id then error("stream response did not give us a streamid!!!"); end
+		session.streamid = attr.id;
+	
 		if not session.dialback_verifying then
-			-- generate dialback key
-			if not attr.id then error("stream response did not give us a streamid!!!"); end
-			session.streamid = attr.id;
-			session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
-			session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
-			session.log("info", "sent dialback key on outgoing s2s stream");
+			initiate_dialback(session);
 		else
 			mark_connected(session);
 		end
@@ -137,6 +144,13 @@ function streamopened(session, attr)
 	send("</stream:features>");]]
 	log("info", "s2s stream opened successfully");
 	session.notopen = nil;
+end
+
+function initiate_dialback(session)
+	-- generate dialback key
+	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
+	session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
+	session.log("info", "sent dialback key on outgoing s2s stream");
 end
 
 function generate_dialback(id, to, from)
@@ -167,18 +181,22 @@ function mark_connected(session)
 	
 	local from, to = session.from_host, session.to_host;
 	
-	session.log("debug", session.direction.." s2s connection "..session.from_host.."->"..session.to_host.." is now complete");
+	session.log("debug", session.direction.." s2s connection "..from.."->"..to.." is now complete");
 	
 	local send_to_host = send_to_host;
-	function session.send(data) send_to_host(from, to, data); end
+	function session.send(data) send_to_host(to, from, data); end
 	
-	if sendq then
-		session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
-		for i, data in ipairs(sendq) do
-			send(data);
-			sendq[i] = nil;
+	
+	if session.direction == "outgoing" then
+		hosts[to] = session;
+		if sendq then
+			session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
+			for i, data in ipairs(sendq) do
+				send(data);
+				sendq[i] = nil;
+			end
+			session.sendq = nil;
 		end
-		session.sendq = nil;
 	end
 end
 
