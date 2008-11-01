@@ -60,7 +60,7 @@ function core_process_stanza(origin, stanza)
 		core_handle_stanza(origin, stanza);
 	elseif stanza.name == "iq" and not select(3, jid_split(to)) then
 		core_handle_stanza(origin, stanza);
-	elseif stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
+	elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
 		modules_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" or origin.type == "s2sin" then
 		core_route_stanza(origin, stanza);
