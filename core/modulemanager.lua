@@ -31,17 +31,27 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 	end
 end
 
-function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
-	if not (origin_type and tag and xmlns and handler) then return false; end
+local function _add_handler(module, origin_type, tag, xmlns, handler)
 	handlers[origin_type] = handlers[origin_type] or {};
 	if not handlers[origin_type][tag] then
 		handlers[origin_type][tag] = handlers[origin_type][tag] or {};
 		handlers[origin_type][tag][xmlns]= handler;
-		handler_info[handler] = getfenv(2).module;
-		log("debug", "mod_%s now handles tag '%s'", getfenv(2).module.name, tag);
+		handler_info[handler] = module;
+		log("debug", "mod_%s now handles tag '%s'", module.name, tag);
 	elseif handler_info[handlers[origin_type][tag]] then
-		log("warning", "mod_%s wants to handle tag '%s' but mod_%s already handles that", getfenv(2).module.name, tag, handler_info[handlers[origin_type][tag]].module.name);
+		log("warning", "mod_%s wants to handle tag '%s' but mod_%s already handles that", module.name, tag, handler_info[handlers[origin_type][tag]].module.name);
 	end
+end
+
+function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
+	if not (origin_type and tag and xmlns and handler) then return false; end
+	if type(origin_type) == "table" then
+		for _, origin_type in ipairs(origin_type) do
+			_add_handler(getfenv(2).module, origin_type, tag, xmlns, handler);
+		end
+		return;
+	end
+	_add_handler(getfenv(2).module, origin_type, tag, xmlns, handler);
 end
 
 function loadall()
@@ -53,6 +63,7 @@ function loadall()
 	load("vcard");
 	load("private");
 	load("version");
+	load("dialback");
 end
 
 function load(name)

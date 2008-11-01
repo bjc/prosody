@@ -188,7 +188,6 @@ function mark_connected(session)
 	
 	
 	if session.direction == "outgoing" then
-		hosts[to] = session;
 		if sendq then
 			session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
 			for i, data in ipairs(sendq) do
