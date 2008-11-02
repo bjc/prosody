@@ -23,6 +23,8 @@ if md5 then
 	else
 		error("md5 library found, but unrecognised... no hash functions will be available", 0);
 	end
+else
+	error("No md5 library found. Install md5 using luarocks, for example", 0);
 end
 
 return _M;
