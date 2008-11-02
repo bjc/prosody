@@ -34,7 +34,7 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 	if not (origin_type and handler and xmlns) then return false; end
 	if type(origin_type) == "table" then
 		for _, origin_type in ipairs(origin_type) do
-			_add_iq_handler(getfenv(2), origin_type, xmlns, handler);
+			_add_iq_handler(getfenv(2).module, origin_type, xmlns, handler);
 		end
 		return;
 	end
