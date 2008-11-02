@@ -21,6 +21,10 @@ local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 
 local format = string.format;
 local tostring = tostring;
+local t_concat = table.concat;
+local t_insert = table.insert;
+local tonumber = tonumber;
+local s_find = string.find;
 
 local jid_split = require "util.jid".split;
 local print = print;
@@ -91,7 +95,7 @@ function core_handle_stanza(origin, stanza)
 						core_route_stanza(origin, stanza);
 					end
 				end
-				if not origin.presence then -- presence probes on initial presence -- FIXME does unavailable qualify as initial presence?
+				if stanza.attr.type == nil and not origin.presence then -- initial presence
 					local probe = st.presence({from = origin.full_jid, type = "probe"});
 					for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
 						local subscription = origin.roster[jid].subscription;
@@ -100,16 +104,42 @@ function core_handle_stanza(origin, stanza)
 							core_route_stanza(origin, probe);
 						end
 					end
-					for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all resources
-						if res ~= origin and stanza.attr.type ~= "unavailable" and res.presence then -- FIXME does unavailable qualify as initial presence?
+					for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
+						if res ~= origin and res.presence then
 							res.presence.attr.to = origin.full_jid;
 							core_route_stanza(res, res.presence);
 							res.presence.attr.to = nil;
 						end
 					end
-					-- TODO resend subscription requests
+					if origin.roster.pending then -- resend incoming subscription requests
+						for jid in pairs(origin.roster.pending) do
+							origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+						end
+					end
+					local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
+					for jid, item in pairs(origin.roster) do -- resend outgoing subscription requests
+						if item.ask then
+							request.attr.to = jid;
+							core_route_stanza(origin, request);
+						end
+					end
 				end
-				origin.presence = stanza;
+				origin.priority = 0;
+				if stanza.attr.type == "unavailable" then
+					origin.presence = nil;
+				else
+					origin.presence = stanza;
+					local priority = stanza:child_with_name("priority");
+					if priority and #priority > 0 then
+						priority = t_concat(priority);
+						if s_find(priority, "^[+-]?[0-9]+$") then
+							priority = tonumber(priority);
+							if priority < -128 then priority = -128 end
+							if priority > 127 then priority = 127 end
+							origin.priority = priority;
+						end
+					end
+				end
 				stanza.attr.to = nil; -- reset it
 			else
 				-- TODO error, bad type
@@ -189,6 +219,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	if stanza.attr.type == "probe" then
+		log("debug", "inbound probe from "..from_bare.." for "..to_bare);
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
@@ -252,22 +283,28 @@ function core_route_stanza(origin, stanza)
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
 					else -- sender is available or unavailable
-						for k in pairs(user.sessions) do -- presence broadcast to all user resources. FIXME should this be just for available resources? Do we need to check subscription?
-							if user.sessions[k].full_jid then
-								stanza.attr.to = user.sessions[k].full_jid; -- reset at the end of function
-								user.sessions[k].send(stanza);
+						for _, session in pairs(user.sessions) do -- presence broadcast to all user resources.
+							if session.full_jid then -- FIXME should this be just for available resources? Do we need to check subscription?
+								stanza.attr.to = session.full_jid; -- reset at the end of function
+								session.send(stanza);
 							end
 						end
 					end
 				elseif stanza.name == "message" then -- select a resource to recieve message
-					for k in pairs(user.sessions) do
-						if user.sessions[k].full_jid then
-							res = user.sessions[k];
-							break;
+					local priority = 0;
+					local recipients = {};
+					for _, session in pairs(user.sessions) do -- find resource with greatest priority
+						local p = session.priority;
+						if p > priority then
+							priority = p;
+							recipients = {session};
+						elseif p == priority then
+							t_insert(recipients, session);
 						end
 					end
-					-- TODO find resource with greatest priority
-					res.send(stanza);
+					for _, session in pairs(recipient) do
+						session.send(stanza);
+					end
 				else
 					-- TODO send IQ error
 				end
