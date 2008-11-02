@@ -18,17 +18,27 @@ local handlers = {};
 					
 local modulehelpers = setmetatable({}, { __index = _G });
 
-function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
-	if not (origin_type and handler and xmlns) then return false; end
+local function _add_iq_handler(module, origin_type, xmlns, handler)
 	handlers[origin_type] = handlers[origin_type] or {};
 	handlers[origin_type].iq = handlers[origin_type].iq or {};
 	if not handlers[origin_type].iq[xmlns] then
 		handlers[origin_type].iq[xmlns]= handler;
-		handler_info[handler] = getfenv(2).module;
-		log("debug", "mod_%s now handles tag 'iq' with query namespace '%s'", getfenv(2).module.name, xmlns);
+		handler_info[handler] = module;
+		log("debug", "mod_%s now handles tag 'iq' with query namespace '%s'", module.name, xmlns);
 	else
-		log("warning", "mod_%s wants to handle tag 'iq' with query namespace '%s' but mod_%s already handles that", getfenv(2).module.name, xmlns, handler_info[handlers[origin_type].iq[xmlns]].module.name);
+		log("warning", "mod_%s wants to handle tag 'iq' with query namespace '%s' but mod_%s already handles that", module.name, xmlns, handler_info[handlers[origin_type].iq[xmlns]].module.name);
 	end
+end
+
+function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
+	if not (origin_type and handler and xmlns) then return false; end
+	if type(origin_type) == "table" then
+		for _, origin_type in ipairs(origin_type) do
+			_add_iq_handler(getfenv(2), origin_type, xmlns, handler);
+		end
+		return;
+	end
+	_add_iq_handler(getfenv(2), origin_type, xmlns, handler);
 end
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
