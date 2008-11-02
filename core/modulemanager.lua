@@ -38,7 +38,7 @@ function modulehelpers.add_iq_handler(origin_type, xmlns, handler)
 		end
 		return;
 	end
-	_add_iq_handler(getfenv(2), origin_type, xmlns, handler);
+	_add_iq_handler(getfenv(2).module, origin_type, xmlns, handler);
 end
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
