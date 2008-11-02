@@ -17,7 +17,6 @@ sessions = {};
 -- Load and initialise core modules --
  
 require "util.import"
-require "core.stanza_dispatch"
 require "core.xmlhandlers"
 require "core.rostermanager"
 require "core.offlinemessage"
