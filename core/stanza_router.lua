@@ -22,6 +22,7 @@ local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local format = string.format;
 local tostring = tostring;
 local t_concat = table.concat;
+local t_insert = table.insert;
 local tonumber = tonumber;
 local s_find = string.find;
 
@@ -218,6 +219,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	if stanza.attr.type == "probe" then
+		log("debug", "inbound probe from "..from_bare.." for "..to_bare);
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
@@ -281,22 +283,28 @@ function core_route_stanza(origin, stanza)
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
 					else -- sender is available or unavailable
-						for k in pairs(user.sessions) do -- presence broadcast to all user resources. FIXME should this be just for available resources? Do we need to check subscription?
-							if user.sessions[k].full_jid then
-								stanza.attr.to = user.sessions[k].full_jid; -- reset at the end of function
-								user.sessions[k].send(stanza);
+						for _, session in pairs(user.sessions) do -- presence broadcast to all user resources.
+							if session.full_jid then -- FIXME should this be just for available resources? Do we need to check subscription?
+								stanza.attr.to = session.full_jid; -- reset at the end of function
+								session.send(stanza);
 							end
 						end
 					end
 				elseif stanza.name == "message" then -- select a resource to recieve message
-					for k in pairs(user.sessions) do
-						if user.sessions[k].full_jid then
-							res = user.sessions[k];
-							break;
+					local priority = 0;
+					local recipients = {};
+					for _, session in pairs(user.sessions) do -- find resource with greatest priority
+						local p = session.priority;
+						if p > priority then
+							priority = p;
+							recipients = {session};
+						elseif p == priority then
+							t_insert(recipients, session);
 						end
 					end
-					-- TODO find resource with greatest priority
-					res.send(stanza);
+					for _, session in pairs(recipient) do
+						session.send(stanza);
+					end
 				else
 					-- TODO send IQ error
 				end
