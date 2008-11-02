@@ -9,7 +9,7 @@ local t_concat, t_insert = table.concat, table.insert;
 require "util.jid"
 local jid_split = jid.split;
 
-add_iq_handler("c2s", "vcard-temp", 
+add_iq_handler({"c2s", "s2sin"}, "vcard-temp", 
 		function (session, stanza)
 			if stanza.tags[1].name == "vCard" then
 				local to = stanza.attr.to;
