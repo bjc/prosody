@@ -5,8 +5,10 @@ local char = string.char;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 local log = log;
 local io_open = io.open;
+local os_remove = os.remove;
 local tostring = tostring;
 local error = error;
+local next = next;
 
 local indent = function(f, i)
 	for n = 1, i do
@@ -93,14 +95,23 @@ function load(username, host, datastore)
 end
 
 function store(username, host, datastore, data)
+	if not data then
+		data = {};
+	end
+	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore), "w+");
 	if not f then
 		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return nil;
+		return;
 	end
 	f:write("return ");
 	simplesave(f, data, 1);
 	f:close();
+	if not next(data) then -- try to delete empty datastore
+		os_remove(getpath(username, host, datastore));
+	end
+	-- we write data even when we are deleting because lua doesn't have a
+	-- platform independent way of checking for non-exisitng files
 	return true;
 end
 
