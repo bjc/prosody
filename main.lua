@@ -10,12 +10,12 @@ function log(type, area, message)
 end
 
 dofile "lxmppd.cfg"
- 
+
 -- Maps connections to sessions --
 sessions = {};
- 
+
 -- Load and initialise core modules --
- 
+
 require "util.import"
 require "core.xmlhandlers"
 require "core.rostermanager"

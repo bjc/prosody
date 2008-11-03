@@ -51,7 +51,7 @@ function core_process_stanza(origin, stanza)
 	if origin.type == "c2s" then
 		stanza.attr.from = origin.full_jid; -- quick fix to prevent impersonation (FIXME this would be incorrect when the origin is not c2s)
 	end
-	
+
 	if not to then
 		core_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
@@ -78,7 +78,7 @@ function core_handle_stanza(origin, stanza)
 	if modules_handle_stanza(origin, stanza) then return; end
 	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
 		local session = origin;
-		
+
 		if stanza.name == "presence" and origin.roster then
 			if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
 				for jid in pairs(origin.roster) do -- broadcast to all interested contacts
@@ -260,7 +260,7 @@ end
 function core_route_stanza(origin, stanza)
 	-- Hooks
 	--- ...later
-	
+
 	-- Deliver
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
