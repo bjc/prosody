@@ -18,6 +18,7 @@ local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
+local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
 local format = string.format;
 local tostring = tostring;
@@ -31,6 +32,7 @@ local print = print;
 
 function core_process_stanza(origin, stanza)
 	log("debug", "Received["..origin.type.."]: "..tostring(stanza))
+
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
 		if stanza.attr.type == "set" or stanza.attr.type == "get" then
@@ -46,28 +48,49 @@ function core_process_stanza(origin, stanza)
 		error("Client MUST bind resource after auth");
 	end
 
-	local to = stanza.attr.to;
 	-- TODO also, stazas should be returned to their original state before the function ends
 	if origin.type == "c2s" then
-		stanza.attr.from = origin.full_jid; -- quick fix to prevent impersonation (FIXME this would be incorrect when the origin is not c2s)
+		stanza.attr.from = origin.full_jid;
 	end
+	local to = stanza.attr.to;
+	local node, host, resource = jid_split(to);
+	local to_bare = node and (node.."@"..host) or host; -- bare JID
+	local from = stanza.attr.from;
+	local from_node, from_host, from_resource = jid_split(from);
+	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 
+	if origin.type == "s2sin" then
+		if origin.from_host ~= from_host then -- remote server trying to impersonate some other server?
+			log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from, origin.from_host);
+			return; -- FIXME what should we do here? does this work with subdomains?
+		end
+	end
+	--[[if to and not(hosts[to]) and not(hosts[to_bare]) and (hosts[host] and hosts[host].type ~= "local") then -- not for us?
+		log("warn", "stanza recieved for a non-local server");
+		return; -- FIXME what should we do here?
+	end]] -- FIXME
+
+	-- FIXME do stanzas not of jabber:client get handled by components?
 	if not to then
 		core_handle_stanza(origin, stanza);
-	elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-		local node, host = jid_split(stanza.attr.to);
-		local to_bare = node and (node.."@"..host) or host; -- bare JID
-		local from_node, from_host = jid_split(stanza.attr.from);
-		local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
-		handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
-	elseif hosts[to] and hosts[to].type == "local" then
+	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
 		core_handle_stanza(origin, stanza);
-	elseif stanza.name == "iq" and not select(3, jid_split(to)) then
+	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+		component_handle_stanza(origin, stanza);
+	elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
+		component_handle_stanza(origin, stanza);
+	elseif hosts[host].type == "component" then -- directed at a component
+		component_handle_stanza(origin, stanza);
+	elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+		handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
+	elseif stanza.name == "iq" and not resource then -- directed at bare JID
 		core_handle_stanza(origin, stanza);
 	elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
 		modules_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" or origin.type == "s2sin" then
 		core_route_stanza(origin, stanza);
+	else
+		log("warn", "stanza not processed");
 	end
 end
 
@@ -144,9 +167,9 @@ function core_handle_stanza(origin, stanza)
 			else
 				-- TODO error, bad type
 			end
-		end
+		end -- TODO handle other stanzas
 	else
-		log("warn", "Unhandled origin: %s", origin.type);
+		log("warn", "Unhandled origin: %s", origin.type); -- FIXME reply with error
 	end
 end
 
