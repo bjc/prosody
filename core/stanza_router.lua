@@ -61,12 +61,14 @@ function core_process_stanza(origin, stanza)
 
 	if origin.type == "s2sin" then
 		if origin.host ~= from_host then -- remote server trying to impersonate some other server?
+			log("warn", "origin.host ~= from_host");
 			return; -- FIXME what should we do here? does this work with subdomains?
 		end
 	end
-	if to and not(hosts[to]) and not(hosts[to_bare]) and (not(hosts[host]) or hosts[host].type ~= "local") then -- not for us?
+	--[[if to and not(hosts[to]) and not(hosts[to_bare]) and (hosts[host] and hosts[host].type ~= "local") then -- not for us?
+		log("warn", "stanza recieved for a non-local server");
 		return; -- FIXME what should we do here?
-	end
+	end]] -- FIXME
 
 	-- FIXME do stanzas not of jabber:client get handled by components?
 	if not to then
