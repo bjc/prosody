@@ -75,6 +75,8 @@ function core_process_stanza(origin, stanza)
 		core_handle_stanza(origin, stanza);
 	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
 		core_handle_stanza(origin, stanza);
+	elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
+		modules_handle_stanza(origin, stanza);
 	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 		component_handle_stanza(origin, stanza);
 	elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
@@ -85,8 +87,6 @@ function core_process_stanza(origin, stanza)
 		handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
 	elseif stanza.name == "iq" and not resource then -- directed at bare JID
 		core_handle_stanza(origin, stanza);
-	elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
-		modules_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" or origin.type == "s2sin" then
 		core_route_stanza(origin, stanza);
 	else
@@ -370,6 +370,12 @@ function core_route_stanza(origin, stanza)
 		log("debug", "sending s2s stanza: %s", tostring(stanza));
 		send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
 		stanza.attr.xmlns = xmlns; -- reset
+	elseif origin.type == "component" or origin.type == "local" then
+		-- Route via s2s for components and modules
+		log("debug", "Routing outgoing stanza for %s to %s", origin.host, host);
+		for k,v in pairs(origin) do print("origin:", tostring(k), tostring(v)); end
+		print(tostring(host), tostring(from_host))
+		send_s2s(origin.host, host, stanza);
 	else
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
@@ -379,3 +385,5 @@ end
 function handle_stanza_toremote(stanza)
 	log("error", "Stanza bound for remote host, but s2s is not implemented");
 end
+
+
