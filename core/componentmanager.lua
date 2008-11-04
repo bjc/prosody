@@ -15,7 +15,7 @@ function handle_stanza(origin, stanza)
 	if not component then component = components[stanza.attr.to]; end -- hack to allow hooking node@server/resource and server/resource
 	if component then
 		log("debug", "stanza being handled by component: "..host);
-		component(origin, stanza);
+		component(origin, stanza, hosts[host]);
 	else
 		log("error", "Component manager recieved a stanza for a non-existing component: " .. stanza.attr.to);
 	end
@@ -25,7 +25,7 @@ function register_component(host, component)
 	if not hosts[host] then
 		-- TODO check for host well-formedness
 		components[host] = component;
-		hosts[host] = {type = "component", connected = true};
+		hosts[host] = {type = "component", host = host, connected = true};
 		log("debug", "component added: "..host);
 	else
 		log("error", "Attempt to set component for existing host: "..host);
