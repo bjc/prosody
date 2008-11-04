@@ -167,7 +167,7 @@ function iq(attr)
 end
 
 function reply(orig)
-	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or nil) });
+	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
 end
 
 function error_reply(orig, type, condition, message, clone)
