@@ -31,7 +31,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received["..origin.type.."]: "..tostring(stanza))
+	log("debug", "Received["..origin.type.."]: "..tostring(st.reply(st.reply(stanza))))
 
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
@@ -81,7 +81,7 @@ function core_process_stanza(origin, stanza)
 		component_handle_stanza(origin, stanza);
 	elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
 		component_handle_stanza(origin, stanza);
-	elseif hosts[host].type == "component" then -- directed at a component
+	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 		component_handle_stanza(origin, stanza);
 	elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 		handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
