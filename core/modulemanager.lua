@@ -64,18 +64,6 @@ function modulehelpers.add_handler(origin_type, tag, xmlns, handler)
 	_add_handler(getfenv(2).module, origin_type, tag, xmlns, handler);
 end
 
-function loadall()
-	load("saslauth");
-	load("legacyauth");
-	load("roster");
-	load("register");
-	load("tls");
-	load("vcard");
-	load("private");
-	load("version");
-	load("dialback");
-end
-
 function load(name)
 	local mod, err = loadfile("plugins/mod_"..name..".lua");
 	if not mod then
