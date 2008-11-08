@@ -31,7 +31,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received["..origin.type.."]: "..tostring(stanza))
+	log("debug", "Received["..origin.type.."]: "..tostring(st.reply(st.reply(stanza))))
 
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
@@ -71,26 +71,28 @@ function core_process_stanza(origin, stanza)
 	end]] -- FIXME
 
 	-- FIXME do stanzas not of jabber:client get handled by components?
-	if not to then
-		core_handle_stanza(origin, stanza);
-	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
-		core_handle_stanza(origin, stanza);
-	elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
-		modules_handle_stanza(origin, stanza);
-	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
-		component_handle_stanza(origin, stanza);
-	elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
-		component_handle_stanza(origin, stanza);
-	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
-		component_handle_stanza(origin, stanza);
-	elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-		handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
-	elseif stanza.name == "iq" and not resource then -- directed at bare JID
-		core_handle_stanza(origin, stanza);
-	elseif origin.type == "c2s" or origin.type == "s2sin" then
-		core_route_stanza(origin, stanza);
+	if origin.type == "s2sin" or origin.type == "c2s" then
+		if not to then
+			core_handle_stanza(origin, stanza);
+		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
+			core_handle_stanza(origin, stanza);
+		elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
+			modules_handle_stanza(origin, stanza);
+		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+			component_handle_stanza(origin, stanza);
+		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
+			component_handle_stanza(origin, stanza);
+		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
+			component_handle_stanza(origin, stanza);
+		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
+		elseif stanza.name == "iq" and not resource then -- directed at bare JID
+			core_handle_stanza(origin, stanza);
+		else
+			core_route_stanza(origin, stanza);
+		end
 	else
-		log("warn", "stanza not processed");
+		core_handle_stanza(origin, stanza);
 	end
 end
 
