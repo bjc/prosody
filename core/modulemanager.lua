@@ -68,7 +68,7 @@ function load(name)
 	local mod, err = loadfile("plugins/mod_"..name..".lua");
 	if not mod then
 		log("error", "Unable to load module '%s': %s", name or "nil", err or "nil");
-		return;
+		return nil, err;
 	end
 	
 	local pluginenv = setmetatable({ module = { name = name } }, { __index = modulehelpers });
@@ -77,8 +77,9 @@ function load(name)
 	local success, ret = pcall(mod);
 	if not success then
 		log("error", "Error initialising module '%s': %s", name or "nil", ret or "nil");
-		return;
+		return nil, err;
 	end
+	return true;
 end
 
 function handle_stanza(origin, stanza)
