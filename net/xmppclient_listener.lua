@@ -60,7 +60,12 @@ function xmppclient.listener(conn, data)
 		-- TODO: Below function should be session,stanza - and xmlhandlers should use :method() notation to call,
 		-- this will avoid the useless indirection we have atm
 		-- (I'm on a mission, no time to fix now)
-		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
+
+		-- Debug version --
+		local function handleerr() print("Traceback:", debug.traceback()); end
+		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+
+--		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
 
 	end
 	if data then
