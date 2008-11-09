@@ -41,9 +41,7 @@ require "util.jid"
 -- Initialise modules
 if config.modules and #config.modules > 0 then
 	for _, module in pairs(config.modules) do
-		if not modulemanager.load(module) then
-			error("Unable to load module "..module);
-		end
+		modulemanager.load(module);
 	end
 else error("No modules enabled in the configuration file"); end
 
