@@ -7,6 +7,7 @@ local tostring = tostring;
 local st = require "util.stanza";
 local generate_uuid = require "util.uuid".generate;
 local s_match = string.match;
+local gmatch = string.gmatch
 local math = require "math"
 local type = type
 local error = error
@@ -82,7 +83,7 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 	
 	local function parse(data)
 		message = {}
-		for k, v in string.gmatch(data, [[([%w%-])="?[%w%-]"?,?]]) do
+		for k, v in gmatch(data, [[([%w%-]+)="?([%w%-%/%.]+)"?,?]]) do
 			message[k] = v
 		end
 		return message
@@ -102,14 +103,11 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 												algorithm = "md5-sess"} ));
 	object.onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(challenge))
 	object.feed = 	function(self, stanza)
-						print(tostring(stanza))
 						if stanza.name ~= "response" and stanza.name ~= "auth" then self.onFail("invalid-stanza-tag") end
 						if stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl" then self.onFail("invalid-stanza-namespace") end
 						if stanza.name == "auth" then return end
 						self.step = self.step + 1
 						if (self.step == 2) then
-							
-							log("debug", tostring(stanza[1]))
 							local response = parse(base64.decode(stanza[1]))
 							-- check for replay attack
 							if response["nonce-count"] then
@@ -133,12 +131,11 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 							if not response["qop"] then response["qop"] = "auth" end
 							
 							local hostname = ""
+							local protocol = ""
 							if response["digest-uri"] then
-								local uri = response["digest-uri"]:gmatch("^(%w)/(%w)")
-								local protocol = uri[1]
-								log(protocol)
-								local hostname = uri[2]
-								log(hostname)
+								protocol, hostname = response["digest-uri"]:match("(%w+)/(.*)$")
+							else
+								error("No digest-uri")
 							end
 														
 							-- compare response_value with own calculation
@@ -146,7 +143,7 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 							        --   ":", nonce-value, ":", cnonce-value)
 							local A2
 							
-							local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
+							--local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
 							
 							if response["qop"] == "auth" then
 							
@@ -154,7 +151,7 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 							
 							end
 							
-							local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
+							--local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
 							
 						end
 						--[[
