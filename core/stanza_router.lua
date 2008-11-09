@@ -328,7 +328,7 @@ function core_route_stanza(origin, stanza)
 							t_insert(recipients, session);
 						end
 					end
-					for _, session in pairs(recipient) do
+					for _, session in pairs(recipients) do
 						session.send(stanza);
 					end
 				else
