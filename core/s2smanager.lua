@@ -78,6 +78,7 @@ function new_outgoing(from_host, to_host)
 		local conn, handler = socket.tcp()
 		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
 		to_host = srvmap[to_host] or to_host;
+		conn:settimeout(0.1);
 		conn:connect(to_host, 5269);
 		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
 		host_session.conn = conn;
