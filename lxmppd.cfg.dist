@@ -26,5 +26,6 @@ config = {
 		"private";
 		"version";
 		"dialback";
+		"uptime";
 	};
 }
