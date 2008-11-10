@@ -15,50 +15,55 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
-add_handler("c2s_unauthed", "auth", xmlns_sasl,
-		function (session, stanza)
-			if not session.sasl_handler then
-				session.sasl_handler = new_sasl(stanza.attr.mechanism, 
-					function (username, password)
-						-- onAuth
-						require "core.usermanager"
-						if usermanager_validate_credentials(session.host, username, password) then
-							return true;
-						end
-						return false;
-					end,
-					function (username)
-						-- onSuccess
-						local success, err = sessionmanager.make_authenticated(session, username);
-						if not success then
-							sessionmanager.destroy_session(session);
-							return;
-						end
-						session.sasl_handler = nil;
-						session:reset_stream();
-					end,
-					function (reason)
-						-- onFail
-						log("debug", "SASL failure, reason: %s", reason);
-					end,
-					function (stanza)
-						-- onWrite
-						log("debug", "SASL writes: %s", tostring(stanza));
-						send(session, stanza);
-					end
-				);
-				session.sasl_handler:feed(stanza);	
-			else
-				error("Client tried to negotiate SASL again", 0);
+add_handler("c2s_unauthed", "auth", xmlns_sasl, function (session, stanza)
+	if not session.sasl_handler then
+		session.sasl_handler = new_sasl(stanza.attr.mechanism, 
+			function (username, password)
+				-- onAuth
+				require "core.usermanager"
+				if usermanager_validate_credentials(session.host, username, password) then
+					return true;
+				end
+				return false;
+			end,
+			function (username)
+				-- onSuccess
+				local success, err = sessionmanager.make_authenticated(session, username);
+				if not success then
+					sessionmanager.destroy_session(session);
+					return;
+				end
+				session.sasl_handler = nil;
+				session:reset_stream();
+			end,
+			function (reason)
+				-- onFail
+				log("debug", "SASL failure, reason: %s", reason);
+			end,
+			function (stanza)
+				-- onWrite
+				log("debug", "SASL writes: %s", tostring(stanza));
+				send(session, stanza);
 			end
-			
-		end);
+		);
+		session.sasl_handler:feed(stanza);	
+	else
+		error("Client tried to negotiate SASL again", 0);
+	end	
+end);
+
+add_handler("c2s_unauthed", "response", xmlns_sasl, function (session, stanza)
+	if session.sasl_handler then
+		session.sasl_handler:feed(stanza);	
+	end	
+end);
 		
 add_event_hook("stream-features", 
 					function (session, features)												
 						if not session.username then
 							t_insert(features, "<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
 								t_insert(features, "<mechanism>PLAIN</mechanism>");
+								t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
 							t_insert(features, "</mechanisms>");
 						else
 							t_insert(features, "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
