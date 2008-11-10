@@ -33,6 +33,7 @@ local print = print;
 function core_process_stanza(origin, stanza)
 	log("debug", "Received["..origin.type.."]: "..tostring(st.reply(st.reply(stanza))))
 
+	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
 		if stanza.attr.type == "set" or stanza.attr.type == "get" then
@@ -327,7 +328,7 @@ function core_route_stanza(origin, stanza)
 							t_insert(recipients, session);
 						end
 					end
-					for _, session in pairs(recipient) do
+					for _, session in pairs(recipients) do
 						session.send(stanza);
 					end
 				else

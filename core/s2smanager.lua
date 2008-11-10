@@ -76,15 +76,18 @@ function new_outgoing(from_host, to_host)
 		local cl = connlisteners_get("xmppserver");
 		
 		local conn, handler = socket.tcp()
-		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
-		to_host = srvmap[to_host] or to_host;
-		conn:connect(to_host, 5269);
-		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
-		host_session.conn = conn;
+		
 		
 		-- Register this outgoing connection so that xmppserver_listener knows about it
 		-- otherwise it will assume it is a new incoming connection
 		cl.register_outgoing(conn, host_session);
+		
+		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
+		to_host = srvmap[to_host] or to_host;
+		conn:settimeout(0.1);
+		conn:connect(to_host, 5269);
+		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
+		host_session.conn = conn;
 		
 		do
 			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
