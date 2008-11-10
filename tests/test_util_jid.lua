@@ -1,10 +1,10 @@
 
 function split(split)
-	function test(jid, node, server, resource)
-		local rnode, rserver, rresource = split(jid);
-		assert_equal(node, rnode, "split("..tostring(jid)..") failed");
-		assert_equal(server, rserver, "split("..tostring(jid)..") failed");
-		assert_equal(resource, rresource, "split("..tostring(jid)..") failed");
+	function test(input_jid, expected_node, expected_server, expected_resource)
+		local rnode, rserver, rresource = split(input_jid);
+		assert_equal(expected_node, rnode, "split("..tostring(input_jid)..") failed");
+		assert_equal(expected_server, rserver, "split("..tostring(input_jid)..") failed");
+		assert_equal(expected_resource, rresource, "split("..tostring(input_jid)..") failed");
 	end
 	test("node@server", 		"node", "server", nil		);
 	test("node@server/resource", 	"node", "server", "resource"	);
