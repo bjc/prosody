@@ -139,11 +139,13 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 							end
 														
 							-- compare response_value with own calculation
-							local A1-- = H(response["username"]..":"..realm-value, ":", passwd } ),
-							        --   ":", nonce-value, ":", cnonce-value)
-							local A2
+							--local A1 = usermanager.get_md5(response["username"], hostname)..":"..response["nonce"]..response["cnonce"]
+							local A1 = H("tobias:luaetta.ath.cx:tobias")..":"..response["nonce"]..response["cnonce"]
+							local A2 = "AUTHENTICATE:"..response["digest-uri"]
 							
-							--local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
+							local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
+							
+							log("debug", "response_value: "..response_value);
 							
 							if response["qop"] == "auth" then
 							
