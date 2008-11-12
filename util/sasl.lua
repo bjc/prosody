@@ -8,6 +8,7 @@ local st = require "util.stanza";
 local generate_uuid = require "util.uuid".generate;
 local s_match = string.match;
 local gmatch = string.gmatch
+local string = string
 local math = require "math"
 local type = type
 local error = error
@@ -32,39 +33,14 @@ local function new_plain(onAuth, onSuccess, onFail, onWrite)
 							self.onSuccess(authentication)
 						else
 							self.onWrite(st.stanza("failure", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):tag("temporary-auth-failure"));
+							self.onFail("Wrong password.")
 						end
 					end
 	return object
 end
 
-
---[[
-SERVER:
-nonce="3145176401",qop="auth",charset=utf-8,algorithm=md5-sess
-
-CLIENT: username="tobiasfar",nonce="3145176401",cnonce="pJiW7hzeZLvOSAf7gBzwTzLWe4obYOVDlnNESzQCzGg=",nc=00000001,digest-uri="xmpp/jabber.org",qop=auth,response=99a93ba75235136e6403c3a2ba37089d,charset=utf-8	
-
-username="tobias",nonce="4406697386",cnonce="wUnT7vYrOB0V8D/lKd5bhpaNCk+hLJwc8T4CBCqp7WM=",nc=00000001,digest-uri="xmpp/luaetta.ath.cx",qop=auth,response=d202b8a1bdf8204816fb23c5f87b6b63,charset=utf-8
-
-SERVER:
-rspauth=ab66d28c260e97da577ce3aac46a8991
-]]--
 local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
-	local function H(s)
-		return md5.sum(s)
-	end
-	
-	local function KD(k, s)
-		return H(k..":"..s)
-	end
-	
-	local function HEX(n)
-		return md5.sumhexa(n)
-	end
-
-	local function HMAC(k, s)
-		return crypto.hmac.digest("md5", s, k, true)
-	end
+	--TODO maybe support for authzid
 
 	local function serialize(message)
 		local data = ""
@@ -76,15 +52,18 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 		if message["qop"] then data = data..[[qop="]]..message.qop..[[",]] end
 		if message["charset"] then data = data..[[charset=]]..message.charset.."," end
 		if message["algorithm"] then data = data..[[algorithm=]]..message.algorithm.."," end
-		if message["rspauth"] then data = data..[[rspauth=]]..message.algorith.."," end
+		if message["realm"] then data = data..[[realm="]]..message.realm..[[",]] end
+		if message["rspauth"] then data = data..[[rspauth=]]..message.rspauth.."," end
 		data = data:gsub(",$", "")
 		return data
 	end
 	
 	local function parse(data)
 		message = {}
-		for k, v in gmatch(data, [[([%w%-]+)="?([%w%-%/%.]+)"?,?]]) do
+		log("debug", "parse-message: "..data)
+		for k, v in gmatch(data, [[([%w%-]+)="?([%w%-%/%.%+=]+)"?,?]]) do
 			message[k] = v
+		log("debug", "               "..k.." = "..v)
 		end
 		return message
 	end
@@ -93,8 +72,8 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 	 				onWrite = onWrite }
 	
 	--TODO: something better than math.random would be nice, maybe OpenSSL's random number generator
-	object.nonce = math.random(0, 9)
-	for i = 1, 9 do object.nonce = object.nonce..math.random(0, 9) end
+	object.nonce = generate_uuid()
+	log("debug", "SASL nonce: "..object.nonce)
 	object.step = 1
 	object.nonce_count = {}
 	local challenge = base64.encode(serialize({	nonce = object.nonce, 
@@ -103,6 +82,7 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 												algorithm = "md5-sess"} ));
 	object.onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(challenge))
 	object.feed = 	function(self, stanza)
+						log("debug", "SASL step: "..self.step)
 						if stanza.name ~= "response" and stanza.name ~= "auth" then self.onFail("invalid-stanza-tag") end
 						if stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl" then self.onFail("invalid-stanza-namespace") end
 						if stanza.name == "auth" then return end
@@ -110,62 +90,77 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 						if (self.step == 2) then
 							local response = parse(base64.decode(stanza[1]))
 							-- check for replay attack
-							if response["nonce-count"] then
-								if self.nonce_count[response["nonce-count"]] then self.onFail("not-authorized") end
+							if response["nc"] then
+								if self.nonce_count[response["nc"]] then self.onFail("not-authorized") end
 							end
 							
 							-- check for username, it's REQUIRED by RFC 2831
 							if not response["username"] then
 								self.onFail("malformed-request")
 							end
+							self["username"] = response["username"] 
 							
 							-- check for nonce, ...
 							if not response["nonce"] then
 								self.onFail("malformed-request")
 							else
 								-- check if it's the right nonce
-								if response["nonce"] ~= self.nonce then self.onFail("malformed-request") end
+								if response["nonce"] ~= tostring(self.nonce) then self.onFail("malformed-request") end
 							end
 							
 							if not response["cnonce"] then self.onFail("malformed-request") end
 							if not response["qop"] then response["qop"] = "auth" end
 							
-							local hostname = ""
+							if response["realm"] == nil then response["realm"] = "" end
+							
+							local domain = ""
 							local protocol = ""
 							if response["digest-uri"] then
-								protocol, hostname = response["digest-uri"]:match("(%w+)/(.*)$")
+								protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$")
 							else
 								error("No digest-uri")
 							end
 														
 							-- compare response_value with own calculation
 							--local A1 = usermanager.get_md5(response["username"], hostname)..":"..response["nonce"]..response["cnonce"]
-							local A1 = H("tobias:luaetta.ath.cx:tobias")..":"..response["nonce"]..response["cnonce"]
-							local A2 = "AUTHENTICATE:"..response["digest-uri"]
 							
-							local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
+							--FIXME actual username and password here :P
+							local X = "tobias:"..response["realm"]..":tobias"
+							local Y = md5.sum(X)
+							local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
+							local A2 = "AUTHENTICATE:"..protocol.."/"..domain
+							
+							local HA1 = md5.sumhexa(A1)
+							local HA2 = md5.sumhexa(A2)
+							
+							local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
+							local response_value = md5.sumhexa(KD)
 							
 							log("debug", "response_value: "..response_value);
-							
-							if response["qop"] == "auth" then
-							
+							log("debug", "response:       "..response["response"]);
+							if response_value == response["response"] then
+								-- calculate rspauth
+								A2 = ":"..protocol.."/"..domain
+								
+								HA1 = md5.sumhexa(A1)
+								HA2 = md5.sumhexa(A2)
+
+								KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
+								local rspauth = md5.sumhexa(KD)
+								
+								self.onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(base64.encode(serialize({rspauth = rspauth}))))
 							else
-							
+								self.onWrite(st.stanza("response", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
+								self.onFail()
+							end							
+						elseif self.step == 3 then
+							if stanza.name == "response" then 
+								self.onWrite(st.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
+								self.onSuccess(self.username)
+							else 
+								self.onFail("Third step isn't a response stanza.")
 							end
-							
-							--local response_value = HEX(KD(HEX(H(A1)), response["nonce"]..":"..response["nonce-count"]..":"..response["cnonce-value"]..":"..response["qop"]..":"..HEX(H(A2))))
-							
 						end
-						--[[
-						local authorization = s_match(response, "([^&%z]+)")
-						local authentication = s_match(response, "%z([^&%z]+)%z")
-						local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
-						if self.onAuth(authentication, password) == true then
-							self.onWrite(st.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
-							self.onSuccess(authentication)
-						else
-							self.onWrite(st.stanza("failure", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):tag("temporary-auth-failure"));
-						end]]--
 					end
 	return object
 end
