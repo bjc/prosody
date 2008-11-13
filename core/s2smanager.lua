@@ -10,6 +10,8 @@ local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
 local connlisteners_get = require "net.connlisteners".get;
 local wraptlsclient = require "net.server".wraptlsclient;
 local modulemanager = require "core.modulemanager";
+local st = require "stanza";
+local stanza = st.stanza;
 
 local uuid_gen = require "util.uuid".generate;
 
