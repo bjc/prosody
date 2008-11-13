@@ -32,6 +32,9 @@ require "core.usermanager"
 require "core.sessionmanager"
 require "core.stanza_router"
 
+pcall(require, "remdebug.engine");
+if remdebug then remdebug.engine.start() end
+
 local start = require "net.connlisteners".start;
 require "util.stanza"
 require "util.jid"
