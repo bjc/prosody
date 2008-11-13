@@ -10,6 +10,8 @@ local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
 local connlisteners_get = require "net.connlisteners".get;
 local wraptlsclient = require "net.server".wraptlsclient;
 local modulemanager = require "core.modulemanager";
+local st = require "stanza";
+local stanza = st.stanza;
 
 local uuid_gen = require "util.uuid".generate;
 
@@ -31,18 +33,23 @@ end
 function send_to_host(from_host, to_host, data)
 	local host = hosts[to_host];
 	if host then
-		-- Write to connection
-		if host.type == "s2sout_unauthed" and not host.notopen and not host.dialback_key then
-			log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
-			initiate_dialback(host);
-			if not host.sendq then host.sendq = { data };
-			else t_insert(host.sendq, data); end
+		-- We have a connection to this host already
+		if host.type == "s2sout_unauthed" then
+			host.log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
+			if not host.notopen and not host.dialback_key then
+				host.log("debug", "dialback had not been initiated");
+				initiate_dialback(host);
+			end
+			
+			-- Queue stanza until we are able to send it
+			if host.sendq then t_insert(host.sendq, data);
+			else host.sendq = { data }; end
 		else
-			log("debug", "going to send stanza to "..to_host.." from "..from_host);
+			host.log("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
 			if hosts[to_host].from_host ~= from_host then log("error", "WARNING! This might, possibly, be a bug, but it might not..."); end
 			hosts[to_host].sends2s(data);
-			log("debug", "stanza sent over "..hosts[to_host].type);
+			host.log("debug", "stanza sent over "..hosts[to_host].type);
 		end
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
@@ -77,18 +84,22 @@ function new_outgoing(from_host, to_host)
 		
 		local conn, handler = socket.tcp()
 		
+		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
+		to_host = srvmap[to_host] or to_host;
 		
+		conn:settimeout(0);
+		local success, err = conn:connect(to_host, 5269);
+		if not success then
+			log("warn", "s2s connect() failed: %s", err);
+		end
+		
+		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
+		host_session.conn = conn;
+
 		-- Register this outgoing connection so that xmppserver_listener knows about it
 		-- otherwise it will assume it is a new incoming connection
 		cl.register_outgoing(conn, host_session);
-		
-		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
-		to_host = srvmap[to_host] or to_host;
-		conn:settimeout(0.1);
-		conn:connect(to_host, 5269);
-		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
-		host_session.conn = conn;
-		
+
 		do
 			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
 			host_session.log = logger_init(conn_name);
@@ -124,7 +135,7 @@ function streamopened(session, attr)
 		session.streamid = uuid_gen();
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
-		send(format("<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s'>", session.streamid, session.to_host));
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }));
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
