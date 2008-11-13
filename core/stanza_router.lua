@@ -13,6 +13,7 @@ local user_exists = require "core.usermanager".user_exists;
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
+local offlinemanager = require "core.offlinemanager";
 
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
@@ -149,6 +150,10 @@ function core_handle_stanza(origin, stanza)
 							core_route_stanza(origin, request);
 						end
 					end
+					for _, msg in ipairs(offlinemanager.load(node, host) or {}) do
+						origin.send(msg); -- FIXME do we need to modify to/from in any way?
+					end
+					offlinemanager.deleteAll(node, host);
 				end
 				origin.priority = 0;
 				if stanza.attr.type == "unavailable" then
@@ -328,8 +333,14 @@ function core_route_stanza(origin, stanza)
 							t_insert(recipients, session);
 						end
 					end
+					local count = 0;
 					for _, session in pairs(recipients) do
 						session.send(stanza);
+						count = count + 1;
+					end
+					if count == 0 then
+						offlinemanager.store(node, host, stanza);
+						-- TODO deal with storage errors
 					end
 				else
 					-- TODO send IQ error
@@ -349,7 +360,12 @@ function core_route_stanza(origin, stanza)
 						-- TODO send unavailable presence or unsubscribed
 					end
 				elseif stanza.name == "message" then
-					-- TODO send message error, or store offline messages
+					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
+						offlinemanager.store(node, host, stanza);
+						-- FIXME don't store messages with only chat state notifications
+					end
+					-- TODO allow configuration of offline storage
+					-- TODO send error if not storing offline
 				elseif stanza.name == "iq" then
 					-- TODO send IQ error
 				end
