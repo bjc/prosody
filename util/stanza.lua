@@ -105,6 +105,14 @@ function stanza_mt.__tostring(t)
 	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
 
+function stanza_mt.top_tag(t)
+	local attr_string = "";
+	if t.attr then
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
+	end
+	return s_format("<%s%s>", t.name, attr_string);
+end
+
 function stanza_mt.__add(s1, s2)
 	return s1:add_direct_child(s2);
 end
