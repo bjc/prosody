@@ -174,16 +174,22 @@ function core_handle_stanza(origin, stanza)
 				stanza.attr.to = nil; -- reset it
 			else
 				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+				if stanza.attr.type ~= "error" then
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+				end
 			end
 		else
 			log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+			end
 		end -- TODO handle other stanzas
 	else
 		log("warn", "Unhandled origin: %s", origin.type);
-		-- s2s stanzas can get here
-		(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			-- s2s stanzas can get here
+			(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+		end
 	end
 end
 
