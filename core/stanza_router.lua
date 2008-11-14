@@ -32,7 +32,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received["..origin.type.."]: "..tostring(st.reply(st.reply(stanza))))
+	log("debug", "Received[%s]: %s", origin.type, stanza:pretty_top_tag())
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
