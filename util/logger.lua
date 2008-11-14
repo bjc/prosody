@@ -13,9 +13,9 @@ function init(name)
 					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
 				end
 				if ... then 
-					print(level, format(message, ...));
+					print(name, level, format(message, ...));
 				else
-					print(level, message);
+					print(name, level, message);
 				end
 			end
 end
