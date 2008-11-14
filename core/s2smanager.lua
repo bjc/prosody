@@ -28,9 +28,6 @@ local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.c
 
 module "s2smanager"
 
-function connect_host(from_host, to_host)
-end
-
 function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
@@ -65,10 +62,6 @@ function send_to_host(from_host, to_host, data)
 		-- Store in buffer
 		host_session.sendq = { data };
 	end
-end
-
-function disconnect_host(host)
-	
 end
 
 local open_sessions = 0;
