@@ -24,7 +24,7 @@ local md5_hash = require "util.hashes".md5;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
-local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
+local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "hampton.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
 
 module "s2smanager"
 
