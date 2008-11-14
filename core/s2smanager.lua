@@ -47,7 +47,10 @@ function send_to_host(from_host, to_host, data)
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
-			if hosts[to_host].from_host ~= from_host then log("error", "WARNING! This might, possibly, be a bug, but it might not..."); end
+			if hosts[to_host].from_host ~= from_host then
+				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
+				log("error", "We are going to send from %s instead of %s", hosts[to_host].from_host, from_host);
+			end
 			hosts[to_host].sends2s(data);
 			host.log("debug", "stanza sent over "..hosts[to_host].type);
 		end
