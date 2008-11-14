@@ -182,7 +182,8 @@ function core_handle_stanza(origin, stanza)
 		end -- TODO handle other stanzas
 	else
 		log("warn", "Unhandled origin: %s", origin.type);
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+		-- s2s stanzas can get here
+		(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 	end
 end
 
