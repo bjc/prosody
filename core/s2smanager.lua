@@ -48,7 +48,7 @@ function send_to_host(from_host, to_host, data)
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", get_traceback());
-			log("error", "Stanza: %s", data);
+			log("error", "Stanza: %s", tostring(data));
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
