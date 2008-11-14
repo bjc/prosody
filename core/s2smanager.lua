@@ -45,7 +45,7 @@ function send_to_host(from_host, to_host, data)
 			if host.sendq then t_insert(host.sendq, data);
 			else host.sendq = { data }; end
 		else
-			host.log("debug", "going to send stanza to "..to_host.." from "..from_host);
+			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
 			if hosts[to_host].from_host ~= from_host then log("error", "WARNING! This might, possibly, be a bug, but it might not..."); end
 			hosts[to_host].sends2s(data);
