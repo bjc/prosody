@@ -25,7 +25,7 @@ function register_component(host, component)
 	if not hosts[host] then
 		-- TODO check for host well-formedness
 		components[host] = component;
-		hosts[host] = {type = "component", host = host, connected = true};
+		hosts[host] = {type = "component", host = host, connected = true, s2sout = {} };
 		log("debug", "component added: "..host);
 	else
 		log("error", "Attempt to set component for existing host: "..host);
