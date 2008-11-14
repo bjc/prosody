@@ -17,7 +17,7 @@ hosts = {};
 
 if config.hosts and #config.hosts > 0 then
 	for _, host in pairs(config.hosts) do
-		hosts[host] = {type = "local", connected = true, sessions = {}, host = host};
+		hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
 	end
 else error("No hosts defined in the configuration file"); end
 
