@@ -4,6 +4,7 @@ local sessions = sessions;
 local socket = require "socket";
 local format = string.format;
 local t_insert = table.insert;
+local get_traceback = debug.traceback;
 local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
     = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
 
@@ -44,6 +45,9 @@ function send_to_host(from_host, to_host, data)
 			-- Queue stanza until we are able to send it
 			if host.sendq then t_insert(host.sendq, data);
 			else host.sendq = { data }; end
+		elseif host.type == "local" or host.type == "component" then
+			log("error", "Trying to send a stanza to ourselves??")
+			log("error", "Traceback: "..get_traceback());
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
