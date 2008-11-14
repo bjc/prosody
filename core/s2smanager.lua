@@ -32,7 +32,7 @@ function connect_host(from_host, to_host)
 end
 
 function send_to_host(from_host, to_host, data)
-	local host = hosts[to_host];
+	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
 		if host.type == "s2sout_unauthed" then
@@ -52,12 +52,12 @@ function send_to_host(from_host, to_host, data)
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
-			if hosts[to_host].from_host ~= from_host then
+			if host.from_host ~= from_host then
 				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
-				log("error", "We are going to send from %s instead of %s", hosts[to_host].from_host, from_host);
+				log("error", "We are going to send from %s instead of %s", host.from_host, from_host);
 			end
-			hosts[to_host].sends2s(data);
-			host.log("debug", "stanza sent over "..hosts[to_host].type);
+			host.sends2s(data);
+			host.log("debug", "stanza sent over "..host.type);
 		end
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
@@ -87,7 +87,7 @@ end
 
 function new_outgoing(from_host, to_host)
 		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
-		hosts[to_host] = host_session;
+		hosts[from_host].s2sout[to_host] = host_session;
 		local cl = connlisteners_get("xmppserver");
 		
 		local conn, handler = socket.tcp()
@@ -225,7 +225,7 @@ end
 function destroy_session(session)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	if session.direction == "outgoing" then
-		hosts[session.to_host] = nil;
+		hosts[session.from_host].s2sout[session.to_host] = nil;
 	end
 	session.conn = nil;
 	session.disconnect = nil;
