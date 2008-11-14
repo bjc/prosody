@@ -22,6 +22,7 @@ add_handler({"s2sin_unauthed", "s2sin"}, "verify", xmlns_dialback,
 			type = "invalid"
 			log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 		end
+		log("debug", "verifyied dialback key... it is %s", type);
 		origin.sends2s(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
 	end);
 
