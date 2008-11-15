@@ -16,24 +16,25 @@ local print = print
 
 module "sasl"
 
-local function new_plain(onAuth, onSuccess, onFail, onWrite)
-	local object = { mechanism = "PLAIN", onAuth = onAuth, onSuccess = onSuccess, onFail = onFail,
-	 				onWrite = onWrite}
-	local challenge = base64.encode("");
-	--onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(challenge))
-	object.feed = 	function(self, stanza)
-						if stanza.name ~= "response" and stanza.name ~= "auth" then self.onFail("invalid-stanza-tag") end
-						if stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl" then self.onFail("invalid-stanza-namespace") end
-						local response = base64.decode(stanza[1])
+local function new_plain(realm, password_handler)
+	local object = { mechanism = "PLAIN", realm = realm, password_handler = password_handler}
+	object.feed = 	function(self, message)
+						log("debug", "feed: "..message)
+						local response = message
 						local authorization = s_match(response, "([^&%z]+)")
 						local authentication = s_match(response, "%z([^&%z]+)%z")
 						local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
-						if self.onAuth(authentication, password) == true then
-							self.onWrite(st.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
-							self.onSuccess(authentication)
+						
+						local password_encoding, correct_password = self.password_handler(authentication.."@"..self.realm, "PLAIN")
+						
+						local claimed_password = ""
+						if password_encoding == nil then claimed_password = password
+						else claimed_password = password_encoding(password) end
+						
+						if claimed_password == correct_password then
+							return "success", nil
 						else
-							self.onWrite(st.stanza("failure", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):tag("temporary-auth-failure"));
-							self.onFail("Wrong password.")
+							return "failure", "not-authorized"
 						end
 					end
 	return object
@@ -165,13 +166,13 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 	return object
 end
 
-function new(mechanism, onAuth, onSuccess, onFail, onWrite)
+function new(mechanism, realm, password)
 	local object
-	if mechanism == "PLAIN" then object = new_plain(onAuth, onSuccess, onFail, onWrite)
-	elseif mechanism == "DIGEST-MD5" then object = new_digest_md5(onAuth, onSuccess, onFail, onWrite)
+	if mechanism == "PLAIN" then object = new_plain(realm, password)
+	--elseif mechanism == "DIGEST-MD5" then object = new_digest_md5(ream, password)
 	else
 		log("debug", "Unsupported SASL mechanism: "..tostring(mechanism));
-		onFail("unsupported-mechanism")
+		return nil
 	end
 	return object
 end
