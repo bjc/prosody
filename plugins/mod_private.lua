@@ -1,6 +1,5 @@
 
 local st = require "util.stanza"
-local send = require "core.sessionmanager".send_to_session
 
 local jid_split = require "util.jid".split;
 local datamanager = require "util.datamanager"
@@ -19,9 +18,9 @@ add_iq_handler("c2s", "jabber:iq:private",
 					local data = datamanager.load(node, host, "private");
 					if stanza.attr.type == "get" then
 						if data and data[key] then
-							send(session, st.reply(stanza):tag("query", {xmlns = "jabber:iq:private"}):add_child(st.deserialize(data[key])));
+							session.send(st.reply(stanza):tag("query", {xmlns = "jabber:iq:private"}):add_child(st.deserialize(data[key])));
 						else
-							send(session, st.reply(stanza):add_child(stanza.tags[1]));
+							session.send(st.reply(stanza):add_child(stanza.tags[1]));
 						end
 					else -- set
 						if not data then data = {}; end;
@@ -32,16 +31,16 @@ add_iq_handler("c2s", "jabber:iq:private",
 						end
 						-- TODO delete datastore if empty
 						if datamanager.store(node, host, "private", data) then
-							send(session, st.reply(stanza));
+							session.send(st.reply(stanza));
 						else
-							send(session, st.error_reply(stanza, "wait", "internal-server-error"));
+							session.send(st.error_reply(stanza, "wait", "internal-server-error"));
 						end
 					end
 				else
-					send(session, st.error_reply(stanza, "modify", "bad-format"));
+					session.send(st.error_reply(stanza, "modify", "bad-format"));
 				end
 			else
-				send(session, st.error_reply(stanza, "cancel", "forbidden"));
+				session.send(st.error_reply(stanza, "cancel", "forbidden"));
 			end
 		end
 	end);
