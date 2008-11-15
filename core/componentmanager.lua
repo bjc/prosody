@@ -27,6 +27,7 @@ function register_component(host, component)
 		components[host] = component;
 		hosts[host] = {type = "component", host = host, connected = true, s2sout = {} };
 		log("debug", "component added: "..host);
+		return hosts[host];
 	else
 		log("error", "Attempt to set component for existing host: "..host);
 	end
