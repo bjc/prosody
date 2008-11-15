@@ -3,6 +3,7 @@ local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local jid
+local base64 = require "base64"
 
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
@@ -101,7 +102,7 @@ add_event_hook("stream-features",
 							t_insert(features, "<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
 							-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 								t_insert(features, "<mechanism>PLAIN</mechanism>");
-								-- t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
+								t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
 							t_insert(features, "</mechanisms>");
 						else
 							t_insert(features, "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
