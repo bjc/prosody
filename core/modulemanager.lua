@@ -10,6 +10,7 @@ local type = type;
 local tostring, print = tostring, print;
 
 local _G = _G;
+local debug = debug;
 
 module "modulemanager"
 
@@ -89,14 +90,13 @@ function handle_stanza(origin, stanza)
 		log("debug", "Stanza is an <iq/>");
 		local child = stanza.tags[1];
 		if child then
-			local xmlns = child.attr.xmlns;
-			log("debug", "Stanza has xmlns: %s", xmlns);
+			local xmlns = child.attr.xmlns or xmlns;
+			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
 			local handler = handlers[origin_type][name][xmlns];
 			if  handler then
 				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
 				return handler(origin, stanza) or true;
 			end
-
 		end
 	elseif handlers[origin_type] then
 		local handler = handlers[origin_type][name];
