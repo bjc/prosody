@@ -232,7 +232,7 @@ function unsubscribed(username, host, jid)
 		if item.subscription == "from" then
 			item.subscription = "none";
 			changed = true;
-		elseif item.subscription == both then
+		elseif item.subscription == "both" then
 			item.subscription = "to";
 			changed = true;
 		end
