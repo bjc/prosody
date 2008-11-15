@@ -1,6 +1,5 @@
 
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
 local t_concat = table.concat;
 
 add_iq_handler("c2s_unauthed", "jabber:iq:auth", 
@@ -10,7 +9,7 @@ add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 			local resource = stanza.tags[1]:child_with_name("resource");
 			if not (username and password and resource) then
 				local reply = st.reply(stanza);
-				send(session, reply:query("jabber:iq:auth")
+				session.send(reply:query("jabber:iq:auth")
 					:tag("username"):up()
 					:tag("password"):up()
 					:tag("resource"):up());
@@ -30,14 +29,14 @@ add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 							return true;
 						end
 					end
-					send(session, st.reply(stanza));
+					session.send(st.reply(stanza));
 					return true;
 				else
 					local reply = st.reply(stanza);
 					reply.attr.type = "error";
 					reply:tag("error", { code = "401", type = "auth" })
 						:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-					send(session, reply);
+					session.send(reply);
 					return true;
 				end
 			end
