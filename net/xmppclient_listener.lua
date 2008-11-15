@@ -73,15 +73,16 @@ function xmppclient.listener(conn, data)
 	end
 end
 	
-function xmppclient.disconnect(conn)
+function xmppclient.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if session.last_presence and session.last_presence.attr.type ~= "unavailable" then
+		if session.presence and session.presence.attr.type ~= "unavailable" then
 			local pres = st.presence{ type = "unavailable" };
-			if err == "closed" then err = "connection closed"; end --FIXME where did err come from?
+			if err == "closed" then err = "connection closed"; end
 			pres:tag("status"):text("Disconnected: "..err);
 			session.stanza_dispatch(pres);
 		end
+		session.log("info", "Client disconnected: %s", err);
 		sm_destroy_session(session);
 		sessions[conn]  = nil;
 		session = nil;
