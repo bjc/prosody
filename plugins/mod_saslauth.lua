@@ -50,7 +50,7 @@ local function password_callback(node, host, mechanism)
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
-			return func, require "hashes".md5(node..":"..host..":"..password);
+			return func, require "md5".sum(node..":"..host..":"..password);
 		end
 	end
 	return func, nil;
