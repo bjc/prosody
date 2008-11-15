@@ -1,6 +1,5 @@
 
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
 
 local log = require "util.logger".init("mod_version");
 

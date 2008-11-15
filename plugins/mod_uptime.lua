@@ -1,6 +1,5 @@
 
 local st = require "util.stanza"
-local send = require "core.sessionmanager".send_to_session
 
 local jid_split = require "util.jid".split;
 local t_concat = table.concat;
