@@ -19,7 +19,9 @@ module "sasl"
 local function new_plain(realm, password_handler)
 	local object = { mechanism = "PLAIN", realm = realm, password_handler = password_handler}
 	object.feed = 	function(self, message)
-						log("debug", "feed: "..message)
+						--print(message:gsub("%W", function (c) return string.format("\\%d", string.byte(c)) end));
+
+						if message == "" or message == nil then return "failure", "malformed-request" end
 						local response = message
 						local authorization = s_match(response, "([^&%z]+)")
 						local authentication = s_match(response, "%z([^&%z]+)%z")
@@ -31,9 +33,12 @@ local function new_plain(realm, password_handler)
 						if password_encoding == nil then claimed_password = password
 						else claimed_password = password_encoding(password) end
 						
+						self.username = authentication
 						if claimed_password == correct_password then
+							log("debug", "success")
 							return "success", nil
 						else
+							log("debug", "failure")
 							return "failure", "not-authorized"
 						end
 					end
