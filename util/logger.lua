@@ -3,7 +3,20 @@ local format = string.format;
 local print = print;
 local debug = debug;
 local tostring = tostring;
+
+local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local do_pretty_printing = not os.getenv("WINDIR");
+
 module "logger"
+
+local logstyles = {};
+
+--TODO: This should be done in config, but we don't have proper config yet
+if do_pretty_printing then
+	logstyles["info"] = getstyle("bold");
+	logstyles["warn"] = getstyle("bold", "yellow");
+	logstyles["error"] = getstyle("bold", "red");
+end
 
 function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
@@ -13,9 +26,9 @@ function init(name)
 					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
 				end
 				if ... then 
-					print(name, level, format(message, ...));
+					print(name, getstring(logstyles[level], level), format(message, ...));
 				else
-					print(name, level, message);
+					print(name, getstring(logstyles[level], level), message);
 				end
 			end
 end
