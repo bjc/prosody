@@ -1,9 +1,18 @@
 
 local verbosity = tonumber(arg[1]) or 2;
 
-function assert_equal(a, b)
+package.path = package.path..";../?.lua";
+
+require "util.import"
+
+local env_mt = { __index = function (t,k) return rawget(_G, k) or print("WARNING: Attempt to access nil global '"..tostring(k).."'"); end };
+function testlib_new_env(t)
+	return setmetatable(t or {}, env_mt);
+end
+
+function assert_equal(a, b, message)
 	if not (a == b) then
-		error(getfenv(2).__unit.."assert_equal failed: "..tostring(a).." ~= "..tostring(b), 2);
+		error("\n   assert_equal failed: "..tostring(a).." ~= "..tostring(b)..(message and ("\n   Message: "..message) or ""), 2);
 	elseif verbosity >= 4 then
 		print("assert_equal succeeded: "..tostring(a).." == "..tostring(b));
 	end
@@ -52,7 +61,8 @@ function dotest(unitname)
 		else
 			local success, ret = pcall(tests[name], f, unit);
 			if not success then
-				print("TEST FAILED: ", unitname, name, ret);
+				print("TEST FAILED! Unit: ["..unitname.."] Function: ["..name.."]");
+				print("   Location: "..ret:gsub(":%s*\n", "\n"));
 			elseif verbosity >= 2 then
 				print("TEST SUCCEEDED: ", unitname, name);
 			end
@@ -60,5 +70,15 @@ function dotest(unitname)
 	end
 end
 
-dotest "util.jid"
+function runtest(f, msg)
+	local success, ret = pcall(f);
+	if success and verbosity >= 2 then
+		print("SUBTEST PASSED: "..(msg or "(no description)"));
+	elseif (not success) and verbosity >= 1 then
+		print("SUBTEST FAILED: "..(msg or "(no description)"));
+		error(ret, 0);
+	end
+end
 
+dotest "util.jid"
+dotest "core.stanza_router"
