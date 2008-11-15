@@ -105,7 +105,6 @@ add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 			local resource;
 			if stanza.attr.type == "set" then
 				local bind = stanza.tags[1];
-				
 				if bind and bind.attr.xmlns == xmlns_bind then
 					resource = bind:child_with_name("resource");
 					if resource then
@@ -113,26 +112,13 @@ add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 					end
 				end
 			end
-			local success, err = sm_bind_resource(session, resource);
+			local success, err_type, err, err_msg = sm_bind_resource(session, resource);
 			if not success then
-				local reply = st.reply(stanza);
-				reply.attr.type = "error";
-				if err == "conflict" then
-					reply:tag("error", { type = "modify" })
-						:tag("conflict", { xmlns = xmlns_stanzas });
-				elseif err == "constraint" then
-					reply:tag("error", { type = "cancel" })
-						:tag("resource-constraint", { xmlns = xmlns_stanzas });
-				elseif err == "auth" then
-					reply:tag("error", { type = "cancel" })
-						:tag("not-allowed", { xmlns = xmlns_stanzas });
-				end
-				send(session, reply);
+				session.send(st.error_reply(stanza, err_type, err, err_msg));
 			else
-				local reply = st.reply(stanza);
-				reply:tag("bind", { xmlns = xmlns_bind})
-					:tag("jid"):text(session.full_jid);
-				send(session, reply);
+				session.send(st.reply(stanza)
+					:tag("bind", { xmlns = xmlns_bind})
+					:tag("jid"):text(session.full_jid));
 			end
 		end);
 		
