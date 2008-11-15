@@ -68,9 +68,13 @@ function make_authenticated(session, username)
 	return true;
 end
 
+-- returns true, nil on success
+-- returns nil, err_type, err, err_message on failure
 function bind_resource(session, resource)
-	if not session.username then return false, "auth"; end
-	if session.resource then return false, "constraint"; end -- We don't support binding multiple resources
+	if not session.username then return nil, "auth", "not-authorized", "Cannot bind resource before authentication"; end
+	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
+	-- We don't support binding multiple resources
+
 	resource = resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	
@@ -79,7 +83,7 @@ function bind_resource(session, resource)
 	else
 		if hosts[session.host].sessions[session.username].sessions[resource] then
 			-- Resource conflict
-			return false, "conflict"; -- TODO kick old resource
+			return nil, "cancel", "conflict", "Resource already exists"; -- TODO kick old resource
 		end
 	end
 	
