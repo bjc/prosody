@@ -11,7 +11,7 @@ local function handle_version_request(session, stanza)
 		session.send(st.reply(stanza):query(xmlns_version)
 			:tag("name"):text("lxmppd"):up()
 			:tag("version"):text("pre-alpha"):up()
-			:tag("os"):text("The best one"));
+			:tag("os"):text("the best operating system ever!"));
 	end
 end
 
