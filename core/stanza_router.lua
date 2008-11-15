@@ -50,7 +50,7 @@ function core_process_stanza(origin, stanza)
 		error("Client MUST bind resource after auth");
 	end
 
-	-- TODO also, stazas should be returned to their original state before the function ends
+	-- TODO also, stanzas should be returned to their original state before the function ends
 	if origin.type == "c2s" then
 		stanza.attr.from = origin.full_jid;
 	end
@@ -88,7 +88,7 @@ function core_process_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
-		elseif stanza.name == "iq" and not resource then -- directed at bare JID
+		elseif origin.type ~= "c2s" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
 			core_route_stanza(origin, stanza);
