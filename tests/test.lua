@@ -71,6 +71,7 @@ function dotest(unitname)
 end
 
 function runtest(f, msg)
+	if not f then print("SUBTEST NOT FOUND: "..(msg or "(no description)")); return; end
 	local success, ret = pcall(f);
 	if success and verbosity >= 2 then
 		print("SUBTEST PASSED: "..(msg or "(no description)"));

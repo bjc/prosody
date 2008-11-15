@@ -1,6 +1,5 @@
 
 local st = require "util.stanza"
-local send = require "core.sessionmanager".send_to_session
 
 local jid_split = require "util.jid".split;
 local t_concat = table.concat;
@@ -29,7 +28,7 @@ add_iq_handler("c2s", "jabber:iq:roster",
 							roster:up(); -- move out from item
 						end
 					end
-					send(session, roster);
+					session.send(roster);
 					session.interested = true; -- resource is interested in roster updates
 					return true;
 				elseif stanza.attr.type == "set" then
@@ -46,13 +45,13 @@ add_iq_handler("c2s", "jabber:iq:roster",
 									if session.roster[item.attr.jid] then
 										local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, item.attr.jid);
 										if success then
-											send(session, st.reply(stanza));
+											session.send(st.reply(stanza));
 											rm_roster_push(from_node, from_host, item.attr.jid);
 										else
-											send(session, st.error_reply(stanza, err_type, err_cond, err_msg));
+											session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 										end
 									else
-										send(session, st.error_reply(stanza, "modify", "item-not-found"));
+										session.send(st.error_reply(stanza, "modify", "item-not-found"));
 									end
 								else
 									local r_item = {name = item.attr.name, groups = {}};
@@ -73,20 +72,20 @@ add_iq_handler("c2s", "jabber:iq:roster",
 									end
 									local success, err_type, err_cond, err_msg = rm_add_to_roster(session, item.attr.jid, r_item);
 									if success then
-										send(session, st.reply(stanza));
+										session.send(st.reply(stanza));
 										rm_roster_push(from_node, from_host, item.attr.jid);
 									else
-										send(session, st.error_reply(stanza, err_type, err_cond, err_msg));
+										session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 									end
 								end
 							else
-								send(session, st.error_reply(stanza, "cancel", "not-allowed"));
+								session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 							end
 						else
-							send(session, st.error_reply(stanza, "modify", "bad-request")); -- FIXME what's the correct error?
+							session.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME what's the correct error?
 						end
 					else
-						send(session, st.error_reply(stanza, "modify", "bad-request"));
+						session.send(st.error_reply(stanza, "modify", "bad-request"));
 					end
 					return true;
 				end
