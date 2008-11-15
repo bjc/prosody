@@ -53,43 +53,26 @@ local function password_callback(jid, mechanism)
 	return func, nil;
 end
 
+function do_sasl(session, stanza)
+	local text = stanza[1];
+	if text then
+		text = base64.decode(text);
+		if not text then
+			session.sasl_handler = nil;
+			session.send(build_reply("failure", "incorrect-encoding"));
+			return;
+		end
+	end
+	local status, ret = session.sasl_handler:feed(text);
+	handle_status(session, status);
+	session.send(build_reply(status, ret));
+end
+
 add_handler("c2s_unauthed", "auth", xmlns_sasl,
 		function (session, stanza)
 			if not session.sasl_handler then
 				session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
-				local status, ret = session.sasl_handler:feed(stanza[1]);
-				handle_status(session, status);
-				session.send(build_reply(status, ret));
-				--[[session.sasl_handler = new_sasl(stanza.attr.mechanism, 
-					function (username, password)
-						-- onAuth
-						require "core.usermanager"
-						if usermanager_validate_credentials(session.host, username, password) then
-							return true;
-						end
-						return false;
-					end,
-					function (username)
-						-- onSuccess
-						local success, err = sessionmanager.make_authenticated(session, username);
-						if not success then
-							sessionmanager.destroy_session(session);
-							return;
-						end
-						session.sasl_handler = nil;
-						session:reset_stream();
-					end,
-					function (reason)
-						-- onFail
-						log("debug", "SASL failure, reason: %s", reason);
-					end,
-					function (stanza)
-						-- onWrite
-						log("debug", "SASL writes: %s", tostring(stanza));
-						send(session, stanza);
-					end
-				);
-				session.sasl_handler:feed(stanza);	]]
+				do_sasl(session, stanza);
 			else
 				error("Client tried to negotiate SASL again", 0);
 			end
@@ -98,19 +81,15 @@ add_handler("c2s_unauthed", "auth", xmlns_sasl,
 add_handler("c2s_unauthed", "abort", xmlns_sasl,
 	function(session, stanza)
 		if not session.sasl_handler then error("Attempt to abort when sasl has not started"); end
-		local status, ret = session.sasl_handler:feed(stanza[1]);
-		handle_status(session, status);
-		session.send(build_reply(status, ret));
+		do_sasl(session, stanza);
 	end);
 
 add_handler("c2s_unauthed", "response", xmlns_sasl,
 	function(session, stanza)
 		if not session.sasl_handler then error("Attempt to respond when sasl has not started"); end
-		local status, ret = session.sasl_handler:feed(stanza[1]);
-		handle_status(session, status);
-		session.send(build_reply(status, ret));
+		do_sasl(session, stanza);
 	end);
-		
+
 add_event_hook("stream-features", 
 					function (session, features)												
 						if not session.username then
