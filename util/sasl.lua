@@ -16,30 +16,29 @@ module "sasl"
 
 local function new_plain(realm, password_handler)
 	local object = { mechanism = "PLAIN", realm = realm, password_handler = password_handler}
-	object.feed = 	function(self, message)
-						--print(message:gsub("%W", function (c) return string.format("\\%d", string.byte(c)) end));
-
-						if message == "" or message == nil then return "failure", "malformed-request" end
-						local response = message
-						local authorization = s_match(response, "([^&%z]+)")
-						local authentication = s_match(response, "%z([^&%z]+)%z")
-						local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
-						
-						local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
-						
-						local claimed_password = ""
-						if password_encoding == nil then claimed_password = password
-						else claimed_password = password_encoding(password) end
-						
-						self.username = authentication
-						if claimed_password == correct_password then
-							log("debug", "success")
-							return "success"
-						else
-							log("debug", "failure")
-							return "failure", "not-authorized"
-						end
-					end
+	function object.feed(self, message)
+        
+		if message == "" or message == nil then return "failure", "malformed-request" end
+		local response = message
+		local authorization = s_match(response, "([^&%z]+)")
+		local authentication = s_match(response, "%z([^&%z]+)%z")
+		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+		
+		local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
+		
+		local claimed_password = ""
+		if password_encoding == nil then claimed_password = password
+		else claimed_password = password_encoding(password) end
+		
+		self.username = authentication
+		if claimed_password == correct_password then
+			log("debug", "success")
+			return "success"
+		else
+			log("debug", "failure")
+			return "failure", "not-authorized"
+		end
+	end
 	return object
 end
 
@@ -111,7 +110,7 @@ local function new_digest_md5(realm, password_handler)
 				if response["nonce"] ~= tostring(self.nonce) then return "failure", "malformed-request" end
 			end
 			
-			if not response["cnonce"] then return "failure", "malformed-request" end
+			if not response["cnonce"] then return "failure", "malformed-request", "Missing entry for cnonce in SASL message." end
 			if not response["qop"] then response["qop"] = "auth" end
 			
 			if response["realm"] == nil then response["realm"] = "" end
@@ -147,13 +146,14 @@ local function new_digest_md5(realm, password_handler)
         
 				KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
 				local rspauth = md5.sumhexa(KD)
-				
+				self.authenticated = true
 				return "challenge", serialize({rspauth = rspauth})
 			else
 				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated."
 			end							
 		elseif self.step == 3 then
-			return "success"
+			if self.authenticated ~= nil then return "success"
+			else return "failure", "malformed-request" end
 		end
 	end
 	return object
