@@ -2,10 +2,12 @@
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
+local jid
 
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
+local jid_split = require "util.jid".split
 
 local log = require "util.logger".init("mod_saslauth");
 
@@ -15,50 +17,91 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
+local function build_reply(status, ret)
+	local reply = st.stanza(status, {xmlns = xmlns_sasl});
+	if status == "challenge" then
+		reply:text(ret or "");
+	elseif status == "failure" then
+		reply:tag(ret):up();
+	elseif status == "success" then
+		reply:text(ret or "");
+	else
+		error("Unknown sasl status: "..status);
+	end
+	return reply;
+end
+
+local function handle_status(session, status)
+	if status == "failure" then
+		session.sasl_handler = nil;
+	elseif status == "success" then
+		if not session.sasl_handler.username then error("SASL succeeded but we didn't get a username!"); end -- TODO move this to sessionmanager
+		sessionmanager.make_authenticated(session, session.sasl_handler.username);
+		session.sasl_handler = nil;
+		session:reset_stream();
+	end
+end
+
+local function password_callback(jid, mechanism)
+	local node, host = jid_split(jid);
+	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
+	local func = function(x) return x; end;
+	if password then
+		if mechanism == "PLAIN" then
+			return func, password;
+		elseif mechanism == "DIGEST-MD5" then
+			return func, require "hashes".md5(node.."::"..password);
+		end
+	end
+	return func, nil;
+end
+
+function do_sasl(session, stanza)
+	local text = stanza[1];
+	if text then
+		text = base64.decode(text);
+		if not text then
+			session.sasl_handler = nil;
+			session.send(build_reply("failure", "incorrect-encoding"));
+			return;
+		end
+	end
+	local status, ret = session.sasl_handler:feed(text);
+	handle_status(session, status);
+	local s = build_reply(status, ret); 
+	log("debug", "sasl reply: "..tostring(s));
+	session.send(s);
+end
+
 add_handler("c2s_unauthed", "auth", xmlns_sasl,
 		function (session, stanza)
 			if not session.sasl_handler then
-				session.sasl_handler = new_sasl(stanza.attr.mechanism, 
-					function (username, password)
-						-- onAuth
-						require "core.usermanager"
-						if usermanager_validate_credentials(session.host, username, password) then
-							return true;
-						end
-						return false;
-					end,
-					function (username)
-						-- onSuccess
-						local success, err = sessionmanager.make_authenticated(session, username);
-						if not success then
-							sessionmanager.destroy_session(session);
-							return;
-						end
-						session.sasl_handler = nil;
-						session:reset_stream();
-					end,
-					function (reason)
-						-- onFail
-						log("debug", "SASL failure, reason: %s", reason);
-					end,
-					function (stanza)
-						-- onWrite
-						log("debug", "SASL writes: %s", tostring(stanza));
-						send(session, stanza);
-					end
-				);
-				session.sasl_handler:feed(stanza);	
+				session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+				do_sasl(session, stanza);
 			else
 				error("Client tried to negotiate SASL again", 0);
 			end
-			
 		end);
-		
+
+add_handler("c2s_unauthed", "abort", xmlns_sasl,
+	function(session, stanza)
+		if not session.sasl_handler then error("Attempt to abort when sasl has not started"); end
+		do_sasl(session, stanza);
+	end);
+
+add_handler("c2s_unauthed", "response", xmlns_sasl,
+	function(session, stanza)
+		if not session.sasl_handler then error("Attempt to respond when sasl has not started"); end
+		do_sasl(session, stanza);
+	end);
+
 add_event_hook("stream-features", 
 					function (session, features)												
 						if not session.username then
 							t_insert(features, "<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
+							-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 								t_insert(features, "<mechanism>PLAIN</mechanism>");
+								t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
 							t_insert(features, "</mechanisms>");
 						else
 							t_insert(features, "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
