@@ -7,6 +7,7 @@ local jid
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
+local jid_split = require "util.jid".split
 
 local log = require "util.logger".init("mod_saslauth");
 
@@ -65,7 +66,9 @@ function do_sasl(session, stanza)
 	end
 	local status, ret = session.sasl_handler:feed(text);
 	handle_status(session, status);
-	session.send(build_reply(status, ret));
+	local s = build_reply(status, ret); 
+	log("debug", "sasl reply: "..tostring(s));
+	session.send(s);
 end
 
 add_handler("c2s_unauthed", "auth", xmlns_sasl,
