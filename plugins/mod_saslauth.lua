@@ -1,6 +1,5 @@
 
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local jid
 local base64 = require "base64"
@@ -125,5 +124,5 @@ add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 
 		function (session, stanza)
 			log("debug", "Client tried to bind to a resource");
-			send(session, st.reply(stanza));
+			session.send(st.reply(stanza));
 		end);
