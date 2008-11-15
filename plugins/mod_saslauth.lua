@@ -17,12 +17,13 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
-local function build_reply(status, ret)
+local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
 		reply:text(ret or "");
 	elseif status == "failure" then
 		reply:tag(ret):up();
+		if err_msg then reply:tag("text"); end
 	elseif status == "success" then
 		reply:text(ret or "");
 	else
@@ -42,15 +43,14 @@ local function handle_status(session, status)
 	end
 end
 
-local function password_callback(jid, mechanism)
-	local node, host = jid_split(jid);
+local function password_callback(node, host, mechanism)
 	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
 	local func = function(x) return x; end;
 	if password then
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
-			return func, require "hashes".md5(node.."::"..password);
+			return func, require "hashes".md5(node..":"..host..":"..password);
 		end
 	end
 	return func, nil;
@@ -66,9 +66,9 @@ function do_sasl(session, stanza)
 			return;
 		end
 	end
-	local status, ret = session.sasl_handler:feed(text);
+	local status, ret, err_msg = session.sasl_handler:feed(text);
 	handle_status(session, status);
-	local s = build_reply(status, ret); 
+	local s = build_reply(status, ret, err_msg); 
 	log("debug", "sasl reply: "..tostring(s));
 	session.send(s);
 end
