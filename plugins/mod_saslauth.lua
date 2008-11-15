@@ -35,6 +35,8 @@ local function handle_status(session, status)
 	if status == "failure" then
 		session.sasl_handler = nil;
 	elseif status == "success" then
+		if not session.sasl_handler.username then error("SASL succeeded but we didn't get a username!"); end -- TODO move this to sessionmanager
+		sessionmanager.make_authenticated(session, session.sasl_handler.username);
 		session.sasl_handler = nil;
 		session:reset_stream();
 	end
