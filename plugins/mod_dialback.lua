@@ -22,6 +22,7 @@ add_handler({"s2sin_unauthed", "s2sin"}, "verify", xmlns_dialback,
 			type = "invalid"
 			log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 		end
+		log("debug", "verifyied dialback key... it is %s", type);
 		origin.sends2s(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
 	end);
 
@@ -38,7 +39,7 @@ add_handler("s2sin_unauthed", "result", xmlns_dialback,
 		send_s2s(origin.to_host, origin.from_host,
 			format("<db:verify from='%s' to='%s' id='%s'>%s</db:verify>", origin.to_host, origin.from_host,
 				origin.streamid, origin.dialback_key));
-		hosts[origin.from_host].dialback_verifying = origin;
+		hosts[origin.to_host].s2sout[origin.from_host].dialback_verifying = origin;
 	end);
 
 add_handler({ "s2sout_unauthed", "s2sout" }, "verify", xmlns_dialback,

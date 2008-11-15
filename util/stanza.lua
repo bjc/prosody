@@ -10,8 +10,11 @@ local next          =          next;
 local print          =          print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
+local os = os;
 
-local debug = debug;
+local do_pretty_printing = not os.getenv("WINDIR");
+local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+
 local log = require "util.logger".init("stanza");
 
 module "stanza"
@@ -105,6 +108,14 @@ function stanza_mt.__tostring(t)
 	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
 
+function stanza_mt.top_tag(t)
+	local attr_string = "";
+	if t.attr then
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
+	end
+	return s_format("<%s%s>", t.name, attr_string);
+end
+
 function stanza_mt.__add(s1, s2)
 	return s1:add_direct_child(s2);
 end
@@ -182,6 +193,46 @@ end
 
 function presence(attr)
 	return stanza("presence", attr);
+end
+
+if do_pretty_printing then
+	local style_attrk = getstyle("yellow");
+	local style_attrv = getstyle("red");
+	local style_tagname = getstyle("red");
+	local style_punc = getstyle("magenta");
+	
+	local attr_format = " "..getstring(style_attrk, "%s")..getstring(style_punc, "=")..getstring(style_attrv, "'%s'");
+	local top_tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">");
+	--local tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">").."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
+	local tag_format = top_tag_format.."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
+	function stanza_mt.pretty_print(t)
+		local children_text = "";
+		for n, child in ipairs(t) do
+			if type(child) == "string" then	
+				children_text = children_text .. xml_escape(child);
+			else
+				children_text = children_text .. child:pretty_print();
+			end
+		end
+
+		local attr_string = "";
+		if t.attr then
+			for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(attr_format, k, tostring(v)); end end
+		end
+		return s_format(tag_format, t.name, attr_string, children_text, t.name);
+	end
+	
+	function stanza_mt.pretty_top_tag(t)
+		local attr_string = "";
+		if t.attr then
+			for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(attr_format, k, tostring(v)); end end
+		end
+		return s_format(top_tag_format, t.name, attr_string);
+	end
+else
+	-- Sorry, fresh out of colours for you guys ;)
+	stanza_mt.pretty_print = stanza_mt.__tostring;
+	stanza_mt.pretty_top_tag = stanza_mt.top_tag;
 end
 
 return _M;

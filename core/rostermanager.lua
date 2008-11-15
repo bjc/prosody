@@ -1,8 +1,6 @@
 
-local mainlog = log;
-local function log(type, message)
-	mainlog(type, "rostermanager", message);
-end
+
+local log = require "util.logger".init("rostermanager");
 
 local setmetatable = setmetatable;
 local format = string.format;
@@ -234,7 +232,7 @@ function unsubscribed(username, host, jid)
 		if item.subscription == "from" then
 			item.subscription = "none";
 			changed = true;
-		elseif item.subscription == both then
+		elseif item.subscription == "both" then
 			item.subscription = "to";
 			changed = true;
 		end

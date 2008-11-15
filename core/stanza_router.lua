@@ -13,6 +13,7 @@ local user_exists = require "core.usermanager".user_exists;
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
+local offlinemanager = require "core.offlinemanager";
 
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
@@ -31,7 +32,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received["..origin.type.."]: "..tostring(st.reply(st.reply(stanza))))
+	log("debug", "Received[%s]: %s", origin.type, stanza:pretty_top_tag())
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
@@ -149,6 +150,10 @@ function core_handle_stanza(origin, stanza)
 							core_route_stanza(origin, request);
 						end
 					end
+					for _, msg in ipairs(offlinemanager.load(node, host) or {}) do
+						origin.send(msg); -- FIXME do we need to modify to/from in any way?
+					end
+					offlinemanager.deleteAll(node, host);
 				end
 				origin.priority = 0;
 				if stanza.attr.type == "unavailable" then
@@ -168,11 +173,23 @@ function core_handle_stanza(origin, stanza)
 				end
 				stanza.attr.to = nil; -- reset it
 			else
-				-- TODO error, bad type
+				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
+				if stanza.attr.type ~= "error" then
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+				end
+			end
+		else
+			log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 			end
 		end -- TODO handle other stanzas
 	else
-		log("warn", "Unhandled origin: %s", origin.type); -- FIXME reply with error
+		log("warn", "Unhandled origin: %s", origin.type);
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			-- s2s stanzas can get here
+			(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+		end
 	end
 end
 
@@ -328,8 +345,14 @@ function core_route_stanza(origin, stanza)
 							t_insert(recipients, session);
 						end
 					end
+					local count = 0;
 					for _, session in pairs(recipients) do
 						session.send(stanza);
+						count = count + 1;
+					end
+					if count == 0 then
+						offlinemanager.store(node, host, stanza);
+						-- TODO deal with storage errors
 					end
 				else
 					-- TODO send IQ error
@@ -349,7 +372,12 @@ function core_route_stanza(origin, stanza)
 						-- TODO send unavailable presence or unsubscribed
 					end
 				elseif stanza.name == "message" then
-					-- TODO send message error, or store offline messages
+					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
+						offlinemanager.store(node, host, stanza);
+						-- FIXME don't store messages with only chat state notifications
+					end
+					-- TODO allow configuration of offline storage
+					-- TODO send error if not storing offline
 				elseif stanza.name == "iq" then
 					-- TODO send IQ error
 				end

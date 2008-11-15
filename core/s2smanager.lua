@@ -4,12 +4,15 @@ local sessions = sessions;
 local socket = require "socket";
 local format = string.format;
 local t_insert = table.insert;
+local get_traceback = debug.traceback;
 local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
     = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
 
 local connlisteners_get = require "net.connlisteners".get;
 local wraptlsclient = require "net.server".wraptlsclient;
 local modulemanager = require "core.modulemanager";
+local st = require "stanza";
+local stanza = st.stanza;
 
 local uuid_gen = require "util.uuid".generate;
 
@@ -21,28 +24,37 @@ local md5_hash = require "util.hashes".md5;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
-local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "longlance.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
+local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "hampton.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
 
 module "s2smanager"
 
-function connect_host(from_host, to_host)
-end
-
 function send_to_host(from_host, to_host, data)
-	local host = hosts[to_host];
+	local host = hosts[from_host].s2sout[to_host];
 	if host then
-		-- Write to connection
-		if host.type == "s2sout_unauthed" and not host.notopen and not host.dialback_key then
-			log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
-			initiate_dialback(host);
-			if not host.sendq then host.sendq = { data };
-			else t_insert(host.sendq, data); end
+		-- We have a connection to this host already
+		if host.type == "s2sout_unauthed" then
+			host.log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
+			if not host.notopen and not host.dialback_key then
+				host.log("debug", "dialback had not been initiated");
+				initiate_dialback(host);
+			end
+			
+			-- Queue stanza until we are able to send it
+			if host.sendq then t_insert(host.sendq, data);
+			else host.sendq = { data }; end
+		elseif host.type == "local" or host.type == "component" then
+			log("error", "Trying to send a stanza to ourselves??")
+			log("error", "Traceback: %s", get_traceback());
+			log("error", "Stanza: %s", tostring(data));
 		else
-			log("debug", "going to send stanza to "..to_host.." from "..from_host);
+			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
-			if hosts[to_host].from_host ~= from_host then log("error", "WARNING! This might, possibly, be a bug, but it might not..."); end
-			hosts[to_host].sends2s(data);
-			log("debug", "stanza sent over "..hosts[to_host].type);
+			if host.from_host ~= from_host then
+				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
+				log("error", "We are going to send from %s instead of %s", host.from_host, from_host);
+			end
+			host.sends2s(data);
+			host.log("debug", "stanza sent over "..host.type);
 		end
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
@@ -50,10 +62,6 @@ function send_to_host(from_host, to_host, data)
 		-- Store in buffer
 		host_session.sendq = { data };
 	end
-end
-
-function disconnect_host(host)
-	
 end
 
 local open_sessions = 0;
@@ -72,22 +80,26 @@ end
 
 function new_outgoing(from_host, to_host)
 		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
-		hosts[to_host] = host_session;
+		hosts[from_host].s2sout[to_host] = host_session;
 		local cl = connlisteners_get("xmppserver");
 		
 		local conn, handler = socket.tcp()
 		
+		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
+		to_host = srvmap[to_host] or to_host;
+		
+		conn:settimeout(0);
+		local success, err = conn:connect(to_host, 5269);
+		if not success then
+			log("warn", "s2s connect() failed: %s", err);
+		end
+		
+		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
+		host_session.conn = conn;
 		
 		-- Register this outgoing connection so that xmppserver_listener knows about it
 		-- otherwise it will assume it is a new incoming connection
 		cl.register_outgoing(conn, host_session);
-		
-		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
-		to_host = srvmap[to_host] or to_host;
-		conn:settimeout(0.1);
-		conn:connect(to_host, 5269);
-		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
-		host_session.conn = conn;
 		
 		do
 			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
@@ -103,7 +115,6 @@ function new_outgoing(from_host, to_host)
 end
 
 function streamopened(session, attr)
-	session.log("debug", "s2s stream opened");
 	local send = session.sends2s;
 	
 	session.version = tonumber(attr.version) or 0;
@@ -124,7 +135,7 @@ function streamopened(session, attr)
 		session.streamid = uuid_gen();
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
-		send(format("<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s'>", session.streamid, session.to_host));
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
@@ -147,7 +158,7 @@ function streamopened(session, attr)
 	end
 
 	send("</stream:features>");]]
-	log("info", "s2s stream opened successfully");
+
 	session.notopen = nil;
 end
 
@@ -194,7 +205,7 @@ function mark_connected(session)
 	
 	if session.direction == "outgoing" then
 		if sendq then
-			session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
+			session.log("debug", "sending "..#sendq.." queued stanzas across new outgoing connection to "..session.to_host);
 			for i, data in ipairs(sendq) do
 				send(data);
 				sendq[i] = nil;
@@ -207,7 +218,7 @@ end
 function destroy_session(session)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	if session.direction == "outgoing" then
-		hosts[session.to_host] = nil;
+		hosts[session.from_host].s2sout[session.to_host] = nil;
 	end
 	session.conn = nil;
 	session.disconnect = nil;

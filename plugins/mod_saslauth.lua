@@ -2,6 +2,7 @@
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
+local jid
 
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
@@ -15,48 +16,100 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
-add_handler("c2s_unauthed", "auth", xmlns_sasl, function (session, stanza)
-	if not session.sasl_handler then
-		session.sasl_handler = new_sasl(stanza.attr.mechanism, 
-			function (username, password)
-				-- onAuth
-				require "core.usermanager"
-				if usermanager_validate_credentials(session.host, username, password) then
-					return true;
-				end
-				return false;
-			end,
-			function (username)
-				-- onSuccess
-				local success, err = sessionmanager.make_authenticated(session, username);
-				if not success then
-					sessionmanager.destroy_session(session);
-					return;
-				end
-				session.sasl_handler = nil;
-				session:reset_stream();
-			end,
-			function (reason)
-				-- onFail
-				log("debug", "SASL failure, reason: %s", reason);
-			end,
-			function (stanza)
-				-- onWrite
-				log("debug", "SASL writes: %s", tostring(stanza));
-				send(session, stanza);
-			end
-		);
-		session.sasl_handler:feed(stanza);	
+local function build_reply(status, ret)
+	local reply = st.stanza(status, {xmlns = xmlns_sasl});
+	if status == "challenge" then
+		reply:text(ret or "");
+	elseif status == "failure" then
+		reply:tag(ret):up();
+	elseif status == "success" then
+		reply:text(ret or "");
 	else
-		error("Client tried to negotiate SASL again", 0);
-	end	
-end);
+		error("Unknown sasl status: "..status);
+	end
+	return reply;
+end
 
-add_handler("c2s_unauthed", "response", xmlns_sasl, function (session, stanza)
-	if session.sasl_handler then
-		session.sasl_handler:feed(stanza);	
-	end	
-end);
+local function handle_status(session, status)
+	if status == "failure" then
+		session.sasl_handler = nil;
+	elseif status == "success" then
+		session.sasl_handler = nil;
+		session:reset_stream();
+	end
+end
+
+local function password_callback(jid, mechanism)
+	local node, host = jid_split(jid);
+	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
+	local func = function(x) return x; end;
+	if password then
+		if mechanism == "PLAIN" then
+			return func, password;
+		elseif mechanism == "DIGEST-MD5" then
+			return func, require "hashes".md5(node.."::"..password);
+		end
+	end
+	return func, nil;
+end
+
+add_handler("c2s_unauthed", "auth", xmlns_sasl,
+		function (session, stanza)
+			if not session.sasl_handler then
+				session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+				local status, ret = session.sasl_handler:feed(stanza[1]);
+				handle_status(session, status);
+				session.send(build_reply(status, ret));
+				--[[session.sasl_handler = new_sasl(stanza.attr.mechanism, 
+					function (username, password)
+						-- onAuth
+						require "core.usermanager"
+						if usermanager_validate_credentials(session.host, username, password) then
+							return true;
+						end
+						return false;
+					end,
+					function (username)
+						-- onSuccess
+						local success, err = sessionmanager.make_authenticated(session, username);
+						if not success then
+							sessionmanager.destroy_session(session);
+							return;
+						end
+						session.sasl_handler = nil;
+						session:reset_stream();
+					end,
+					function (reason)
+						-- onFail
+						log("debug", "SASL failure, reason: %s", reason);
+					end,
+					function (stanza)
+						-- onWrite
+						log("debug", "SASL writes: %s", tostring(stanza));
+						send(session, stanza);
+					end
+				);
+				session.sasl_handler:feed(stanza);	]]
+			else
+				error("Client tried to negotiate SASL again", 0);
+			end
+		end);
+
+add_handler("c2s_unauthed", "abort", xmlns_sasl,
+	function(session, stanza)
+		if not session.sasl_handler then error("Attempt to abort when sasl has not started"); end
+		local status, ret = session.sasl_handler:feed(stanza[1]);
+		handle_status(session, status);
+		session.send(build_reply(status, ret));
+	end);
+
+add_handler("c2s_unauthed", "response", xmlns_sasl,
+	function(session, stanza)
+		if not session.sasl_handler then error("Attempt to respond when sasl has not started"); end
+		local status, ret = session.sasl_handler:feed(stanza[1]);
+		handle_status(session, status);
+		session.send(build_reply(status, ret));
+	end);
 		
 add_event_hook("stream-features", 
 					function (session, features)												
