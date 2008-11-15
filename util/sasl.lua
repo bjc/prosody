@@ -1,7 +1,7 @@
 
 local base64 = require "base64"
 local md5 = require "md5"
-local crypto = require "crypto"
+--local crypto = require "crypto"
 local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
