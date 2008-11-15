@@ -111,7 +111,7 @@ function streamopened(session, attr)
 						send("<stream:features>");
 						
 						for _, feature in ipairs(features) do
-							send(session, tostring(feature));
+							send(tostring(feature));
 						end
  
         			                send("</stream:features>");
