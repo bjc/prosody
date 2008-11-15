@@ -20,12 +20,12 @@ local new_sasl = require "util.sasl".new;
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
-		reply:text(ret or "");
+		reply:text(base64.encode(ret or ""));
 	elseif status == "failure" then
 		reply:tag(ret):up();
-		if err_msg then reply:tag("text"); end
+		if err_msg then reply:tag("text"):text(err_msg); end
 	elseif status == "success" then
-		reply:text(ret or "");
+		reply:text(base64.encode(ret or ""));
 	else
 		error("Unknown sasl status: "..status);
 	end
