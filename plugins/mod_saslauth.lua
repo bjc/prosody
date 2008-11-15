@@ -56,7 +56,13 @@ local function password_callback(node, host, mechanism)
 	return func, nil;
 end
 
-function do_sasl(session, stanza)
+function sasl_handler(session, stanza)
+	if stanza.name == "auth" then
+		-- FIXME ignoring duplicates because ejabberd does
+		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+	elseif not session.sasl_handler then
+		return; -- FIXME ignoring out of order stanzas because ejabberd does
+	end
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
@@ -73,27 +79,9 @@ function do_sasl(session, stanza)
 	session.send(s);
 end
 
-add_handler("c2s_unauthed", "auth", xmlns_sasl,
-		function (session, stanza)
-			if not session.sasl_handler then
-				session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
-				do_sasl(session, stanza);
-			else
-				error("Client tried to negotiate SASL again", 0);
-			end
-		end);
-
-add_handler("c2s_unauthed", "abort", xmlns_sasl,
-	function(session, stanza)
-		if not session.sasl_handler then error("Attempt to abort when sasl has not started"); end
-		do_sasl(session, stanza);
-	end);
-
-add_handler("c2s_unauthed", "response", xmlns_sasl,
-	function(session, stanza)
-		if not session.sasl_handler then error("Attempt to respond when sasl has not started"); end
-		do_sasl(session, stanza);
-	end);
+add_handler("c2s_unauthed", "auth", xmlns_sasl, sasl_handler);
+add_handler("c2s_unauthed", "abort", xmlns_sasl, sasl_handler);
+add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 
 add_event_hook("stream-features", 
 					function (session, features)												
