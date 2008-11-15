@@ -205,7 +205,7 @@ function mark_connected(session)
 	
 	if session.direction == "outgoing" then
 		if sendq then
-			session.log("debug", "sending queued stanzas across new outgoing connection to "..session.to_host);
+			session.log("debug", "sending "..#sendq.." queued stanzas across new outgoing connection to "..session.to_host);
 			for i, data in ipairs(sendq) do
 				send(data);
 				sendq[i] = nil;
