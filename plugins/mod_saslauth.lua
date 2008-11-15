@@ -116,6 +116,7 @@ add_event_hook("stream-features",
 						if not session.username then
 							t_insert(features, "<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
 								t_insert(features, "<mechanism>PLAIN</mechanism>");
+								t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
 							t_insert(features, "</mechanisms>");
 						else
 							t_insert(features, "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
