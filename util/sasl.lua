@@ -1,7 +1,5 @@
 
-local base64 = require "base64"
 local md5 = require "md5"
---local crypto = require "crypto"
 local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
@@ -27,7 +25,7 @@ local function new_plain(realm, password_handler)
 						local authentication = s_match(response, "%z([^&%z]+)%z")
 						local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
 						
-						local password_encoding, correct_password = self.password_handler(authentication.."@"..self.realm, "PLAIN")
+						local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
 						
 						local claimed_password = ""
 						if password_encoding == nil then claimed_password = password
@@ -36,7 +34,7 @@ local function new_plain(realm, password_handler)
 						self.username = authentication
 						if claimed_password == correct_password then
 							log("debug", "success")
-							return "success", nil
+							return "success"
 						else
 							log("debug", "failure")
 							return "failure", "not-authorized"
@@ -45,7 +43,7 @@ local function new_plain(realm, password_handler)
 	return object
 end
 
-local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
+local function new_digest_md5(realm, password_handler)
 	--TODO maybe support for authzid
 
 	local function serialize(message)
@@ -74,107 +72,97 @@ local function new_digest_md5(onAuth, onSuccess, onFail, onWrite)
 		return message
 	end
 
-	local object = { mechanism = "DIGEST-MD5", onAuth = onAuth, onSuccess = onSuccess, onFail = onFail,
-	 				onWrite = onWrite }
+	local object = { mechanism = "DIGEST-MD5", realm = realm, password_handler = password_handler}
 	
 	--TODO: something better than math.random would be nice, maybe OpenSSL's random number generator
 	object.nonce = generate_uuid()
-	log("debug", "SASL nonce: "..object.nonce)
-	object.step = 1
+	object.step = 0
 	object.nonce_count = {}
-	local challenge = base64.encode(serialize({	nonce = object.nonce, 
-												qop = "auth",
-												charset = "utf-8",
-												algorithm = "md5-sess"} ));
-	object.onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(challenge))
-	object.feed = 	function(self, stanza)
-						log("debug", "SASL step: "..self.step)
-						if stanza.name ~= "response" and stanza.name ~= "auth" then self.onFail("invalid-stanza-tag") end
-						if stanza.attr.xmlns ~= "urn:ietf:params:xml:ns:xmpp-sasl" then self.onFail("invalid-stanza-namespace") end
-						if stanza.name == "auth" then return end
-						self.step = self.step + 1
-						if (self.step == 2) then
-							local response = parse(base64.decode(stanza[1]))
-							-- check for replay attack
-							if response["nc"] then
-								if self.nonce_count[response["nc"]] then self.onFail("not-authorized") end
-							end
-							
-							-- check for username, it's REQUIRED by RFC 2831
-							if not response["username"] then
-								self.onFail("malformed-request")
-							end
-							self["username"] = response["username"] 
-							
-							-- check for nonce, ...
-							if not response["nonce"] then
-								self.onFail("malformed-request")
-							else
-								-- check if it's the right nonce
-								if response["nonce"] ~= tostring(self.nonce) then self.onFail("malformed-request") end
-							end
-							
-							if not response["cnonce"] then self.onFail("malformed-request") end
-							if not response["qop"] then response["qop"] = "auth" end
-							
-							if response["realm"] == nil then response["realm"] = "" end
-							
-							local domain = ""
-							local protocol = ""
-							if response["digest-uri"] then
-								protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$")
-							else
-								error("No digest-uri")
-							end
-														
-							-- compare response_value with own calculation
-							--local A1 = usermanager.get_md5(response["username"], hostname)..":"..response["nonce"]..response["cnonce"]
-							
-							--FIXME actual username and password here :P
-							local X = "tobias:"..response["realm"]..":tobias"
-							local Y = md5.sum(X)
-							local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
-							local A2 = "AUTHENTICATE:"..protocol.."/"..domain
-							
-							local HA1 = md5.sumhexa(A1)
-							local HA2 = md5.sumhexa(A2)
-							
-							local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-							local response_value = md5.sumhexa(KD)
-							
-							log("debug", "response_value: "..response_value);
-							log("debug", "response:       "..response["response"]);
-							if response_value == response["response"] then
-								-- calculate rspauth
-								A2 = ":"..protocol.."/"..domain
-								
-								HA1 = md5.sumhexa(A1)
-								HA2 = md5.sumhexa(A2)
-
-								KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-								local rspauth = md5.sumhexa(KD)
-								
-								self.onWrite(st.stanza("challenge", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}):text(base64.encode(serialize({rspauth = rspauth}))))
-							else
-								self.onWrite(st.stanza("response", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
-								self.onFail()
-							end							
-						elseif self.step == 3 then
-							if stanza.name == "response" then 
-								self.onWrite(st.stanza("success", {xmlns = "urn:ietf:params:xml:ns:xmpp-sasl"}))
-								self.onSuccess(self.username)
-							else 
-								self.onFail("Third step isn't a response stanza.")
-							end
-						end
-					end
+												
+	function object.feed(self, message)
+		log("debug", "SASL step: "..self.step)
+		self.step = self.step + 1
+		if (self.step == 1) then
+			local challenge = serialize({	nonce = object.nonce, 
+											qop = "auth",
+											charset = "utf-8",
+											algorithm = "md5-sess",
+											realm = self.realm});
+			log("debug", "challenge: "..challenge)
+			return "challenge", challenge
+		elseif (self.step == 2) then
+			local response = parse(message)
+			-- check for replay attack
+			if response["nc"] then
+				if self.nonce_count[response["nc"]] then return "failure", "not-authorized" end
+			end
+			
+			-- check for username, it's REQUIRED by RFC 2831
+			if not response["username"] then
+				return "failure", "malformed-request"
+			end
+			self["username"] = response["username"] 
+			
+			-- check for nonce, ...
+			if not response["nonce"] then
+				return "failure", "malformed-request"
+			else
+				-- check if it's the right nonce
+				if response["nonce"] ~= tostring(self.nonce) then return "failure", "malformed-request" end
+			end
+			
+			if not response["cnonce"] then return "failure", "malformed-request" end
+			if not response["qop"] then response["qop"] = "auth" end
+			
+			if response["realm"] == nil then response["realm"] = "" end
+			
+			local domain = ""
+			local protocol = ""
+			if response["digest-uri"] then
+				protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$")
+			else
+				return "failure", "malformed-request", "Missing entry for digest-uri in SASL message."
+			end
+			
+			--TODO maybe realm support
+			self.username = response["username"]
+			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
+			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
+			local A2 = "AUTHENTICATE:"..protocol.."/"..domain
+			
+			local HA1 = md5.sumhexa(A1)
+			local HA2 = md5.sumhexa(A2)
+			
+			local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
+			local response_value = md5.sumhexa(KD)
+			
+			log("debug", "response_value: "..response_value);
+			log("debug", "response:       "..response["response"]);
+			if response_value == response["response"] then
+				-- calculate rspauth
+				A2 = ":"..protocol.."/"..domain
+				
+				HA1 = md5.sumhexa(A1)
+				HA2 = md5.sumhexa(A2)
+        
+				KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
+				local rspauth = md5.sumhexa(KD)
+				
+				return "challenge", serialize({rspauth = rspauth})
+			else
+				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated."
+			end							
+		elseif self.step == 3 then
+			return "success"
+		end
+	end
 	return object
 end
 
-function new(mechanism, realm, password)
+function new(mechanism, realm, password_handler)
 	local object
-	if mechanism == "PLAIN" then object = new_plain(realm, password)
-	--elseif mechanism == "DIGEST-MD5" then object = new_digest_md5(ream, password)
+	if mechanism == "PLAIN" then object = new_plain(realm, password_handler)
+	elseif mechanism == "DIGEST-MD5" then object = new_digest_md5(realm, password_handler)
 	else
 		log("debug", "Unsupported SASL mechanism: "..tostring(mechanism));
 		return nil
