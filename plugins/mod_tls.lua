@@ -1,13 +1,10 @@
 
 local st = require "util.stanza";
 local send = require "core.sessionmanager".send_to_session;
-local sm_bind_resource = require "core.sessionmanager".bind_resource;
 
-local sessions = sessions;
+--local sessions = sessions;
 
-local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
-local t_concat, t_insert = table.concat, table.insert;
-local tostring = tostring;
+local t_insert = table.insert;
 
 local log = require "util.logger".init("mod_starttls");
 

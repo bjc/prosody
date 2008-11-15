@@ -23,22 +23,10 @@ add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
 					if success then
-						success, err = sessionmanager.bind_resource(session, resource);
-						--FIXME: Reply with error
+						local err_type, err_msg;
+						success, err_type, err, err_msg = sessionmanager.bind_resource(session, resource);
 						if not success then
-							local reply = st.reply(stanza);
-							reply.attr.type = "error";
-							if err == "conflict" then
-								reply:tag("error", { code = "409", type = "cancel" })
-									:tag("conflict", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-							elseif err == "constraint" then
-								reply:tag("error", { code = "409", type = "cancel" })
-									:tag("already-bound", { xmlns = "x-lxmppd:extensions:legacyauth" });
-							elseif err == "auth" then
-								reply:tag("error", { code = "401", type = "auth" })
-									:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-							end
-							send(session, reply);
+							session.send(st.error_reply(stanza, err_type, err, err_msg));
 							return true;
 						end
 					end
