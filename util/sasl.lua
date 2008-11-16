@@ -32,10 +32,8 @@ local function new_plain(realm, password_handler)
 		
 		self.username = authentication
 		if claimed_password == correct_password then
-			log("debug", "success")
 			return "success"
 		else
-			log("debug", "failure")
 			return "failure", "not-authorized"
 		end
 	end
@@ -63,10 +61,8 @@ local function new_digest_md5(realm, password_handler)
 	
 	local function parse(data)
 		message = {}
-		log("debug", "parse-message: "..data)
 		for k, v in gmatch(data, [[([%w%-]+)="?([%w%-%/%.%+=]+)"?,?]]) do
 			message[k] = v
-		log("debug", "               "..k.." = "..v)
 		end
 		return message
 	end
@@ -79,7 +75,6 @@ local function new_digest_md5(realm, password_handler)
 	object.nonce_count = {}
 												
 	function object.feed(self, message)
-		log("debug", "SASL step: "..self.step)
 		self.step = self.step + 1
 		if (self.step == 1) then
 			local challenge = serialize({	nonce = object.nonce, 
@@ -87,7 +82,6 @@ local function new_digest_md5(realm, password_handler)
 											charset = "utf-8",
 											algorithm = "md5-sess",
 											realm = self.realm});
-			log("debug", "challenge: "..challenge)
 			return "challenge", challenge
 		elseif (self.step == 2) then
 			local response = parse(message)
@@ -135,8 +129,6 @@ local function new_digest_md5(realm, password_handler)
 			local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
 			local response_value = md5.sumhexa(KD)
 			
-			log("debug", "response_value: "..response_value);
-			log("debug", "response:       "..response["response"]);
 			if response_value == response["response"] then
 				-- calculate rspauth
 				A2 = ":"..protocol.."/"..domain
