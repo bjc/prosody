@@ -523,6 +523,8 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			return receive( socket, pattern, prefix )
 		end
 		
+		handler.starttls = nil;
+		
 			handler.handshake = coroutine_wrap( function( client )
 					local err
 					for i = 1, 10 do    -- 10 handshake attemps

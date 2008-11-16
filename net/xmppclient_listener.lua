@@ -82,7 +82,7 @@ function xmppclient.disconnect(conn, err)
 			pres:tag("status"):text("Disconnected: "..err);
 			session.stanza_dispatch(pres);
 		end
-		session.log("info", "Client disconnected: %s", err);
+		(session.log or log)("info", "Client disconnected: %s", err);
 		sm_destroy_session(session);
 		sessions[conn]  = nil;
 		session = nil;
