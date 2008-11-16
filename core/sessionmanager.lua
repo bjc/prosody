@@ -55,11 +55,6 @@ function destroy_session(session)
 	end
 end
 
-function send_to_session(session, data)
-	log("debug", "Sending: %s", tostring(data));
-	session.conn.write(tostring(data));
-end
-
 function make_authenticated(session, username)
 	session.username = username;
 	if session.type == "c2s_unauthed" then
