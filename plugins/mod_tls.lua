@@ -1,6 +1,5 @@
 
 local st = require "util.stanza";
-local send = require "core.sessionmanager".send_to_session;
 
 --local sessions = sessions;
 
@@ -13,7 +12,7 @@ local xmlns_starttls ='urn:ietf:params:xml:ns:xmpp-tls';
 add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls then
-				send(session, st.stanza("proceed", { xmlns = xmlns_starttls }));
+				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				-- FIXME: I'm commenting the below, not sure why it was necessary
 				-- sessions[session.conn] = nil;
 				session:reset_stream();
