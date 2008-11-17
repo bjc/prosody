@@ -61,16 +61,16 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		-- 3. send_presence_of_available_resources
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
-			core_route_stanza(origin, stanza);
-			send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza);
 		end
+		core_route_stanza(origin, stanza);
+		send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza);
 	elseif stanza.attr.type == "unsubscribed" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none or to)
 		if rostermanager.unsubscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
-			core_route_stanza(origin, stanza);
 		end
+		core_route_stanza(origin, stanza);
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
 end
@@ -91,6 +91,10 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	elseif stanza.attr.type == "subscribe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
+			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
+			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
+				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
+			end
 		else
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
 				if rostermanager.set_contact_pending_in(node, host, from_bare) then
@@ -107,7 +111,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	elseif stanza.attr.type == "unsubscribed" then
-		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+		if rostermanager.process_inbound_subscription_cancellation(node, host, from_bare) then
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	end -- discard any other type
