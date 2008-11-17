@@ -29,6 +29,7 @@ local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "hampton.con
 module "s2smanager"
 
 function send_to_host(from_host, to_host, data)
+	if data.name then data = tostring(data); end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
