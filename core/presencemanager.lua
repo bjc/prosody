@@ -13,7 +13,7 @@ local sessionmanager = require "core.sessionmanager";
 
 module "presencemanager"
 
-function send_presence_of_available_resources(user, host, jid, recipient_session)
+function send_presence_of_available_resources(user, host, jid, recipient_session, core_route_stanza)
 	local h = hosts[host];
 	local count = 0;
 	if h and h.type == "local" then
@@ -24,7 +24,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 				if pres then
 					pres.attr.to = jid;
 					pres.attr.from = session.full_jid;
-					recipient_session.send(pres);
+					core_route_stanza(recipient_session, pres);
 					pres.attr.to = nil;
 					pres.attr.from = nil;
 					count = count + 1;
@@ -61,7 +61,7 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 			core_route_stanza(origin, stanza);
-			send_presence_of_available_resources(node, host, to_bare, origin);
+			send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza);
 		end
 	elseif stanza.attr.type == "unsubscribed" then
 		-- 1. route stanza
@@ -81,7 +81,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	log("debug", "inbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
 	if stanza.attr.type == "probe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
+			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
