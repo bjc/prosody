@@ -32,7 +32,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 			end
 		end
 	end
-	log("info", "broadcasted presence of "..count.." resources from "..user.."@"..host.." to "..to_bare);
+	log("info", "broadcasted presence of "..count.." resources from "..user.."@"..host.." to "..jid);
 	return count;
 end
 
