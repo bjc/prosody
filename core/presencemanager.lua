@@ -24,7 +24,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 				if pres then
 					pres.attr.to = jid;
 					pres.attr.from = session.full_jid;
-					core_route_stanza(recipient_session, pres);
+					core_route_stanza(session, pres);
 					pres.attr.to = nil;
 					pres.attr.from = nil;
 					count = count + 1;
