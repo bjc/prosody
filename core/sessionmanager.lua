@@ -37,7 +37,7 @@ function destroy_session(session)
 	(session.log or log)("info", "Destroying session");
 	
 	-- Send unavailable presence
-	if session.presence and session.presence.attr.type ~= "unavailable" then
+	if session.presence then
 		local pres = st.presence{ type = "unavailable" };
 		if err == "closed" then err = "connection closed"; end
 		pres:tag("status"):text("Disconnected: "..err);
