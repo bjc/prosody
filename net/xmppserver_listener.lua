@@ -35,6 +35,39 @@ local function session_reset_stream(session)
 		return true;
 end
 
+
+local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
+local function session_disconnect(session, reason)
+	local log = session.log or log;
+	if session.conn then
+		if reason then
+			if type(reason) == "string" then -- assume stream error
+				log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
+				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
+			elseif type(reason) == "table" then
+				if reason.condition then
+					local stanza = st.stanza("stream:error"):tag(reason.condition, stream_xmlns_attr):up();
+					if reason.text then
+						stanza:tag("text", stream_xmlns_attr):text(reason.text):up();
+					end
+					if reason.extra then
+						stanza:add_child(reason.extra);
+					end
+					log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(stanza));
+					session.send(stanza);
+				elseif reason.name then -- a stanza
+					log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(reason));
+					session.send(reason);
+				end
+			end
+		end
+		session.send("</stream:stream>");
+		session.conn.close();
+		xmppserver.disconnect(session.conn, "stream error");
+	end
+end
+
+
 -- End of session methods --
 
 function xmppserver.listener(conn, data)
@@ -56,6 +89,7 @@ function xmppserver.listener(conn, data)
 		print("Incoming s2s connection");
 		
 		session.reset_stream = session_reset_stream;
+		session.disconnect = session_disconnect;
 		
 		session_reset_stream(session); -- Initialise, ready for use
 		
