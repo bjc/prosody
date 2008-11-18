@@ -96,13 +96,23 @@ function streamopened(session, attr)
 						session.host = attr.to or error("Client failed to specify destination hostname");
 			                        session.version = tonumber(attr.version) or 0;
 			                        session.streamid = m_random(1000000, 99999999);
-			                        print(session, session.host, "Client opened stream");
-			                        send("<?xml version='1.0'?>");
+			                        (session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
+			                        
+						
+						send("<?xml version='1.0'?>");
 			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+						
+						if not hosts[session.host] then
+							-- We don't serve this host...
+							session:disconnect{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
+							return;
+						end
+						
 						
 						local features = {};
 						modulemanager.fire_event("stream-features", session, features);
 						
+						-- FIXME: Need to send() this all at once
 						send("<stream:features>");
 						
 						for _, feature in ipairs(features) do
