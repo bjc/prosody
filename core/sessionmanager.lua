@@ -35,6 +35,16 @@ end
 
 function destroy_session(session)
 	(session.log or log)("info", "Destroying session");
+	
+	-- Send unavailable presence
+	if session.presence and session.presence.attr.type ~= "unavailable" then
+		local pres = st.presence{ type = "unavailable" };
+		if err == "closed" then err = "connection closed"; end
+		pres:tag("status"):text("Disconnected: "..err);
+		session.stanza_dispatch(pres);
+	end
+	
+	-- Remove session/resource from user's session list
 	if session.host and session.username then
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
@@ -46,8 +56,7 @@ function destroy_session(session)
 			end
 		end
 	end
-	session.conn = nil;
-	session.disconnect = nil;
+	
 	for k in pairs(session) do
 		if k ~= "trace" then
 			session[k] = nil;

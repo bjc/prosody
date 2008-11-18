@@ -52,7 +52,7 @@ function send_to_host(from_host, to_host, data)
 			-- FIXME
 			if host.from_host ~= from_host then
 				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
-				log("error", "We are going to send from %s instead of %s", host.from_host, from_host);
+				log("error", "We are going to send from %s instead of %s", tostring(host.from_host), tostring(from_host));
 			end
 			host.sends2s(data);
 			host.log("debug", "stanza sent over "..host.type);
@@ -137,6 +137,11 @@ function streamopened(session, attr)
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
+		if session.to_host and not hosts[session.to_host] then
+			-- Attempting to connect to a host we don't serve
+			session:disconnect("host-unknown");
+			return;
+		end
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
@@ -218,9 +223,13 @@ end
 
 function destroy_session(session)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
+	
+	-- FIXME: Flush sendq here/report errors to originators
+	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
 	end
+	
 	session.conn = nil;
 	session.disconnect = nil;
 	for k in pairs(session) do
