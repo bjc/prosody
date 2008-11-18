@@ -96,7 +96,7 @@ function init_xmlhandlers(session, stream_callbacks)
 		end
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
-			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
+			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
 				if name == "stream" and cb_streamclosed then
 					log("debug", "Stream closed");
 					cb_streamclosed(session);
