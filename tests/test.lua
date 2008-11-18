@@ -83,3 +83,4 @@ end
 
 dotest "util.jid"
 dotest "core.stanza_router"
+dotest "core.s2smanager"
