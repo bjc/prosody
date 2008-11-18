@@ -98,9 +98,6 @@ function xmppclient.listener(conn, data)
 		-- Debug version --
 		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
 		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
-
---		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
-
 	end
 	if data then
 		session.data(conn, data);
