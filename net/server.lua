@@ -225,6 +225,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol then handler._dispatchdata(); end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -364,7 +365,8 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	local err
 
 	socket:settimeout( 0 )
-
+	out_put("setting linger on "..tostring(socket))
+	socket:setoption("linger", { on = true, timeout = 10 });
 	--// private closures of the object //--
 
 	local writequeue = { }    -- buffer for messages to send
@@ -404,6 +406,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol then handler._dispatchdata(); end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -614,6 +617,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 		return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol then handler._dispatchdata(); end
 		_ = not closed and shutdown( socket )
 		_ = not closed and close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
