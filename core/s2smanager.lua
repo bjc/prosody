@@ -3,7 +3,7 @@ local hosts = hosts;
 local sessions = sessions;
 local socket = require "socket";
 local format = string.format;
-local t_insert = table.insert;
+local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
 local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
     = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
@@ -24,9 +24,11 @@ local md5_hash = require "util.hashes".md5;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
-local srvmap = { ["gmail.com"] = "talk.google.com", ["identi.ca"] = "hampton.controlezvous.ca", ["cdr.se"] = "jabber.cdr.se" };
+local dns = require "net.dns";
 
 module "s2smanager"
+
+local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
 
 function send_to_host(from_host, to_host, data)
 	if data.name then data = tostring(data); end
@@ -34,7 +36,7 @@ function send_to_host(from_host, to_host, data)
 	if host then
 		-- We have a connection to this host already
 		if host.type == "s2sout_unauthed" then
-			host.log("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
+			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
 			if not host.notopen and not host.dialback_key then
 				host.log("debug", "dialback had not been initiated");
 				initiate_dialback(host);
@@ -87,11 +89,31 @@ function new_outgoing(from_host, to_host)
 		local conn, handler = socket.tcp()
 		
 		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
-		to_host = srvmap[to_host] or to_host;
+		
+		local connect_host, connect_port = to_host, 5269;
+		
+		local answer = dns.lookup("_xmpp-server._tcp."..to_host..".", "SRV");
+		
+		if answer then
+			log("debug", to_host.." has SRV records, handling...");
+			local srv_hosts = {};
+			host_session.srv_hosts = srv_hosts;
+			for _, record in ipairs(answer) do
+				t_insert(srv_hosts, record.srv);
+			end
+			t_sort(srv_hosts, compare_srv_priorities);
+			
+			local srv_choice = srv_hosts[1];
+			if srv_choice then
+				log("debug", "Best record found");
+				connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
+				log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
+			end
+		end
 		
 		conn:settimeout(0);
-		local success, err = conn:connect(to_host, 5269);
-		if not success then
+		local success, err = conn:connect(connect_host, connect_port);
+		if not success and err ~= "timeout" then
 			log("warn", "s2s connect() failed: %s", err);
 		end
 		
