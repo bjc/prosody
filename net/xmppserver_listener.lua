@@ -5,7 +5,10 @@ local init_xmlhandlers = require "core.xmlhandlers"
 local sm_new_session = require "core.sessionmanager".new_session;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
+local s2s_streamclosed = require "core.s2smanager".streamopened;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
+
+local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed };
 
 local connlisteners_register = require "net.connlisteners".register;
 
@@ -24,7 +27,7 @@ local xmppserver = { default_port = 5269 };
 
 local function session_reset_stream(session)
 	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, s2s_streamopened), "|");
+		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "|");
 		session.parser = parser;
 		
 		session.notopen = true;
@@ -43,7 +46,7 @@ local function session_disconnect(session, reason)
 		if reason then
 			if type(reason) == "string" then -- assume stream error
 				log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
-				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
+				session.sends2s(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
 			elseif type(reason) == "table" then
 				if reason.condition then
 					local stanza = st.stanza("stream:error"):tag(reason.condition, stream_xmlns_attr):up();
@@ -54,14 +57,14 @@ local function session_disconnect(session, reason)
 						stanza:add_child(reason.extra);
 					end
 					log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(stanza));
-					session.send(stanza);
+					session.sends2s(stanza);
 				elseif reason.name then -- a stanza
-					log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(reason));
-					session.send(reason);
+					log("info", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, tostring(reason));
+					session.sends2s(reason);
 				end
 			end
 		end
-		session.send("</stream:stream>");
+		session.sends2s("</stream:stream>");
 		session.conn.close();
 		xmppserver.disconnect(session.conn, "stream error");
 	end
@@ -100,9 +103,6 @@ function xmppserver.listener(conn, data)
 		-- Debug version --
 		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
 		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
-
---		session.stanza_dispatch = function (stanza) return core_process_stanza(session, stanza); end
-
 	end
 	if data then
 		session.data(conn, data);

@@ -13,7 +13,10 @@ local m_random = math.random;
 local format = string.format;
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session; --import("core.sessionmanager", "new_session", "destroy_session");
 local sm_streamopened = sessionmanager.streamopened;
+local sm_streamclosed = sessionmanager.streamclosed;
 local st = stanza;
+
+local stream_callbacks = { streamopened = sm_streamopened, streamclosed = sm_streamclosed };
 
 local sessions = {};
 local xmppclient = { default_port = 5222 };
@@ -22,7 +25,7 @@ local xmppclient = { default_port = 5222 };
 
 local function session_reset_stream(session)
 	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, sm_streamopened), "|");
+		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "|");
 		session.parser = parser;
 		
 		session.notopen = true;
@@ -107,12 +110,6 @@ end
 function xmppclient.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if session.presence and session.presence.attr.type ~= "unavailable" then
-			local pres = st.presence{ type = "unavailable" };
-			if err == "closed" then err = "connection closed"; end
-			pres:tag("status"):text("Disconnected: "..err);
-			session.stanza_dispatch(pres);
-		end
 		(session.log or log)("info", "Client disconnected: %s", err);
 		sm_destroy_session(session);
 		sessions[conn]  = nil;
