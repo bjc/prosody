@@ -139,7 +139,7 @@ function streamopened(session, attr)
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
-			session:disconnect("host-unknown");
+			session:close("host-unknown");
 			return;
 		end
 	elseif session.direction == "outgoing" then
@@ -230,8 +230,6 @@ function destroy_session(session)
 		hosts[session.from_host].s2sout[session.to_host] = nil;
 	end
 	
-	session.conn = nil;
-	session.disconnect = nil;
 	for k in pairs(session) do
 		if k ~= "trace" then
 			session[k] = nil;

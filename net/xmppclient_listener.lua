@@ -38,7 +38,7 @@ end
 
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local function session_disconnect(session, reason)
+local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
 		if reason then
@@ -90,7 +90,7 @@ function xmppclient.listener(conn, data)
 		print("Client connected");
 		
 		session.reset_stream = session_reset_stream;
-		session.disconnect = session_disconnect;
+		session.close = session_close;
 		
 		session_reset_stream(session); -- Initialise, ready for use
 		

@@ -113,7 +113,7 @@ function streamopened(session, attr)
 						
 						if not hosts[session.host] then
 							-- We don't serve this host...
-							session:disconnect{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
+							session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
 							return;
 						end
 						
