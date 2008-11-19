@@ -35,7 +35,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received[%s]: %s", origin.type, stanza:pretty_top_tag())
+	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:pretty_print()) --top_tag())
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
@@ -177,19 +177,19 @@ function core_handle_stanza(origin, stanza)
 				stanza.attr.to = nil; -- reset it
 			else
 				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-				if stanza.attr.type ~= "error" then
+				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 				end
 			end
 		else
 			log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 			end
 		end -- TODO handle other stanzas
 	else
 		log("warn", "Unhandled origin: %s", origin.type);
-		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			-- s2s stanzas can get here
 			(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 		end
