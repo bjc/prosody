@@ -160,12 +160,28 @@ function streamopened(session, attr)
 		session.streamid = uuid_gen();
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
+		send(stanza("stream:stream", { version = '1.0', xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close("host-unknown");
 			return;
 		end
+		if session.version >= 1.0 then
+			send(st.stanza("stream:features")
+					:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up());
+		end
+		--[[
+		local features = {};
+		modulemanager.fire_event("stream-features-s2s", session, features);
+	
+		send("<stream:features>");
+	
+		for _, feature in ipairs(features) do
+			send(tostring(feature));
+		end
+
+		send("</stream:features>");
+		]]
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
@@ -177,17 +193,6 @@ function streamopened(session, attr)
 			mark_connected(session);
 		end
 	end
-	--[[
-	local features = {};
-	modulemanager.fire_event("stream-features-s2s", session, features);
-	
-	send("<stream:features>");
-	
-	for _, feature in ipairs(features) do
-		send(tostring(feature));
-	end
-
-	send("</stream:features>");]]
 
 	session.notopen = nil;
 end
