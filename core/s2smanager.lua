@@ -160,7 +160,7 @@ function streamopened(session, attr)
 		session.streamid = uuid_gen();
 		print(session, session.from_host, "incoming s2s stream opened");
 		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { version = '1.0', xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close("host-unknown");
