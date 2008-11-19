@@ -14,6 +14,8 @@ local error = error;
 local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 
+local st = require "util.stanza";
+
 local newproxy = newproxy;
 local getmetatable = getmetatable;
 
@@ -33,13 +35,13 @@ function new_session(conn)
 	return session;
 end
 
-function destroy_session(session)
+function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session");
 	
 	-- Send unavailable presence
 	if session.presence then
 		local pres = st.presence{ type = "unavailable" };
-		if err == "closed" then err = "connection closed"; end
+		if (not err) or err == "closed" then err = "connection closed"; end
 		pres:tag("status"):text("Disconnected: "..err);
 		session.stanza_dispatch(pres);
 	end
