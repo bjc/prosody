@@ -56,7 +56,7 @@ add_handler({ "s2sout_unauthed", "s2sout" }, "verify", xmlns_dialback,
 				valid = "invalid";
 			end
 			if not origin.dialback_verifying.sends2s then
-				log("warn", "Incoming s2s session was closed in the meantime, so we can't notify it of the db result");
+				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result", tostring(origin.dialback_verifying):match("%w+$"));
 			else
 				origin.dialback_verifying.sends2s(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>",
 					attr.from, attr.to, attr.id, valid, origin.dialback_verifying.dialback_key));
