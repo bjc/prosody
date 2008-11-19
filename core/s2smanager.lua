@@ -105,7 +105,6 @@ function new_outgoing(from_host, to_host)
 			
 			local srv_choice = srv_hosts[1];
 			if srv_choice then
-				log("debug", "Best record found");
 				connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
 				log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
 			end
@@ -145,7 +144,6 @@ function streamopened(session, attr)
 	session.version = tonumber(attr.version) or 0;
 	if session.version >= 1.0 and not (attr.to and attr.from) then
 		print("to: "..tostring(attr.to).." from: "..tostring(attr.from));
-		--error(session.to_host.." failed to specify 'to' or 'from' hostname as per RFC");
 		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
 	end
 	
@@ -170,18 +168,6 @@ function streamopened(session, attr)
 			send(st.stanza("stream:features")
 					:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up());
 		end
-		--[[
-		local features = {};
-		modulemanager.fire_event("stream-features-s2s", session, features);
-	
-		send("<stream:features>");
-	
-		for _, feature in ipairs(features) do
-			send(tostring(feature));
-		end
-
-		send("</stream:features>");
-		]]
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
