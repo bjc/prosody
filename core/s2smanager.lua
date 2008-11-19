@@ -87,9 +87,7 @@ function new_outgoing(from_host, to_host)
 		local cl = connlisteners_get("xmppserver");
 		
 		local conn, handler = socket.tcp()
-		
-		--FIXME: Below parameters (ports/ip) are incorrect (use SRV)
-		
+
 		local connect_host, connect_port = to_host, 5269;
 		
 		local answer = dns.lookup("_xmpp-server._tcp."..to_host..".", "SRV");
