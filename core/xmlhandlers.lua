@@ -69,8 +69,10 @@ function init_xmlhandlers(session, stream_callbacks)
 			if not stanza then --if we are not currently inside a stanza
 				if session.notopen then
 					print("client opening with "..tostring(name));
-					if name == "stream" and cb_streamopened then
-						cb_streamopened(session, attr);
+					if name == "stream" then
+						if cb_streamopened then
+							cb_streamopened(session, attr);
+						end
 						return;
 					end
 					error("Client failed to open stream successfully");
@@ -97,14 +99,16 @@ function init_xmlhandlers(session, stream_callbacks)
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
 			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
-				if name == "stream" and cb_streamclosed then
+				if name == "stream" then
 					log("debug", "Stream closed");
-					cb_streamclosed(session);
+					if cb_streamclosed then
+						cb_streamclosed(session);
+					end
 					return;
 				elseif name == "error" then
 					error("Stream error: "..tostring(name)..": "..tostring(stanza));
 				else
-					error("XML parse error in client stream");
+					error("XML parse error in client stream with element: "..name);
 				end
 			end
 			if stanza and #chardata > 0 then
