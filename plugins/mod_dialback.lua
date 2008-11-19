@@ -55,8 +55,12 @@ add_handler({ "s2sout_unauthed", "s2sout" }, "verify", xmlns_dialback,
 				log("warn", "dialback for "..(origin.dialback_verifying.from_host or "(unknown)").." failed");
 				valid = "invalid";
 			end
-			origin.dialback_verifying.sends2s(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>",
-				attr.from, attr.to, attr.id, valid, origin.dialback_verifying.dialback_key));
+			if not origin.dialback_verifying.sends2s then
+				log("warn", "Incoming s2s session was closed in the meantime, so we can't notify it of the db result");
+			else
+				origin.dialback_verifying.sends2s(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>",
+					attr.from, attr.to, attr.id, valid, origin.dialback_verifying.dialback_key));
+			end
 		end
 	end);
 
