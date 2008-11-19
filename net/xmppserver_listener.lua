@@ -5,7 +5,7 @@ local init_xmlhandlers = require "core.xmlhandlers"
 local sm_new_session = require "core.sessionmanager".new_session;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
-local s2s_streamclosed = require "core.s2smanager".streamopened;
+local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed };
@@ -112,6 +112,7 @@ end
 function xmppserver.disconnect(conn)
 	local session = sessions[conn];
 	if session then
+		(session.log or log)("info", "s2s disconnected: %s->%s", tostring(session.from_host), tostring(session.to_host));
 		s2s_destroy_session(session);
 		sessions[conn]  = nil;
 		session = nil;
