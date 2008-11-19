@@ -35,7 +35,7 @@ function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" then
+		if host.type == "s2sout_unauthed" and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
 			if not host.notopen and not host.dialback_key then
 				host.log("debug", "dialback had not been initiated");
