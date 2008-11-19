@@ -117,7 +117,7 @@ function new_outgoing(from_host, to_host)
 			log("warn", "s2s connect() failed: %s", err);
 		end
 		
-		conn = wraptlsclient(cl, conn, to_host, 5269, 0, 1, hosts[from_host].ssl_ctx );
+		conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, 1, hosts[from_host].ssl_ctx );
 		host_session.conn = conn;
 		
 		-- Register this outgoing connection so that xmppserver_listener knows about it
