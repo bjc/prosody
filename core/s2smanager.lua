@@ -76,8 +76,8 @@ function new_incoming(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("s2s session got collected, now "..open_sessions.." s2s sessions are allocated") end;
 	end
 	open_sessions = open_sessions + 1;
-	local w = conn.write;
-	session.sends2s = function (t) w(tostring(t)); end
+	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
+	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	return session;
 end
 
@@ -124,13 +124,15 @@ function new_outgoing(from_host, to_host)
 		-- otherwise it will assume it is a new incoming connection
 		cl.register_outgoing(conn, host_session);
 		
+		local log;
 		do
 			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
-			host_session.log = logger_init(conn_name);
+			log = logger_init(conn_name);
+			host_session.log = log;
 		end
 		
 		local w = conn.write;
-		host_session.sends2s = function (t) w(tostring(t)); end
+		host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 		
 		conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 		 
