@@ -141,20 +141,20 @@ function streamopened(session, attr)
 	
 	session.version = tonumber(attr.version) or 0;
 	if session.version >= 1.0 and not (attr.to and attr.from) then
-		print("to: "..tostring(attr.to).." from: "..tostring(attr.from));
+		--print("to: "..tostring(attr.to).." from: "..tostring(attr.from));
 		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
 	end
 	
 	if session.direction == "incoming" then
 		-- Send a reply stream header
 		
-		for k,v in pairs(attr) do print("", tostring(k), ":::", tostring(v)); end
+		--for k,v in pairs(attr) do print("", tostring(k), ":::", tostring(v)); end
 		
 		session.to_host = attr.to;
 		session.from_host = attr.from;
 	
 		session.streamid = uuid_gen();
-		print(session, session.from_host, "incoming s2s stream opened");
+		(session.log or log)("debug", "incoming s2s received <stream:stream>");
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
