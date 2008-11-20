@@ -12,4 +12,9 @@ function split(jid)
 	return node, server, resource;
 end
 
+function bare(jid)
+	local node, host = split(jid);
+	return node.."@"..host;
+end
+
 return _M;
