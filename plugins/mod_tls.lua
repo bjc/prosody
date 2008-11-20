@@ -24,9 +24,10 @@ add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 			end
 		end);
 		
+local starttls_attr = { xmlns = xmlns_starttls };
 add_event_hook("stream-features", 
 					function (session, features)												
 						if session.conn.starttls then
-							t_insert(features, "<starttls xmlns='"..xmlns_starttls.."'/>");
+							features:tag("starttls", starttls_attr):up();
 						end
 					end);

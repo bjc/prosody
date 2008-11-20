@@ -83,19 +83,21 @@ add_handler("c2s_unauthed", "auth", xmlns_sasl, sasl_handler);
 add_handler("c2s_unauthed", "abort", xmlns_sasl, sasl_handler);
 add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 
+local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
+local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
+local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
 add_event_hook("stream-features", 
 					function (session, features)												
 						if not session.username then
-							t_insert(features, "<mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>");
+							features:tag("mechanisms", mechanisms_attr);
 							-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
-								t_insert(features, "<mechanism>PLAIN</mechanism>");
-								t_insert(features, "<mechanism>DIGEST-MD5</mechanism>");
-							t_insert(features, "</mechanisms>");
+								features:tag("mechanism"):text("PLAIN"):up();
+								features:tag("mechanism"):text("DIGEST-MD5"):up();
+							features:up();
 						else
-							t_insert(features, "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><required/></bind>");
-							t_insert(features, "<session xmlns='urn:ietf:params:xml:ns:xmpp-session'/>");
+							features:tag("bind", bind_attr):tag("required"):up():up();
+							features:tag("session", xmpp_session_attr):up();
 						end
-						--send [[<register xmlns="http://jabber.org/features/iq-register"/> ]]
 					end);
 					
 add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 

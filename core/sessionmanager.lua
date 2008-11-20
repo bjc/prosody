@@ -121,18 +121,12 @@ function streamopened(session, attr)
 						end
 						
 						
-						local features = {};
+						local features = st.stanza("stream:features");
 						modulemanager.fire_event("stream-features", session, features);
 						
-						-- FIXME: Need to send() this all at once
-						send("<stream:features>");
+						send(features);
 						
-						for _, feature in ipairs(features) do
-							send(tostring(feature));
-						end
- 
-        			                send("</stream:features>");
-						log("info", "Stream opened successfully");
+						(session.log or log)("info", "Sent reply <stream:stream> to client");
 						session.notopen = nil;
 end
 
