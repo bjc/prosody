@@ -58,4 +58,6 @@ local protected_disconnect = function (conn, err) local success, ret = pcall(dis
 start("xmppclient", { ssl = config.ssl_ctx })
 start("xmppserver", { ssl = config.ssl_ctx })
 
+modulemanager.fire_event("server-started");
+
 server.loop();
