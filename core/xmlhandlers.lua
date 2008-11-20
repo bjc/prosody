@@ -68,7 +68,6 @@ function init_xmlhandlers(session, stream_callbacks)
 			
 			if not stanza then --if we are not currently inside a stanza
 				if session.notopen then
-					print("client opening with "..tostring(name));
 					if name == "stream" then
 						if cb_streamopened then
 							cb_streamopened(session, attr);
