@@ -30,6 +30,7 @@ function new_session(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("Session got collected, now "..open_sessions.." sessions are allocated") end;
 	end
 	open_sessions = open_sessions + 1;
+	log("info", "open sessions now: ".. open_sessions);
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
 	return session;
