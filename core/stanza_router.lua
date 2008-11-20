@@ -191,7 +191,7 @@ function core_handle_stanza(origin, stanza)
 		log("warn", "Unhandled origin: %s", origin.type);
 		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			-- s2s stanzas can get here
-			(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 		end
 	end
 end
