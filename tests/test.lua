@@ -75,12 +75,12 @@ function dotest(unitname)
 			if not success then
 				print("TEST FAILED! Unit: ["..unitname.."] Function: ["..name.."]");
 				print("   Location: "..ret:gsub(":%s*\n", "\n"));
-				line_info(name, false);
+				line_info(name, false, report_file);
 			elseif verbosity >= 2 then
 				print("TEST SUCCEEDED: ", unitname, name);
-				print(string.format("TEST COVERED %d/%d lines", line_info(name, true)));
+				print(string.format("TEST COVERED %d/%d lines", line_info(name, true, report_file)));
 			else
-				line_info(name, success);
+				line_info(name, success, report_file);
 			end
 		end
 	end
