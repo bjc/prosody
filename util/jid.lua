@@ -5,7 +5,6 @@ module "jid"
 
 function split(jid)
 	if not jid then return; end
-	-- TODO verify JID, and return; if invalid
 	local node, nodelen = match(jid, "^([^@]+)@()");
 	local host, hostlen = match(jid, "^([^@/]+)()", nodelen)
 	if node and not host then return nil, nil, nil; end
