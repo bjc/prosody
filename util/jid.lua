@@ -1,7 +1,6 @@
 
 local match = string.match;
-local tostring = tostring;
-local print = print
+
 module "jid"
 
 function split(jid)
