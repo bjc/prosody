@@ -208,6 +208,10 @@ function core_route_stanza(origin, stanza)
 	local from_node, from_host, from_resource = jid_split(from);
 	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 
+	-- Auto-detect origin if not specified
+	origin = origin or hosts[from_host];
+	if not origin then return false; end
+	
 	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
