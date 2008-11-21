@@ -5,11 +5,11 @@ module "jid"
 
 function split(jid)
 	if not jid then return; end
-	local node, nodelen = match(jid, "^([^@]+)@()");
-	local host, hostlen = match(jid, "^([^@/]+)()", nodelen)
+	local node, nodepos = match(jid, "^([^@]+)@()");
+	local host, hostpos = match(jid, "^([^@/]+)()", nodepos)
 	if node and not host then return nil, nil, nil; end
-	local resource = match(jid, "^/(.+)$", hostlen);
-	if (not host) or ((not resource) and #jid >= hostlen) then return nil, nil, nil; end
+	local resource = match(jid, "^/(.+)$", hostpos);
+	if (not host) or ((not resource) and #jid >= hostpos) then return nil, nil, nil; end
 	return node, host, resource;
 end
 
