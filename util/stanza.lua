@@ -30,6 +30,11 @@ end
 function stanza_mt:query(xmlns)
 	return self:tag("query", { xmlns = xmlns });
 end
+
+function stanza_mt:body(text, attr)
+	return self:tag("body", attr):text(text);
+end
+
 function stanza_mt:tag(name, attrs)
 	local s = stanza(name, attrs);
 	(self.last_add[#self.last_add] or self):add_direct_child(s);
