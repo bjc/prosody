@@ -17,10 +17,8 @@ function bare(jid)
 	local node, host = split(jid);
 	if node and host then
 		return node.."@"..host;
-	elseif host then
-		return host;
 	end
-	return nil;
+	return host;
 end
 
 return _M;
