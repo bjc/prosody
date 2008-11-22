@@ -619,7 +619,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 		return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
-		if eol and not fatal_send_error then handler._dispatchdata(); end
+		if eol and not fatal_send_error then handler.dispatchdata(); end
 		_ = not closed and shutdown( socket )
 		_ = not closed and close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
