@@ -190,7 +190,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 
 	local writequeue = { }    -- buffer for messages to send
 
-	local eol   -- end of buffer
+	local eol, fatal_send_error   -- end of buffer
 
 	local sstat, rstat = 0, 0
 
@@ -225,6 +225,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol and not fatal_send_error then handler._dispatchdata(); end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -295,6 +296,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			eol = 1
 			return true
 		else    -- connection was closed during sending or fatal error
+			fatal_send_error = true;
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
 			handler.close( )
 			disconnect( handler, err )
@@ -364,12 +366,13 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	local err
 
 	socket:settimeout( 0 )
-
+	out_put("setting linger on "..tostring(socket))
+	socket:setoption("linger", { on = true, timeout = 10 });
 	--// private closures of the object //--
 
 	local writequeue = { }    -- buffer for messages to send
 
-	local eol   -- end of buffer
+	local eol, fatal_send_error   -- end of buffer
 
 	local sstat, rstat = 0, 0
 
@@ -404,6 +407,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol and not fatal_send_error then handler._dispatchdata(); end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -481,6 +485,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			eol = 1
 			return true
 		else    -- connection was closed during sending or fatal error
+			fatal_send_error = true; -- :(
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
 			handler.close( )
 			disconnect( handler, err )
@@ -579,7 +584,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 
 	local writequeue = { }    -- list for messages to send
 
-	local eol
+	local eol, fatal_send_error
 
 	local rstat, sstat = 0, 0
 
@@ -614,6 +619,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 		return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
+		if eol and not fatal_send_error then handler.dispatchdata(); end
 		_ = not closed and shutdown( socket )
 		_ = not closed and close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
@@ -686,6 +692,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 			eol = 1
 			return true
 		else    -- connection was closed during sending or fatal error
+			fatal_send_error = true; -- :'-(
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
 			handler.close( )
 			disconnect( handler, err )

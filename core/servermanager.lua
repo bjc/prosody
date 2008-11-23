@@ -2,7 +2,7 @@
 local st = require "util.stanza";
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
-require "modulemanager"
+local modulemanager = require "core.modulemanager";
 
 -- Handle stanzas that were addressed to the server (whether they came from c2s, s2s, etc.)
 function handle_stanza(origin, stanza)

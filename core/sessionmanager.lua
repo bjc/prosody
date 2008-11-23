@@ -14,6 +14,8 @@ local error = error;
 local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 
+local st = require "util.stanza";
+
 local newproxy = newproxy;
 local getmetatable = getmetatable;
 
@@ -28,13 +30,24 @@ function new_session(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("Session got collected, now "..open_sessions.." sessions are allocated") end;
 	end
 	open_sessions = open_sessions + 1;
+	log("info", "open sessions now: ".. open_sessions);
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
 	return session;
 end
 
-function destroy_session(session)
+function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session");
+	
+	-- Send unavailable presence
+	if session.presence then
+		local pres = st.presence{ type = "unavailable" };
+		if (not err) or err == "closed" then err = "connection closed"; end
+		pres:tag("status"):text("Disconnected: "..err);
+		session.stanza_dispatch(pres);
+	end
+	
+	-- Remove session/resource from user's session list
 	if session.host and session.username then
 		if session.resource then
 			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
@@ -46,8 +59,7 @@ function destroy_session(session)
 			end
 		end
 	end
-	session.conn = nil;
-	session.disconnect = nil;
+	
 	for k in pairs(session) do
 		if k ~= "trace" then
 			session[k] = nil;
@@ -96,21 +108,25 @@ function streamopened(session, attr)
 						session.host = attr.to or error("Client failed to specify destination hostname");
 			                        session.version = tonumber(attr.version) or 0;
 			                        session.streamid = m_random(1000000, 99999999);
-			                        print(session, session.host, "Client opened stream");
-			                        send("<?xml version='1.0'?>");
+			                        (session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
+			                        
+						
+						send("<?xml version='1.0'?>");
 			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
 						
-						local features = {};
+						if not hosts[session.host] then
+							-- We don't serve this host...
+							session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
+							return;
+						end
+						
+						
+						local features = st.stanza("stream:features");
 						modulemanager.fire_event("stream-features", session, features);
 						
-						send("<stream:features>");
+						send(features);
 						
-						for _, feature in ipairs(features) do
-							send(tostring(feature));
-						end
- 
-        			                send("</stream:features>");
-						log("info", "Stream opened successfully");
+						(session.log or log)("info", "Sent reply <stream:stream> to client");
 						session.notopen = nil;
 end
 

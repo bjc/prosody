@@ -43,9 +43,10 @@ add_iq_handler({"c2s", "s2sin"}, "vcard-temp",
 			end
 		end);
 
+local feature_vcard_attr = { var='vcard-temp' };
 add_event_hook("stream-features", 
 					function (session, features)												
 						if session.type == "c2s" then
-							t_insert(features, "<feature var='vcard-temp'/>");
+							features:tag("feature", feature_vcard_attr):up();
 						end
 					end);
