@@ -24,7 +24,11 @@ local function new_plain(realm, password_handler)
 		local authentication = s_match(response, "%z([^&%z]+)%z")
 		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
 		
+		if authentication == nil or password == nil then return "failure", "malformed-request" end
+		
 		local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
+		
+		if correct_password == nil then return "failure", "malformed-request" end
 		
 		local claimed_password = ""
 		if password_encoding == nil then claimed_password = password
@@ -113,6 +117,7 @@ local function new_digest_md5(realm, password_handler)
 			local protocol = ""
 			if response["digest-uri"] then
 				protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$")
+				if protocol == nil or domain == nil then return "failure", "malformed-request" end
 			else
 				return "failure", "malformed-request", "Missing entry for digest-uri in SASL message."
 			end
@@ -120,6 +125,8 @@ local function new_digest_md5(realm, password_handler)
 			--TODO maybe realm support
 			self.username = response["username"]
 			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
+			if Y == nil then return "failure", "malformed-request" end
+			
 			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
 			local A2 = "AUTHENTICATE:"..protocol.."/"..domain
 			
