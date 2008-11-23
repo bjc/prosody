@@ -1,0 +1,74 @@
+-- lxmppd Example Configuration File 
+-- 
+-- If it wasn't already obvious, -- starts a comment, and all 
+-- text after it is ignored by lxmppd.
+--
+-- The config is split into sections, a global section, and one 
+-- for each defined host that we serve. You can add as many host 
+-- sections as you like.
+--
+-- Lists are written { "like", "this", "one" } 
+-- Lists can also be of { 1, 2, 3 } numbers, etc. 
+-- Either commas, or semi-colons; may be used
+-- as seperators.
+--
+-- A table is a list of values, except each value has a name. An 
+-- example would be:
+--
+-- logging = { type = "html", directory = "/var/logs", rotate = "daily" }
+--
+-- Whitespace (that is tabs, spaces, line breaks) is insignificant, so can 
+-- be placed anywhere
+-- that 	you deem fitting. Youcouldalsoremoveitentirely,butforobviousrea
+--sonsIdon'trecommendit.
+--
+-- Tip: You can check that the syntax of this file is correct when you have finished
+-- by running: luac -p lxmppd.cfg.lua
+-- If there are any errors, it will let you know what and where they are, otherwise it 
+-- will keep quiet.
+--
+-- The only thing left to do is rename this file to remove the .dist ending, and fill in the 
+-- blanks. Good luck, and happy Jabbering!
+
+-- Global settings go in this section
+Host "*"
+	
+	-- This is the list of modules lxmppd will load on startup.
+	-- It looks for plugins/mod_modulename.lua, so make sure that exists too.
+	modules_enabled = {
+				"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
+				"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
+				"roster"; -- Allow users to have a roster. Recommended ;)
+				"register"; -- Allow users to register on this server using a client
+				"tls"; -- Add support for secure TLS on c2s/s2s connections
+				"vcard"; -- Allow users to set vCards
+				"private"; -- Private XML storage (for room bookmarks, etc.)
+				"version"; -- Replies to server version requests
+				"dialback"; -- s2s dialback support
+			  };
+	
+	-- These are the SSL/TLS-related settings. If you don't want
+	-- to use SSL/TLS, you may comment or remove this
+	ssl = { 
+		key = "certs/server.key";
+		certificate = "certs/server.crt";
+		}
+
+-- This allows clients to connect to localhost. No harm in it.
+Host "localhost"
+
+-- Section for example.com
+-- (replace example.com with your domain name)
+Host "example.com"
+	-- Assign this host a certificate for TLS, otherwise it would use the one
+	-- set in the global section (if any).
+	-- Note that old-style SSL on port 5223 only supports one certificate, and will always
+	-- use the global one.
+	ssl = { 
+		key = "certs/example.com.key";
+		certificate = "certs/example.com.crt";
+		}
+
+Host "example.org"
+	enabled = false -- This will disable the host, preserving the config, but denying connections
+	

@@ -3,6 +3,8 @@ local st = require "util.stanza";
 local register_component = require "core.componentmanager".register_component;
 local core_route_stanza = core_route_stanza;
 local socket = require "socket";
+local config = require "core.configmanager";
+local ping_hosts = config.get("*", "mod_selftests", "ping_hosts") or { "jabber.org" };
 
 local open_pings = {};
 
@@ -10,7 +12,7 @@ local t_insert = table.insert;
 
 local log = require "util.logger".init("mod_selftests");
 
-local tests_jid, host; "self_tests@getjabber.ath.cx";
+local tests_jid = "self_tests@getjabber.ath.cx";
 local host = "getjabber.ath.cx";
 
 if not (tests_jid and host) then
@@ -44,14 +46,8 @@ if tests_jid and host then
 							open_pings[id] = socket.gettime();
 						end
 						
-						send_ping "matthewwild.co.uk"
-						send_ping "snikket.com"
-						send_ping "gmail.com"
-						send_ping "isode.com"
-						send_ping "jabber.org"
-						send_ping "chrome.pl"
-						send_ping "swissjabber.ch"
-						send_ping "soapbox.net"
-						send_ping "jabber.ccc.de"
+						for _, host in ipairs(ping_hosts) do
+							send_ping(host);
+						end
 					end);
 end
