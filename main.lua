@@ -88,7 +88,9 @@ end
 start("xmppclient", { ssl = global_ssl_ctx })
 start("xmppserver", { ssl = global_ssl_ctx })
 
-start("console")
+if config.get("*", "core", "console_enabled") then
+	start("console")
+end
 
 modulemanager.fire_event("server-started");
 
