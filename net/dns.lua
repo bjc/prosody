@@ -501,7 +501,9 @@ function resolver:setnameserver (address)    -- - - - - - - - - - setnameserver
 
 
 function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
-  for line in io.lines ('/etc/resolv.conf') do
+  local resolv_conf = io.open("/etc/resolv.conf");
+  if not resolv_conf then return nil; end
+  for line in resolv_conf:lines() do
     address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
     if address then  self:addnameserver (address)  end
     end  end
