@@ -30,6 +30,11 @@ end
 function stanza_mt:query(xmlns)
 	return self:tag("query", { xmlns = xmlns });
 end
+
+function stanza_mt:body(text, attr)
+	return self:tag("body", attr):text(text);
+end
+
 function stanza_mt:tag(name, attrs)
 	local s = stanza(name, attrs);
 	(self.last_add[#self.last_add] or self):add_direct_child(s);
@@ -103,7 +108,7 @@ function stanza_mt.__tostring(t)
 
 	local attr_string = "";
 	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, xml_escape(tostring(v))); end end
 	end
 	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
 end
@@ -111,7 +116,7 @@ end
 function stanza_mt.top_tag(t)
 	local attr_string = "";
 	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, tostring(v)); end end
+		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, xml_escape(tostring(v))); end end
 	end
 	return s_format("<%s%s>", t.name, attr_string);
 end

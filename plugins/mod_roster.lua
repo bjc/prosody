@@ -4,6 +4,7 @@ local st = require "util.stanza"
 local jid_split = require "util.jid".split;
 local t_concat = table.concat;
 
+local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
@@ -38,15 +39,25 @@ add_iq_handler("c2s", "jabber:iq:roster",
 							and query.tags[1].attr.jid ~= "pending" then
 						local item = query.tags[1];
 						local from_node, from_host = jid_split(stanza.attr.from);
+						local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 						local node, host, resource = jid_split(item.attr.jid);
-						if not resource then
+						local to_bare = node and (node.."@"..host) or host; -- bare JID
+						if not resource and host then
 							if item.attr.jid ~= from_node.."@"..from_host then
 								if item.attr.subscription == "remove" then
-									if session.roster[item.attr.jid] then
+									local r_item = session.roster[item.attr.jid];
+									if r_item then
 										local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, item.attr.jid);
 										if success then
 											session.send(st.reply(stanza));
 											rm_roster_push(from_node, from_host, item.attr.jid);
+											if r_item.subscription == "both" or r_item.subscription == "from" then
+												handle_outbound_presence_subscriptions_and_probes(session,
+													st.presence({type="unsubscribed"}), from_bare, to_bare);
+											elseif r_item.subscription == "both" or r_item.subscription == "to" then
+												handle_outbound_presence_subscriptions_and_probes(session,
+													st.presence({type="unsubscribe"}), from_bare, to_bare);
+											end
 										else
 											session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 										end

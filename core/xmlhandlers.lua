@@ -25,7 +25,7 @@ local ns_prefixes = {
 						["http://www.w3.org/XML/1998/namespace"] = "xml";
 				}
 
-function init_xmlhandlers(session, streamopened)
+function init_xmlhandlers(session, stream_callbacks)
 		local ns_stack = { "" };
 		local curr_ns = "";
 		local curr_tag;
@@ -35,6 +35,9 @@ function init_xmlhandlers(session, streamopened)
 		--local print = function (...) log("info", "xmlhandlers", t_concatall({...}, "\t")); end
 		
 		local send = session.send;
+		
+		local cb_streamopened = stream_callbacks.streamopened;
+		local cb_streamclosed = stream_callbacks.streamclosed;
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
@@ -66,7 +69,9 @@ function init_xmlhandlers(session, streamopened)
 			if not stanza then --if we are not currently inside a stanza
 				if session.notopen then
 					if name == "stream" then
-						streamopened(session, attr);
+						if cb_streamopened then
+							cb_streamopened(session, attr);
+						end
 						return;
 					end
 					error("Client failed to open stream successfully");
@@ -75,7 +80,7 @@ function init_xmlhandlers(session, streamopened)
 					error("Client sent invalid top-level stanza");
 				end
 				
-				stanza = st.stanza(name, attr); --{ to = attr.to, type = attr.type, id = attr.id, xmlns = curr_ns });
+				stanza = st.stanza(name, attr);
 				curr_tag = stanza;
 			else -- we are inside a stanza, so add a tag
 				attr.xmlns = nil;
@@ -92,15 +97,17 @@ function init_xmlhandlers(session, streamopened)
 		end
 		function xml_handlers:EndElement(name)
 			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
-			if (not stanza) or #stanza.last_add < 0 or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
+			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
 				if name == "stream" then
 					log("debug", "Stream closed");
-					sm_destroy_session(session);
+					if cb_streamclosed then
+						cb_streamclosed(session);
+					end
 					return;
 				elseif name == "error" then
 					error("Stream error: "..tostring(name)..": "..tostring(stanza));
 				else
-					error("XML parse error in client stream");
+					error("XML parse error in client stream with element: "..name);
 				end
 			end
 			if stanza and #chardata > 0 then

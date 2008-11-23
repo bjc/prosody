@@ -5,11 +5,20 @@ module "jid"
 
 function split(jid)
 	if not jid then return; end
-	-- TODO verify JID, and return; if invalid
-	local node = match(jid, "^([^@]+)@");
-	local server = (node and match(jid, ".-@([^@/]+)")) or match(jid, "^([^@/]+)");
-	local resource = match(jid, "/(.+)$");
-	return node, server, resource;
+	local node, nodepos = match(jid, "^([^@]+)@()");
+	local host, hostpos = match(jid, "^([^@/]+)()", nodepos)
+	if node and not host then return nil, nil, nil; end
+	local resource = match(jid, "^/(.+)$", hostpos);
+	if (not host) or ((not resource) and #jid >= hostpos) then return nil, nil, nil; end
+	return node, host, resource;
+end
+
+function bare(jid)
+	local node, host = split(jid);
+	if node and host then
+		return node.."@"..host;
+	end
+	return host;
 end
 
 return _M;

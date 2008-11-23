@@ -21,6 +21,9 @@ local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
+local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
+local handle_inbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
+
 local format = string.format;
 local tostring = tostring;
 local t_concat = table.concat;
@@ -32,7 +35,7 @@ local jid_split = require "util.jid".split;
 local print = print;
 
 function core_process_stanza(origin, stanza)
-	log("debug", "Received[%s]: %s", origin.type, stanza:pretty_top_tag())
+	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:pretty_print()) --top_tag())
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
@@ -87,7 +90,7 @@ function core_process_stanza(origin, stanza)
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 			component_handle_stanza(origin, stanza);
 		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif origin.type ~= "c2s" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
@@ -174,130 +177,23 @@ function core_handle_stanza(origin, stanza)
 				stanza.attr.to = nil; -- reset it
 			else
 				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-				if stanza.attr.type ~= "error" then
+				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 				end
 			end
 		else
 			log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 			end
 		end -- TODO handle other stanzas
 	else
 		log("warn", "Unhandled origin: %s", origin.type);
-		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			-- s2s stanzas can get here
-			(origin.sends2s or origin.send)(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 		end
 	end
-end
-
-function send_presence_of_available_resources(user, host, jid, recipient_session)
-	local h = hosts[host];
-	local count = 0;
-	if h and h.type == "local" then
-		local u = h.sessions[user];
-		if u then
-			for k, session in pairs(u.sessions) do
-				local pres = session.presence;
-				if pres then
-					pres.attr.to = jid;
-					pres.attr.from = session.full_jid;
-					recipient_session.send(pres);
-					pres.attr.to = nil;
-					pres.attr.from = nil;
-					count = count + 1;
-				end
-			end
-		end
-	end
-	return count;
-end
-
-function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
-	local node, host = jid_split(from_bare);
-	local st_from, st_to = stanza.attr.from, stanza.attr.to;
-	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
-	if stanza.attr.type == "subscribe" then
-		log("debug", "outbound subscribe from "..from_bare.." for "..to_bare);
-		-- 1. route stanza
-		-- 2. roster push (subscription = none, ask = subscribe)
-		if rostermanager.set_contact_pending_out(node, host, to_bare) then
-			rostermanager.roster_push(node, host, to_bare);
-		end -- else file error
-		core_route_stanza(origin, stanza);
-	elseif stanza.attr.type == "unsubscribe" then
-		log("debug", "outbound unsubscribe from "..from_bare.." for "..to_bare);
-		-- 1. route stanza
-		-- 2. roster push (subscription = none or from)
-		if rostermanager.unsubscribe(node, host, to_bare) then
-			rostermanager.roster_push(node, host, to_bare); -- FIXME do roster push when roster has in fact not changed?
-		end -- else file error
-		core_route_stanza(origin, stanza);
-	elseif stanza.attr.type == "subscribed" then
-		log("debug", "outbound subscribed from "..from_bare.." for "..to_bare);
-		-- 1. route stanza
-		-- 2. roster_push ()
-		-- 3. send_presence_of_available_resources
-		if rostermanager.subscribed(node, host, to_bare) then
-			rostermanager.roster_push(node, host, to_bare);
-			core_route_stanza(origin, stanza);
-			send_presence_of_available_resources(node, host, to_bare, origin);
-		end
-	elseif stanza.attr.type == "unsubscribed" then
-		log("debug", "outbound unsubscribed from "..from_bare.." for "..to_bare);
-		-- 1. route stanza
-		-- 2. roster push (subscription = none or to)
-		if rostermanager.unsubscribed(node, host, to_bare) then
-			rostermanager.roster_push(node, host, to_bare);
-			core_route_stanza(origin, stanza);
-		end
-	end
-	stanza.attr.from, stanza.attr.to = st_from, st_to;
-end
-
-function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
-	local node, host = jid_split(to_bare);
-	local st_from, st_to = stanza.attr.from, stanza.attr.to;
-	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
-	if stanza.attr.type == "probe" then
-		log("debug", "inbound probe from "..from_bare.." for "..to_bare);
-		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
-				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
-			end
-		else
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
-		end
-	elseif stanza.attr.type == "subscribe" then
-		log("debug", "inbound subscribe from "..from_bare.." for "..to_bare);
-		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
-		else
-			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
-				if rostermanager.set_contact_pending_in(node, host, from_bare) then
-					sessionmanager.send_to_available_resources(node, host, stanza);
-				end -- TODO else return error, unable to save
-			end
-		end
-	elseif stanza.attr.type == "unsubscribe" then
-		log("debug", "inbound unsubscribe from "..from_bare.." for "..to_bare);
-		if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
-			rostermanager.roster_push(node, host, from_bare);
-		end
-	elseif stanza.attr.type == "subscribed" then
-		log("debug", "inbound subscribed from "..from_bare.." for "..to_bare);
-		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
-			rostermanager.roster_push(node, host, from_bare);
-		end
-	elseif stanza.attr.type == "unsubscribed" then
-		log("debug", "inbound unsubscribed from "..from_bare.." for "..to_bare);
-		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
-			rostermanager.roster_push(node, host, from_bare);
-		end
-	end -- discard any other type
-	stanza.attr.from, stanza.attr.to = st_from, st_to;
 end
 
 function core_route_stanza(origin, stanza)
@@ -312,6 +208,10 @@ function core_route_stanza(origin, stanza)
 	local from_node, from_host, from_resource = jid_split(from);
 	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 
+	-- Auto-detect origin if not specified
+	origin = origin or hosts[from_host];
+	if not origin then return false; end
+	
 	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
@@ -324,7 +224,7 @@ function core_route_stanza(origin, stanza)
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
+						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 					else -- sender is available or unavailable
 						for _, session in pairs(user.sessions) do -- presence broadcast to all user resources.
 							if session.full_jid then -- FIXME should this be just for available resources? Do we need to check subscription?
@@ -367,7 +267,7 @@ function core_route_stanza(origin, stanza)
 			if user_exists(node, host) then
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare);
+						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 					else
 						-- TODO send unavailable presence or unsubscribed
 					end
@@ -404,8 +304,6 @@ function core_route_stanza(origin, stanza)
 	elseif origin.type == "component" or origin.type == "local" then
 		-- Route via s2s for components and modules
 		log("debug", "Routing outgoing stanza for %s to %s", origin.host, host);
-		for k,v in pairs(origin) do print("origin:", tostring(k), tostring(v)); end
-		print(tostring(host), tostring(from_host))
 		send_s2s(origin.host, host, stanza);
 	else
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
