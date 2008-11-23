@@ -92,8 +92,8 @@ function handle_stanza(origin, stanza)
 		if child then
 			local xmlns = child.attr.xmlns or xmlns;
 			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
-			local handler = handlers[origin_type][name][xmlns];
-			if  handler then
+			local handler = handlers[origin_type][name] and handlers[origin_type][name][xmlns];
+			if handler then
 				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
 				return handler(origin, stanza) or true;
 			end
