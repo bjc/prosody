@@ -502,11 +502,16 @@ function resolver:setnameserver (address)    -- - - - - - - - - - setnameserver
 
 function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
   local resolv_conf = io.open("/etc/resolv.conf");
-  if not resolv_conf then return nil; end
-  for line in resolv_conf:lines() do
-    local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
-    if address then  self:addnameserver (address)  end
-    end  end
+  if resolv_conf then
+	  for line in resolv_conf:lines() do
+		local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
+		if address then  self:addnameserver (address)  end
+	  end
+  else -- FIXME correct for windows, using opendns nameservers for now
+	self:addnameserver ("208.67.222.222")
+	self:addnameserver ("208.67.220.220")
+  end
+end
 
 
 function resolver:getsocket (servernum)    -- - - - - - - - - - - - - getsocket
