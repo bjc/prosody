@@ -9,7 +9,7 @@ local rostermanager_is_contact_subscribed = require "core.rostermanager".is_cont
 do
 	helper:addDiscoInfoHandler("*host", function(reply, to, from, node)
 		if hosts[to] then
-			reply:tag("identity", {category="server", type="im", name="ejabberd"}):up();
+			reply:tag("identity", {category="server", type="im", name="lxmppd"}):up();
 			return true;
 		end
 	end);
