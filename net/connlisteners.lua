@@ -38,8 +38,8 @@ function start(name, udata)
 		error("No such connection module: "..name, 0);
 	end
 	return server_add(h, 
-			udata.port or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
-				udata.interface or "*", udata.mode or h.default_mode or 1, udata.ssl );
+			(udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
+				(udata and udata.interface) or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil );
 end
 
 return _M;
