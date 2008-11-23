@@ -88,6 +88,8 @@ end
 start("xmppclient", { ssl = global_ssl_ctx })
 start("xmppserver", { ssl = global_ssl_ctx })
 
+start("console")
+
 modulemanager.fire_event("server-started");
 
 server.loop();
