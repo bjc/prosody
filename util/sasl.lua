@@ -28,7 +28,7 @@ local function new_plain(realm, password_handler)
 		
 		local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
 		
-		if correct_password == nil then return "failure", "not-authorized" end
+		if correct_password == nil then return "failure", "not-authorized"
 		elseif correct_password == false then return "failure", "account-disabled" end
 		
 		local claimed_password = ""
@@ -126,7 +126,7 @@ local function new_digest_md5(realm, password_handler)
 			--TODO maybe realm support
 			self.username = response["username"]
 			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
-			if Y == nil then return "failure", "not-authorized" end
+			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			
 			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
