@@ -19,8 +19,8 @@ local ztact = require 'util.ztact'
 local coroutine, io, math, socket, string, table =
       coroutine, io, math, socket, string, table
 
-local ipairs, next, pairs, print, setmetatable, tostring =
-      ipairs, next, pairs, print, setmetatable, tostring
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error =
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error
 
 local get, set = ztact.get, ztact.set
 
@@ -130,7 +130,7 @@ function rr_metatable.__tostring (rr)
 
 local rrs_metatable = {}    -- - - - - - - - - - - - - - - - - -  rrs_metatable
 function rrs_metatable.__tostring (rrs)
-  t = {}
+  local t = {}
   for i,rr in pairs (rrs) do  append (t, tostring (rr)..'\n')  end
   return table.concat (t)
   end
@@ -504,7 +504,7 @@ function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
   local resolv_conf = io.open("/etc/resolv.conf");
   if not resolv_conf then return nil; end
   for line in resolv_conf:lines() do
-    address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
+    local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
     if address then  self:addnameserver (address)  end
     end  end
 
@@ -582,7 +582,7 @@ function resolver:purge (soft)    -- - - - - - - - - - - - - - - - - - -  purge
     for class,types in pairs (self.cache or {}) do
       for type,names in pairs (types) do
         for name,rrs in pairs (names) do
-          prune (rrs, time, 'soft')
+          prune (rrs, self.time, 'soft')
           end  end  end
   else  self.cache = {}  end
   end
@@ -594,7 +594,7 @@ function resolver:query (qname, qtype, qclass)    -- - - - - - - - - - -- query
 
   if not self.server then  self:adddefaultnameservers ()  end
 
-  local question = question or encodeQuestion (qname, qtype, qclass)
+  local question = encodeQuestion (qname, qtype, qclass)
   local peek = self:peek (qname, qtype, qclass)
   if peek then  return peek  end
 
@@ -767,7 +767,7 @@ function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
 
   -- this function seems to be redundant with resolver.new ()
 
-  r = { active = {}, cache = {}, unsorted = {}, wanted = {}, yielded = {} }
+  local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, yielded = {} }
   setmetatable (r, resolver)
   setmetatable (r.cache, cache_metatable)
   setmetatable (r.unsorted, { __mode = 'kv' })
