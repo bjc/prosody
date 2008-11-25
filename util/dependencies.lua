@@ -3,6 +3,8 @@ local fatal;
 local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil; end end
 
 local function missingdep(name, sources, msg)
+	print("");
+	print("**************************");
 	print("Prosody was unable to find "..tostring(name));
 	print("This package can be obtained in the following ways:");
 	print("");
@@ -10,6 +12,9 @@ local function missingdep(name, sources, msg)
 		print("", k, v);
 	end
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
+	print("More help can be found on our website, at http://.../doc/depends");
+	print("**************************");
+	print("");
 end
 
 local lxp = softreq "lxp"
@@ -31,5 +36,14 @@ local ssl = softreq "ssl"
 if not ssl then
 	missingdep("LuaSec", { ["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/" }, "SSL/TLS support will not be available");
 end
+
+
+local md5 = softreq "md5";
+
+if not md5 then
+	missingdep("MD5", { ["luarocks"] = "luarocks install md5"; ["Source"] = "http://luaforge.net/frs/?group_id=155" });	
+	fatal = true;
+end
+
 
 if fatal then os.exit(1); end
