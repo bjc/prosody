@@ -4,19 +4,28 @@ local connlisteners_register = require "net.connlisteners".register;
 local console_listener = { default_port = 5582; default_mode = "*l"; };
 
 local commands = {};
-local default_env = {};
-local default_env_mt = { __index = default_env };
+local def_env = {};
+local default_env_mt = { __index = def_env };
 
 console = {};
 
 function console:new_session(conn)
 	local w = conn.write;
-	return { conn = conn;
+	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
 			print = function (t) w("| "..tostring(t).."\n"); end;
 			disconnect = function () conn.close(); end;
-			env = setmetatable({}, default_env_mt);
 			};
+	session.env = setmetatable({}, default_env_mt);
+	
+	-- Load up environment with helper objects
+	for name, t in pairs(def_env) do
+		if type(t) == "table" then
+			session.env[name] = setmetatable({ session = session }, { __index = t });
+		end
+	end
+	
+	return session;
 end
 
 local sessions = {};
@@ -111,16 +120,16 @@ commands["!"] = function (session, data)
 end
 
 -- Session environment --
--- Anything in default_env will be accessible within the session as a global variable
+-- Anything in def_env will be accessible within the session as a global variable
 
-default_env.server = {};
-function default_env.server.reload()
+def_env.server = {};
+function def_env.server:reload()
 	dofile "main.lua"
 	return true, "Server reloaded";
 end
 
-default_env.module = {};
-function default_env.module.load(name)
+def_env.module = {};
+function def_env.module:load(name)
 	local mm = require "modulemanager";
 	local ok, err = mm.load(name);
 	if not ok then
@@ -129,12 +138,28 @@ function default_env.module.load(name)
 	return true, "Module loaded";
 end
 
-default_env.config = {};
-function default_env.config.load(filename, format)
-	local cfgm_load = require "core.configmanager".load;
-	local ok, err = cfgm_load(filename, format);
+def_env.config = {};
+function def_env.config:load(filename, format)
+	local config_load = require "core.configmanager".load;
+	local ok, err = config_load(filename, format);
 	if not ok then
 		return false, err or "Unknown error loading config";
 	end
 	return true, "Config loaded";
+end
+
+function def_env.config:get(host, section, key)
+	local config_get = require "core.configmanager".get
+	return true, tostring(config_get(host, section, key));
+end
+
+def_env.hosts = {};
+function def_env.hosts:list()
+	for host, host_session in pairs(hosts) do
+		self.session.print(host);
+	end
+	return true, "Done";
+end
+
+function def_env.hosts:add(name)
 end
