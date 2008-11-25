@@ -11,6 +11,7 @@ local function missingdep(name, sources, msg)
 	for k,v in pairs(sources) do
 		print("", k, v);
 	end
+	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
 	print("More help can be found on our website, at http://.../doc/depends");
 	print("**************************");
