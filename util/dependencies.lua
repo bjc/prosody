@@ -35,7 +35,11 @@ end
 local ssl = softreq "ssl"
 
 if not ssl then
-	missingdep("LuaSec", { ["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/" }, "SSL/TLS support will not be available");
+	if config.get("*", "core", "run_without_ssl") then
+		log("warn", "Running without SSL support because run_without_ssl is defined in the config");
+	else
+		missingdep("LuaSec", { ["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/" }, "SSL/TLS support will not be available");
+	end
 end
 
 
