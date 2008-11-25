@@ -3,7 +3,7 @@ pcall(require, "luarocks.require")
 local server = require "net.server"
 require "lxp"
 require "socket"
-require "ssl"
+pcall(require,"ssl") -- Optional
 local config = require "core.configmanager"
 
 log = require "util.logger".init("general");
