@@ -1,10 +1,6 @@
 pcall(require, "luarocks.require")
 
-local server = require "net.server"
 local config = require "core.configmanager"
-
-require "util.dependencies"
-
 log = require "util.logger".init("general");
 
 do
@@ -27,6 +23,10 @@ do
 		end
 	end
 end
+
+local server = require "net.server"
+
+require "util.dependencies"
 
 -- Maps connections to sessions --
 sessions = {};
