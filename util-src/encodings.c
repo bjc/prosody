@@ -1,24 +1,12 @@
 /*
-* xxpath.c
-* An implementation of a subset of xpath for Lua 5.1
-* Waqas Hussain <waqas20@gmail.com>
-* 05 Oct 2008 15:28:15
+* encodings.c
+* Lua library for base64, stringprep and idna encodings
 */
 
 #include <string.h>
 
 #include "lua.h"
 #include "lauxlib.h"
-
-/*const char* hex_tab = "0123456789abcdef";
-void toHex(const char* in, int length, char* out) {
-	int i;
-	for (i = 0; i < length; i++) {
-		out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
-		out[i*2+1] = hex_tab[(in[i]) & 0xF];
-	}
-	//out[i*2] = 0;
-}*/
 
 /***************** BASE64 *****************/
 
