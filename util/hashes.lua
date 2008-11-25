@@ -1,5 +1,5 @@
 
-local softreq = function (...) return select(2, pcall(require, ...)); end
+local softreq = function (...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil; end end
 local error = error;
 
 module "hashes"
