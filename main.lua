@@ -1,6 +1,6 @@
 pcall(require, "luarocks.require")
 
-local config = require "core.configmanager"
+config = require "core.configmanager"
 log = require "util.logger".init("general");
 
 do
