@@ -9,6 +9,8 @@ local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
 
+require "core.discomanager".set("roster", "jabber:iq:roster");
+
 add_iq_handler("c2s", "jabber:iq:roster", 
 		function (session, stanza)
 			if stanza.tags[1].name == "query" then

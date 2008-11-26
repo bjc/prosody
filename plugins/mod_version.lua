@@ -5,6 +5,8 @@ local log = require "util.logger".init("mod_version");
 
 local xmlns_version = "jabber:iq:version"
 
+require "core.discomanager".set("version", xmlns_version);
+
 local function handle_version_request(session, stanza)
 	if stanza.attr.type == "get" then
 		session.send(st.reply(stanza):query(xmlns_version)
