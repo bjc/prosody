@@ -13,6 +13,7 @@ local log = require "util.logger".init("sessionmanager");
 local error = error;
 local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
+local config_get = require "core.configmanager".get;
 
 local st = require "util.stanza";
 
@@ -88,9 +89,35 @@ function bind_resource(session, resource)
 	if not hosts[session.host].sessions[session.username] then
 		hosts[session.host].sessions[session.username] = { sessions = {} };
 	else
-		if hosts[session.host].sessions[session.username].sessions[resource] then
+		local sessions = hosts[session.host].sessions[session.username].sessions;
+		local limit = config_get(session.host, "core", "max_resources") or 10;
+		if #sessions >= limit then
+			return nil, "cancel", "conflict", "Resource limit reached; only "..limit.." resources allowed";
+		end
+		if sessions[resource] then
 			-- Resource conflict
-			return nil, "cancel", "conflict", "Resource already exists"; -- TODO kick old resource
+			local policy = config_get(session.host, "core", "conflict_resolve");
+			local increment;
+			if policy == "random" then
+				resource = uuid_generate();
+				increment = true;
+			elseif policy == "increment" then
+				increment = true; -- TODO ping old resource
+			elseif policy == "kick_new" then
+				return nil, "cancel", "conflict", "Resource already exists";
+			else -- if policy == "kick_old" then
+				hosts[session.host].sessions[session.username].sessions[resource]:close {
+					condition = "conflict";
+					text = "Replaced by new connection";
+				};
+			end
+			if increment and sessions[resource] then
+				local count = 1;
+				while sessions[resource.."#"..count] do
+					count = count + 1;
+				end
+				resource = resource.."#"..count;
+			end
 		end
 	end
 	
