@@ -4,7 +4,7 @@ local register_component = require "core.componentmanager".register_component;
 local core_route_stanza = core_route_stanza;
 local socket = require "socket";
 local config = require "core.configmanager";
-local ping_hosts = config.get("*", "mod_selftests", "ping_hosts") or { "jabber.org" };
+local ping_hosts = config.get("*", "mod_selftests", "ping_hosts") or { "coversant.interop.xmpp.org", "djabberd.interop.xmpp.org", "djabberd-trunk.interop.xmpp.org", "ejabberd.interop.xmpp.org", "openfire.interop.xmpp.org" };
 
 local open_pings = {};
 
