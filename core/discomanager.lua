@@ -37,11 +37,11 @@ function addDiscoInfoHandler(jid, func)
 	return helper:addDiscoInfoHandler(jid, func);
 end
 
-function set(plugin, origin, var)
+function set(plugin, var, origin)
 	-- TODO handle origin and host based on plugin.
 	local handler = function(reply, to, from, node) -- service discovery
 		if #node == 0 then
-			reply:tag("feature", {var = var});
+			reply:tag("feature", {var = var}):up();
 			return true;
 		end
 	end
