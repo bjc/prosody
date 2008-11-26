@@ -199,7 +199,7 @@ static const luaL_Reg Reg[] =
 	{ NULL,		NULL	}
 };
 
-LUALIB_API int luaopen_encodings(lua_State *L)
+LUALIB_API int luaopen_util_encodings(lua_State *L)
 {
 	luaL_register(L, "encodings", Reg);
 
