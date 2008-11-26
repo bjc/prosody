@@ -4,6 +4,8 @@ local st = require "util.stanza"
 local jid_split = require "util.jid".split;
 local datamanager = require "util.datamanager"
 
+require "core.discomanager".set("private", "jabber:iq:private");
+
 add_iq_handler("c2s", "jabber:iq:private",
 	function (session, stanza)
 		local type = stanza.attr.type;
