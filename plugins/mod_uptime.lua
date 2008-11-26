@@ -6,6 +6,8 @@ local t_concat = table.concat;
 
 local start_time = os.time();
 
+require "core.discomanager".set("uptime", "jabber:iq:last");
+
 add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last", 
 	function (origin, stanza)
 		if stanza.tags[1].name == "query" then
@@ -20,5 +22,3 @@ add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last",
 			end
 		end
 	end);
-
-
