@@ -8,6 +8,7 @@ local get_traceback = debug.traceback;
 local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
     = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
 
+local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
 local wraptlsclient = require "net.server".wraptlsclient;
 local modulemanager = require "core.modulemanager";
@@ -84,13 +85,28 @@ end
 function new_outgoing(from_host, to_host)
 		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
 		hosts[from_host].s2sout[to_host] = host_session;
-		local cl = connlisteners_get("xmppserver");
 		
-		local conn, handler = socket.tcp()
+		local log;
+		do
+			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
+			log = logger_init(conn_name);
+			host_session.log = log;
+		end
+		
+		attempt_connection(host_session);
+		
+		return host_session;
+end
 
-		local connect_host, connect_port = to_host, 5269;
-		
-		local answer = dns.lookup("_xmpp-server._tcp."..to_host..".", "SRV");
+
+function attempt_connection(host_session, err)
+	local from_host, to_host = host_session.from_host, host_session.to_host;
+	local conn, handler = socket.tcp()
+
+	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
+	
+	if not err then -- This is our first attempt
+		local answer = dns.lookup("_xmpp-server._tcp."..connect_host..".", "SRV");
 		
 		if answer then
 			log("debug", to_host.." has SRV records, handling...");
@@ -102,38 +118,43 @@ function new_outgoing(from_host, to_host)
 			t_sort(srv_hosts, compare_srv_priorities);
 			
 			local srv_choice = srv_hosts[1];
+			host_session.srv_choice = 1;
 			if srv_choice then
 				connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
 				log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
 			end
 		end
-		
-		conn:settimeout(0);
-		local success, err = conn:connect(connect_host, connect_port);
-		if not success and err ~= "timeout" then
-			log("warn", "s2s connect() failed: %s", err);
-		end
-		
-		conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, 1, hosts[from_host].ssl_ctx );
-		host_session.conn = conn;
-		
-		-- Register this outgoing connection so that xmppserver_listener knows about it
-		-- otherwise it will assume it is a new incoming connection
-		cl.register_outgoing(conn, host_session);
-		
-		local log;
-		do
-			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
-			log = logger_init(conn_name);
-			host_session.log = log;
-		end
-		
-		local w = conn.write;
-		host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
-		
-		conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
-		 
-		return host_session;
+	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
+		host_session.srv_choice = host_session.srv_choice + 1;
+		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
+		connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
+		host_session.log("debug", "Attempt #%d: This time to %s:%d", host_session.srv_choice, connect_host, connect_port);
+	else
+		host_session.log("debug", "Out of connection options, can't connect to %s", tostring(host_session.to_host));
+		-- We're out of options
+		return false;
+	end
+	
+	-- Ok, we're going to try to connect
+	conn:settimeout(0);
+	local success, err = conn:connect(connect_host, connect_port);
+	if not success and err ~= "timeout" then
+		log("warn", "s2s connect() failed: %s", err);
+	end
+	
+	local cl = connlisteners_get("xmppserver");
+	conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, 1, hosts[from_host].ssl_ctx );
+	host_session.conn = conn;
+	
+	-- Register this outgoing connection so that xmppserver_listener knows about it
+	-- otherwise it will assume it is a new incoming connection
+	cl.register_outgoing(conn, host_session);
+	
+	local w = conn.write;
+	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	
+	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
+	return true;
 end
 
 function streamopened(session, attr)
@@ -159,7 +180,7 @@ function streamopened(session, attr)
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', ["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
-			session:close("host-unknown");
+			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
 			return;
 		end
 		if session.version >= 1.0 then
