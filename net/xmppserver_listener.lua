@@ -7,7 +7,7 @@ local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
-
+local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
 local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed };
 
 local connlisteners_register = require "net.connlisteners".register;
@@ -109,10 +109,15 @@ function xmppserver.listener(conn, data)
 	end
 end
 	
-function xmppserver.disconnect(conn)
+function xmppserver.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		(session.log or log)("info", "s2s disconnected: %s->%s", tostring(session.from_host), tostring(session.to_host));
+		if err and err ~= "closed" and session.srv_hosts then
+			if s2s_attempt_connect(session, err) then
+				return; -- Session lives for now
+			end
+		end
+		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
 		s2s_destroy_session(session);
 		sessions[conn]  = nil;
 		session = nil;
