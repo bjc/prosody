@@ -1,6 +1,7 @@
 
 local st = require "util.stanza";
 local datetime = require "util.datetime".datetime;
+local legacy = require "util.datetime".legacy;
 
 -- XEP-0202: Entity Time
 
@@ -23,6 +24,6 @@ add_iq_handler({"c2s", "s2sin"}, "jabber:iq:time",
 	function(session, stanza)
 		if stanza.attr.type == "get" then
 			session.send(st.reply(stanza):tag("query", {xmlns="jabber:iq:time"})
-				:tag("utc"):text(datetime()));
+				:tag("utc"):text(legacy()));
 		end
 	end);
