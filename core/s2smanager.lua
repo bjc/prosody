@@ -128,7 +128,7 @@ function attempt_connection(host_session, err)
 		host_session.srv_choice = host_session.srv_choice + 1;
 		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
 		connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
-		host_session.log("debug", "Attempt #%d: This time to %s:%d", host_session.srv_choice, connect_host, connect_port);
+		host_session.log("debug", "Connection failed (%s). Attempt #%d: This time to %s:%d", tostring(err), host_session.srv_choice, connect_host, connect_port);
 	else
 		host_session.log("debug", "Out of connection options, can't connect to %s", tostring(host_session.to_host));
 		-- We're out of options
