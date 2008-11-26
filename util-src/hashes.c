@@ -48,7 +48,7 @@ static const luaL_Reg Reg[] =
 	{ NULL,		NULL	}
 };
 
-LUALIB_API int luaopen_hashes(lua_State *L)
+LUALIB_API int luaopen_util_hashes(lua_State *L)
 {
 	luaL_register(L, "hashes", Reg);
 	lua_pushliteral(L, "version");			/** version */
