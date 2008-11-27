@@ -26,7 +26,7 @@ static int myFunc(lua_State *L) { \
 	int hex_out = lua_toboolean(L, 2); \
 	char hash[size]; \
 	char result[size*2]; \
-	func(s, len, hash); \
+	func((const unsigned char*)s, len, (unsigned char*)hash);  \
 	if (hex_out) { \
 		toHex(hash, size, result); \
 		lua_pushlstring(L, result, size*2); \
