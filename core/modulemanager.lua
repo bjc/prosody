@@ -27,6 +27,9 @@ local modulehelpers = setmetatable({}, { __index = _G });
 
 
 function load(host, module_name, config)
+	if not (host and module_name) then
+		return nil, "insufficient-parameters";
+	end
 	local mod, err = loadfile("plugins/mod_"..module_name..".lua");
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
@@ -57,6 +60,23 @@ function load(host, module_name, config)
 	modulemap[host][module_name] = mod;
 	
 	return true;
+end
+
+function is_loaded(host, name)
+	return modulemap[host] and modulemap[host][name] and true;
+end
+
+function unload(host, name, ...)
+	local mod = modulemap[host] and modulemap[host][name];
+	if not mod then return nil, "module-not-loaded"; end
+	
+	if type(mod.unload) == "function" then
+		local ok, err = pcall(mod.unload, ...)
+		if (not ok) and err then
+			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+		end
+	end
+	
 end
 
 function handle_stanza(host, origin, stanza)
