@@ -21,7 +21,7 @@ local logger_init = require "util.logger".init;
 
 local log = logger_init("s2smanager");
 
-local md5_hash = require "util.hashes".md5;
+local sha256_hash = require "util.hashes".sha256;
 
 local dialback_secret = "This is very secret!!! Ha!";
 
@@ -210,7 +210,7 @@ function initiate_dialback(session)
 end
 
 function generate_dialback(id, to, from)
-	return md5_hash(id..to..from..dialback_secret); -- FIXME: See XEP-185 and XEP-220
+	return sha256_hash(id..to..from..dialback_secret, true);
 end
 
 function verify_dialback(id, to, from, key)
