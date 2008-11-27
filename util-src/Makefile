@@ -1,4 +1,8 @@
 
+!IFDEF WINDIR
+!INCLUDE Makefile.win
+!ELSE
+
 LUA_INCLUDE=/usr/include/lua5.1
 LUA_LIB=lua5.1
 
@@ -22,3 +26,4 @@ encodings.so: encodings.c
 hashes.so: hashes.c
 	gcc -shared hashes.c -I$(LUA_INCLUDE) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
 	
+!ENDIF
