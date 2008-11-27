@@ -8,6 +8,7 @@ local usermanager_validate_credentials = require "core.usermanager".validate_cre
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 local jid_split = require "util.jid".split
+local md5 = require "util.hashes".md5;
 
 local log = require "util.logger".init("mod_saslauth");
 
@@ -50,7 +51,7 @@ local function password_callback(node, host, mechanism)
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
-			return func, require "md5".sum(node..":"..host..":"..password);
+			return func, md5(node..":"..host..":"..password);
 		end
 	end
 	return func, nil;

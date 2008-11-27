@@ -1,5 +1,5 @@
 
-local md5 = require "md5"
+local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
@@ -132,21 +132,21 @@ local function new_digest_md5(realm, password_handler)
 			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
 			local A2 = "AUTHENTICATE:"..protocol.."/"..domain
 			
-			local HA1 = md5.sumhexa(A1)
-			local HA2 = md5.sumhexa(A2)
+			local HA1 = md5(A1, true)
+			local HA2 = md5(A2, true)
 			
 			local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-			local response_value = md5.sumhexa(KD)
+			local response_value = md5(KD, true)
 			
 			if response_value == response["response"] then
 				-- calculate rspauth
 				A2 = ":"..protocol.."/"..domain
 				
-				HA1 = md5.sumhexa(A1)
-				HA2 = md5.sumhexa(A2)
+				HA1 = md5(A1, true)
+				HA2 = md5(A2, true)
         
 				KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-				local rspauth = md5.sumhexa(KD)
+				local rspauth = md5(KD, true)
 				self.authenticated = true
 				return "challenge", serialize({rspauth = rspauth})
 			else
