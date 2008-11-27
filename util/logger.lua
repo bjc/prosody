@@ -1,8 +1,10 @@
 
-local format = string.format;
+local format, rep = string.format, string.rep;
+local io_write = io.write;
 local print = print;
 local debug = debug;
 local tostring = tostring;
+local math_max = math.max;
 
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 local do_pretty_printing = not os.getenv("WINDIR");
@@ -18,17 +20,21 @@ if do_pretty_printing then
 	logstyles["error"] = getstyle("bold", "red");
 end
 
+local sourcewidth = 20;
+
 function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
+	sourcewidth = math_max(#name+2, sourcewidth);
+	local namelen = #name;
 	return 	function (level, message, ...)
 				if not name then
 					local inf = debug.getinfo(3, 'Snl');
 					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
 				end
 				if ... then 
-					print(name, getstring(logstyles[level], level), format(message, ...));
+					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
 				else
-					print(name, getstring(logstyles[level], level), message);
+					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
 				end
 			end
 end
