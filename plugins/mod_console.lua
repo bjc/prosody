@@ -129,13 +129,22 @@ function def_env.server:reload()
 end
 
 def_env.module = {};
-function def_env.module:load(name, host)
+function def_env.module:load(name, host, config)
 	local mm = require "modulemanager";
-	local ok, err = mm.load(host or self.env.host, name);
+	local ok, err = mm.load(host or self.env.host, name, config);
 	if not ok then
 		return false, err or "Unknown error loading module";
 	end
 	return true, "Module loaded";
+end
+
+function def_env.module:unload(name, host)
+	local mm = require "modulemanager";
+	local ok, err = mm.unload(host or self.env.host, name);
+	if not ok then
+		return false, err or "Unknown error unloading module";
+	end
+	return true, "Module unloaded";
 end
 
 def_env.config = {};
