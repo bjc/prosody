@@ -43,12 +43,4 @@ if not ssl then
 end
 
 
-local md5 = softreq "md5";
-
-if not md5 then
-	missingdep("MD5", { ["luarocks"] = "luarocks install md5"; ["Source"] = "http://luaforge.net/frs/?group_id=155" });	
-	fatal = true;
-end
-
-
 if fatal then os.exit(1); end

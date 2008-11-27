@@ -19,15 +19,12 @@ function validate_credentials(host, username, password, method)
 		end
 	end
 	-- must do md5
-	if not hashes.md5 then
-		return nil, "Server misconfiguration, the md5 library is not available.";
-	end
 	-- make credentials md5
 	local pwd = credentials.password;
-	if not pwd then pwd = credentials.md5; else pwd = hashes.md5(pwd); end
+	if not pwd then pwd = credentials.md5; else pwd = hashes.md5(pwd, true); end
 	-- make password md5
 	if method == "PLAIN" then
-		password = hashes.md5(password or "");
+		password = hashes.md5(password or "", true);
 	elseif method ~= "DIGEST-MD5" then
 		return nil, "Unsupported auth method";
 	end
@@ -49,9 +46,7 @@ end
 
 function get_supported_methods(host)
 	local methods = {["PLAIN"] = true}; -- TODO this should be taken from the config
-	if hashes.md5 then
-		methods["DIGEST-MD5"] = true;
-	end
+	methods["DIGEST-MD5"] = true;
 	return methods;
 end
 
