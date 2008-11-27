@@ -8,7 +8,7 @@ local start_time = os.time();
 
 require "core.discomanager".set("uptime", "jabber:iq:last");
 
-add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last", 
+module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last", 
 	function (origin, stanza)
 		if stanza.tags[1].name == "query" then
 			if stanza.attr.type == "get" then

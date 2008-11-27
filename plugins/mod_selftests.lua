@@ -36,7 +36,7 @@ if tests_jid and host then
 
 
 	local our_origin = hosts[host];
-	add_event_hook("server-started", 
+	module:add_event_hook("server-started", 
 					function ()
 						local id = st.new_id();
 						local ping_attr = { xmlns = 'urn:xmpp:ping' };

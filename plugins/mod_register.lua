@@ -6,7 +6,7 @@ local datamanager_store = require "util.datamanager".store;
 
 require "core.discomanager".set("register", "jabber:iq:register");
 
-add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
+module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 	if stanza.tags[1].name == "query" then
 		local query = stanza.tags[1];
 		if stanza.attr.type == "get" then
@@ -73,7 +73,7 @@ add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 	end;
 end);
 
-add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
+module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
 	if stanza.tags[1].name == "query" then
 		local query = stanza.tags[1];
 		if stanza.attr.type == "get" then

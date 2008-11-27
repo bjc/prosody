@@ -9,7 +9,7 @@ local log = require "util.logger".init("mod_starttls");
 
 local xmlns_starttls ='urn:ietf:params:xml:ns:xmpp-tls';
 
-add_handler("c2s_unauthed", "starttls", xmlns_starttls,
+module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls then
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
@@ -25,7 +25,7 @@ add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		end);
 		
 local starttls_attr = { xmlns = xmlns_starttls };
-add_event_hook("stream-features", 
+module:add_event_hook("stream-features", 
 					function (session, features)												
 						if session.conn.starttls then
 							features:tag("starttls", starttls_attr):up();

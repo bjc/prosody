@@ -10,7 +10,7 @@ local jid_split = jid.split;
 
 require "core.discomanager".set("vcard", "vcard-temp");
 
-add_iq_handler({"c2s", "s2sin"}, "vcard-temp", 
+module:add_iq_handler({"c2s", "s2sin"}, "vcard-temp", 
 		function (session, stanza)
 			if stanza.tags[1].name == "vCard" then
 				local to = stanza.attr.to;
@@ -46,7 +46,7 @@ add_iq_handler({"c2s", "s2sin"}, "vcard-temp",
 		end);
 
 local feature_vcard_attr = { var='vcard-temp' };
-add_event_hook("stream-features", 
+module:add_event_hook("stream-features", 
 					function (session, features)												
 						if session.type == "c2s" then
 							features:tag("feature", feature_vcard_attr):up();

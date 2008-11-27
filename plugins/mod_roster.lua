@@ -11,7 +11,7 @@ local rm_roster_push = require "core.rostermanager".roster_push;
 
 require "core.discomanager".set("roster", "jabber:iq:roster");
 
-add_iq_handler("c2s", "jabber:iq:roster", 
+module:add_iq_handler("c2s", "jabber:iq:roster", 
 		function (session, stanza)
 			if stanza.tags[1].name == "query" then
 				if stanza.attr.type == "get" then

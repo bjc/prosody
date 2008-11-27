@@ -1,10 +1,4 @@
 
--- The code in this file should be self-explanatory, though the logic is horrible
--- for more info on that, see doc/stanza_routing.txt, which attempts to condense
--- the rules from the RFCs (mainly 3921)
-
-require "core.servermanager"
-
 local log = require "util.logger".init("stanzarouter")
 
 local st = require "util.stanza";
@@ -82,7 +76,7 @@ function core_process_stanza(origin, stanza)
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
 			core_handle_stanza(origin, stanza);
 		elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
-			modules_handle_stanza(origin, stanza);
+			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 			component_handle_stanza(origin, stanza);
 		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
@@ -105,7 +99,7 @@ end
 -- that is, they are handled by this server
 function core_handle_stanza(origin, stanza)
 	-- Handlers
-	if modules_handle_stanza(origin, stanza) then return; end
+	if modules_handle_stanza(stanza.attr.to or origin.host, origin, stanza) then return; end
 	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
 		local session = origin;
 
