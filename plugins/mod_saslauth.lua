@@ -2,7 +2,7 @@
 local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local jid
-local base64 = require "base64"
+local base64 = require "util.encodings".base64;
 
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
