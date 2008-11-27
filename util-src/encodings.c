@@ -3,7 +3,11 @@
 * Lua library for base64, stringprep and idna encodings
 */
 
+// Newer MSVC compilers deprecate strcpy as unsafe, but we use it in a safe way
+#define _CRT_SECURE_NO_DEPRECATE
+
 #include <string.h>
+#include <malloc.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -51,9 +55,9 @@ static void base64_decode(luaL_Buffer *b, int c1, int c2, int c3, int c4, int n)
 	char s[3];
 	switch (--n)
 	{
-		case 3: s[2]=tuple;
-		case 2: s[1]=tuple >> 8;
-		case 1: s[0]=tuple >> 16;
+		case 3: s[2]=(char) tuple;
+		case 2: s[1]=(char) (tuple >> 8);
+		case 1: s[0]=(char) (tuple >> 16);
 	}
 	luaL_addlstring(b,s,n);
 }
@@ -74,7 +78,7 @@ static int Lbase64_decode(lua_State *L)		/** decode(s) */
 			const char *p;
 			default:
 				p=strchr(code,c); if (p==NULL) return 0;
-				t[n++]= p-code;
+				t[n++]= (char) (p-code);
 				if (n==4)
 				{
 					base64_decode(&b,t[0],t[1],t[2],t[3],4);
