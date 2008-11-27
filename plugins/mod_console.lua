@@ -37,7 +37,7 @@ function console_listener.listener(conn, data)
 		-- Handle new connection
 		session = console:new_session(conn);
 		sessions[conn] = session;
-		session.print("Welcome to the lxmppd admin console!");
+		printbanner(session);
 	end
 	if data then
 		-- Handle data
@@ -129,13 +129,22 @@ function def_env.server:reload()
 end
 
 def_env.module = {};
-function def_env.module:load(name)
+function def_env.module:load(name, host, config)
 	local mm = require "modulemanager";
-	local ok, err = mm.load(name);
+	local ok, err = mm.load(host or self.env.host, name, config);
 	if not ok then
 		return false, err or "Unknown error loading module";
 	end
 	return true, "Module loaded";
+end
+
+function def_env.module:unload(name, host)
+	local mm = require "modulemanager";
+	local ok, err = mm.unload(host or self.env.host, name);
+	if not ok then
+		return false, err or "Unknown error unloading module";
+	end
+	return true, "Module unloaded";
 end
 
 def_env.config = {};
@@ -162,4 +171,21 @@ function def_env.hosts:list()
 end
 
 function def_env.hosts:add(name)
+end
+
+-------------
+
+function printbanner(session)
+session.print [[
+                   ____                \   /     _       
+                    |  _ \ _ __ ___  ___  _-_   __| |_   _ 
+                    | |_) | '__/ _ \/ __|/ _ \ / _` | | | |
+                    |  __/| | | (_) \__ \ |_| | (_| | |_| |
+                    |_|   |_|  \___/|___/\___/ \__,_|\__, |
+                    A study in simplicity            |___/ 
+
+]]
+session.print("Welcome to the Prosody administration console. For a list of commands, type: help");
+session.print("You may find more help on using this console in our online documentation at ");
+session.print("http://prosody.im/doc/console\n");
 end
