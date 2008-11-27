@@ -6,7 +6,7 @@ local datamanager = require "util.datamanager"
 
 require "core.discomanager".set("private", "jabber:iq:private");
 
-add_iq_handler("c2s", "jabber:iq:private",
+module:add_iq_handler("c2s", "jabber:iq:private",
 	function (session, stanza)
 		local type = stanza.attr.type;
 		local query = stanza.tags[1];

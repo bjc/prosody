@@ -63,10 +63,15 @@ require "util.jid"
 ------------------------------------------------------------------------
 
 -- Initialise modules
-local modules_enabled = config.get("*", "core", "modules_enabled");
-if modules_enabled then
-	for _, module in pairs(modules_enabled) do
-		modulemanager.load(module);
+
+for host in pairs(hosts) do
+	if host ~= "*" then
+		local modules_enabled = config.get(host, "core", "modules_enabled");
+		if modules_enabled then
+			for _, module in pairs(modules_enabled) do
+				modulemanager.load(host, module);
+			end
+		end
 	end
 end
 

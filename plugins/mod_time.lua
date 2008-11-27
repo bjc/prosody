@@ -7,7 +7,7 @@ local legacy = require "util.datetime".legacy;
 
 require "core.discomanager".set("time", "urn:xmpp:time");
 
-add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:time",
+module:add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:time",
 	function(session, stanza)
 		if stanza.attr.type == "get" then
 			session.send(st.reply(stanza):tag("time", {xmlns="urn:xmpp:time"})
@@ -20,7 +20,7 @@ add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:time",
 
 require "core.discomanager".set("time", "jabber:iq:time");
 
-add_iq_handler({"c2s", "s2sin"}, "jabber:iq:time",
+module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:time",
 	function(session, stanza)
 		if stanza.attr.type == "get" then
 			session.send(st.reply(stanza):tag("query", {xmlns="jabber:iq:time"})

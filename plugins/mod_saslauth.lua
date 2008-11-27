@@ -79,14 +79,14 @@ function sasl_handler(session, stanza)
 	session.send(s);
 end
 
-add_handler("c2s_unauthed", "auth", xmlns_sasl, sasl_handler);
-add_handler("c2s_unauthed", "abort", xmlns_sasl, sasl_handler);
-add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
+module:add_handler("c2s_unauthed", "auth", xmlns_sasl, sasl_handler);
+module:add_handler("c2s_unauthed", "abort", xmlns_sasl, sasl_handler);
+module:add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
-add_event_hook("stream-features", 
+module:add_event_hook("stream-features", 
 					function (session, features)												
 						if not session.username then
 							features:tag("mechanisms", mechanisms_attr);
@@ -100,7 +100,7 @@ add_event_hook("stream-features",
 						end
 					end);
 					
-add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 
 		function (session, stanza)
 			log("debug", "Client tried to bind to a resource");
 			local resource;
@@ -123,7 +123,7 @@ add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 			end
 		end);
 		
-add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 
 		function (session, stanza)
 			log("debug", "Client tried to bind to a resource");
 			session.send(st.reply(stanza));
