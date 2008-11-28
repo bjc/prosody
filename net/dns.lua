@@ -691,7 +691,8 @@ function resolver:pulse ()    -- - - - - - - - - - - - - - - - - - - - -  pulse
           if not next (self.active) then  return nil  end
         else
           -- print ('retry', o.server, o.delay)
-          self.socket[o.server]:send (o.packet)
+          local _a = self.socket[o.server];
+          if _a then _a:send (o.packet) end
           o.retry = self.time + self.delays[o.delay]
           end  end  end  end
 
