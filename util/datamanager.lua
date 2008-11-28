@@ -17,6 +17,8 @@ local indent = function(f, i)
 	end
 end
 
+local data_path = "data";
+
 module "datamanager"
 
 
@@ -70,14 +72,18 @@ end
 
 ------- API -------------
 
+function set_data_path(path)
+	data_path = path;
+end
+
 function getpath(username, host, datastore, ext)
 	ext = ext or "dat";
 	if username then
-		return format("data/%s/%s/%s.%s", encode(host), datastore, encode(username), ext);
+		return format("%s/%s/%s/%s.%s", data_path, encode(host), datastore, encode(username), ext);
 	elseif host then
-		return format("data/%s/%s.%s", encode(host), datastore, ext);
+		return format("%s/%s/%s.%s", data_path, encode(host), datastore, ext);
 	else
-		return format("data/%s.%s", datastore, ext);
+		return format("%s/%s.%s", data_path, datastore, ext);
 	end
 end
 
