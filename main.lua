@@ -24,6 +24,8 @@ do
 	end
 end
 
+require "util.datamanager".set_data_path(config.get("*", "core", "data_path") or "data");
+
 local server = require "net.server"
 
 require "util.dependencies"
