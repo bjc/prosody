@@ -1,13 +1,13 @@
 
 
-LUA_INCLUDE=/usr/include/lua5.1
+LUA_INCLUDE=/usr/include/lua51
 LUA_LIB=lua5.1
 
 IDN_LIB=idn
 OPENSSL_LIB=ssl
 
-
 all: encodings.so hashes.so
+	
 
 install: encodings.so hashes.so
 	strip *.so
