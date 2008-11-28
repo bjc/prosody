@@ -19,7 +19,7 @@ local st = stanza;
 local stream_callbacks = { streamopened = sm_streamopened, streamclosed = sm_streamclosed };
 
 local sessions = {};
-local xmppclient = { default_port = 5222 };
+local xmppclient = { default_port = 5222, default_mode = "*a" };
 
 -- These are session methods --
 

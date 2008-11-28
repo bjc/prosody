@@ -143,7 +143,7 @@ function attempt_connection(host_session, err)
 	end
 	
 	local cl = connlisteners_get("xmppserver");
-	conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, 1, hosts[from_host].ssl_ctx );
+	conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, cl.default_mode or 1, hosts[from_host].ssl_ctx );
 	host_session.conn = conn;
 	
 	-- Register this outgoing connection so that xmppserver_listener knows about it
