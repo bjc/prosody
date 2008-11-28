@@ -21,7 +21,7 @@ local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionma
 local st = stanza;
 
 local sessions = {};
-local xmppserver = { default_port = 5269 };
+local xmppserver = { default_port = 5269, default_mode = "*a" };
 
 -- These are session methods --
 
