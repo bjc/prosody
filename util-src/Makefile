@@ -21,8 +21,8 @@ clean:
 	rm -f ../util/*.so
 
 encodings.so: encodings.c
-	gcc -shared encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
+	gcc -shared -fPIC encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
 
 hashes.so: hashes.c
-	gcc -shared hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
+	gcc -shared -fPIC hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
 	
