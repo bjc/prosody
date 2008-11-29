@@ -124,7 +124,7 @@ end
 
 def_env.server = {};
 function def_env.server:reload()
-	dofile "main.lua"
+	dofile "prosody"
 	return true, "Server reloaded";
 end
 
