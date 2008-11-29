@@ -2,7 +2,10 @@
 local log = require "util.logger".init("presencemanager")
 
 local require = require;
-local pairs = pairs;
+local pairs, ipairs = pairs, ipairs;
+local t_concat = table.concat;
+local s_find = string.find;
+local tonumber = tonumber;
 
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
@@ -10,8 +13,95 @@ local hosts = hosts;
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
+local offlinemanager = require "core.offlinemanager";
 
 module "presencemanager"
+
+function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, inbound)
+	local type = stanza.attr.type;
+	if type and type ~= "unavailable" then
+		if inbound then
+			handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
+		else
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
+		end
+	elseif not inbound and not stanza.attr.to then
+		handle_normal_presence(origin, stanza, core_route_stanza);
+	else
+		core_route_stanza(origin, stanza);
+	end
+end
+
+function handle_normal_presence(origin, stanza, core_route_stanza)
+	if origin.roster then
+		for jid in pairs(origin.roster) do -- broadcast to all interested contacts
+			local subscription = origin.roster[jid].subscription;
+			if subscription == "both" or subscription == "from" then
+				stanza.attr.to = jid;
+				core_route_stanza(origin, stanza);
+			end
+		end
+		local node, host = jid_split(stanza.attr.from);
+		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
+			if res ~= origin and res.full_jid then -- to resource. FIXME is res.full_jid the correct check? Maybe it should be res.presence
+				stanza.attr.to = res.full_jid;
+				core_route_stanza(origin, stanza);
+			end
+		end
+		if stanza.attr.type == nil and not origin.presence then -- initial presence
+			local probe = st.presence({from = origin.full_jid, type = "probe"});
+			for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
+				local subscription = origin.roster[jid].subscription;
+				if subscription == "both" or subscription == "to" then
+					probe.attr.to = jid;
+					core_route_stanza(origin, probe);
+				end
+			end
+			for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
+				if res ~= origin and res.presence then
+					res.presence.attr.to = origin.full_jid;
+					core_route_stanza(res, res.presence);
+					res.presence.attr.to = nil;
+				end
+			end
+			if origin.roster.pending then -- resend incoming subscription requests
+				for jid in pairs(origin.roster.pending) do
+					origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+				end
+			end
+			local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
+			for jid, item in pairs(origin.roster) do -- resend outgoing subscription requests
+				if item.ask then
+					request.attr.to = jid;
+					core_route_stanza(origin, request);
+				end
+			end
+			for _, msg in ipairs(offlinemanager.load(node, host) or {}) do
+				origin.send(msg); -- FIXME do we need to modify to/from in any way?
+			end
+			offlinemanager.deleteAll(node, host);
+		end
+		origin.priority = 0;
+		if stanza.attr.type == "unavailable" then
+			origin.presence = nil;
+		else
+			origin.presence = stanza;
+			local priority = stanza:child_with_name("priority");
+			if priority and #priority > 0 then
+				priority = t_concat(priority);
+				if s_find(priority, "^[+-]?[0-9]+$") then
+					priority = tonumber(priority);
+					if priority < -128 then priority = -128 end
+					if priority > 127 then priority = 127 end
+					origin.priority = priority;
+				end
+			end
+		end
+		stanza.attr.to = nil; -- reset it
+	else
+		log("error", "presence recieved from client with no roster");
+	end
+end
 
 function send_presence_of_available_resources(user, host, jid, recipient_session, core_route_stanza)
 	local h = hosts[host];
