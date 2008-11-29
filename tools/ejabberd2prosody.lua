@@ -12,7 +12,10 @@ dm.set_data_path(data_path);
 
 local _mkdir = {}
 function mkdir(path)
-	path = path:gsub("/", "\\");
+	if os.getenv("WINDIR") then
+		-- I'm afraid it's true :(
+		path = path:gsub("/", "\\");
+	end
 	--print("mkdir",path);
 	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
 end
