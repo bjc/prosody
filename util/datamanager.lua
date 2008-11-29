@@ -3,7 +3,7 @@ local setmetatable, type = setmetatable, type;
 local pairs, ipairs = pairs, ipairs;
 local char = string.char;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
-local log = log;
+local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
 local tostring, tonumber = tostring, tonumber;
@@ -17,13 +17,13 @@ local indent = function(f, i)
 	end
 end
 
+local data_path = "data";
+
 module "datamanager"
 
 
 ---- utils -----
 local encode, decode;
-
-local log = function (type, msg) return log(type, "datamanager", msg); end
 
 do 
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
@@ -70,14 +70,18 @@ end
 
 ------- API -------------
 
+function set_data_path(path)
+	data_path = path;
+end
+
 function getpath(username, host, datastore, ext)
 	ext = ext or "dat";
 	if username then
-		return format("data/%s/%s/%s.%s", encode(host), datastore, encode(username), ext);
+		return format("%s/%s/%s/%s.%s", data_path, encode(host), datastore, encode(username), ext);
 	elseif host then
-		return format("data/%s/%s.%s", encode(host), datastore, ext);
+		return format("%s/%s/%s.%s", data_path, encode(host), datastore, ext);
 	else
-		return format("data/%s.%s", datastore, ext);
+		return format("%s/%s.%s", data_path, datastore, ext);
 	end
 end
 
