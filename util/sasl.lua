@@ -66,7 +66,7 @@ local function new_digest_md5(realm, password_handler)
 	
 	local function parse(data)
 		message = {}
-		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do
+		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
 			message[k] = v
 		end
 		return message
