@@ -87,7 +87,7 @@ local function new_digest_md5(realm, password_handler)
 											qop = "auth",
 											charset = "utf-8",
 											algorithm = "md5-sess",
-											realm = self.realm});
+											realm = idna_ascii(self.realm)});
 			return "challenge", challenge
 		elseif (self.step == 2) then
 			local response = parse(message)
