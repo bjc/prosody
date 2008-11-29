@@ -45,13 +45,18 @@ Host "*"
 				"private"; -- Private XML storage (for room bookmarks, etc.)
 				"version"; -- Replies to server version requests
 				"dialback"; -- s2s dialback support
+			  	"disco"; -- Service discovery
+			  	"ping"; -- XMPP Ping
+			  	"time"; -- Let others know the time here
+			  	"uptime"; -- Uptime reporting
+			  	"console"; -- telnet to port 5528 (needs console_enabled = true)
 			  };
 	
 	-- These are the SSL/TLS-related settings. If you don't want
 	-- to use SSL/TLS, you may comment or remove this
 	ssl = { 
-		key = "certs/server.key";
-		certificate = "certs/server.crt";
+		key = "certs/localhost.key";
+		certificate = "certs/localhost.cert";
 		}
 
 -- This allows clients to connect to localhost. No harm in it.
