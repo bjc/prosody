@@ -1,4 +1,19 @@
+#!/usr/bin/env lua
+
+-- Config here --
+
+
+
+-- -- -- -- -- --
+
+if CFG_SOURCEDIR then
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
+	package.cpath = CFG_SOURCEDIR.."/?.lua;"..package.cpath
+end
+
+-- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
+
 
 config = require "core.configmanager"
 log = require "util.logger".init("general");
