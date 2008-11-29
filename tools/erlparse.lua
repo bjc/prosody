@@ -98,7 +98,7 @@ readItem = function()
 		return readString();
 	elseif ch == "<" then
 		return readSpecialString();
-	elseif isSpace(ch) or ch == "," then
+	elseif isSpace(ch) or ch == "," or ch == "|" then
 		read();
 		return readItem();
 	else
