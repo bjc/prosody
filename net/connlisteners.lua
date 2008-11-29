@@ -1,5 +1,5 @@
 
-local listeners_dir = (CFG_SOURCEDIR or "").."/net/";
+local listeners_dir = (CFG_SOURCEDIR or ".").."/net/";
 local server_add = require "net.server".add;
 local log = require "util.logger".init("connlisteners");
 
