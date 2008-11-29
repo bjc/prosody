@@ -7,19 +7,17 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "lua.h"
 #include "lauxlib.h"
 
 /***************** BASE64 *****************/
 
-#define uint unsigned int
-
 static const char code[]=
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static void base64_encode(luaL_Buffer *b, uint c1, uint c2, uint c3, int n)
+static void base64_encode(luaL_Buffer *b, unsigned int c1, unsigned int c2, unsigned int c3, int n)
 {
 	unsigned long tuple=c3+256UL*(c2+256UL*c1);
 	int i;
