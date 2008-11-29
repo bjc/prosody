@@ -6,6 +6,11 @@ CONFIG = $(DESTDIR)$(SYSCONFDIR)
 MODULES = $(DESTDIR)$(PREFIX)/lib/prosody/modules
 SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
 
+INSTALLEDSOURCE = $(PREFIX)/lib/prosody
+INSTALLEDCONFIG = $(SYSCONFDIR)
+INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
+
+
 all:
 	$(MAKE) all -C util-src
 
@@ -31,5 +36,5 @@ util/hashes.so:
 	$(MAKE) install -C util-src
 
 prosody.install: prosody
-	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(SOURCE)';|;s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(CONFIG)';|;s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(MODULES)/';|;" prosody > prosody.install
+	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|;s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" prosody > prosody.install
 
