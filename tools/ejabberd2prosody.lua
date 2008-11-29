@@ -10,12 +10,10 @@ local dm = require "util.datamanager"
 local data_path = "data";
 dm.set_data_path(data_path);
 
+local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local _mkdir = {}
 function mkdir(path)
-	if os.getenv("WINDIR") then
-		-- I'm afraid it's true :(
-		path = path:gsub("/", "\\");
-	end
+	path = path:gsub("/", path_separator);
 	--print("mkdir",path);
 	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
 end
