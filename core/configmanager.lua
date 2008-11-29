@@ -2,6 +2,7 @@
 local _G = _G;
 local 	setmetatable, loadfile, pcall, rawget, rawset, io = 
 		setmetatable, loadfile, pcall, rawget, rawset, io;
+
 module "configmanager"
 
 local parsers = {};
@@ -52,18 +53,21 @@ end
 
 function load(filename, format)
 	format = format or filename:match("%w+$");
+
 	if parsers[format] and parsers[format].load then
-		local f = io.open(filename);
+		local f, err = io.open(filename);
 		if f then 
 			local ok, err = parsers[format].load(f:read("*a"));
 			f:close();
 			return ok, err;
 		end
+		return f, err;
 	end
+
 	if not format then
 		return nil, "no parser specified";
 	else
-		return false, "no parser";
+		return nil, "no parser for "..(format);
 	end
 end
 

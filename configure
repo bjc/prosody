@@ -125,7 +125,7 @@ find_program() {
 
 if [ "$LUA_SUFFIX_SET" != "yes" ]
 then
-   for suffix in "" "5.1" "51" ""
+   for suffix in "5.1" "51" ""
    do
       LUA_SUFFIX="$suffix"
       if [ "$LUA_DIR_SET" = "yes" ]

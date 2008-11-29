@@ -1,4 +1,5 @@
 
+local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
 local log = logger.init("modulemanager")
@@ -11,8 +12,8 @@ local type = type;
 
 local tostring, print = tostring, print;
 
+-- We need this to let modules access the real global namespace
 local _G = _G;
-local debug = debug;
 
 module "modulemanager"
 
@@ -30,7 +31,7 @@ function load(host, module_name, config)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
 	end
-	local mod, err = loadfile("plugins/mod_"..module_name..".lua");
+	local mod, err = loadfile(plugin_dir.."mod_"..module_name..".lua");
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		return nil, err;
