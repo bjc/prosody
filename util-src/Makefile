@@ -1,10 +1,12 @@
 
+include ../config.unix
 
-LUA_INCLUDE=/usr/include/lua5.1
-LUA_LIB=lua5.1
+LUA_SUFFIX?=5.1
+LUA_INCDIR?=/usr/include/lua$(LUA_SUFFIX)
+LUA_LIB?=lua$(LUA_SUFFIX)
+IDN_LIB?=idn
+OPENSSL_LIB?=ssl
 
-IDN_LIB=idn
-OPENSSL_LIB=ssl
 
 
 all: encodings.so hashes.so
@@ -15,11 +17,12 @@ install: encodings.so hashes.so
 	
 
 clean:
-	rm *.so
+	rm -f *.so
+	rm -f ../util/*.so
 
 encodings.so: encodings.c
-	gcc -shared encodings.c -I$(LUA_INCLUDE) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
+	gcc -shared encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
 
 hashes.so: hashes.c
-	gcc -shared hashes.c -I$(LUA_INCLUDE) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
+	gcc -shared hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
 	
