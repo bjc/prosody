@@ -9,6 +9,7 @@ end
 local verbosity = tonumber(arg[1]) or 2;
 
 package.path = package.path..";../?.lua";
+package.cpath = package.cpath..";../?.so";
 
 require "util.import"
 
