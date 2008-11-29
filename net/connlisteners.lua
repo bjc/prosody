@@ -1,4 +1,5 @@
 
+local listeners_dir = (CFG_SOURCEDIR or "").."/net/";
 local server_add = require "net.server".add;
 local log = require "util.logger".init("connlisteners");
 
@@ -26,7 +27,7 @@ end
 function get(name)
 	local h = listeners[name];
 	if not h then
-		pcall(dofile, "net/"..name:gsub("[^%w%-]", "_").."_listener.lua");
+		pcall(dofile, listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua");
 		h = listeners[name];
 	end
 	return h;

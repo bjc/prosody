@@ -17,6 +17,7 @@ local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
 local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
 local handle_inbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
+local handle_normal_presence = require "core.presencemanager".handle_normal_presence;
 
 local format = string.format;
 local tostring = tostring;
@@ -105,70 +106,7 @@ function core_handle_stanza(origin, stanza)
 
 		if stanza.name == "presence" and origin.roster then
 			if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
-				for jid in pairs(origin.roster) do -- broadcast to all interested contacts
-					local subscription = origin.roster[jid].subscription;
-					if subscription == "both" or subscription == "from" then
-						stanza.attr.to = jid;
-						core_route_stanza(origin, stanza);
-					end
-				end
-				local node, host = jid_split(stanza.attr.from);
-				for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
-					if res ~= origin and res.full_jid then -- to resource. FIXME is res.full_jid the correct check? Maybe it should be res.presence
-						stanza.attr.to = res.full_jid;
-						core_route_stanza(origin, stanza);
-					end
-				end
-				if stanza.attr.type == nil and not origin.presence then -- initial presence
-					local probe = st.presence({from = origin.full_jid, type = "probe"});
-					for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
-						local subscription = origin.roster[jid].subscription;
-						if subscription == "both" or subscription == "to" then
-							probe.attr.to = jid;
-							core_route_stanza(origin, probe);
-						end
-					end
-					for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
-						if res ~= origin and res.presence then
-							res.presence.attr.to = origin.full_jid;
-							core_route_stanza(res, res.presence);
-							res.presence.attr.to = nil;
-						end
-					end
-					if origin.roster.pending then -- resend incoming subscription requests
-						for jid in pairs(origin.roster.pending) do
-							origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
-						end
-					end
-					local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
-					for jid, item in pairs(origin.roster) do -- resend outgoing subscription requests
-						if item.ask then
-							request.attr.to = jid;
-							core_route_stanza(origin, request);
-						end
-					end
-					for _, msg in ipairs(offlinemanager.load(node, host) or {}) do
-						origin.send(msg); -- FIXME do we need to modify to/from in any way?
-					end
-					offlinemanager.deleteAll(node, host);
-				end
-				origin.priority = 0;
-				if stanza.attr.type == "unavailable" then
-					origin.presence = nil;
-				else
-					origin.presence = stanza;
-					local priority = stanza:child_with_name("priority");
-					if priority and #priority > 0 then
-						priority = t_concat(priority);
-						if s_find(priority, "^[+-]?[0-9]+$") then
-							priority = tonumber(priority);
-							if priority < -128 then priority = -128 end
-							if priority > 127 then priority = 127 end
-							origin.priority = priority;
-						end
-					end
-				end
-				stanza.attr.to = nil; -- reset it
+				handle_normal_presence(origin, stanza, core_route_stanza);
 			else
 				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
 				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
@@ -304,9 +242,3 @@ function core_route_stanza(origin, stanza)
 	end
 	stanza.attr.to = to; -- reset
 end
-
-function handle_stanza_toremote(stanza)
-	log("error", "Stanza bound for remote host, but s2s is not implemented");
-end
-
-

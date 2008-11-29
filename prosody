@@ -2,14 +2,31 @@
 
 -- Config here --
 
-
+CFG_SOURCEDIR=nil;
+CFG_CONFIGDIR=nil;
+CFG_PLUGINDIR=nil;
 
 -- -- -- -- -- --
 
 if CFG_SOURCEDIR then
+	if os.getenv("HOME") then
+		CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
+	end
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
-	package.cpath = CFG_SOURCEDIR.."/?.lua;"..package.cpath
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
 end
+
+if CFG_CONFIGDIR then
+	if os.getenv("HOME") then
+		CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+	end
+end	
+
+if CFG_PLUGINDIR then
+	if os.getenv("HOME") then
+		CFG_PLUGINDIR = CFG_PLUGINDIR:gsub("^~", os.getenv("HOME"));
+	end
+end	
 
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
@@ -21,7 +38,7 @@ log = require "util.logger".init("general");
 do
 	-- TODO: Check for other formats when we add support for them
 	-- Use lfs? Make a new conf/ dir?
-	local ok, err = config.load("lxmppd.cfg.lua");
+	local ok, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
 	if not ok then
 		log("error", "Couldn't load config file: %s", err);
 		log("info", "Falling back to old config file format...")
