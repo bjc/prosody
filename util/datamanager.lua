@@ -3,7 +3,7 @@ local setmetatable, type = setmetatable, type;
 local pairs, ipairs = pairs, ipairs;
 local char = string.char;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
-local log = log;
+local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
 local tostring, tonumber = tostring, tonumber;
@@ -24,8 +24,6 @@ module "datamanager"
 
 ---- utils -----
 local encode, decode;
-
-local log = function (type, msg) return log(type, "datamanager", msg); end
 
 do 
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
