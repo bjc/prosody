@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 
 require "erlparse";
 require "serialize";
