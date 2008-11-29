@@ -25,12 +25,12 @@ install: prosody.install prosody.cfg.lua util/encodings.so util/encodings.so
 	install -m644 plugins/* $(MODULES)
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 plugins/* $(MODULES)
-	install -m644 prosody.cfg.lua $(CONFIG)/prosody.cfg.lua
+	install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
 	$(MAKE) install -C util-src
 
 clean:
 	rm -f prosody.install
-	rm -f prosody.cfg.lua
+	rm -f prosody.cfg.lua.install
 	$(MAKE) clean -C util-src
 
 util/encodings.so:
@@ -43,5 +43,5 @@ prosody.install: prosody
 	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|;s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" prosody > prosody.install
 
 prosody.cfg.lua:
-	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua
+	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
 
