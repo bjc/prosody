@@ -11,6 +11,7 @@ local math = require "math"
 local type = type
 local error = error
 local print = print
+local idna_ascii = require "util.encodings".idna.to_ascii
 
 module "sasl"
 
@@ -130,7 +131,7 @@ local function new_digest_md5(realm, password_handler)
 			elseif Y == false then return "failure", "account-disabled" end
 			
 			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
-			local A2 = "AUTHENTICATE:"..protocol.."/"..domain
+			local A2 = "AUTHENTICATE:"..protocol.."/"..idna_ascii(domain)
 			
 			local HA1 = md5(A1, true)
 			local HA2 = md5(A2, true)
@@ -140,7 +141,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			if response_value == response["response"] then
 				-- calculate rspauth
-				A2 = ":"..protocol.."/"..domain
+				A2 = ":"..protocol.."/"..idna_ascii(domain)
 				
 				HA1 = md5(A1, true)
 				HA2 = md5(A2, true)
