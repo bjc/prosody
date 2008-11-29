@@ -1,7 +1,7 @@
--- lxmppd Example Configuration File 
+-- Prosody Example Configuration File 
 -- 
 -- If it wasn't already obvious, -- starts a comment, and all 
--- text after it is ignored by lxmppd.
+-- text after it is ignored by Prosody.
 --
 -- The config is split into sections, a global section, and one 
 -- for each defined host that we serve. You can add as many host 
@@ -23,7 +23,7 @@
 --sonsIdon'trecommendit.
 --
 -- Tip: You can check that the syntax of this file is correct when you have finished
--- by running: luac -p lxmppd.cfg.lua
+-- by running: luac -p prosody.cfg.lua
 -- If there are any errors, it will let you know what and where they are, otherwise it 
 -- will keep quiet.
 --
@@ -33,8 +33,8 @@
 -- Global settings go in this section
 Host "*"
 	
-	-- This is the list of modules lxmppd will load on startup.
-	-- It looks for plugins/mod_modulename.lua, so make sure that exists too.
+	-- This is the list of modules Prosody will load on startup.
+	-- It looks for mod_modulename.lua in the plugins folder, so make sure that exists too.
 	modules_enabled = {
 				"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 				"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
@@ -69,6 +69,5 @@ Host "example.com"
 		certificate = "certs/example.com.crt";
 		}
 
-Host "example.org"
 	enabled = false -- This will disable the host, preserving the config, but denying connections
 	
