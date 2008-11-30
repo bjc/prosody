@@ -13,6 +13,8 @@ LUA_LIBDIR="/usr/lib"
 IDN_LIB=idn
 OPENSSL_LIB=crypto
 
+CFLAGS="-shared -fPIC"
+
 # Help
 
 show_help() {
@@ -20,6 +22,8 @@ cat <<EOF
 Configure Prosody prior to building.
 
 --help                      This help.
+--ostype=OS                 Use one of the OS presets.
+                            May be one of: debian, macosx
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
@@ -38,7 +42,9 @@ Configure Prosody prior to building.
                             Default is $IDN_LIB
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
---require-config              Will cause Prosody to refuse to run when
+--cflags=FLAGS              Flags to pass to the compiler
+                            Default is $CFLAGS
+--require-config            Will cause Prosody to refuse to run when
                             it fails to find a configuration file
 EOF
 }
@@ -62,6 +68,10 @@ do
    --prefix=*)
       PREFIX="$value"
       PREFIX_SET=yes
+      ;;
+   --ostype=*)
+      OSTYPE="$value"
+      OSTYPE_SET=yes
       ;;
    --data-dir=*)
    	DATADIR="$value"
@@ -91,6 +101,9 @@ do
    --with-ssl=*)
       OPENSSL_LIB="$value"
       ;;      
+   --cflags=*)
+      CFLAGS="$value"
+      ;;      
    *)
       echo "Error: Unknown flag: $1"
       exit 1
@@ -98,6 +111,19 @@ do
    esac
    shift
 done
+
+if [ "$OSTYPE_SET" = "yes" ]
+then
+	if [ "$OSTYPE" = "debian" ]
+	then LUA_SUFFIX="5.1";
+	LUA_INCDIR=/usr/include/lua5.1;
+	fi
+	if [ "$OSTYPE" = "macosx" ]
+	then LUA_INCDIR=/usr/local/include;
+	LUA_LIBDIR=/usr/local/lib
+	CFLAGS="-bundle -Wl,-undefined,dynamic_lookup"
+	fi	
+fi
 
 if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
 then
@@ -245,6 +271,7 @@ LUA_BINDIR=$LUA_BINDIR
 REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 OPENSSL_LIB=$OPENSSL_LIB
+CFLAGS=$CFLAGS
 
 EOF
 

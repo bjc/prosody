@@ -5,7 +5,7 @@ LUA_SUFFIX?=5.1
 LUA_INCDIR?=/usr/include/lua$(LUA_SUFFIX)
 LUA_LIB?=lua$(LUA_SUFFIX)
 IDN_LIB?=idn
-OPENSSL_LIB?=ssl
+OPENSSL_LIB?=crypto
 
 
 
@@ -21,8 +21,8 @@ clean:
 	rm -f ../util/*.so
 
 encodings.so: encodings.c
-	gcc -shared -fPIC encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
+	gcc $(CFLAGS) encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
 
 hashes.so: hashes.c
-	gcc -shared -fPIC hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
+	gcc $(CFLAGS) hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
 	
