@@ -6,16 +6,18 @@ CONFIG = $(DESTDIR)$(SYSCONFDIR)
 MODULES = $(DESTDIR)$(PREFIX)/lib/prosody/modules
 SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
 
+DATADIR?=data
+
 INSTALLEDSOURCE = $(PREFIX)/lib/prosody
 INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
+INSTALLEDDATA = $(DATADIR)
 
-
-all:
+all: prosody.install prosody.cfg.lua.install
 	$(MAKE) all -C util-src
 
 install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so
-	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
+	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATADIR)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
 	install ./prosody.install $(BIN)/prosody
@@ -40,7 +42,12 @@ util/hashes.so:
 	$(MAKE) install -C util-src
 
 prosody.install: prosody
-	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|;s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" prosody > prosody.install
+	cp prosody prosody.install
+	sed -i "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|;" prosody.install
+	sed -i "s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;" prosody.install
+	sed -i "s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|;" prosody.install
+	# The trailing slash is intentional in this one
+	sed -i "s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" prosody.install
 
 prosody.cfg.lua.install:
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install

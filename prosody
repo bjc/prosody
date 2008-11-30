@@ -5,28 +5,20 @@
 CFG_SOURCEDIR=nil;
 CFG_CONFIGDIR=nil;
 CFG_PLUGINDIR=nil;
+CFG_DATADIR=nil;
 
 -- -- -- -- -- --
 
 if CFG_SOURCEDIR then
-	if os.getenv("HOME") then
-		CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
-	end
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
 end
 
-if CFG_CONFIGDIR then
+if CFG_DATADIR then
 	if os.getenv("HOME") then
-		CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
 	end
-end	
-
-if CFG_PLUGINDIR then
-	if os.getenv("HOME") then
-		CFG_PLUGINDIR = CFG_PLUGINDIR:gsub("^~", os.getenv("HOME"));
-	end
-end	
+end
 
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
@@ -56,7 +48,7 @@ do
 	end
 end
 
-local data_path = config.get("*", "core", "data_path") or "data";
+local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local _mkdir = {}
 function mkdir(path)
