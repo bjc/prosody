@@ -5,8 +5,7 @@ BIN = $(DESTDIR)$(PREFIX)/bin
 CONFIG = $(DESTDIR)$(SYSCONFDIR)
 MODULES = $(DESTDIR)$(PREFIX)/lib/prosody/modules
 SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
-
-DATADIR?=data
+DATA = $(DESTDIR)$(DATADIR)
 
 INSTALLEDSOURCE = $(PREFIX)/lib/prosody
 INSTALLEDCONFIG = $(SYSCONFDIR)
@@ -17,7 +16,7 @@ all: prosody.install prosody.cfg.lua.install
 	$(MAKE) all -C util-src
 
 install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so
-	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATADIR)
+	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATA)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
 	install ./prosody.install $(BIN)/prosody
