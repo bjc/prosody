@@ -4,6 +4,8 @@ function run_all_tests()
 	dotest "core.stanza_router"
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
+	
+	dosingletest("test_sasl.lua", "latin1toutf8");
 end
 
 local verbosity = tonumber(arg[1]) or 2;
@@ -23,6 +25,44 @@ function assert_equal(a, b, message)
 		error("\n   assert_equal failed: "..tostring(a).." ~= "..tostring(b)..(message and ("\n   Message: "..message) or ""), 2);
 	elseif verbosity >= 4 then
 		print("assert_equal succeeded: "..tostring(a).." == "..tostring(b));
+	end
+end
+
+function dosingletest(testname, fname)
+	local tests = setmetatable({}, { __index = _G });
+	tests.__unit = testname;
+	tests.__test = fname;
+	local chunk, err = loadfile(testname);
+	if not chunk then
+		print("WARNING: ", "Failed to load tests for "..testname, err);
+		return;
+	end
+
+	setfenv(chunk, tests);
+	local success, err = pcall(chunk);
+	if not success then
+		print("WARNING: ", "Failed to initialise tests for "..testname, err);
+		return;
+	end
+	
+	if type(tests[fname]) ~= "function" then
+		error(testname.." has no test '"..fname.."'", 0);
+	end
+	
+	
+	local line_hook, line_info = new_line_coverage_monitor(testname);
+	debug.sethook(line_hook, "l")
+	local success, ret = pcall(tests[fname]);
+	debug.sethook();
+	if not success then
+		print("TEST FAILED! Unit: ["..testname.."] Function: ["..fname.."]");
+		print("   Location: "..ret:gsub(":%s*\n", "\n"));
+		line_info(fname, false, report_file);
+	elseif verbosity >= 2 then
+		print("TEST SUCCEEDED: ", testname, fname);
+		print(string.format("TEST COVERED %d/%d lines", line_info(fname, true, report_file)));
+	else
+		line_info(name, success, report_file);
 	end
 end
 
