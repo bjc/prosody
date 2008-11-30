@@ -12,6 +12,7 @@ local type = type
 local error = error
 local print = print
 local idna_ascii = require "util.encodings".idna.to_ascii
+local idna_unicode = require "util.encodings".idna.to_unicode
 
 module "sasl"
 
@@ -126,7 +127,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"]
-			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
+			local password_encoding, Y = self.password_handler(response["username"], idna_unicode(response["realm"]), "DIGEST-MD5")
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			
