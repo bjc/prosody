@@ -116,7 +116,9 @@ if [ "$OSTYPE_SET" = "yes" ]
 then
 	if [ "$OSTYPE" = "debian" ]
 	then LUA_SUFFIX="5.1";
+	LUA_SUFFIX_SET=yes
 	LUA_INCDIR=/usr/include/lua5.1;
+	LUA_INCDIR_SET=yes
 	fi
 	if [ "$OSTYPE" = "macosx" ]
 	then LUA_INCDIR=/usr/local/include;
