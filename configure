@@ -122,7 +122,9 @@ then
 	fi
 	if [ "$OSTYPE" = "macosx" ]
 	then LUA_INCDIR=/usr/local/include;
+	LUA_INCDIR_SET=yes	
 	LUA_LIBDIR=/usr/local/lib
+	LUA_LIBDIR_SET=yes
 	CFLAGS="-bundle -Wl,-undefined,dynamic_lookup"
 	fi	
 fi
