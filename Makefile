@@ -25,7 +25,7 @@ install: prosody.install prosody.cfg.lua.install util/encodings.so util/encoding
 	install -m644 plugins/* $(MODULES)
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 plugins/* $(MODULES)
-	install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
+	test -e $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
 	$(MAKE) install -C util-src
 
 clean:
