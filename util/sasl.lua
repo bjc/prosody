@@ -4,6 +4,8 @@ local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
 local generate_uuid = require "util.uuid".generate;
+local t_insert, t_concat = table.insert, table.concat;
+local to_byte, to_char = string.byte, string.char;
 local s_match = string.match;
 local gmatch = string.gmatch
 local string = string
@@ -66,6 +68,20 @@ local function new_digest_md5(realm, password_handler)
 		return data
 	end
 	
+	local function latin1toutf8(str)
+		local p = {};
+		for ch in gmatch(str, ".") do
+			ch = to_byte(ch);
+			if (ch < 0x80) then
+				t_insert(p, to_char(ch));
+			elseif (ch < 0xC0) then
+				t_insert(p, to_char(0xC2, ch));
+			else
+				t_insert(p, to_char(0xC3, ch - 64));
+			end
+		end
+		return t_concat(p);
+	end
 	local function parse(data)
 		message = {}
 		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
