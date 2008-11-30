@@ -88,7 +88,7 @@ local function new_digest_md5(realm, password_handler)
 											qop = "auth",
 											charset = "utf-8",
 											algorithm = "md5-sess",
-											realm = idna_ascii(self.realm)});
+											realm = self.realm});
 			return "challenge", challenge
 		elseif (self.step == 2) then
 			local response = parse(message)
@@ -127,7 +127,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"]
-			local password_encoding, Y = self.password_handler(response["username"], idna_unicode(response["realm"]), "DIGEST-MD5")
+			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			
