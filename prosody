@@ -5,28 +5,20 @@
 CFG_SOURCEDIR=nil;
 CFG_CONFIGDIR=nil;
 CFG_PLUGINDIR=nil;
+CFG_DATADIR=nil;
 
 -- -- -- -- -- --
 
 if CFG_SOURCEDIR then
-	if os.getenv("HOME") then
-		CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
-	end
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
 end
 
-if CFG_CONFIGDIR then
+if CFG_DATADIR then
 	if os.getenv("HOME") then
-		CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
 	end
-end	
-
-if CFG_PLUGINDIR then
-	if os.getenv("HOME") then
-		CFG_PLUGINDIR = CFG_PLUGINDIR:gsub("^~", os.getenv("HOME"));
-	end
-end	
+end
 
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
@@ -56,7 +48,30 @@ do
 	end
 end
 
-require "util.datamanager".set_data_path(config.get("*", "core", "data_path") or "data");
+local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
+local _mkdir = {}
+function mkdir(path)
+	path = path:gsub("/", path_separator);
+	--print("mkdir",path);
+	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
+end
+function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
+function mkdirs(host)
+	if not _mkdir[host] then
+		local host_dir = string.format("%s/%s", data_path, encode(host));
+		mkdir(host_dir);
+		mkdir(host_dir.."/accounts");
+		mkdir(host_dir.."/vcard");
+		mkdir(host_dir.."/roster");
+		mkdir(host_dir.."/private");
+		mkdir(host_dir.."/offline");
+		_mkdir[host] = true;
+	end
+end
+mkdir(data_path);
+
+require "util.datamanager".set_data_path(data_path);
 
 local server = require "net.server"
 
@@ -71,6 +86,7 @@ local defined_hosts = config.getconfig();
 for host, host_config in pairs(defined_hosts) do
 	if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) then
 		hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
+		mkdirs(host);
 	end
 end
 
