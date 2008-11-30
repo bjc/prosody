@@ -14,7 +14,7 @@ INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 all:
 	$(MAKE) all -C util-src
 
-install: prosody.install prosody.cfg.lua util/encodings.so util/encodings.so
+install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
