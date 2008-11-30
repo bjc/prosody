@@ -132,6 +132,13 @@ local function new_digest_md5(realm, password_handler)
 			
 			if response["realm"] == nil then response["realm"] = "" end
 			
+			if response["charset"] == nil then
+				response["username"] = latin1toutf8(response["username"])
+				response["realm"] = latin1toutf8(response["realm"])
+			elseif response["charset"] ~= "utf-8" then
+				return "failure", "incorrect-encoding", "The client's response uses "..response["charset"].." for encoding with isn't supported by sasl.lua. Supported encodings are latin or utf-8."
+			end
+			
 			local domain = ""
 			local protocol = ""
 			if response["digest-uri"] then
