@@ -70,14 +70,20 @@ function destroy_session(session, err)
 	
 	-- Remove session/resource from user's session list
 	if session.host and session.username then
-		if session.resource then
-			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
-		end
+		-- FIXME: How can the below ever be nil? (but they sometimes are...)
 		if hosts[session.host] and hosts[session.host].sessions[session.username] then
+			if session.resource then
+				hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
+			end
+				
 			if not next(hosts[session.host].sessions[session.username].sessions) then
 				log("debug", "All resources of %s are now offline", session.username);
 				hosts[session.host].sessions[session.username] = nil;
 			end
+		else
+			log("error", "host or session table didn't exist, please report this! Host: %s [%s] Sessions: %s [%s]", 
+					tostring(hosts[session.host]), tostring(session.host),
+					tostring(hosts[session.host].sessions[session.username] ), tostring(session.username));
 		end
 	end
 	
