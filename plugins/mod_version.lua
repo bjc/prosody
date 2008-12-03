@@ -10,8 +10,8 @@ require "core.discomanager".set("version", xmlns_version);
 local function handle_version_request(session, stanza)
 	if stanza.attr.type == "get" then
 		session.send(st.reply(stanza):query(xmlns_version)
-			:tag("name"):text("lxmppd"):up()
-			:tag("version"):text("pre-alpha"):up()
+			:tag("name"):text("Prosody"):up()
+			:tag("version"):text("0.1"):up()
 			:tag("os"):text("the best operating system ever!"));
 	end
 end
