@@ -12,8 +12,7 @@ OPENSSL_LIB?=crypto
 all: encodings.so hashes.so
 
 install: encodings.so hashes.so
-	strip *.so
-	cp *.so ../util/
+	install -s *.so ../util/
 	
 
 clean:
