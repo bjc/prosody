@@ -144,6 +144,7 @@ local function new_digest_md5(realm, password_handler)
 			if not response["qop"] then response["qop"] = "auth" end
 			
 			if response["realm"] == nil then response["realm"] = "" end
+			local raw_realm = response["realm"];
 			
 			if response["charset"] == nil then
 				response["username"] = latin1toutf8(response["username"])
@@ -163,7 +164,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"]
-			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5")
+			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", raw_realm)
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			
