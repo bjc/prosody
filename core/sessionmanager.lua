@@ -80,6 +80,10 @@ function destroy_session(session, err)
 				log("debug", "All resources of %s are now offline", session.username);
 				hosts[session.host].sessions[session.username] = nil;
 			end
+		else
+			log("error", "host or session table didn't exist, please report this! Host: %s [%s] Sessions: %s [%s]", 
+					tostring(hosts[session.host]), tostring(session.host),
+					tostring(hosts[session.host].sessions[session.username] ), tostring(session.username));
 		end
 	end
 	
