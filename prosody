@@ -3,9 +3,9 @@
 -- Config here --
 
 CFG_SOURCEDIR=nil;
-CFG_CONFIGDIR=nil;
+CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=nil;
-CFG_DATADIR=nil;
+CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
 -- -- -- -- -- --
 
@@ -54,7 +54,7 @@ local _mkdir = {}
 function mkdir(path)
 	path = path:gsub("/", path_separator);
 	--print("mkdir",path);
-	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
+	local x = io.popen("mkdir \""..path.."\" 2>&1"):read("*a");
 end
 function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
 function mkdirs(host)
