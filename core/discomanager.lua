@@ -10,7 +10,7 @@ local print = print;
 do
 	helper:addDiscoInfoHandler("*host", function(reply, to, from, node)
 		if hosts[to] then
-			reply:tag("identity", {category="server", type="im", name="lxmppd"}):up();
+			reply:tag("identity", {category="server", type="im", name="Prosody"}):up();
 			return true;
 		end
 	end);
