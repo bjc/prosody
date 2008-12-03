@@ -49,7 +49,7 @@ Host "*"
 			  	"ping"; -- XMPP Ping
 			  	"time"; -- Let others know the time here
 			  	"uptime"; -- Uptime reporting
-			  	"console"; -- telnet to port 5528 (needs console_enabled = true)
+			  	"console"; -- telnet to port 5582 (needs console_enabled = true)
 			  };
 	
 	-- These are the SSL/TLS-related settings. If you don't want
