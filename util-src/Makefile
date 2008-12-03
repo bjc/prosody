@@ -28,5 +28,5 @@ encodings.so: encodings.o
 hashes.o: hashes.c
 	gcc $(CFLAGS) -I$(LUA_INCDIR) -c -o hashes.o hashes.c
 hashes.so: hashes.o
-	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(LFLAGS) -o hashes.so hashes.o -L/usr/local/lib -lcrypto -lssl
+	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(CFLAGS) -o hashes.so hashes.o -L/usr/local/lib -lcrypto -lssl
 	
