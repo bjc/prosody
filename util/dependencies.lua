@@ -33,7 +33,7 @@ local function missingdep(name, sources, msg)
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
-	print("More help can be found on our website, at http://.../doc/depends");
+	print("More help can be found on our website, at http://prosody.im/doc/depends");
 	print("**************************");
 	print("");
 end
