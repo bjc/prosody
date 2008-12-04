@@ -21,8 +21,8 @@
 
 local discomanager_handle = require "core.discomanager".handle;
 
-require "core.discomanager".set("disco", "http://jabber.org/protocol/disco#info");
-require "core.discomanager".set("disco", "http://jabber.org/protocol/disco#items");
+module:add_feature("http://jabber.org/protocol/disco#info");
+module:add_feature("http://jabber.org/protocol/disco#items");
 
 module:add_iq_handler({"c2s", "s2sin"}, "http://jabber.org/protocol/disco#info", function (session, stanza)
 	session.send(discomanager_handle(stanza));

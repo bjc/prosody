@@ -22,7 +22,7 @@
 local st = require "util.stanza";
 local t_concat = table.concat;
 
-require "core.discomanager".set("legacyauth", "jabber:iq:auth");
+module:add_feature("jabber:iq:auth");
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:auth", 
 		function (session, stanza)

@@ -28,7 +28,7 @@ local t_concat, t_insert = table.concat, table.insert;
 require "util.jid"
 local jid_split = jid.split;
 
-require "core.discomanager".set("vcard", "vcard-temp");
+module:add_feature("vcard-temp");
 
 module:add_iq_handler({"c2s", "s2sin"}, "vcard-temp", 
 		function (session, stanza)

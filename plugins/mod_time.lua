@@ -25,7 +25,7 @@ local legacy = require "util.datetime".legacy;
 
 -- XEP-0202: Entity Time
 
-require "core.discomanager".set("time", "urn:xmpp:time");
+module:add_feature("urn:xmpp:time");
 
 module:add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:time",
 	function(session, stanza)
@@ -38,7 +38,7 @@ module:add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:time",
 
 -- XEP-0090: Entity Time (deprecated)
 
-require "core.discomanager".set("time", "jabber:iq:time");
+module:add_feature("jabber:iq:time");
 
 module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:time",
 	function(session, stanza)
