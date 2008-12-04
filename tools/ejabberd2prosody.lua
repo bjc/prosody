@@ -21,9 +21,9 @@
 
 
 require "erlparse";
-require "serialize";
 
 package.path = package.path ..";../?.lua";
+local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 package.loaded["util.logger"] = {init = function() return function() end; end}
 local dm = require "util.datamanager"
@@ -74,7 +74,7 @@ function build_stanza(tuple, stanza)
 	elseif tuple[1] == "xmlcdata" then
 		stanza:text(tuple[2]);
 	else
-		error("unknown element type: "..serialize.serialize(tuple));
+		error("unknown element type: "..serialize(tuple));
 	end
 end
 function build_time(tuple)
@@ -190,7 +190,7 @@ for item in erlparse.parseFile(arg) do
 	count = count + 1;
 	local name = item[1];
 	t[name] = (t[name] or 0) + 1;
-	--print(count, serialize.serialize(item));
+	--print(count, serialize(item));
 	if filters[name] then filters[name](item); end
 end
---print(serialize.serialize(t));
+--print(serialize(t));
