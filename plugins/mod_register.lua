@@ -24,7 +24,7 @@ local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local datamanager_store = require "util.datamanager".store;
 
-require "core.discomanager".set("register", "jabber:iq:register");
+module:add_feature("jabber:iq:register");
 
 module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 	if stanza.tags[1].name == "query" then

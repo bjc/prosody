@@ -26,7 +26,7 @@ local t_concat = table.concat;
 
 local start_time = os.time();
 
-require "core.discomanager".set("uptime", "jabber:iq:last");
+module:add_feature("jabber:iq:last");
 
 module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last", 
 	function (origin, stanza)
