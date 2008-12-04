@@ -101,7 +101,7 @@ function xmppclient.listener(conn, data)
 
 		local mainlog, log = log;
 		do
-			local conn_name = tostring(conn):match("[a-f0-9]+$");
+			local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 			log = logger.init(conn_name);
 		end
 		local print = function (...) log("info", t_concatall({...}, "\t")); end
