@@ -22,7 +22,8 @@
 local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
-local log = logger.init("modulemanager")
+local log = logger.init("modulemanager");
+local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -170,6 +171,15 @@ function api:add_iq_handler(origin_type, xmlns, handler)
 		return;
 	end
 	_add_iq_handler(self, origin_type, xmlns, handler);
+end
+
+function api:add_feature(xmlns)
+	addDiscoInfoHandler(self.host, function(reply, to, from, node)
+		if #node == 0 then
+			reply:tag("feature", {var = xmlns}):up();
+			return true;
+		end
+	end);
 end
 
 
