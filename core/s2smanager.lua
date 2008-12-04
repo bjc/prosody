@@ -108,7 +108,7 @@ function new_outgoing(from_host, to_host)
 		
 		local log;
 		do
-			local conn_name = "s2sout"..tostring(conn):match("[a-f0-9]*$");
+			local conn_name = "s2sout"..tostring(host_session):match("[a-f0-9]*$");
 			log = logger_init(conn_name);
 			host_session.log = log;
 		end
