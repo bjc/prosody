@@ -12,16 +12,21 @@ OPENSSL_LIB?=crypto
 all: encodings.so hashes.so
 
 install: encodings.so hashes.so
-	install -s *.so ../util/
+	install *.so ../util/
 	
 
 clean:
 	rm -f *.so
 	rm -f ../util/*.so
 
-encodings.so: encodings.c
-	gcc $(CFLAGS) encodings.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(IDN_LIB) -o encodings.so
+encodings.o: encodings.c
+	gcc $(CFLAGS) -I$(LUA_INCDIR) -c -o encodings.o encodings.c
+encodings.so: encodings.o
+	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(LFLAGS) -o encodings.so encodings.o -L/usr/local/lib -llua$(LUA_SUFFIX) -lcrypto -lidn
+	
 
-hashes.so: hashes.c
-	gcc $(CFLAGS) hashes.c -I$(LUA_INCDIR) -l$(LUA_LIB) -l$(OPENSSL_LIB) -o hashes.so
+hashes.o: hashes.c
+	gcc $(CFLAGS) -I$(LUA_INCDIR) -c -o hashes.o hashes.c
+hashes.so: hashes.o
+	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(LFLAGS) -o hashes.so hashes.o -L/usr/local/lib -llua$(LUA_SUFFIX) -lcrypto -lssl
 	
