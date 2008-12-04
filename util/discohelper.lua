@@ -57,7 +57,19 @@ local function handle(self, stanza)
 		elseif query.attr.xmlns == "http://jabber.org/protocol/disco#items" then
 			handlers = self.item_handlers;
 		end
-		local handler = handlers[to]; -- get the handler
+		local handler;
+		local found; -- to keep track of any handlers found
+		if to_node then -- handlers which get called always
+			handler = handlers["*node"];
+		else
+			handler = handlers["*host"];
+		end
+		if handler then -- call always called handler
+			for _, h in ipairs(handler) do
+				if h(reply, to, from, node) then found = true; end
+			end
+		end
+		handler = handlers[to]; -- get the handler
 		if not handler then -- if not found then use default handler
 			if to_node then
 				handler = handlers["*defaultnode"];
@@ -65,18 +77,7 @@ local function handle(self, stanza)
 				handler = handlers["*defaulthost"];
 			end
 		end
-		local found; -- to keep track of any handlers found
 		if handler then
-			for _, h in ipairs(handler) do
-				if h(reply, to, from, node) then found = true; end
-			end
-		end
-		if to_node then -- handlers which get called always
-			handler = handlers["*node"];
-		else
-			handler = handlers["*host"];
-		end
-		if handler then -- call always called handler
 			for _, h in ipairs(handler) do
 				if h(reply, to, from, node) then found = true; end
 			end
