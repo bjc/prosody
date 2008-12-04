@@ -180,7 +180,9 @@ end
 function streamopened(session, attr)
 	local send = session.sends2s;
 	
-	session.version = tonumber(attr.version) or 0;
+	-- TODO: #29: SASL/TLS on s2s streams
+	session.version = 0; --tonumber(attr.version) or 0;
+	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
 		--print("to: "..tostring(attr.to).." from: "..tostring(attr.from));
 		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
