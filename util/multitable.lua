@@ -1,0 +1,84 @@
+-- Prosody IM v0.1
+-- Copyright (C) 2008 Matthew Wild
+-- Copyright (C) 2008 Waqas Hussain
+-- 
+-- This program is free software; you can redistribute it and/or
+-- modify it under the terms of the GNU General Public License
+-- as published by the Free Software Foundation; either version 2
+-- of the License, or (at your option) any later version.
+-- 
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+-- 
+-- You should have received a copy of the GNU General Public License
+-- along with this program; if not, write to the Free Software
+-- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--
+
+
+
+local select = select;
+local t_insert = table.insert;
+local pairs = pairs;
+
+module "multitable"
+
+local function get(self, ...)
+	local t = self.data;
+	for n = 1,select('#', ...) do
+		t = t[select(n, ...)];
+		if not t then break; end
+	end
+	return t;
+end
+
+local function add(self, ...)
+	local t = self.data;
+	local count = select('#', ...);
+	for n = 1,count-1 do
+		local key = select(n, ...);
+		local tab = t[key];
+		if not tab then tab = {}; t[key] = tab; end
+		t = tab;
+	end
+	t_insert(t, select(count, ...));
+end
+
+local function r(t, n, _end, ...)
+	if t == nil then return; end
+	if n > _end then
+		for key in pairs(t) do
+			t[key] = nil;
+		end
+	end
+	local k = select(n, ...);
+	if k then
+		r(t[k], n+1, _end, ...);
+	else
+		for _,b in pairs(t) do
+			r(b, n+1, _end, ...);
+		end
+	end
+end
+
+local function remove(self, ...)
+	local _end = select('#', ...);
+	for n = _end,1 do
+		if select(n, ...) then _end = n; break; end
+	end
+	r(self.data, 1, _end, ...);
+end
+
+
+function new()
+	return {
+		data = {};
+		get = get;
+		add = add;
+		remove = remove;
+	};
+end
+
+return _M;
