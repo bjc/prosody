@@ -30,21 +30,12 @@ local tostring, tonumber = tostring, tonumber;
 local error = error;
 local next = next;
 local t_insert = table.insert;
-
-local indent = function(f, i)
-	for n = 1, i do
-		f:write("\t");
-	end
-end
-
-local data_path = "data";
+local append = require "util.serialization".append;
 
 module "datamanager"
 
-
 ---- utils -----
 local encode, decode;
-
 do 
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
 
@@ -57,39 +48,9 @@ do
 	end
 end
 
-local function basicSerialize (o)
-	if type(o) == "number" or type(o) == "boolean" then
-		return tostring(o);
-	else -- assume it is a string -- FIXME make sure it's a string. throw an error otherwise.
-		return (format("%q", tostring(o)):gsub("\\\n", "\\n"));
-	end
-end
-
-
-local function simplesave (f, o, ind)
-	if type(o) == "number" then
-		f:write(o)
-	elseif type(o) == "string" then
-		f:write((format("%q", o):gsub("\\\n", "\\n")))
-	elseif type(o) == "table" then
-		f:write("{\n")
-		for k,v in pairs(o) do
-			indent(f, ind);
-			f:write("[", basicSerialize(k), "] = ")
-			simplesave(f, v, ind+1)
-			f:write(",\n")
-		end
-		indent(f, ind-1);
-		f:write("}")
-	elseif type(o) == "boolean" then
-		f:write(o and "true" or "false");
-	else
-		error("cannot serialize a " .. type(o))
-	end
-end
-
 ------- API -------------
 
+local data_path = "data";
 function set_data_path(path)
 	data_path = path;
 end
@@ -131,7 +92,7 @@ function store(username, host, datastore, data)
 		return;
 	end
 	f:write("return ");
-	simplesave(f, data, 1);
+	append(f, data);
 	f:close();
 	if not next(data) then -- try to delete empty datastore
 		os_remove(getpath(username, host, datastore));
@@ -150,7 +111,7 @@ function list_append(username, host, datastore, data)
 		return;
 	end
 	f:write("item(");
-	simplesave(f, data, 1);
+	append(f, data);
 	f:write(");\n");
 	f:close();
 	return true;
@@ -168,7 +129,7 @@ function list_store(username, host, datastore, data)
 	end
 	for _, d in ipairs(data) do
 		f:write("item(");
-		simplesave(f, d, 1);
+		append(f, d);
 		f:write(");\n");
 	end
 	f:close();
