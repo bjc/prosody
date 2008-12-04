@@ -52,12 +52,13 @@ function init_xmlhandlers(session, stream_callbacks)
 		local chardata = {};
 		local xml_handlers = {};
 		local log = session.log or default_log;
-		--local print = function (...) log("info", "xmlhandlers", t_concatall({...}, "\t")); end
-		
+
 		local send = session.send;
 		
 		local cb_streamopened = stream_callbacks.streamopened;
 		local cb_streamclosed = stream_callbacks.streamclosed;
+		local cb_error = stream_callbacks.error or function (e) error("XML stream error: "..tostring(e)); end;
+		local cb_handlestanza = stream_callbacks.handlestanza;
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
@@ -92,12 +93,14 @@ function init_xmlhandlers(session, stream_callbacks)
 						if cb_streamopened then
 							cb_streamopened(session, attr);
 						end
-						return;
+					else
+						-- Garbage before stream?
+						cb_error("no-stream");
 					end
-					error("Client failed to open stream successfully");
+					return;
 				end
 				if curr_ns == "jabber:client" and name ~= "iq" and name ~= "presence" and name ~= "message" then
-					error("Client sent invalid top-level stanza");
+					cb_error("invalid-top-level-element");
 				end
 				
 				stanza = st.stanza(name, attr);
@@ -119,15 +122,14 @@ function init_xmlhandlers(session, stream_callbacks)
 			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
 			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
 				if name == "stream" then
-					log("debug", "Stream closed");
 					if cb_streamclosed then
 						cb_streamclosed(session);
 					end
 					return;
 				elseif name == "error" then
-					error("Stream error: "..tostring(name)..": "..tostring(stanza));
+					cb_error("stream-error", stanza);
 				else
-					error("XML parse error in client stream with element: "..name);
+					cb_error("parse-error", "unexpected-element-close", name);
 				end
 			end
 			if stanza and #chardata > 0 then
@@ -137,7 +139,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 			-- Complete stanza
 			if #stanza.last_add == 0 then
-				session.stanza_dispatch(stanza);
+				cb_handlestanza(session, stanza);
 				stanza = nil;
 			else
 				stanza:up();
