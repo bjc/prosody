@@ -51,7 +51,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				end
 				-- TODO datamanager should be able to delete all user data itself
 				datamanager.store(session.username, session.host, "roster", nil);
-				datamanager.store(session.username, session.host, "vCard", nil);
+				datamanager.store(session.username, session.host, "vcard", nil);
 				datamanager.store(session.username, session.host, "private", nil);
 				datamanager.store(session.username, session.host, "offline", nil);
 				local bare = session.username.."@"..session.host;
