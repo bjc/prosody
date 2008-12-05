@@ -19,7 +19,6 @@
 
 
 
-local format = string.format;
 local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
@@ -45,7 +44,7 @@ module:add_handler({"s2sin_unauthed", "s2sin"}, "verify", xmlns_dialback,
 			log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 		end
 		log("debug", "verified dialback key... it is %s", type);
-		origin.sends2s(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
+		origin.sends2s(st.stanza("db:verify", { from = attr.to, to = attr.from, id = attr.id, type = type }):text(stanza[1]));
 	end);
 
 module:add_handler("s2sin_unauthed", "result", xmlns_dialback,
@@ -79,8 +78,9 @@ module:add_handler({ "s2sout_unauthed", "s2sout" }, "verify", xmlns_dialback,
 			if not origin.dialback_verifying.sends2s then
 				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result", tostring(origin.dialback_verifying):match("%w+$"));
 			else
-				origin.dialback_verifying.sends2s(format("<db:result from='%s' to='%s' id='%s' type='%s'>%s</db:result>",
-					attr.to, attr.from, attr.id, valid, origin.dialback_verifying.dialback_key));
+				origin.dialback_verifying.sends2s(
+						st.stanza("db:result", { from = attr.to, to = attr.from, id = attr.id, type = valid })
+								:text(origin.dialback_verifying.dialback_key));
 			end
 		end
 	end);
