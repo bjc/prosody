@@ -56,8 +56,8 @@ function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
-			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host..", authing it now...");
+		if host.type == "s2sout_unauthed" and (data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
+			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			if not host.notopen and not host.dialback_key then
 				host.log("debug", "dialback had not been initiated");
 				initiate_dialback(host);
@@ -66,6 +66,7 @@ function send_to_host(from_host, to_host, data)
 			-- Queue stanza until we are able to send it
 			if host.sendq then t_insert(host.sendq, data);
 			else host.sendq = { data }; end
+			host.log("debug", "stanza queued");
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", get_traceback());
