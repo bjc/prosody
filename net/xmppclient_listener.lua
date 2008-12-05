@@ -113,7 +113,7 @@ function xmppclient.listener(conn, data)
 	if not session then
 		session = sm_new_session(conn);
 		sessions[conn] = session;
-
+		
 		-- Logging functions --
 
 		local mainlog, log = log;
