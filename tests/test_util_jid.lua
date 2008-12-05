@@ -33,6 +33,8 @@ function split(split)
 	test(nil,			nil,	nil	, nil		);
 
 	test("node@/server", nil, nil, nil , nil );
+	test("@server",      nil, nil, nil , nil );
+	test("@server/resource",nil,nil,nil, nil );
 end
 
 function bare(bare)
