@@ -470,9 +470,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			if handler.need_tls then
 				out_put("server.lua: connection is ready for tls handshake");
 				handler.starttls(true);
-				if handler.need_tls then
-					out_put("server.lua: uh-oh... we still want tls, something must be wrong");
-				end
 			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
@@ -536,6 +533,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		end
 		
 		handler.starttls = nil;
+		handler.need_tls = nil
 		
 			handler.handshake = coroutine_wrap( function( client )
 					local err
@@ -546,7 +544,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 							writelen = ( wrote and removesocket( writelist, socket, writelen ) ) or writelen
 							handler.receivedata = handler._receivedata    -- when handshake is done, replace the handshake function with regular functions
 							handler.dispatchdata = handler._dispatchdata
-							handler.need_tls = nil
 							return true;
 						else
 							out_put( "server.lua: error during ssl handshake: ", err )
