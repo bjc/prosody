@@ -24,6 +24,8 @@ local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local jid
 local base64 = require "util.encodings".base64;
 
+local gettime = require "socket".gettime;
+
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
@@ -64,14 +66,14 @@ local function handle_status(session, status)
 	end
 end
 
-local function password_callback(node, host, mechanism, raw_host)
+local function password_callback(node, host, mechanism)
 	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
 	local func = function(x) return x; end;
 	if password then
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
-			return func, md5(node..":"..raw_host..":"..password);
+			return func, md5(node..":"..host..":"..password);
 		end
 	end
 	return func, nil;
@@ -142,6 +144,8 @@ module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 					:tag("bind", { xmlns = xmlns_bind})
 					:tag("jid"):text(session.full_jid));
 			end
+			
+			session.log("******", "Connection took "..tostring(session.conntimetotal).." seconds");
 		end);
 		
 module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 

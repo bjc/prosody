@@ -35,6 +35,8 @@ local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 
+local gettime = require "socket".gettime;
+
 local st = require "util.stanza";
 
 local newproxy = newproxy;
@@ -45,7 +47,7 @@ module "sessionmanager"
 local open_sessions = 0;
 
 function new_session(conn)
-	local session = { conn = conn,  priority = 0, type = "c2s_unauthed" };
+	local session = { conn = conn,  priority = 0, type = "c2s_unauthed", conntime = gettime() };
 	if true then
 		session.trace = newproxy(true);
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("Session got collected, now "..open_sessions.." sessions are allocated") end;
@@ -109,6 +111,8 @@ function bind_resource(session, resource)
 	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
+	session.conntimetotal = gettime()-session.conntime;
+	
 	resource = resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	

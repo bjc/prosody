@@ -21,6 +21,7 @@
 
 local log = require "util.logger".init("presencemanager")
 
+local tostring = tostring;
 local require = require;
 local pairs, ipairs = pairs, ipairs;
 local t_concat = table.concat;
@@ -121,6 +122,14 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 	else
 		log("error", "presence recieved from client with no roster");
 	end
+	
+	if origin.conntimetotal then
+		local session = origin;
+		origin.log("BLAH", "***********\n\n\n\n\n\n****************");
+		origin.send(st.stanza("message", { from = session.host, to=session.full_jid, type = "normal" }):body("Your login took "..tostring(session.conntimetotal).." seconds"));
+		origin.conntimetotal = nil;
+	end
+	
 end
 
 function send_presence_of_available_resources(user, host, jid, recipient_session, core_route_stanza)
