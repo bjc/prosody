@@ -36,7 +36,16 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = stanza;
 
-local stream_callbacks = { streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
+local stream_callbacks = { ns = "http://etherx.jabber.org/streams", streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
+
+function stream_callbacks.error(session, error, data)
+	if error == "no-stream" then
+		session:close("invalid-namespace");
+	else
+		session.log("debug", "Client XML parse error: %s", tostring(error));
+		session:close("xml-not-well-formed");
+	end
+end
 
 local sessions = {};
 local xmppclient = { default_port = 5222, default_mode = "*a" };
@@ -51,8 +60,11 @@ local function session_reset_stream(session)
 		session.notopen = true;
 		
 		function session.data(conn, data)
-			parser:parse(data);
+			local ok, err = parser:parse(data);
+			if ok then return; end
+			session:close("xml-not-well-formed");
 		end
+		
 		return true;
 end
 
