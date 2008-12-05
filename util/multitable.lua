@@ -22,6 +22,7 @@
 local select = select;
 local t_insert = table.insert;
 local pairs = pairs;
+local next = next;
 
 module "multitable"
 
@@ -55,10 +56,19 @@ local function r(t, n, _end, ...)
 	end
 	local k = select(n, ...);
 	if k then
-		r(t[k], n+1, _end, ...);
+		v = t[k];
+		if v then
+			r(v, n+1, _end, ...);
+			if not next(v) then
+				t[k] = nil;
+			end
+		end
 	else
 		for _,b in pairs(t) do
 			r(b, n+1, _end, ...);
+			if not next(b) then
+				t[_] = nil;
+			end
 		end
 	end
 end
