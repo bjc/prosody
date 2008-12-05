@@ -33,7 +33,7 @@ function console:new_session(conn)
 	local w = conn.write;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
-			print = function (t) w("| "..tostring(t).."\r\n"); end;
+			print = function (t) w("| "..tostring(t).."\n"); end;
 			disconnect = function () conn.close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
