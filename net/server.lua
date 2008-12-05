@@ -265,7 +265,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			local count = #data * STAT_UNIT
 			rstat = rstat + count
 			receivestat = receivestat + count
-			out_put( "server.lua: read data '", data, "', error: ", err )
+			--out_put( "server.lua: read data '", data, "', error: ", err )
 			return dispatch( handler, data, err )
 		else    -- connections was closed or fatal error
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
@@ -562,7 +562,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			)
 			handler.receivedata = handler.handshake
 			handler.dispatchdata = handler.handshake
-
+			
 			handler.handshake( socket )    -- do handshake
 		end
 	socketlist[ socket ] = handler
@@ -658,7 +658,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 			local count = #data * STAT_UNIT
 			rstat = rstat + count
 			receivestat = receivestat + count
-			out_put( "server.lua: read data '", data, "', error: ", err )
+			--out_put( "server.lua: read data '", data, "', error: ", err )
 			return dispatch( handler, data, err )
 		else    -- connections was closed or fatal error
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
