@@ -47,6 +47,11 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
+local function handleerr(err) print("Traceback:", err, debug.traceback()); end
+function stream_callbacks.handlestanza(a, b)
+	xpcall(function () core_process_stanza(a, b) end, handleerr);
+end
+
 local sessions = {};
 local xmppclient = { default_port = 5222, default_mode = "*a" };
 
