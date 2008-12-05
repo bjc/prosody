@@ -364,8 +364,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	local err
 
 	socket:settimeout( 0 )
-	out_put("setting linger on "..tostring(socket))
-	socket:setoption("linger", { on = true, timeout = 10 });
 	--// private closures of the object //--
 
 	local writequeue = { }    -- buffer for messages to send
