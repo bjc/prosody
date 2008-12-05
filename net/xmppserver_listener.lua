@@ -28,7 +28,7 @@ local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
-local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed };
+local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
 
 local connlisteners_register = require "net.connlisteners".register;
 
@@ -121,8 +121,8 @@ function xmppserver.listener(conn, data)
 		-- (I'm on a mission, no time to fix now)
 
 		-- Debug version --
-		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
-		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+--		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
+--		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
 	end
 	if data then
 		session.data(conn, data);

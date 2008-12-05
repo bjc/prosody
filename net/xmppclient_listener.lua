@@ -36,7 +36,7 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = stanza;
 
-local stream_callbacks = { streamopened = sm_streamopened, streamclosed = sm_streamclosed };
+local stream_callbacks = { streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
 local sessions = {};
 local xmppclient = { default_port = 5222, default_mode = "*a" };
@@ -101,7 +101,7 @@ function xmppclient.listener(conn, data)
 
 		local mainlog, log = log;
 		do
-			local conn_name = tostring(conn):match("[a-f0-9]+$");
+			local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 			log = logger.init(conn_name);
 		end
 		local print = function (...) log("info", t_concatall({...}, "\t")); end
@@ -119,8 +119,9 @@ function xmppclient.listener(conn, data)
 		-- (I'm on a mission, no time to fix now)
 
 		-- Debug version --
-		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
-		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+		--local function handleerr(err) print("Traceback:", err, debug.traceback()); end
+		--session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+		
 	end
 	if data then
 		session.data(conn, data);
