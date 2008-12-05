@@ -57,8 +57,10 @@ function init_xmlhandlers(session, stream_callbacks)
 		
 		local cb_streamopened = stream_callbacks.streamopened;
 		local cb_streamclosed = stream_callbacks.streamclosed;
-		local cb_error = stream_callbacks.error or function (e) error("XML stream error: "..tostring(e)); end;
+		local cb_error = stream_callbacks.error or function (session, e) error("XML stream error: "..tostring(e)); end;
 		local cb_handlestanza = stream_callbacks.handlestanza;
+		
+		local stream_ns = stream_callbacks.ns;
 		
 		local stanza
 		function xml_handlers:StartElement(name, attr)
@@ -89,18 +91,18 @@ function init_xmlhandlers(session, stream_callbacks)
 			
 			if not stanza then --if we are not currently inside a stanza
 				if session.notopen then
-					if name == "stream" then
+					if name == "stream" and curr_ns == stream_ns then
 						if cb_streamopened then
 							cb_streamopened(session, attr);
 						end
 					else
 						-- Garbage before stream?
-						cb_error("no-stream");
+						cb_error(session, "no-stream");
 					end
 					return;
 				end
 				if curr_ns == "jabber:client" and name ~= "iq" and name ~= "presence" and name ~= "message" then
-					cb_error("invalid-top-level-element");
+					cb_error(session, "invalid-top-level-element");
 				end
 				
 				stanza = st.stanza(name, attr);
@@ -127,9 +129,9 @@ function init_xmlhandlers(session, stream_callbacks)
 					end
 					return;
 				elseif name == "error" then
-					cb_error("stream-error", stanza);
+					cb_error(session, "stream-error", stanza);
 				else
-					cb_error("parse-error", "unexpected-element-close", name);
+					cb_error(session, "parse-error", "unexpected-element-close", name);
 				end
 			end
 			if stanza and #chardata > 0 then

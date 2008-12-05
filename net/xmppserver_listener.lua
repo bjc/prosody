@@ -28,7 +28,16 @@ local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
-local stream_callbacks = { streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
+local stream_callbacks = { ns = "http://etherx.jabber.org/streams", streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
+
+function stream_callbacks.error(session, error, data)
+	if error == "no-stream" then
+		session:close("invalid-namespace");
+	else
+		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
+		session:close("xml-not-well-formed");
+	end
+end
 
 local connlisteners_register = require "net.connlisteners".register;
 
@@ -53,8 +62,11 @@ local function session_reset_stream(session)
 		session.notopen = true;
 		
 		function session.data(conn, data)
-			parser:parse(data);
+			local ok, err = parser:parse(data);
+			if ok then return; end
+			session:close("xml-not-well-formed");
 		end
+		
 		return true;
 end
 
