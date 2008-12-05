@@ -24,6 +24,8 @@ local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 
+local st = require "util.stanza";
+
 local log = require "util.logger".init("mod_dialback");
 
 local xmlns_dialback = "jabber:server:dialback";
@@ -42,7 +44,7 @@ module:add_handler({"s2sin_unauthed", "s2sin"}, "verify", xmlns_dialback,
 			type = "invalid"
 			log("warn", "Asked to verify a dialback key that was incorrect. An imposter is claiming to be %s?", attr.to);
 		end
-		log("debug", "verifyied dialback key... it is %s", type);
+		log("debug", "verified dialback key... it is %s", type);
 		origin.sends2s(format("<db:verify from='%s' to='%s' id='%s' type='%s'>%s</db:verify>", attr.to, attr.from, attr.id, type, stanza[1]));
 	end);
 
@@ -57,8 +59,7 @@ module:add_handler("s2sin_unauthed", "result", xmlns_dialback,
 		origin.dialback_key = stanza[1];
 		log("debug", "asking %s if key %s belongs to them", origin.from_host, origin.dialback_key);
 		send_s2s(origin.to_host, origin.from_host,
-			format("<db:verify from='%s' to='%s' id='%s'>%s</db:verify>", origin.to_host, origin.from_host,
-				origin.streamid, origin.dialback_key));
+			st.stanza("db:verify", { from = origin.to_host, to = origin.from_host, id = origin.streamid }):text(origin.dialback_key));
 		hosts[origin.to_host].s2sout[origin.from_host].dialback_verifying = origin;
 	end);
 

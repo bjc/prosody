@@ -52,11 +52,10 @@ module "s2smanager"
 local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
 
 function send_to_host(from_host, to_host, data)
-	if data.name then data = tostring(data); end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and (data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
+		if host.type == "s2sout_unauthed" and data.name ~= "db:verify" and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			if not host.notopen and not host.dialback_key then
 				host.log("debug", "dialback had not been initiated");
@@ -64,9 +63,9 @@ function send_to_host(from_host, to_host, data)
 			end
 			
 			-- Queue stanza until we are able to send it
-			if host.sendq then t_insert(host.sendq, data);
-			else host.sendq = { data }; end
-			host.log("debug", "stanza queued");
+			if host.sendq then t_insert(host.sendq, tostring(data));
+			else host.sendq = { tostring(data) }; end
+			host.log("debug", "stanza [%s] queued ", data.name);
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", get_traceback());
@@ -85,7 +84,7 @@ function send_to_host(from_host, to_host, data)
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = new_outgoing(from_host, to_host);
 		-- Store in buffer
-		host_session.sendq = { data };
+		host_session.sendq = { tostring(data) };
 	end
 end
 
