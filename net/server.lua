@@ -501,13 +501,24 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	handler.starttls = function (now)
 		if not now then out_put("server.lua: we need to do tls, but delaying until later"); handler.need_tls = true; return; end
 		out_put( "server.lua: attempting to start tls on "..tostring(socket) )
+		local oldsocket = socket;
 		socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
 		out_put("sslwrapped socket is "..tostring(socket));
 		if err then
 			out_put( "server.lua: ssl error: ", err )
 			return nil, nil, err    -- fatal error
 		end
-		socket:settimeout( 1 )
+		socket:settimeout(0);
+		
+		-- Add the new socket to our system
+		socketlist[ socket ] = handler
+		readlen = readlen + 1
+		readlist[ readlen ] = socket
+		
+		-- Remove traces of the old socket
+		readlen = removesocket( readlist, oldsocket, readlen )
+		socketlist [ oldsocket ] = nil;
+		
 		send = socket.send
 		receive = socket.receive
 		close = socket.close
