@@ -52,6 +52,7 @@ end
 
 local data_path = "data";
 function set_data_path(path)
+	log("info", "Setting data path to %s", path);
 	data_path = path;
 end
 
