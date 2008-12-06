@@ -44,7 +44,7 @@ module "modulemanager"
 
 local api = {}; -- Module API container
 
-local modulemap = {};
+local modulemap = { ["*"] = {} };
 
 local m_handler_info = multitable_new();
 local m_stanza_handlers = multitable_new();
@@ -69,11 +69,6 @@ function load(host, module_name, config)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
 	end
-	local mod, err = loadfile(plugin_dir.."mod_"..module_name..".lua");
-	if not mod then
-		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
-		return nil, err;
-	end
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
@@ -81,8 +76,17 @@ function load(host, module_name, config)
 	elseif modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
+	elseif modulemap["*"][module_name] then
+		return nil, "global-module-already-loaded";
 	end
 	
+
+	local mod, err = loadfile(plugin_dir.."mod_"..module_name..".lua");
+	if not mod then
+		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		return nil, err;
+	end
+
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
 
@@ -96,7 +100,8 @@ function load(host, module_name, config)
 		return nil, ret;
 	end
 	
-	modulemap[host][module_name] = mod;
+	-- Use modified host, if the module set one
+	modulemap[api_instance.host][module_name] = mod;
 	
 	return true;
 end
