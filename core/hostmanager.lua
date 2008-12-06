@@ -1,9 +1,9 @@
 
-hosts = {};
-
 local hosts = hosts;
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
+
+local log = require "util.logger".init("hostmanager");
 
 local pairs = pairs;
 
@@ -23,13 +23,13 @@ eventmanager.add_event_hook("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
 	hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
-	
+	log("info", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
 
 function deactivate(host)
 	local host_session = hosts[host];
-	
+	log("info", "Deactivating host: %s", host);
 	eventmanager.fire_event("host-deactivating", host, host_session);
 	
 	-- Disconnect local users, s2s connections
@@ -42,6 +42,7 @@ function deactivate(host)
 	
 	hosts[host] = nil;
 	eventmanager.fire_event("host-deactivated", host);
+	log("info", "Deactivated host: %s", host);
 end
 
 function getconfig(name)
