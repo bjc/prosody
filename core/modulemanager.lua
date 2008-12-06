@@ -118,39 +118,6 @@ function unload(host, name, ...)
 	
 end
 
-function _handle_stanza(host, origin, stanza)
-	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
-	
-	local handlers = stanza_handlers[host];
-	if not handlers then
-		log("warn", "No handlers for %s", host);
-		return false;
-	end
-	
-	if name == "iq" and xmlns == "jabber:client" and handlers[origin_type] then
-		local child = stanza.tags[1];
-		if child then
-			local xmlns = child.attr.xmlns or xmlns;
-			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
-			local handler = handlers[origin_type][name] and handlers[origin_type][name][xmlns];
-			if handler then
-				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
-				return handler(origin, stanza) or true;
-			end
-		end
-	elseif handlers[origin_type] then
-		local handler = handlers[origin_type][name];
-		if  handler then
-			handler = handler[xmlns];
-			if handler then
-				log("debug", "Passing stanza to mod_%s", handler_info[handler].name);
-				return handler(origin, stanza) or true;
-			end
-		end
-	end
-	log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns);
-	return false; -- we didn't handle it
-end
 function handle_stanza(host, origin, stanza)
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
 	if name == "iq" and xmlns == "jabber:client" then
@@ -181,18 +148,6 @@ function api:get_host()
 end
 
 
-local function __add_iq_handler(module, origin_type, xmlns, handler)
-	local handlers = stanza_handlers[module.host];
-	handlers[origin_type] = handlers[origin_type] or {};
-	handlers[origin_type].iq = handlers[origin_type].iq or {};
-	if not handlers[origin_type].iq[xmlns] then
-		handlers[origin_type].iq[xmlns]= handler;
-		handler_info[handler] = module;
-		module:log("debug", "I now handle tag 'iq' [%s] with payload namespace '%s'", origin_type, xmlns);
-	else
-		module:log("warn", "I wanted to handle tag 'iq' [%s] with payload namespace '%s' but mod_%s already handles that", origin_type, xmlns, handler_info[handlers[origin_type].iq[xmlns]].name);
-	end
-end
 local function _add_iq_handler(module, origin_type, xmlns, handler)
 	local handlers = m_stanza_handlers:get(module.host, origin_type, "iq", xmlns);
 	if not handlers then
@@ -226,18 +181,6 @@ end
 
 function api:add_event_hook (...) return eventmanager.add_event_hook(...); end
 
-local function __add_handler(module, origin_type, tag, xmlns, handler)
-	local handlers = stanza_handlers[module.host];
-	handlers[origin_type] = handlers[origin_type] or {};
-	if not handlers[origin_type][tag] then
-		handlers[origin_type][tag] = handlers[origin_type][tag] or {};
-		handlers[origin_type][tag][xmlns]= handler;
-		handler_info[handler] = module;
-		module:log("debug", "I now handle tag '%s' [%s] with xmlns '%s'", tag, origin_type, xmlns);
-	elseif handler_info[handlers[origin_type][tag]] then
-		log("warning", "I wanted to handle tag '%s' [%s] but mod_%s already handles that", tag, origin_type, handler_info[handlers[origin_type][tag]].module.name);
-	end
-end
 local function _add_handler(module, origin_type, tag, xmlns, handler)
 	local handlers = m_stanza_handlers:get(module.host, origin_type, tag, xmlns);
 	if not handlers then
