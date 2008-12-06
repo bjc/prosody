@@ -135,18 +135,6 @@ eventmanager.add_event_hook("host-activated", mkdirs);
 
 eventmanager.fire_event("server-starting");
 
--- Initialise modules
-
-for host in pairs(hosts) do
-	if host ~= "*" then
-		local modules_enabled = config.get(host, "core", "modules_enabled");
-		if modules_enabled then
-			for _, module in pairs(modules_enabled) do
-				modulemanager.load(host, module);
-			end
-		end
-	end
-end
 
 -- setup error handling
 setmetatable(_G, { __index = function (t, k) print("WARNING: ATTEMPT TO READ A NIL GLOBAL!!!", k); error("Attempt to read a non-existent global. Naughty boy.", 2); end, __newindex = function (t, k, v) print("ATTEMPT TO SET A GLOBAL!!!!", tostring(k).." = "..tostring(v)); error("Attempt to set a global. Naughty boy.", 2); end }) --]][][[]][];

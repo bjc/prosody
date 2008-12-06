@@ -25,6 +25,7 @@ local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
+local config = require "core.configmanager";
 
 
 local loadfile, pcall = loadfile, pcall;
@@ -49,6 +50,17 @@ local stanza_handlers = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
+-- Load modules when a host is activated
+function load_modules_for_host(host)
+	local modules_enabled = config.get(host, "core", "modules_enabled");
+	if modules_enabled then
+		for _, module in pairs(modules_enabled) do
+			load(host, module);
+		end
+	end
+end
+eventmanager.add_event_hook("host-activated", load_modules_for_host);
+--
 
 function load(host, module_name, config)
 	if not (host and module_name) then
