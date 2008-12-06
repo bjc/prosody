@@ -265,7 +265,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			local count = #data * STAT_UNIT
 			rstat = rstat + count
 			receivestat = receivestat + count
-			out_put( "server.lua: read data '", data, "', error: ", err )
+			--out_put( "server.lua: read data '", data, "', error: ", err )
 			return dispatch( handler, data, err )
 		else    -- connections was closed or fatal error
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
@@ -364,8 +364,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	local err
 
 	socket:settimeout( 0 )
-	out_put("setting linger on "..tostring(socket))
-	socket:setoption("linger", { on = true, timeout = 10 });
 	--// private closures of the object //--
 
 	local writequeue = { }    -- buffer for messages to send
@@ -472,9 +470,6 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			if handler.need_tls then
 				out_put("server.lua: connection is ready for tls handshake");
 				handler.starttls(true);
-				if handler.need_tls then
-					out_put("server.lua: uh-oh... we still want tls, something must be wrong");
-				end
 			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
@@ -506,13 +501,24 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 	handler.starttls = function (now)
 		if not now then out_put("server.lua: we need to do tls, but delaying until later"); handler.need_tls = true; return; end
 		out_put( "server.lua: attempting to start tls on "..tostring(socket) )
+		local oldsocket = socket;
 		socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
 		out_put("sslwrapped socket is "..tostring(socket));
 		if err then
 			out_put( "server.lua: ssl error: ", err )
 			return nil, nil, err    -- fatal error
 		end
-		socket:settimeout( 1 )
+		socket:settimeout(0);
+		
+		-- Add the new socket to our system
+		socketlist[ socket ] = handler
+		readlen = readlen + 1
+		readlist[ readlen ] = socket
+		
+		-- Remove traces of the old socket
+		readlen = removesocket( readlist, oldsocket, readlen )
+		socketlist [ oldsocket ] = nil;
+		
 		send = socket.send
 		receive = socket.receive
 		close = socket.close
@@ -527,6 +533,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		end
 		
 		handler.starttls = nil;
+		handler.need_tls = nil
 		
 			handler.handshake = coroutine_wrap( function( client )
 					local err
@@ -536,11 +543,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 							out_put( "server.lua: ssl handshake done" )
 							writelen = ( wrote and removesocket( writelist, socket, writelen ) ) or writelen
 							handler.receivedata = handler._receivedata    -- when handshake is done, replace the handshake function with regular functions
-							handler.dispatchdata = handler._dispatchdata
-							handler.need_tls = nil
-							socketlist[ client ] = handler
-							readlen = readlen + 1
-							readlist[ readlen ] = client												
+							handler.dispatchdata = handler._dispatchdata;
 							return true;
 						else
 							out_put( "server.lua: error during ssl handshake: ", err )
@@ -564,7 +567,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			)
 			handler.receivedata = handler.handshake
 			handler.dispatchdata = handler.handshake
-
+			
 			handler.handshake( socket )    -- do handshake
 		end
 	socketlist[ socket ] = handler
@@ -660,7 +663,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 			local count = #data * STAT_UNIT
 			rstat = rstat + count
 			receivestat = receivestat + count
-			out_put( "server.lua: read data '", data, "', error: ", err )
+			--out_put( "server.lua: read data '", data, "', error: ", err )
 			return dispatch( handler, data, err )
 		else    -- connections was closed or fatal error
 			out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
