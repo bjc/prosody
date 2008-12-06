@@ -46,10 +46,8 @@ local api = {}; -- Module API container
 
 local modulemap = {};
 
-local m_handler_info = multitable_new();
-local m_stanza_handlers = multitable_new();
+local stanza_handlers = multitable_new();
 local handler_info = {};
-local stanza_handlers = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
@@ -77,7 +75,6 @@ function load(host, module_name, config)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-		stanza_handlers[host] = {};
 	elseif modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
@@ -124,7 +121,7 @@ function handle_stanza(host, origin, stanza)
 		xmlns = stanza.tags[1].attr.xmlns;
 		log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
 	end
-	local handlers = m_stanza_handlers:get(host, origin_type, name, xmlns);
+	local handlers = stanza_handlers:get(host, origin_type, name, xmlns);
 	if handlers then
 		log("debug", "Passing stanza to mod_%s", handler_info[handlers[1]].name);
 		(handlers[1])(origin, stanza);
@@ -148,10 +145,10 @@ function api:get_host()
 end
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
-	local handlers = m_stanza_handlers:get(module.host, origin_type, tag, xmlns);
+	local handlers = stanza_handlers:get(module.host, origin_type, tag, xmlns);
 	local msg = (tag == "iq") and "namespace" or "payload namespace";
 	if not handlers then
-		m_stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
+		stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
 		handler_info[handler] = module;
 		module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
 	else
