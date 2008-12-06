@@ -53,13 +53,11 @@ static int daemonize(lua_State *L)
 	else if(pid != 0)
 	{
 		/* We are the parent process */
-		printf("We are the parent, pid of child is %d\n", (int)pid);
 		lua_pushboolean(L, 1);
 		lua_pushnumber(L, pid);
 		return 2;
 	}
 	
-	printf("We are the child, pid reports %d\n", (int)pid);
 	/* and we are the child process */
 	if(setsid() == -1)
 	{
