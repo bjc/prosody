@@ -12,9 +12,10 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
-all: prosody.install prosody.cfg.lua.install util/encodings.so util/hashes.so
+all: prosody.install prosody.cfg.lua.install
+	$(MAKE) -C util-src install
 
-install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so
+install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATA)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
@@ -37,6 +38,9 @@ util/encodings.so:
 	$(MAKE) install -C util-src
 
 util/hashes.so:
+	$(MAKE) install -C util-src
+
+util/pposix.so:
 	$(MAKE) install -C util-src
 
 prosody.install: prosody
