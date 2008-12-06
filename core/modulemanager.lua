@@ -26,6 +26,7 @@ local log = logger.init("modulemanager");
 local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
+local multitable_new = require "util.multitable".new;
 
 
 local loadfile, pcall = loadfile, pcall;
@@ -45,6 +46,8 @@ local api = {}; -- Module API container
 
 local modulemap = {};
 
+local m_handler_info = multitable_new();
+local m_stanza_handlers = multitable_new();
 local handler_info = {};
 local stanza_handlers = {};
 
@@ -115,7 +118,7 @@ function unload(host, name, ...)
 	
 end
 
-function handle_stanza(host, origin, stanza)
+function _handle_stanza(host, origin, stanza)
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
 	
 	local handlers = stanza_handlers[host];
@@ -148,6 +151,21 @@ function handle_stanza(host, origin, stanza)
 	log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns);
 	return false; -- we didn't handle it
 end
+function handle_stanza(host, origin, stanza)
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
+	if name == "iq" and xmlns == "jabber:client" then
+		xmlns = stanza.tags[1].attr.xmlns;
+		log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
+	end
+	local handlers = m_stanza_handlers:get(host, origin_type, name, xmlns);
+	if handlers then
+		log("debug", "Passing stanza to mod_%s", handler_info[handlers[1]].name);
+		(handlers[1])(origin, stanza);
+		return true;
+	else
+		log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns); -- we didn't handle it
+	end
+end
 
 ----- API functions exposed to modules -----------
 -- Must all be in api.* 
@@ -163,7 +181,7 @@ function api:get_host()
 end
 
 
-local function _add_iq_handler(module, origin_type, xmlns, handler)
+local function __add_iq_handler(module, origin_type, xmlns, handler)
 	local handlers = stanza_handlers[module.host];
 	handlers[origin_type] = handlers[origin_type] or {};
 	handlers[origin_type].iq = handlers[origin_type].iq or {};
@@ -173,6 +191,16 @@ local function _add_iq_handler(module, origin_type, xmlns, handler)
 		module:log("debug", "I now handle tag 'iq' [%s] with payload namespace '%s'", origin_type, xmlns);
 	else
 		module:log("warn", "I wanted to handle tag 'iq' [%s] with payload namespace '%s' but mod_%s already handles that", origin_type, xmlns, handler_info[handlers[origin_type].iq[xmlns]].name);
+	end
+end
+local function _add_iq_handler(module, origin_type, xmlns, handler)
+	local handlers = m_stanza_handlers:get(module.host, origin_type, "iq", xmlns);
+	if not handlers then
+		m_stanza_handlers:add(module.host, origin_type, "iq", xmlns, handler);
+		handler_info[handler] = module;
+		module:log("debug", "I now handle tag 'iq' [%s] with payload namespace '%s'", origin_type, xmlns);
+	else
+		module:log("warn", "I wanted to handle tag 'iq' [%s] with payload namespace '%s' but mod_%s already handles that", origin_type, xmlns, handler_info[handlers[1]].name);
 	end
 end
 
@@ -198,7 +226,7 @@ end
 
 api.add_event_hook = eventmanager.add_event_hook;
 
-local function _add_handler(module, origin_type, tag, xmlns, handler)
+local function __add_handler(module, origin_type, tag, xmlns, handler)
 	local handlers = stanza_handlers[module.host];
 	handlers[origin_type] = handlers[origin_type] or {};
 	if not handlers[origin_type][tag] then
@@ -208,6 +236,16 @@ local function _add_handler(module, origin_type, tag, xmlns, handler)
 		module:log("debug", "I now handle tag '%s' [%s] with xmlns '%s'", tag, origin_type, xmlns);
 	elseif handler_info[handlers[origin_type][tag]] then
 		log("warning", "I wanted to handle tag '%s' [%s] but mod_%s already handles that", tag, origin_type, handler_info[handlers[origin_type][tag]].module.name);
+	end
+end
+local function _add_handler(module, origin_type, tag, xmlns, handler)
+	local handlers = m_stanza_handlers:get(module.host, origin_type, tag, xmlns);
+	if not handlers then
+		m_stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
+		handler_info[handler] = module;
+		module:log("debug", "I now handle tag '%s' [%s] with xmlns '%s'", tag, origin_type, xmlns);
+	else
+		module:log("warning", "I wanted to handle tag '%s' [%s] but mod_%s already handles that", tag, origin_type, handler_info[handlers[1]].module.name);
 	end
 end
 
