@@ -196,7 +196,7 @@ function api:add_feature(xmlns)
 	end);
 end
 
-api.add_event_hook = eventmanager.add_event_hook;
+function api:add_event_hook (...) return eventmanager.add_event_hook(...); end
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
 	local handlers = stanza_handlers[module.host];
