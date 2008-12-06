@@ -24,6 +24,8 @@ local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
+local eventmanager = require "core.eventmanager";
+
 
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -182,28 +184,7 @@ function api:add_feature(xmlns)
 	end);
 end
 
-
-do
-	local event_handlers = {};
-	
-	function api:add_event_hook(name, handler)
-		if not event_handlers[name] then
-			event_handlers[name] = {};
-		end
-		t_insert(event_handlers[name] , handler);
-		self:log("debug", "Subscribed to %s", name);
-	end
-	
-	function fire_event(name, ...)
-		local event_handlers = event_handlers[name];
-		if event_handlers then
-			for name, handler in ipairs(event_handlers) do
-				handler(...);
-			end
-		end
-	end
-end
-
+api.add_event_hook = eventmanager.add_event_hook;
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
 	local handlers = stanza_handlers[module.host];
