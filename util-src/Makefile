@@ -9,9 +9,9 @@ OPENSSL_LIB?=crypto
 
 
 
-all: encodings.so hashes.so
+all: encodings.so hashes.so pposix.so
 
-install: encodings.so hashes.so
+install: encodings.so hashes.so pposix.so
 	install *.so ../util/
 	
 
@@ -29,4 +29,9 @@ hashes.o: hashes.c
 	gcc $(CFLAGS) -I$(LUA_INCDIR) -c -o hashes.o hashes.c
 hashes.so: hashes.o
 	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(LFLAGS) -o hashes.so hashes.o -L/usr/local/lib -llua$(LUA_SUFFIX) -lcrypto -lssl
+
+pposix.o: pposix.c
+	gcc $(CFLAGS) -I$(LUA_INCDIR) -c -o pposix.o pposix.c
+pposix.so: pposix.o
+	export MACOSX_DEPLOYMENT_TARGET="10.3"; gcc $(LFLAGS) -o pposix.so pposix.o -L/usr/local/lib -llua$(LUA_SUFFIX)
 	
