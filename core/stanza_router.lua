@@ -121,30 +121,31 @@ end
 function core_handle_stanza(origin, stanza)
 	-- Handlers
 	if modules_handle_stanza(stanza.attr.to or origin.host, origin, stanza) then return; end
-	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
-		local session = origin;
-
-		if stanza.name == "presence" and origin.roster then
-			if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
-				handle_normal_presence(origin, stanza, core_route_stanza);
+	if origin.type == "c2s" or origin.type == "s2sin" then
+		if origin.type == "c2s" then
+			if stanza.name == "presence" and origin.roster then
+				if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
+					handle_normal_presence(origin, stanza, core_route_stanza);
+				else
+					log("warn", "Unhandled c2s presence: %s", tostring(stanza));
+					if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
+						origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+					end
+				end
 			else
-				log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
+				log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
+				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 				end
 			end
-		else
-			log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
+		else -- s2s stanzas
+			log("warn", "Unhandled s2s stanza: %s", tostring(stanza));
 			if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 			end
-		end -- TODO handle other stanzas
-	else
-		log("warn", "Unhandled origin: %s", origin.type);
-		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-			-- s2s stanzas can get here
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 		end
+	else
+		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
 	end
 end
 
