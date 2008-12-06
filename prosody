@@ -68,6 +68,44 @@ do
 	end
 end
 
+require "util.datamanager".set_data_path(data_path);
+
+local server = require "net.server"
+
+require "util.dependencies"
+
+-- Maps connections to sessions --
+sessions = {};
+hosts = {};
+
+
+-- Load and initialise core modules --
+
+require "util.import"
+require "core.xmlhandlers"
+require "core.rostermanager"
+require "core.offlinemessage"
+require "core.eventmanager"
+require "core.hostmanager"
+require "core.modulemanager"
+require "core.usermanager"
+require "core.sessionmanager"
+require "core.stanza_router"
+
+--[[
+pcall(require, "remdebug.engine");
+if remdebug then remdebug.engine.start() end
+]]
+
+local cl = require "net.connlisteners";
+
+require "util.stanza"
+require "util.jid"
+
+------------------------------------------------------------------------
+
+------------- Begin code without a home ---------------------
+
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local _mkdir = {}
@@ -91,46 +129,11 @@ function mkdirs(host)
 end
 mkdir(data_path);
 
-require "util.datamanager".set_data_path(data_path);
+eventmanager.add_event_hook("host-activated", mkdirs);
 
-local server = require "net.server"
+----------- End of out-of-place code --------------
 
-require "util.dependencies"
-
--- Maps connections to sessions --
-sessions = {};
-hosts = {};
-
-local defined_hosts = config.getconfig();
-
-for host, host_config in pairs(defined_hosts) do
-	if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) then
-		hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
-		mkdirs(host);
-	end
-end
-
--- Load and initialise core modules --
-
-require "util.import"
-require "core.xmlhandlers"
-require "core.rostermanager"
-require "core.offlinemessage"
-require "core.modulemanager"
-require "core.usermanager"
-require "core.sessionmanager"
-require "core.stanza_router"
-
---[[
-pcall(require, "remdebug.engine");
-if remdebug then remdebug.engine.start() end
-]]
-
-local start = require "net.connlisteners".start;
-require "util.stanza"
-require "util.jid"
-
-------------------------------------------------------------------------
+eventmanager.fire_event("server-starting");
 
 -- Initialise modules
 
@@ -159,13 +162,17 @@ if global_ssl_ctx then
 end
 
 -- start listening on sockets
-start("xmppclient", { ssl = global_ssl_ctx })
-start("xmppserver", { ssl = global_ssl_ctx })
+cl.start("xmppclient", { ssl = global_ssl_ctx })
+cl.start("xmppserver", { ssl = global_ssl_ctx })
 
 if config.get("*", "core", "console_enabled") then
-	start("console")
+	if cl.get("console") then
+		cl.start("console")
+	else
+		log("error", "Console is enabled, but the console module appears not to be loaded");
+	end
 end
 
-modulemanager.fire_event("server-started");
+eventmanager.fire_event("server-started");
 
 server.loop();
