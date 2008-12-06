@@ -17,11 +17,9 @@
 -- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 --
 
-
-
 local format, rep = string.format, string.rep;
 local io_write = io.write;
-local print = print;
+local pcall = pcall;
 local debug = debug;
 local tostring = tostring;
 local math_max = math.max;
@@ -42,6 +40,8 @@ end
 
 local sourcewidth = 20;
 
+local outfunction = nil;
+
 function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	sourcewidth = math_max(#name+2, sourcewidth);
@@ -51,12 +51,24 @@ function init(name)
 					local inf = debug.getinfo(3, 'Snl');
 					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
 				end
+				
+				if outfunction then return outfunction(name, level, message, ...); end
+				
 				if ... then 
 					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
 				else
 					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
 				end
 			end
+end
+
+function setwriter(f)
+	if not f then outfunction = nil; return true, nil; end
+	local ok, ret = pcall(f, "logger", "info", "Switched logging output successfully");
+	if ok then
+		outfunction = f;
+	end
+	return ok, ret;
 end
 
 return _M;
