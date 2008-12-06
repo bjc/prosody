@@ -798,10 +798,6 @@ end
 loop = function( )    -- this is the main loop of the program
 	--signal_set( "hub", "run" )
 	repeat
-		--[[print(readlen, writelen)
-		for _, s in ipairs(readlist) do print("R:", tostring(s)) end
-		for _, s in ipairs(writelist) do print("W:", tostring(s)) end
-		out_put("select()"..os.time())]]
 		local read, write, err = socket_select( readlist, writelist, 1 )    -- 1 sec timeout, nice for timers
 		for i, socket in ipairs( write ) do    -- send data waiting in writequeues
 			local handler = socketlist[ socket ]
