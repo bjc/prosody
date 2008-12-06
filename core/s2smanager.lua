@@ -94,7 +94,7 @@ function new_incoming(conn)
 	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming" };
 	if true then
 		session.trace = newproxy(true);
-		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("s2s session got collected, now "..open_sessions.." s2s sessions are allocated") end;
+		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));

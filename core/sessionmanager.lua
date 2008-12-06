@@ -52,7 +52,7 @@ function new_session(conn)
 	local session = { conn = conn,  priority = 0, type = "c2s_unauthed", conntime = gettime() };
 	if true then
 		session.trace = newproxy(true);
-		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; print("Session got collected, now "..open_sessions.." sessions are allocated") end;
+		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
 	log("info", "open sessions now: ".. open_sessions);
