@@ -147,27 +147,30 @@ function api:get_host()
 	return self.host;
 end
 
-
-local function _add_iq_handler(module, origin_type, xmlns, handler)
-	local handlers = m_stanza_handlers:get(module.host, origin_type, "iq", xmlns);
+local function _add_handler(module, origin_type, tag, xmlns, handler)
+	local handlers = m_stanza_handlers:get(module.host, origin_type, tag, xmlns);
+	local msg = (tag == "iq") and "namespace" or "payload namespace";
 	if not handlers then
-		m_stanza_handlers:add(module.host, origin_type, "iq", xmlns, handler);
+		m_stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
 		handler_info[handler] = module;
-		module:log("debug", "I now handle tag 'iq' [%s] with payload namespace '%s'", origin_type, xmlns);
+		module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
 	else
-		module:log("warn", "I wanted to handle tag 'iq' [%s] with payload namespace '%s' but mod_%s already handles that", origin_type, xmlns, handler_info[handlers[1]].name);
+		module:log("warn", "I wanted to handle tag '%s' [%s] with %s '%s' but mod_%s already handles that", tag, origin_type, msg, xmlns, handler_info[handlers[1]].module.name);
 	end
 end
 
-function api:add_iq_handler(origin_type, xmlns, handler)
-	if not (origin_type and handler and xmlns) then return false; end
+function api:add_handler(origin_type, tag, xmlns, handler)
+	if not (origin_type and tag and xmlns and handler) then return false; end
 	if type(origin_type) == "table" then
 		for _, origin_type in ipairs(origin_type) do
-			_add_iq_handler(self, origin_type, xmlns, handler);
+			_add_handler(self, origin_type, tag, xmlns, handler);
 		end
-		return;
+	else
+		_add_handler(self, origin_type, tag, xmlns, handler);
 	end
-	_add_iq_handler(self, origin_type, xmlns, handler);
+end
+function api:add_iq_handler(origin_type, xmlns, handler)
+	self:add_handler(origin_type, "iq", xmlns, handler);
 end
 
 function api:add_feature(xmlns)
@@ -180,28 +183,6 @@ function api:add_feature(xmlns)
 end
 
 function api:add_event_hook (...) return eventmanager.add_event_hook(...); end
-
-local function _add_handler(module, origin_type, tag, xmlns, handler)
-	local handlers = m_stanza_handlers:get(module.host, origin_type, tag, xmlns);
-	if not handlers then
-		m_stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
-		handler_info[handler] = module;
-		module:log("debug", "I now handle tag '%s' [%s] with xmlns '%s'", tag, origin_type, xmlns);
-	else
-		module:log("warning", "I wanted to handle tag '%s' [%s] but mod_%s already handles that", tag, origin_type, handler_info[handlers[1]].module.name);
-	end
-end
-
-function api:add_handler(origin_type, tag, xmlns, handler)
-	if not (origin_type and tag and xmlns and handler) then return false; end
-	if type(origin_type) == "table" then
-		for _, origin_type in ipairs(origin_type) do
-			_add_handler(self, origin_type, tag, xmlns, handler);
-		end
-		return;
-	end
-	_add_handler(self, origin_type, tag, xmlns, handler);
-end
 
 --------------------------------------------------------------------
 
