@@ -39,6 +39,11 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
+local function handleerr(err) log("error", "Traceback[s2s]:", err, debug.traceback()); end
+function stream_callbacks.handlestanza(a, b)
+	xpcall(function () core_process_stanza(a, b) end, handleerr);
+end
+
 local connlisteners_register = require "net.connlisteners".register;
 
 local t_insert = table.insert;
@@ -113,25 +118,17 @@ function xmppserver.listener(conn, data)
 
 		-- Logging functions --
 
-		local mainlog, log = log;
-		do
-			local conn_name = "s2sin"..tostring(conn):match("[a-f0-9]+$");
-			log = logger.init(conn_name);
-		end
-		local print = function (...) log("info", t_concatall({...}, "\t")); end
-		session.log = log;
-
-		print("Incoming s2s connection");
+		
+		local conn_name = "s2sin"..tostring(conn):match("[a-f0-9]+$");
+		session.log = logger.init(conn_name);
+		
+		session.log("info", "Incoming s2s connection");
 		
 		session.reset_stream = session_reset_stream;
 		session.close = session_close;
 		
 		session_reset_stream(session); -- Initialise, ready for use
 		
-		-- FIXME: Below function should be session,stanza - and xmlhandlers should use :method() notation to call,
-		-- this will avoid the useless indirection we have atm
-		-- (I'm on a mission, no time to fix now)
-
 		-- Debug version --
 --		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
 --		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
@@ -164,11 +161,8 @@ function xmppserver.register_outgoing(conn, session)
 	session.reset_stream = session_reset_stream;	
 	session_reset_stream(session); -- Initialise, ready for use
 	
-	-- FIXME: Below function should be session,stanza - and xmlhandlers should use :method() notation to call,
-	-- this will avoid the useless indirection we have atm
-	-- (I'm on a mission, no time to fix now)
-	local function handleerr(err) print("Traceback:", err, debug.traceback()); end
-	session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+	--local function handleerr(err) print("Traceback:", err, debug.traceback()); end
+	--session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
 end
 
 connlisteners_register("xmppserver", xmppserver);
