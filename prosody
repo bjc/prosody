@@ -68,8 +68,6 @@ do
 	end
 end
 
-require "util.datamanager".set_data_path(data_path);
-
 local server = require "net.server"
 
 require "util.dependencies"
@@ -77,7 +75,6 @@ require "util.dependencies"
 -- Maps connections to sessions --
 sessions = {};
 hosts = {};
-
 
 -- Load and initialise core modules --
 
@@ -104,9 +101,13 @@ require "util.jid"
 
 ------------------------------------------------------------------------
 
+
 ------------- Begin code without a home ---------------------
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+require "util.datamanager".set_data_path(data_path);
+
+
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local _mkdir = {}
 function mkdir(path)
