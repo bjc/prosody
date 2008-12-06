@@ -44,7 +44,7 @@ local function add(self, ...)
 		if not tab then tab = {}; t[key] = tab; end
 		t = tab;
 	end
-	t_insert(t, select(count, ...));
+	t_insert(t, (select(count, ...)));
 end
 
 local function r(t, n, _end, ...)
