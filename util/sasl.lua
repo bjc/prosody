@@ -177,11 +177,10 @@ local function new_digest_md5(realm, password_handler)
 			if not response["qop"] then response["qop"] = "auth" end
 			
 			if response["realm"] == nil then response["realm"] = "" end
-			local raw_realm = response["realm"];
+			local decoder;
 			
 			if response["charset"] == nil then
-				response["username"] = latin1toutf8(response["username"])
-				response["realm"] = utf8tolatin1ifpossible(response["realm"])
+				decoder = utf8tolatin1ifpossible;
 			elseif response["charset"] ~= "utf-8" then
 				return "failure", "incorrect-encoding", "The client's response uses "..response["charset"].." for encoding with isn't supported by sasl.lua. Supported encodings are latin or utf-8."
 			end
@@ -197,7 +196,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"]
-			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", raw_realm)
+			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", decoder)
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			

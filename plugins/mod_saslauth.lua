@@ -66,15 +66,14 @@ local function handle_status(session, status)
 	end
 end
 
-local function password_callback(node, host, mechanism, raw_host)
-	log("host", host);
-	log("raw_host", raw_host);
-	local password = (datamanager.load(node, raw_host, "accounts") or {}).password; -- FIXME handle hashed passwords
+local function password_callback(node, host, mechanism, decoder)
+	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
 	local func = function(x) return x; end;
 	if password then
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
+			if decoder then node, host, password = decoder(node), decoder(host), decoder(password); end
 			return func, md5(node..":"..host..":"..password);
 		end
 	end
