@@ -129,7 +129,7 @@ function xmppserver.listener(conn, data)
 		
 		session_reset_stream(session); -- Initialise, ready for use
 		
-		session.stanza_dispatch = streamcallbacks.handlestanza;
+		session.stanza_dispatch = stream_callbacks.handlestanza;
 	end
 	if data then
 		session.data(conn, data);
