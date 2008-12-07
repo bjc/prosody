@@ -110,6 +110,8 @@ static int Lbase64_decode(lua_State *L)		/** decode(s) */
 					case 2: base64_decode(&b,t[0],t[1],0,0,2);	break;
 					case 3: base64_decode(&b,t[0],t[1],t[2],0,3);	break;
 				}
+				n=0;
+				break;
 			case 0:
 				luaL_pushresult(&b);
 				return 1;
