@@ -35,15 +35,13 @@ if not config_get("*", "core", "no_daemonize") then
 			log("info", "Daemonized to pid %d", ret);			
 			os.exit(0);
 		else
-			log("info", "Successfully daemonized");
-
 			if logwriter then
 				local ok, ret = logger_set(logwriter);
 				if not ok then
 					log("error", "Couldn't set new log output: %s", ret);
 				end
 			end
-			
+			log("info", "Successfully daemonized");	
 		end
 	end
 	module:add_event_hook("server-starting", daemonize_server);
