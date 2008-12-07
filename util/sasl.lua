@@ -176,7 +176,11 @@ local function new_digest_md5(realm, password_handler)
 			if not response["cnonce"] then return "failure", "malformed-request", "Missing entry for cnonce in SASL message." end
 			if not response["qop"] then response["qop"] = "auth" end
 			
-			if response["realm"] == nil then response["realm"] = "" end
+			if response["realm"] == nil then
+				response["realm"] = ""
+			elseif response["realm"] ~= self.realm then
+				return "failure", "not-authorized", "Incorrect realm value";
+			end
 			local decoder;
 			
 			if response["charset"] == nil then
