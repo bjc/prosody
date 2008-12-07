@@ -205,7 +205,7 @@ local function new_digest_md5(realm, password_handler)
 			elseif Y == false then return "failure", "account-disabled" end
 			
 			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
-			local A2 = "AUTHENTICATE:"..protocol.."/"..idna_ascii(domain)
+			local A2 = "AUTHENTICATE:"..protocol.."/"..domain;
 			
 			local HA1 = md5(A1, true)
 			local HA2 = md5(A2, true)
@@ -215,7 +215,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			if response_value == response["response"] then
 				-- calculate rspauth
-				A2 = ":"..protocol.."/"..idna_ascii(domain)
+				A2 = ":"..protocol.."/"..domain;
 				
 				HA1 = md5(A1, true)
 				HA2 = md5(A2, true)
