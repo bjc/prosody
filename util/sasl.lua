@@ -81,6 +81,39 @@ local function new_digest_md5(realm, password_handler)
 		return data
 	end
 	
+	local function utf8tolatin1ifpossible(passwd)
+		local i = 1;
+		while i <= #passwd do
+			local passwd_i = to_byte(passwd:sub(i, i));
+			if passwd_i > 0x7F then
+				if passwd_i < 0xC0 or passwd_i > 0xC3 then
+					return passwd;
+				end
+				i = i + 1;
+				passwd_i = to_byte(passwd:sub(i, i));
+				if passwd_i < 0x80 or passwd_i > 0xBF then
+					return passwd;
+				end
+			end
+			i = i + 1;
+		end
+
+		local p = {};
+		local j = 0;
+		i = 1;
+		while (i <= #passwd) do
+			local passwd_i = to_byte(passwd:sub(i, i));
+			if passwd_i > 0x7F then
+				i = i + 1;
+				local passwd_i_1 = to_byte(passwd:sub(i, i));
+				t_insert(p, to_char(passwd_i%4*64 + passwd_i_1%64)); -- I'm so clever
+			else
+				t_insert(p, to_char(passwd_i));
+			end
+			i = i + 1;
+		end
+		return t_concat(p);
+	end
 	local function latin1toutf8(str)
 		local p = {};
 		for ch in gmatch(str, ".") do
@@ -148,7 +181,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			if response["charset"] == nil then
 				response["username"] = latin1toutf8(response["username"])
-				response["realm"] = latin1toutf8(response["realm"])
+				response["realm"] = utf8tolatin1ifpossible(response["realm"])
 			elseif response["charset"] ~= "utf-8" then
 				return "failure", "incorrect-encoding", "The client's response uses "..response["charset"].." for encoding with isn't supported by sasl.lua. Supported encodings are latin or utf-8."
 			end
