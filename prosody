@@ -146,8 +146,25 @@ if global_ssl_ctx then
 end
 
 -- start listening on sockets
-cl.start("xmppclient", { ssl = global_ssl_ctx })
-cl.start("xmppserver", { ssl = global_ssl_ctx })
+local function do_ports(option, listener, default, key)
+	local ports = config.get("*", "core", option) or default;
+	--if type(ports) == "number" then ports = {ports} end;
+	if type(ports) ~= "table" then
+		log("error", "core."..option.." is not a table");
+	else
+		for _, port in ipairs(ports) do
+			if type(port) ~= "number" then
+				log("error", "Non-numeric "..option..": "..tostring(port));
+			else
+				cl.start(listener, { ssl = global_ssl_ctx, [key] = port });
+			end
+		end
+	end
+end
+
+do_ports("c2s_ports", "xmppclient", {5222}, "port");
+do_ports("s2s_ports", "xmppserver", {5269}, "port");
+do_ports("legacy_ssl_ports", "xmppclient", {}, "legacy_ssl_port");
 
 if config.get("*", "core", "console_enabled") then
 	if cl.get("console") then
