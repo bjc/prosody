@@ -129,9 +129,7 @@ function xmppserver.listener(conn, data)
 		
 		session_reset_stream(session); -- Initialise, ready for use
 		
-		-- Debug version --
---		local function handleerr(err) print("Traceback:", err, debug.traceback()); end
---		session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+		session.stanza_dispatch = streamcallbacks.handlestanza;
 	end
 	if data then
 		session.data(conn, data);
