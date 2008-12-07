@@ -69,7 +69,7 @@ function destroy_session(session, err)
 		local pres = st.presence{ type = "unavailable" };
 		if (not err) or err == "closed" then err = "connection closed"; end
 		pres:tag("status"):text("Disconnected: "..err);
-		session.stanza_dispatch(pres);
+		session:dispatch_stanza(pres);
 	end
 	
 	-- Remove session/resource from user's session list
