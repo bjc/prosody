@@ -72,7 +72,7 @@ local function readSpecialString()
 	read("<"); read("<"); -- read <<
 	local str = "";
 	if peek() == "\"" then
-		local str = readString();
+		str = readString();
 	elseif peek() ~= ">" then
 		error();
 	end
