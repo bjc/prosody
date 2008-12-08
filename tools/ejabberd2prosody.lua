@@ -124,7 +124,7 @@ local filters = {
 	end;
 	roster = function(tuple)
 		local node = tuple[3][1]; local host = tuple[3][2];
-		local contact = tuple[4][1].."@"..tuple[4][2];
+		local contact = (type(tuple[4][1]) == "table") and tuple[4][2] or tuple[4][1].."@"..tuple[4][2];
 		local name = tuple[5]; local subscription = tuple[6];
 		local ask = tuple[7]; local groups = tuple[8];
 		if type(name) ~= type("") then name = nil; end
