@@ -20,7 +20,8 @@
 
 
 
-local log = require "util.logger".init("componentmanager")
+local log = require "util.logger".init("componentmanager");
+local module_load = require "core.modulemanager".load;
 local jid_split = require "util.jid".split;
 local hosts = hosts;
 
@@ -45,7 +46,9 @@ function register_component(host, component)
 	if not hosts[host] then
 		-- TODO check for host well-formedness
 		components[host] = component;
-		hosts[host] = {type = "component", host = host, connected = true, s2sout = {} };
+		hosts[host] = { type = "component", host = host, connected = true, s2sout = {} };
+		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
+		module_load(host, "dialback");
 		log("debug", "component added: "..host);
 		return hosts[host];
 	else
