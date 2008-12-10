@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -31,7 +31,7 @@ local function handle_version_request(session, stanza)
 	if stanza.attr.type == "get" then
 		session.send(st.reply(stanza):query(xmlns_version)
 			:tag("name"):text("Prosody"):up()
-			:tag("version"):text("0.1"):up()
+			:tag("version"):text("0.2"):up()
 			:tag("os"):text("the best operating system ever!"));
 	end
 end
