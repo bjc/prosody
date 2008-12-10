@@ -19,6 +19,7 @@
 
 
 local t_insert      =  table.insert;
+local t_concat      =  table.concat;
 local t_remove      =  table.remove;
 local s_format      = string.format;
 local tostring      =      tostring;
@@ -27,7 +28,7 @@ local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
 local next          =          next;
-local print          =          print;
+local print         =         print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
 local os = os;
@@ -116,21 +117,35 @@ end
 
 local xml_escape = xml_escape;
 
-function stanza_mt.__tostring(t)
-	local children_text = "";
+local function dostring(t, buf, self)
+	t_insert(buf, "<");
+	t_insert(buf, t.name);
+	if t.attr then
+		for k, v in pairs(t.attr) do if type(k) == "string" then
+			t_insert(buf, " ");
+			t_insert(buf, k);
+			t_insert(buf, "='");
+			t_insert(buf, (xml_escape(tostring(v))));
+			t_insert(buf, "'");
+		end end
+	end
+	t_insert(buf, ">");
 	for n, child in ipairs(t) do
-		if type(child) == "string" then	
-			children_text = children_text .. xml_escape(child);
+		if child.name then 
+			self(child, buf, self);
 		else
-			children_text = children_text .. tostring(child);
+			t_insert(buf, (xml_escape(child)));
 		end
 	end
+	t_insert(buf, "</");
+	t_insert(buf, t.name);
+	t_insert(buf, ">");
+end
 
-	local attr_string = "";
-	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, xml_escape(tostring(v))); end end
-	end
-	return s_format("<%s%s>%s</%s>", t.name, attr_string, children_text, t.name);
+function stanza_mt.__tostring(t)
+	local buf = {};
+	dostring(t, buf, dostring);
+	return t_concat(buf);
 end
 
 function stanza_mt.top_tag(t)
