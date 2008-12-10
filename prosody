@@ -18,8 +18,6 @@
 -- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 --
 
-
-
 -- Config here --
 
 CFG_SOURCEDIR=nil;
@@ -46,6 +44,9 @@ pcall(require, "luarocks.require")
 
 config = require "core.configmanager"
 log = require "util.logger".init("general");
+
+-- Disable log output, needs to read from config
+-- require "util.logger".setwriter(function () end);
 
 do
 	-- TODO: Check for other formats when we add support for them
