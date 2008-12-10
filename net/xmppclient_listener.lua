@@ -47,7 +47,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[c2s]:", err, debug.traceback()); end
+local function handleerr(err) log("error", "Traceback[c2s]: %s: %s", tostring(err), debug.traceback()); end
 function stream_callbacks.handlestanza(a, b)
 	xpcall(function () core_process_stanza(a, b) end, handleerr);
 end
