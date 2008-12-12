@@ -156,8 +156,7 @@ function request(u, callback, ex)
 	req.state = "status"
 	
 	listener.register_request(req.handler, req);
-	
-	server.loop()
+
 	return req;
 end
 
