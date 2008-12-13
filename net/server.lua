@@ -587,6 +587,8 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 
 	local eol, fatal_send_error
 
+	socket:settimeout(0);
+	
 	local rstat, sstat = 0, 0
 
 	--// local import of socket methods //--
@@ -833,5 +835,6 @@ return {
 	stats = stats,
 	closeall = closeall,
 	addtimer = addtimer,
+	wraptcpclient = wraptcpclient,
 	wraptlsclient = wraptlsclient,
 }
