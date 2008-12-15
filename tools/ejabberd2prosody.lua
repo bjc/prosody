@@ -37,7 +37,7 @@ function mkdir(path)
 	--print("mkdir",path);
 	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
 end
-function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
+function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
 function getpath(username, host, datastore, ext)
 	ext = ext or "dat";
 	if username then
