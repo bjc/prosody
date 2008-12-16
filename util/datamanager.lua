@@ -44,7 +44,7 @@ do
 	end
 
 	encode = function (s)
-		return s and (s:gsub("%W", function (c) return format("%%%x", c:byte()); end));
+		return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end));
 	end
 end
 

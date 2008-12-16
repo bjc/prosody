@@ -13,7 +13,7 @@ local tonumber, tostring, pairs = tonumber, tostring, pairs;
 local print = function () end
 
 local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
-local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
+local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
 
 module "http"
 

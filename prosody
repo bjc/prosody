@@ -115,7 +115,7 @@ function mkdir(path)
 	path = path:gsub("/", path_separator);
 	local x = io.popen("mkdir \""..path.."\" 2>&1"):read("*a");
 end
-function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
+function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
 function mkdirs(host)
 	if not _mkdir[host] then
 		local host_dir = string.format("%s/%s", data_path, encode(host));
