@@ -47,7 +47,8 @@ end
 function get(name)
 	local h = listeners[name];
 	if not h then
-		pcall(dofile, listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua");
+		local ok, ret = pcall(dofile, listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua");
+		if not ok then return nil, ret; end
 		h = listeners[name];
 	end
 	return h;
