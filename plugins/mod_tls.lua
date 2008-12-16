@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -33,8 +33,6 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls then
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
-				-- FIXME: I'm commenting the below, not sure why it was necessary
-				-- sessions[session.conn] = nil;
 				session:reset_stream();
 				session.conn.starttls();
 				session.log("info", "TLS negotiation started...");

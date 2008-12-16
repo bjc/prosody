@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -113,8 +113,6 @@ function bind_resource(session, resource)
 	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
-	session.conntimetotal = gettime()-session.conntime;
-	
 	resource = resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	

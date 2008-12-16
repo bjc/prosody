@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -36,7 +36,7 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = stanza;
 
-local stream_callbacks = { ns = "http://etherx.jabber.org/streams", streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
@@ -47,7 +47,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[c2s]:", err, debug.traceback()); end
+local function handleerr(err) log("error", "Traceback[c2s]: %s: %s", tostring(err), debug.traceback()); end
 function stream_callbacks.handlestanza(a, b)
 	xpcall(function () core_process_stanza(a, b) end, handleerr);
 end

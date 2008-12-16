@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -47,6 +47,9 @@ local dialback_secret = sha256_hash(tostring{} .. math.random() .. socket.gettim
 
 local dns = require "net.dns";
 
+incoming_s2s = {};
+local incoming_s2s = incoming_s2s;
+
 module "s2smanager"
 
 local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
@@ -91,7 +94,7 @@ end
 local open_sessions = 0;
 
 function new_incoming(conn)
-	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming" };
+	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
 	if true then
 		session.trace = newproxy(true);
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
@@ -99,6 +102,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	incoming_s2s[session] = true;
 	return session;
 end
 
@@ -239,11 +243,16 @@ function verify_dialback(id, to, from, key)
 	return key == generate_dialback(id, to, from);
 end
 
-function make_authenticated(session)
+function make_authenticated(session, host)
 	if session.type == "s2sout_unauthed" then
 		session.type = "s2sout";
 	elseif session.type == "s2sin_unauthed" then
 		session.type = "s2sin";
+		if host then
+			session.hosts[host].authed = true;
+		end
+	elseif session.type == "s2sin" and host then
+		session.hosts[host].authed = true;
 	else
 		return false;
 	end
@@ -284,6 +293,8 @@ function destroy_session(session)
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
+	elseif session.direction == "incoming" then
+		incoming_s2s[session] = nil;
 	end
 	
 	for k in pairs(session) do

@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -72,26 +72,27 @@ function core_process_stanza(origin, stanza)
 	if origin.type == "c2s" then
 		stanza.attr.from = origin.full_jid;
 	end
-	local to = stanza.attr.to;
+	local to, xmlns = stanza.attr.to, stanza.attr.xmlns;
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
 	local from = stanza.attr.from;
 	local from_node, from_host, from_resource = jid_split(from);
 	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 
-	if origin.type == "s2sin" then
-		if origin.from_host ~= from_host then -- remote server trying to impersonate some other server?
-			log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from, origin.from_host);
-			return; -- FIXME what should we do here? does this work with subdomains?
-		end
-	end
 	--[[if to and not(hosts[to]) and not(hosts[to_bare]) and (hosts[host] and hosts[host].type ~= "local") then -- not for us?
 		log("warn", "stanza recieved for a non-local server");
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
 	-- FIXME do stanzas not of jabber:client get handled by components?
-	if origin.type == "s2sin" or origin.type == "c2s" then
+	if (origin.type == "s2sin" or origin.type == "c2s") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
+		if origin.type == "s2sin" then
+			local host_status = origin.hosts[from_host];
+			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
+				log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from_host, origin.from_host);
+				return; -- FIXME what should we do here? does this work with subdomains?
+			end
+		end
 		if not to then
 			core_handle_stanza(origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server

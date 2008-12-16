@@ -1,4 +1,4 @@
--- Prosody IM v0.1
+-- Prosody IM v0.2
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
@@ -21,6 +21,7 @@
 local t_insert      =  table.insert;
 local t_concat      =  table.concat;
 local t_remove      =  table.remove;
+local t_concat      =  table.concat;
 local s_format      = string.format;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
@@ -31,7 +32,7 @@ local next          =          next;
 local print         =         print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
-local os = os;
+local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
@@ -117,22 +118,20 @@ end
 
 local xml_escape = xml_escape;
 
-local function dostring(t, buf, self)
+local function dostring(t, buf, self, xml_escape)
 	t_insert(buf, "<");
 	t_insert(buf, t.name);
-	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then
-			t_insert(buf, " ");
-			t_insert(buf, k);
-			t_insert(buf, "='");
-			t_insert(buf, (xml_escape(tostring(v))));
-			t_insert(buf, "'");
-		end end
-	end
+	for k, v in pairs(t.attr) do if type(k) == "string" then
+		t_insert(buf, " ");
+		t_insert(buf, k);
+		t_insert(buf, "='");
+		t_insert(buf, (xml_escape(tostring(v))));
+		t_insert(buf, "'");
+	end end
 	t_insert(buf, ">");
 	for n, child in ipairs(t) do
 		if child.name then 
-			self(child, buf, self);
+			self(child, buf, self, xml_escape);
 		else
 			t_insert(buf, (xml_escape(child)));
 		end
@@ -144,9 +143,10 @@ end
 
 function stanza_mt.__tostring(t)
 	local buf = {};
-	dostring(t, buf, dostring);
+	dostring(t, buf, dostring, xml_escape);
 	return t_concat(buf);
 end
+
 
 function stanza_mt.top_tag(t)
 	local attr_string = "";
