@@ -21,6 +21,7 @@
 
 local hosts = hosts;
 local sessions = sessions;
+local core_process_stanza = function(a, b) core_process_stanza(a, b); end
 local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
@@ -54,6 +55,32 @@ module "s2smanager"
 
 local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
 
+local function bounce_sendq(session)
+	local sendq = session.sendq;
+	if sendq then
+		session.log("debug", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
+		local dummy = {
+			type = "s2sin";
+			send = function(s)
+				(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", get_traceback());
+			end;
+			dummy = true;
+		};
+		for i, data in ipairs(sendq) do
+			local reply = data[2];
+			local xmlns = reply.attr.xmlns;
+			if not xmlns or xmlns == "jabber:client" or xmlns == "jabber:server" then
+				reply.attr.type = "error";
+				reply:tag("error", {type = "cancel"})
+					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
+				core_process_stanza(dummy, reply);
+			end
+			sendq[i] = nil;
+		end
+		session.sendq = nil;
+	end
+end
+
 function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
@@ -66,8 +93,8 @@ function send_to_host(from_host, to_host, data)
 			end
 			
 			-- Queue stanza until we are able to send it
-			if host.sendq then t_insert(host.sendq, tostring(data));
-			else host.sendq = { tostring(data) }; end
+			if host.sendq then t_insert(host.sendq, {tostring(data), st.reply(data)});
+			else host.sendq = { {tostring(data), st.reply(data)} }; end
 			host.log("debug", "stanza [%s] queued ", data.name);
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
@@ -87,7 +114,8 @@ function send_to_host(from_host, to_host, data)
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = new_outgoing(from_host, to_host);
 		-- Store in buffer
-		host_session.sendq = { tostring(data) };
+		host_session.sendq = { {tostring(data), st.reply(data)} };
+		if not host_session.conn then destroy_session(host_session); end
 	end
 end
 
@@ -164,6 +192,7 @@ function attempt_connection(host_session, err)
 	local success, err = conn:connect(connect_host, connect_port);
 	if not success and err ~= "timeout" then
 		log("warn", "s2s connect() failed: %s", err);
+		return false;
 	end
 	
 	local cl = connlisteners_get("xmppserver");
@@ -278,7 +307,7 @@ function mark_connected(session)
 		if sendq then
 			session.log("debug", "sending "..#sendq.." queued stanzas across new outgoing connection to "..session.to_host);
 			for i, data in ipairs(sendq) do
-				send(data);
+				send(data[1]);
 				sendq[i] = nil;
 			end
 			session.sendq = nil;
@@ -289,10 +318,10 @@ end
 function destroy_session(session)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
-	-- FIXME: Flush sendq here/report errors to originators
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
+		bounce_sendq(session);
 	elseif session.direction == "incoming" then
 		incoming_s2s[session] = nil;
 	end
