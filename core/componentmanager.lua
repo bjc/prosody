@@ -31,9 +31,10 @@ module "componentmanager"
 
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);
-	local component = components[host];
-	if not component then component = components[node.."@"..host]; end -- hack to allow hooking node@server
+	local component = nil;
 	if not component then component = components[stanza.attr.to]; end -- hack to allow hooking node@server/resource and server/resource
+	if not component then component = components[node.."@"..host]; end -- hack to allow hooking node@server
+	if not component then component = components[host]; end
 	if component then
 		log("debug", "stanza being handled by component: "..host);
 		component(origin, stanza, hosts[host]);
