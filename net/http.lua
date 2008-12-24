@@ -81,7 +81,7 @@ local function request_reader(request, data, startpos)
 			return request.callback(0, "invalid-status-line", request);
 		end
 		
-		request.responsecode, request.responseversion = code, http;
+		request.code, request.responseversion = code, http;
 		
 		if request.onlystatus or not expectbody(request, tonumber(code)) then
 			if request.callback then
