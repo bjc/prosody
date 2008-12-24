@@ -110,6 +110,10 @@ function core_process_stanza(origin, stanza)
 		elseif origin.type ~= "c2s" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
+			if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then
+				origin.directed = origin.directed or {};
+				t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
+			end
 			core_route_stanza(origin, stanza);
 		end
 	else
