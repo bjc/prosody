@@ -27,40 +27,7 @@ local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 package.loaded["util.logger"] = {init = function() return function() end; end}
 local dm = require "util.datamanager"
-local data_path = "data";
-dm.set_data_path(data_path);
-
-local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
-local _mkdir = {}
-function mkdir(path)
-	path = path:gsub("/", path_separator);
-	--print("mkdir",path);
-	local x = io.popen("mkdir "..path.." 2>&1"):read("*a");
-end
-function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
-function getpath(username, host, datastore, ext)
-	ext = ext or "dat";
-	if username then
-		return format("%s/%s/%s/%s.%s", data_path, encode(host), datastore, encode(username), ext);
-	elseif host then
-		return format("%s/%s/%s.%s", data_path, encode(host), datastore, ext);
-	else
-		return format("%s/%s.%s", data_path, datastore, ext);
-	end
-end
-function mkdirs(host)
-	if not _mkdir[host] then
-		local host_dir = string.format("%s/%s", data_path, encode(host));
-		mkdir(host_dir);
-		mkdir(host_dir.."/accounts");
-		mkdir(host_dir.."/vcard");
-		mkdir(host_dir.."/roster");
-		mkdir(host_dir.."/private");
-		mkdir(host_dir.."/offline");
-		_mkdir[host] = true;
-	end
-end
-mkdir(data_path);
+dm.set_data_path("data");
 
 function build_stanza(tuple, stanza)
 	if tuple[1] == "xmlelement" then
@@ -83,31 +50,26 @@ function build_time(tuple)
 end
 
 function vcard(node, host, stanza)
-	mkdirs(host);
 	local ret, err = dm.store(node, host, "vcard", st.preserialize(stanza));
 	print("["..(err or "success").."] vCard: "..node.."@"..host);
 end
 function password(node, host, password)
-	mkdirs(host);
 	local ret, err = dm.store(node, host, "accounts", {password = password});
 	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
 end
 function roster(node, host, jid, item)
-	mkdirs(host);
 	local roster = dm.load(node, host, "roster") or {};
 	roster[jid] = item;
 	local ret, err = dm.store(node, host, "roster", roster);
 	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
 end
 function private_storage(node, host, xmlns, stanza)
-	mkdirs(host);
 	local private = dm.load(node, host, "private") or {};
 	private[xmlns] = st.preserialize(stanza);
 	local ret, err = dm.store(node, host, "private", private);
 	print("["..(err or "success").."] private: " ..node.."@"..host.." - "..xmlns);
 end
 function offline_msg(node, host, t, stanza)
-	mkdirs(host);
 	stanza.attr.stamp = os.date("!%Y-%m-%dT%H:%M:%SZ", t);
 	stanza.attr.stamp_legacy = os.date("!%Y%m%dT%H:%M:%S", t);
 	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));

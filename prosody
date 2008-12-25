@@ -108,30 +108,6 @@ require "util.jid"
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
 
-
-local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
-local _mkdir = {}
-function mkdir(path)
-	path = path:gsub("/", path_separator);
-	local x = io.popen("mkdir \""..path.."\" 2>&1"):read("*a");
-end
-function encode(s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
-function mkdirs(host)
-	if not _mkdir[host] then
-		local host_dir = string.format("%s/%s", data_path, encode(host));
-		mkdir(host_dir);
-		mkdir(host_dir.."/accounts");
-		mkdir(host_dir.."/vcard");
-		mkdir(host_dir.."/roster");
-		mkdir(host_dir.."/private");
-		mkdir(host_dir.."/offline");
-		_mkdir[host] = true;
-	end
-end
-mkdir(data_path);
-
-eventmanager.add_event_hook("host-activated", mkdirs);
-
 ----------- End of out-of-place code --------------
 
 eventmanager.fire_event("server-starting");
