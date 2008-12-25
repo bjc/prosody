@@ -229,7 +229,7 @@ function core_route_stanza(origin, stanza)
 					else
 						-- TODO send unavailable presence or unsubscribed
 					end
-				elseif stanza.name == "message" then
+				elseif stanza.name == "message" then -- FIXME if full jid, then send out to resources with highest priority
 					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
 						offlinemanager.store(node, host, stanza);
 						-- FIXME don't store messages with only chat state notifications
@@ -237,12 +237,13 @@ function core_route_stanza(origin, stanza)
 					-- TODO allow configuration of offline storage
 					-- TODO send error if not storing offline
 				elseif stanza.name == "iq" then
-					-- TODO send IQ error
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
 			else -- user does not exist
 				-- TODO we would get here for nodeless JIDs too. Do something fun maybe? Echo service? Let plugins use xmpp:server/resource addresses?
 				if stanza.name == "presence" then
-					if stanza.attr.type == "probe" then
+					local t = stanza.attr.type;
+					if t == "subscribe" or t == "probe" then
 						origin.send(st.presence({from = to_bare, to = from_bare, type = "unsubscribed"}));
 					end
 					-- else ignore
