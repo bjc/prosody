@@ -27,10 +27,10 @@ end
 local function request_reader(request, data, startpos)
 	if not data then
 		if request.body then
-			request.callback(request.code, t_concat(request.body), request);
+			request.callback(t_concat(request.body), request.code, request);
 		else
 			-- Error.. connection was closed prematurely
-			request.callback(0, "connection-closed", request);
+			request.callback("connection-closed", 0, request);
 		end
 		destroy_request(request);
 		return;
@@ -47,7 +47,7 @@ local function request_reader(request, data, startpos)
 			if request.havebodylength >= request.bodylength then
 				-- We have the body
 				if request.callback then
-					request.callback(request.code, t_concat(request.body), request);
+					request.callback(t_concat(request.body), request.code, request);
 				end
 			end
 			print("", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
@@ -77,15 +77,16 @@ local function request_reader(request, data, startpos)
 	elseif request.state == "status" then
 		print("Reading status...")
 		local http, code, text, linelen = data:match("^HTTP/(%S+) (%d+) (.-)\r\n()", startpos);
+		code = tonumber(code);
 		if not code then
-			return request.callback(0, "invalid-status-line", request);
+			return request.callback("invalid-status-line", 0, request);
 		end
 		
 		request.code, request.responseversion = code, http;
 		
-		if request.onlystatus or not expectbody(request, tonumber(code)) then
+		if request.onlystatus or not expectbody(request, code) then
 			if request.callback then
-				request.callback(code, nil, request);
+				request.callback(nil, code, request);
 			end
 			destroy_request(request);
 			return;
@@ -99,7 +100,7 @@ local function request_reader(request, data, startpos)
 	end
 end
 
-function request(u, callback, ex)
+function request(u, ex, callback)
 	local req = url.parse(u);
 	
 	local custom_headers, body;
