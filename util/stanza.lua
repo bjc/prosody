@@ -19,6 +19,7 @@
 
 
 local t_insert      =  table.insert;
+local t_concat      =  table.concat;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
 local s_format      = string.format;

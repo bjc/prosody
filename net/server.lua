@@ -37,6 +37,7 @@ local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
 local print = print;
 local out_put = function () end --print;
+local out_put = print;
 local out_error = print;
 
 --// extern libs //--
@@ -100,6 +101,8 @@ wrapserver = function( listener, socket, ip, serverport, mode, sslctx )    -- th
 
 	local wrapclient, err
 
+	out_put("Starting a new server on "..tostring(serverport).." with ssl: "..tostring(sslctx));
+	
 	if sslctx then
 		if not ssl_newcontext then
 			return nil, "luasec not found"
@@ -188,7 +191,7 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 
 	local writequeue = { }    -- buffer for messages to send
 
-	local eol, fatal_send_error   -- end of buffer
+	local eol, fatal_send_error, wants_closing
 
 	local sstat, rstat = 0, 0
 
@@ -223,7 +226,17 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
-		if eol and not fatal_send_error then handler._dispatchdata(); end
+		if eol and not fatal_send_error then
+			-- There is data in the buffer, and we haven't experienced
+			-- an error trying to send yet, so we'll flush the buffer now
+			handler._dispatchdata();
+			if eol then
+				-- and there is *still* data in the buffer
+				-- we'll give up for now, and close later
+				wants_closing = true;
+				return;
+			end
+		end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -287,6 +300,9 @@ wrapsslclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			--writequeue = { }
 			eol = nil
 			writelen = removesocket( writelist, socket, writelen )    -- delete socket from writelist
+			if wants_closing then
+				handler.close();
+			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
 			buffer = string_sub( buffer, byte + 1, -1 )    -- new buffer
@@ -368,7 +384,7 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 
 	local writequeue = { }    -- buffer for messages to send
 
-	local eol, fatal_send_error   -- end of buffer
+	local eol, fatal_send_error, wants_closing
 
 	local sstat, rstat = 0, 0
 
@@ -403,7 +419,17 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 		--return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
-		if eol and not fatal_send_error then handler._dispatchdata(); end
+		if eol and not fatal_send_error then
+			-- There is data in the buffer, and we haven't experienced
+			-- an error trying to send yet, so we'll flush the buffer now
+			handler._dispatchdata();
+			if eol then
+				-- and there is *still* data in the buffer
+				-- we'll give up for now, and close later
+				wants_closing = true;
+				return;
+			end
+		end
 		close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
 		readlen = removesocket( readlist, socket, readlen )
@@ -470,6 +496,9 @@ wraptlsclient = function( listener, socket, ip, serverport, clientport, mode, ss
 			if handler.need_tls then
 				out_put("server.lua: connection is ready for tls handshake");
 				handler.starttls(true);
+			end
+			if wants_closing then
+				handler.close();
 			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
@@ -585,7 +614,7 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 
 	local writequeue = { }    -- list for messages to send
 
-	local eol, fatal_send_error
+	local eol, fatal_send_error, wants_closing
 
 	socket:settimeout(0);
 	
@@ -622,7 +651,17 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 		return shutdown( socket, pattern )
 	end
 	handler.close = function( closed )
-		if eol and not fatal_send_error then handler.dispatchdata(); end
+		if eol and not fatal_send_error then
+			-- There is data in the buffer, and we haven't experienced
+			-- an error trying to send yet, so we'll flush the buffer now
+			handler.dispatchdata();
+			if eol then
+				-- and there is *still* data in the buffer
+				-- we'll give up for now, and close later
+				wants_closing = true;
+				return;
+			end
+		end
 		_ = not closed and shutdown( socket )
 		_ = not closed and close( socket )
 		writelen = ( eol and removesocket( writelist, socket, writelen ) ) or writelen
@@ -688,6 +727,9 @@ wraptcpclient = function( listener, socket, ip, serverport, clientport, mode )  
 			--writequeue = { }
 			eol = nil
 			writelen = removesocket( writelist, socket, writelen )    -- delete socket from writelist
+			if wants_closing then
+				handler.close();
+			end
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
 			buffer = string_sub( buffer, byte + 1, -1 )    -- new buffer

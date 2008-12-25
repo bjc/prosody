@@ -47,29 +47,27 @@ local ns_prefixes = {
 
 function init_xmlhandlers(session, stream_callbacks)
 		local ns_stack = { "" };
-		local curr_ns = "";
+		local curr_ns, name = "";
 		local curr_tag;
 		local chardata = {};
 		local xml_handlers = {};
 		local log = session.log or default_log;
-
-		local send = session.send;
 		
 		local cb_streamopened = stream_callbacks.streamopened;
 		local cb_streamclosed = stream_callbacks.streamclosed;
 		local cb_error = stream_callbacks.error or function (session, e) error("XML stream error: "..tostring(e)); end;
 		local cb_handlestanza = stream_callbacks.handlestanza;
 		
-		local stream_ns = stream_callbacks.ns;
+		local stream_tag = stream_callbacks.stream_tag;
 		
 		local stanza
-		function xml_handlers:StartElement(name, attr)
+		function xml_handlers:StartElement(tagname, attr)
 			if stanza and #chardata > 0 then
 				-- We have some character data in the buffer
 				stanza:text(t_concat(chardata));
 				chardata = {};
 			end
-			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
+			local curr_ns,name = tagname:match("^(.+)|([%w%-]+)$");
 			if curr_ns ~= "jabber:server" then
 				attr.xmlns = curr_ns;
 			end
@@ -91,7 +89,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			
 			if not stanza then --if we are not currently inside a stanza
 				if session.notopen then
-					if name == "stream" and curr_ns == stream_ns then
+					if tagname == stream_tag then
 						if cb_streamopened then
 							cb_streamopened(session, attr);
 						end
@@ -120,10 +118,10 @@ function init_xmlhandlers(session, stream_callbacks)
 				t_insert(chardata, data);
 			end
 		end
-		function xml_handlers:EndElement(name)
-			curr_ns,name = name:match("^(.+)|([%w%-]+)$");
+		function xml_handlers:EndElement(tagname)
+			curr_ns,name = tagname:match("^(.+)|([%w%-]+)$");
 			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
-				if name == "stream" then
+				if tagname == stream_tag then
 					if cb_streamclosed then
 						cb_streamclosed(session);
 					end
