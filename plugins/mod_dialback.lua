@@ -22,6 +22,7 @@
 local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
+local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local st = require "util.stanza";
 
@@ -120,7 +121,6 @@ module:add_handler({ "s2sout_unauthed", "s2sout" }, "result", xmlns_dialback,
 		if stanza.attr.type == "valid" then
 			s2s_make_authenticated(origin, attr.from);
 		else
-			-- FIXME: Waiting on #33
-			error("dialback failed!");
+			s2s_destroy_session(origin)
 		end
 	end);
