@@ -28,7 +28,7 @@ local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
-local stream_callbacks = { ns = "http://etherx.jabber.org/streams", streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
