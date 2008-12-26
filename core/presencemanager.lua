@@ -96,10 +96,13 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 					core_route_stanza(origin, request);
 				end
 			end
-			for _, msg in ipairs(offlinemanager.load(node, host) or {}) do
-				origin.send(msg); -- FIXME do we need to modify to/from in any way?
+			local offline = offlinemanager.load(node, host);
+			if offline then
+				for _, msg in ipairs(offline) do
+					origin.send(msg); -- FIXME do we need to modify to/from in any way?
+				end
+				offlinemanager.deleteAll(node, host);
 			end
-			offlinemanager.deleteAll(node, host);
 		end
 		origin.priority = 0;
 		if stanza.attr.type == "unavailable" then
