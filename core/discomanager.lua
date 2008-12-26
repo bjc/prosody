@@ -41,6 +41,11 @@ do
 			return true;
 		end
 	end);
+	helper:addDiscoItemsHandler("*host", function(reply, to, from, node)
+		if hosts[to] and hosts[to].type == "local" then
+			return true;
+		end
+	end);
 end
 
 module "discomanager"
