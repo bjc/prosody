@@ -47,14 +47,25 @@ local function add(self, ...)
 	t_insert(t, (select(count, ...)));
 end
 
+local function set(self, ...)
+	local t = self.data;
+	local count = select('#', ...);
+	for n = 1,count-2 do
+		local key = select(n, ...);
+		local tab = t[key];
+		if not tab then tab = {}; t[key] = tab; end
+		t = tab;
+	end
+	t[(select(count-1, ...))] = (select(count, ...));
+end
+
 local function r(t, n, _end, ...)
 	if t == nil then return; end
-	if n > _end then
-		for key in pairs(t) do
-			t[key] = nil;
-		end
-	end
 	local k = select(n, ...);
+	if n == _end then
+		t[k] = nil;
+		return;
+	end
 	if k then
 		v = t[k];
 		if v then
@@ -87,6 +98,7 @@ function new()
 		data = {};
 		get = get;
 		add = add;
+		set = set;
 		remove = remove;
 	};
 end
