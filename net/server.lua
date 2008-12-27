@@ -94,14 +94,14 @@ stats = function( )
 	return receivestat, sendstat
 end
 
-wrapserver = function( listener, socket, ip, serverport, mode, sslctx )    -- this function wraps a server
+wrapserver = function( listener, socket, ip, serverport, mode, sslctx, wrapper_function )    -- this function wraps a server
 
 	local dispatch, disconnect = listener.listener, listener.disconnect    -- dangerous
 
 	local wrapclient, err
 
 	out_put("Starting a new server on "..tostring(serverport).." with ssl: "..tostring(sslctx));
-	
+	out_put(traceback())
 	if sslctx then
 		if not ssl_newcontext then
 			return nil, "luasec not found"
@@ -116,12 +116,16 @@ wrapserver = function( listener, socket, ip, serverport, mode, sslctx )    -- th
 			out_error( "server.lua: ", err )
 			return nil, err
 		end
+	end
+	
+	if wrapper_function then
+		wrapclient = wrapper_function
+	elseif sslctx then
 		wrapclient = wrapsslclient
-		wrapclient = wraptlsclient
 	else
 		wrapclient = wraptcpclient
 	end
-
+	
 	local accept = socket.accept
 	local close = socket.close
 
@@ -768,7 +772,7 @@ firetimer = function( listener )
 	end
 end
 
-addserver = function( listeners, port, addr, mode, sslctx )    -- this function provides a way for other scripts to reg a server
+addserver = function( listeners, port, addr, mode, sslctx, wrapper_function )    -- this function provides a way for other scripts to reg a server
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
@@ -797,7 +801,7 @@ addserver = function( listeners, port, addr, mode, sslctx )    -- this function 
 		out_error( "server.lua: ", err )
 		return nil, err
 	end
-	local handler, err = wrapserver( listeners, server, addr, port, mode, sslctx )    -- wrap new server socket
+	local handler, err = wrapserver( listeners, server, addr, port, mode, sslctx, wrapper_function )    -- wrap new server socket
 	if not handler then
 		server:close( )
 		return nil, err
@@ -877,5 +881,6 @@ return {
 	closeall = closeall,
 	addtimer = addtimer,
 	wraptcpclient = wraptcpclient,
+	wrapsslclient = wrapsslclient,
 	wraptlsclient = wraptlsclient,
 }
