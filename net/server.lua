@@ -37,7 +37,6 @@ local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
 local print = print;
 local out_put = function () end --print;
-local out_put = print;
 local out_error = print;
 
 --// extern libs //--
