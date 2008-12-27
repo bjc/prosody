@@ -20,7 +20,7 @@
 
 
 local listeners_dir = (CFG_SOURCEDIR or ".").."/net/";
-local server_add = require "net.server".add;
+local server = require "net.server";
 local log = require "util.logger".init("connlisteners");
 
 local dofile, pcall, error = 
@@ -54,14 +54,19 @@ function get(name)
 	return h;
 end
 
+local wrapper_functions = { tcp = server.wraptcpclient, ssl = server.wrapsslclient, tls = server.wraptlsclient }
+
 function start(name, udata)
 	local h = get(name);
 	if not h then
 		error("No such connection module: "..name, 0);
 	end
-	return server_add(h, 
+	
+	local wrapper_function = wrapper_functions[(udata and udata.type)] or wrapper_functions.tcp;
+	
+	return server.add(h, 
 			(udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
-				(udata and udata.interface) or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil );
+				(udata and udata.interface) or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil, wrapper_function);
 end
 
 return _M;
