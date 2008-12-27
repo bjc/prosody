@@ -101,7 +101,6 @@ wrapserver = function( listener, socket, ip, serverport, mode, sslctx, wrapper_f
 	local wrapclient, err
 
 	out_put("Starting a new server on "..tostring(serverport).." with ssl: "..tostring(sslctx));
-	out_put(traceback())
 	if sslctx then
 		if not ssl_newcontext then
 			return nil, "luasec not found"
