@@ -32,7 +32,7 @@ local listeners = {};
 
 function register(name, listener)
 	if listeners[name] and listeners[name] ~= listener then
-		log("warning", "Listener %s is already registered, not registering any more", name);
+		log("warn", "Listener %s is already registered, not registering any more", name);
 		return false;
 	end
 	listeners[name] = listener;
