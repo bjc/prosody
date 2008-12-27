@@ -187,7 +187,7 @@ function stream_callbacks.handlestanza(request, stanza)
 end
 
 function on_timer()
-	log("debug", "Checking for requests soon to timeout...");
+	-- log("debug", "Checking for requests soon to timeout...");
 	-- Identify requests timing out within the next few seconds
 	local now = os_time() + 3;
 	for request in pairs(waiting_requests) do
@@ -198,11 +198,6 @@ function on_timer()
 			if request.conn then
 				sessions[request.sid].send("");
 			end
-		else
-			log("debug", "%s timing out in %ds [destroyed: %s]", request.id, request.reply_before - now, tostring(request.destroyed));
-		end
-		if not request.on_destroy then
-			log("warn", "%s has no on_destroy!", request.id);
 		end
 	end
 end
