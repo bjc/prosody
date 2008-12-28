@@ -16,6 +16,7 @@ install: encodings.so hashes.so pposix.so
 	
 
 clean:
+	rm -f *.o
 	rm -f *.so
 	rm -f ../util/*.so
 
