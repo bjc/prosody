@@ -140,7 +140,7 @@ local function do_ports(option, listener, default, conntype)
 	end
 end
 
-do_ports("c2s_ports", "xmppclient", {5222}, "tls");
+do_ports("c2s_ports", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
 do_ports("s2s_ports", "xmppserver", {5269}, "tcp");
 do_ports("legacy_ssl_ports", "xmppclient", {}, "ssl");
 
