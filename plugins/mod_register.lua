@@ -94,7 +94,9 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 end);
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
-	if stanza.tags[1].name == "query" then
+	if config.get(module.host, "core", "allow_registration") == false then
+		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+	elseif stanza.tags[1].name == "query" then
 		local query = stanza.tags[1];
 		if stanza.attr.type == "get" then
 			local reply = st.reply(stanza);
@@ -132,3 +134,4 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	end;
 end);
+
