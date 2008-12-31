@@ -125,7 +125,7 @@ end
 -- that is, they are handled by this server
 function core_handle_stanza(origin, stanza)
 	-- Handlers
-	if modules_handle_stanza(stanza.attr.to or origin.host, origin, stanza) then return; end
+	if modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host, origin, stanza) then return; end
 	if origin.type == "c2s" or origin.type == "s2sin" then
 		if origin.type == "c2s" then
 			if stanza.name == "presence" and origin.roster then
