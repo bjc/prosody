@@ -10,9 +10,26 @@ local multitable_new = require "util.multitable".new;
 local muc_domain = "conference."..module:get_host();
 local muc_name = "MUCMUCMUC!!!";
 
+-- room_name -> room
+	-- occupant_room_nick -> data
+		-- affiliation = ...
+		-- role
+		-- jid = occupant's real jid
 local rooms = multitable_new();
-local jid_nick = multitable_new();
+
+local jid_nick = multitable_new(); -- real jid -> room's jid -> room nick
+
+-- room_name -> info
+	-- name - the room's friendly name
+	-- subject - the room's subject
+	-- non-anonymous = true|nil
+	-- persistent = true|nil
 local rooms_info = multitable_new();
+
+local persist_list = datamanager.load(nil, muc_domain, 'room_list') or {};
+for room in pairs(persist_list) do
+	rooms_info:set(room, datamanager.store(room, muc_domain, 'rooms') or nil);
+end
 
 local component;
 
@@ -48,6 +65,29 @@ end
 function get_room_disco_items(stanza)
 	return st.iq({type='result', id=stanza.attr.id, from=stanza.attr.to, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#items");
 end -- TODO allow non-private rooms
+
+function save_room(room)
+	local persistent = rooms_info:get(room, 'persistent');
+	if persistent then
+		datamanager.store(room, muc_domain, 'rooms', rooms_info:get(room));
+	end
+	if persistent ~= persist_list[room] then
+		if not persistent then
+			datamanager.store(room, muc_domain, 'rooms', nil);
+		end
+		persist_list[room] = persistent;
+		datamanager.store(nil, muc_domain, 'room_list', persist_list);
+	end
+end
+
+function set_subject(current_nick, room, subject)
+	-- TODO check nick's authority
+	if subject == "" then subject = nil; end
+	rooms_info:set(room, 'subject', subject);
+	save_room();
+	broadcast_message(current_nick, room, subject or "", nil);
+	return true;
+end
 
 function broadcast_presence(type, from, room, code)
 	local data = rooms:get(room, from);
@@ -128,7 +168,13 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				if rooms:get(room, to) then
 					origin.send(st.error_reply(stanza, "cancel", "conflict"));
 				else
-					local data = {affiliation='none', role='participant', jid=from};
+					local data;
+					if not rooms:get(room) and not rooms_info:get(room) then -- new room
+						data = {affiliation='owner', role='moderator', jid=from};
+					end
+					if not data then -- new occupant
+						data = {affiliation='none', role='participant', jid=from};
+					end
 					rooms:set(room, to, data);
 					jid_nick:set(from, room, to);
 					local r = rooms:get(room);
@@ -143,6 +189,10 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						end
 					end
 					broadcast_presence(nil, to, room);
+					-- TODO send discussion history
+					if rooms_info:get(room, 'subject') then
+						broadcast_message(room, room, rooms_info:get(room, 'subject'), nil);
+					end
 				end
 			end
 		elseif type ~= 'result' then -- bad type
@@ -174,7 +224,13 @@ function handle_to_room(origin, stanza) -- presence changes and groupchat messag
 		if not current_nick then -- not in room
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 		else
-			broadcast_message(current_nick, room, getText(stanza, {"subject"}), getText(stanza, {"body"}));
+			local subject = getText(stanza, {"subject"});
+			if subject then
+				set_subject(current_nick, room, subject);
+			else
+				broadcast_message(current_nick, room, nil, getText(stanza, {"body"}));
+				-- TODO add to discussion history
+			end
 		end
 	else
 		if type == "error" or type == "result" then return; end
