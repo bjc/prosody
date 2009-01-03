@@ -191,7 +191,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					broadcast_presence(nil, to, room);
 					-- TODO send discussion history
 					if rooms_info:get(room, 'subject') then
-						broadcast_message(room, room, rooms_info:get(room, 'subject'), nil);
+						core_route_stanza(component, st.message({type='groupchat', from=room, to=from}):tag("subject"):text(rooms_info:get(room, 'subject')));
 					end
 				end
 			end
