@@ -30,7 +30,7 @@ local default_env_mt = { __index = def_env };
 console = {};
 
 function console:new_session(conn)
-	local w = conn.write;
+	local w = function(s) conn.write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
 			print = function (t) w("| "..tostring(t).."\n"); end;
@@ -61,50 +61,52 @@ function console_listener.listener(conn, data)
 	end
 	if data then
 		-- Handle data
-		
-		if data:match("[!.]$") then
-			local command = data:lower();
-			command = data:match("^%w+") or data:match("%p");
-			if commands[command] then
-				commands[command](session, data);
-				return;
+		(function(session, data)
+			if data:match("[!.]$") then
+				local command = data:lower();
+				command = data:match("^%w+") or data:match("%p");
+				if commands[command] then
+					commands[command](session, data);
+					return;
+				end
 			end
-		end
-		
-		session.env._ = data;
-		
-		local chunk, err = loadstring("return "..data);
-		if not chunk then
-			chunk, err = loadstring(data);
+			
+			session.env._ = data;
+			
+			local chunk, err = loadstring("return "..data);
 			if not chunk then
-				err = err:gsub("^%[string .-%]:%d+: ", "");
-				err = err:gsub("^:%d+: ", "");
-				err = err:gsub("'<eof>'", "the end of the line");
-				session.print("Sorry, I couldn't understand that... "..err);
+				chunk, err = loadstring(data);
+				if not chunk then
+					err = err:gsub("^%[string .-%]:%d+: ", "");
+					err = err:gsub("^:%d+: ", "");
+					err = err:gsub("'<eof>'", "the end of the line");
+					session.print("Sorry, I couldn't understand that... "..err);
+					return;
+				end
+			end
+			
+			setfenv(chunk, session.env);
+			local ranok, taskok, message = pcall(chunk);
+			
+			if not ranok then
+				session.print("Fatal error while running command, it did not complete");
+				session.print("Error: "..taskok);
 				return;
 			end
-		end
-		
-		setfenv(chunk, session.env);
-		local ranok, taskok, message = pcall(chunk);
-		
-		if not ranok then
-			session.print("Fatal error while running command, it did not complete");
-			session.print("Error: "..taskok);
-			return;
-		end
-		
-		if not message then
-			session.print("Result: "..tostring(taskok));
-			return;
-		elseif (not taskok) and message then
-			session.print("Command completed with a problem");
-			session.print("Message: "..tostring(message));
-			return;
-		end
-		
-		session.print("OK: "..tostring(message));
+			
+			if not message then
+				session.print("Result: "..tostring(taskok));
+				return;
+			elseif (not taskok) and message then
+				session.print("Command completed with a problem");
+				session.print("Message: "..tostring(message));
+				return;
+			end
+			
+			session.print("OK: "..tostring(message));
+		end)(session, data);
 	end
+	session.send(string.char(0));
 end
 
 function console_listener.disconnect(conn, err)
