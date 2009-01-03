@@ -34,6 +34,7 @@ local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
 local t_insert = table.insert;
 local type = type;
+local next = next;
 
 local tostring, print = tostring, print;
 
@@ -50,6 +51,10 @@ local stanza_handlers = multitable_new();
 local handler_info = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
+
+local features_table = multitable_new();
+local handler_table = multitable_new();
+local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
@@ -116,7 +121,7 @@ function load(host, module_name, config)
 	end
 	
 	-- Use modified host, if the module set one
-	modulemap[api_instance.host][module_name] = mod;
+	modulemap[api_instance.host][module_name] = pluginenv;
 	
 	return true;
 end
@@ -129,13 +134,21 @@ function unload(host, name, ...)
 	local mod = modulemap[host] and modulemap[host][name];
 	if not mod then return nil, "module-not-loaded"; end
 	
-	if type(mod.unload) == "function" then
+	--[[if type(mod.unload) == "function" then
 		local ok, err = pcall(mod.unload, ...)
 		if (not ok) and err then
 			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
 		end
+	end]]
+	modulemap[host][name] = nil;
+	features_table:remove(host, name);
+	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
+	for _, param in pairs(params) do
+		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
+		handler_info[handlers[1]] = nil;
+		stanza_handlers:remove(param[1], param[2], param[3], param[4]);
 	end
-	
+	return true;
 end
 
 function handle_stanza(host, origin, stanza)
@@ -178,6 +191,7 @@ local function _add_handler(module, origin_type, tag, xmlns, handler)
 	if not handlers then
 		stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
 		handler_info[handler] = module;
+		handler_table:add(module.host, module.name, {module.host, origin_type, tag, xmlns});
 		module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
 	else
 		module:log("warn", "I wanted to handle tag '%s' [%s] with %s '%s' but mod_%s already handles that", tag, origin_type, msg, xmlns, handler_info[handlers[1]].module.name);
@@ -198,13 +212,23 @@ function api:add_iq_handler(origin_type, xmlns, handler)
 	self:add_handler(origin_type, "iq", xmlns, handler);
 end
 
-function api:add_feature(xmlns)
-	addDiscoInfoHandler(self.host, function(reply, to, from, node)
-		if #node == 0 then
-			reply:tag("feature", {var = xmlns}):up();
-			return true;
+addDiscoInfoHandler("*host", function(reply, to, from, node)
+	if #node == 0 then
+		local done = {};
+		for module, features in pairs(features_table:get(to) or NULL) do -- for each module
+			for feature in pairs(features) do
+				if not done[feature] then
+					reply:tag("feature", {var = feature}):up(); -- TODO cache
+					done[feature] = true;
+				end
+			end
 		end
-	end);
+		return next(done) ~= nil;
+	end
+end);
+
+function api:add_feature(xmlns)
+	features_table:set(self.host, self.name, xmlns, true);
 end
 
 function api:add_event_hook (...) return eventmanager.add_event_hook(...); end
