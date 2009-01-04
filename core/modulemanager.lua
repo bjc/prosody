@@ -79,7 +79,9 @@ function load_modules_for_host(host)
 	local modules_enabled = config.get(host, "core", "modules_enabled");
 	if modules_enabled then
 		for _, module in pairs(modules_enabled) do
-			load(host, module);
+			if not is_loaded(host, module) then
+				load(host, module);
+			end
 		end
 	end
 end
