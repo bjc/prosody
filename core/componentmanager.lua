@@ -22,6 +22,7 @@
 
 local log = require "util.logger".init("componentmanager");
 local module_load = require "core.modulemanager".load;
+local module_unload = require "core.modulemanager".unload;
 local jid_split = require "util.jid".split;
 local hosts = hosts;
 
@@ -54,6 +55,18 @@ function register_component(host, component)
 		return hosts[host];
 	else
 		log("error", "Attempt to set component for existing host: "..host);
+	end
+end
+
+function deregister_component(host, component)
+	if components[host] then
+		module_unload(host, "dialback");
+		components[host] = nil;
+		hosts[host] = nil;
+		log("debug", "component removed: "..host);
+		return true;
+	else
+		log("error", "Attempt to remove component for non-existing host: "..host);
 	end
 end
 
