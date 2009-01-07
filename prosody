@@ -146,7 +146,7 @@ do_ports("legacy_ssl_ports", "xmppclient", {}, "ssl");
 
 if config.get("*", "core", "console_enabled") then
 	if cl.get("console") then
-		cl.start("console")
+		cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
 	else
 		log("error", "Console is enabled, but the console module appears not to be loaded");
 	end
