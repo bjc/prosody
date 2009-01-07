@@ -35,6 +35,7 @@ local pairs, ipairs = pairs, ipairs;
 local t_insert = table.insert;
 local type = type;
 local next = next;
+local rawget = rawget;
 
 local tostring, print = tostring, print;
 
@@ -134,12 +135,12 @@ function unload(host, name, ...)
 	local mod = modulemap[host] and modulemap[host][name];
 	if not mod then return nil, "module-not-loaded"; end
 	
-	--[[if type(mod.unload) == "function" then
-		local ok, err = pcall(mod.unload, ...)
+	if type(rawget(mod, "unload")) == "function" then
+		local ok, err = pcall(rawget(mod, "unload"), ...)
 		if (not ok) and err then
 			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
 		end
-	end]]
+	end
 	modulemap[host][name] = nil;
 	features_table:remove(host, name);
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
