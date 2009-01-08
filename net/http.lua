@@ -9,7 +9,10 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs = tonumber, tostring, pairs;
+local tonumber, tostring, pairs, xpcall, select, debug_traceback = 
+        tonumber, tostring, pairs, xpcall, select, debug.traceback;
+
+local log = require "util.logger".init("http");
 local print = function () end
 
 local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
@@ -105,6 +108,7 @@ local function request_reader(request, data, startpos)
 	end
 end
 
+local function handleerr(err) log("error", "Traceback[http]: %s: %s", tostring(err), debug_traceback()); end
 function request(u, ex, callback)
 	local req = url.parse(u);
 	
@@ -157,9 +161,9 @@ function request(u, ex, callback)
 		req.write(body);
 	end
 	
-	req.callback = callback;
+	req.callback = function (content, code, request) log("debug", "Calling callback, code %s content: %s", code or "---", content or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
 	req.reader = request_reader;
-	req.state = "status"
+	req.state = "status";
 	
 	listener.register_request(req.handler, req);
 
