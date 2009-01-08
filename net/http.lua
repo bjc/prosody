@@ -27,8 +27,9 @@ end
 local function request_reader(request, data, startpos)
 	if not data then
 		if request.body then
+			log("debug", "Connection closed, but we have data, calling callback...");
 			request.callback(t_concat(request.body), request.code, request);
-		else
+		elseif request.state ~= "completed" then
 			-- Error.. connection was closed prematurely
 			request.callback("connection-closed", 0, request);
 		end
@@ -46,11 +47,15 @@ local function request_reader(request, data, startpos)
 			request.havebodylength = request.havebodylength + #data;
 			if request.havebodylength >= request.bodylength then
 				-- We have the body
+				log("debug", "Have full body, calling callback");
 				if request.callback then
 					request.callback(t_concat(request.body), request.code, request);
 				end
+				request.body = nil;
+				request.state = "completed";
+			else
+				print("", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
 			end
-			print("", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
 		end
 	elseif request.state == "headers" then
 		print("Reading headers...")
