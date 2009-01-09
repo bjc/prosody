@@ -17,7 +17,7 @@ local config = require "core.configmanager";
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
 
 local BOSH_DEFAULT_HOLD = tonumber(config.get("*", "core", "bosh_default_hold")) or 1;
-local BOSH_DEFAULT_INACTIVITY = tonumber(config.get("*", "core", "bosh_max_inactivity")) or 30;
+local BOSH_DEFAULT_INACTIVITY = tonumber(config.get("*", "core", "bosh_max_inactivity")) or 60;
 local BOSH_DEFAULT_POLLING = tonumber(config.get("*", "core", "bosh_max_polling")) or 5;
 local BOSH_DEFAULT_REQUESTS = tonumber(config.get("*", "core", "bosh_max_requests")) or 2;
 local BOSH_DEFAULT_MAXPAUSE = tonumber(config.get("*", "core", "bosh_max_pause")) or 300;
