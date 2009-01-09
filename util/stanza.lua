@@ -199,6 +199,9 @@ function deserialize(stanza)
 				end
 			end
 			stanza.tags = tags;
+			if not stanza.last_add then
+				stanza.last_add = {};
+			end
 		end
 	end
 	
