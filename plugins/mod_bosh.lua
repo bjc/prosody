@@ -84,9 +84,21 @@ function handle_request(method, body, request)
 	end
 end
 
-local session_close_reply = tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }));
+
 local function bosh_reset_stream(session) session.notopen = true; end
-local function bosh_close_stream(session, reason) end
+
+local session_close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" });
+local function bosh_close_stream(session, reason)
+	(session.log or log)("info", "BOSH client disconnected");
+	session_close_reply.attr.condition = reason;
+	local session_close_reply = tostring(session_close_reply);
+	for _, held_request in ipairs(session.requests) do
+		held_request:send(session_close_reply);
+		held_request:destroy();
+	end
+	sessions[session.sid]  = nil;
+	sm_destroy_session(session);
+end
 
 function stream_callbacks.streamopened(request, attr)
 	print("Attr:")
@@ -95,8 +107,16 @@ function stream_callbacks.streamopened(request, attr)
 	local sid = attr.sid
 	if not sid then
 		-- New session request
-		-- TODO: Sanity checks here (rid, to, known host, etc.)
 		request.notopen = nil; -- Signals that we accept this opening tag
+		
+		-- TODO: Sanity checks here (rid, to, known host, etc.)
+		if not hosts[attr.to] then
+			-- Unknown host
+			session_close_reply.attr.condition = "host-unknown";
+			request:send(tostring(session_close_reply));
+			request.notopen = nil
+			return;
+		end
 		
 		-- New session
 		sid = tostring(new_uuid());
@@ -169,13 +189,7 @@ function stream_callbacks.streamopened(request, attr)
 	
 	if attr.type == "terminate" then
 		-- Client wants to end this session
-		(session.log or log)("info", "BOSH client disconnected");
-		for _, held_request in ipairs(session.requests) do
-				held_request:send(session_close_reply);
-				held_request:destroy();
-		end
-		sm_destroy_session(session);
-		sessions[sid]  = nil;
+		session:close();
 		request.notopen = nil;
 		return;
 	end
