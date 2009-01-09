@@ -55,6 +55,9 @@ local modulehelpers = setmetatable({}, { __index = _G });
 
 local features_table = multitable_new();
 local handler_table = multitable_new();
+local hooked = multitable_new();
+local event_hooks = multitable_new();
+
 local NULL = {};
 
 -- Load modules when a host is activated
@@ -151,6 +154,7 @@ function unload(host, name, ...)
 		handler_info[handlers[1]] = nil;
 		stanza_handlers:remove(param[1], param[2], param[3], param[4]);
 	end
+	event_hooks:remove(host, name);
 	return true;
 end
 
@@ -234,7 +238,19 @@ function api:add_feature(xmlns)
 	features_table:set(self.host, self.name, xmlns, true);
 end
 
-function api:add_event_hook (...) return eventmanager.add_event_hook(...); end
+local event_hook = function(host, mod_name, event_name, ...)
+	if type((...)) == "table" and (...).host and (...).host ~= host then return; end
+	for handler in pairs(event_hooks:get(host, mod_name, event_name) or NULL) do
+		handler(...);
+	end
+end;
+function api:add_event_hook(name, handler)
+	if not hooked:get(self.host, self.name, name) then
+		eventmanager.add_event_hook(name, function(...) event_hook(self.host, self.name, name, ...); end);
+		hooked:set(self.host, self.name, name, true);
+	end
+	event_hooks:set(self.host, self.name, name, handler, true);
+end
 
 --------------------------------------------------------------------
 

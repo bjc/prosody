@@ -177,12 +177,12 @@ local function new_digest_md5(realm, password_handler)
 			if not response["qop"] then response["qop"] = "auth" end
 			
 			if response["realm"] == nil then
-				response["realm"] = ""
-			elseif response["realm"] ~= self.realm then
+				response["realm"] = "";
+			elseif response["realm"] ~= self.realm and response["realm"] ~= "" then
 				return "failure", "not-authorized", "Incorrect realm value";
 			end
-			local decoder;
 			
+			local decoder;
 			if response["charset"] == nil then
 				decoder = utf8tolatin1ifpossible;
 			elseif response["charset"] ~= "utf-8" then

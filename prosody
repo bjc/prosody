@@ -82,7 +82,6 @@ hosts = {};
 require "util.import"
 require "core.xmlhandlers"
 require "core.rostermanager"
-require "core.offlinemessage"
 require "core.eventmanager"
 require "core.hostmanager"
 require "core.modulemanager"
