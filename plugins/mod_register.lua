@@ -96,6 +96,7 @@ end);
 
 local recent_ips = {};
 local min_seconds_between_registrations = config.get(module.host, "core", "min_seconds_between_registrations");
+local whitelist_only = config.get(module.host, "core", "whitelist_registration_only");
 local whitelisted_ips = config.get(module.host, "core", "registration_whitelist") or { "127.0.0.1" };
 local blacklisted_ips = config.get(module.host, "core", "registration_blacklist") or {};
 
@@ -122,7 +123,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 				local password = query:child_with_name("password");
 				if username and password then
 					-- Check that the user is not blacklisted or registering too often
-					if blacklisted_ips[session.ip] then
+					if blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
 							session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 							return;
 					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
