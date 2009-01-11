@@ -23,6 +23,7 @@ local st = require "util.stanza";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local datamanager_store = require "util.datamanager".store;
+local os_time = os.time;
 
 module:add_feature("jabber:iq:register");
 
@@ -93,6 +94,14 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 	end;
 end);
 
+local recent_ips = {};
+local min_seconds_between_registrations = config.get(module.host, "core", "min_seconds_between_registrations");
+local whitelisted_ips = config.get(module.host, "core", "registration_whitelist") or { "127.0.0.1" };
+local blacklisted_ips = config.get(module.host, "core", "registration_blacklist") or {};
+
+for _, ip in ipairs(whitelisted_ips) do whitelisted_ips[ip] = true; end
+for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
+
 module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
 	if config.get(module.host, "core", "allow_registration") == false then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
@@ -112,6 +121,26 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 				local username = query:child_with_name("username");
 				local password = query:child_with_name("password");
 				if username and password then
+					-- Check that the user is not blacklisted or registering too often
+					if blacklisted_ips[session.ip] then
+							session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+							return;
+					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
+						if not recent_ips[session.ip] then
+							recent_ips[session.ip] = { time = os_time(), count = 1 };
+						else
+						
+							local ip = recent_ips[session.ip];
+							ip.count = ip.count + 1;
+							
+							if os_time() - ip.time < min_seconds_between_registrations then
+								ip.time = os_time();
+								session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+								return;
+							end
+							ip.time = os_time();
+						end
+					end
 					-- FIXME shouldn't use table.concat
 					username = table.concat(username);
 					password = table.concat(password);
