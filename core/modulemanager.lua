@@ -68,11 +68,11 @@ function load_modules_for_host(host)
 	local disabled_set = {};
 	if modules_enabled then
 		if modules_disabled then
-			for _, module in pairs(modules_disabled) do
+			for _, module in ipairs(modules_disabled) do
 				disabled_set[module] = true;
 			end
 		end
-		for _, module in pairs(modules_enabled) do
+		for _, module in ipairs(modules_enabled) do
 			if not disabled_set[module] then
 				load(host, module);
 			end
