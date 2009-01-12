@@ -240,11 +240,15 @@ function on_timer()
 	
 	now = now - 3;
 	for session, inactive_since in pairs(inactive_sessions) do
-		if now - inactive_since > session.bosh_max_inactive then
-			(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
-			sessions[session.sid]  = nil;
+		if session.bosh_max_inactive then
+			if now - inactive_since > session.bosh_max_inactive then
+				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
+				sessions[session.sid]  = nil;
+				inactive_sessions[session] = nil;
+				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
+			end
+		elseif not session.type then
 			inactive_sessions[session] = nil;
-			sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 		end
 	end
 end
