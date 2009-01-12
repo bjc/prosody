@@ -27,7 +27,7 @@ local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
-
+local register_actions = require "core.actions".register;
 
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -253,5 +253,18 @@ function api:add_event_hook(name, handler)
 end
 
 --------------------------------------------------------------------
+
+local actions = {};
+
+function actions.load(params)
+	--return true, "Module loaded ("..params.module.." on "..params.host..")";
+	return load(params.host, params.module);
+end
+
+function actions.unload(params)
+	return unload(params.host, params.module);
+end
+
+register_actions("/modules", actions);
 
 return _M;
