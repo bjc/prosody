@@ -53,6 +53,8 @@ local function handle_request(method, body, request)
 			t_insert(s, " = ");
 			if type(v) == "function" then
 				t_insert(s, "action")
+			elseif type(v) == "table" then
+				t_insert(s, "list");
 			else
 				t_insert(s, tostring(v));
 			end
