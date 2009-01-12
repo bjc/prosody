@@ -58,6 +58,7 @@ function new_session(conn)
 	log("info", "open sessions now: ".. open_sessions);
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
+	session.ip = conn.ip();
 	return session;
 end
 
