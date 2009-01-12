@@ -247,7 +247,7 @@ function on_timer()
 				inactive_sessions[session] = nil;
 				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 			end
-		elseif not session.type then
+		else
 			inactive_sessions[session] = nil;
 		end
 	end
