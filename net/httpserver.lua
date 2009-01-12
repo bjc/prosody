@@ -126,7 +126,7 @@ local function request_reader(request, data, startpos)
 	end
 	if request.state == "body" then
 		log("debug", "Reading body...")
-		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.responseheaders["content-length"]); end
+		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.headers["content-length"]); end
 		if startpos then
 			data = data:sub(startpos, -1)
 		end
@@ -141,7 +141,7 @@ local function request_reader(request, data, startpos)
 	elseif request.state == "headers" then
 		log("debug", "Reading headers...")
 		local pos = startpos;
-		local headers = request.responseheaders or {};
+		local headers = request.headers or {};
 		for line in data:gmatch("(.-)\r\n") do
 			startpos = (startpos or 1) + #line + 2;
 			local k, v = line:match("(%S+): (.+)");
@@ -149,7 +149,7 @@ local function request_reader(request, data, startpos)
 				headers[k:lower()] = v;
 --				log("debug", "Header: "..k:lower().." = "..v);
 			elseif #line == 0 then
-				request.responseheaders = headers;
+				request.headers = headers;
 				break;
 			else
 				log("debug", "Unhandled header line: "..line);
