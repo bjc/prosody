@@ -164,6 +164,12 @@ function reload(host, name, ...)
 	local mod = modulemap[host] and modulemap[host][name];
 	if not mod then return nil, "module-not-loaded"; end
 
+	local _mod, err = loadfile(plugin_dir.."mod_"..name..".lua"); -- checking for syntax errors
+	if not _mod then
+		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		return nil, err;
+	end
+
 	local saved;
 	if type(mod.module.save) == "function" then
 		local ok, err = pcall(mod.module.save)
