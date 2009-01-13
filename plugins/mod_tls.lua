@@ -21,12 +21,6 @@
 
 local st = require "util.stanza";
 
---local sessions = sessions;
-
-local t_insert = table.insert;
-
-local log = require "util.logger".init("mod_starttls");
-
 local xmlns_starttls ='urn:ietf:params:xml:ns:xmpp-tls';
 
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
@@ -44,8 +38,8 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		
 local starttls_attr = { xmlns = xmlns_starttls };
 module:add_event_hook("stream-features", 
-					function (session, features)												
-						if session.conn.starttls then
-							features:tag("starttls", starttls_attr):up();
-						end
-					end);
+		function (session, features)												
+			if session.conn.starttls then
+				features:tag("starttls", starttls_attr):up();
+			end
+		end);

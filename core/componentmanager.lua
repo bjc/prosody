@@ -58,7 +58,7 @@ function register_component(host, component)
 	end
 end
 
-function deregister_component(host, component)
+function deregister_component(host)
 	if components[host] then
 		module_unload(host, "dialback");
 		components[host] = nil;

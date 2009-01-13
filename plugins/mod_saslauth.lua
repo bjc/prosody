@@ -21,7 +21,6 @@
 
 local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
-local jid
 local base64 = require "util.encodings".base64;
 
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
@@ -80,7 +79,7 @@ local function password_callback(node, host, mechanism, decoder)
 	return func, nil;
 end
 
-function sasl_handler(session, stanza)
+local function sasl_handler(session, stanza)
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
 		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
@@ -112,18 +111,18 @@ local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
 module:add_event_hook("stream-features", 
-					function (session, features)												
-						if not session.username then
-							features:tag("mechanisms", mechanisms_attr);
-							-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
-								features:tag("mechanism"):text("PLAIN"):up();
-								features:tag("mechanism"):text("DIGEST-MD5"):up();
-							features:up();
-						else
-							features:tag("bind", bind_attr):tag("required"):up():up();
-							features:tag("session", xmpp_session_attr):up();
-						end
-					end);
+		function (session, features)												
+			if not session.username then
+				features:tag("mechanisms", mechanisms_attr);
+				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
+					features:tag("mechanism"):text("PLAIN"):up();
+					features:tag("mechanism"):text("DIGEST-MD5"):up();
+				features:up();
+			else
+				features:tag("bind", bind_attr):tag("required"):up():up();
+				features:tag("session", xmpp_session_attr):up();
+			end
+		end);
 					
 module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 
 		function (session, stanza)
