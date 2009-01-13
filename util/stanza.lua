@@ -87,8 +87,14 @@ function stanza_mt:add_child(child)
 end
 
 function stanza_mt:child_with_name(name)
-	for _, child in ipairs(self) do	
+	for _, child in ipairs(self.tags) do	
 		if child.name == name then return child; end
+	end
+end
+
+function stanza_mt:child_with_ns(ns)
+	for _, child in ipairs(self.tags) do	
+		if child.attr.xmlns == ns then return child; end
 	end
 end
 
@@ -199,6 +205,9 @@ function deserialize(stanza)
 				end
 			end
 			stanza.tags = tags;
+			if not stanza.last_add then
+				stanza.last_add = {};
+			end
 		end
 	end
 	

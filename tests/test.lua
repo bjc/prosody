@@ -25,7 +25,8 @@ function run_all_tests()
 	dotest "core.stanza_router"
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
-	
+	dotest "util.stanza"
+		
 	dosingletest("test_sasl.lua", "latin1toutf8");
 end
 
