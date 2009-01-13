@@ -169,6 +169,15 @@ function def_env.module:unload(name, host)
 	return true, "Module unloaded";
 end
 
+function def_env.module:reload(name, host)
+	local mm = require "modulemanager";
+	local ok, err = mm.reload(host or self.env.host, name);
+	if not ok then
+		return false, err or "Unknown error reloading module";
+	end
+	return true, "Module reloaded";
+end
+
 def_env.config = {};
 function def_env.config:load(filename, format)
 	local config_load = require "core.configmanager".load;
