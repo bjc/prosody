@@ -274,7 +274,13 @@ component = register_component(muc_domain, function(origin, stanza)
 	end
 end);
 
-function unload()
+module.unload = function()
 	deregister_component(muc_domain);
 end
-
+module.save = function()
+	return {rooms = rooms.data; jid_nick = jid_nick.data; rooms_info = rooms_info.data; persist_list = persist_list};
+end
+module.restore = function(data)
+	rooms.data, jid_nick.data, rooms_info.data, persist_list =
+	data.rooms or {}, data.jid_nick or {}, data.rooms_info or {}, data.persist_list or {};
+end
