@@ -140,8 +140,8 @@ function unload(host, name, ...)
 	local mod = modulemap[host] and modulemap[host][name];
 	if not mod then return nil, "module-not-loaded"; end
 	
-	if type(rawget(mod, "unload")) == "function" then
-		local ok, err = pcall(rawget(mod, "unload"), ...)
+	if type(mod.module.unload) == "function" then
+		local ok, err = pcall(mod.module.unload, ...)
 		if (not ok) and err then
 			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
 		end
@@ -158,6 +158,33 @@ function unload(host, name, ...)
 	end
 	event_hooks:remove(host, name);
 	return true;
+end
+
+function reload(host, name, ...)
+	local mod = modulemap[host] and modulemap[host][name];
+	if not mod then return nil, "module-not-loaded"; end
+
+	local saved;
+	if type(mod.module.save) == "function" then
+		local ok, err = pcall(mod.module.save)
+		if (not ok) and err then
+			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+		else
+			saved = err;
+		end
+	end
+
+	unload(host, name, ...);
+	if load(host, name, ...) then
+		mod = modulemap[host] and modulemap[host][name];
+		if type(mod.module.restore) == "function" then
+			local ok, err = pcall(mod.module.restore, saved or {})
+			if (not ok) and err then
+				log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+			end
+		end
+		return true;
+	end
 end
 
 function handle_stanza(host, origin, stanza)
