@@ -1,6 +1,7 @@
 
 
 local register_component = require "core.componentmanager".register_component;
+local deregister_component = require "core.componentmanager".deregister_component;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -272,3 +273,8 @@ component = register_component(muc_domain, function(origin, stanza)
 		handle_to_domain(origin, stanza);
 	end
 end);
+
+function unload()
+	deregister_component(muc_domain);
+end
+
