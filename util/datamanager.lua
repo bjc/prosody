@@ -88,7 +88,7 @@ end
 function load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore));
 	if not data then
-		log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 		return nil;
 	end
 	setfenv(data, {});
@@ -163,7 +163,7 @@ end
 function list_load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore, "list"));
 	if not data then
-		log("warn", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 		return nil;
 	end
 	local items = {};
