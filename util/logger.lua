@@ -63,10 +63,12 @@ function init(name)
 end
 
 function setwriter(f)
-	if not f then outfunction = nil; return true, nil; end
+	local old_func = outfunction;
+	if not f then outfunction = nil; return true, old_func; end
 	local ok, ret = pcall(f, "logger", "info", "Switched logging output successfully");
 	if ok then
 		outfunction = f;
+		ret = old_func;
 	end
 	return ok, ret;
 end
