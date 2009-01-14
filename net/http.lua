@@ -37,9 +37,11 @@ local function request_reader(request, data, startpos)
 			request.callback("connection-closed", 0, request);
 		end
 		destroy_request(request);
+		request.body = nil;
+		request.state = "completed";
 		return;
 	end
-	if request.state == "body" then
+	if request.state == "body" and request.state ~= "completed" then
 		print("Reading body...")
 		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.responseheaders["content-length"]); end
 		if startpos then
