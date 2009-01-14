@@ -47,9 +47,10 @@ local tonumber = tonumber;
 local s_find = string.find;
 
 local jid_split = require "util.jid".split;
+local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
 local function checked_error_reply(origin, stanza)
-	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server" or not stanza.attr.xmlns) and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
 	end
 end
@@ -78,11 +79,28 @@ function core_process_stanza(origin, stanza)
 		stanza.attr.from = origin.full_jid;
 	end
 	local to, xmlns = stanza.attr.to, stanza.attr.xmlns;
-	local node, host, resource = jid_split(to);
-	local to_bare = node and (node.."@"..host) or host; -- bare JID
 	local from = stanza.attr.from;
-	local from_node, from_host, from_resource = jid_split(from);
-	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
+	local node, host, resource;
+	local from_node, from_host, from_resource;
+	local to_bare, from_bare;
+	if to then
+		node, host, resource = jid_prepped_split(to);
+		if not host then
+			error("Invalid to JID");
+		end
+		to_bare = node and (node.."@"..host) or host; -- bare JID
+		if resource then to = to_bare.."/"..resource; else to = to_bare; end
+		stanza.attr.to = to;
+	end
+	if from then
+		from_node, from_host, from_resource = jid_prepped_split(from);
+		if not from_host then
+			error("Invalid from JID");
+		end
+		from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
+		if from_resource then from = from_bare.."/"..from_resource; else from = from_bare; end
+		stanza.attr.from = from;
+	end
 
 	--[[if to and not(hosts[to]) and not(hosts[to_bare]) and (hosts[host] and hosts[host].type ~= "local") then -- not for us?
 		log("warn", "stanza recieved for a non-local server");
