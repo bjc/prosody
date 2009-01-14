@@ -48,6 +48,11 @@ local s_find = string.find;
 
 local jid_split = require "util.jid".split;
 local print = print;
+local function checked_error_reply(origin, stanza)
+	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server" or not stanza.attr.xmlns) and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
+	end
+end
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:pretty_print()) --top_tag())
@@ -133,24 +138,19 @@ function core_handle_stanza(origin, stanza)
 					handle_normal_presence(origin, stanza, core_route_stanza);
 				else
 					log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-					if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" then
-						origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
-					end
+					checked_error_reply(origin, stanza);
 				end
 			else
 				log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-				if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-					origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
-				end
+				checked_error_reply(origin, stanza);
 			end
 		else -- s2s stanzas
 			log("warn", "Unhandled s2s stanza: %s", tostring(stanza));
-			if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
-			end
+			checked_error_reply(origin, stanza);
 		end
 	else
 		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
+		checked_error_reply(origin, stanza);
 	end
 end
 
