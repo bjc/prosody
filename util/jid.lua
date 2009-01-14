@@ -20,6 +20,9 @@
 
 
 local match = string.match;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
+local nameprep = require "util.encodings".stringprep.nameprep;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module "jid"
 
@@ -37,6 +40,36 @@ function bare(jid)
 	local node, host = split(jid);
 	if node and host then
 		return node.."@"..host;
+	end
+	return host;
+end
+
+function prepped_split(jid)
+	local node, host, resource = split(jid);
+	if host then
+		host = nameprep(host);
+		if not host then return; end
+		if node then
+			node = nodeprep(node);
+			if not node then return; end
+		end
+		if resource then
+			resource = resourceprep(resource);
+			if not resource then return; end
+		end
+		return node, host, resource;
+	end
+end
+
+function prep(jid)
+	local node, host, resource = prepped_split(jid);
+	if host then
+		if node then
+			host = node .. "@" .. host;
+		end
+		if resource then
+			host = host .. "/" .. resource;
+		end
 	end
 	return host;
 end
