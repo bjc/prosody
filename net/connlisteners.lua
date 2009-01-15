@@ -57,9 +57,9 @@ end
 local wrapper_functions = { tcp = server.wraptcpclient, ssl = server.wrapsslclient, tls = server.wraptlsclient }
 
 function start(name, udata)
-	local h = get(name);
+	local h, err = get(name);
 	if not h then
-		error("No such connection module: "..name, 0);
+		error("No such connection module: "..name.. (err and (" ("..err..")") or ""), 0);
 	end
 	
 	local wrapper_function = wrapper_functions[(udata and udata.type)] or wrapper_functions.tcp;
