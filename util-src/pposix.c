@@ -37,7 +37,7 @@
 
 /* Daemonization support */
 
-static int daemonize(lua_State *L)
+static int lc_daemonize(lua_State *L)
 {
 
 	pid_t pid;
@@ -147,7 +147,7 @@ int facility_constants[] =	{
 */ 
 char* syslog_ident = NULL;
 
-int syslog_open(lua_State* L)
+int lc_syslog_open(lua_State* L)
 {
 	int facility = luaL_checkoption(L, 2, "daemon", &facility_strings);
 	facility = facility_constants[facility];
@@ -179,7 +179,7 @@ int level_constants[] = 	{
 				LOG_EMERG,
 				-1
 			};
-int syslog_log(lua_State* L)
+int lc_syslog_log(lua_State* L)
 {
 	int level = luaL_checkoption(L, 1, "notice", &level_strings);
 	level = level_constants[level];
@@ -190,7 +190,7 @@ int syslog_log(lua_State* L)
 	return 0;
 }
 
-int syslog_close(lua_State* L)
+int lc_syslog_close(lua_State* L)
 {
 	closelog();
 	if(syslog_ident)
@@ -201,21 +201,34 @@ int syslog_close(lua_State* L)
 	return 0;
 }
 
+/* getpid */
+
+int lc_getpid(lua_State* L)
+{
+	lua_pushinteger(L, getpid());
+	return 1;
+}
+
+/* Register functions */
+
 int luaopen_util_pposix(lua_State *L)
 {
 	lua_newtable(L);
 
-	lua_pushcfunction(L, daemonize);
+	lua_pushcfunction(L, lc_daemonize);
 	lua_setfield(L, -2, "daemonize");
 
-	lua_pushcfunction(L, syslog_open);
+	lua_pushcfunction(L, lc_syslog_open);
 	lua_setfield(L, -2, "syslog_open");
 
-	lua_pushcfunction(L, syslog_close);
+	lua_pushcfunction(L, lc_syslog_close);
 	lua_setfield(L, -2, "syslog_close");
 
-	lua_pushcfunction(L, syslog_log);
+	lua_pushcfunction(L, lc_syslog_log);
 	lua_setfield(L, -2, "syslog_log");
+
+	lua_pushcfunction(L, lc_getpid);
+	lua_setfield(L, -2, "getpid");
 
 	return 1;
 };
