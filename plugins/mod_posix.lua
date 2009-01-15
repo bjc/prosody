@@ -11,7 +11,17 @@ if not config_get("*", "core", "no_daemonize") then
 		local logwriter;
 		
 		local logfilename = config_get("*", "core", "log");
-		if logfilename then
+		if logfilename == "syslog" then
+			pposix.syslog_open("prosody");
+				local syslog, format = pposix.syslog_log, string.format;
+				logwriter = function (name, level, message, ...)
+							if ... then 
+								syslog(level, format(message, ...));
+							else
+								syslog(level, message);
+							end
+						end;			
+		elseif logfilename then
 			local logfile = io.open(logfilename, "a+");
 			if logfile then
 				local write, format, flush = logfile.write, string.format, logfile.flush;
