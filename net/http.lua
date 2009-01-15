@@ -170,7 +170,7 @@ function request(u, ex, callback)
 		req.write(body);
 	end
 	
-	req.callback = function (content, code, request) log("debug", "Calling callback, code %s content: %s", code or "---", content or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
+	req.callback = function (content, code, request) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
 	req.reader = request_reader;
 	req.state = "status";
 	
