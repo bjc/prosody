@@ -42,7 +42,6 @@ if not config_get("*", "core", "no_daemonize") then
 		if not ok then
 			log("error", "Failed to daemonize: %s", ret);
 		elseif ret and ret > 0 then
-			log("info", "Daemonized to pid %d", ret);			
 			os.exit(0);
 		else
 			if logwriter then
@@ -51,7 +50,18 @@ if not config_get("*", "core", "no_daemonize") then
 					log("error", "Couldn't set new log output: %s", ret);
 				end
 			end
-			log("info", "Successfully daemonized");	
+			log("info", "Successfully daemonized to PID %d", pposix.getpid());
+			
+			local pidfile = config.get("*", "core", "pidfile");
+			if pidfile then
+				local pf, err = io.open(pidfile, "w+");
+				if not pf then
+					log("error", "Couldn't write pidfile; %s", err);
+				else
+					pf:write(tostring(pposix.getpid()));
+					pf:close();
+				end
+			end
 		end
 	end
 	module:add_event_hook("server-starting", daemonize_server);
