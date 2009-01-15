@@ -142,7 +142,14 @@ function request(u, ex, callback)
 		return nil, err;
 	end
 	
-	req.write((req.method or "GET ")..req.path.." HTTP/1.0\r\n");
+	local request_line = { req.method or "GET", " ", req.path, " HTTP/1.1\r\n" };
+	
+	if req.query then
+		t_insert(request_line, 4, "?");
+		t_insert(request_line, 5, req.query);
+	end
+	
+	req.write(t_concat(request_line));
 	local t = { [2] = ": ", [4] = "\r\n" };
 	if custom_headers then
 		for k, v in pairs(custom_headers) do
