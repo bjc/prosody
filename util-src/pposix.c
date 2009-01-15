@@ -28,7 +28,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <syslog.h>
+
+#include <string.h>
+
 #include "lua.h"
+#include "lauxlib.h"
+
+/* Daemonization support */
 
 static int daemonize(lua_State *L)
 {
@@ -83,10 +90,132 @@ static int daemonize(lua_State *L)
 	return 2;
 }
 
+/* Syslog support */
+
+char *facility_strings[] = 	{ 	"auth",
+					"authpriv",
+					"cron",
+					"daemon",
+					"ftp",
+					"kern",
+					"local0",
+					"local1",
+					"local2",
+					"local3",
+					"local4",
+					"local5",
+					"local6",
+					"local7",
+					"lpr",
+					"mail",
+					"syslog",
+					"user",
+					"uucp",
+					NULL
+				};
+int facility_constants[] =	{
+					LOG_AUTH,
+					LOG_AUTHPRIV,
+					LOG_CRON,
+					LOG_DAEMON,
+					LOG_FTP,
+					LOG_KERN,
+					LOG_LOCAL0,
+					LOG_LOCAL1,
+					LOG_LOCAL2,
+					LOG_LOCAL3,
+					LOG_LOCAL4,
+					LOG_LOCAL5,
+					LOG_LOCAL6,
+					LOG_LOCAL7,
+					LOG_LPR,
+					LOG_MAIL,
+					LOG_NEWS,
+					LOG_SYSLOG,
+					LOG_USER,
+					LOG_UUCP,
+					-1
+				};
+
+/* "
+       The parameter ident in the call of openlog() is probably stored  as-is.
+       Thus,  if  the  string  it  points  to  is  changed, syslog() may start
+       prepending the changed string, and if the string it points to ceases to
+       exist,  the  results  are  undefined.  Most portable is to use a string
+       constant.
+   " -- syslog manpage
+*/ 
+char* syslog_ident = NULL;
+
+int syslog_open(lua_State* L)
+{
+	int facility = luaL_checkoption(L, 2, "daemon", &facility_strings);
+	facility = facility_constants[facility];
+
+	luaL_checkstring(L, 1);
+	
+	if(syslog_ident)
+		free(syslog_ident);
+	
+	syslog_ident = strdup(lua_tostring(L, 1));
+	
+	openlog(syslog_ident, LOG_PID, facility);
+	return 0;
+}
+
+char *level_strings[] = 	{
+				"debug",
+				"info",
+				"notice",
+				"warn",
+				"error",
+				NULL
+			};
+int level_constants[] = 	{
+				LOG_DEBUG,
+				LOG_INFO,
+				LOG_NOTICE,
+				LOG_WARNING,
+				LOG_EMERG,
+				-1
+			};
+int syslog_log(lua_State* L)
+{
+	int level = luaL_checkoption(L, 1, "notice", &level_strings);
+	level = level_constants[level];
+
+	luaL_checkstring(L, 2);
+
+	syslog(level, "%s", lua_tostring(L, 2));
+	return 0;
+}
+
+int syslog_close(lua_State* L)
+{
+	closelog();
+	if(syslog_ident)
+	{
+		free(syslog_ident);
+		syslog_ident = NULL;
+	}
+	return 0;
+}
+
 int luaopen_util_pposix(lua_State *L)
 {
 	lua_newtable(L);
+
 	lua_pushcfunction(L, daemonize);
 	lua_setfield(L, -2, "daemonize");
+
+	lua_pushcfunction(L, syslog_open);
+	lua_setfield(L, -2, "syslog_open");
+
+	lua_pushcfunction(L, syslog_close);
+	lua_setfield(L, -2, "syslog_close");
+
+	lua_pushcfunction(L, syslog_log);
+	lua_setfield(L, -2, "syslog_log");
+
 	return 1;
 };
