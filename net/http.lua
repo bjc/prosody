@@ -123,7 +123,7 @@ function request(u, ex, callback)
 	end
 	
 	if ex then
-		custom_headers = ex.custom_headers;
+		custom_headers = ex.headers;
 		req.onlystatus = ex.onlystatus;
 		body = ex.body;
 		if body then
