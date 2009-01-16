@@ -213,7 +213,7 @@ function stream_callbacks.streamopened(request, attr)
 end
 
 function stream_callbacks.handlestanza(request, stanza)
-	log("debug", "BOSH stanza received: %s\n", stanza:pretty_print());
+	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
 	local session = sessions[request.sid];
 	if session then
 		if stanza.attr.xmlns == xmlns_bosh then
