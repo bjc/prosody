@@ -209,7 +209,6 @@ int lc_syslog_setmask(lua_State* L)
 	int mask = 0;
 	do
 	{
-		printf("PPOSIX: Setting mask for %s\n", level_strings[level_idx]);
 		mask |= LOG_MASK(level_constants[level_idx]);
 	} while (++level_idx<=4);
 
