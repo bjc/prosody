@@ -2,7 +2,7 @@
 local want_pposix_version = "0.3.0";
 
 local pposix = assert(require "util.pposix");
-if pposix._VERSION ~= want_pposix_version then log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
+if pposix._VERSION ~= want_pposix_version then module:log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
 
 local config_get = require "core.configmanager".get;
 local logger_set = require "util.logger".setwriter;
