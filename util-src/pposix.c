@@ -203,6 +203,20 @@ int lc_syslog_close(lua_State* L)
 	return 0;
 }
 
+int lc_syslog_setmask(lua_State* L)
+{
+	int level_idx = luaL_checkoption(L, 1, "notice", &level_strings);
+	int mask = 0;
+	do
+	{
+		printf("PPOSIX: Setting mask for %s\n", level_strings[level_idx]);
+		mask |= LOG_MASK(level_constants[level_idx]);
+	} while (++level_idx<=4);
+
+	setlogmask(mask);
+	return 0;
+}
+
 /* getpid */
 
 int lc_getpid(lua_State* L)
@@ -228,6 +242,9 @@ int luaopen_util_pposix(lua_State *L)
 
 	lua_pushcfunction(L, lc_syslog_log);
 	lua_setfield(L, -2, "syslog_log");
+
+	lua_pushcfunction(L, lc_syslog_setmask);
+	lua_setfield(L, -2, "syslog_setminlevel");
 
 	lua_pushcfunction(L, lc_getpid);
 	lua_setfield(L, -2, "getpid");
