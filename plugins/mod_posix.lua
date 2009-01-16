@@ -1,5 +1,8 @@
 
+local pposix_version = "0.3.0";
+
 local pposix = assert(require "util.pposix");
+if pposix._VERSION ~= want_pposix_version then log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), pposix_version); end
 
 local config_get = require "core.configmanager".get;
 local logger_set = require "util.logger".setwriter;
@@ -13,6 +16,7 @@ if not config_get("*", "core", "no_daemonize") then
 		local logfilename = config_get("*", "core", "log");
 		if logfilename == "syslog" then
 			pposix.syslog_open("prosody");
+			pposix.syslog_setminlevel(config.get("*", "core", "minimum_log_level") or "info");
 				local syslog, format = pposix.syslog_log, string.format;
 				logwriter = function (name, level, message, ...)
 							if ... then 
