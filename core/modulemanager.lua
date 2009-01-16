@@ -234,7 +234,7 @@ local function _add_handler(module, origin_type, tag, xmlns, handler)
 		stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
 		handler_info[handler] = module;
 		handler_table:add(module.host, module.name, {module.host, origin_type, tag, xmlns});
-		module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
+		--module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
 	else
 		module:log("warn", "I wanted to handle tag '%s' [%s] with %s '%s' but mod_%s already handles that", tag, origin_type, msg, xmlns, handler_info[handlers[1]].module.name);
 	end
