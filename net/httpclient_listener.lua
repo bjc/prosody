@@ -25,7 +25,7 @@ function httpclient.disconnect(conn, err)
 	if request then
 		request:reader(nil);
 	end
-	--requests[conn] = nil;
+	requests[conn] = nil;
 end
 
 function httpclient.register_request(conn, req)
