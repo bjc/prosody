@@ -36,8 +36,10 @@ local string_sub = use'string'.sub
 local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
 local print = print;
+
+local log = require "util.logger".init("server");
 local out_put = function () end --print;
-local out_error = print;
+local out_error = function (...) log("error", table_concat({...}, " ")); end
 
 --// extern libs //--
 
@@ -797,7 +799,7 @@ addserver = function( listeners, port, addr, mode, sslctx, wrapper_function )   
 	addr = addr or "*"
 	local server, err = socket_bind( addr, port )
 	if err then
-		out_error( "server.lua: ", err )
+		out_error( addr..":"..port.." -", err )
 		return nil, err
 	end
 	local handler, err = wrapserver( listeners, server, addr, port, mode, sslctx, wrapper_function )    -- wrap new server socket
