@@ -56,7 +56,7 @@ local function checked_error_reply(origin, stanza)
 end
 
 function core_process_stanza(origin, stanza)
-	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:pretty_print()) --top_tag())
+	(origin.log or log)("debug", "Received[%s]: %s", origin.type, top_tag())
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
