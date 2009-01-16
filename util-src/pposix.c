@@ -21,6 +21,8 @@
    POSIX support functions for Lua
 */
 
+#define MODULE_VERSION "0.3.0"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -230,5 +232,11 @@ int luaopen_util_pposix(lua_State *L)
 	lua_pushcfunction(L, lc_getpid);
 	lua_setfield(L, -2, "getpid");
 
+	lua_pushliteral(L, "pposix");
+	lua_setfield(L, -2, "_NAME");
+
+	lua_pushliteral(L, MODULE_VERSION);
+	lua_setfield(L, -2, "_VERSION");
+	
 	return 1;
 };
