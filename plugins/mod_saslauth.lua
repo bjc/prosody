@@ -40,13 +40,13 @@ local new_sasl = require "util.sasl".new;
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
-		log("challenge", ret or "");
+		log("debug", ret or "");
 		reply:text(base64.encode(ret or ""));
 	elseif status == "failure" then
 		reply:tag(ret):up();
 		if err_msg then reply:tag("text"):text(err_msg); end
 	elseif status == "success" then
-		log("success", ret or "");
+		log("debug", ret or "");
 		reply:text(base64.encode(ret or ""));
 	else
 		error("Unknown sasl status: "..status);
@@ -89,7 +89,7 @@ local function sasl_handler(session, stanza)
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
-		log("recieved", text);
+		log("debug", text);
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
