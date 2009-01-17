@@ -19,7 +19,7 @@ local clean = function( tbl )
 end
 
 local log, table_concat = require ("util.logger").init("socket"), table.concat;
-local out_put = function () end
+local out_put = function (...) return log("debug", table_concat{...}); end
 local out_error = function (...) return log("warn", table_concat{...}); end
 local mem_free = collectgarbage
 
@@ -433,7 +433,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             readtraffic = readtraffic + count
             _readtraffic = _readtraffic + count
             _readtimes[ handler ] = _currenttime
-            out_put( "server.lua: read data '", buffer, "', error: ", err )
+            --out_put( "server.lua: read data '", buffer, "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
             out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
@@ -450,7 +450,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         sendtraffic = sendtraffic + count
         _sendtraffic = _sendtraffic + count
         _ = _cleanqueue and clean( bufferqueue )
-        out_put( "server.lua: sended '", buffer, "', bytes: ", succ, ", error: ", err, ", part: ", byte, ", to: ", ip, ":", clientport )
+        --out_put( "server.lua: sended '", buffer, "', bytes: ", succ, ", error: ", err, ", part: ", byte, ", to: ", ip, ":", clientport )
         if succ then    -- sending succesful
             bufferqueuelen = 0
             bufferlen = 0
@@ -483,7 +483,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 for i = 1, 10 do    -- 10 handshake attemps
                     _, err = client:dohandshake( )
                     if not err then
-                        out_put( "server.lua: ssl handshake done" )
+                        --out_put( "server.lua: ssl handshake done" )
                         _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
@@ -506,7 +506,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             end
         )
         if startssl then    -- ssl now?
-            out_put("server.lua: ", "starting ssl handshake")
+            --out_put("server.lua: ", "starting ssl handshake")
 	    local err
             socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
             if err then
@@ -521,14 +521,14 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         else
             handler.starttls = function( now )
                 if not now then
-                    out_put "server.lua: we need to do tls, but delaying until later"
+                    --out_put "server.lua: we need to do tls, but delaying until later"
                     needtls = true
                     return
                 end
-                out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
+                --out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
                 local oldsocket, err = socket
                 socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
-                out_put( "server.lua: sslwrapped socket is " .. tostring( socket ) )
+                --out_put( "server.lua: sslwrapped socket is " .. tostring( socket ) )
                 if err then
                     out_put( "server.lua: error while starting tls on client: ", err )
                     return nil, err    -- fatal error
@@ -615,7 +615,7 @@ end
 
 addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, startssl )    -- this function provides a way for other scripts to reg a server
     local err
-    out_put("server.lua: autossl on ", port, " is ", startssl)
+    --out_put("server.lua: autossl on ", port, " is ", startssl)
     if type( listeners ) ~= "table" then
         err = "invalid listener table"
     end
