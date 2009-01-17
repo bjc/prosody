@@ -134,7 +134,7 @@ function request(u, ex, callback)
 		if ex.method then req.method = ex.method; end
 	end
 	
-	req.handler, req.conn = server.wraptcpclient(listener, socket.tcp(), req.host, req.port or 80, 0, "*a");
+	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
 	req.write = req.handler.write;
 	req.conn:settimeout(0);
 	local ok, err = req.conn:connect(req.host, req.port or 80);

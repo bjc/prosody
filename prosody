@@ -133,7 +133,7 @@ local function do_ports(option, listener, default, conntype)
 			if type(port) ~= "number" then
 				log("error", "Non-numeric "..option..": "..tostring(port));
 			else
-				cl.start(listener, { ssl = global_ssl_ctx, port = port, type = conntype });
+				cl.start(listener, { ssl = conntype ~= "tcp" and global_ssl_ctx, port = port, type = conntype });
 			end
 		end
 	end
