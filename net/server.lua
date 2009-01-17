@@ -17,8 +17,10 @@ local clean = function( tbl )
         tbl[ i ] = nil
     end
 end
-local out_put = print
-local out_error = print
+
+local log, table_concat = require ("util.logger").init("socket"), table.concat;
+local out_put = function () end
+local out_error = function (...) return log("warn", table_concat{...}); end
 local mem_free = collectgarbage
 
 ----------------------------------// DECLARATION //--
