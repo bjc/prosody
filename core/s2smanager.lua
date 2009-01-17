@@ -31,7 +31,7 @@ local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
-local wraptlsclient = require "net.server".wraptlsclient;
+local wrapclient = require "net.server".wrapclient;
 local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
@@ -196,7 +196,7 @@ function attempt_connection(host_session, err)
 	end
 	
 	local cl = connlisteners_get("xmppserver");
-	conn = wraptlsclient(cl, conn, connect_host, connect_port, 0, cl.default_mode or 1, hosts[from_host].ssl_ctx );
+	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1, hosts[from_host].ssl_ctx, false );
 	host_session.conn = conn;
 	
 	-- Register this outgoing connection so that xmppserver_listener knows about it
