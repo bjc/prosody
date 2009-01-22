@@ -53,19 +53,16 @@ do
 	-- Use lfs? Make a new conf/ dir?
 	local ok, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
 	if not ok then
-		log("error", "Couldn't load config file: %s", err);
-		log("info", "Falling back to old config file format...")
-		ok, err = pcall(dofile, "lxmppd.cfg");
-		if not ok then
-			log("error", "Old config format loading failed too: %s", err);
-		else
-			for _, host in ipairs(_G.config.hosts) do
-				config.set(host, "core", "defined", true);
-			end
-			
-			config.set("*", "core", "modules_enabled", _G.config.modules);
-			config.set("*", "core", "ssl", _G.config.ssl_ctx);
-		end
+		print("");
+		print("**************************");
+		print("Prosody was unable to find the configuration file.");
+		print("We looked for: "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+		print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
+		print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
+		print("More help on configuring Prosody can be found at http://prosody.im/doc/configure");
+		print("Good luck!");
+		print("**************************");
+		os.exit(1);
 	end
 end
 
