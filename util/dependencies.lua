@@ -67,6 +67,7 @@ if not encodings then
 	missingdep("util.encodings", { ["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
 	 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
 	 			});
+	fatal = true;
 end
 
 local encodings = softreq "util.hashes"
@@ -74,6 +75,7 @@ if not encodings then
 	missingdep("util.hashes", { ["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
 	 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
 	 			});
+	fatal = true;
 end
 
 if fatal then os.exit(1); end
