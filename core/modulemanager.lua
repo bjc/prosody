@@ -259,6 +259,10 @@ function api:get_host()
 	return self.host;
 end
 
+function api:set_global()
+	self.host = "*";
+end
+
 local function _add_handler(module, origin_type, tag, xmlns, handler)
 	local handlers = stanza_handlers:get(module.host, origin_type, tag, xmlns);
 	local msg = (tag == "iq") and "namespace" or "payload namespace";
