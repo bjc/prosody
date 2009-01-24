@@ -32,7 +32,7 @@ local register_actions = require "core.actions".register;
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
-local t_insert = table.insert;
+local t_insert, t_concat = table.insert, table.concat;
 local type = type;
 local next = next;
 local rawget = rawget;
@@ -107,7 +107,7 @@ function load(host, module_name, config)
 	end
 	
 
-	local mod, err = loadfile(plugin_dir.."mod_"..module_name..".lua");
+	local mod, err = loadfile(get_module_filename(module_name));
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		return nil, err;
@@ -132,18 +132,22 @@ function load(host, module_name, config)
 	return true;
 end
 
+function get_module(host, name)
+	return modulemap[host] and modulemap[host][name];
+end
+
 function is_loaded(host, name)
 	return modulemap[host] and modulemap[host][name] and true;
 end
 
 function unload(host, name, ...)
-	local mod = modulemap[host] and modulemap[host][name];
+	local mod = get_module(host, name); 
 	if not mod then return nil, "module-not-loaded"; end
 	
-	if type(mod.module.unload) == "function" then
-		local ok, err = pcall(mod.module.unload, ...)
+	if module_has_method(mod, "unload") then
+		local ok, err = call_module_method(mod, "unload");
 		if (not ok) and err then
-			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
 	modulemap[host][name] = nil;
@@ -161,36 +165,45 @@ function unload(host, name, ...)
 end
 
 function reload(host, name, ...)
-	local mod = modulemap[host] and modulemap[host][name];
+	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 
-	local _mod, err = loadfile(plugin_dir.."mod_"..name..".lua"); -- checking for syntax errors
+	local _mod, err = loadfile(get_module_filename(name)); -- checking for syntax errors
 	if not _mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		return nil, err;
 	end
 
 	local saved;
-	if type(mod.module.save) == "function" then
-		local ok, err = pcall(mod.module.save)
-		if (not ok) and err then
-			log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+
+	if module_has_method(mod, "save") then
+		local ok, ret, err = call_module_method(mod, "save");
+		if ok then
+			saved = ret;
 		else
-			saved = err;
+			log("warn", "Error saving module '%s:%s' state: %s", host, module, ret);
+			if not config.get(host, "core", "force_module_reload") then
+				log("warn", "Aborting reload due to error, set force_module_reload to ignore this");
+				return nil, "save-state-failed";
+			else
+				log("warn", "Continuing with reload (using the force)");
+			end
 		end
 	end
 
 	unload(host, name, ...);
-	if load(host, name, ...) then
-		mod = modulemap[host] and modulemap[host][name];
-		if type(mod.module.restore) == "function" then
-			local ok, err = pcall(mod.module.restore, saved or {})
+	local ok, err = load(host, name, ...);
+	if ok then
+		mod = get_module(host, name);
+		if module_has_method(mod, "restore") then
+			local ok, err = call_module_method(mod, "restore", saved or {})
 			if (not ok) and err then
-				log("warn", "Non-fatal error unloading module '%s' from '%s': %s", name, host, err);
+				log("warn", "Error restoring module '%s' from '%s': %s", name, host, err);
 			end
 		end
 		return true;
 	end
+	return ok, err;
 end
 
 function handle_stanza(host, origin, stanza)
@@ -212,6 +225,25 @@ function handle_stanza(host, origin, stanza)
 	else
 		log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns); -- we didn't handle it
 	end
+end
+
+function module_has_method(module, method)
+	return type(module.module[method]) == "function";
+end
+
+function call_module_method(module, func, ...)
+	local f = module.module[func];
+	if module_has_method(module, method) then	
+		return pcall(f, ...);
+	else
+		return false, "no-such-method";
+	end
+end
+
+local _modulepath = { plugin_dir, "mod_", nil, ".lua"};
+function get_module_filename(name)
+	_modulepath[3] = name;
+	return t_concat(_modulepath);
 end
 
 ----- API functions exposed to modules -----------
