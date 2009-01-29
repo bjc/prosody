@@ -63,6 +63,13 @@ function roster(node, host, jid, item)
 	local ret, err = dm.store(node, host, "roster", roster);
 	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
 end
+function roster_pending(node, host, jid)
+	local roster = dm.load(node, host, "roster") or {};
+	roster.pending = roster.pending or {};
+	roster.pending[jid] = true;
+	local ret, err = dm.store(node, host, "roster", roster);
+	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+end
 function private_storage(node, host, xmlns, stanza)
 	local private = dm.load(node, host, "private") or {};
 	private[xmlns] = st.preserialize(stanza);
@@ -90,7 +97,10 @@ local filters = {
 		local name = tuple[5]; local subscription = tuple[6];
 		local ask = tuple[7]; local groups = tuple[8];
 		if type(name) ~= type("") then name = nil; end
-		if ask == "none" then ask = nil; elseif ask == "out" then ask = "subscribe" else error(ask) end
+		if ask == "none" then ask = nil; elseif ask == "out" then ask = "subscribe" elseif ask == "in" then
+			roster_pending(node, host, contact);
+			return;
+		else error(ask) end
 		if subscription ~= "both" and subscription ~= "from" and subscription ~= "to" and subscription ~= "none" then error(subscription) end
 		local item = {name = name, ask = ask, subscription = subscription, groups = {}};
 		for _, g in ipairs(groups) do item.groups[g] = true; end
