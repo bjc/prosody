@@ -17,6 +17,7 @@ local function load_enabled_hosts(config)
 			activate(host, host_config);
 		end
 	end
+	eventmanager.fire_event("hosts-activated", defined_hosts);
 end
 
 eventmanager.add_event_hook("server-starting", load_enabled_hosts);

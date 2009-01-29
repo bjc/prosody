@@ -54,19 +54,23 @@ function get(name)
 	return h;
 end
 
-local wrapper_functions = { tcp = server.wraptcpclient, ssl = server.wrapsslclient, tls = server.wraptlsclient }
-
 function start(name, udata)
 	local h, err = get(name);
 	if not h then
 		error("No such connection module: "..name.. (err and (" ("..err..")") or ""), 0);
 	end
 	
-	local wrapper_function = wrapper_functions[(udata and udata.type)] or wrapper_functions.tcp;
+	if udata then
+		if (udata.type == "ssl" or udata.type == "tls") and not udata.ssl then
+			error("No SSL context supplied for a "..tostring(udata.type):upper().." connection!", 0);
+		elseif udata.ssl and udata.type == "tcp" then
+			error("SSL context supplied for a TCP connection!", 0);
+		end
+	end
 	
-	return server.add(h, 
+	return server.addserver(h, 
 			(udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
-				(udata and udata.interface) or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil, wrapper_function);
+				(udata and udata.interface) or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil, 99999999, udata and udata.type == "ssl");
 end
 
 return _M;

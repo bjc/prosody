@@ -107,7 +107,8 @@ do
 	parsers.lua = {};
 	function parsers.lua.load(data)
 		local env;
-		env = setmetatable({ Host = true; host = true; }, { __index = function (t, k)
+		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
+		env = setmetatable({ Host = true; host = true; Component = true, component = true }, { __index = function (t, k)
 												return rawget(_G, k) or
 														function (settings_table)
 															config[__currenthost or "*"][k] = settings_table;
@@ -119,9 +120,20 @@ do
 		
 		function env.Host(name)
 			rawset(env, "__currenthost", name);
+			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
 		end
 		env.host = env.Host;
+		
+		function env.Component(name)
+			return function (module)
+					set(name, "core", "component_module", module);
+					-- Don't load the global modules by default
+					set(name, "core", "modules_enable", false);
+					rawset(env, "__currenthost", name);
+				end
+		end
+		env.component = env.Component;
 		
 		local chunk, err = loadstring(data);
 		

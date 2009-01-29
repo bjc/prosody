@@ -21,14 +21,43 @@
 
 
 local log = require "util.logger".init("componentmanager");
-local module_load = require "core.modulemanager".load;
-local module_unload = require "core.modulemanager".unload;
+local configmanager = require "core.configmanager";
+local eventmanager = require "core.eventmanager";
+local modulemanager = require "core.modulemanager";
 local jid_split = require "util.jid".split;
 local hosts = hosts;
+
+local pairs, type, tostring = pairs, type, tostring;
 
 local components = {};
 
 module "componentmanager"
+
+function load_enabled_components(config)
+	local defined_hosts = config or configmanager.getconfig();
+		
+	for host, host_config in pairs(defined_hosts) do
+		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
+			hosts[host] = { type = "component", host = host, connected = true, s2sout = {} };
+			modulemanager.load(host, "dialback");
+			local ok, err = modulemanager.load(host, host_config.core.component_module);
+			if not ok then
+				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
+			else
+				log("info", "Activated %s component: %s", host_config.core.component_module, host);
+			end
+			
+			local ok, component_handler = modulemanager.call_module_method(modulemanager.get_module(host, host_config.core.component_module), "load_component");
+			if not ok then
+				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(component_handler));
+			else
+				components[host] = component_handler;
+			end
+		end
+	end
+end
+
+eventmanager.add_event_hook("server-starting", load_enabled_components);
 
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);
@@ -50,7 +79,7 @@ function register_component(host, component)
 		components[host] = component;
 		hosts[host] = { type = "component", host = host, connected = true, s2sout = {} };
 		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
-		module_load(host, "dialback");
+		modulemanager.load(host, "dialback");
 		log("debug", "component added: "..host);
 		return hosts[host];
 	else
@@ -60,7 +89,7 @@ end
 
 function deregister_component(host)
 	if components[host] then
-		module_unload(host, "dialback");
+		modulemanager.unload(host, "dialback");
 		components[host] = nil;
 		hosts[host] = nil;
 		log("debug", "component removed: "..host);
