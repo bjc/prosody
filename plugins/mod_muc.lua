@@ -8,7 +8,12 @@ local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
 local multitable_new = require "util.multitable".new;
 
-local muc_domain = "conference."..module:get_host();
+if module:get_host_type() ~= "component" then
+	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
+end
+
+local muc_domain = module:get_host();
+
 local muc_name = "MUCMUCMUC!!!";
 
 -- room_name -> room
@@ -256,7 +261,7 @@ function handle_to_domain(origin, stanza)
 	end
 end
 
-component = register_component(muc_domain, function(origin, stanza)
+function handle_stanza(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 		if type == "error" or type == "result" then return; end
@@ -272,7 +277,11 @@ component = register_component(muc_domain, function(origin, stanza)
 		if type == "error" or type == "result" then return; end
 		handle_to_domain(origin, stanza);
 	end
-end);
+end
+
+module.load_component = function()
+	return handle_stanza; -- Return the function that we want to handle incoming stanzas
+end
 
 module.unload = function()
 	deregister_component(muc_domain);
