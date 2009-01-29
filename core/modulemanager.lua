@@ -235,7 +235,7 @@ end
 
 function call_module_method(module, method, ...)
 	if module_has_method(module, method) then	
-		local f = module.module[func];
+		local f = module.module[method];
 		return pcall(f, ...);
 	else
 		return false, "no-such-method";
