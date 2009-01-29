@@ -66,9 +66,10 @@ do
 	end
 end
 
+require "util.dependencies"
+
 local server = require "net.server"
 
-require "util.dependencies"
 
 -- Maps connections to sessions --
 sessions = {};
