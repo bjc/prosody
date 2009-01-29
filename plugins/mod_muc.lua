@@ -95,11 +95,11 @@ function set_subject(current_nick, room, subject)
 	return true;
 end
 
-function broadcast_presence(type, from, room, code)
+function broadcast_presence(type, from, room, code, newnick)
 	local data = rooms:get(room, from);
 	local stanza = st.presence({type=type, from=from})
 		:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-		:tag("item", {affiliation=data.affiliation, role=data.role}):up();
+		:tag("item", {affiliation=data.affiliation, role=data.role, nick = newnick}):up();
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
@@ -163,11 +163,16 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						origin.send(st.error_reply(stanza, "cancel", "conflict"));
 					else
 						local data = rooms:get(room, current_nick);
-						broadcast_presence('unavailable', current_nick, room, '303');
-						rooms:remove(room, current_nick);
-						rooms:set(room, to, data);
-						jid_nick:set(from, room, to);
-						broadcast_presence(nil, to, room);
+						local to_nick = select(3, jid_split(to));
+						if to_nick then
+							broadcast_presence('unavailable', current_nick, room, '303', to_nick);
+							rooms:remove(room, current_nick);
+							rooms:set(room, to, data);
+							jid_nick:set(from, room, to);
+							broadcast_presence(nil, to, room, nil);
+						else
+							--TODO: malformed-jid
+						end
 					end
 				end
 			else -- enter room
