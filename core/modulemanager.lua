@@ -29,6 +29,8 @@ local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local register_actions = require "core.actions".register;
 
+local hosts = hosts;
+
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
@@ -231,9 +233,9 @@ function module_has_method(module, method)
 	return type(module.module[method]) == "function";
 end
 
-function call_module_method(module, func, ...)
-	local f = module.module[func];
+function call_module_method(module, method, ...)
 	if module_has_method(module, method) then	
+		local f = module.module[func];
 		return pcall(f, ...);
 	else
 		return false, "no-such-method";
@@ -257,6 +259,10 @@ end
 -- Returns the host that the current module is serving
 function api:get_host()
 	return self.host;
+end
+
+function api:get_host_type()
+	return hosts[self.host].type;
 end
 
 function api:set_global()
