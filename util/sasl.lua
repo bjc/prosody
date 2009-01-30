@@ -1,5 +1,5 @@
 -- sasl.lua v0.2
--- Copyright (C) 2008 Tobias Markmann
+-- Copyright (C) 2008-2009 Tobias Markmann
 -- 
 --    All rights reserved.
 --    
