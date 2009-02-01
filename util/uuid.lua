@@ -9,10 +9,11 @@
 
 
 local m_random = math.random;
+local tostring = tostring;
 module "uuid"
 
 function generate()
-	return m_random(0, 99999999);
+	return tostring(m_random(0, 99999999));
 end
 
 return _M;
