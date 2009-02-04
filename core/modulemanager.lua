@@ -90,7 +90,9 @@ function load(host, module_name, config)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-	elseif modulemap[host][module_name] then
+	end
+	
+	if modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
 	elseif modulemap["*"][module_name] then
