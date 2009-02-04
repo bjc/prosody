@@ -456,8 +456,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             bufferlen = 0
             _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )    -- delete socket from writelist
             _ = needtls and handler.starttls(true)
-	    _ = toclose and handler.close( )
             _writetimes[ handler ] = nil
+	    _ = toclose and handler.close( )
             return true
         elseif byte and ( err == "timeout" or err == "wantwrite" ) then    -- want write
             buffer = string_sub( buffer, byte + 1, bufferlen )    -- new buffer
