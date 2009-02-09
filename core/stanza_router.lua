@@ -202,7 +202,7 @@ function core_route_stanza(origin, stanza)
 					local priority = 0;
 					local recipients = {};
 					for _, session in pairs(user.sessions) do -- find resource with greatest priority
-						local p = session.priority;
+						local p = session.priority or -1;
 						if p > priority then
 							priority = p;
 							recipients = {session};
