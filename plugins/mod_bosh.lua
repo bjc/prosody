@@ -42,7 +42,7 @@ function handle_request(method, body, request)
 		log("debug", "Request %s suffered error %s", tostring(request.id), body);
 		return;
 	end
-	log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
+	--log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
 	request.notopen = true;
 	request.log = log;
 	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "|");
@@ -79,7 +79,7 @@ function handle_request(method, body, request)
 			waiting_requests[request] = true;
 		end
 		
-		log("debug", "Had nothing to say, so leaving request unanswered for now");
+		log("debug", "Have nothing to say, so leaving request unanswered for now");
 		return true;
 	end
 end
@@ -101,8 +101,6 @@ local function bosh_close_stream(session, reason)
 end
 
 function stream_callbacks.streamopened(request, attr)
-	print("Attr:")
-	for k,v in pairs(attr) do print("", k, v); end
 	log("debug", "BOSH body open (sid: %s)", attr.sid);
 	local sid = attr.sid
 	if not sid then
@@ -139,7 +137,7 @@ function stream_callbacks.streamopened(request, attr)
 				log("debug", "We have an open request, so using that to send with");
 				response.body = t_concat{"<body xmlns='http://jabber.org/protocol/httpbind' sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>", tostring(s), "</body>" };
 				oldest_request:send(response);
-				log("debug", "Sent");
+				--log("debug", "Sent");
 				if oldest_request.stayopen then
 					if #r>1 then
 						-- Move front request to back
