@@ -243,6 +243,7 @@ function on_timer()
 				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
 				sessions[session.sid]  = nil;
 				inactive_sessions[session] = nil;
+				session.bosh_max_inactive = nil; -- Stop us marking this session as active during destroy
 				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 			end
 		else
