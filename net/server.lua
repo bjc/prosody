@@ -362,7 +362,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             _closelist[ handler ] = "send buffer exceeded"   -- cannot close the client at the moment, have to wait to the end of the cycle
             handler.write = idfalse    -- dont write anymore
             return false
-        elseif not _sendlist[ socket ] then
+        elseif socket and not _sendlist[ socket ] then
             _sendlistlen = _sendlistlen + 1
             _sendlist[ _sendlistlen ] = socket
             _sendlist[ socket ] = _sendlistlen
