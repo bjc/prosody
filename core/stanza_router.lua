@@ -178,6 +178,14 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
+	if hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
+		return component_handle_stanza(origin, stanza);
+	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+		return component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
+		return component_handle_stanza(origin, stanza);
+	end
+
 	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
