@@ -10,8 +10,8 @@
 
 function core_process_stanza(core_process_stanza)
 	local s2sout_session = { to_host = "remotehost", from_host = "localhost", type = "s2sout" }
-	local s2sin_session = { from_host = "remotehost", to_host = "localhost", type = "s2sin" }
-	local local_host_session = { host = "localhost", type = "local" }
+	local s2sin_session = { from_host = "remotehost", to_host = "localhost", type = "s2sin", hosts = { ["remotehost"] = { authed = true } } }
+	local local_host_session = { host = "localhost", type = "local", s2sout = { ["remotehost"] = s2sout_session } }
 	local local_user_session = { username = "user", host = "localhost", resource = "resource", full_jid = "user@localhost/resource", type = "c2s" }
 	local hosts = {
 			["localhost"] = local_host_session;
