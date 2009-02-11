@@ -97,7 +97,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		if stanza.attr.type == "unavailable" then
 			origin.presence = nil;
 			if origin.directed then
-				for _, jid in ipairs(origin.directed) do
+				for jid in pairs(origin.directed) do
 					stanza.attr.to = jid;
 					core_route_stanza(origin, stanza);
 				end
