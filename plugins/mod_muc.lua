@@ -7,14 +7,15 @@ local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
 local multitable_new = require "util.multitable".new;
+local t_insert, t_remove = table.insert, table.remove;
 
 if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
 local muc_domain = module:get_host();
-
 local muc_name = "MUCMUCMUC!!!";
+local history_length = 20;
 
 -- room_name -> room
 	-- occupant_room_nick -> data
@@ -30,6 +31,7 @@ local jid_nick = multitable_new(); -- real jid -> room's jid -> room nick
 	-- subject - the room's subject
 	-- non-anonymous = true|nil
 	-- persistent = true|nil
+	-- history = {preserialized stanzas}
 local rooms_info = multitable_new();
 
 local persist_list = datamanager.load(nil, muc_domain, 'room_list') or {};
@@ -131,6 +133,15 @@ function broadcast_message(from, room, subject, body)
 			stanza.attr.to = o_data.jid;
 			core_route_stanza(component, stanza);
 		end
+		if not subject and body then -- add to history
+			local history = rooms_info:get(room, 'history');
+			if not history then history = {}; rooms_info:set(room, 'history', history); end
+			-- stanza = st.deserialize(st.preserialize(stanza));
+			stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
+			stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+			t_insert(history, st.preserialize(stanza));
+			while #history > history_length do t_remove(history, 1) end
+		end
 	end
 end
 
@@ -200,7 +211,14 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						end
 					end
 					broadcast_presence(nil, to, room);
-					-- TODO send discussion history
+					local history = rooms_info:get(room, 'history'); -- send discussion history
+					if history then
+						for _, msg in ipairs(history) do
+							msg = st.deserialize(msg);
+							msg.attr.to=from;
+							core_route_stanza(component, msg);
+						end
+					end
 					if rooms_info:get(room, 'subject') then
 						core_route_stanza(component, st.message({type='groupchat', from=room, to=from}):tag("subject"):text(rooms_info:get(room, 'subject')));
 					end
@@ -266,7 +284,7 @@ function handle_to_domain(origin, stanza)
 	end
 end
 
-function handle_stanza(origin, stanza)
+register_component(muc_domain, function(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 		if type == "error" or type == "result" then return; end
@@ -282,11 +300,7 @@ function handle_stanza(origin, stanza)
 		if type == "error" or type == "result" then return; end
 		handle_to_domain(origin, stanza);
 	end
-end
-
-module.load_component = function()
-	return handle_stanza; -- Return the function that we want to handle incoming stanzas
-end
+end);
 
 module.unload = function()
 	deregister_component(muc_domain);

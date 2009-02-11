@@ -34,6 +34,8 @@ local t_concat = table.concat;
 local t_insert = table.insert;
 local tonumber = tonumber;
 local s_find = string.find;
+local pairs = pairs;
+local ipairs = ipairs;
 
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
@@ -105,6 +107,11 @@ function core_process_stanza(origin, stanza)
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
+		if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
+			origin.directed = origin.directed or {};
+			origin.directed[to] = true;
+			--t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
+		end
 		if not to then
 			core_handle_stanza(origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
@@ -122,10 +129,6 @@ function core_process_stanza(origin, stanza)
 		elseif origin.type ~= "c2s" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
-			if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then
-				origin.directed = origin.directed or {};
-				t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
-			end
 			core_route_stanza(origin, stanza);
 		end
 	else
@@ -177,6 +180,14 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
+	if hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
+		return component_handle_stanza(origin, stanza);
+	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+		return component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
+		return component_handle_stanza(origin, stanza);
+	end
+
 	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
 
 	local host_session = hosts[host]
@@ -199,25 +210,36 @@ function core_route_stanza(origin, stanza)
 						end
 					end
 				elseif stanza.name == "message" then -- select a resource to recieve message
-					local priority = 0;
-					local recipients = {};
-					for _, session in pairs(user.sessions) do -- find resource with greatest priority
-						local p = session.priority or -1;
-						if p > priority then
-							priority = p;
-							recipients = {session};
-						elseif p == priority then
-							t_insert(recipients, session);
+					stanza.attr.to = to_bare;
+					if stanza.attr.type == 'headline' then
+						for _, session in pairs(user.sessions) do -- find resource with greatest priority
+							if session.presence and session.priority >= 0 then
+								session.send(stanza);
+							end
 						end
-					end
-					local count = 0;
-					for _, session in pairs(recipients) do
-						session.send(stanza);
-						count = count + 1;
-					end
-					if count == 0 then
-						offlinemanager.store(node, host, stanza);
-						-- TODO deal with storage errors
+					else
+						local priority = 0;
+						local recipients = {};
+						for _, session in pairs(user.sessions) do -- find resource with greatest priority
+							if session.presence then
+								local p = session.priority;
+								if p > priority then
+									priority = p;
+									recipients = {session};
+								elseif p == priority then
+									t_insert(recipients, session);
+								end
+							end
+						end
+						local count = 0;
+						for _, session in ipairs(recipients) do
+							session.send(stanza);
+							count = count + 1;
+						end
+						if count == 0 and (stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type) then
+							offlinemanager.store(node, host, stanza);
+							-- TODO deal with storage errors
+						end
 					end
 				else
 					-- TODO send IQ error
@@ -237,6 +259,7 @@ function core_route_stanza(origin, stanza)
 						-- TODO send unavailable presence or unsubscribed
 					end
 				elseif stanza.name == "message" then -- FIXME if full jid, then send out to resources with highest priority
+					stanza.attr.to = to_bare; -- TODO not in RFC, but seems obvious. Should discuss on the mailing list.
 					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
 						offlinemanager.store(node, host, stanza);
 						-- FIXME don't store messages with only chat state notifications
