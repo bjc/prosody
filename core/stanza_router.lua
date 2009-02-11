@@ -34,6 +34,8 @@ local t_concat = table.concat;
 local t_insert = table.insert;
 local tonumber = tonumber;
 local s_find = string.find;
+local pairs = pairs;
+local ipairs = ipairs;
 
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
@@ -208,25 +210,36 @@ function core_route_stanza(origin, stanza)
 						end
 					end
 				elseif stanza.name == "message" then -- select a resource to recieve message
-					local priority = 0;
-					local recipients = {};
-					for _, session in pairs(user.sessions) do -- find resource with greatest priority
-						local p = session.priority;
-						if p > priority then
-							priority = p;
-							recipients = {session};
-						elseif p == priority then
-							t_insert(recipients, session);
+					if message.attr.type == 'headline' then
+						for _, session in pairs(user.sessions) do -- find resource with greatest priority
+							if session.presence and session.priority >= 0 then
+								stanza.attr.to = session.full_jid;
+								session.send(stanza);
+							end
 						end
-					end
-					local count = 0;
-					for _, session in pairs(recipients) do
-						session.send(stanza);
-						count = count + 1;
-					end
-					if count == 0 then
-						offlinemanager.store(node, host, stanza);
-						-- TODO deal with storage errors
+					else
+						local priority = 0;
+						local recipients = {};
+						for _, session in pairs(user.sessions) do -- find resource with greatest priority
+							if session.presence then
+								local p = session.priority;
+								if p > priority then
+									priority = p;
+									recipients = {session};
+								elseif p == priority then
+									t_insert(recipients, session);
+								end
+							end
+						end
+						local count = 0;
+						for _, session in ipairs(recipients) do
+							session.send(stanza);
+							count = count + 1;
+						end
+						if count == 0 and (stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type) then
+							offlinemanager.store(node, host, stanza);
+							-- TODO deal with storage errors
+						end
 					end
 				else
 					-- TODO send IQ error
