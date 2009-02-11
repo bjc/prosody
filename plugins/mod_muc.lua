@@ -266,7 +266,7 @@ function handle_to_domain(origin, stanza)
 	end
 end
 
-function handle_stanza(origin, stanza)
+register_component(muc_domain, function(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 		if type == "error" or type == "result" then return; end
@@ -282,11 +282,7 @@ function handle_stanza(origin, stanza)
 		if type == "error" or type == "result" then return; end
 		handle_to_domain(origin, stanza);
 	end
-end
-
-module.load_component = function()
-	return handle_stanza; -- Return the function that we want to handle incoming stanzas
-end
+end);
 
 module.unload = function()
 	deregister_component(muc_domain);
