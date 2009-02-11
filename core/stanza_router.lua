@@ -210,10 +210,10 @@ function core_route_stanza(origin, stanza)
 						end
 					end
 				elseif stanza.name == "message" then -- select a resource to recieve message
-					if message.attr.type == 'headline' then
+					stanza.attr.to = to_bare;
+					if stanza.attr.type == 'headline' then
 						for _, session in pairs(user.sessions) do -- find resource with greatest priority
 							if session.presence and session.priority >= 0 then
-								stanza.attr.to = session.full_jid;
 								session.send(stanza);
 							end
 						end
@@ -259,6 +259,7 @@ function core_route_stanza(origin, stanza)
 						-- TODO send unavailable presence or unsubscribed
 					end
 				elseif stanza.name == "message" then -- FIXME if full jid, then send out to resources with highest priority
+					stanza.attr.to = to_bare; -- TODO not in RFC, but seems obvious. Should discuss on the mailing list.
 					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
 						offlinemanager.store(node, host, stanza);
 						-- FIXME don't store messages with only chat state notifications
