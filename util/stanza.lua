@@ -12,6 +12,7 @@ local t_concat      =  table.concat;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
 local s_format      = string.format;
+local s_match      = string.match;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
 local pairs         =         pairs;
@@ -114,11 +115,22 @@ end
 local xml_escape = xml_escape;
 
 local function dostring(t, buf, self, xml_escape)
+	local nsid, ns, attrk = 0;
 	t_insert(buf, "<");
 	t_insert(buf, t.name);
 	for k, v in pairs(t.attr) do if type(k) == "string" then
 		t_insert(buf, " ");
-		t_insert(buf, k);
+		ns, attrk = s_match(k, "^([^|]+)|(.+)$");
+		if ns then
+			nsid = (nsid or -1) + 1;
+			t_insert(buf, "xmlns:ns"..nsid);
+			t_insert(buf, "='");
+			t_insert(buf, (xml_escape(tostring(ns))));
+			t_insert(buf, "' ");
+			t_insert(buf, "ns"..nsid..":"..attrk);
+		else
+			t_insert(buf, k);
+		end
 		t_insert(buf, "='");
 		t_insert(buf, (xml_escape(tostring(v))));
 		t_insert(buf, "'");
