@@ -126,7 +126,7 @@ function core_process_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		elseif origin.type ~= "c2s" and stanza.name == "iq" and not resource then -- directed at bare JID
+		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
 			core_route_stanza(origin, stanza);
