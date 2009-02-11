@@ -112,6 +112,7 @@ function load(host, module_name, config)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	
 	setfenv(mod, pluginenv);
+	if not hosts[host] then hosts[host] = { type = "component", host = host, connected = false, s2sout = {} }; end
 	
 	local success, ret = pcall(mod);
 	if not success then
