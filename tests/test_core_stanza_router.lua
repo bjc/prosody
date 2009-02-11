@@ -155,6 +155,28 @@ function core_process_stanza(core_process_stanza)
 		assert_equal(target_routed, true, "stanza was not routed successfully");
 	end
 
+	local function test_iq_to_local_bare()
+		local env = testlib_new_env();
+		local msg = stanza.stanza("iq", { to = "user@localhost", from = "user@localhost", type = "get" }):tag("ping", { xmlns = "urn:xmpp:ping:0" });
+		
+		local target_handled;
+		
+		function env.core_handle_stanza(p_origin, p_stanza)
+			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
+			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
+			target_handled = true;		
+		end
+
+		function env.core_route_stanza(p_origin, p_stanza)
+			
+		end
+
+		env.hosts = hosts;
+		setfenv(core_process_stanza, env);
+		assert_equal(core_process_stanza(local_user_session, msg), nil, "core_process_stanza returned incorrect value");
+		assert_equal(target_handled, true, "stanza was not handled successfully");
+	end
+
 	runtest(test_message_full_jid, "Messages with full JID destinations get routed");
 	runtest(test_message_bare_jid, "Messages with bare JID destinations get routed");
 	runtest(test_message_no_to, "Messages with no destination are handled by the server");
@@ -162,6 +184,7 @@ function core_process_stanza(core_process_stanza)
 	runtest(test_message_to_remote_server, "Messages to a remote server's JID are routed");
 
 	runtest(test_iq_to_remote_server, "iq to a remote server's JID are routed");
+	runtest(test_iq_to_local_bare, "iq from a local user to a local user's bare JID are handled");
 	runtest(test_iq_error_to_local_user, "iq type=error to a local user's JID are routed");
 
 end
