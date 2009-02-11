@@ -163,7 +163,7 @@ function runtest(f, msg)
 	local success, ret = pcall(f);
 	if success and verbosity >= 2 then
 		print("SUBTEST PASSED: "..(msg or "(no description)"));
-	elseif (not success) and verbosity >= 1 then
+	elseif (not success) and verbosity >= 0 then
 		print("SUBTEST FAILED: "..(msg or "(no description)"));
 		error(ret, 0);
 	end
