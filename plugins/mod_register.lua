@@ -37,7 +37,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				session.send(st.reply(stanza));
 				local roster = session.roster;
 				for _, session in pairs(hosts[session.host].sessions[session.username].sessions) do -- disconnect all resources
-					session:disconnect({condition = "not-authorized", text = "Account deleted"});
+					session:close({condition = "not-authorized", text = "Account deleted"});
 				end
 				-- TODO datamanager should be able to delete all user data itself
 				datamanager.store(session.username, session.host, "roster", nil);
