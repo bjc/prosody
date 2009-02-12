@@ -126,10 +126,13 @@ function bind_resource(session, resource)
 			elseif policy == "kick_new" then
 				return nil, "cancel", "conflict", "Resource already exists";
 			else -- if policy == "kick_old" then
-				hosts[session.host].sessions[session.username].sessions[resource]:close {
+				sessions[resource]:close {
 					condition = "conflict";
 					text = "Replaced by new connection";
 				};
+				if not next(sessions) then
+					hosts[session.host].sessions[session.username] = { sessions = sessions };
+				end
 			end
 			if increment and sessions[resource] then
 				local count = 1;
