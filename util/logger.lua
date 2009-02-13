@@ -33,16 +33,11 @@ local outfunction = nil;
 
 function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
-	sourcewidth = math_max(#name+2, sourcewidth);
 	local namelen = #name;
 	return 	function (level, message, ...)
-				if not name then
-					local inf = debug.getinfo(3, 'Snl');
-					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
-				end
-				
 				if outfunction then return outfunction(name, level, message, ...); end
 				
+				sourcewidth = math_max(#name+2, sourcewidth);
 				if ... then 
 					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
 				else
