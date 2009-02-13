@@ -85,7 +85,8 @@ static int lc_daemonize(lua_State *L)
 
 /* Syslog support */
 
-char *facility_strings[] = 	{ 	"auth",
+const char * const facility_strings[] = {
+					"auth",
 					"authpriv",
 					"cron",
 					"daemon",
@@ -142,7 +143,7 @@ char* syslog_ident = NULL;
 
 int lc_syslog_open(lua_State* L)
 {
-	int facility = luaL_checkoption(L, 2, "daemon", &facility_strings);
+	int facility = luaL_checkoption(L, 2, "daemon", facility_strings);
 	facility = facility_constants[facility];
 
 	luaL_checkstring(L, 1);
@@ -156,7 +157,7 @@ int lc_syslog_open(lua_State* L)
 	return 0;
 }
 
-char *level_strings[] = 	{
+const char * const level_strings[] = {
 				"debug",
 				"info",
 				"notice",
@@ -174,7 +175,7 @@ int level_constants[] = 	{
 			};
 int lc_syslog_log(lua_State* L)
 {
-	int level = luaL_checkoption(L, 1, "notice", &level_strings);
+	int level = luaL_checkoption(L, 1, "notice", level_strings);
 	level = level_constants[level];
 
 	luaL_checkstring(L, 2);
@@ -196,7 +197,7 @@ int lc_syslog_close(lua_State* L)
 
 int lc_syslog_setmask(lua_State* L)
 {
-	int level_idx = luaL_checkoption(L, 1, "notice", &level_strings);
+	int level_idx = luaL_checkoption(L, 1, "notice", level_strings);
 	int mask = 0;
 	do
 	{
