@@ -9,8 +9,8 @@
 
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io, error = 
-		setmetatable, loadfile, pcall, rawget, rawset, io, error;
+local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile = 
+		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile;
 
 module "configmanager"
 
@@ -98,7 +98,7 @@ do
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({ Host = true; host = true; Component = true, component = true,
-							Include = true, include = true }, { __index = function (t, k)
+							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
 												return rawget(_G, k) or
 														function (settings_table)
 															config[__currenthost or "*"][k] = settings_table;
