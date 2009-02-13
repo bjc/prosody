@@ -68,15 +68,15 @@ function load(filename, format)
 		if f then 
 			local ok, err = parsers[format].load(f:read("*a"));
 			f:close();
-			return ok, err;
+			return ok, "parser", err;
 		end
-		return f, err;
+		return f, "file", err;
 	end
 
 	if not format then
-		return nil, "no parser specified";
+		return nil, "file", "no parser specified";
 	else
-		return nil, "no parser for "..(format);
+		return nil, "file", "no parser for "..(format);
 	end
 end
 
