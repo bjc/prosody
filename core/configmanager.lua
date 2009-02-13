@@ -9,8 +9,8 @@
 
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io = 
-		setmetatable, loadfile, pcall, rawget, rawset, io;
+local 	setmetatable, loadfile, pcall, rawget, rawset, io, error = 
+		setmetatable, loadfile, pcall, rawget, rawset, io, error;
 
 module "configmanager"
 
@@ -97,7 +97,8 @@ do
 	function parsers.lua.load(data)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({ Host = true; host = true; Component = true, component = true }, { __index = function (t, k)
+		env = setmetatable({ Host = true; host = true; Component = true, component = true,
+							Include = true, include = true }, { __index = function (t, k)
 												return rawget(_G, k) or
 														function (settings_table)
 															config[__currenthost or "*"][k] = settings_table;
@@ -123,6 +124,18 @@ do
 				end
 		end
 		env.component = env.Component;
+		
+		function env.Include(file)
+			local f, err = io.open(file);
+			if f then
+				local data = f:read("*a");
+				local ok, err = parsers.lua.load(data);
+				if not ok then error(err:gsub("%[string.-%]", file), 0); end
+			end
+			if not f then error("Error loading included "..file..": "..err, 0); end
+			return f, err;
+		end
+		env.include = env.Include;
 		
 		local chunk, err = loadstring(data);
 		
