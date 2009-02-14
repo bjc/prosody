@@ -240,6 +240,7 @@ local function new_anonymous(realm, password_handler)
 		function object.feed(self, message)
 			return "success"
 		end
+	--TODO: From XEP-0175 "It is RECOMMENDED for the node identifier to be a UUID as specified in RFC 4122 [5]." So util.uuid() should (or have an option to) behave as specified in RFC 4122.
 	object["username"] = generate_uuid()
 	return object
 end
