@@ -1,4 +1,4 @@
--- sasl.lua v0.2
+-- sasl.lua v0.3
 -- Copyright (C) 2008-2009 Tobias Markmann
 -- 
 --    All rights reserved.
@@ -235,10 +235,21 @@ local function new_digest_md5(realm, password_handler)
 	return object
 end
 
+local function new_anonymous(realm, password_handler)
+	local object = { mechanism = "ANONYMOUS", realm = realm, password_handler = password_handler}
+		function object.feed(self, message)
+			return "success"
+		end
+	object["username"] = generate_uuid()
+	return object
+end
+
+
 function new(mechanism, realm, password_handler)
 	local object
 	if mechanism == "PLAIN" then object = new_plain(realm, password_handler)
 	elseif mechanism == "DIGEST-MD5" then object = new_digest_md5(realm, password_handler)
+	elseif mechanism == "ANONYMOUS" then object = new_anonymous(realm, password_handler)
 	else
 		log("debug", "Unsupported SASL mechanism: "..tostring(mechanism));
 		return nil
