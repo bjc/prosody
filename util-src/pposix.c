@@ -22,9 +22,10 @@
 #include <fcntl.h>
 
 #include <syslog.h>
+#include <pwd.h>
 
 #include <string.h>
-
+#include <errno.h>
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -216,6 +217,78 @@ int lc_getpid(lua_State* L)
 	return 1;
 }
 
+/* UID/GID functions */
+
+int lc_getuid(lua_State* L)
+{
+	lua_pushinteger(L, getuid());
+	return 1;
+}
+
+int lc_getgid(lua_State* L)
+{
+	lua_pushinteger(L, getgid());
+	return 1;
+}
+
+int lc_setuid(lua_State* L)
+{
+	int uid = -1;
+	if(lua_gettop(L) < 1)
+		return 0;
+	if(!lua_isnumber(L, 1) && lua_tostring(L, 1))
+	{
+		/* Passed UID is actually a string, so look up the UID */
+		struct passwd *p;
+		p = getpwnam(lua_tostring(L, 1));
+		if(!p)
+		{
+			lua_pushboolean(L, 0);
+			lua_pushstring(L, "no-such-user");
+			return 2;
+		}
+		uid = p->pw_uid;
+	}
+	else
+	{
+		uid = lua_tonumber(L, 1);
+	}
+	
+	if(uid>-1)
+	{
+		/* Ok, attempt setuid */
+		errno = 0;
+		if(setuid(uid))
+		{
+			/* Fail */
+			lua_pushboolean(L, 0);
+			switch(errno)
+			{
+			case EINVAL:
+				lua_pushstring(L, "invalid-uid");
+				break;
+			case EPERM:
+				lua_pushstring(L, "permission-denied");
+				break;
+			default:
+				lua_pushstring(L, "unknown-error");
+			}
+			return 2;
+		}
+		else
+		{
+			/* Success! */
+			lua_pushboolean(L, 1);
+			return 1;
+		}
+	}
+	
+	/* Seems we couldn't find a valid UID to switch to */
+	lua_pushboolean(L, 0);
+	lua_pushstring(L, "invalid-uid");
+	return 2;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -239,6 +312,12 @@ int luaopen_util_pposix(lua_State *L)
 
 	lua_pushcfunction(L, lc_getpid);
 	lua_setfield(L, -2, "getpid");
+
+	lua_pushcfunction(L, lc_getuid);
+	lua_setfield(L, -2, "getuid");
+
+	lua_pushcfunction(L, lc_setuid);
+	lua_setfield(L, -2, "setuid");
 
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
