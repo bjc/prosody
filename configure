@@ -15,7 +15,7 @@ OPENSSL_LIB=crypto
 CC=gcc
 LD=gcc
 
-CFLAGS="-fPIC"
+CFLAGS="-fPIC -Wall"
 LFLAGS="-shared"
 
 # Help
@@ -140,7 +140,7 @@ then
 	LUA_INCDIR_SET=yes	
 	LUA_LIBDIR=/usr/local/lib
 	LUA_LIBDIR_SET=yes
-	CFLAGS=""
+	CFLAGS="-Wall"
 	LFLAGS="-bundle -undefined dynamic_lookup"
 	fi	
 fi
