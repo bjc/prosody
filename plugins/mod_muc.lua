@@ -345,7 +345,9 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	else -- private stanza
 		local o_data = rooms:get(room, to);
 		if o_data then
-			stanza.attr.to, stanza.attr.from = o_data.jid, current_nick;
+			local jid = o_data.jid;
+			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
+			stanza.attr.to, stanza.attr.from = jid, current_nick;
 			core_route_stanza(component, stanza);
 		else -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
