@@ -41,6 +41,29 @@ end
 
 local component;
 
+function filter_xmlns_from_array(array, filters)
+	local count = 0;
+	for i=#array,1,-1 do
+		local attr = array[i].attr;
+		if filters[attr and attr.xmlns] then
+			t_remove(array, i);
+			count = count + 1;
+		end
+	end
+	return count;
+end
+function filter_xmlns_from_stanza(stanza, filters)
+	if filters then
+		if filter_xmlns_from_array(stanza.tags, filters) ~= 0 then
+			return stanza, filter_xmlns_from_array(stanza, filters);
+		end
+	end
+	return stanza, 0;
+end
+local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
+function get_filtered_presence(stanza)
+	return filter_xmlns_from_stanza(st.deserialize(st.preserialize(stanza)), presence_filters);
+end
 function getUsingPath(stanza, path, getText)
 	local tag = stanza;
 	for _, name in ipairs(path) do
@@ -93,7 +116,10 @@ function set_subject(current_nick, room, subject)
 	if subject == "" then subject = nil; end
 	rooms_info:set(room, 'subject', subject);
 	save_room();
-	broadcast_message(current_nick, room, subject or "", nil);
+	local msg = st.message({type='groupchat', from=from})
+		:tag('subject'):text(subject):up();
+	broadcast_message_stanza(room, msg, false);
+	--broadcast_message(current_nick, room, subject or "", nil);
 	return true;
 end
 
@@ -144,6 +170,56 @@ function broadcast_message(from, room, subject, body)
 		end
 	end
 end
+function broadcast_message_stanza(room, stanza, historic)
+	local r = rooms:get(room);
+	if r then
+		for occupant, o_data in pairs(r) do
+			for jid in pairs(o_data.sessions) do
+				stanza.attr.to = jid;
+				core_route_stanza(component, stanza);
+			end
+		end
+		if historic then -- add to history
+			local history = rooms_info:get(room, 'history');
+			if not history then history = {}; rooms_info:set(room, 'history', history); end
+			-- stanza = st.deserialize(st.preserialize(stanza));
+			stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
+			stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+			t_insert(history, st.preserialize(stanza));
+			while #history > history_length do t_remove(history, 1) end
+		end
+	end
+end
+function broadcast_presence_stanza(room, stanza, code, nick)
+	stanza = get_filtered_presence(stanza);
+	local data = rooms:get(room, stanza.attr.from);
+	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+		:tag("item", {affiliation=data.affiliation, role=data.role, nick=nick}):up();
+	if code then
+		stanza:tag("status", {code=code}):up();
+	end
+	local me;
+	local r = rooms:get(room);
+	if r then
+		for occupant, o_data in pairs(r) do
+			if occupant ~= stanza.attr.from then
+				for jid in pairs(o_data.sessions) do
+					stanza.attr.to = jid;
+					core_route_stanza(component, stanza);
+				end
+			else
+				me = o_data;
+			end
+		end
+	end
+	if me then
+		stanza:tag("status", {code='110'});
+		for jid in pairs(me.sessions) do
+			stanza.attr.to = jid;
+			core_route_stanza(component, stanza);
+		end
+	end
+end
 
 function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -151,24 +227,34 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local current_nick = jid_nick:get(from, room);
 	local type = stanza.attr.type;
 	if stanza.name == "presence" then
+		local pr = get_filtered_presence(stanza);
+		pr.attr.from = to;
 		if type == "error" then -- error, kick em out!
-			local data = rooms:get(room, to);
-			data.role = 'none';
-			broadcast_presence('unavailable', to, room); -- TODO also add <status>This participant is kicked from the room because he sent an error presence: badformed error stanza</status>
-			rooms:remove(room, to);
-			jid_nick:remove(from, room);
-		elseif type == "unavailable" then -- unavailable
-			if current_nick == to then
+			if current_nick then
 				local data = rooms:get(room, to);
 				data.role = 'none';
-				broadcast_presence('unavailable', to, room);
+				local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error presence'):up()
+					:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+					:tag("item", {affiliation=data.affiliation, role=data.role}):up();
+				broadcast_presence_stanza(room, pr);
+				--broadcast_presence('unavailable', to, room); -- TODO also add <status>This participant is kicked from the room because he sent an error presence: badformed error stanza</status>
 				rooms:remove(room, to);
 				jid_nick:remove(from, room);
-			end -- TODO else do nothing?
+			end
+		elseif type == "unavailable" then -- unavailable
+			if current_nick then
+				local data = rooms:get(room, to);
+				data.role = 'none';
+				broadcast_presence_stanza(room, pr);
+				--broadcast_presence('unavailable', to, room);
+				rooms:remove(room, to);
+				jid_nick:remove(from, room);
+			end
 		elseif not type then -- available
 			if current_nick then
 				if current_nick == to then -- simple presence
-					-- TODO broadcast
+					broadcast_presence_stanza(room, pr);
+					-- FIXME check if something was filtered. if it was, then user may be rejoining
 				else -- change nick
 					if rooms:get(room, to) then
 						origin.send(st.error_reply(stanza, "cancel", "conflict"));
@@ -176,26 +262,36 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						local data = rooms:get(room, current_nick);
 						local to_nick = select(3, jid_split(to));
 						if to_nick then
-							broadcast_presence('unavailable', current_nick, room, '303', to_nick);
+							local p = st.presence({type='unavailable', from=current_nick});
+								--[[:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+									:tag('item', {affiliation=data.affiliation, role=data.role, nick=to_nick}):up()
+									:tag('status', {code='303'});]]
+							broadcast_presence_stanza(room, p, '303', to_nick);
+							--broadcast_presence('unavailable', current_nick, room, '303', to_nick);
 							rooms:remove(room, current_nick);
 							rooms:set(room, to, data);
 							jid_nick:set(from, room, to);
-							broadcast_presence(nil, to, room, nil);
+							broadcast_presence_stanza(room, pr);
+							--broadcast_presence(nil, to, room, nil);
 						else
-							--TODO: malformed-jid
+							--TODO malformed-jid
 						end
 					end
 				end
 			else -- enter room
+				local new_nick = to;
 				if rooms:get(room, to) then
+					new_nick = nil;
+				end
+				if not new_nick then
 					origin.send(st.error_reply(stanza, "cancel", "conflict"));
 				else
 					local data;
 					if not rooms:get(room) and not rooms_info:get(room) then -- new room
-						data = {affiliation='owner', role='moderator', jid=from};
+						data = {affiliation='owner', role='moderator', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 					end
 					if not data then -- new occupant
-						data = {affiliation='none', role='participant', jid=from};
+						data = {affiliation='none', role='participant', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 					end
 					rooms:set(room, to, data);
 					jid_nick:set(from, room, to);
@@ -203,14 +299,18 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					if r then
 						for occupant, o_data in pairs(r) do
 							if occupant ~= from then
-								local pres = st.presence({to=from, from=occupant})
+								local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
+								pres.attr.to, pres.attr.from = from, occupant;
+								pres
+								--local pres = st.presence({to=from, from=occupant})
 									:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 									:tag("item", {affiliation=o_data.affiliation, role=o_data.role}):up();
 								core_route_stanza(component, pres);
 							end
 						end
 					end
-					broadcast_presence(nil, to, room);
+					broadcast_presence_stanza(room, pr);
+					--broadcast_presence(nil, to, room);
 					local history = rooms_info:get(room, 'history'); -- send discussion history
 					if history then
 						for _, msg in ipairs(history) do
@@ -253,13 +353,25 @@ function handle_to_room(origin, stanza) -- presence changes and groupchat messag
 		if not current_nick then -- not in room
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 		else
+			local from = stanza.attr.from;
+			stanza.attr.from = current_nick;
 			local subject = getText(stanza, {"subject"});
 			if subject then
-				set_subject(current_nick, room, subject);
+				set_subject(current_nick, room, subject); -- TODO use broadcast_message_stanza
 			else
-				broadcast_message(current_nick, room, nil, getText(stanza, {"body"}));
-				-- TODO add to discussion history
+				--broadcast_message(current_nick, room, nil, getText(stanza, {"body"}));
+				broadcast_message_stanza(room, stanza, true);
 			end
+		end
+	elseif stanza.name == "presence" then -- hack - some buggy clients send presence updates to the room rather than their nick
+		local to = stanza.attr.to;
+		local current_nick = jid_nick:get(stanza.attr.from, to);
+		if current_nick then
+			stanza.attr.to = current_nick;
+			handle_to_occupant(origin, stanza);
+			stanza.attr.to = to;
+		else
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	else
 		if type == "error" or type == "result" then return; end
@@ -286,10 +398,7 @@ end
 
 register_component(muc_domain, function(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	if stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
-		if type == "error" or type == "result" then return; end
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME what's appropriate?
-	elseif to_resource and not to_node then
+	if to_resource and not to_node then
 		if type == "error" or type == "result" then return; end
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- host/resource
 	elseif to_resource then
