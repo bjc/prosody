@@ -21,8 +21,13 @@ end
 
 local verbosity = tonumber(arg[1]) or 2;
 
-package.path = package.path..";../?.lua";
-package.cpath = package.cpath..";../?.so";
+if os.getenv("WINDIR") then
+	package.path = package.path..";..\\?.lua";
+	package.cpath = package.cpath..";..\\?.dll";
+else
+	package.path = package.path..";../?.lua";
+	package.cpath = package.cpath..";../?.so";
+end
 
 require "util.import"
 
