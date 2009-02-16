@@ -327,11 +327,19 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type ~= 'result' then -- bad type
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
 		end
+	elseif not current_nick then -- not in room
+		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then
 		-- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-	else
-		origin.send(st.error_reply(stanza, "cancel", "not-implemented", "Private stanzas not implemented")); -- TODO route private stanza
+	else -- private stanza
+		local o_data = rooms:get(room, to);
+		if o_data then
+			stanza.attr.to, stanza.attr.from = o_data.jid, current_nick;
+			core_route_stanza(component, stanza);
+		else -- recipient not in room
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+		end
 	end
 end
 
