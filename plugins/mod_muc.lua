@@ -329,9 +329,19 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		end
 	elseif not current_nick then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
-	elseif stanza.name == "message" and type == "groupchat" then
-		-- groupchat messages not allowed in PM
+	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+	elseif stanza.name == "message" and type == "error" then
+		if current_nick then
+			local data = rooms:get(room, to);
+			data.role = 'none';
+			local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant'):up()
+				:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+				:tag("item", {affiliation=data.affiliation, role=data.role}):up();
+			broadcast_presence_stanza(room, pr);
+			rooms:remove(room, to);
+			jid_nick:remove(from, room);
+		end
 	else -- private stanza
 		local o_data = rooms:get(room, to);
 		if o_data then
