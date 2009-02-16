@@ -12,8 +12,10 @@ LUA_INCDIR="/usr/include"
 LUA_LIBDIR="/usr/lib"
 IDN_LIB=idn
 OPENSSL_LIB=crypto
+CC=gcc
+LD=gcc
 
-CFLAGS="-fPIC"
+CFLAGS="-fPIC -Wall"
 LFLAGS="-shared"
 
 # Help
@@ -45,6 +47,12 @@ Configure Prosody prior to building.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
                             Default is $CFLAGS
+--lflags=FLAGS              Flags to pass to the linker
+                            Default is $LFLAGS
+--c-compiler=CC             The C compiler to use when building modules.
+                            Default is $CC
+--linker=CC                 The linker to use when building modules.
+                            Default is $LD
 --require-config            Will cause Prosody to refuse to run when
                             it fails to find a configuration file
 EOF
@@ -105,6 +113,12 @@ do
    --cflags=*)
       CFLAGS="$value"
       ;;      
+   --c-compiler=*)
+      CC="$value"
+      ;;      
+   --linker=*)
+      LD="$value"
+      ;;      
    *)
       echo "Error: Unknown flag: $1"
       exit 1
@@ -126,7 +140,7 @@ then
 	LUA_INCDIR_SET=yes	
 	LUA_LIBDIR=/usr/local/lib
 	LUA_LIBDIR_SET=yes
-	CFLAGS=""
+	CFLAGS="-Wall"
 	LFLAGS="-bundle -undefined dynamic_lookup"
 	fi	
 fi
@@ -279,6 +293,8 @@ IDN_LIB=$IDN_LIB
 OPENSSL_LIB=$OPENSSL_LIB
 CFLAGS=$CFLAGS
 LFLAGS=$LFLAGS
+CC=$CC
+LD=$LD
 
 EOF
 
