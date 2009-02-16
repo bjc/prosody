@@ -298,7 +298,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					local r = rooms:get(room);
 					if r then
 						for occupant, o_data in pairs(r) do
-							if occupant ~= from then
+							if occupant ~= to then
 								local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
 								pres.attr.to, pres.attr.from = from, occupant;
 								pres
