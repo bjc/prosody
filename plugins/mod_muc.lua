@@ -226,11 +226,13 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local room = jid_bare(to);
 	local current_nick = jid_nick:get(from, room);
 	local type = stanza.attr.type;
+	log("debug", "room: %s, current_nick: %s, stanza: %s", room, current_nick, stanza:top_tag());
 	if stanza.name == "presence" then
 		local pr = get_filtered_presence(stanza);
 		pr.attr.from = to;
 		if type == "error" then -- error, kick em out!
 			if current_nick then
+				log("debug", "kicking %s from %s", current_nick, room);
 				local data = rooms:get(room, current_nick);
 				data.role = 'none';
 				local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error presence'):up()
@@ -243,6 +245,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
+				log("debug", "%s leaving %s", current_nick, room);
 				local data = rooms:get(room, current_nick);
 				data.role = 'none';
 				broadcast_presence_stanza(room, pr);
@@ -254,19 +257,23 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			if current_nick then
 				if current_nick == to then -- simple presence
 					if #pr == #stanza then
+						log("debug", "%s broadcasted presence", current_nick);
 						broadcast_presence_stanza(room, pr);
 					else -- possible rejoin
+						log("debug", "%s had connection replaced", current_nick);
 						local pr_ = st.presence({type='unavailable', from=from, to=current_nick}):tag('status'):text('Replaced by new connection');
 						handle_to_occupant(origin, pr_); -- send unavailable
 						handle_to_occupant(origin, pr); -- resend available
 					end
 				else -- change nick
 					if rooms:get(room, to) then
+						log("debug", "%s couldn't change nick", current_nick);
 						origin.send(st.error_reply(stanza, "cancel", "conflict"));
 					else
 						local data = rooms:get(room, current_nick);
 						local to_nick = select(3, jid_split(to));
 						if to_nick then
+							log("debug", "%s changing nick to %s", current_nick, to_nick);
 							local p = st.presence({type='unavailable', from=current_nick});
 								--[[:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 									:tag('item', {affiliation=data.affiliation, role=data.role, nick=to_nick}):up()
@@ -289,8 +296,10 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					new_nick = nil;
 				end
 				if not new_nick then
+					log("debug", "%s couldn't join due to nick conflict: %s", from, to);
 					origin.send(st.error_reply(stanza, "cancel", "conflict"));
 				else
+					log("debug", "%s joining as %s", from, to);
 					local data;
 					if not rooms:get(room) and not rooms_info:get(room) then -- new room
 						data = {affiliation='owner', role='moderator', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
@@ -338,6 +347,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	elseif stanza.name == "message" and type == "error" then
 		if current_nick then
+			log("debug", "%s kicked from %s for sending an error message", current_nick, room);
 			local data = rooms:get(room, to);
 			data.role = 'none';
 			local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant'):up()
@@ -350,6 +360,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	else -- private stanza
 		local o_data = rooms:get(room, to);
 		if o_data then
+			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
 			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
