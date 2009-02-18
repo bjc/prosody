@@ -116,7 +116,7 @@ function set_subject(current_nick, room, subject)
 	if subject == "" then subject = nil; end
 	rooms_info:set(room, 'subject', subject);
 	save_room();
-	local msg = st.message({type='groupchat', from=from})
+	local msg = st.message({type='groupchat', from=current_nick})
 		:tag('subject'):text(subject):up();
 	broadcast_message_stanza(room, msg, false);
 	--broadcast_message(current_nick, room, subject or "", nil);
@@ -231,30 +231,35 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		pr.attr.from = to;
 		if type == "error" then -- error, kick em out!
 			if current_nick then
-				local data = rooms:get(room, to);
+				local data = rooms:get(room, current_nick);
 				data.role = 'none';
 				local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error presence'):up()
-					:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-					:tag("item", {affiliation=data.affiliation, role=data.role}):up();
+					--:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+					--:tag("item", {affiliation=data.affiliation, role=data.role}):up();
 				broadcast_presence_stanza(room, pr);
-				--broadcast_presence('unavailable', to, room); -- TODO also add <status>This participant is kicked from the room because he sent an error presence: badformed error stanza</status>
-				rooms:remove(room, to);
+				--broadcast_presence('unavailable', current_nick, room); -- TODO also add <status>This participant is kicked from the room because he sent an error presence: badformed error stanza</status>
+				rooms:remove(room, current_nick);
 				jid_nick:remove(from, room);
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
-				local data = rooms:get(room, to);
+				local data = rooms:get(room, current_nick);
 				data.role = 'none';
 				broadcast_presence_stanza(room, pr);
-				--broadcast_presence('unavailable', to, room);
-				rooms:remove(room, to);
+				--broadcast_presence('unavailable', current_nick, room);
+				rooms:remove(room, current_nick);
 				jid_nick:remove(from, room);
 			end
 		elseif not type then -- available
 			if current_nick then
 				if current_nick == to then -- simple presence
-					broadcast_presence_stanza(room, pr);
-					-- FIXME check if something was filtered. if it was, then user may be rejoining
+					if #pr == #stanza then
+						broadcast_presence_stanza(room, pr);
+					else -- possible rejoin
+						local pr_ = st.presence({type='unavailable', from=from, to=current_nick}):tag('status'):text('Replaced by new connection');
+						handle_to_occupant(origin, pr_); -- send unavailable
+						handle_to_occupant(origin, pr); -- resend available
+					end
 				else -- change nick
 					if rooms:get(room, to) then
 						origin.send(st.error_reply(stanza, "cancel", "conflict"));
@@ -298,7 +303,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					local r = rooms:get(room);
 					if r then
 						for occupant, o_data in pairs(r) do
-							if occupant ~= from then
+							if occupant ~= to then
 								local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
 								pres.attr.to, pres.attr.from = from, occupant;
 								pres
