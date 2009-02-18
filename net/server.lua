@@ -369,7 +369,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
         bufferqueuelen = bufferqueuelen + 1
         bufferqueue[ bufferqueuelen ] = data
-        _writetimes[ handler ] = _writetimes[ handler ] or _currenttime
+        if handler then
+        	_writetimes[ handler ] = _writetimes[ handler ] or _currenttime
+        end
         return true
     end
     handler.write = write
@@ -470,7 +472,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
             fatalerror = true
             disconnect( handler, err )
-            handler.close( )
+            _ = handler and handler.close( )
             return false
         end
     end
