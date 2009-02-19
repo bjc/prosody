@@ -229,7 +229,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	log("debug", "room: %s, current_nick: %s, stanza: %s", room or "nil", current_nick or "nil", stanza:top_tag());
 	if stanza.name == "presence" then
 		local pr = get_filtered_presence(stanza);
-		pr.attr.from = to;
+		pr.attr.from = current_nick;
 		if type == "error" then -- error, kick em out!
 			if current_nick then
 				log("debug", "kicking %s from %s", current_nick, room);
@@ -246,6 +246,8 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
+--							log("debug", "rooms: %s", require "util.serialization".serialize(rooms.data));
+--							log("debug", "jid_nick: %s", require "util.serialization".serialize(jid_nick.data));
 				local data = rooms:get(room, current_nick);
 				data.role = 'none';
 				broadcast_presence_stanza(room, pr);
@@ -255,40 +257,47 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		elseif not type then -- available
 			if current_nick then
-				if current_nick == to then -- simple presence
-					if #pr == #stanza then
+				if #pr == #stanza then
+					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
+						rooms:get(room, current_nick).sessions[from] = pr;
 						broadcast_presence_stanza(room, pr);
-					else -- possible rejoin
-						log("debug", "%s had connection replaced", current_nick);
-						local pr_ = st.presence({type='unavailable', from=from, to=current_nick}):tag('status'):text('Replaced by new connection');
-						handle_to_occupant(origin, pr_); -- send unavailable
-						handle_to_occupant(origin, pr); -- resend available
-					end
-				else -- change nick
-					if rooms:get(room, to) then
-						log("debug", "%s couldn't change nick", current_nick);
-						origin.send(st.error_reply(stanza, "cancel", "conflict"));
-					else
-						local data = rooms:get(room, current_nick);
-						local to_nick = select(3, jid_split(to));
-						if to_nick then
-							log("debug", "%s changing nick to %s", current_nick, to_nick);
-							local p = st.presence({type='unavailable', from=current_nick});
-								--[[:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
-									:tag('item', {affiliation=data.affiliation, role=data.role, nick=to_nick}):up()
-									:tag('status', {code='303'});]]
-							broadcast_presence_stanza(room, p, '303', to_nick);
-							--broadcast_presence('unavailable', current_nick, room, '303', to_nick);
-							rooms:remove(room, current_nick);
-							rooms:set(room, to, data);
-							jid_nick:set(from, room, to);
-							broadcast_presence_stanza(room, pr);
-							--broadcast_presence(nil, to, room, nil);
+					else -- change nick
+						if rooms:get(room, to) then
+							log("debug", "%s couldn't change nick", current_nick);
+							origin.send(st.error_reply(stanza, "cancel", "conflict"));
 						else
-							--TODO malformed-jid
+							local data = rooms:get(room, current_nick);
+							local to_nick = select(3, jid_split(to));
+							if to_nick then
+								log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
+--								log("debug", "rooms: %s", require "util.serialization".serialize(rooms.data));
+--								log("debug", "jid_nick: %s", require "util.serialization".serialize(jid_nick.data));
+								local p = st.presence({type='unavailable', from=current_nick});
+									--[[:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+										:tag('item', {affiliation=data.affiliation, role=data.role, nick=to_nick}):up()
+										:tag('status', {code='303'});]]
+								broadcast_presence_stanza(room, p, '303', to_nick);
+								--broadcast_presence('unavailable', current_nick, room, '303', to_nick);
+								rooms:remove(room, current_nick);
+								rooms:set(room, to, data);
+								jid_nick:set(from, room, to);
+								pr.attr.from = to;
+								rooms:get(room, to).sessions[from] = pr;
+								broadcast_presence_stanza(room, pr);
+--								log("debug", "rooms: %s", require "util.serialization".serialize(rooms.data));
+--								log("debug", "jid_nick: %s", require "util.serialization".serialize(jid_nick.data));
+								--broadcast_presence(nil, to, room, nil);
+							else
+								--TODO malformed-jid
+							end
 						end
 					end
+				else -- possible rejoin
+					log("debug", "%s had connection replaced", current_nick);
+					local pr_ = st.presence({type='unavailable', from=from, to=current_nick}):tag('status'):text('Replaced by new connection');
+					handle_to_occupant(origin, pr_); -- send unavailable
+					handle_to_occupant(origin, stanza); -- resend available
 				end
 			else -- enter room
 				local new_nick = to;
@@ -323,6 +332,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							end
 						end
 					end
+					pr.attr.from = to;
 					broadcast_presence_stanza(room, pr);
 					--broadcast_presence(nil, to, room);
 					local history = rooms_info:get(room, 'history'); -- send discussion history
