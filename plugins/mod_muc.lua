@@ -258,7 +258,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		elseif not type then -- available
 			if current_nick then
-				if #pr == #stanza then
+				if #pr == #stanza or current_nick ~= to then
 					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
 						rooms:get(room, current_nick).sessions[from] = pr;
