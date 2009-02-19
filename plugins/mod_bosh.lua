@@ -32,6 +32,19 @@ local inactive_sessions = {}; -- Sessions which have no open requests
 local waiting_requests = {};
 function on_destroy_request(request)
 	waiting_requests[request] = nil;
+	local session = request.session;
+	if session then
+		local requests = session.requests;
+		for i,r in pairs(requests) do
+			if r == request then requests[i] = nil; break; end
+		end
+		
+		-- If this session now has no requests open, mark it as inactive
+		if #requests == 0 and session.bosh_max_inactive and not inactive_sessions[session] then
+			inactive_sessions[session] = os_time();
+			(session.log or log)("debug", "BOSH session marked as inactive at %d", inactive_sessions[session]);
+		end
+	end
 end
 
 function handle_request(method, body, request)
@@ -151,10 +164,6 @@ function stream_callbacks.streamopened(request, attr)
 				end
 			elseif s ~= "" then
 				log("debug", "Saved to send buffer because there are %d open requests", #r);
-				if session.bosh_max_inactive and not inactive_sessions[session] then
-					inactive_sessions[session] = os_time();
-					(session.log or log)("debug", "BOSH session marked as inactive at %d", inactive_sessions[session]);
-				end
 				-- Hmm, no requests are open :(
 				t_insert(session.send_buffer, tostring(s));
 				log("debug", "There are now %d things in the send_buffer", #session.send_buffer);
@@ -243,7 +252,6 @@ function on_timer()
 				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
 				sessions[session.sid]  = nil;
 				inactive_sessions[session] = nil;
-				session.bosh_max_inactive = nil; -- Stop us marking this session as active during destroy
 				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 			end
 		else
