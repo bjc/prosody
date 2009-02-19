@@ -62,7 +62,7 @@ function filter_xmlns_from_stanza(stanza, filters)
 end
 local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
 function get_filtered_presence(stanza)
-	return filter_xmlns_from_stanza(st.deserialize(st.preserialize(stanza)), presence_filters);
+	return filter_xmlns_from_stanza(st.clone(stanza), presence_filters);
 end
 function getUsingPath(stanza, path, getText)
 	local tag = stanza;
@@ -162,10 +162,10 @@ function broadcast_message(from, room, subject, body)
 		if not subject and body then -- add to history
 			local history = rooms_info:get(room, 'history');
 			if not history then history = {}; rooms_info:set(room, 'history', history); end
-			-- stanza = st.deserialize(st.preserialize(stanza));
+			-- stanza = st.clone(stanza);
 			stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
 			stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-			t_insert(history, st.preserialize(stanza));
+			t_insert(history, st.clone(st.preserialize(stanza)));
 			while #history > history_length do t_remove(history, 1) end
 		end
 	end
@@ -182,10 +182,10 @@ function broadcast_message_stanza(room, stanza, historic)
 		if historic then -- add to history
 			local history = rooms_info:get(room, 'history');
 			if not history then history = {}; rooms_info:set(room, 'history', history); end
-			-- stanza = st.deserialize(st.preserialize(stanza));
+			-- stanza = st.clone(stanza);
 			stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
 			stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-			t_insert(history, st.preserialize(stanza));
+			t_insert(history, st.clone(st.preserialize(stanza)));
 			while #history > history_length do t_remove(history, 1) end
 		end
 	end
