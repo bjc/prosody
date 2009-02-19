@@ -226,7 +226,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local room = jid_bare(to);
 	local current_nick = jid_nick:get(from, room);
 	local type = stanza.attr.type;
-	log("debug", "room: %s, current_nick: %s, stanza: %s", room, current_nick, stanza:top_tag());
+	log("debug", "room: %s, current_nick: %s, stanza: %s", room or "nil", current_nick or "nil", stanza:top_tag());
 	if stanza.name == "presence" then
 		local pr = get_filtered_presence(stanza);
 		pr.attr.from = to;
