@@ -186,12 +186,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if type == "error" then -- error, kick em out!
 			if current_nick then
 				log("debug", "kicking %s from %s", current_nick, room);
-				local data = rooms:get(room, current_nick);
-				data.role = 'none';
-				local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error presence'):up()
-				broadcast_presence_stanza(room, pr);
-				rooms:remove(room, current_nick);
-				jid_nick:remove(from, room);
+				handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('This participant is kicked from the room because he sent an error presence')); -- send unavailable
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
@@ -233,8 +228,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 				else -- possible rejoin
 					log("debug", "%s had connection replaced", current_nick);
-					local pr_ = st.presence({type='unavailable', from=from, to=current_nick}):tag('status'):text('Replaced by new connection');
-					handle_to_occupant(origin, pr_); -- send unavailable
+					handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection')); -- send unavailable
 					handle_to_occupant(origin, stanza); -- resend available
 				end
 			else -- enter room
@@ -291,17 +285,8 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	elseif stanza.name == "message" and type == "error" then
-		if current_nick then
-			log("debug", "%s kicked from %s for sending an error message", current_nick, room);
-			local data = rooms:get(room, to);
-			data.role = 'none';
-			local pr = st.presence({type='unavailable', from=current_nick}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant'):up()
-				:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag("item", {affiliation=data.affiliation, role=data.role}):up();
-			broadcast_presence_stanza(room, pr);
-			rooms:remove(room, to);
-			jid_nick:remove(from, room);
-		end
+		log("debug", "%s kicked from %s for sending an error message", current_nick, room);
+		handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	else -- private stanza
 		local o_data = rooms:get(room, to);
 		if o_data then
