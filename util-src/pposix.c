@@ -302,15 +302,15 @@ int lc_setuid(lua_State* L)
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
 int string2resource(const char *s) {
-	if (!strcmp(resource, "CORE")) return RLIMIT_CORE;
-	if (!strcmp(resource, "CPU")) return RLIMIT_CPU;
-	if (!strcmp(resource, "DATA")) return RLIMIT_DATA;
-	if (!strcmp(resource, "FSIZE")) return RLIMIT_FSIZE;
-	if (!strcmp(resource, "MEMLOCK")) return RLIMIT_MEMLOCK;
-	if (!strcmp(resource, "NOFILE")) return RLIMIT_NOFILE;
-	if (!strcmp(resource, "NPROC")) return RLIMIT_NPROC;
-	if (!strcmp(resource, "RSS")) return RLIMIT_RSS;
-	if (!strcmp(resource, "STACK")) return RLIMIT_STACK;
+	if (!strcmp(s, "CORE")) return RLIMIT_CORE;
+	if (!strcmp(s, "CPU")) return RLIMIT_CPU;
+	if (!strcmp(s, "DATA")) return RLIMIT_DATA;
+	if (!strcmp(s, "FSIZE")) return RLIMIT_FSIZE;
+	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
+	if (!strcmp(s, "NOFILE")) return RLIMIT_NOFILE;
+	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
+	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
+	if (!strcmp(s, "STACK")) return RLIMIT_STACK;
 	return -1;
 }
 
@@ -331,8 +331,8 @@ int lc_setrlimit(lua_State *L) {
 	
 	rid = string2resource(resource);
 	if (rid != -1) {
-		rlimit lim;
-		rlimit lim_current;
+		struct rlimit lim;
+		struct rlimit lim_current;
 		
 		if (softlimit < 0 || hardlimit < 0) {
 			if (getrlimit(rid, &lim_current)) {
@@ -342,7 +342,7 @@ int lc_setrlimit(lua_State *L) {
 			}
 		}
 		
-		if (softimit < 0) lim.rlim_cur = lim_current.rlim_cur;
+		if (softlimit < 0) lim.rlim_cur = lim_current.rlim_cur;
 			else lim.rlim_cur = softlimit;
 		if (hardlimit < 0) lim.rlim_max = lim_current.rlim_max;
 			else lim.rlim_max = hardlimit;
@@ -365,7 +365,7 @@ int lc_getrlimit(lua_State *L) {
 	int arguments = lua_gettop(L);
 	const char *resource = NULL;
 	int rid = -1;
-	rlimit lim;
+	struct rlimit lim;
 	
 	if (arguments != 1) {
 		lua_pushboolean(L, 0);
