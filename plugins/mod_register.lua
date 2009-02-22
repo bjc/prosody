@@ -44,7 +44,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				datamanager.store(session.username, session.host, "vcard", nil);
 				datamanager.store(session.username, session.host, "private", nil);
 				datamanager.store(session.username, session.host, "offline", nil);
-				local bare = session.username.."@"..session.host;
+				--local bare = session.username.."@"..session.host;
 				for jid, item in pairs(roster) do
 					if jid ~= "pending" then
 						if item.subscription == "both" or item.subscription == "to" then
