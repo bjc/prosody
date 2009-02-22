@@ -362,7 +362,34 @@ int lc_setrlimit(lua_State *L) {
 }
 
 int lc_getrlimit(lua_State *L) {
-	return 0;
+	int arguments = lua_gettop(L);
+	const char *resource = NULL;
+	int rid = -1;
+	rlimit lim;
+	
+	if (arguments != 1) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "I expect one argument only, the resource string.");
+		return 2;
+	}
+	
+	resource = luaL_checkstring(L, 1);
+	rid = string2resource(resource);
+	if (rid != -1) {
+		if (getrlimit(rid, &lim)) {
+			lua_pushboolean(L, 0);
+			lua_pushstring(L, "getrlimit() failed.");
+			return 2;
+		}
+	} else {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard.");
+		return 2;
+	}
+	lua_pushboolean(L, 1);
+	lua_pushnumber(L, lim.rlim_cur);
+	lua_pushnumber(L, lim.rlim_max);
+	return 3;
 }
 
 /* Register functions */
