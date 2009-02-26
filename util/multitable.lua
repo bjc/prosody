@@ -82,6 +82,53 @@ local function remove(self, ...)
 end
 
 
+local function s(t, n, results, _end, ...)
+	if t == nil then return; end
+	local k = select(n, ...);
+	if n == _end then
+		if k == nil then
+			for _, v in pairs(t) do
+				t_insert(results, v);
+			end
+		else
+			t_insert(results, t[k]);
+		end
+		return;
+	end
+	if k then
+		v = t[k];
+		if v then
+			s(v, n+1, results, _end, ...);
+		end
+	else
+		for _,b in pairs(t) do
+			s(b, n+1, results, _end, ...);
+		end
+	end
+end
+
+-- Search for keys, nil == wildcard
+local function search(self, ...)
+	local _end = select('#', ...);
+	for n = _end,1 do
+		if select(n, ...) then _end = n; break; end
+	end
+	local results = {};
+	s(self.data, 1, results, _end, ...);
+	return results;
+end
+
+-- Append results to an existing list
+local function search_add(self, results, ...)
+	if not results then results = {}; end
+	local _end = select('#', ...);
+	for n = _end,1 do
+		if select(n, ...) then _end = n; break; end
+	end
+	s(self.data, 1, results, _end, ...);
+	return results;
+end
+
 function new()
 	return {
 		data = {};
@@ -89,6 +136,8 @@ function new()
 		add = add;
 		set = set;
 		remove = remove;
+		search = search;
+		search_add = search_add;
 	};
 end
 
