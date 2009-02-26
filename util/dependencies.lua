@@ -9,7 +9,7 @@
 
 local fatal;
 
-local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil; end end
+local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
 
 local function missingdep(name, sources, msg)
 	print("");
@@ -51,19 +51,37 @@ if not ssl then
 	end
 end
 
-local encodings = softreq "util.encodings"
+local encodings, err = softreq "util.encodings"
 if not encodings then
-	missingdep("util.encodings", { ["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
+	if err:match("not found") then
+		missingdep("util.encodings", { ["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
 	 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
 	 			});
+	else
+		print "***********************************"
+		print("util/encodings couldn't be loaded. Check that you have a recent version of libidn");
+		print ""
+		print("The full error was:");
+		print(err)
+		print "***********************************"
+	end
 	fatal = true;
 end
 
-local encodings = softreq "util.hashes"
-if not encodings then
-	missingdep("util.hashes", { ["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
+local hashes, err = softreq "util.hashes"
+if not hashes then
+	if err:match("not found") then
+		missingdep("util.hashes", { ["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
 	 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
 	 			});
+ 	else
+		print "***********************************"
+		print("util/hashes couldn't be loaded. Check that you have a recent version of OpenSSL (libcrypto in particular)");
+		print ""
+		print("The full error was:");
+		print(err)
+		print "***********************************"
+	end
 	fatal = true;
 end
 
