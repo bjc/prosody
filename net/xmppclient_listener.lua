@@ -29,9 +29,10 @@ local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
+		session.log("debug", "Invalid opening stream header");
 		session:close("invalid-namespace");
-	else
-		session.log("debug", "Client XML parse error: %s", tostring(error));
+	elseif session.close then
+		(session.log or log)("debug", "Client XML parse error: %s", tostring(error));
 		session:close("xml-not-well-formed");
 	end
 end
