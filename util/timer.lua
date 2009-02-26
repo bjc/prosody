@@ -10,7 +10,8 @@
 local ns_addtimer = require "net.server".addtimer;
 local get_time = os.time;
 local t_insert = table.insert;
-local ipairs = ipairs;
+local t_remove = table.remove;
+local ipairs, pairs = ipairs, pairs;
 local type = type;
 
 local data = {};
@@ -30,14 +31,19 @@ add_task = _add_task;
 
 ns_addtimer(function()
 	local current_time = get_time();
-	for _, d in ipairs(new_data) do
-		t_insert(data, d);
+	if #new_data > 0 then
+		for _, d in ipairs(new_data) do
+			t_insert(data, d);
+		end
+		new_data = {};
+	elseif #data == 0 then
+		return;
 	end
-	new_data = {};
-	for i = #data,1 do
-		local t, func = data[i][1], data[i][2];
+	
+	for i, d in pairs(data) do
+		local t, func = d[1], d[2];
 		if t <= current_time then
-			data[i] = nil;
+			t_remove(data, i);
 			local r = func();
 			if type(r) == "number" then _add_task(r, func); end
 		end
