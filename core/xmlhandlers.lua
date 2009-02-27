@@ -122,7 +122,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				end
 			end
 			if stanza then
-				if stanza and #chardata > 0 then
+				if #chardata > 0 then
 					-- We have some character data in the buffer
 					stanza:text(t_concat(chardata));
 					chardata = {};
