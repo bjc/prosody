@@ -7,14 +7,14 @@
 -- COPYING file in the source package for more information.
 --
 
--- Config here --
+-- Will be modified by configure script if run --
 
 CFG_SOURCEDIR=nil;
 CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=nil;
 CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
--- -- -- -- -- --
+-- -- -- -- -- -- -- ---- -- -- -- -- -- -- -- --
 
 if CFG_SOURCEDIR then
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
@@ -84,7 +84,9 @@ require "core.usermanager"
 require "core.sessionmanager"
 require "core.stanza_router"
 
---[[
+-- Commented to protect us from 
+-- the second kind of people
+--[[ 
 pcall(require, "remdebug.engine");
 if remdebug then remdebug.engine.start() end
 ]]
@@ -103,6 +105,7 @@ local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
 
 ----------- End of out-of-place code --------------
+
 
 eventmanager.fire_event("server-starting");
 
@@ -148,4 +151,13 @@ end
 
 eventmanager.fire_event("server-started");
 
-server.loop();
+local quitting;
+while not quitting do
+	xpcall(server.loop, function (err)
+					if err:match("%d*: interrupted!$") then
+						quitting = true;
+						return;
+					end
+					eventmanager.fire_event("very-bad-error", "*", err, debug.traceback("", 2));
+				end);
+end
