@@ -480,16 +480,19 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     if sslctx then    -- ssl?
         ssl = true
         local wrote
+        local read
         local handshake = coroutine_wrap( function( client )    -- create handshake coroutine
                 local err
                 for i = 1, 10 do    -- 10 handshake attemps
+                    _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
+                    _readlistlen = ( read and removesocket( _readlist, socket, _readlistlen ) ) or _readlistlen
+                    read, wrote = nil, nil
                     _, err = client:dohandshake( )
                     if not err then
                         --out_put( "server.lua: ssl handshake done" )
-                        _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
-                        --return dispatch( handler )
+                        -- return dispatch( handler )
                         return true
                     else
                         out_put( "server.lua: error during ssl handshake: ", err )
@@ -497,6 +500,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                             _sendlistlen = _sendlistlen + 1
                             _sendlist[ _sendlistlen ] = client
                             wrote = true
+                        elseif err == "wantread" and not read then
+                                _readlistlen = _readlistlen + 1
+                                _readlist [ _readlistlen ] = client
+                                read = true
                         end
                         --coroutine_yield( handler, nil, err )    -- handshake not finished
                         coroutine_yield( )
@@ -558,8 +565,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 handler.starttls = nil
                 needtls = nil
 
-                handler.receivedata = handler.handshake
-                handler.dispatchdata = handler.handshake
+                handler.readbuffer = handshake
+                handler.sendbuffer = handshake
                 handshake( socket )    -- do handshake
             end
             handler.readbuffer = _readbuffer
