@@ -217,6 +217,9 @@ function core_route_stanza(origin, stanza)
 								session.send(stanza);
 							end
 						end
+					elseif resource and stanza.attr.type == 'groupchat' then
+						-- Groupchat message sent to offline resource
+						origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 					else
 						local priority = 0;
 						local recipients = {};
@@ -263,6 +266,10 @@ function core_route_stanza(origin, stanza)
 					if stanza.attr.type == "chat" or stanza.attr.type == "normal" or not stanza.attr.type then
 						offlinemanager.store(node, host, stanza);
 						-- FIXME don't store messages with only chat state notifications
+					elseif stanza.attr.type == "groupchat" then
+						local reply = st.error_reply(stanza, "cancel", "service-unavailable");
+						reply.attr.from = to;
+						origin.send(reply);
 					end
 					-- TODO allow configuration of offline storage
 					-- TODO send error if not storing offline
