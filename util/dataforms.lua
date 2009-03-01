@@ -45,6 +45,7 @@ function form_t.form(layout, data)
 		-- Jump back up to list of fields
 		form:up();
 	end
+	return form;
 end
 
 function form_t.data(layout, stanza)
