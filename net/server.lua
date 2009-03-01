@@ -489,7 +489,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                     read, wrote = nil, nil
                     _, err = client:dohandshake( )
                     if not err then
-                        --out_put( "server.lua: ssl handshake done" )
+                        out_put( "server.lua: ssl handshake done" )
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
                         -- return dispatch( handler )
@@ -504,12 +504,14 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                                 _readlistlen = _readlistlen + 1
                                 _readlist [ _readlistlen ] = client
                                 read = true
+                        else
+                        	break;
                         end
                         --coroutine_yield( handler, nil, err )    -- handshake not finished
                         coroutine_yield( )
                     end
                 end
-                disconnect( handler, "max handshake attemps exceeded" )
+                disconnect( handler, "ssl handshake failed" )
                 handler.close( true )    -- forced disconnect
                 return false    -- handshake failed
             end
