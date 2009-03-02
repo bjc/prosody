@@ -158,6 +158,14 @@ while not quitting do
 						quitting = true;
 						return;
 					end
-					eventmanager.fire_event("very-bad-error", "*", err, debug.traceback("", 2));
+
+					log("error", "Top-level error, please report:\n%s", tostring(err));
+
+					local traceback = debug.traceback("", 2);
+					if traceback then
+						log("error", "%s", traceback);
+					end
+					
+					eventmanager.fire_event("very-bad-error", "*", err, traceback);
 				end);
 end
