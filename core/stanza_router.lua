@@ -273,7 +273,7 @@ function core_route_stanza(origin, stanza)
 					end
 					-- TODO allow configuration of offline storage
 					-- TODO send error if not storing offline
-				elseif stanza.name == "iq" then
+				elseif stanza.name == "iq" and (stanza.attr.type == "get" or stanza.attr.type == "set") then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
 			else -- user does not exist
@@ -284,7 +284,7 @@ function core_route_stanza(origin, stanza)
 						origin.send(st.presence({from = to_bare, to = from_bare, type = "unsubscribed"}));
 					end
 					-- else ignore
-				else
+				elseif stanza.attr.type ~= "error" and (stanza.name ~= "iq" or stanza.attr.type ~= "result") then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
 			end
