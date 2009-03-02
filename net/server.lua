@@ -438,7 +438,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             --out_put( "server.lua: read data '", buffer, "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
-            out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
+            out_put( "server.lua: client ", ip, ":", tostring(clientport), " error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
 	    _ = handler and handler.close( )
