@@ -186,5 +186,41 @@ function core_process_stanza(core_process_stanza)
 	runtest(test_iq_to_remote_server, "iq to a remote server's JID are routed");
 	runtest(test_iq_to_local_bare, "iq from a local user to a local user's bare JID are handled");
 	runtest(test_iq_error_to_local_user, "iq type=error to a local user's JID are routed");
+end
 
+function core_route_stanza(core_route_stanza)
+	local s2sout_session = { to_host = "remotehost", from_host = "localhost", type = "s2sout" }
+	local s2sin_session = { from_host = "remotehost", to_host = "localhost", type = "s2sin", hosts = { ["remotehost"] = { authed = true } } }
+	local local_host_session = { host = "localhost", type = "local", s2sout = { ["remotehost"] = s2sout_session }, sessions = {} }
+	local local_user_session = { username = "user", host = "localhost", resource = "resource", full_jid = "user@localhost/resource", type = "c2s" }
+	local hosts = {
+			["localhost"] = local_host_session;
+			}
+
+	local function test_iq_result_to_offline_user()
+		local env = testlib_new_env();
+		local msg = stanza.stanza("iq", { to = "user@localhost/foo", from = "user@localhost", type = "result" }):tag("ping", { xmlns = "urn:xmpp:ping:0" });
+		local msg2 = stanza.stanza("iq", { to = "user@localhost/foo", from = "user@localhost", type = "error" }):tag("ping", { xmlns = "urn:xmpp:ping:0" });
+		--package.loaded["core.usermanager"] = { user_exists = function (user, host) print("RAR!") return true or user == "user" and host == "localhost" and true; end };
+		local target_handled, target_replied;
+		
+		function env.core_handle_stanza(p_origin, p_stanza)
+			target_handled = true;
+		end
+		
+		function local_user_session.send(data)
+			--print("Replying with: ", tostring(data));
+			--print(debug.traceback())
+			target_replied = true;
+		end
+
+		env.hosts = hosts;
+		setfenv(core_route_stanza, env);
+		assert_equal(core_route_stanza(local_user_session, msg), nil, "core_route_stanza returned incorrect value");
+		assert_equal(target_handled, nil, "stanza was handled and not dropped");
+		assert_equal(target_replied, nil, "stanza was replied to and not dropped");
+		package.loaded["core.usermanager"] = nil;
+	end
+
+	runtest(test_iq_result_to_offline_user, "iq type=result|error to an offline user are not replied to");
 end
