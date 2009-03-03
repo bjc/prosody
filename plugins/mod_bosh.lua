@@ -22,6 +22,8 @@ local BOSH_DEFAULT_POLLING = tonumber(config.get("*", "core", "bosh_max_polling"
 local BOSH_DEFAULT_REQUESTS = tonumber(config.get("*", "core", "bosh_max_requests")) or 2;
 local BOSH_DEFAULT_MAXPAUSE = tonumber(config.get("*", "core", "bosh_max_pause")) or 300;
 
+local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
+
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
 
@@ -100,7 +102,7 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
-local session_close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" });
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }) };
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	session_close_reply.attr.condition = reason;
@@ -124,7 +126,7 @@ function stream_callbacks.streamopened(request, attr)
 		if not hosts[attr.to] then
 			-- Unknown host
 			session_close_reply.attr.condition = "host-unknown";
-			request:send(tostring(session_close_reply));
+			request:send{ headers = default_headers, body = tostring(session_close_reply) };
 			request.notopen = nil
 			return;
 		end
@@ -137,7 +139,7 @@ function stream_callbacks.streamopened(request, attr)
 		sessions[sid] = session;
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 		local r, send_buffer = session.requests, session.send_buffer;
-		local response = { }
+		local response = { headers = default_headers }
 		function session.send(s)
 			log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
@@ -179,7 +181,7 @@ function stream_callbacks.streamopened(request, attr)
 									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120", 
 									sid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
 									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
-		request:send(tostring(response));
+		request:send{ headers = default_headers, body = tostring(response) };
 				
 		request.sid = sid;
 		return;
@@ -189,7 +191,7 @@ function stream_callbacks.streamopened(request, attr)
 	if not session then
 		-- Unknown sid
 		log("info", "Client tried to use sid '%s' which we don't know about", sid);
-		request:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
+		request:send{ headers = default_headers, body = tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })) };
 		request.notopen = nil;
 		return;
 	end
