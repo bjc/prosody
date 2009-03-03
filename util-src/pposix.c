@@ -1,7 +1,7 @@
 /* Prosody IM v0.3
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
--- Copyright 2009 Tobias Markmann
+-- Copyright (C) 2009 Tobias Markmann
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
