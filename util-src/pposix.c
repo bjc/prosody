@@ -1,6 +1,7 @@
 /* Prosody IM v0.3
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright 2009 Tobias Markmann
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -17,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -289,6 +291,107 @@ int lc_setuid(lua_State* L)
 	return 2;
 }
 
+/*	Like POSIX's setrlimit()/getrlimit() API functions.
+ *	
+ *	Syntax:
+ *	pposix.setrlimit( resource, soft limit, hard limit)
+ *	
+ *	Any negative limit will be replace with the current limit by an additional call of getrlimit().
+ *	
+ *	Example usage:
+ *	pposix.setrlimit("NOFILE", 1000, 2000)
+ */
+int string2resource(const char *s) {
+	if (!strcmp(s, "CORE")) return RLIMIT_CORE;
+	if (!strcmp(s, "CPU")) return RLIMIT_CPU;
+	if (!strcmp(s, "DATA")) return RLIMIT_DATA;
+	if (!strcmp(s, "FSIZE")) return RLIMIT_FSIZE;
+	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
+	if (!strcmp(s, "NOFILE")) return RLIMIT_NOFILE;
+	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
+	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
+	if (!strcmp(s, "STACK")) return RLIMIT_STACK;
+	return -1;
+}
+
+int lc_setrlimit(lua_State *L) {
+	int arguments = lua_gettop(L);
+	int softlimit = -1;
+	int hardlimit = -1;
+	const char *resource = NULL;
+	int rid = -1;
+	if(arguments < 1 || arguments > 3) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "Wrong number of arguments");
+	}
+	
+	resource = luaL_checkstring(L, 1);
+	softlimit = luaL_checkinteger(L, 2);
+	hardlimit = luaL_checkinteger(L, 3);
+	
+	rid = string2resource(resource);
+	if (rid != -1) {
+		struct rlimit lim;
+		struct rlimit lim_current;
+		
+		if (softlimit < 0 || hardlimit < 0) {
+			if (getrlimit(rid, &lim_current)) {
+				lua_pushboolean(L, 0);
+				lua_pushstring(L, "getrlimit() failed.");
+				return 2;
+			}
+		}
+		
+		if (softlimit < 0) lim.rlim_cur = lim_current.rlim_cur;
+			else lim.rlim_cur = softlimit;
+		if (hardlimit < 0) lim.rlim_max = lim_current.rlim_max;
+			else lim.rlim_max = hardlimit;
+		
+		if (setrlimit(rid, &lim)) {
+			lua_pushboolean(L, 0);
+			lua_pushstring(L, "setrlimit() failed.");
+			return 2;
+		}
+	} else {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard.");
+		return 2;
+	}
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+int lc_getrlimit(lua_State *L) {
+	int arguments = lua_gettop(L);
+	const char *resource = NULL;
+	int rid = -1;
+	struct rlimit lim;
+	
+	if (arguments != 1) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "I expect one argument only, the resource string.");
+		return 2;
+	}
+	
+	resource = luaL_checkstring(L, 1);
+	rid = string2resource(resource);
+	if (rid != -1) {
+		if (getrlimit(rid, &lim)) {
+			lua_pushboolean(L, 0);
+			lua_pushstring(L, "getrlimit() failed.");
+			return 2;
+		}
+	} else {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard.");
+		return 2;
+	}
+	lua_pushboolean(L, 1);
+	lua_pushnumber(L, lim.rlim_cur);
+	lua_pushnumber(L, lim.rlim_max);
+	return 3;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -318,6 +421,12 @@ int luaopen_util_pposix(lua_State *L)
 
 	lua_pushcfunction(L, lc_setuid);
 	lua_setfield(L, -2, "setuid");
+	
+	lua_pushcfunction(L, lc_setrlimit);
+	lua_setfield(L, -2, "setrlimit");
+	
+	lua_pushcfunction(L, lc_getrlimit);
+	lua_setfield(L, -2, "getrlimit");
 
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
