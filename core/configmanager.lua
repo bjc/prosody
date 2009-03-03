@@ -9,8 +9,8 @@
 
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile = 
-		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile;
+local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type = 
+		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type;
 
 module "configmanager"
 
@@ -117,10 +117,12 @@ do
 		
 		function env.Component(name)
 			return function (module)
-					set(name, "core", "component_module", module);
-					-- Don't load the global modules by default
-					set(name, "core", "modules_enable", false);
-					rawset(env, "__currenthost", name);
+					if type(module) == "string" then
+						set(name, "core", "component_module", module);
+						-- Don't load the global modules by default
+						set(name, "core", "modules_enable", false);
+						rawset(env, "__currenthost", name);
+					end
 				end
 		end
 		env.component = env.Component;
