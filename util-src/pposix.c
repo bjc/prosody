@@ -322,7 +322,7 @@ int lc_setrlimit(lua_State *L) {
 	int rid = -1;
 	if(arguments < 1 || arguments > 3) {
 		lua_pushboolean(L, 0);
-		lua_pushstring(L, "Wrong number of arguments");
+		lua_pushstring(L, "incorrect-arguments");
 	}
 	
 	resource = luaL_checkstring(L, 1);
@@ -337,7 +337,7 @@ int lc_setrlimit(lua_State *L) {
 		if (softlimit < 0 || hardlimit < 0) {
 			if (getrlimit(rid, &lim_current)) {
 				lua_pushboolean(L, 0);
-				lua_pushstring(L, "getrlimit() failed.");
+				lua_pushstring(L, "getrlimit-failed");
 				return 2;
 			}
 		}
@@ -349,12 +349,13 @@ int lc_setrlimit(lua_State *L) {
 		
 		if (setrlimit(rid, &lim)) {
 			lua_pushboolean(L, 0);
-			lua_pushstring(L, "setrlimit() failed.");
+			lua_pushstring(L, "setrlimit-failed");
 			return 2;
 		}
 	} else {
+		/* Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard. */
 		lua_pushboolean(L, 0);
-		lua_pushstring(L, "Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard.");
+		lua_pushstring(L, "invalid-resource");
 		return 2;
 	}
 	lua_pushboolean(L, 1);
@@ -369,7 +370,7 @@ int lc_getrlimit(lua_State *L) {
 	
 	if (arguments != 1) {
 		lua_pushboolean(L, 0);
-		lua_pushstring(L, "I expect one argument only, the resource string.");
+		lua_pushstring(L, "invalid-arguments");
 		return 2;
 	}
 	
@@ -378,12 +379,13 @@ int lc_getrlimit(lua_State *L) {
 	if (rid != -1) {
 		if (getrlimit(rid, &lim)) {
 			lua_pushboolean(L, 0);
-			lua_pushstring(L, "getrlimit() failed.");
+			lua_pushstring(L, "getrlimit-failed.");
 			return 2;
 		}
 	} else {
+		/* Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard. */
 		lua_pushboolean(L, 0);
-		lua_pushstring(L, "Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard.");
+		lua_pushstring(L, "invalid-resource");
 		return 2;
 	}
 	lua_pushboolean(L, 1);
