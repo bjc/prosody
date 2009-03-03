@@ -54,15 +54,21 @@ function handle_stanza(origin, stanza)
 	end
 end
 
-function register_component(host, component)
-	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
+function create_component(host, component)
 		-- TODO check for host well-formedness
+		session = session or { type = "component", host = host, connected = true, s2sout = {}, send = component };
+		return session;
+end
+
+function register_component(host, component, session)
+	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
 		components[host] = component;
-		hosts[host] = { type = "component", host = host, connected = true, s2sout = {} };
+		hosts[host] = session or create_component(host, component);
+		
 		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
 		modulemanager.load(host, "dialback");
 		log("debug", "component added: "..host);
-		return hosts[host];
+		return session or hosts[host];
 	else
 		log("error", "Attempt to set component for existing host: "..host);
 	end

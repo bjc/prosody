@@ -369,7 +369,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
         bufferqueuelen = bufferqueuelen + 1
         bufferqueue[ bufferqueuelen ] = data
-        _writetimes[ handler ] = _writetimes[ handler ] or _currenttime
+        if handler then
+        	_writetimes[ handler ] = _writetimes[ handler ] or _currenttime
+        end
         return true
     end
     handler.write = write
@@ -436,7 +438,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             --out_put( "server.lua: read data '", buffer, "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
-            out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
+            out_put( "server.lua: client ", ip, ":", tostring(clientport), " error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
 	    _ = handler and handler.close( )
@@ -470,7 +472,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
             fatalerror = true
             disconnect( handler, err )
-            handler.close( )
+            _ = handler and handler.close( )
             return false
         end
     end
@@ -478,16 +480,19 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     if sslctx then    -- ssl?
         ssl = true
         local wrote
+        local read
         local handshake = coroutine_wrap( function( client )    -- create handshake coroutine
                 local err
                 for i = 1, 10 do    -- 10 handshake attemps
+                    _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
+                    _readlistlen = ( read and removesocket( _readlist, socket, _readlistlen ) ) or _readlistlen
+                    read, wrote = nil, nil
                     _, err = client:dohandshake( )
                     if not err then
-                        --out_put( "server.lua: ssl handshake done" )
-                        _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
+                        out_put( "server.lua: ssl handshake done" )
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
-                        --return dispatch( handler )
+                        -- return dispatch( handler )
                         return true
                     else
                         out_put( "server.lua: error during ssl handshake: ", err )
@@ -495,12 +500,18 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                             _sendlistlen = _sendlistlen + 1
                             _sendlist[ _sendlistlen ] = client
                             wrote = true
+                        elseif err == "wantread" and not read then
+                                _readlistlen = _readlistlen + 1
+                                _readlist [ _readlistlen ] = client
+                                read = true
+                        else
+                        	break;
                         end
                         --coroutine_yield( handler, nil, err )    -- handshake not finished
                         coroutine_yield( )
                     end
                 end
-                disconnect( handler, "max handshake attemps exceeded" )
+                disconnect( handler, "ssl handshake failed" )
                 handler.close( true )    -- forced disconnect
                 return false    -- handshake failed
             end
@@ -556,8 +567,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 handler.starttls = nil
                 needtls = nil
 
-                handler.receivedata = handler.handshake
-                handler.dispatchdata = handler.handshake
+                handler.readbuffer = handshake
+                handler.sendbuffer = handshake
                 handshake( socket )    -- do handshake
             end
             handler.readbuffer = _readbuffer
