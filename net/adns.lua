@@ -1,5 +1,5 @@
 local server = require "net.server";
-local dns = require "net.dns2";
+local dns = require "net.dns";
 
 local log = require "util.logger".init("adns");
 
