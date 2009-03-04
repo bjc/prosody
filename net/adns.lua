@@ -36,3 +36,5 @@ function new_async_socket(sock)
 end
 
 dns:socket_wrapper_set(new_async_socket);
+
+return _M;
