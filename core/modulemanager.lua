@@ -212,6 +212,7 @@ function handle_stanza(host, origin, stanza)
 		end
 	end
 	local handlers = stanza_handlers:get(host, origin_type, name, xmlns);
+	if not handlers then handlers = stanza_handlers:get("*", origin_type, name, xmlns); end
 	if handlers then
 		log("debug", "Passing stanza to mod_%s", handler_info[handlers[1]].name);
 		(handlers[1])(origin, stanza);
