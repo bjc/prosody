@@ -81,7 +81,7 @@ local function handle_xmlrpc_request(method, args)
 	return create_error_response(0, result or "nil");
 end
 
---[[local function handle_xmpp_request(origin, stanza)
+local function handle_xmpp_request(origin, stanza)
 	local query = stanza.tags[1];
 	if query.name == "query" then
 		if #query.tags == 1 then
@@ -99,7 +99,8 @@ end
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	end
 end
-module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:rpc", handle_xmpp_request);]]
+module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:rpc", handle_xmpp_request);
+module:add_feature("jabber:iq:rpc");
 
 local function handle_http_request(method, body, request)
 	local stanza = body and parse_xml(body);
