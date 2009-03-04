@@ -300,6 +300,14 @@ addDiscoInfoHandler("*host", function(reply, to, from, node)
 				end
 			end
 		end
+		for module, features in pairs(features_table:get("*") or NULL) do -- for each module
+			for feature in pairs(features) do
+				if not done[feature] then
+					reply:tag("feature", {var = feature}):up(); -- TODO cache
+					done[feature] = true;
+				end
+			end
+		end
 		return next(done) ~= nil;
 	end
 end);
