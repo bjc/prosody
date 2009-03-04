@@ -102,6 +102,7 @@ end
 module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:rpc", handle_xmpp_request);
 module:add_feature("jabber:iq:rpc");
 
+local default_headers = { ["Content-Type"] = "text/xml" };
 local function handle_http_request(method, body, request)
 	local stanza = body and parse_xml(body);
 	if (not stanza) or request.method ~= "POST" then
@@ -109,8 +110,8 @@ local function handle_http_request(method, body, request)
 	end
 	local success, method, args = pcall(translate_request, stanza);
 	if success then
-		return tostring(handle_xmlrpc_request(method, args));
+		return { headers = default_headers; body = tostring(handle_xmlrpc_request(method, args)) };
 	end
-	return "<html><body>You really don't look like an XML-RPC client to me... what do you want?</body></html>";
+	return "<html><body>Error parsing XML-RPC request: "..tostring(method).."</body></html>";
 end
 httpserver.new{ port = 9000, base = "xmlrpc", handler = handle_http_request }
