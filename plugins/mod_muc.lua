@@ -71,6 +71,30 @@ local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabbe
 function get_filtered_presence(stanza)
 	return filter_xmlns_from_stanza(st.clone(stanza), presence_filters);
 end
+local kickable_error_conditions = {
+	["gone"] = true;
+	["internal-server-error"] = true;
+	["item-not-found"] = true;
+	["jid-malformed"] = true;
+	["recipient-unavailable"] = true;
+	["redirect"] = true;
+	["remote-server-not-found"] = true;
+	["remote-server-timeout"] = true;
+	["service-unavailable"] = true;
+};
+function get_kickable_error(stanza)
+	for _, tag in ipairs(stanza.tags) do
+		if tag.name == "error" and tag.attr.xmlns == "jabber:client" then
+			for _, cond in ipairs(tag.tags) do
+				if cond.attr.xmlns == "urn:ietf:params:xml:ns:xmpp-stanzas" then
+					return kickable_error_conditions[cond.name] and cond.name;
+				end
+			end
+			return true; -- malformed error message
+		end
+	end
+	return true; -- malformed error message
+end
 function getUsingPath(stanza, path, getText)
 	local tag = stanza;
 	for _, name in ipairs(path) do
@@ -291,7 +315,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-	elseif stanza.name == "message" and type == "error" then
+	elseif stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
 		log("debug", "%s kicked from %s for sending an error message", current_nick, room);
 		handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	else -- private stanza
@@ -302,7 +326,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
 			core_route_stanza(component, stanza);
-		else -- recipient not in room
+		elseif type ~= "error" and type ~= "result" then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 		end
 	end
@@ -342,7 +366,7 @@ function handle_to_room(origin, stanza) -- presence changes and groupchat messag
 			stanza.attr.to = current_nick;
 			handle_to_occupant(origin, stanza);
 			stanza.attr.to = to;
-		else
+		elseif type ~= "error" and type ~= "result" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	else
