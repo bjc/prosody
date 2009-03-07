@@ -12,6 +12,9 @@ local st = require "util.stanza";
 local t_concat = table.concat;
 
 module:add_feature("jabber:iq:auth");
+module:add_event_hook("stream-features", function (session, features)
+	if not session.username then features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up(); end
+end);
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:auth", 
 		function (session, stanza)
