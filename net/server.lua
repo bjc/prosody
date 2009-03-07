@@ -386,6 +386,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         pattern = new or pattern
         return pattern
     end
+    handler.setsend = function ( newsend )
+        send = newsend or send
+        return send
+    end
     handler.bufferlen = function( readlen, sendlen )
         maxsendlen = sendlen or maxsendlen
         maxreadlen = readlen or maxreadlen
