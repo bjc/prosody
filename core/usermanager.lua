@@ -11,8 +11,12 @@
 require "util.datamanager"
 local datamanager = datamanager;
 local log = require "util.logger".init("usermanager");
+local type = type;
 local error = error;
+local ipairs = ipairs;
 local hashes = require "util.hashes";
+local jid_bare = require "util.jid".bare;
+local config = require "core.configmanager";
 
 module "usermanager"
 
@@ -57,6 +61,17 @@ function get_supported_methods(host)
 	local methods = {["PLAIN"] = true}; -- TODO this should be taken from the config
 	methods["DIGEST-MD5"] = true;
 	return methods;
+end
+
+function is_admin(jid)
+	local admins = config.get("*", "core", "admins") or {};
+	if type(admins) == "table" then
+		jid = jid_bare(jid);
+		for _,admin in ipairs(admins) do
+			if admin == jid then return true; end
+		end
+	else log("debug", "Option core.admins is not a table"); end
+	return nil;
 end
 
 return _M;
