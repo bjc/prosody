@@ -18,7 +18,7 @@ local log_sources = config.get("*", "core", "log_sources");
 
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 local do_pretty_printing = not os.getenv("WINDIR");
-local find = require "string".find;
+local find = string.find;
 local ipairs = ipairs;
 
 module "logger"
@@ -41,8 +41,8 @@ function init(name)
 		local log_this = false;
 		for _, source in ipairs(log_sources) do
 			if find(name, source) then 
-				log_this = true
-				break
+				log_this = true;
+				break;
 			end
 		end
 		
