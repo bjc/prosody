@@ -60,11 +60,12 @@ local function parse_xml(xml)
 	return stanza.tags[1];
 end
 
-local function get_method(method)
+--[[local function get_method(method)
 	return function(...)
 		return {method = method; args = {...}};
 	end
-end
+end]]
+local get_method = require "core.objectmanager".get_object;
 
 local function handle_xmlrpc_request(method, args)
 	method = get_method(method);
