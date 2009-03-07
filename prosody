@@ -32,10 +32,6 @@ pcall(require, "luarocks.require")
 
 
 config = require "core.configmanager"
-log = require "util.logger".init("general");
-
--- Disable log output, needs to read from config
--- require "util.logger".setwriter(function () end);
 
 do
 	-- TODO: Check for other formats when we add support for them
@@ -62,6 +58,11 @@ do
 		os.exit(1);
 	end
 end
+
+log = require "util.logger".init("general");
+
+-- Disable log output, needs to read from config
+-- require "util.logger".setwriter(function () end);
 
 require "util.dependencies"
 
