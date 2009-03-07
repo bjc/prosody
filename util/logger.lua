@@ -13,8 +13,13 @@ local debug = debug;
 local tostring = tostring;
 local math_max = math.max;
 
+local config = require "core.configmanager";
+local log_sources = config.get("*", "core", "log_sources");
+
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 local do_pretty_printing = not os.getenv("WINDIR");
+local find = require "string".find;
+local ipairs = ipairs;
 
 module "logger"
 
@@ -32,6 +37,18 @@ local sourcewidth = 20;
 local outfunction = nil;
 
 function init(name)
+	if log_sources then
+		local log_this = false;
+		for _, source in ipairs(log_sources) do
+			if find(name, source) then 
+				log_this = true
+				break
+			end
+		end
+		
+		if not log_this then return function () end end
+	end
+	
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	local namelen = #name;
 	return 	function (level, message, ...)
