@@ -41,6 +41,9 @@ local map = {
 	number=function(stanza, object)
 		stanza:tag("int"):text(tostring(object)):up();
 	end;
+	["nil"]=function(stanza, object) -- nil extension
+		stanza:tag("nil"):up();
+	end;
 };
 _lua_to_xmlrpc = function(stanza, object)
 	local h = map[type(object)];
@@ -145,6 +148,9 @@ local rmap = {
 		local n = t_concat(stanza)
 		if tostring(tonumber(n)) == n then n = tonumber(n); end
 		return n;
+	end;
+	["nil"]=function(stanza) -- nil extension
+		return nil;
 	end;
 }
 _xmlrpc_to_lua = function(stanza)
