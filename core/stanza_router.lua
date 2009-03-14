@@ -51,10 +51,8 @@ function core_process_stanza(origin, stanza)
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
-	if stanza.name == "iq" and not(#stanza.tags == 1 and stanza.tags[1].attr.xmlns) then
+	if stanza.name == "iq" and #stanza.tags > 1 then
 		if stanza.attr.type == "set" or stanza.attr.type == "get" then
-			error("Invalid IQ");
-		elseif #stanza.tags > 1 and not(stanza.attr.type == "error" or stanza.attr.type == "result") then
 			error("Invalid IQ");
 		end
 	end
