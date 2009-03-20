@@ -1,4 +1,4 @@
--- sasl.lua v0.3
+-- sasl.lua v0.4
 -- Copyright (C) 2008-2009 Tobias Markmann
 -- 
 --    All rights reserved.
