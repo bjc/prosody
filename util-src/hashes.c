@@ -1,4 +1,4 @@
-/* Prosody IM v0.3
+/* Prosody IM v0.4
 -- Copyright (C) 2008 Matthew Wild
 -- Copyright (C) 2008 Waqas Hussain
 -- 
