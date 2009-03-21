@@ -25,7 +25,9 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = stanza;
 
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", 
+		default_ns = "jabber:client",
+		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
