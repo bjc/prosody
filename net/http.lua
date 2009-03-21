@@ -114,6 +114,14 @@ local function handleerr(err) log("error", "Traceback[http]: %s: %s", tostring(e
 function request(u, ex, callback)
 	local req = url.parse(u);
 	
+	if not (req and req.host) then
+		return nil, "invalid-url";
+	end
+	
+	if not req.path then
+		req.path = "/";
+	end
+	
 	local custom_headers, body;
 	local default_headers = { ["Host"] = req.host, ["User-Agent"] = "Prosody XMPP Server" }
 	
@@ -139,6 +147,7 @@ function request(u, ex, callback)
 	req.conn:settimeout(0);
 	local ok, err = req.conn:connect(req.host, req.port or 80);
 	if not ok and err ~= "timeout" then
+		callback(nil, 0, req);
 		return nil, err;
 	end
 	
