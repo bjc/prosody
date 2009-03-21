@@ -48,6 +48,7 @@ function init_xmlhandlers(session, stream_callbacks)
 		local cb_handlestanza = stream_callbacks.handlestanza;
 		
 		local stream_tag = stream_callbacks.stream_tag;
+		local stream_default_ns = stream_callbacks.default_ns;
 		
 		local stanza
 		function xml_handlers:StartElement(tagname, attr)
@@ -57,7 +58,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				chardata = {};
 			end
 			local curr_ns,name = tagname:match("^(.+)|([%w%-]+)$");
-			if curr_ns ~= "jabber:server" then
+			if curr_ns ~= stream_default_ns then
 				attr.xmlns = curr_ns;
 			end
 			
@@ -96,7 +97,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				curr_tag = stanza;
 			else -- we are inside a stanza, so add a tag
 				attr.xmlns = nil;
-				if curr_ns ~= "jabber:server" and curr_ns ~= "jabber:client" then
+				if curr_ns ~= stream_default_ns then
 					attr.xmlns = curr_ns;
 				end
 				stanza:tag(name, attr);
