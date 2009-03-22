@@ -214,4 +214,11 @@ end
 
 connlisteners.register('component', component_listener);
 
-module:add_event_hook("server-starting", function () connlisteners.start("component"); end);
+module:add_event_hook("server-started", 
+	function ()
+		if net_activate_ports then
+			net_activate_ports("component_ports", "component", {5437}, "tcp");
+		else
+			error("No net_activate_ports: Using an incompatible version of Prosody?");
+		end
+	end);
