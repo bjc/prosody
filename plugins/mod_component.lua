@@ -122,14 +122,6 @@ end
 
 module:add_handler("component", "handshake", xmlns_component, handle_component_auth);
 
---[[
--- Helper function to deal with errors processing component stanzas
-local function handleerr(err) log("error", "Traceback[component]: %s: %s", tostring(err), debug.traceback()); end
-function stream_callbacks.handlestanza(a, b)
-	xpcall(function () core_process_stanza(a, b) end, handleerr);
-end
-]]
-
 --- Closing a component connection
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local function session_close(session, reason)
