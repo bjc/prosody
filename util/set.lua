@@ -1,3 +1,5 @@
+local ipairs, pairs = 
+      ipairs, pairs;
 
 module "set"
 
@@ -5,38 +7,42 @@ function new(list)
 	local items = {};
 	local set = { items = items };
 	
-	function set:add(set, item)
+	function set:add(item)
 		items[item] = true;
 	end
 	
-	function set:contains(set, item)
-		return items[item]
+	function set:contains(item)
+		return items[item];
 	end
 	
-	function set:items(set)
+	function set:items()
 		return items;
 	end
 	
-	function set:remove(set, item)
+	function set:remove(item)
 		items[item] = nil;
 	end
 	
-	function set:add_list(set, list)
+	function set:add_list(list)
 		for _, item in ipairs(list) do
 			items[item] = true;
 		end
 	end
 	
-	function set:include(set, otherset)
+	function set:include(otherset)
 		for item in pairs(otherset) do
 			items[item] = true;
 		end
 	end
 
-	function set:exclude(set, otherset)
+	function set:exclude(otherset)
 		for item in pairs(otherset) do
 			items[item] = nil;
 		end
+	end
+	
+	if list then
+		set:add_list(list);
 	end
 	
 	return set;
