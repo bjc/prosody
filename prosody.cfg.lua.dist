@@ -1,7 +1,7 @@
 -- Prosody Example Configuration File 
 -- 
 -- If it wasn't already obvious, -- starts a comment, and all 
--- text after it is ignored by Prosody.
+-- text after it on a line is ignored by Prosody.
 --
 -- The config is split into sections, a global section, and one 
 -- for each defined host that we serve. You can add as many host 
@@ -17,10 +17,10 @@
 --
 -- logging = { type = "html", directory = "/var/logs", rotate = "daily" }
 --
--- Whitespace (that is tabs, spaces, line breaks) is insignificant, so can 
+-- Whitespace (that is tabs, spaces, line breaks) is mostly insignificant, so 
+-- can 
 -- be placed anywhere
--- that 	you deem fitting. Youcouldalsoremoveitentirely,butforobviousrea
---sonsIdon'trecommendit.
+-- that 	you deem fitting.
 --
 -- Tip: You can check that the syntax of this file is correct when you have finished
 -- by running: luac -p prosody.cfg.lua
