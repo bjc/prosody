@@ -102,7 +102,8 @@ function store(username, host, datastore, data)
 	f:write("return ");
 	append(f, data);
 	f:close();
-	if not next(data) then -- try to delete empty datastore
+	if next(data) == nil then -- try to delete empty datastore
+		log("debug", "Removing empty %s datastore for user %s@%s", datastore, username, host);
 		os_remove(getpath(username, host, datastore));
 	end
 	-- we write data even when we are deleting because lua doesn't have a
@@ -141,7 +142,8 @@ function list_store(username, host, datastore, data)
 		f:write(");\n");
 	end
 	f:close();
-	if not next(data) then -- try to delete empty datastore
+	if next(data) == nil then -- try to delete empty datastore
+		log("debug", "Removing empty %s datastore for user %s@%s", datastore, username, host);
 		os_remove(getpath(username, host, datastore, "list"));
 	end
 	-- we write data even when we are deleting because lua doesn't have a
