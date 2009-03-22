@@ -116,12 +116,14 @@ do
 		env.host = env.Host;
 		
 		function env.Component(name)
+			set(name, "core", "component_module", "component");
+			-- Don't load the global modules by default
+			set(name, "core", "modules_enable", false);
+			rawset(env, "__currenthost", name);
+	
 			return function (module)
 					if type(module) == "string" then
 						set(name, "core", "component_module", module);
-						-- Don't load the global modules by default
-						set(name, "core", "modules_enable", false);
-						rawset(env, "__currenthost", name);
 					end
 				end
 		end
