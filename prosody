@@ -111,17 +111,8 @@ require "util.datamanager".set_data_path(data_path);
 eventmanager.fire_event("server-starting");
 
 
--- setup error handling
-setmetatable(_G, { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end });
-
-local global_ssl_ctx = config.get("*", "core", "ssl");
-if global_ssl_ctx then
-	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
-	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
-end
-
 -- start listening on sockets
-local function do_ports(option, listener, default, conntype)
+function net_activate_ports(option, listener, default, conntype)
 	local ports = config.get("*", "core", option) or default;
 	if type(ports) == "number" then ports = {ports} end;
 	
@@ -138,9 +129,9 @@ local function do_ports(option, listener, default, conntype)
 	end
 end
 
-do_ports("c2s_ports", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
-do_ports("s2s_ports", "xmppserver", {5269}, "tcp");
-do_ports("legacy_ssl_ports", "xmppclient", {}, "ssl");
+net_activate_ports("c2s_ports", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
+net_activate_ports("s2s_ports", "xmppserver", {5269}, "tcp");
+net_activate_ports("legacy_ssl_ports", "xmppclient", {}, "ssl");
 
 if config.get("*", "core", "console_enabled") then
 	if cl.get("console") then
@@ -148,6 +139,15 @@ if config.get("*", "core", "console_enabled") then
 	else
 		log("error", "Console is enabled, but the console module appears not to be loaded");
 	end
+end
+
+-- setup error handling
+setmetatable(_G, { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end });
+
+local global_ssl_ctx = config.get("*", "core", "ssl");
+if global_ssl_ctx then
+	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
 end
 
 eventmanager.fire_event("server-started");
