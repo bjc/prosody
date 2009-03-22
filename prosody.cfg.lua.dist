@@ -36,20 +36,30 @@ Host "*"
 	-- This is the list of modules Prosody will load on startup.
 	-- It looks for mod_modulename.lua in the plugins folder, so make sure that exists too.
 	modules_enabled = {
-				"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
-				"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
+			-- Generally required
 				"roster"; -- Allow users to have a roster. Recommended ;)
-				"register"; -- Allow users to register on this server using a client
+				"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 				"tls"; -- Add support for secure TLS on c2s/s2s connections
-				"vcard"; -- Allow users to set vCards
-				"private"; -- Private XML storage (for room bookmarks, etc.)
-				"version"; -- Replies to server version requests
 				"dialback"; -- s2s dialback support
 			  	"disco"; -- Service discovery
-			  	"ping"; -- XMPP Ping
-			  	"time"; -- Let others know the time here
-			  	"uptime"; -- Uptime reporting
-			  	"console"; -- telnet to port 5582 (needs console_enabled = true)
+			
+			-- Not essential, but recommended
+				"private"; -- Private XML storage (for room bookmarks, etc.)
+				"vcard"; -- Allow users to set vCards
+			
+			-- Nice to have
+				"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
+				"version"; -- Replies to server version requests
+			  	"uptime"; -- Report how long server has been running
+			  	"time"; -- Let others know the time here on this server
+			  	"ping"; -- Replies to XMPP pings with pongs
+
+			-- Other specific functionality
+				--"register"; -- Allow users to register on this server using a client
+				--"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
+			  	--"console"; -- telnet to port 5582 (needs console_enabled = true)
+				--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+				--"httpserver"; -- Serve static files from a directory over HTTP
 			  };
 	
 	-- These are the SSL/TLS-related settings. If you don't want
@@ -75,3 +85,6 @@ Host "example.com"
 		}
 
 	enabled = false -- This will disable the host, preserving the config, but denying connections
+
+-- Set up a MUC (multi-user chat) room server on conference.example.com:
+Component "conference.example.com" "muc"
