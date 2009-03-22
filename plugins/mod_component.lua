@@ -23,7 +23,7 @@ local sessions = {};
 
 local log = module._log;
 
-local component_listener = { default_port = 5347; default_mode = "*a"; };
+local component_listener = { default_port = 5347; default_mode = "*a"; default_interface = config.get("*", "core", "component_interface") or "127.0.0.1" };
 
 local xmlns_component = 'jabber:component:accept';
 
