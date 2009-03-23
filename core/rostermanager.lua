@@ -15,6 +15,7 @@ local setmetatable = setmetatable;
 local format = string.format;
 local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 local pairs, ipairs = pairs, ipairs;
+local tostring = tostring;
 
 local hosts = hosts;
 
@@ -54,10 +55,11 @@ function remove_from_roster(session, jid)
 end
 
 function roster_push(username, host, jid)
-	if jid ~= "pending" and hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
+	local roster = jid and jid ~= "pending" and hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster;
+	if roster then
 		local item = hosts[host].sessions[username].roster[jid];
 		local stanza = st.iq({type="set"});
-		stanza:tag("query", {xmlns = "jabber:iq:roster"});
+		stanza:tag("query", {xmlns = "jabber:iq:roster", ver = tostring(roster[false].version or "1")  });
 		if item then
 			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name, ask = item.ask});
 			for group in pairs(item.groups) do
@@ -85,6 +87,7 @@ function load_roster(username, host)
 		if not roster then
 			log("debug", "load_roster: loading for new user: "..username.."@"..host);
 			roster = datamanager.load(username, host, "roster") or {};
+			if not roster[false] then roster[false] = { }; end
 			hosts[host].sessions[username].roster = roster;
 		end
 		return roster;
@@ -97,8 +100,11 @@ end
 function save_roster(username, host)
 	log("debug", "save_roster: saving roster for "..username.."@"..host);
 	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
+		local roster = hosts[host].sessions[username].roster;
+		roster[false].version = (roster[false].version or 1) + 1;
 		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
 	end
+	log("warn", "save_roster: user had no roster to save");
 	return nil;
 end
 

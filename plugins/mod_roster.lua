@@ -12,6 +12,7 @@ local st = require "util.stanza"
 
 local jid_split = require "util.jid".split;
 local t_concat = table.concat;
+local tostring = tostring;
 
 local handle_presence = require "core.presencemanager".handle_presence;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
@@ -27,19 +28,26 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 				if stanza.attr.type == "get" then
 					local roster = st.reply(stanza)
 								:query("jabber:iq:roster");
-					for jid in pairs(session.roster) do
-						if jid ~= "pending" then
-							roster:tag("item", {
-								jid = jid,
-								subscription = session.roster[jid].subscription,
-								ask = session.roster[jid].ask,
-								name = session.roster[jid].name,
-							});
-							for group in pairs(session.roster[jid].groups) do
-								roster:tag("group"):text(group):up();
+					
+					local ver = stanza.tags[1].attr.ver
+					
+					if (not ver) or tonumber(ver) ~= (session.roster[false].version or 1) then
+						-- Client does not support versioning, or has stale roster
+						for jid in pairs(session.roster) do
+							if jid ~= "pending" and jid then
+								roster:tag("item", {
+									jid = jid,
+									subscription = session.roster[jid].subscription,
+									ask = session.roster[jid].ask,
+									name = session.roster[jid].name,
+								});
+								for group in pairs(session.roster[jid].groups) do
+									roster:tag("group"):text(group):up();
+								end
+								roster:up(); -- move out from item
 							end
-							roster:up(); -- move out from item
 						end
+						roster.tags[1].attr.ver = tostring(session.roster[false].version or "1");
 					end
 					session.send(roster);
 					session.interested = true; -- resource is interested in roster updates
@@ -47,7 +55,8 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 				elseif stanza.attr.type == "set" then
 					local query = stanza.tags[1];
 					if #query.tags == 1 and query.tags[1].name == "item"
-							and query.tags[1].attr.xmlns == "jabber:iq:roster" and query.tags[1].attr.jid
+							and query.tags[1].attr.xmlns == "jabber:iq:roster" and query.tags[1].attr.jid 
+							-- Protection against overwriting roster.pending, until we move it
 							and query.tags[1].attr.jid ~= "pending" then
 						local item = query.tags[1];
 						local from_node, from_host = jid_split(stanza.attr.from);
