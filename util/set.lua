@@ -5,7 +5,7 @@ module "set"
 
 function new(list)
 	local items = {};
-	local set = { items = items };
+	local set = { _items = items };
 	
 	function set:add(item)
 		items[item] = true;
@@ -50,13 +50,13 @@ end
 
 function union(set1, set2)
 	local set = new();
-	local items = set.items;
+	local items = set._items;
 	
-	for item in pairs(set1.items) do
+	for item in pairs(set1._items) do
 		items[item] = true;
 	end
 
-	for item in pairs(set2.items) do
+	for item in pairs(set2._items) do
 		items[item] = true;
 	end
 	
@@ -65,14 +65,23 @@ end
 
 function difference(set1, set2)
 	local set = new();
-	local items = set.items;
+	local items = set._items;
 	
-	for item in pairs(set1.items) do
-		items[item] = true;
+	for item in pairs(set1._items) do
+		items[item] = (not set2._items[item]) or nil;
 	end
 
-	for item in pairs(set2.items) do
-		items[item] = nil;
+	return set;
+end
+
+function intersection(set1, set2)
+	local set = new();
+	local items = set._items;
+	
+	set1, set2 = set1._items, set2._items;
+	
+	for item in pairs(set1) do
+		items[item] = (not not set2[item]) or nil;
 	end
 	
 	return set;
