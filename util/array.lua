@@ -1,11 +1,13 @@
-local array_methods = {};
-local array_mt = { __index = array_methods, __tostring = function (array) return array:concat(", "); end };
+local array = {};
 
-local function array(t)
+local array_mt = { __index = array, __tostring = function (array) return array:concat(", "); end };
+local function new_array(_, t)
 	return setmetatable(t or {}, array_mt);
 end
 
-function array_methods:map(func, t2)
+setmetatable(array, { __call = new_array });
+
+function array:map(func, t2)
 	local t2 = t2 or array{};
 	for k,v in ipairs(self) do
 		t2[k] = func(v);
@@ -13,7 +15,7 @@ function array_methods:map(func, t2)
 	return t2;
 end
 
-function array_methods:filter(func, t2)
+function array:filter(func, t2)
 	local t2 = t2 or array{};
 	for k,v in ipairs(self) do
 		if func(v) then
@@ -24,17 +26,17 @@ function array_methods:filter(func, t2)
 end
 
 
-array_methods.push = table.insert;
-array_methods.pop = table.remove;
-array_methods.sort = table.sort;
-array_methods.concat = table.concat;
-array_methods.length = function (t) return #t; end
+array.push = table.insert;
+array.pop = table.remove;
+array.sort = table.sort;
+array.concat = table.concat;
+array.length = function (t) return #t; end
 
-function array_methods:random()
+function array:random()
 	return self[math.random(1,#self)];
 end
 
-function array_methods:shuffle()
+function array:shuffle()
 	local len = #self;
 	for i=1,#self do
 		local r = math.random(i,len);
