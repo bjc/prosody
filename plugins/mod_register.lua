@@ -13,6 +13,7 @@ local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local datamanager_store = require "util.datamanager".store;
 local os_time = os.time;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 module:add_feature("jabber:iq:register");
 
@@ -62,7 +63,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				local password = query:child_with_name("password");
 				if username and password then
 					-- FIXME shouldn't use table.concat
-					username = table.concat(username);
+					username = nodeprep(table.concat(username));
 					password = table.concat(password);
 					if username == session.username then
 						if usermanager_create_user(username, password, session.host) then -- password change -- TODO is this the right way?
@@ -133,7 +134,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 						end
 					end
 					-- FIXME shouldn't use table.concat
-					username = table.concat(username);
+					username = nodeprep(table.concat(username));
 					password = table.concat(password);
 					if usermanager_user_exists(username, session.host) then
 						session.send(st.error_reply(stanza, "cancel", "conflict"));
