@@ -11,6 +11,7 @@
 local st = require "util.stanza"
 
 local jid_split = require "util.jid".split;
+local jid_prep = require "util.jid".prep;
 local t_concat = table.concat;
 local tostring = tostring;
 
@@ -61,17 +62,18 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 						local item = query.tags[1];
 						local from_node, from_host = jid_split(stanza.attr.from);
 						local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
-						local node, host, resource = jid_split(item.attr.jid);
-						local to_bare = node and (node.."@"..host) or host; -- bare JID
+						local jid = jid_prep(item.attr.jid);
+						local node, host, resource = jid_split(jid);
 						if not resource and host then
-							if item.attr.jid ~= from_node.."@"..from_host then
+							if jid ~= from_node.."@"..from_host then
 								if item.attr.subscription == "remove" then
-									local r_item = session.roster[item.attr.jid];
+									local r_item = session.roster[jid];
 									if r_item then
-										local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, item.attr.jid);
+										local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, jid);
 										if success then
 											session.send(st.reply(stanza));
-											rm_roster_push(from_node, from_host, item.attr.jid);
+											rm_roster_push(from_node, from_host, jid);
+											local to_bare = node and (node.."@"..host) or host; -- bare JID
 											if r_item.subscription == "both" or r_item.subscription == "from" then
 												handle_presence(session, st.presence({type="unsubscribed"}), from_bare, to_bare,
 													core_route_stanza, false);
@@ -88,9 +90,9 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 								else
 									local r_item = {name = item.attr.name, groups = {}};
 									if r_item.name == "" then r_item.name = nil; end
-									if session.roster[item.attr.jid] then
-										r_item.subscription = session.roster[item.attr.jid].subscription;
-										r_item.ask = session.roster[item.attr.jid].ask;
+									if session.roster[jid] then
+										r_item.subscription = session.roster[jid].subscription;
+										r_item.ask = session.roster[jid].ask;
 									else
 										r_item.subscription = "none";
 									end
@@ -102,10 +104,10 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 											end
 										end
 									end
-									local success, err_type, err_cond, err_msg = rm_add_to_roster(session, item.attr.jid, r_item);
+									local success, err_type, err_cond, err_msg = rm_add_to_roster(session, jid, r_item);
 									if success then
 										session.send(st.reply(stanza));
-										rm_roster_push(from_node, from_host, item.attr.jid);
+										rm_roster_push(from_node, from_host, jid);
 									else
 										session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 									end
