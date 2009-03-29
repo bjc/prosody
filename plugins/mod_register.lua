@@ -29,22 +29,23 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 		elseif stanza.attr.type == "set" then
 			if query.tags[1] and query.tags[1].name == "remove" then
 				-- TODO delete user auth data, send iq response, kick all user resources with a <not-authorized/>, delete all user data
+				local username, host = session.username, session.host;
 				--session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 				--return;
-				usermanager_create_user(session.username, nil, session.host); -- Disable account
+				usermanager_create_user(username, nil, host); -- Disable account
 				-- FIXME the disabling currently allows a different user to recreate the account
 				-- we should add an in-memory account block mode when we have threading
 				session.send(st.reply(stanza));
 				local roster = session.roster;
-				for _, session in pairs(hosts[session.host].sessions[session.username].sessions) do -- disconnect all resources
+				for _, session in pairs(hosts[host].sessions[username].sessions) do -- disconnect all resources
 					session:close({condition = "not-authorized", text = "Account deleted"});
 				end
 				-- TODO datamanager should be able to delete all user data itself
-				datamanager.store(session.username, session.host, "roster", nil);
-				datamanager.store(session.username, session.host, "vcard", nil);
-				datamanager.store(session.username, session.host, "private", nil);
-				datamanager.store(session.username, session.host, "offline", nil);
-				--local bare = session.username.."@"..session.host;
+				datamanager.store(username, host, "roster", nil);
+				datamanager.store(username, host, "vcard", nil);
+				datamanager.store(username, host, "private", nil);
+				datamanager.store(username, host, "offline", nil);
+				--local bare = username.."@"..host;
 				for jid, item in pairs(roster) do
 					if jid ~= "pending" then
 						if item.subscription == "both" or item.subscription == "to" then
@@ -55,7 +56,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 						end
 					end
 				end
-				datamanager.store(session.username, session.host, "accounts", nil); -- delete accounts datastore at the end
+				datamanager.store(username, host, "accounts", nil); -- delete accounts datastore at the end
 			else
 				local username = query:child_with_name("username");
 				local password = query:child_with_name("password");
