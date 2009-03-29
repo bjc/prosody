@@ -204,7 +204,7 @@ function handle_stanza(host, origin, stanza)
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
 	if name == "iq" and xmlns == "jabber:client" then
 		if stanza.attr.type == "get" or stanza.attr.type == "set" then
-			xmlns = stanza.tags[1].attr.xmlns;
+			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
 			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
 		else
 			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
