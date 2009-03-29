@@ -24,6 +24,7 @@ local wrapclient = require "net.server".wrapclient;
 local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local uuid_gen = require "util.uuid".generate;
 
@@ -211,8 +212,8 @@ function streamopened(session, attr)
 	
 	if session.direction == "incoming" then
 		-- Send a reply stream header
-		session.to_host = attr.to;
-		session.from_host = attr.from;
+		session.to_host = nameprep(attr.to);
+		session.from_host = nameprep(attr.from);
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
