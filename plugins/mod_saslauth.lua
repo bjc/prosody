@@ -72,7 +72,15 @@ end
 local function sasl_handler(session, stanza)
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
+		if config.get(session.host or "*", "core", "anonymous_login") and stanza.attr.mechanism ~= "ANONYMOUS" then
+			return session.send(build_reply("failure", "invalid-mechanism"));
+		elseif mechanism == "ANONYMOUS" then
+			return session.send(build_reply("failure", "mechanism-too-weak"));
+		end
 		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+		if not session.sasl_handler then
+			return session.send(build_reply("failure", "invalid-mechanism"));
+		end
 	elseif not session.sasl_handler then
 		return; -- FIXME ignoring out of order stanzas because ejabberd does
 	end
@@ -105,10 +113,11 @@ module:add_event_hook("stream-features",
 			if not session.username then
 				features:tag("mechanisms", mechanisms_attr);
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
-					features:tag("mechanism"):text("PLAIN"):up();
-					features:tag("mechanism"):text("DIGEST-MD5"):up();
 					if config.get(session.host or "*", "core", "anonymous_login") then
 						features:tag("mechanism"):text("ANONYMOUS"):up();
+					else
+						features:tag("mechanism"):text("DIGEST-MD5"):up();
+						features:tag("mechanism"):text("PLAIN"):up();
 					end
 				features:up();
 			else
