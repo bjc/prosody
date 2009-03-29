@@ -115,6 +115,7 @@ function request(u, ex, callback)
 	local req = url.parse(u);
 	
 	if not (req and req.host) then
+		callback(nil, 0, req);
 		return nil, "invalid-url";
 	end
 	
