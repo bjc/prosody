@@ -107,7 +107,7 @@ module:add_event_hook("stream-features",
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 					features:tag("mechanism"):text("PLAIN"):up();
 					features:tag("mechanism"):text("DIGEST-MD5"):up();
-					if config.get(session.host or "*", "core", "sasl_anonymous") then
+					if config.get(session.host or "*", "core", "anonymous_login") then
 						features:tag("mechanism"):text("ANONYMOUS"):up();
 					end
 				features:up();
