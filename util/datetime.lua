@@ -14,20 +14,20 @@ local error = error;
 
 module "datetime"
 
-function date()
-	return os_date("!%Y-%m-%d");
+function date(t)
+	return os_date("!%Y-%m-%d", t);
 end
 
-function datetime()
-	return os_date("!%Y-%m-%dT%H:%M:%SZ");
+function datetime(t)
+	return os_date("!%Y-%m-%dT%H:%M:%SZ", t);
 end
 
-function time()
-	return os_date("!%H:%M:%S");
+function time(t)
+	return os_date("!%H:%M:%S", t);
 end
 
-function legacy()
-	return os_date("!%Y%m%dT%H:%M:%S");
+function legacy(t)
+	return os_date("!%Y%m%dT%H:%M:%S", t);
 end
 
 function parse(s)
