@@ -44,4 +44,12 @@ function array:shuffle()
 	end
 end
 
+function array:reverse()
+	local len = #self-1;
+	for i=len,1,-1 do
+		self:push(self[i]);
+		self:pop(i);
+	end
+end
+
 _G.array = array 
