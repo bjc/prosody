@@ -50,12 +50,16 @@ local function mkdir(path)
 end
 
 local data_path = "data";
+local callback;
 
 ------- API -------------
 
 function set_data_path(path)
 	log("info", "Setting data path to: %s", path);
 	data_path = path;
+end
+function set_callback(func)
+	callback = func;
 end
 
 function getpath(username, host, datastore, ext, create)
@@ -93,6 +97,7 @@ function store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
+	if callback and callback(username, host, datastore) then return true; end
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, nil, true), "w+");
 	if not f then
@@ -113,6 +118,7 @@ end
 
 function list_append(username, host, datastore, data)
 	if not data then return; end
+	if callback and callback(username, host, datastore) then return true; end
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a+");
 	if not f then
@@ -130,6 +136,7 @@ function list_store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
+	if callback and callback(username, host, datastore) then return true; end
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "w+");
 	if not f then
