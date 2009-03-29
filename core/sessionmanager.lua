@@ -23,6 +23,7 @@ local error = error;
 local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local fire_event = require "core.eventmanager".fire_event;
 
@@ -156,6 +157,7 @@ end
 function streamopened(session, attr)
 						local send = session.send;
 						session.host = attr.to or error("Client failed to specify destination hostname");
+						session.host = nameprep(session.host);
 			                        session.version = tonumber(attr.version) or 0;
 			                        session.streamid = m_random(1000000, 99999999);
 			                        (session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
