@@ -104,6 +104,9 @@ require "util.jid"
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
+require "util.datamanager".set_callback(function(username, host, datastore)
+	return config.get(host, "core", "anonymous_login");
+end);
 
 ----------- End of out-of-place code --------------
 
