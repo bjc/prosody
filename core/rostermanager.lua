@@ -224,6 +224,10 @@ function subscribed(username, host, jid)
 	if is_contact_pending_in(username, host, jid) then
 		local roster = load_roster(username, host);
 		local item = roster[jid];
+		if not item then -- FIXME should roster item be auto-created?
+			item = {subscription = "none", groups = {}};
+			roster[jid] = item;
+		end
 		if item.subscription == "none" then
 			item.subscription = "from";
 		else -- subscription == to
