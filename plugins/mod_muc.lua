@@ -369,6 +369,16 @@ function handle_to_room(origin, stanza) -- presence changes and groupchat messag
 		elseif type ~= "error" and type ~= "result" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
+	elseif stanza.name == "message" and not stanza.attr.type and #stanza.tags == 1 and jid_nick:get(stanza.attr.from, stanza.attr.to)
+		and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" and #stanza.tags[1].tags == 1
+		and stanza.tags[1].tags[1].name == "invite" and stanza.tags[1].tags[1].attr.to then
+		local _from, _to = stanza.attr.from, stanza.attr.to;
+		local _invitee = stanza.tags[1].tags[1].attr.to;
+		stanza.attr.from, stanza.attr.to = _to, _invitee;
+		stanza.tags[1].tags[1].attr.from, stanza.tags[1].tags[1].attr.to = _from, nil;
+		core_route_stanza(component, stanza);
+		stanza.tags[1].tags[1].attr.from, stanza.tags[1].tags[1].attr.to = nil, _invitee;
+		stanza.attr.from, stanza.attr.to = _from, _to;
 	else
 		if type == "error" or type == "result" then return; end
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
