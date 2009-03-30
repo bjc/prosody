@@ -74,7 +74,7 @@ local function sasl_handler(session, stanza)
 		-- FIXME ignoring duplicates because ejabberd does
 		if config.get(session.host or "*", "core", "anonymous_login") and stanza.attr.mechanism ~= "ANONYMOUS" then
 			return session.send(build_reply("failure", "invalid-mechanism"));
-		elseif mechanism == "ANONYMOUS" then
+		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
 		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
