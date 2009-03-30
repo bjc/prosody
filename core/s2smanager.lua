@@ -212,8 +212,8 @@ function streamopened(session, attr)
 	
 	if session.direction == "incoming" then
 		-- Send a reply stream header
-		session.to_host = nameprep(attr.to);
-		session.from_host = nameprep(attr.from);
+		session.to_host = attr.to and nameprep(attr.to);
+		session.from_host = attr.from and nameprep(attr.from);
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
