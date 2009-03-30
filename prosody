@@ -110,9 +110,13 @@ end);
 
 ----------- End of out-of-place code --------------
 
-
 eventmanager.fire_event("server-starting");
 
+local global_ssl_ctx = config.get("*", "core", "ssl");
+if global_ssl_ctx then
+	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
+end
 
 -- start listening on sockets
 function net_activate_ports(option, listener, default, conntype)
@@ -146,12 +150,6 @@ end
 
 -- setup error handling
 setmetatable(_G, { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end });
-
-local global_ssl_ctx = config.get("*", "core", "ssl");
-if global_ssl_ctx then
-	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
-	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
-end
 
 eventmanager.fire_event("server-started");
 
