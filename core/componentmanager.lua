@@ -20,6 +20,18 @@ local pairs, type, tostring = pairs, type, tostring;
 
 local components = {};
 
+local disco_items = require "util.multitable".new();
+local NULL = {};
+require "core.discomanager".addDiscoItemsHandler("*host", function(reply, to, from, node)
+	if #node == 0 and hosts[to] then
+		for jid in pairs(disco_items:get(to) or NULL) do
+			reply:tag("item", {jid = jid}):up();
+		end
+		return true;
+	end
+end);
+
+
 module "componentmanager"
 
 function load_enabled_components(config)
@@ -64,7 +76,10 @@ function register_component(host, component, session)
 	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
 		components[host] = component;
 		hosts[host] = session or create_component(host, component);
-		
+		-- add to disco_items
+		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
+			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
+		end
 		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
 		modulemanager.load(host, "dialback");
 		log("debug", "component added: "..host);
@@ -79,6 +94,10 @@ function deregister_component(host)
 		modulemanager.unload(host, "dialback");
 		components[host] = nil;
 		hosts[host] = nil;
+		-- remove from disco_items
+		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
+			disco_items:remove(host:sub(host:find(".", 1, true)+1), host);
+		end
 		log("debug", "component removed: "..host);
 		return true;
 	else
