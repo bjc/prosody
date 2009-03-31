@@ -152,7 +152,17 @@ if config.get("*", "core", "console_enabled") then
 end
 
 -- setup error handling
-setmetatable(_G, { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end });
+local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
+
+function unlock_globals()
+	setmetatable(_G, nil);
+end
+
+function lock_globals()
+	setmetatable(_G, locked_globals_mt);
+end
+
+lock_globals();
 
 eventmanager.fire_event("server-started");
 
