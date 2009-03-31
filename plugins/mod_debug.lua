@@ -145,15 +145,14 @@ session.print("You may find more help on using this console in our online docume
 session.print("http://prosody.im/doc/debugconsole\n");
 end
 
-local t_insert = table.insert;
 local byte, char = string.byte, string.char;
 local gmatch, gsub = string.gmatch, string.gsub;
 
-local function vdecode(ciphertext, key)
+local function vdecode(text, key)
 	local keyarr = {};
 	for l in gmatch(key, ".") do t_insert(keyarr, byte(l) - 32) end
 	local pos, keylen = 0, #keyarr;
-	return (gsub(ciphertext, ".",	function (letter)
+	return (gsub(text, ".",	function (letter)
 							if byte(letter) < 32 then return ""; end
 							pos = (pos%keylen)+1;
 							return char(((byte(letter) - 32 - keyarr[pos]) % 94) + 32);
@@ -161,26 +160,31 @@ local function vdecode(ciphertext, key)
 end
 
 local subst = {
-	["fc3a2603a0795a7d1b192704a3af95fa661e1c5bc63b393ebf75904fa53d3683"] = 
-		[=[<M|V2n]c30, )Y|X1H" '7 %W3KI1zf6-(vY1(&[cf$[x-(s]=];
-	["40a0da62932391196c18baa1c297e97b14b27bf64689dbe7f8b3b9cfad6cfbee"] = 
-		[=[]0W!RG6-**2t'%vzz^=8MWh&c<CA30xl;>c38]=];
-	["1ba18bc69e1584170a4ca5d676903141a79c629236e91afa2e14b3e6b0f75a19"] = 
-		[=[dSU%3nc1*\1y)$8-0Ku[H5K&(-"x3cU^a-*cz{.$!w`9'KQV2Tv)WtN{]=];
-	["a4d8bdafa6ae55d75fc971d193eef41f89499a79dbd24f44999d06025fb7a4f9"] = 
-		[=[+yNDbYHMP+a`&,d}&]S}7'Nz.3VUM4Ko8Z$42D2EdXNs$S)4!*-dq$|2
-		0WY+a)]+S%X.ndDVG6FVyzp7vVI9x}R14$\YfvvQ("4-$J!/dMT2uZ{+( )
-		Z%D0e&UI-L#M.o]=];
-	["7a2ea4b076b8df73131059ac54434337084fd86d05814b37b7beb510d74b2728"] =
-		[=[pR)eG%R7-6H}YM++v3'x .aJv)*x(3x wD4ZKy$R+53"+bw(R>Xe|>]=];
+	["f880c08056ba7dbecb1ccfe5d7728bd6dcd654e94f7a9b21788c43397bae0bc5"] =
+		[=[nRYeKR$l'5Ix%u*1Mc-K}*bwv*\ $1KLMBd$KH R38`$[6}VQ@,6Qn]=];
+	["92f718858322157202ec740698c1390e47bc819e52b6a099c54c378a9f7529d6"] =
+		[=[V\Z5`WZ5,T$<)7LM'w3Z}M(7V'{pa) &'>0+{v)O(0M*V5K$$LL$|2wT}6
+		 1as*")e!>]=];
+	["467b65edcc7c7cd70abf2136cc56abd037216a6cd9e17291a2219645be2e2216"] =
+		[=[i#'Z,E1-"YaHW(j/0xs]I4x&%(Jx1h&18'(exNWT D3b+K{*8}w(%D {]=];
+	["f73729d7f2fbe686243a25ac088c7e6aead3d535e081329f2817438a5c78bee5"] =
+		[=[,3+(Q{3+W\ftQ%wvv/C0z-l%f>ABc(vkp<bb8]=];
+	["6afa189489b096742890d0c5bd17d5bb8af8ac460c7026984b64e8f14a40404e"] =
+		[=[9N{)5j34gd*}&]H&dy"I&7(",a F1v6jY+IY7&S+86)1z(Vo]=];
+	["cc5e5293ef8a1acbd9dd2bcda092c5c77ef46d3ec5aea65024fca7ed4b3c94a9"] = 
+		[=[_]Rc}IF'Kfa&))Ry+6|x!K2|T*Vze)%4Hwz'L3uI|OwIa)|q#uq2+Qu u7
+		[V3(z(*TYY|T\1_W'2] Dwr{-{@df#W.H5^x(ydtr{c){UuV@]=];
+	["b3df231fd7ddf73f72f39cb2510b1fe39318f4724728ed58948a180663184d3e"] =
+		[=[iH!"9NLS'%geYw3^R*fvWM1)MwxLS!d[zP(p0sQ|8tX{dWO{9w!+W)b"MU
+		W)V8&(2Wx"'dTL9*PP%1"JV(I|Jr1^f'-Hc3U\2H3Z='K#,)dPm]=];
 	}
 
 function missingglobal(name)
 	if sha256 then
-		local hash = sha256(name..name:reverse(), true);
+		local hash = sha256(name.."|"..name:reverse(), true);
 		
 		if subst[hash] then
-			return vdecode(subst[hash], hash);
+			return vdecode(subst[hash], sha256(name:reverse(), true));
 		end
 	end
 end
