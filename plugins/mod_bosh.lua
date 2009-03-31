@@ -34,7 +34,7 @@ local inactive_sessions = {}; -- Sessions which have no open requests
 local waiting_requests = {};
 function on_destroy_request(request)
 	waiting_requests[request] = nil;
-	local session = request.session;
+	local session = sessions[request.sid];
 	if session then
 		local requests = session.requests;
 		for i,r in pairs(requests) do
