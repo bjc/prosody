@@ -85,6 +85,9 @@ require "core.usermanager"
 require "core.sessionmanager"
 require "core.stanza_router"
 
+require "util.array"
+require "util.iterators"
+
 -- Commented to protect us from 
 -- the second kind of people
 --[[ 
