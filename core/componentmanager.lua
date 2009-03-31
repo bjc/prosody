@@ -68,7 +68,7 @@ end
 
 function create_component(host, component)
 		-- TODO check for host well-formedness
-		session = session or { type = "component", host = host, connected = true, s2sout = {}, send = component };
+		local session = session or { type = "component", host = host, connected = true, s2sout = {}, send = component };
 		return session;
 end
 
