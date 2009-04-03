@@ -59,7 +59,7 @@ function destroy_session(session, err)
 	if session.presence then
 		local pres = st.presence{ type = "unavailable" };
 		if (not err) or err == "closed" then err = "connection closed"; end
-		pres:tag("status"):text("Disconnected: "..err);
+		pres:tag("status"):text("Disconnected: "..err):up();
 		session:dispatch_stanza(pres);
 	end
 	
