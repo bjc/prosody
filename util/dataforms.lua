@@ -72,10 +72,65 @@ function form_t.form(layout, data)
 	return form;
 end
 
+local field_readers = {};
+
 function form_t.data(layout, stanza)
+	local data = {};
 	
+	for field_tag in stanza:childtags() do
+		local field_type = field_tag.attr.type;
+		
+		local reader = field_readers[field_type];
+		if reader then
+			data[field_tag.attr.var] = reader(field_tag);
+		end
+		
+	end
+	return data;
 end
 
+field_readers["text-single"] = 
+	function (field_tag)
+		local value = field_tag:child_with_name("value");
+		if value then
+			return value[1];
+		end
+	end
+
+field_readers["text-private"] = 
+	field_readers["text-single"];
+
+field_readers["text-multi"] = 
+	function (field_tag)
+		local result = {};
+		for value_tag in field_tag:childtags() do
+			if value_tag.name == "value" then
+				result[#result+1] = value_tag[1];
+			end
+		end
+		return t_concat(result, "\n");
+	end
+
+field_readers["boolean"] = 
+	function (field_tag)
+		local value = field_tag:child_with_name("value");
+		if value then
+			if value[1] == "1" or value[1] == "true" then
+				return true;
+			else
+				return false;
+			end
+		end		
+	end
+
+field_readers["hidden"] = 
+	function (field_tag)
+		local value = field_tag:child_with_name("value");
+		if value then
+			return value[1];
+		end
+	end
+	
 return _M;
 
 
