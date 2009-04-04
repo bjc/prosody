@@ -1,5 +1,8 @@
 local setmetatable = setmetatable;
 local pairs, ipairs = pairs, ipairs;
+local tostring, type = tostring, type;
+local t_concat = table.concat;
+
 local st = require "util.stanza";
 
 module "dataforms"
@@ -34,9 +37,11 @@ function form_t.form(layout, data)
 		if field_type == "hidden" then
 			if type(value) == "table" then
 				-- Assume an XML snippet
-				form:add_child(value);
+				form:tag("value")
+					:add_child(value)
+					:up();
 			elseif value then
-				form:tag("value"):text(tostring(value));
+				form:tag("value"):text(tostring(value)):up();
 			end
 		elseif field_type == "boolean" then
 			form:tag("value"):text((value and "1") or "0"):up();
