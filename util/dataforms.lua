@@ -36,10 +36,10 @@ function form_t.form(layout, data)
 				-- Assume an XML snippet
 				form:add_child(value);
 			elseif value then
-				form:text(tostring(value));
+				form:tag("value"):text(tostring(value));
 			end
 		elseif field_type == "boolean" then
-			form:tag("value"):text((value and "1") or "0");
+			form:tag("value"):text((value and "1") or "0"):up();
 		elseif field_type == "fixed" then
 			
 		elseif field_type == "jid-multi" then
