@@ -57,6 +57,10 @@ function form_t.form(layout, data)
 			end
 		end
 		
+		if field.required then
+			form:tag("required"):up();
+		end
+		
 		-- Jump back up to list of fields
 		form:up();
 	end
