@@ -29,7 +29,7 @@ function form_t.form(layout, data)
 		-- Add field tag
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
 
-		local value = data[field.name];
+		local value = data[field.name] or field.value;
 		
 		-- Add value, depending on type
 		if field_type == "hidden" then
