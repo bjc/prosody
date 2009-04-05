@@ -244,6 +244,11 @@ function streamopened(session, attr)
 	session.notopen = nil;
 end
 
+function streamclosed(session)
+	session.send("</stream:stream>");
+	session.notopen = true;
+end
+
 function initiate_dialback(session)
 	-- generate dialback key
 	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
