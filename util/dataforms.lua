@@ -16,10 +16,8 @@ function new(layout)
 	return setmetatable(layout, form_mt);
 end
 
-local form_x_attr = { xmlns = xmlns_forms };
-
 function form_t.form(layout, data)
-	local form = st.stanza("x", form_x_attr);
+	local form = st.stanza("x", { xmlns = xmlns_forms, type = "form" });
 	if layout.title then
 		form:tag("title"):text(layout.title):up();
 	end
