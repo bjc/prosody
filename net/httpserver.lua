@@ -96,7 +96,7 @@ local function call_callback(request, err)
 		
 		local response = callback(request.method, request.body and t_concat(request.body), request);
 		if response then
-			if response == true then
+			if response == true and not request.destroyed then
 				-- Keep connection open, we will reply later
 				log("warn", "Request %s left open, on_destroy is %s", request.id, tostring(request.on_destroy));
 			else
