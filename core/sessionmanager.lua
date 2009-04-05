@@ -182,6 +182,11 @@ function streamopened(session, attr)
 						session.notopen = nil;
 end
 
+function streamclosed(session)
+	session.send("</stream:stream>");
+	session.notopen = true;
+end
+
 function send_to_available_resources(user, host, stanza)
 	local count = 0;
 	local to = stanza.attr.to;

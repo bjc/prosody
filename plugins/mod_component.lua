@@ -69,6 +69,8 @@ function stream_callbacks.streamopened(session, attr)
 end
 
 function stream_callbacks.streamclosed(session)
+	session.send("</stream:stream>");
+	session.notopen = true;
 end
 
 local core_process_stanza = core_process_stanza;
