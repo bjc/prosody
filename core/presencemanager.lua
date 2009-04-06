@@ -28,7 +28,7 @@ module "presencemanager"
 
 function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, inbound)
 	local type = stanza.attr.type;
-	if type and type ~= "unavailable" then
+	if type and type ~= "unavailable" and type ~= "error" then
 		if inbound then
 			handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		else
