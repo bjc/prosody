@@ -244,8 +244,8 @@ function core_route_stanza(origin, stanza)
 							-- TODO deal with storage errors
 						end
 					end
-				else
-					-- TODO send IQ error
+				elseif stanza.attr.type == "get" or stanza.attr.type == "set" then
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
 			else
 				-- User + resource is online...
