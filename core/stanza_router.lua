@@ -124,7 +124,7 @@ function core_process_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 			component_handle_stanza(origin, stanza);
-		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
@@ -144,7 +144,7 @@ function core_handle_stanza(origin, stanza)
 	if origin.type == "c2s" or origin.type == "s2sin" then
 		if origin.type == "c2s" then
 			if stanza.name == "presence" and origin.roster then
-				if stanza.attr.type == nil or stanza.attr.type == "unavailable" then
+				if stanza.attr.type == nil or stanza.attr.type == "unavailable" and stanza.attr.type ~= "error" then
 					handle_normal_presence(origin, stanza, core_route_stanza);
 				else
 					log("warn", "Unhandled c2s presence: %s", tostring(stanza));
@@ -188,7 +188,7 @@ function core_route_stanza(origin, stanza)
 		return component_handle_stanza(origin, stanza);
 	end
 
-	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable") then resource = nil; end
+	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error") then resource = nil; end
 
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
@@ -199,9 +199,9 @@ function core_route_stanza(origin, stanza)
 			if not res then
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
-					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-					else -- sender is available or unavailable
+					elseif not resource then -- sender is available or unavailable or error
 						for _, session in pairs(user.sessions) do -- presence broadcast to all user resources.
 							if session.full_jid then -- FIXME should this be just for available resources? Do we need to check subscription?
 								stanza.attr.to = session.full_jid; -- reset at the end of function
@@ -256,7 +256,7 @@ function core_route_stanza(origin, stanza)
 			-- user not online
 			if user_exists(node, host) then
 				if stanza.name == "presence" then
-					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" then
+					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 					else
 						-- TODO send unavailable presence or unsubscribed
