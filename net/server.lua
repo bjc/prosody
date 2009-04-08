@@ -244,10 +244,10 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
                 return false
             end
             connections = connections + 1
-            out_put( "server.lua: accepted new client connection from ", ip, ":", clientport, " to ",  serverport)
+            out_put( "server.lua: accepted new client connection from ", tostring(ip), ":", tostring(clientport), " to ", tostring(serverport))
             return dispatch( handler )
         elseif err then    -- maybe timeout or something else
-            out_put( "server.lua: error with new client connection: ", err )
+            out_put( "server.lua: error with new client connection: ", tostring(err) )
             return false
         end
     end
@@ -443,7 +443,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             --out_put( "server.lua: read data '", buffer, "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
-            out_put( "server.lua: client ", ip, ":", tostring(clientport), " error: ", tostring(err) )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
 	    _ = handler and handler.close( )
@@ -474,7 +474,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             _writetimes[ handler ] = _currenttime
             return true
         else    -- connection was closed during sending or fatal error
-            out_put( "server.lua: client ", ip, ":", clientport, " error: ", err )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
             _ = handler and handler.close( )
@@ -500,7 +500,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                         -- return dispatch( handler )
                         return true
                     else
-                        out_put( "server.lua: error during ssl handshake: ", err )
+                        out_put( "server.lua: error during ssl handshake: ", tostring(err) )
                         if err == "wantwrite" and not wrote then
                             _sendlistlen = _sendlistlen + 1
                             _sendlist[ _sendlistlen ] = client
@@ -526,7 +526,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	    local err
             socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
             if err then
-                out_put( "server.lua: ssl error: ", err )
+                out_put( "server.lua: ssl error: ", tostring(err) )
                 mem_free( )
                 return nil, nil, err    -- fatal error
             end
@@ -546,7 +546,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
                 --out_put( "server.lua: sslwrapped socket is " .. tostring( socket ) )
                 if err then
-                    out_put( "server.lua: error while starting tls on client: ", err )
+                    out_put( "server.lua: error while starting tls on client: ", tostring(err) )
                     return nil, err    -- fatal error
                 end
 

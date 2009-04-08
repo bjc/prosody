@@ -177,6 +177,11 @@ function attempt_connection(host_session, err)
 		return false;
 	end
 	
+	if not (connect_host and connect_port) then
+		-- Likely we couldn't resolve DNS
+		return false;
+	end
+	
 	-- Ok, we're going to try to connect
 	conn:settimeout(0);
 	local success, err = conn:connect(connect_host, connect_port);
@@ -245,7 +250,7 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	session.send("</stream:stream>");
+	session.sends2s("</stream:stream>");
 	session.notopen = true;
 end
 
