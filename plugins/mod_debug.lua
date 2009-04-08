@@ -10,7 +10,7 @@ module.host = "*";
 
 local connlisteners_register = require "net.connlisteners".register;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; };
+local console_listener = { default_port = 5583; default_mode = "*l"; };
 
 local sha256, missingglobal = require "util.hashes".sha256;
 
@@ -102,7 +102,8 @@ function console_listener.disconnect(conn, err)
 	
 end
 
-connlisteners_register('console', console_listener);
+connlisteners_register('debug', console_listener);
+require "net.connlisteners".start("debug");
 
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
