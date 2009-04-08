@@ -65,6 +65,14 @@ function stanza_mt:up()
 	return self;
 end
 
+function stanza_mt:reset()
+	local last_add = self.last_add;
+	for i = 1,#last_add do
+		last_add[i] = nil;
+	end
+	return self;
+end
+
 function stanza_mt:add_direct_child(child)
 	if type(child) == "table" then
 		t_insert(self.tags, child);
