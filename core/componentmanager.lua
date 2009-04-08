@@ -34,12 +34,18 @@ end);
 
 module "componentmanager"
 
+local function default_component_handler(origin, stanza)
+	origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+end
+
+
 function load_enabled_components(config)
 	local defined_hosts = config or configmanager.getconfig();
 		
 	for host, host_config in pairs(defined_hosts) do
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
 			hosts[host] = { type = "component", host = host, connected = false, s2sout = {} };
+			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
 				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
@@ -93,7 +99,13 @@ function deregister_component(host)
 	if components[host] then
 		modulemanager.unload(host, "dialback");
 		components[host] = nil;
-		hosts[host] = nil;
+		local host_config = defined_hosts[host];
+		if ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
+			-- Set default handler
+		else
+			-- Component not in config, or disabled, remove
+			hosts[host] = nil;
+		end
 		-- remove from disco_items
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:remove(host:sub(host:find(".", 1, true)+1), host);
@@ -103,6 +115,10 @@ function deregister_component(host)
 	else
 		log("error", "Attempt to remove component for non-existing host: "..host);
 	end
+end
+
+function set_component_handler(host, handler)
+	components[host] = handler;
 end
 
 return _M;
