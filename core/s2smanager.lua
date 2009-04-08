@@ -250,7 +250,7 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	session.send("</stream:stream>");
+	session.sends2s("</stream:stream>");
 	session.notopen = true;
 end
 
