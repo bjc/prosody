@@ -259,7 +259,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 				else -- possible rejoin
 					log("debug", "%s had connection replaced", current_nick);
-					handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection')); -- send unavailable
+					handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection'):up()); -- send unavailable
 					handle_to_occupant(origin, stanza); -- resend available
 				end
 			else -- enter room
