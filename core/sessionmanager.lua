@@ -155,31 +155,29 @@ function bind_resource(session, resource)
 end
 
 function streamopened(session, attr)
-						local send = session.send;
-						session.host = attr.to or error("Client failed to specify destination hostname");
-						session.host = nameprep(session.host);
-			                        session.version = tonumber(attr.version) or 0;
-			                        session.streamid = m_random(1000000, 99999999);
-			                        (session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
-			                        
+	local send = session.send;
+	session.host = attr.to or error("Client failed to specify destination hostname");
+	session.host = nameprep(session.host);
+	session.version = tonumber(attr.version) or 0;
+	session.streamid = m_random(1000000, 99999999);
+	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
+	
+	send("<?xml version='1.0'?>");
+	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+
+	if not hosts[session.host] then
+		-- We don't serve this host...
+		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
+		return;
+	end
 						
-						send("<?xml version='1.0'?>");
-			                        send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
-						
-						if not hosts[session.host] then
-							-- We don't serve this host...
-							session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
-							return;
-						end
-						
-						
-						local features = st.stanza("stream:features");
-						fire_event("stream-features", session, features);
-						
-						send(features);
-						
-						(session.log or log)("info", "Sent reply <stream:stream> to client");
-						session.notopen = nil;
+	local features = st.stanza("stream:features");
+	fire_event("stream-features", session, features);
+	
+	send(features);
+	
+	(session.log or log)("info", "Sent reply <stream:stream> to client");
+	session.notopen = nil;
 end
 
 function streamclosed(session)
