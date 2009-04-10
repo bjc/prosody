@@ -36,7 +36,9 @@ local sha256_hash = require "util.hashes".sha256;
 
 local dialback_secret = sha256_hash(tostring{} .. math.random() .. socket.gettime(), true);
 
-local dns = require "net.dns";
+local adns = require "net.adns";
+
+local debug = debug;
 
 incoming_s2s = {};
 local incoming_s2s = incoming_s2s;
@@ -105,7 +107,7 @@ function send_to_host(from_host, to_host, data)
 		local host_session = new_outgoing(from_host, to_host);
 		-- Store in buffer
 		host_session.sendq = { {tostring(data), st.reply(data)} };
-		if not host_session.conn then destroy_session(host_session); end
+		if (not host_session.connecting) and (not host_session.conn) then destroy_session(host_session); end
 	end
 end
 
@@ -143,29 +145,35 @@ end
 
 function attempt_connection(host_session, err)
 	local from_host, to_host = host_session.from_host, host_session.to_host;
-	local conn, handler = socket.tcp()
-
 	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
 	
 	if not err then -- This is our first attempt
-		local answer = dns.lookup("_xmpp-server._tcp."..connect_host..".", "SRV");
-		
-		if answer then
-			log("debug", to_host.." has SRV records, handling...");
-			local srv_hosts = {};
-			host_session.srv_hosts = srv_hosts;
-			for _, record in ipairs(answer) do
-				t_insert(srv_hosts, record.srv);
+		host_session.connecting = true;
+		local answer = 
+		adns.lookup(function (answer)
+			host_session.connecting = nil;
+			if answer then
+				log("debug", to_host.." has SRV records, handling...");
+				local srv_hosts = {};
+				host_session.srv_hosts = srv_hosts;
+				for _, record in ipairs(answer) do
+					t_insert(srv_hosts, record.srv);
+				end
+				t_sort(srv_hosts, compare_srv_priorities);
+				
+				local srv_choice = srv_hosts[1];
+				host_session.srv_choice = 1;
+				if srv_choice then
+					connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
+					log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
+				end
+			else
+				log("debug", to_host.." has no SRV records, falling back to A");
 			end
-			t_sort(srv_hosts, compare_srv_priorities);
-			
-			local srv_choice = srv_hosts[1];
-			host_session.srv_choice = 1;
-			if srv_choice then
-				connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
-				log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
-			end
-		end
+			-- Try with SRV, or just the plain hostname if no SRV
+			return try_connect(host_session, connect_host, connect_port);
+		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
+		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
 		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
@@ -182,7 +190,17 @@ function attempt_connection(host_session, err)
 		return false;
 	end
 	
+	return try_connect(host_session, connect_host, connect_port);
+end
+
+function try_connect(host_session, connect_host, connect_port)
+	log("debug", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
+	
+	local from_host, to_host = host_session.from_host, host_session.to_host;
+	
+	local conn, handler = socket.tcp()
+
 	conn:settimeout(0);
 	local success, err = conn:connect(connect_host, connect_port);
 	if not success and err ~= "timeout" then
@@ -194,14 +212,19 @@ function attempt_connection(host_session, err)
 	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1, hosts[from_host].ssl_ctx, false );
 	host_session.conn = conn;
 	
+	log("debug", "conn wrapped")
 	-- Register this outgoing connection so that xmppserver_listener knows about it
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
+	
+	log("debug", "outgoing registered")
 	
 	local w = conn.write;
 	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
+	log("debug", "Connection attempt in progress...");
+	print("foo")
 	return true;
 end
 
@@ -315,6 +338,7 @@ end
 function destroy_session(session)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
+	log("debug", debug.traceback());
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
