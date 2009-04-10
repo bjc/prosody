@@ -115,7 +115,7 @@ end);
 
 eventmanager.fire_event("server-starting");
 
-local global_ssl_ctx = config.get("*", "core", "ssl");
+local global_ssl_ctx = ssl and config.get("*", "core", "ssl");
 if global_ssl_ctx then
 	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
 	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
