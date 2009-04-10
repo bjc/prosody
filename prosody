@@ -123,7 +123,7 @@ end
 
 -- start listening on sockets
 function net_activate_ports(option, listener, default, conntype)
-	local ports = config.get("*", "core", option) or default;
+	local ports = config.get("*", "core", option.."_ports") or default;
 	if type(ports) == "number" then ports = {ports} end;
 	
 	if type(ports) ~= "table" then
@@ -131,17 +131,22 @@ function net_activate_ports(option, listener, default, conntype)
 	else
 		for _, port in ipairs(ports) do
 			if type(port) ~= "number" then
-				log("error", "Non-numeric "..option..": "..tostring(port));
+				log("error", "Non-numeric "..option.."_ports: "..tostring(port));
 			else
-				cl.start(listener, { ssl = conntype ~= "tcp" and global_ssl_ctx, port = port, type = conntype });
+				cl.start(listener, { 
+					ssl = conntype ~= "tcp" and global_ssl_ctx,
+					port = port,
+					interface = config.get("*", "core", option.."_interface"),
+					type = conntype
+				});
 			end
 		end
 	end
 end
 
-net_activate_ports("c2s_ports", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
-net_activate_ports("s2s_ports", "xmppserver", {5269}, "tcp");
-net_activate_ports("legacy_ssl_ports", "xmppclient", {}, "ssl");
+net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
+net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
+net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 
 if config.get("*", "core", "console_enabled") then
 	if cl.get("console") then
