@@ -49,8 +49,6 @@ function init(name)
 		if not log_this then return function () end end
 	end
 	
-	if name == "modulemanager" or name:match("^c2s") or name == "datamanager" then return function () end; end
-	
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	local namelen = #name;
 	return 	function (level, message, ...)
