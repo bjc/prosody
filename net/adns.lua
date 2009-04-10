@@ -3,7 +3,7 @@ local dns = require "net.dns";
 
 local log = require "util.logger".init("adns");
 
-local coroutine, tostring = coroutine, tostring;
+local coroutine, tostring, pcall = coroutine, tostring, pcall;
 
 module "adns"
 
@@ -14,7 +14,10 @@ function lookup(handler, qname, qtype, qclass)
 				dns.query(qname, qtype, qclass);
 				coroutine.yield(nil); -- Wait for reply
 				log("debug", "Reply for "..qname.." (%s)", tostring(coroutine.running()));
-				handler(dns.peek(qname, qtype, qclass));
+				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
+				if not ok then
+					log("debug", "Error in DNS response handler: %s", tostring(err));
+				end
 			end)();
 end
 
