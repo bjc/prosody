@@ -15,8 +15,8 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber
-    = tostring, pairs, ipairs, getmetatable, print, newproxy, error, tonumber;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
@@ -37,8 +37,6 @@ local sha256_hash = require "util.hashes".sha256;
 local dialback_secret = sha256_hash(tostring{} .. math.random() .. socket.gettime(), true);
 
 local adns = require "net.adns";
-
-local debug = debug;
 
 incoming_s2s = {};
 local incoming_s2s = incoming_s2s;
@@ -212,19 +210,15 @@ function try_connect(host_session, connect_host, connect_port)
 	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1, hosts[from_host].ssl_ctx, false );
 	host_session.conn = conn;
 	
-	log("debug", "conn wrapped")
 	-- Register this outgoing connection so that xmppserver_listener knows about it
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
-	
-	log("debug", "outgoing registered")
 	
 	local w = conn.write;
 	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
-	print("foo")
 	return true;
 end
 
