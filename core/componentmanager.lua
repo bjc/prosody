@@ -33,6 +33,7 @@ require "core.discomanager".addDiscoItemsHandler("*host", function(reply, to, fr
 	end
 end);
 
+require "core.eventmanager".add_event_hook("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
 
 module "componentmanager"
 
