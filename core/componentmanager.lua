@@ -13,6 +13,7 @@ local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
+local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
 local st = require "util.stanza";
 local hosts = hosts;
@@ -38,7 +39,7 @@ module "componentmanager"
 local function default_component_handler(origin, stanza)
 	log("warn", "Stanza being handled by default component, bouncing error");
 	if stanza.attr.type ~= "error" then
-		origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+		core_route_stanza(nil, st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 	end
 end
 
@@ -78,7 +79,7 @@ end
 
 function create_component(host, component)
 	-- TODO check for host well-formedness
-	local session = session or { type = "component", host = host, connected = true, s2sout = {}, send = component };
+	local session = session or { type = "component", host = host, connected = true, s2sout = {} };
 	return session;
 end
 
