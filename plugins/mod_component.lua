@@ -14,6 +14,7 @@ local t_concat = table.concat;
 
 local connlisteners = require "net.connlisteners";
 local cm_register_component = require "core.componentmanager".register_component;
+local cm_deregister_component = require "core.componentmanager".deregister_component;
 local uuid_gen = require "util.uuid".generate;
 local sha1 = require "util.hashes".sha1;
 local st = stanza;
@@ -196,9 +197,9 @@ function component_listener.disconnect(conn, err)
 	if session then
 		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));
 		if session.host then
-			if session.component then
-				deregister_component(session.host);
-			end
+			log("debug", "deregistering component");
+			cm_deregister_component(session.host);
+			hosts[session.host].connected = nil;
 		end
 		sessions[conn]  = nil;
 		session = nil;
