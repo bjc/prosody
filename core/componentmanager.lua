@@ -69,7 +69,7 @@ function handle_stanza(origin, stanza)
 	if not component then component = components[node.."@"..host]; end -- hack to allow hooking node@server
 	if not component then component = components[host]; end
 	if component then
-		log("debug", "stanza being handled by component: "..host);
+		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
 		component(origin, stanza, hosts[host]);
 	else
 		log("error", "Component manager recieved a stanza for a non-existing component: " .. stanza.attr.to);
