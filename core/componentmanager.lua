@@ -102,13 +102,14 @@ end
 function deregister_component(host)
 	if components[host] then
 		modulemanager.unload(host, "dialback");
-		components[host] = nil;
-		local host_config = defined_hosts[host];
-		if ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
+		local host_config = configmanager.getconfig()[host];
+		if host_config and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
 			-- Set default handler
+			components[host] = default_component_handler;
 		else
 			-- Component not in config, or disabled, remove
 			hosts[host] = nil;
+			components[host] = nil;
 		end
 		-- remove from disco_items
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
