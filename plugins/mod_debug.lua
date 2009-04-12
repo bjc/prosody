@@ -10,7 +10,7 @@ module.host = "*";
 
 local connlisteners_register = require "net.connlisteners".register;
 
-local console_listener = { default_port = 5583; default_mode = "*l"; };
+local console_listener = { default_port = 5583; default_mode = "*l"; default_interface = "127.0.0.1" };
 
 local sha256, missingglobal = require "util.hashes".sha256;
 
