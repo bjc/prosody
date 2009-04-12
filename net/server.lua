@@ -733,7 +733,6 @@ end
 
 loop = function( )    -- this is the main loop of the program
     while dontstop do
-        out_put(tostring(dontstop))
         local read, write, err = socket_select( _readlist, _sendlist, _selecttimeout )
         for i, socket in ipairs( write ) do    -- send data waiting in writequeues
             local handler = _socketlist[ socket ]
