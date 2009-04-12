@@ -43,6 +43,9 @@ util/hashes.so:
 util/pposix.so:
 	$(MAKE) install -C util-src
 
+util/signal.so:
+	$(MAKE) install -C util-src
+
 prosody.install: prosody
 	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
 		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
