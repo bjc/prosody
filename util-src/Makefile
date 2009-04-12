@@ -12,7 +12,7 @@ LD?=gcc
 
 all: encodings.so hashes.so pposix.so signal.so
 
-install: encodings.so hashes.so pposix.so
+install: encodings.so hashes.so pposix.so signal.so
 	install *.so ../util/
 	
 
