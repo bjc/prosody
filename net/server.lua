@@ -724,8 +724,16 @@ stats = function( )
     return _readtraffic, _sendtraffic, _readlistlen, _sendlistlen, _timerlistlen
 end
 
+local dontstop = true;
+
+setquitting = function (quit)
+	dontstop = not quit;
+	return;
+end
+
 loop = function( )    -- this is the main loop of the program
-    while true do
+    while dontstop do
+        out_put(tostring(dontstop))
         local read, write, err = socket_select( _readlist, _sendlist, _selecttimeout )
         for i, socket in ipairs( write ) do    -- send data waiting in writequeues
             local handler = _socketlist[ socket ]
@@ -760,6 +768,7 @@ loop = function( )    -- this is the main loop of the program
         socket_sleep( _sleeptime )    -- wait some time
         --collectgarbage( )
     end
+    return "quitting"
 end
 
 --// EXPERIMENTAL //--
@@ -833,7 +842,7 @@ return {
     addtimer = addtimer,
     addserver = addserver,
     getsettings = getsettings,
+    setquitting = setquitting,
     removeserver = removeserver,
     changesettings = changesettings,
-
 }
