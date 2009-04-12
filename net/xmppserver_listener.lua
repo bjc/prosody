@@ -149,7 +149,8 @@ function xmppserver.register_outgoing(conn, session)
 	session.direction = "outgoing";
 	sessions[conn] = session;
 	
-	session.reset_stream = session_reset_stream;	
+	session.reset_stream = session_reset_stream;
+	session.close = session_close;
 	session_reset_stream(session); -- Initialise, ready for use
 	
 	--local function handleerr(err) print("Traceback:", err, debug.traceback()); end
