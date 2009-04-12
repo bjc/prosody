@@ -87,6 +87,7 @@ require "core.stanza_router"
 
 require "util.array"
 require "util.iterators"
+require "util.timer"
 
 -- Commented to protect us from 
 -- the second kind of people
@@ -156,7 +157,13 @@ if config.get("*", "core", "console_enabled") then
 	end
 end
 
--- setup error handling
+-- Global function to initiate prosody shutdown
+function prosody_shutdown(reason)
+	log("info", "Shutting down: %s", reason or "unknown reason");
+	server.setquitting(true);
+end
+
+-- Catch global accesses --
 local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
 
 function unlock_globals()
@@ -167,25 +174,53 @@ function lock_globals()
 	setmetatable(_G, locked_globals_mt);
 end
 
+-- And lock now...
 lock_globals();
 
 eventmanager.fire_event("server-started");
 
-local quitting;
-while not quitting do
-	xpcall(server.loop, function (err)
-					if err:match("%d*: interrupted!$") then
-						quitting = true;
-						return;
-					end
-
-					log("error", "Top-level error, please report:\n%s", tostring(err));
-
-					local traceback = debug.traceback("", 2);
-					if traceback then
-						log("error", "%s", traceback);
-					end
-					
-					eventmanager.fire_event("very-bad-error", "*", err, traceback);
-				end);
+-- Error handler for errors that make it this far
+local function catch_uncaught_error(err)
+	if err:match("%d*: interrupted!$") then
+		return "quitting";
+	end
+	
+	log("error", "Top-level error, please report:\n%s", tostring(err));
+	local traceback = debug.traceback("", 2);
+	if traceback then
+		log("error", "%s", traceback);
+	end
+	
+	eventmanager.fire_event("very-bad-error", "*", err, traceback);
 end
+
+while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
+	socket.sleep(0.2);
+end
+
+-- Ok, we're quitting I know, but we
+-- need to do some tidying before we go :)
+server.setquitting(false);
+
+for hostname, host in pairs(hosts) do
+	if host.sessions then
+		for username, user in pairs(host.sessions) do
+			for resource, session in pairs(user.sessions) do
+				log("debug", "Closing connection for %s@%s/%s", username, hostname, resource);
+				session:close("system-shutdown");
+			end
+		end
+	end
+	
+	if host.s2sout then
+		for remotehost, session in pairs(host.s2sout) do
+			if session.close then
+				session:close("system-shutdown");
+			else
+				log("warn", "Unable to close outgoing s2s session to %s, no session:close()?!", remotehost);
+			end
+		end
+	end
+end
+
+server.closeall();
