@@ -24,9 +24,9 @@ local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
-local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
-local handle_inbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
-local handle_normal_presence = require "core.presencemanager".handle_normal_presence;
+local handle_outbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
+local handle_inbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
+local handle_normal_presence = function()end;--require "core.presencemanager".handle_normal_presence;
 
 local format = string.format;
 local tostring = tostring;
