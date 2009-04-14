@@ -243,7 +243,7 @@ local function presence_handler(data)
 		if to == nil and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif not to then
-			handle_normal_presence(origin, stanza);
+			handle_normal_presence(origin, stanza, core_route_stanza);
 		else
 			core_route_stanza(origin, stanza);
 		end
@@ -263,5 +263,3 @@ add_handler(module:get_host().."/presence", presence_handler);
 module.unload = function()
 	remove_handler(module:get_host().."/presence", presence_handler);
 end
-
-return _M;
