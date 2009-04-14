@@ -113,6 +113,9 @@ do
    --cflags=*)
       CFLAGS="$value"
       ;;      
+   --lflags=*)
+      LFLAGS="$value"
+      ;;      
    --c-compiler=*)
       CC="$value"
       ;;      
