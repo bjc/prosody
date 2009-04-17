@@ -12,6 +12,8 @@ local _G = _G;
 local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type = 
 		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type;
 
+local eventmanager = require "core.eventmanager";
+
 module "configmanager"
 
 local parsers = {};
@@ -68,6 +70,9 @@ function load(filename, format)
 		if f then 
 			local ok, err = parsers[format].load(f:read("*a"));
 			f:close();
+			if ok then
+				eventmanager.fire_event("config-reloaded", { filename = filename, format = format });
+			end
 			return ok, "parser", err;
 		end
 		return f, "file", err;
