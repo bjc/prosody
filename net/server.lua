@@ -325,7 +325,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             if not ( forced or fatalerror ) then
                 handler.sendbuffer( )
                 if bufferqueuelen ~= 0 then   -- try again...
-                    handler.write = nil    -- ... but no further writing allowed
+                    if handler then
+                        handler.write = nil    -- ... but no further writing allowed
+                    end
                     toclose = true
                     return false
                 end
@@ -337,9 +339,11 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         socket:close( )
         _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
         _socketlist[ socket ] = nil
-        _writetimes[ handler ] = nil
-        _closelist[ handler ] = nil
-        handler = nil
+        if handler then
+            _writetimes[ handler ] = nil
+            _closelist[ handler ] = nil
+            handler = nil
+        end
         socket = nil
         mem_free( )
 	if server then
