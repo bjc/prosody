@@ -57,7 +57,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				stanza:text(t_concat(chardata));
 				chardata = {};
 			end
-			local curr_ns,name = tagname:match("^(.+)|([%w%-]+)$");
+			local curr_ns,name = tagname:match("^(.+)|([^%|]+)$");
 			if curr_ns ~= stream_default_ns then
 				attr.xmlns = curr_ns;
 			end
@@ -109,7 +109,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 		end
 		function xml_handlers:EndElement(tagname)
-			curr_ns,name = tagname:match("^(.+)|([%w%-]+)$");
+			curr_ns,name = tagname:match("^(.+)|([^%|]+)$");
 			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
 				if tagname == stream_tag then
 					if cb_streamclosed then
