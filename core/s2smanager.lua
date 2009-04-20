@@ -141,6 +141,23 @@ function new_outgoing(from_host, to_host)
 		
 		attempt_connection(host_session);
 		
+		if not host_session.sends2s then		
+			-- A sends2s which buffers data (until the stream is opened)
+			-- note that data in this buffer will be sent before the stream is authed
+			-- and will not be ack'd in any way, successful or otherwise
+			local buffer;
+			function host_session.sends2s(data)
+				if not buffer then
+					buffer = {};
+					host_session.send_buffer = buffer;
+				end
+				log("debug", "Buffering data on unconnected s2sout to %s", to_host);
+				buffer[#buffer+1] = data;
+				log("debug", "Buffered item %d: %s", #buffer, tostring(data));
+			end
+			
+		end
+
 		return host_session;
 end
 
@@ -262,6 +279,20 @@ function streamopened(session, attr)
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
+	
+		-- Send unauthed buffer
+		-- (stanzas which are fine to send before dialback)
+		-- Note that this is *not* the stanza queue (which 
+		-- we can only send if auth succeeds) :)
+		local send_buffer = session.send_buffer;
+		if send_buffer and #send_buffer > 0 then
+			log("debug", "Sending s2s send_buffer now...");
+			for i, data in ipairs(send_buffer) do
+				session.sends2s(tostring(data));
+				send_buffer[i] = nil;
+			end
+		end
+		session.send_buffer = nil;
 	
 		if not session.dialback_verifying then
 			initiate_dialback(session);
