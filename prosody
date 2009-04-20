@@ -38,7 +38,7 @@ do
 	-- Use lfs? Make a new conf/ dir?
 	local ok, level, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
 	if not ok then
-		print("");
+		print("\n");
 		print("**************************");
 		if level == "parser" then
 			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
