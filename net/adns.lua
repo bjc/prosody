@@ -8,17 +8,21 @@ local coroutine, tostring, pcall = coroutine, tostring, pcall;
 module "adns"
 
 function lookup(handler, qname, qtype, qclass)
-	return dns.peek(qname, qtype, qclass) or
-		coroutine.wrap(function ()
-				log("debug", "Records for "..qname.." not in cache, sending query (%s)...", tostring(coroutine.running()));
+	return coroutine.wrap(function (peek)
+				if peek then
+					log("debug", "Records for %s already cached, using those...", qname);
+					handler(peek);
+					return;
+				end
+				log("debug", "Records for %s not in cache, sending query (%s)...", qname, tostring(coroutine.running()));
 				dns.query(qname, qtype, qclass);
 				coroutine.yield(nil); -- Wait for reply
-				log("debug", "Reply for "..qname.." (%s)", tostring(coroutine.running()));
+				log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
 				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
 				if not ok then
 					log("debug", "Error in DNS response handler: %s", tostring(err));
 				end
-			end)();
+			end)(dns.peek(qname, qtype, qclass));
 end
 
 function new_async_socket(sock)
