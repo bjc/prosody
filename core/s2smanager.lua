@@ -105,7 +105,11 @@ function send_to_host(from_host, to_host, data)
 		local host_session = new_outgoing(from_host, to_host);
 		-- Store in buffer
 		host_session.sendq = { {tostring(data), st.reply(data)} };
-		if (not host_session.connecting) and (not host_session.conn) then destroy_session(host_session); end
+		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
+		if (not host_session.connecting) and (not host_session.conn) then
+			log("warn", "Connection to %s failed already, destroying session...", to_host);
+			destroy_session(host_session);
+		end
 	end
 end
 
@@ -146,6 +150,7 @@ function attempt_connection(host_session, err)
 	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
 	
 	if not err then -- This is our first attempt
+		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
 		local answer = 
 		adns.lookup(function (answer)
@@ -171,6 +176,7 @@ function attempt_connection(host_session, err)
 			-- Try with SRV, or just the plain hostname if no SRV
 			return try_connect(host_session, connect_host, connect_port);
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
+		log("debug", "DNS lookup for %s sent, waiting for response before we can connect", to_host);
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
@@ -185,6 +191,7 @@ function attempt_connection(host_session, err)
 	
 	if not (connect_host and connect_port) then
 		-- Likely we couldn't resolve DNS
+		log("warn", "Hmm, we're without a host (%s) and port (%s) to connect to for %s, giving up :(", tostring(connect_host), tostring(connect_port), tostring(to_host));
 		return false;
 	end
 	
@@ -267,6 +274,7 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
+	(session.log or log)("debug", "</stream:stream>");
 	session.sends2s("</stream:stream>");
 	session.notopen = true;
 end
