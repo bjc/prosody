@@ -41,6 +41,7 @@ function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, 
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
+			error("hello world")
 	if origin.roster then
 		for jid in pairs(origin.roster) do -- broadcast to all interested contacts
 			local subscription = origin.roster[jid].subscription;
@@ -240,7 +241,7 @@ local function presence_handler(data)
 			origin.directed = origin.directed or {};
 			origin.directed[to] = true;
 		end
-		if to == nil and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+		if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif not to then
 			handle_normal_presence(origin, stanza, core_route_stanza);
@@ -248,7 +249,7 @@ local function presence_handler(data)
 			core_route_stanza(origin, stanza);
 		end
 	elseif (origin.type == "s2sin" or origin.type == "component") and hosts[host] then
-		if to == nil and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+		if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 			handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		else
 			core_route_stanza(origin, stanza);
