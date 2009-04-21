@@ -8,12 +8,15 @@ local math_max = math.max;
 
 local logger = require "util.logger";
 
+local default_logging = { { to = "console" } };
+
 -- Global log function, because some people are too 
 -- lazy to get their own...
 _G.log = logger.init("general");
 
 local log_sink_types = {};
 local get_levels;
+local logging_levels = { "debug", "info", "warn", "error", "critical" }
 
 --- Main function to read config, create the appropriate sinks and tell logger module
 function setup_logging(log)
@@ -47,7 +50,14 @@ function setup_logging(log)
 							end
 						end);
 				else
-					-- All sources	
+					-- All sources
+					-- Create sink
+					local sink = sink_maker(sink_config);
+					
+					-- Set sink for all levels
+					for _, level in pairs(logging_levels) do
+						logger.add_level_sink(level, sink);
+					end
 				end
 			else
 				-- No such sink type
@@ -129,8 +139,6 @@ function log_sink_types.syslog()
 end
 
 --- Helper function to get a set of levels given a "criteria" table
-local logging_levels = { "debug", "info", "warn", "error", "critical" }
-
 function get_levels(criteria, set)
 	set = set or {};
 	if type(criteria) == "string" then
