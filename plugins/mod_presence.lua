@@ -41,7 +41,6 @@ function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, 
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
-			error("hello world")
 	if origin.roster then
 		for jid in pairs(origin.roster) do -- broadcast to all interested contacts
 			local subscription = origin.roster[jid].subscription;
