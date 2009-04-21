@@ -59,22 +59,22 @@ do
 	end
 end
 
-log = require "util.logger".init("general");
+--- Initialize logging
+require "core.loggingmanager"
 
--- Disable log output, needs to read from config
--- require "util.logger".setwriter(function () end);
-
+--- Check runtime dependencies
 require "util.dependencies"
 
+--- Load socket framework
 local server = require "net.server"
+
 
 
 -- Maps connections to sessions --
 sessions = {};
 hosts = {};
 
--- Load and initialise core modules --
-
+--- Load and initialise core modules
 require "util.import"
 require "core.xmlhandlers"
 require "core.rostermanager"

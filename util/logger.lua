@@ -6,34 +6,23 @@
 -- COPYING file in the source package for more information.
 --
 
-local format, rep = string.format, string.rep;
-local io_write = io.write;
 local pcall = pcall;
-local debug = debug;
-local tostring = tostring;
-local math_max = math.max;
 
 local config = require "core.configmanager";
 local log_sources = config.get("*", "core", "log_sources");
 
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
-local do_pretty_printing = not os.getenv("WINDIR");
 local find = string.find;
-local ipairs = ipairs;
+local ipairs, pairs, setmetatable = ipairs, pairs, setmetatable;
 
 module "logger"
 
-local logstyles = {};
+local name_sinks, level_sinks = {}, {};
+local name_patterns = {};
 
---TODO: This should be done in config, but we don't have proper config yet
-if do_pretty_printing then
-	logstyles["info"] = getstyle("bold");
-	logstyles["warn"] = getstyle("bold", "yellow");
-	logstyles["error"] = getstyle("bold", "red");
-end
+-- Weak-keyed so that loggers are collected
+local modify_hooks = setmetatable({}, { __mode = "k" });
 
-local sourcewidth = 20;
-
+local make_logger;
 local outfunction = nil;
 
 function init(name)
@@ -49,18 +38,58 @@ function init(name)
 		if not log_this then return function () end end
 	end
 	
+	local log_debug = make_logger(name, "debug");
+	local log_info = make_logger(name, "info");
+	local log_warn = make_logger(name, "warn");
+	local log_error = make_logger(name, "error");
+
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	local namelen = #name;
-	return 	function (level, message, ...)
-				if outfunction then return outfunction(name, level, message, ...); end
-				
-				sourcewidth = math_max(#name+2, sourcewidth);
-				if ... then 
-					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
-				else
-					io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
+	return function (level, message, ...)
+			if outfunction then return outfunction(name, level, message, ...); end
+			
+			if level == "debug" then
+				return log_debug(message, ...);
+			elseif level == "info" then
+				return log_info(message, ...);
+			elseif level == "warn" then
+				return log_warn(message, ...);
+			elseif level == "error" then
+				return log_error(message, ...);
+			end
+		end
+end
+
+function make_logger(source_name, level)
+	local level_handlers = level_sinks[level];
+	if not level_handlers then
+		level_handlers = {};
+		level_sinks[level] = level_handlers;
+	end
+
+	local source_handlers = name_sinks[source_name];
+	
+	-- All your premature optimisation is belong to me!
+	local num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers;
+	
+	local logger = function (message, ...)
+		if source_handlers then
+			for i = 1,num_source_handlers do
+				if source_handlers(source_name, level, message, ...) == false then
+					return;
 				end
 			end
+		end
+		
+		for i = 1,num_level_handlers do
+			level_handlers[i](source_name, level, message, ...);
+		end
+	end
+
+	-- To make sure our cached lengths stay in sync with reality
+	modify_hooks[logger] = function () num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers; end; 
+	
+	return logger;
 end
 
 function setwriter(f)
@@ -73,5 +102,39 @@ function setwriter(f)
 	end
 	return ok, ret;
 end
+
+function add_level_sink(level, sink_function)
+	if not level_sinks[level] then
+		level_sinks[level] = { sink_function };
+	else
+		level_sinks[level][#level_sinks[level] + 1 ] = sink_function;
+	end
+	
+	for _, modify_hook in pairs(modify_hooks) do
+		modify_hook();
+	end
+end
+
+function add_name_sink(name, sink_function, exclusive)
+	if not name_sinks[name] then
+		name_sinks[name] = { sink_function };
+	else
+		name_sinks[name][#name_sinks[name] + 1] = sink_function;
+	end
+	
+	for _, modify_hook in pairs(modify_hooks) do
+		modify_hook();
+	end
+end
+
+function add_name_pattern_sink(name_pattern, sink_function, exclusive)
+	if not name_patterns[name_pattern] then
+		name_patterns[name_pattern] = { sink_function };
+	else
+		name_patterns[name_pattern][#name_patterns[name_pattern] + 1] = sink_function;
+	end
+end
+
+_M.new = make_logger;
 
 return _M;
