@@ -75,7 +75,7 @@ function make_logger(source_name, level)
 	local logger = function (message, ...)
 		if source_handlers then
 			for i = 1,num_source_handlers do
-				if source_handlers(source_name, level, message, ...) == false then
+				if source_handlers[i](source_name, level, message, ...) == false then
 					return;
 				end
 			end
