@@ -786,7 +786,7 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx,
 end
 
 local addclient = function( address, port, listeners, pattern, sslctx, startssl )
-    local client, err = socket.tcp( )
+    local client, err = luasocket.tcp( )
     if err then
         return nil, err
     end
