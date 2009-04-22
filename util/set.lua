@@ -91,6 +91,10 @@ function new(list)
 		end
 	end
 	
+	function set:empty()
+		return not next(items);
+	end
+	
 	if list then
 		set:add_list(list);
 	end
