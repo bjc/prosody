@@ -795,7 +795,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, startssl 
     if err then    -- try again
         local handler = wrapclient( client, address, port, listeners )
     else
-        wrapconnection( server, listeners, client, address, port, "clientport", pattern, sslctx, startssl )
+        wrapconnection( nil, listeners, client, address, port, "clientport", pattern, sslctx, startssl )
     end
 end
 
