@@ -40,47 +40,26 @@ local function write_pidfile()
 	end
 end
 
-local logfilename = config_get("*", "core", "log");
-if logfilename == "syslog" then
-	pposix.syslog_open("prosody");
-	pposix.syslog_setminlevel(config.get("*", "core", "minimum_log_level") or "info");
-		local syslog, format = pposix.syslog_log, string.format;
-		logwriter = function (name, level, message, ...)
-					if ... then 
-						syslog(level, format(message, ...));
-					else
-						syslog(level, message);
-					end
-				end;			
-elseif logfilename then
-	local logfile = io.open(logfilename, "a+");
-	if logfile then
-		local write, format, flush = logfile.write, string.format, logfile.flush;
-		logwriter = function (name, level, message, ...)
-					if ... then 
-						write(logfile, name, "\t", level, "\t", format(message, ...), "\n");
-					else
-						write(logfile, name, "\t" , level, "\t", message, "\n");
-					end
-					flush(logfile);
-				end;
+local syslog_opened 
+function syslog_sink_maker(config)
+	if not syslog_opened then
+		print("OPENING SYSLOOOOOOOOOG");
+		pposix.syslog_open("prosody");
+		syslog_opened = true;
 	end
-else
-	log("debug", "No logging specified, will continue with default");
+	local syslog, format = pposix.syslog_log, string.format;
+	return function (name, level, message, ...)
+			if ... then
+				syslog(level, format(message, ...));
+			else
+				syslog(level, message);
+			end
+		end;
 end
-
-if logwriter then
-	local ok, ret = logger_set(logwriter);
-	if not ok then
-		log("error", "Couldn't set new log output: %s", ret);
-	end
-end
+require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
 if not config_get("*", "core", "no_daemonize") then
 	local function daemonize_server()
-		local logwriter;
-		
-		
 		local ok, ret = pposix.daemonize();
 		if not ok then
 			log("error", "Failed to daemonize: %s", ret);
