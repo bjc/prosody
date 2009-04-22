@@ -14,7 +14,19 @@ local logger_set = require "util.logger".setwriter;
 
 module.host = "*"; -- we're a global module
 
+local pidfile_written;
+
+local function remove_pidfile()
+	if pidfile_written then
+		os.remove(pidfile);
+		pidfile_written = nil;
+	end
+end
+
 local function write_pidfile()
+	if pidfile_written then
+		remove_pidfile();
+	end
 	local pidfile = config.get("*", "core", "pidfile");
 	if pidfile then
 		local pf, err = io.open(pidfile, "w+");
@@ -23,6 +35,7 @@ local function write_pidfile()
 		else
 			pf:write(tostring(pposix.getpid()));
 			pf:close();
+			pidfile_written = pidfile;
 		end
 	end
 end
@@ -80,9 +93,11 @@ if not config_get("*", "core", "no_daemonize") then
 	end
 	module:add_event_hook("server-starting", daemonize_server);
 else
+	-- Not going to daemonize, so write the pid of this process
 	write_pidfile();
-	-- Not going to daemonize, but let's write the pidfile anyway
 end
+
+module:add_event_hook("server-stopped", remove_pidfile);
 
 -- Set signal handler
 if signal.signal then
