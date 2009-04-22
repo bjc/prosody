@@ -8,10 +8,10 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
-local s_match, s_gmatch = string.match, string.gmatch;
+local s_match, s_gmatch, s_char = string.match, string.gmatch;
 local tonumber, tostring, pairs = tonumber, tostring, pairs;
 
-local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
+local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = s_char(tonumber("0x"..k)); return t[k]; end });
 local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%x", c:byte()); end)); end
 
 local log = require "util.logger".init("httpserver");
