@@ -11,6 +11,9 @@
 local st = require "util.stanza";
 local t_concat = table.concat;
 
+local sessionmanager = require "core.sessionmanager";
+local usermanager = require "core.usermanager";
+
 module:add_feature("jabber:iq:auth");
 module:add_event_hook("stream-features", function (session, features)
 	if not session.username then features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up(); end
