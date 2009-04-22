@@ -52,4 +52,17 @@ function array:reverse()
 	end
 end
 
-_G.array = array 
+function array.collect(f, s, var)
+	local t, var = {};
+	while true do
+		var = f(s, var);
+	        if var == nil then break; end
+		table.insert(t, var);
+	end
+	return setmetatable(t, array_mt);
+end
+
+_G.array = array;
+module("array");
+
+return array;
