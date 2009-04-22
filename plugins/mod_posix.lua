@@ -43,7 +43,6 @@ end
 local syslog_opened 
 function syslog_sink_maker(config)
 	if not syslog_opened then
-		print("OPENING SYSLOOOOOOOOOG");
 		pposix.syslog_open("prosody");
 		syslog_opened = true;
 	end
