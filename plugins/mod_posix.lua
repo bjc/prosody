@@ -14,7 +14,19 @@ local logger_set = require "util.logger".setwriter;
 
 module.host = "*"; -- we're a global module
 
+local pidfile_written;
+
+local function remove_pidfile()
+	if pidfile_written then
+		os.remove(pidfile);
+		pidfile_written = nil;
+	end
+end
+
 local function write_pidfile()
+	if pidfile_written then
+		remove_pidfile();
+	end
 	local pidfile = config.get("*", "core", "pidfile");
 	if pidfile then
 		local pf, err = io.open(pidfile, "w+");
@@ -23,51 +35,31 @@ local function write_pidfile()
 		else
 			pf:write(tostring(pposix.getpid()));
 			pf:close();
+			pidfile_written = pidfile;
 		end
 	end
 end
 
-local logfilename = config_get("*", "core", "log");
-if logfilename == "syslog" then
-	pposix.syslog_open("prosody");
-	pposix.syslog_setminlevel(config.get("*", "core", "minimum_log_level") or "info");
-		local syslog, format = pposix.syslog_log, string.format;
-		logwriter = function (name, level, message, ...)
-					if ... then 
-						syslog(level, format(message, ...));
-					else
-						syslog(level, message);
-					end
-				end;			
-elseif logfilename then
-	local logfile = io.open(logfilename, "a+");
-	if logfile then
-		local write, format, flush = logfile.write, string.format, logfile.flush;
-		logwriter = function (name, level, message, ...)
-					if ... then 
-						write(logfile, name, "\t", level, "\t", format(message, ...), "\n");
-					else
-						write(logfile, name, "\t" , level, "\t", message, "\n");
-					end
-					flush(logfile);
-				end;
+local syslog_opened 
+function syslog_sink_maker(config)
+	if not syslog_opened then
+		print("OPENING SYSLOOOOOOOOOG");
+		pposix.syslog_open("prosody");
+		syslog_opened = true;
 	end
-else
-	log("debug", "No logging specified, will continue with default");
+	local syslog, format = pposix.syslog_log, string.format;
+	return function (name, level, message, ...)
+			if ... then
+				syslog(level, format(message, ...));
+			else
+				syslog(level, message);
+			end
+		end;
 end
-
-if logwriter then
-	local ok, ret = logger_set(logwriter);
-	if not ok then
-		log("error", "Couldn't set new log output: %s", ret);
-	end
-end
+require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
 if not config_get("*", "core", "no_daemonize") then
 	local function daemonize_server()
-		local logwriter;
-		
-		
 		local ok, ret = pposix.daemonize();
 		if not ok then
 			log("error", "Failed to daemonize: %s", ret);
@@ -80,9 +72,11 @@ if not config_get("*", "core", "no_daemonize") then
 	end
 	module:add_event_hook("server-starting", daemonize_server);
 else
+	-- Not going to daemonize, so write the pid of this process
 	write_pidfile();
-	-- Not going to daemonize, but let's write the pidfile anyway
 end
+
+module:add_event_hook("server-stopped", remove_pidfile);
 
 -- Set signal handler
 if signal.signal then

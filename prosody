@@ -160,6 +160,7 @@ end
 -- Global function to initiate prosody shutdown
 function prosody_shutdown(reason)
 	log("info", "Shutting down: %s", reason or "unknown reason");
+	eventmanager.fire_event("server-stopping", { reason = reason });
 	server.setquitting(true);
 end
 
@@ -198,6 +199,8 @@ while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
 	socket.sleep(0.2);
 end
 
+eventmanager.fire_event("server-cleanup");
+
 -- Ok, we're quitting I know, but we
 -- need to do some tidying before we go :)
 server.setquitting(false);
@@ -224,3 +227,5 @@ for hostname, host in pairs(hosts) do
 end
 
 server.closeall();
+
+eventmanager.fire_event("server-stopped");
