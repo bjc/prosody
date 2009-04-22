@@ -141,4 +141,8 @@ function intersection(set1, set2)
 	return set;
 end
 
+function xor(set1, set2)
+	return union(set1, set2) - intersection(set1, set2);
+end
+
 return _M;
