@@ -65,7 +65,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 		local node, host = jid_split(stanza.attr.from);
 		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
-			if res ~= origin and res.full_jid then -- to resource. FIXME is res.full_jid the correct check? Maybe it should be res.presence
+			if res ~= origin and res.presence then -- to resource
 				stanza.attr.to = res.full_jid;
 				core_route_stanza(origin, stanza);
 			end
