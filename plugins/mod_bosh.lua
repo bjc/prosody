@@ -180,7 +180,7 @@ function stream_callbacks.streamopened(request, attr)
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
 		local response = st.stanza("body", { xmlns = xmlns_bosh, 
 									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120", 
-									sid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
+									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
 									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
 				
