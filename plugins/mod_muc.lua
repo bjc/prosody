@@ -21,7 +21,7 @@ if module:get_host_type() ~= "component" then
 end
 
 local muc_domain = module:get_host();
-local muc_name = "MUCMUCMUC!!!";
+local muc_name = "Chatrooms";
 local history_length = 20;
 
 -- room_name -> room
