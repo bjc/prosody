@@ -103,7 +103,7 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }) };
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	session_close_reply.attr.condition = reason;
@@ -126,6 +126,7 @@ function stream_callbacks.streamopened(request, attr)
 		-- TODO: Sanity checks here (rid, to, known host, etc.)
 		if not hosts[attr.to] then
 			-- Unknown host
+			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			session_close_reply.attr.condition = "host-unknown";
 			request:send{ headers = default_headers, body = tostring(session_close_reply) };
 			request.notopen = nil
@@ -180,7 +181,7 @@ function stream_callbacks.streamopened(request, attr)
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
 		local response = st.stanza("body", { xmlns = xmlns_bosh, 
 									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120", 
-									sid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
+									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
 									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
 				

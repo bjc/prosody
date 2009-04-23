@@ -13,6 +13,8 @@ local config = require "core.configmanager";
 
 local logger = require "util.logger";
 
+_G.log = logger.init("general");
+
 module "loggingmanager"
 
 -- The log config used if none specified in the config file
