@@ -102,7 +102,7 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }) };
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	session_close_reply.attr.condition = reason;
