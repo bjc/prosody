@@ -8,6 +8,7 @@
 
 module.host = "*";
 
+local hosts = _G.hosts;
 local connlisteners_register = require "net.connlisteners".register;
 
 local console_listener = { default_port = 5582; default_mode = "*l"; };

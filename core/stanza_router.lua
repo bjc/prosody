@@ -10,6 +10,8 @@
 
 local log = require "util.logger".init("stanzarouter")
 
+local hosts = _G.hosts;
+
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
@@ -24,9 +26,9 @@ local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
-local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
-local handle_inbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
-local handle_normal_presence = require "core.presencemanager".handle_normal_presence;
+local handle_outbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
+local handle_inbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
+local handle_normal_presence = function()end;--require "core.presencemanager".handle_normal_presence;
 
 local format = string.format;
 local tostring = tostring;
@@ -40,6 +42,7 @@ local ipairs = ipairs;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
+local fire_event = require "core.eventmanager2".fire_event;
 local function checked_error_reply(origin, stanza)
 	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
@@ -100,6 +103,8 @@ function core_process_stanza(origin, stanza)
 
 	-- FIXME do stanzas not of jabber:client get handled by components?
 	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
+		local event_data = {origin=origin, stanza=stanza};
+		fire_event(tostring(host or origin.host).."/"..stanza.name, event_data);
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
