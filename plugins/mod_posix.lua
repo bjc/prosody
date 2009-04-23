@@ -18,7 +18,7 @@ local pidfile_written;
 
 local function remove_pidfile()
 	if pidfile_written then
-		os.remove(pidfile);
+		os.remove(pidfile_written);
 		pidfile_written = nil;
 	end
 end
