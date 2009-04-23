@@ -274,6 +274,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					log("debug", "%s joining as %s", from, to);
 					local data;
 					if not rooms:get(room) and not rooms_info:get(room) then -- new room
+						rooms_info:set(room, 'name', (jid_split(room)));
 						data = {affiliation='owner', role='moderator', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 					end
 					if not data then -- new occupant
