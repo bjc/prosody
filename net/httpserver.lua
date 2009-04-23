@@ -30,7 +30,7 @@ local function send_response(request, response)
 	-- Write status line
 	local resp;
 	if response.body then
-		log("debug", "Sending response to %s: %s", request.id, response.body);
+		log("debug", "Sending response to %s", request.id);
 		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
 		local h = response.headers;
 		if h then
@@ -99,7 +99,7 @@ local function call_callback(request, err)
 			if response == true and not request.destroyed then
 				-- Keep connection open, we will reply later
 				log("warn", "Request %s left open, on_destroy is %s", request.id, tostring(request.on_destroy));
-			else
+			elseif response ~= true then
 				-- Assume response
 				send_response(request, response);
 				destroy_request(request);
