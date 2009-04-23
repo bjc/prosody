@@ -30,7 +30,7 @@ local function send_response(request, response)
 	-- Write status line
 	local resp;
 	if response.body then
-		log("debug", "Sending response to %s: %s", request.id, response.body);
+		log("debug", "Sending response to %s", request.id);
 		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
 		local h = response.headers;
 		if h then
