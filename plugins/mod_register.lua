@@ -7,8 +7,10 @@
 --
 
 
-
+local hosts = _G.hosts;
 local st = require "util.stanza";
+local config = require "core.configmanager";
+local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local datamanager_store = require "util.datamanager".store;
