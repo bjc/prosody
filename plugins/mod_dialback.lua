@@ -7,7 +7,7 @@
 --
 
 
-
+local hosts = _G.hosts;
 local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;

@@ -10,8 +10,10 @@
 
 local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
+local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
+local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
@@ -49,14 +51,14 @@ local function handle_status(session, status)
 		session.sasl_handler = nil;
 	elseif status == "success" then
 		if not session.sasl_handler.username then error("SASL succeeded but we didn't get a username!"); end -- TODO move this to sessionmanager
-		sessionmanager.make_authenticated(session, session.sasl_handler.username);
+		sm_make_authenticated(session, session.sasl_handler.username);
 		session.sasl_handler = nil;
 		session:reset_stream();
 	end
 end
 
 local function password_callback(node, host, mechanism, decoder)
-	local password = (datamanager.load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
+	local password = (datamanager_load(node, host, "accounts") or {}).password; -- FIXME handle hashed passwords
 	local func = function(x) return x; end;
 	if password then
 		if mechanism == "PLAIN" then
