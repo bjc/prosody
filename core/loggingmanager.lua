@@ -19,6 +19,7 @@ module "loggingmanager"
 
 -- The log config used if none specified in the config file
 local default_logging = { { to = "console" } };
+local default_file_logging = { { to = "file", levels = { min = "info" } } };
 
 -- The actual config loggingmanager is using
 local logging_config = config.get("*", "core", "log") or default_logging;
@@ -28,6 +29,8 @@ local log_sink_types = setmetatable({}, { __newindex = function (t, k, v) rawset
 local get_levels;
 local logging_levels = { "debug", "info", "warn", "error", "critical" }
 
+-- Put a rule into action. Requires that the sink type has already been registered.
+-- This function is called automatically when a new sink type is added [see apply_sink_rules()]
 local function add_rule(sink_config)
 	local sink_maker = log_sink_types[sink_config.to];
 	if sink_maker then
@@ -65,8 +68,9 @@ local function add_rule(sink_config)
 	end
 end
 
--- Search for all rules using a particular sink type,
--- and apply them
+-- Search for all rules using a particular sink type, and apply
+-- them. Called automatically when a new sink type is added to
+-- the log_sink_types table.
 function apply_sink_rules(sink_type)
 	if type(logging_config) == "table" then
 		for _, sink_config in pairs(logging_config) do
@@ -74,9 +78,14 @@ function apply_sink_rules(sink_type)
 				add_rule(sink_config);
 			end
 		end
-	elseif type(logging_config) == "string" and sink_type == "file" then
+	elseif type(logging_config) == "string" and (not logging_config:match("^%*")) and sink_type == "file" then
 		-- User specified simply a filename, and the "file" sink type 
 		-- was just added
+		for _, sink_config in pairs(default_file_logging) do
+			sink_config.filename = logging_config;
+			add_rule(sink_config);
+			sink_config.filename = nil;
+		end
 	end
 end
 
