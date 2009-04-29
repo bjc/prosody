@@ -78,6 +78,10 @@ do
       PREFIX="$value"
       PREFIX_SET=yes
       ;;
+   --sysconfdir=*)
+      SYSCONFDIR="$value"
+      SYSCONFDIR_SET=yes
+      ;;
    --ostype=*)
       OSTYPE="$value"
       OSTYPE_SET=yes
