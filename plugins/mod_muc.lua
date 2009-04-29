@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local datamanager = require "util.datamanager";
+local datetime = require "util.datetime";
 
 local register_component = require "core.componentmanager".register_component;
 local deregister_component = require "core.componentmanager".deregister_component;

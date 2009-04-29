@@ -10,14 +10,19 @@ if module:get_host_type() ~= "component" then
 	error("Don't load mod_component manually, it should be for a component, please see http://prosody.im/doc/components", 0);
 end
 
+local hosts = _G.hosts;
+
 local t_concat = table.concat;
 
+local lxp = require "lxp";
+local logger = require "util.logger";
+local config = require "core.configmanager";
 local connlisteners = require "net.connlisteners";
 local cm_register_component = require "core.componentmanager".register_component;
 local cm_deregister_component = require "core.componentmanager".deregister_component;
 local uuid_gen = require "util.uuid".generate;
 local sha1 = require "util.hashes".sha1;
-local st = stanza;
+local st = require "util.stanza";
 local init_xmlhandlers = require "core.xmlhandlers";
 
 local sessions = {};
@@ -211,8 +216,8 @@ connlisteners.register('component', component_listener);
 
 module:add_event_hook("server-started", 
 	function ()
-		if net_activate_ports then
-			net_activate_ports("component", "component", {5437}, "tcp");
+		if _G.net_activate_ports then
+			_G.net_activate_ports("component", "component", {5437}, "tcp");
 		else
 			error("No net_activate_ports: Using an incompatible version of Prosody?");
 		end

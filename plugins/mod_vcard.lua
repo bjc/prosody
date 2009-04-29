@@ -8,13 +8,13 @@
 
 
 
-require "util.datamanager"
-local datamanager = datamanager;
+local hosts = _G.hosts;
+local datamanager = require "util.datamanager"
 
 local st = require "util.stanza"
 local t_concat, t_insert = table.concat, table.insert;
 
-require "util.jid"
+local jid = require "util.jid"
 local jid_split = jid.split;
 
 module:add_feature("vcard-temp");
