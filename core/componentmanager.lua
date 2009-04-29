@@ -104,7 +104,7 @@ end
 function deregister_component(host)
 	if components[host] then
 		modulemanager.unload(host, "dialback");
-		host.connected = nil;
+		hosts[host].connected = nil;
 		local host_config = configmanager.getconfig()[host];
 		if host_config and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
 			-- Set default handler
