@@ -13,9 +13,9 @@ local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
-local st = require "util.stanza";
+local log = module._log;
 
-local log = require "util.logger".init("mod_dialback");
+local st = require "util.stanza";
 
 local xmlns_dialback = "jabber:server:dialback";
 
