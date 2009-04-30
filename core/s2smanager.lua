@@ -48,7 +48,7 @@ local function compare_srv_priorities(a,b) return a.priority < b.priority or a.w
 local function bounce_sendq(session)
 	local sendq = session.sendq;
 	if sendq then
-		session.log("debug", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
+		session.log("info", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
 		local dummy = {
 			type = "s2sin";
 			send = function(s)
@@ -199,9 +199,9 @@ function attempt_connection(host_session, err)
 		host_session.srv_choice = host_session.srv_choice + 1;
 		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
 		connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
-		host_session.log("debug", "Connection failed (%s). Attempt #%d: This time to %s:%d", tostring(err), host_session.srv_choice, connect_host, connect_port);
+		host_session.log("info", "Connection failed (%s). Attempt #%d: This time to %s:%d", tostring(err), host_session.srv_choice, connect_host, connect_port);
 	else
-		host_session.log("debug", "Out of connection options, can't connect to %s", tostring(host_session.to_host));
+		host_session.log("info", "Out of connection options, can't connect to %s", tostring(host_session.to_host));
 		-- We're out of options
 		return false;
 	end
@@ -216,7 +216,7 @@ function attempt_connection(host_session, err)
 end
 
 function try_connect(host_session, connect_host, connect_port)
-	log("debug", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
+	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
@@ -338,7 +338,7 @@ function make_authenticated(session, host)
 	else
 		return false;
 	end
-	session.log("info", "connection is now authenticated");
+	session.log("debug", "connection %s->%s is now authenticated", session.from_host or "(unknown)", session.to_host or "(unknown)");
 	
 	mark_connected(session);
 	
@@ -350,7 +350,7 @@ function mark_connected(session)
 	
 	local from, to = session.from_host, session.to_host;
 	
-	session.log("debug", session.direction.." s2s connection "..from.."->"..to.." is now complete");
+	session.log("info", session.direction.." s2s connection "..from.."->"..to.." complete");
 	
 	local send_to_host = send_to_host;
 	function session.send(data) send_to_host(to, from, data); end
