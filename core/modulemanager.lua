@@ -123,6 +123,10 @@ function load(host, module_name, config)
 	-- Use modified host, if the module set one
 	modulemap[api_instance.host][module_name] = pluginenv;
 	
+	if api_instance.host == "*" and host ~= "*" then
+		api_instance:set_global();
+	end
+		
 	return true;
 end
 
@@ -260,6 +264,10 @@ end
 
 function api:set_global()
 	self.host = "*";
+	-- Update the logger
+	local _log = logger.init("mod_"..self.name);
+	self.log = function (self, ...) return _log(...); end;
+	self._log = _log;
 end
 
 local function _add_handler(module, origin_type, tag, xmlns, handler)
