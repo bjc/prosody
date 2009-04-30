@@ -6,7 +6,7 @@ local tostring, setmetatable, rawset, pairs, ipairs, type =
 	tostring, setmetatable, rawset, pairs, ipairs, type;
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
-local os_getenv = os.getenv;
+local os_date, os_getenv = os.date, os.getenv;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 
 local config = require "core.configmanager";
@@ -20,7 +20,7 @@ module "loggingmanager"
 -- The log config used if none specified in the config file
 local default_logging = { { to = "console" } };
 local default_file_logging = { { to = "file", levels = { min = "info" } } };
-
+local default_timestamp = "%b %d %T";
 -- The actual config loggingmanager is using
 local logging_config = config.get("*", "core", "log") or default_logging;
 
@@ -130,9 +130,18 @@ end
 local sourcewidth = 20;
 
 function log_sink_types.stdout()
+	local timestamps = config.timestamps;
+	
+	if timestamps == true then
+		timestamps = default_timestamp; -- Default format
+	end
+	
 	return function (name, level, message, ...)
 		sourcewidth = math_max(#name+2, sourcewidth);
 		local namelen = #name;
+		if timestamps then
+			io_write(os_date(timestamps), " ");
+		end
 		if ... then 
 			io_write(name, rep(" ", sourcewidth-namelen), level, "\t", format(message, ...), "\n");
 		else
@@ -156,9 +165,18 @@ do
 			return log_sink_types.stdout(config);
 		end
 		
+		local timestamps = config.timestamps;
+
+		if timestamps == true then
+			timestamps = default_timestamp; -- Default format
+		end
+
 		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
 			local namelen = #name;
+			if timestamps then
+				io_write(os_date(timestamps), " ");
+			end
 			if ... then 
 				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
 			else
@@ -175,8 +193,17 @@ function log_sink_types.file(config)
 		return function () end
 	end
 
+	local timestamps = config.timestamps;
+
+	if timestamps == true then
+		timestamps = default_timestamp; -- Default format
+	end
+
 	local write, format, flush = logfile.write, format, logfile.flush;
 	return function (name, level, message, ...)
+		if timestamps then
+			write(logfile, os_date(timestamps), " ");
+		end
 		if ... then 
 			write(logfile, name, "\t", level, "\t", format(message, ...), "\n");
 		else
