@@ -21,7 +21,7 @@ local jid_split = require "util.jid".split
 local md5 = require "util.hashes".md5;
 local config = require "core.configmanager";
 
-local log = require "util.logger".init("mod_saslauth");
+local log = module._log;
 
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
