@@ -45,7 +45,7 @@ function new_session(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
-	log("info", "open sessions now: ".. open_sessions);
+	log("debug", "open sessions now: ".. open_sessions);
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
 	session.ip = conn.ip();
@@ -53,7 +53,7 @@ function new_session(conn)
 end
 
 function destroy_session(session, err)
-	(session.log or log)("info", "Destroying session");
+	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
 	
 	-- Send unavailable presence
 	if session.presence then
@@ -94,6 +94,7 @@ function make_authenticated(session, username)
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s";
 	end
+	session.log("info", "Authenticated as %s@%s", username or "(unknown)", session.host or "(unknown)");
 	return true;
 end
 
@@ -176,7 +177,7 @@ function streamopened(session, attr)
 	
 	send(features);
 	
-	(session.log or log)("info", "Sent reply <stream:stream> to client");
+	(session.log or log)("debug", "Sent reply <stream:stream> to client");
 	session.notopen = nil;
 end
 
