@@ -32,13 +32,13 @@ local new_sasl = require "util.sasl".new;
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
-		log("debug", ret or "");
+		log("debug", "%s", ret or "");
 		reply:text(base64.encode(ret or ""));
 	elseif status == "failure" then
 		reply:tag(ret):up();
 		if err_msg then reply:tag("text"):text(err_msg); end
 	elseif status == "success" then
-		log("debug", ret or "");
+		log("debug", "%s", ret or "");
 		reply:text(base64.encode(ret or ""));
 	else
 		error("Unknown sasl status: "..status);
@@ -89,7 +89,7 @@ local function sasl_handler(session, stanza)
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
-		log("debug", text);
+		log("debug", "%s", text);
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
@@ -99,7 +99,7 @@ local function sasl_handler(session, stanza)
 	local status, ret, err_msg = session.sasl_handler:feed(text);
 	handle_status(session, status);
 	local s = build_reply(status, ret, err_msg); 
-	log("debug", "sasl reply: "..tostring(s));
+	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
 end
 
@@ -130,7 +130,7 @@ module:add_event_hook("stream-features",
 					
 module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 
 		function (session, stanza)
-			log("debug", "Client tried to bind to a resource");
+			log("debug", "Client requesting a resource bind");
 			local resource;
 			if stanza.attr.type == "set" then
 				local bind = stanza.tags[1];
@@ -153,6 +153,6 @@ module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 		
 module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 
 		function (session, stanza)
-			log("debug", "Client tried to bind to a resource");
+			log("debug", "Client requesting a session");
 			session.send(st.reply(stanza));
 		end);
