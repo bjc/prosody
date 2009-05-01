@@ -122,6 +122,7 @@ end
 
 --- Definition of built-in logging sinks ---
 
+-- Null sink, must enter log_sink_types *first*
 function log_sink_types.nowhere()
 	return function () return false; end;
 end
