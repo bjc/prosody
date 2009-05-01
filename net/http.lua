@@ -9,8 +9,8 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs, xpcall, select, debug_traceback = 
-        tonumber, tostring, pairs, xpcall, select, debug.traceback;
+local tonumber, tostring, pairs, xpcall, select, debug_traceback, char = 
+        tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char;
 
 local log = require "util.logger".init("http");
 local print = function () end
