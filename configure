@@ -86,7 +86,7 @@ do
       OSTYPE="$value"
       OSTYPE_SET=yes
       ;;
-   --data-dir=*)
+   --datadir=*)
    	DATADIR="$value"
    	DATADIR_SET=yes
       ;;
