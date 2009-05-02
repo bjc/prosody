@@ -204,8 +204,9 @@ eventmanager.fire_event("server-cleanup");
 -- need to do some tidying before we go :)
 server.setquitting(false);
 
+log("info", "Shutdown status: Closing all active sessions");
 for hostname, host in pairs(hosts) do
-	log("info", "Shutdown status: Closing client connections for %s", hostname)
+	log("debug", "Shutdown status: Closing client connections for %s", hostname)
 	if host.sessions then
 		for username, user in pairs(host.sessions) do
 			for resource, session in pairs(user.sessions) do
@@ -215,7 +216,7 @@ for hostname, host in pairs(hosts) do
 		end
 	end
 	
-	log("info", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
+	log("debug", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
 	if host.s2sout then
 		for remotehost, session in pairs(host.s2sout) do
 			if session.close then
