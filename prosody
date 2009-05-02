@@ -114,8 +114,17 @@ end);
 
 ----------- End of out-of-place code --------------
 
+-- Global function to initiate prosody shutdown
+function prosody_shutdown(reason)
+	log("info", "Shutting down: %s", reason or "unknown reason");
+	eventmanager.fire_event("server-stopping", { reason = reason });
+	server.setquitting(true);
+end
+
+-- Signal to modules that we are ready to start
 eventmanager.fire_event("server-starting");
 
+-- Load SSL settings from config, and create a ctx table
 local global_ssl_ctx = ssl and config.get("*", "core", "ssl");
 if global_ssl_ctx then
 	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
@@ -151,13 +160,6 @@ net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 
 if cl.get("console") then
 	cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
-end
-
--- Global function to initiate prosody shutdown
-function prosody_shutdown(reason)
-	log("info", "Shutting down: %s", reason or "unknown reason");
-	eventmanager.fire_event("server-stopping", { reason = reason });
-	server.setquitting(true);
 end
 
 -- Catch global accesses --
