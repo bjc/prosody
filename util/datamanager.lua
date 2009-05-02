@@ -55,7 +55,7 @@ local callback;
 ------- API -------------
 
 function set_data_path(path)
-	log("info", "Setting data path to: %s", path);
+	log("debug", "Setting data path to: %s", path);
 	data_path = path;
 end
 function set_callback(func)
