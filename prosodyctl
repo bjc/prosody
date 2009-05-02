@@ -1,0 +1,389 @@
+#!/usr/bin/env lua
+-- Prosody IM v0.4
+-- Copyright (C) 2008-2009 Matthew Wild
+-- Copyright (C) 2008-2009 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
+-- prosodyctl - command-line controller for Prosody XMPP server
+
+-- Will be modified by configure script if run --
+
+CFG_SOURCEDIR=nil;
+CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
+CFG_PLUGINDIR=nil;
+CFG_DATADIR=os.getenv("PROSODY_DATADIR");
+
+-- -- -- -- -- -- -- ---- -- -- -- -- -- -- -- --
+
+if CFG_SOURCEDIR then
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
+end
+
+if CFG_DATADIR then
+	if os.getenv("HOME") then
+		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
+	end
+end
+
+-- Required to be able to find packages installed with luarocks
+pcall(require, "luarocks.require")
+
+
+config = require "core.configmanager"
+
+do
+	-- TODO: Check for other formats when we add support for them
+	-- Use lfs? Make a new conf/ dir?
+	local ok, level, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+	if not ok then
+		print("\n");
+		print("**************************");
+		if level == "parser" then
+			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
+			print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
+			print("");
+		elseif level == "file" then
+			print("Prosody was unable to find the configuration file.");
+			print("We looked for: "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
+			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
+		end
+		print("More help on configuring Prosody can be found at http://prosody.im/doc/configure");
+		print("Good luck!");
+		print("**************************");
+		print("");
+		os.exit(1);
+	end
+end
+
+local error_messages = setmetatable({ 
+		["invalid-username"] = "The given username is invalid in a Jabber ID";
+		["invalid-hostname"] = "The given hostname is invalid";
+		["no-password"] = "No password was supplied";
+		["no-such-user"] = "The given user does not exist on the server";
+		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
+
+hosts = {};
+
+require "core.hostmanager"
+require "core.eventmanager".fire_event("server-starting");
+
+require "util.prosodyctl"
+-----------------------
+
+function show_message(msg, ...)
+	print(msg:format(...));
+end
+
+function show_warning(msg, ...)
+	print(msg:format(...));
+end
+
+function show_usage(usage, desc)
+	print("Usage: "..arg[0].." "..usage);
+	if desc then
+		print(" "..desc);
+	end
+end
+
+local function getchar(n)
+	os.execute("stty raw -echo");
+	local char = io.read(n or 1);
+	os.execute("stty sane");
+	return char;
+end
+	
+local function getpass()
+	os.execute("stty -echo");
+	local pass = io.read("*l");
+	os.execute("stty sane");
+	io.write("\n");
+	return pass;
+end
+
+function show_yesno(prompt)
+	io.write(prompt, " ");
+	local choice = getchar():lower();
+	io.write("\n");
+	if not choice:match("%a") then
+		choice = prompt:match("%[.-(%U).-%]$");
+		if not choice then return nil; end
+	end
+	return (choice == "y");
+end
+
+local function read_password()
+	local password;
+	while true do
+		io.write("Enter new password: ");
+		password = getpass();
+		io.write("Retype new password: ");
+		if getpass() ~= password then
+			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
+				return;
+			end
+		else
+			break;
+		end
+	end
+	return password;
+end
+-----------------------
+local commands = {};
+local command = arg[1];
+
+function commands.adduser(arg)
+	if not arg[1] or arg[1] == "--help" then
+		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
+		return 1;
+	end
+	local user, host = arg[1]:match("([^@]+)@(.+)");
+	if not user and host then
+		show_message [[Failed to understand JID, please supply the JID you want to create]]
+		show_usage [[adduser user@host]]
+		return 1;
+	end
+	
+	if not host then
+		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
+		return 1;
+	end
+	
+	if prosodyctl.user_exists{ user = user, host = host } then
+		show_message [[That user already exists]];
+		return 1;
+	end
+	
+	if not hosts[host] then
+		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
+		show_warning("The user will not be able to log in until this is changed.");
+	end
+	
+	local password = read_password();
+	if not password then return 1; end
+	
+	local ok, msg = prosodyctl.adduser { user = user, host = host, password = password };
+	
+	if ok then return 0; end
+	
+	show_message(error_messages[msg])
+	return 1;
+end
+
+function commands.passwd(arg)
+	if not arg[1] or arg[1] == "--help" then
+		show_usage([[passwd JID]], [[Set the password for the specified user account in Prosody]]);
+		return 1;
+	end
+	local user, host = arg[1]:match("([^@]+)@(.+)");
+	if not user and host then
+		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
+		show_usage [[passwd user@host]]
+		return 1;
+	end
+	
+	if not host then
+		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
+		return 1;
+	end
+	
+	if not prosodyctl.user_exists { user = user, host = host } then
+		show_message [[That user does not exist, use prosodyctl adduser to create a new user]]
+		return 1;
+	end
+	
+	local password = read_password();
+	if not password then return 1; end
+	
+	local ok, msg = prosodyctl.passwd { user = user, host = host, password = password };
+	
+	if ok then return 0; end
+	
+	show_message(error_messages[msg])
+	return 1;
+end
+
+function commands.deluser(arg)
+	if not arg[1] or arg[1] == "--help" then
+		show_usage([[deluser JID]], [[Permanently remove the specified user account from Prosody]]);
+		return 1;
+	end
+	local user, host = arg[1]:match("([^@]+)@(.+)");
+	if not user and host then
+		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
+		show_usage [[passwd user@host]]
+		return 1;
+	end
+	
+	if not host then
+		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
+		return 1;
+	end
+	
+	if not prosodyctl.user_exists { user = user, host = host } then
+		show_message [[That user does not exist on this server]]
+		return 1;
+	end
+	
+	local ok, msg = prosodyctl.passwd { user = user, host = host };
+	
+	if ok then return 0; end
+	
+	show_message(error_messages[msg])
+	return 1;
+end
+
+function commands.start()
+	local ok, ret = prosodyctl.isrunning();
+	if not ok then
+		show_message(error_messages[ret]);
+		return 1;
+	end
+	
+	if ret then
+		local ok, ret = prosodyctl.getpid();
+		if not ok then
+			show_message("Couldn't get running Prosody's PID");
+			show_message(error_messages[ret]);
+			return 1;
+		end
+		show_message("Prosody is already running with PID %s", ret or "(unknown)");
+		return 1;
+	end
+	
+	local ok, ret = prosodyctl.start();
+	if ok then return 0; end
+
+	show_message("Failed to start Prosody");
+	show_message(error_messages[ret])	
+	return 1;	
+end
+
+function commands.status()
+	local ok, ret = prosodyctl.isrunning();
+	if not ok then
+		show_message(error_messages[ret]);
+		return 1;
+	end
+	
+	if ret then
+		local ok, ret = prosodyctl.getpid();
+		if not ok then
+			show_message("Couldn't get running Prosody's PID");
+			show_message(error_messages[ret]);
+			return 1;
+		end
+		show_message("Prosody is running with PID %s", ret or "(unknown)");
+		return 0;
+	end
+	return 1;
+end
+
+function commands.stop()
+	if not prosodyctl.isrunning() then
+		show_message("Prosody is not running");
+		return 1;
+	end
+	
+	local ok, ret = prosodyctl.stop();
+	if ok then return 0; end
+
+	show_message(error_messages[ret])	
+	return 1;
+end
+
+-- ejabberdctl compatibility
+
+function commands.register(arg)
+	local user, host, password = unpack(arg);
+	if (not (user and host)) or arg[1] == "--help" then
+		if not user and user ~= "--help" then
+			show_message [[No username specified]]
+		elseif not host then
+			show_message [[Please specify which host you want to register the user on]];
+		end
+		show_usage("register USER HOST [PASSWORD]", "Register a user on the server, with the given password");
+		return 1;
+	end
+	if not password then
+		password = read_password();
+		if not password then
+			show_message [[Unable to register user with no password]];
+			return 1;
+		end
+	end
+	
+	local ok, msg = prosodyctl.adduser { user = user, host = host, password = password };
+	
+	if ok then return 0; end
+	
+	show_message(error_messages[msg])
+	return 1;
+end
+
+function commands.unregister(arg)
+	local user, host = unpack(arg);
+	if (not (user and host)) or arg[1] == "--help" then
+		if not user then
+			show_message [[No username specified]]
+		elseif not host then
+			show_message [[Please specify which host you want to unregister the user from]];
+		end
+		show_usage("register USER HOST [PASSWORD]", "Permanently remove a user account from the server");
+		return 1;
+	end
+
+	local ok, msg = prosodyctl.deluser { user = user, host = host };
+	
+	if ok then return 0; end
+	
+	show_message(error_messages[msg])
+	return 1;
+end
+
+
+---------------------
+
+if not commands[command] then -- Show help for all commands
+	function show_usage(usage, desc)
+		print(" "..usage);
+		print("    "..desc);
+	end
+
+	print("prosodyctl - Manage a Prosody server");
+	print("");
+	print("Usage: "..arg[0].." COMMAND [OPTIONS]");
+	print("");
+	print("Where COMMAND may be one of:\n");
+
+	local commands_order = { "adduser", "passwd", "deluser" };
+
+	local done = {};
+
+	for _, command_name in ipairs(commands_order) do
+		local command = commands[command_name];
+		if command then
+			command{ "--help" };
+			print""
+			done[command_name] = true;
+		end
+	end
+
+	for command_name, command in pairs(commands) do
+		if not done[command_name] then
+			command{ "--help" };
+			print""
+			done[command_name] = true;
+		end
+	end
+	
+	
+	os.exit(0);
+end
+
+os.exit(commands[command]({ select(2, unpack(arg)) }));
