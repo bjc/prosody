@@ -238,7 +238,11 @@ function commands.deluser(arg)
 	return 1;
 end
 
-function commands.start()
+function commands.start(arg)
+	if arg[1] == "--help" then
+		show_usage([[start]], [[Start Prosody]]);
+		return 1;
+	end
 	local ok, ret = prosodyctl.isrunning();
 	if not ok then
 		show_message(error_messages[ret]);
@@ -264,7 +268,12 @@ function commands.start()
 	return 1;	
 end
 
-function commands.status()
+function commands.status(arg)
+	if arg[1] == "--help" then
+		show_usage([[status]], [[Reports the running status of Prosody]]);
+		return 1;
+	end
+
 	local ok, ret = prosodyctl.isrunning();
 	if not ok then
 		show_message(error_messages[ret]);
@@ -280,11 +289,19 @@ function commands.status()
 		end
 		show_message("Prosody is running with PID %s", ret or "(unknown)");
 		return 0;
+	else
+		show_message("Prosody is not running");
+		return 2
 	end
 	return 1;
 end
 
-function commands.stop()
+function commands.stop(arg)
+	if arg[1] == "--help" then
+		show_usage([[stop]], [[Stop a running Prosody server]]);
+		return 1;
+	end
+
 	if not prosodyctl.isrunning() then
 		show_message("Prosody is not running");
 		return 1;
@@ -293,7 +310,7 @@ function commands.stop()
 	local ok, ret = prosodyctl.stop();
 	if ok then return 0; end
 
-	show_message(error_messages[ret])	
+	show_message(error_messages[ret]);
 	return 1;
 end
 
