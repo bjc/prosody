@@ -149,12 +149,8 @@ net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "t
 net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
 net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 
-if config.get("*", "core", "console_enabled") then
-	if cl.get("console") then
-		cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
-	else
-		log("error", "Console is enabled, but the console module appears not to be loaded");
-	end
+if cl.get("console") then
+	cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
 end
 
 -- Global function to initiate prosody shutdown
