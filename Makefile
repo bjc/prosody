@@ -12,14 +12,15 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
-all: prosody.install prosody.cfg.lua.install
+all: prosody.install prosodyctl.install prosody.cfg.lua.install
 	$(MAKE) -C util-src install
 
-install: prosody.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
+install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATA)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
 	install ./prosody.install $(BIN)/prosody
+	install ./prosodyctl.install $(BIN)/prosodyctl
 	install -m644 core/* $(SOURCE)/core
 	install -m644 net/* $(SOURCE)/net
 	install -m644 util/* $(SOURCE)/util
@@ -31,6 +32,7 @@ install: prosody.install prosody.cfg.lua.install util/encodings.so util/encoding
 
 clean:
 	rm -f prosody.install
+	rm -f prosodyctl.install
 	rm -f prosody.cfg.lua.install
 	$(MAKE) clean -C util-src
 
@@ -51,6 +53,12 @@ prosody.install: prosody
 		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
 		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
 		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" < prosody > prosody.install
+
+prosodyctl.install: prosodyctl
+	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
+		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
+		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
+		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" < prosodyctl > prosodyctl.install
 
 prosody.cfg.lua.install:
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
