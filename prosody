@@ -149,12 +149,8 @@ net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "t
 net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
 net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 
-if config.get("*", "core", "console_enabled") then
-	if cl.get("console") then
-		cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
-	else
-		log("error", "Console is enabled, but the console module appears not to be loaded");
-	end
+if cl.get("console") then
+	cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
 end
 
 -- Global function to initiate prosody shutdown
@@ -199,6 +195,7 @@ while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
 	socket.sleep(0.2);
 end
 
+log("info", "Shutdown status: Cleaning up");
 eventmanager.fire_event("server-cleanup");
 
 -- Ok, we're quitting I know, but we
@@ -206,6 +203,7 @@ eventmanager.fire_event("server-cleanup");
 server.setquitting(false);
 
 for hostname, host in pairs(hosts) do
+	log("info", "Shutdown status: Closing client connections for %s", hostname)
 	if host.sessions then
 		for username, user in pairs(host.sessions) do
 			for resource, session in pairs(user.sessions) do
@@ -215,6 +213,7 @@ for hostname, host in pairs(hosts) do
 		end
 	end
 	
+	log("info", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
 	if host.s2sout then
 		for remotehost, session in pairs(host.s2sout) do
 			if session.close then
@@ -226,6 +225,10 @@ for hostname, host in pairs(hosts) do
 	end
 end
 
+log("info", "Shutdown status: Closing all server connections");
 server.closeall();
 
+server.setquitting(true);
+
 eventmanager.fire_event("server-stopped");
+log("info", "Shutdown status: Complete!");
