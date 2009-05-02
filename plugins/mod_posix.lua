@@ -14,6 +14,15 @@ local logger_set = require "util.logger".setwriter;
 
 module.host = "*"; -- we're a global module
 
+-- Don't even think about it!
+module:add_event_hook("server-starting", function ()
+		if pposix.getuid() == 0 and not config_get("*", "core", "run_as_root") then
+			module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
+			module:log("error", "For more information on running Prosody as root, see http://prosody.im/doc/root");
+			_G.prosody_shutdown("Refusing to run as root");
+		end
+	end);
+
 local pidfile_written;
 
 local function remove_pidfile()
