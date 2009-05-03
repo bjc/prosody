@@ -53,6 +53,10 @@ local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
+	if config.get(host, "core", "modules_enable") == false then
+		return; -- Only load for hosts, not components, etc.
+	end
+
 	-- Load modules from global section
 	local modules_enabled = config.get("*", "core", "modules_enabled");
 	local modules_disabled = config.get(host, "core", "modules_disabled");

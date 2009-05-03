@@ -44,7 +44,7 @@ local function default_component_handler(origin, stanza)
 	end
 end
 
-
+local components_loaded_once;
 function load_enabled_components(config)
 	local defined_hosts = config or configmanager.getconfig();
 		
@@ -56,7 +56,7 @@ function load_enabled_components(config)
 			if not ok then
 				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
 			else
-				log("info", "Activated %s component: %s", host_config.core.component_module, host);
+				log("debug", "Activated %s component: %s", host_config.core.component_module, host);
 			end
 		end
 	end
