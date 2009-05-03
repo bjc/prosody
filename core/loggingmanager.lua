@@ -86,6 +86,9 @@ function apply_sink_rules(sink_type)
 			add_rule(sink_config);
 			sink_config.filename = nil;
 		end
+	elseif type(logging_config) == "string" and logging_config:match("^%*(.+)") == sink_type then
+		-- Log all levels (debug+) to this sink
+		add_rule({ levels = { min = "debug" }, to = sink_type });
 	end
 end
 
