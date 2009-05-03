@@ -319,10 +319,12 @@ end
 function commands.register(arg)
 	local user, host, password = unpack(arg);
 	if (not (user and host)) or arg[1] == "--help" then
-		if not user and user ~= "--help" then
-			show_message [[No username specified]]
-		elseif not host then
-			show_message [[Please specify which host you want to register the user on]];
+		if user ~= "--help" then
+			if not user then
+				show_message [[No username specified]]
+			elseif not host then
+				show_message [[Please specify which host you want to register the user on]];
+			end
 		end
 		show_usage("register USER HOST [PASSWORD]", "Register a user on the server, with the given password");
 		return 1;
@@ -346,12 +348,14 @@ end
 function commands.unregister(arg)
 	local user, host = unpack(arg);
 	if (not (user and host)) or arg[1] == "--help" then
-		if not user then
-			show_message [[No username specified]]
-		elseif not host then
-			show_message [[Please specify which host you want to unregister the user from]];
+		if user ~= "--help" then
+			if not user then
+				show_message [[No username specified]]
+			elseif not host then
+				show_message [[Please specify which host you want to unregister the user from]];
+			end
 		end
-		show_usage("register USER HOST [PASSWORD]", "Permanently remove a user account from the server");
+		show_usage("unregister USER HOST [PASSWORD]", "Permanently remove a user account from the server");
 		return 1;
 	end
 
@@ -378,6 +382,7 @@ if not commands[command] then -- Show help for all commands
 	print("");
 	print("Where COMMAND may be one of:\n");
 
+	local hidden_commands = require "util.set".new{ "register", "unregister" };
 	local commands_order = { "adduser", "passwd", "deluser" };
 
 	local done = {};
@@ -392,7 +397,7 @@ if not commands[command] then -- Show help for all commands
 	end
 
 	for command_name, command in pairs(commands) do
-		if not done[command_name] then
+		if not done[command_name] and not hidden_commands:contains(command_name) then
 			command{ "--help" };
 			print""
 			done[command_name] = true;
