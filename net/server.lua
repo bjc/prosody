@@ -77,6 +77,7 @@ local idfalse
 local addtimer
 local closeall
 local addserver
+local getserver
 local wrapserver
 local getsettings
 local closesocket
@@ -670,6 +671,10 @@ addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, st
     return handler
 end
 
+getserver = function ( port )
+	return _server[ port ];
+end
+
 removeserver = function( port )
     local handler = _server[ port ]
     if not handler then
@@ -728,7 +733,7 @@ stats = function( )
     return _readtraffic, _sendtraffic, _readlistlen, _sendlistlen, _timerlistlen
 end
 
-local dontstop = true;
+local dontstop = true; -- thinking about tomorrow, ...
 
 setquitting = function (quit)
 	dontstop = not quit;
@@ -844,6 +849,7 @@ return {
     closeall = closeall,
     addtimer = addtimer,
     addserver = addserver,
+    getserver = getserver,
     getsettings = getsettings,
     setquitting = setquitting,
     removeserver = removeserver,
