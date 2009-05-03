@@ -21,11 +21,11 @@ local listeners = {};
 
 function register(name, listener)
 	if listeners[name] and listeners[name] ~= listener then
-		log("warn", "Listener %s is already registered, not registering any more", name);
+		log("debug", "Listener %s is already registered, not registering any more", name);
 		return false;
 	end
 	listeners[name] = listener;
-	log("info", "Registered connection listener %s", name);
+	log("debug", "Registered connection listener %s", name);
 	return true;
 end
 

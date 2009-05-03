@@ -9,6 +9,8 @@ local pairs = pairs;
 
 module "hostmanager"
 
+local hosts_loaded_once;
+
 local function load_enabled_hosts(config)
 	local defined_hosts = config or configmanager.getconfig();
 	
@@ -18,13 +20,14 @@ local function load_enabled_hosts(config)
 		end
 	end
 	eventmanager.fire_event("hosts-activated", defined_hosts);
+	hosts_loaded_once = true;
 end
 
 eventmanager.add_event_hook("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
 	hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
-	log("info", "Activated host: %s", host);
+	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
 
