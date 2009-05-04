@@ -15,7 +15,6 @@ local tonumber, tostring, pairs, xpcall, select, debug_traceback, char =
 local log = require "util.logger".init("http");
 local print = function () end
 
-local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
 local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
 
 module "http"
