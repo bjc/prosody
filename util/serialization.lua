@@ -14,6 +14,8 @@ local t_concat = table.concat;
 local error = error;
 local pairs = pairs;
 
+local debug_traceback = debug.traceback;
+local log = require "util.logger".init("serialization");
 module "serialization"
 
 local indent = function(i)
@@ -50,7 +52,7 @@ local function _simplesave(o, ind, t, func)
 	elseif type(o) == "boolean" then
 		func(t, (o and "true" or "false"));
 	else
-		error("cannot serialize a " .. type(o))
+		log("warn", "cannot serialize a %s: %s", type(o), debug_traceback())
 	end
 end
 
