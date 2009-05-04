@@ -11,7 +11,8 @@ local new_uuid = require "util.uuid".generate;
 local fire_event = require "core.eventmanager".fire_event;
 local core_process_stanza = core_process_stanza;
 local st = require "util.stanza";
-local log = require "util.logger".init("bosh");
+local logger = require "util.logger";
+local log = logger.init("mod_bosh");
 local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind|body" };
 local config = require "core.configmanager";
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
@@ -136,8 +137,10 @@ function stream_callbacks.streamopened(request, attr)
 		sid = new_uuid();
 		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = attr.rid, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
 						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
-						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, dispatch_stanza = core_process_stanza };
+						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
+						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid) };
 		sessions[sid] = session;
+		
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 		local r, send_buffer = session.requests, session.send_buffer;
 		local response = { headers = default_headers }
