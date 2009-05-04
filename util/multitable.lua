@@ -56,7 +56,7 @@ local function r(t, n, _end, ...)
 		return;
 	end
 	if k then
-		v = t[k];
+		local v = t[k];
 		if v then
 			r(v, n+1, _end, ...);
 			if not next(v) then
@@ -96,7 +96,7 @@ local function s(t, n, results, _end, ...)
 		return;
 	end
 	if k then
-		v = t[k];
+		local v = t[k];
 		if v then
 			s(v, n+1, results, _end, ...);
 		end
