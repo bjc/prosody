@@ -28,7 +28,7 @@ local type = type;
 local next = next;
 local rawget = rawget;
 
-local tostring, print = tostring, print;
+local tostring = tostring;
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
