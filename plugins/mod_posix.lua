@@ -86,16 +86,18 @@ end
 
 module:add_event_hook("server-stopped", remove_pidfile);
 
--- Set signal handler
+-- Set signal handlers
 if signal.signal then
 	signal.signal("SIGTERM", function ()
-		module:log("warn", "Received SIGTERM...");
+		module:log("warn", "Received SIGTERM");
 		_G.unlock_globals();
-		if _G.prosody_shutdown then
-			_G.prosody_shutdown("Received SIGTERM");
-		else
-			module:log("warn", "...no prosody_shutdown(), ignoring.");
-		end
+		_G.prosody_shutdown("Received SIGTERM");
 		_G.lock_globals();
+	end);
+
+	signal.signal("SIGHUP", function ()
+		module:log("info", "Received SIGHUP");
+		_G.prosody_reload_config();
+		_G.prosody_reopen_logfiles();
 	end);
 end
