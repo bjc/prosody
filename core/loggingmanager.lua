@@ -10,7 +10,7 @@ local os_date, os_getenv = os.date, os.getenv;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 
 local config = require "core.configmanager";
-
+local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
 
 _G.log = logger.init("general");
@@ -190,12 +190,26 @@ do
 	end
 end
 
+local empty_function = function () end;
 function log_sink_types.file(config)
 	local log = config.filename;
 	local logfile = io_open(log, "a+");
 	if not logfile then
-		return function () end
+		return empty_function;
 	end
+	local write, flush = logfile.write, logfile.flush;
+
+	eventmanager.add_event_hook("reopen-log-files", function ()
+			if logfile then
+				logfile:close();
+			end
+			logfile = io_open(log, "a+");
+			if not logfile then
+				write, flush = empty_function, empty_function;
+			else
+				write, flush = logfile.write, logfile.flush;
+			end
+		end);
 
 	local timestamps = config.timestamps;
 
@@ -203,7 +217,6 @@ function log_sink_types.file(config)
 		timestamps = default_timestamp; -- Default format
 	end
 
-	local write, format, flush = logfile.write, format, logfile.flush;
 	return function (name, level, message, ...)
 		if timestamps then
 			write(logfile, os_date(timestamps), " ");
