@@ -61,6 +61,29 @@ do
 	end
 end
 
+-- Switch away from root and into the prosody user --
+local switched_user, current_uid;
+local ok, pposix = pcall(require, "util.pposix");
+if ok and pposix then
+	current_uid = pposix.getuid();
+	if current_uid == 0 then
+		-- We haz root!
+		local desired_user = config.get("*", "core", "prosody_user") or "prosody";
+		local ok, err = pposix.setuid(desired_user);
+		if ok then
+			-- Yay!
+			switched_user = true;
+		else
+			-- Boo!
+			print("Warning: Couldn't switch to Prosody user '"..tostring(desired_user).."': "..tostring(err));
+		end
+	end
+else
+	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
+	print("For more help send the below error to us through http://prosody.im/discuss");
+	print(tostring(pposix))
+end
+
 local error_messages = setmetatable({ 
 		["invalid-username"] = "The given username is invalid in a Jabber ID";
 		["invalid-hostname"] = "The given hostname is invalid";
