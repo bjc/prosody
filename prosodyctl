@@ -61,6 +61,9 @@ do
 	end
 end
 
+local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+require "util.datamanager".set_data_path(data_path);
+
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 local ok, pposix = pcall(require, "util.pposix");
