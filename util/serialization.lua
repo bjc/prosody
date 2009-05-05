@@ -52,7 +52,8 @@ local function _simplesave(o, ind, t, func)
 	elseif type(o) == "boolean" then
 		func(t, (o and "true" or "false"));
 	else
-		log("warn", "cannot serialize a %s: %s", type(o), debug_traceback())
+		log("error", "cannot serialize a %s: %s", type(o), debug_traceback())
+		func(t, "nil,\n");
 	end
 end
 
