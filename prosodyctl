@@ -92,6 +92,7 @@ local error_messages = setmetatable({
 		["invalid-hostname"] = "The given hostname is invalid";
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
+		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 hosts = {};
@@ -318,9 +319,10 @@ function commands.status(arg)
 	else
 		show_message("Prosody is not running");
 		if not switched_user and current_uid ~= 0 then
-			print("\nNote: You will also see this if prosodyctl is not running under the same");
-			print("      user account as Prosody. Try running as root (e.g. with 'sudo' in front) to");
-			print("      gain access to Prosody's real status.");
+			print("\nNote:")
+			print(" You will also see this if prosodyctl is not running under");
+			print(" the same user account as Prosody. Try running as root (e.g. ");
+			print(" with 'sudo' in front) to gain access to Prosody's real status.");
 		end
 		return 2
 	end
