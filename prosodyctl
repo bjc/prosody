@@ -92,6 +92,7 @@ local error_messages = setmetatable({
 		["invalid-hostname"] = "The given hostname is invalid";
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
+		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 hosts = {};
