@@ -114,7 +114,27 @@ end);
 
 ----------- End of out-of-place code --------------
 
--- Global function to initiate prosody shutdown
+-- Function to reload the config file
+function prosody_reload_config()
+	log("info", "Reloading configuration file");
+	eventmanager.fire_event("reloading-config");
+	local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
+	if not ok then
+		if level == "parser" then
+			log("error", "There was an error parsing the configuration file: %s", tostring(err));
+		elseif level == "file" then
+			log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+		end
+	end
+end
+
+-- Function to reopen logfiles
+function prosody_reopen_logfiles()
+	log("info", "Re-opening log files");
+	eventmanager.fire_event("reopen-log-files"); -- Handled by appropriate log sinks
+end
+
+-- Function to initiate prosody shutdown
 function prosody_shutdown(reason)
 	log("info", "Shutting down: %s", reason or "unknown reason");
 	eventmanager.fire_event("server-stopping", { reason = reason });
