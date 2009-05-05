@@ -61,7 +61,7 @@ function roster_pending(node, host, jid)
 end
 function private_storage(node, host, xmlns, stanza)
 	local private = dm.load(node, host, "private") or {};
-	private[xmlns] = st.preserialize(stanza);
+	private[stanza.name..":"..xmlns] = st.preserialize(stanza);
 	local ret, err = dm.store(node, host, "private", private);
 	print("["..(err or "success").."] private: " ..node.."@"..host.." - "..xmlns);
 end
