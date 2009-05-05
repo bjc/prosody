@@ -19,7 +19,10 @@ function adduser(params)
 		return false, "invalid-hostname";
 	end
 	
-	usermanager.create_user(user, password, host);
+	local ok = usermanager.create_user(user, password, host);
+	if not ok then
+		return false, "unable-to-save-data";
+	end
 	return true;
 end
 
