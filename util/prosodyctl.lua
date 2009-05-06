@@ -9,6 +9,9 @@ local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
 local io, os = io, os;
 local tostring, tonumber = tostring, tonumber;
+
+local CFG_SOURCEDIR = _G.CFG_SOURCEDIR;
+
 module "prosodyctl"
 
 function adduser(params)
