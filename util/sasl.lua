@@ -26,8 +26,6 @@ local math = require "math"
 local type = type
 local error = error
 local print = print
-local idna_ascii = require "util.encodings".idna.to_ascii
-local idna_unicode = require "util.encodings".idna.to_unicode
 
 module "sasl"
 
