@@ -53,7 +53,7 @@ local function _simplesave(o, ind, t, func)
 		func(t, (o and "true" or "false"));
 	else
 		log("error", "cannot serialize a %s: %s", type(o), debug_traceback())
-		func(t, "nil,\n");
+		func(t, "nil");
 	end
 end
 
