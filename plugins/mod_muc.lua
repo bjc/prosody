@@ -205,6 +205,19 @@ function broadcast_presence_stanza(room, stanza, code, nick)
 		end
 	end
 end
+function broadcast_history(room, to)
+	local history = rooms_info:get(room, 'history'); -- send discussion history
+	if history then
+		for _, msg in ipairs(history) do
+			msg = st.deserialize(msg);
+			msg.attr.to=to;
+			core_route_stanza(component, msg);
+		end
+	end
+	if rooms_info:get(room, 'subject') then
+		core_route_stanza(component, st.message({type='groupchat', from=room, to=to}):tag("subject"):text(rooms_info:get(room, 'subject')));
+	end
+end
 
 function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -298,17 +311,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 					pr.attr.from = to;
 					broadcast_presence_stanza(room, pr);
-					local history = rooms_info:get(room, 'history'); -- send discussion history
-					if history then
-						for _, msg in ipairs(history) do
-							msg = st.deserialize(msg);
-							msg.attr.to=from;
-							core_route_stanza(component, msg);
-						end
-					end
-					if rooms_info:get(room, 'subject') then
-						core_route_stanza(component, st.message({type='groupchat', from=room, to=from}):tag("subject"):text(rooms_info:get(room, 'subject')));
-					end
+					broadcast_history(room, from);
 				end
 			end
 		elseif type ~= 'result' then -- bad type
