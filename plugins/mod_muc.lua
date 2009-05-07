@@ -260,7 +260,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		elseif not type then -- available
 			if current_nick then
-				if #pr == #stanza or current_nick ~= to then
+				--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
 					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
 						rooms:get(room, current_nick).sessions[from] = pr;
@@ -287,11 +287,11 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							end
 						end
 					end
-				else -- possible rejoin
-					log("debug", "%s had connection replaced", current_nick);
-					handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection'):up()); -- send unavailable
-					handle_to_occupant(origin, stanza); -- resend available
-				end
+				--else -- possible rejoin
+				--	log("debug", "%s had connection replaced", current_nick);
+				--	handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection'):up()); -- send unavailable
+				--	handle_to_occupant(origin, stanza); -- resend available
+				--end
 			else -- enter room
 				local new_nick = to;
 				if rooms:get(room, to) then
