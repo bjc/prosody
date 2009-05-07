@@ -205,7 +205,7 @@ function broadcast_presence_stanza(room, stanza, code, nick)
 		end
 	end
 end
-function broadcast_history(room, to)
+function send_history(room, to)
 	local history = rooms_info:get(room, 'history'); -- send discussion history
 	if history then
 		for _, msg in ipairs(history) do
@@ -315,7 +315,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					send_occupant_list(room, from);
 					pr.attr.from = to;
 					broadcast_presence_stanza(room, pr);
-					broadcast_history(room, from);
+					send_history(room, from);
 				end
 			end
 		elseif type ~= 'result' then -- bad type
