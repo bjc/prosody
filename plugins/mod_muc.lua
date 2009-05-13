@@ -205,6 +205,34 @@ function broadcast_presence_stanza(room, stanza, code, nick)
 		end
 	end
 end
+function send_history(room, to)
+	local history = rooms_info:get(room, 'history'); -- send discussion history
+	if history then
+		for _, msg in ipairs(history) do
+			msg = st.deserialize(msg);
+			msg.attr.to=to;
+			core_route_stanza(component, msg);
+		end
+	end
+	if rooms_info:get(room, 'subject') then
+		core_route_stanza(component, st.message({type='groupchat', from=room, to=to}):tag("subject"):text(rooms_info:get(room, 'subject')));
+	end
+end
+function send_occupant_list(room, to)
+	local r = rooms:get(room);
+	if r then
+		local current_nick = jid_nick:get(to, room);
+		for occupant, o_data in pairs(r) do
+			if occupant ~= current_nick then
+				local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
+				pres.attr.to, pres.attr.from = to, occupant;
+				pres:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+					:tag("item", {affiliation=o_data.affiliation, role=o_data.role}):up();
+				core_route_stanza(component, pres);
+			end
+		end
+	end
+end
 
 function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -232,7 +260,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		elseif not type then -- available
 			if current_nick then
-				if #pr == #stanza or current_nick ~= to then
+				--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
 					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
 						rooms:get(room, current_nick).sessions[from] = pr;
@@ -259,11 +287,11 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							end
 						end
 					end
-				else -- possible rejoin
-					log("debug", "%s had connection replaced", current_nick);
-					handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection'):up()); -- send unavailable
-					handle_to_occupant(origin, stanza); -- resend available
-				end
+				--else -- possible rejoin
+				--	log("debug", "%s had connection replaced", current_nick);
+				--	handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('Replaced by new connection'):up()); -- send unavailable
+				--	handle_to_occupant(origin, stanza); -- resend available
+				--end
 			else -- enter room
 				local new_nick = to;
 				if rooms:get(room, to) then
@@ -284,31 +312,10 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 					rooms:set(room, to, data);
 					jid_nick:set(from, room, to);
-					local r = rooms:get(room);
-					if r then
-						for occupant, o_data in pairs(r) do
-							if occupant ~= to then
-								local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
-								pres.attr.to, pres.attr.from = from, occupant;
-								pres:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-									:tag("item", {affiliation=o_data.affiliation, role=o_data.role}):up();
-								core_route_stanza(component, pres);
-							end
-						end
-					end
+					send_occupant_list(room, from);
 					pr.attr.from = to;
 					broadcast_presence_stanza(room, pr);
-					local history = rooms_info:get(room, 'history'); -- send discussion history
-					if history then
-						for _, msg in ipairs(history) do
-							msg = st.deserialize(msg);
-							msg.attr.to=from;
-							core_route_stanza(component, msg);
-						end
-					end
-					if rooms_info:get(room, 'subject') then
-						core_route_stanza(component, st.message({type='groupchat', from=room, to=from}):tag("subject"):text(rooms_info:get(room, 'subject')));
-					end
+					send_history(room, from);
 				end
 			end
 		elseif type ~= 'result' then -- bad type
