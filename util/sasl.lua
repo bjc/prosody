@@ -60,8 +60,10 @@ local function new_plain(realm, password_handler)
 	return object
 end
 
+
+-- implementing RFC 2831
 local function new_digest_md5(realm, password_handler)
-	--TODO maybe support for authzid
+	--TODO complete support for authzid
 
 	local function serialize(message)
 		local data = ""
@@ -129,29 +131,29 @@ local function new_digest_md5(realm, password_handler)
 	local function parse(data)
 		message = {}
 		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
-			message[k] = v
+			message[k] = v;
 		end
-		return message
+		return message;
 	end
 
-	local object = { mechanism = "DIGEST-MD5", realm = realm, password_handler = password_handler}
+	local object = { mechanism = "DIGEST-MD5", realm = realm, password_handler = password_handler};
 	
 	--TODO: something better than math.random would be nice, maybe OpenSSL's random number generator
-	object.nonce = generate_uuid()
-	object.step = 0
-	object.nonce_count = {}
+	object.nonce = generate_uuid();
+	object.step = 0;
+	object.nonce_count = {};
 												
 	function object.feed(self, message)
-		self.step = self.step + 1
+		self.step = self.step + 1;
 		if (self.step == 1) then
 			local challenge = serialize({	nonce = object.nonce, 
 											qop = "auth",
 											charset = "utf-8",
 											algorithm = "md5-sess",
 											realm = self.realm});
-			return "challenge", challenge
+			return "challenge", challenge;
 		elseif (self.step == 2) then
-			local response = parse(message)
+			local response = parse(message);
 			-- check for replay attack
 			if response["nc"] then
 				if self.nonce_count[response["nc"]] then return "failure", "not-authorized" end
@@ -159,13 +161,13 @@ local function new_digest_md5(realm, password_handler)
 			
 			-- check for username, it's REQUIRED by RFC 2831
 			if not response["username"] then
-				return "failure", "malformed-request"
+				return "failure", "malformed-request";
 			end
-			self["username"] = response["username"] 
+			self["username"] = response["username"];
 			
 			-- check for nonce, ...
 			if not response["nonce"] then
-				return "failure", "malformed-request"
+				return "failure", "malformed-request";
 			else
 				-- check if it's the right nonce
 				if response["nonce"] ~= tostring(self.nonce) then return "failure", "malformed-request" end
@@ -184,44 +186,53 @@ local function new_digest_md5(realm, password_handler)
 			if response["charset"] == nil then
 				decoder = utf8tolatin1ifpossible;
 			elseif response["charset"] ~= "utf-8" then
-				return "failure", "incorrect-encoding", "The client's response uses "..response["charset"].." for encoding with isn't supported by sasl.lua. Supported encodings are latin or utf-8."
+				return "failure", "incorrect-encoding", "The client's response uses "..response["charset"].." for encoding with isn't supported by sasl.lua. Supported encodings are latin or utf-8.";
 			end
 			
-			local domain = ""
-			local protocol = ""
+			local domain = "";
+			local protocol = "";
 			if response["digest-uri"] then
-				protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$")
+				protocol, domain = response["digest-uri"]:match("(%w+)/(.*)$");
 				if protocol == nil or domain == nil then return "failure", "malformed-request" end
 			else
 				return "failure", "malformed-request", "Missing entry for digest-uri in SASL message."
 			end
 			
 			--TODO maybe realm support
-			self.username = response["username"]
+			self.username = response["username"];
 			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", decoder)
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
-			
-			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
+			local A1 = "";
+			if response.authzid then
+				if response.authzid == self.username.."@"..self.realm then
+					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
+					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
+				else
+					A1 = "?";
+				end
+			else
+				A1 = Y..":"..response["nonce"]..":"..response["cnonce"];
+			end
 			local A2 = "AUTHENTICATE:"..protocol.."/"..domain;
 			
-			local HA1 = md5(A1, true)
-			local HA2 = md5(A2, true)
+			local HA1 = md5(A1, true);
+			local HA2 = md5(A2, true);
 			
-			local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-			local response_value = md5(KD, true)
+			local KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2;
+			local response_value = md5(KD, true);
 			
 			if response_value == response["response"] then
 				-- calculate rspauth
 				A2 = ":"..protocol.."/"..domain;
 				
-				HA1 = md5(A1, true)
-				HA2 = md5(A2, true)
+				HA1 = md5(A1, true);
+				HA2 = md5(A2, true);
         
 				KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
-				local rspauth = md5(KD, true)
-				self.authenticated = true
-				return "challenge", serialize({rspauth = rspauth})
+				local rspauth = md5(KD, true);
+				self.authenticated = true;
+				return "challenge", serialize({rspauth = rspauth});
 			else
 				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated."
 			end							
@@ -230,7 +241,7 @@ local function new_digest_md5(realm, password_handler)
 			else return "failure", "malformed-request" end
 		end
 	end
-	return object
+	return object;
 end
 
 local function new_anonymous(realm, password_handler)
