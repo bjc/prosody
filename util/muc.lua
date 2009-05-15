@@ -118,7 +118,7 @@ local function room_broadcast_presence(room, stanza, code, nick)
 		end
 	end
 end
-function room_broadcast_message(room, stanza, historic)
+local function room_broadcast_message(room, stanza, historic)
 	for occupant, o_data in pairs(room._participants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
@@ -149,7 +149,7 @@ local function room_send_occupant_list(room, to)
 		end
 	end
 end
-function send_history(room, to)
+local function room_send_history(room, to)
 	local history = room._data['history']; -- send discussion history
 	if history then
 		for _, msg in ipairs(history) do
@@ -356,7 +356,7 @@ function new_room(jid)
 		jid = jid;
 		handle_stanza = room_handle_stanza;
 		set_subject = room_set_subject;
-		route_stanza = function(room, stanza) end -- Replace with a routing function, e.g., function(room, stanza) core_route_stanza(origin, stanza); end
+		route_stanza = function(room, stanza) end; -- Replace with a routing function, e.g., function(room, stanza) core_route_stanza(origin, stanza); end
 		_jid_nick = {};
 		_participants = {};
 		_data = {};
