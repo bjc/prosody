@@ -258,10 +258,9 @@ function reply(orig)
 	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
 end
 
-function error_reply(orig, type, condition, message, clone)
+function error_reply(orig, type, condition, message)
 	local t = reply(orig);
 	t.attr.type = "error";
-	-- TODO use clone
 	t:tag("error", {type = type})
 		:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
 	if (message) then t:tag("text"):text(message):up(); end
