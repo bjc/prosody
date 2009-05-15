@@ -117,11 +117,6 @@ function core_process_stanza(origin, stanza)
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
-		if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
-			origin.directed = origin.directed or {};
-			origin.directed[to] = true;
-			--t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
-		end
 		if not to then
 			core_handle_stanza(origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
