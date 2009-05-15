@@ -43,11 +43,6 @@ local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
 local fire_event = require "core.eventmanager2".fire_event;
-local function checked_error_reply(origin, stanza)
-	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
-	end
-end
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
@@ -142,28 +137,15 @@ end
 -- This function handles stanzas which are not routed any further,
 -- that is, they are handled by this server
 function core_handle_stanza(origin, stanza)
-	-- Handlers
-	if modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host or origin.to_host, origin, stanza) then return; end
-	if origin.type == "c2s" or origin.type == "s2sin" then
-		if origin.type == "c2s" then
-			if stanza.name == "presence" and origin.roster then
-				if stanza.attr.type == nil or stanza.attr.type == "unavailable" and stanza.attr.type ~= "error" then
-					handle_normal_presence(origin, stanza, core_route_stanza);
-				else
-					log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-					checked_error_reply(origin, stanza);
-				end
-			else
-				log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-				checked_error_reply(origin, stanza);
-			end
-		else -- s2s stanzas
-			log("warn", "Unhandled s2s stanza: %s", tostring(stanza));
-			checked_error_reply(origin, stanza);
-		end
-	else
+	if not modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host or origin.to_host, origin, stanza) then
 		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
-		checked_error_reply(origin, stanza);
+		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") then
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			end
+		else
+			origin:close("unsupported-stanza-type");
+		end
 	end
 end
 
