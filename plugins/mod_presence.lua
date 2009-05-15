@@ -252,7 +252,7 @@ local function presence_handler(data)
 	if origin.type == "c2s" then
 		if to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
 			origin.directed = origin.directed or {};
-			origin.directed[to] = true;
+			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
 		end
 		if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
