@@ -113,9 +113,9 @@ function core_process_stanza(origin, stanza)
 		if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then
 			-- event handled
 		elseif not to then
-			core_handle_stanza(origin, stanza);
+			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
-			core_handle_stanza(origin, stanza);
+			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
 			component_handle_stanza(origin, stanza);
 		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
@@ -123,27 +123,12 @@ function core_process_stanza(origin, stanza)
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 			component_handle_stanza(origin, stanza);
 		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
-			core_handle_stanza(origin, stanza);
+			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		else
 			core_route_stanza(origin, stanza);
 		end
 	else
-		core_handle_stanza(origin, stanza);
-	end
-end
-
--- This function handles stanzas which are not routed any further,
--- that is, they are handled by this server
-function core_handle_stanza(origin, stanza)
-	if not modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host or origin.to_host, origin, stanza) then
-		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
-		if stanza.attr.xmlns == "jabber:client" then
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-			end
-		else
-			origin:close("unsupported-stanza-type");
-		end
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end
 
