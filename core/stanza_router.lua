@@ -106,7 +106,6 @@ function core_process_stanza(origin, stanza)
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
-	-- FIXME do stanzas not of jabber:client get handled by components?
 	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
 		local event_data = {origin=origin, stanza=stanza};
 		if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then return; end
