@@ -120,19 +120,17 @@ function init_xmlhandlers(session, stream_callbacks)
 					cb_error(session, "parse-error", "unexpected-element-close", name);
 				end
 			end
-			if stanza then
-				if #chardata > 0 then
-					-- We have some character data in the buffer
-					stanza:text(t_concat(chardata));
-					chardata = {};
-				end
-				-- Complete stanza
-				if #stanza.last_add == 0 then
-					cb_handlestanza(session, stanza);
-					stanza = nil;
-				else
-					stanza:up();
-				end
+			if #chardata > 0 then
+				-- We have some character data in the buffer
+				stanza:text(t_concat(chardata));
+				chardata = {};
+			end
+			-- Complete stanza
+			if #stanza.last_add == 0 then
+				cb_handlestanza(session, stanza);
+				stanza = nil;
+			else
+				stanza:up();
 			end
 		end
 	return xml_handlers;
