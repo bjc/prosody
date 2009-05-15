@@ -60,8 +60,10 @@ local function new_plain(realm, password_handler)
 	return object
 end
 
+
+-- implementing RFC 2831
 local function new_digest_md5(realm, password_handler)
-	--TODO maybe support for authzid
+	--TODO complete support for authzid
 
 	local function serialize(message)
 		local data = ""
