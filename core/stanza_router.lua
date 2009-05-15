@@ -109,24 +109,32 @@ function core_process_stanza(origin, stanza)
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
-		local event_data = {origin=origin, stanza=stanza};
-		if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then
-			-- event handled
-		elseif not to then
-			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
-			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
-			component_handle_stanza(origin, stanza);
-		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
-			component_handle_stanza(origin, stanza);
-		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
-			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-		else
-			core_route_stanza(origin, stanza);
-		end
+		core_post_stanza(origin, stanza);
 	else
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	end
+end
+
+function core_post_stanza(origin, stanza)
+	local to = stanza.attr.to;
+	local node, host, resource = jid_split(to);
+	local to_bare = node and (node.."@"..host) or host; -- bare JID
+
+	local event_data = {origin=origin, stanza=stanza};
+	if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then
+		-- event handled
+	elseif not to then
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+		component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
+		component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	else
+		core_route_stanza(origin, stanza);
 	end
 end
 
