@@ -53,7 +53,8 @@ function new()
 		if not h then h = {}; handlers[event] = h; end
 		local dispatcher = function(data)
 			for _, handler in ipairs(h) do
-				handler(data);
+				local ret = handler(data);
+				if ret ~= nil then return ret; end
 			end
 		end;
 		dispatchers[event] = dispatcher;
@@ -66,7 +67,8 @@ function new()
 		local h = handlers[event];
 		if h then
 			for _, handler in ipairs(h) do
-				handler(data);
+				local ret = handler(data);
+				if ret ~= nil then return ret; end
 			end
 		end
 	end;

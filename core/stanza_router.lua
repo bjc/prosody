@@ -54,7 +54,7 @@ function core_process_stanza(origin, stanza)
 
 	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
 	-- TODO verify validity of stanza (as well as JID validity)
-	if stanza.attr.xmlns == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
+	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
 		if (stanza.attr.type == "set" or stanza.attr.type == "get") and #stanza.tags ~= 1 then
 			origin.send(st.error_reply(stanza, "modify", "bad-request"));
@@ -106,21 +106,15 @@ function core_process_stanza(origin, stanza)
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
-	-- FIXME do stanzas not of jabber:client get handled by components?
 	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
 		local event_data = {origin=origin, stanza=stanza};
-		fire_event(tostring(host or origin.host).."/"..stanza.name, event_data);
+		if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then return; end
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
 				log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from_host, origin.from_host);
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
-		end
-		if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
-			origin.directed = origin.directed or {};
-			origin.directed[to] = true;
-			--t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
 		end
 		if not to then
 			core_handle_stanza(origin, stanza);
@@ -134,8 +128,6 @@ function core_process_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 			component_handle_stanza(origin, stanza);
-		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else

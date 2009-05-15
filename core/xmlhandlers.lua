@@ -14,15 +14,8 @@ local st = stanza;
 local tostring = tostring;
 local pairs = pairs;
 local ipairs = ipairs;
-local type = type;
-local print = print;
-local format = string.format;
-local m_random = math.random;
 local t_insert = table.insert;
-local t_remove = table.remove;
 local t_concat = table.concat;
-local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
-local sm_destroy_session = import("core.sessionmanager", "destroy_session");
 
 local default_log = require "util.logger".init("xmlhandlers");
 
@@ -68,15 +61,13 @@ function init_xmlhandlers(session, stream_callbacks)
 			
 			-- FIXME !!!!!
 			for i, k in ipairs(attr) do
-				if type(k) == "string" then
-					local ns, nm = k:match("^([^|]+)|?([^|]-)$")
-					if ns and nm then
-						ns = ns_prefixes[ns]; 
-						if ns then 
-							attr[ns..":"..nm] = attr[k];
-							attr[i] = ns..":"..nm;
-							attr[k] = nil;
-						end
+				local ns, nm = k:match("^([^|]+)|?([^|]-)$")
+				if ns and nm then
+					ns = ns_prefixes[ns]; 
+					if ns then 
+						attr[ns..":"..nm] = attr[k];
+						attr[i] = ns..":"..nm;
+						attr[k] = nil;
 					end
 				end
 			end
@@ -129,19 +120,17 @@ function init_xmlhandlers(session, stream_callbacks)
 					cb_error(session, "parse-error", "unexpected-element-close", name);
 				end
 			end
-			if stanza then
-				if #chardata > 0 then
-					-- We have some character data in the buffer
-					stanza:text(t_concat(chardata));
-					chardata = {};
-				end
-				-- Complete stanza
-				if #stanza.last_add == 0 then
-					cb_handlestanza(session, stanza);
-					stanza = nil;
-				else
-					stanza:up();
-				end
+			if #chardata > 0 then
+				-- We have some character data in the buffer
+				stanza:text(t_concat(chardata));
+				chardata = {};
+			end
+			-- Complete stanza
+			if #stanza.last_add == 0 then
+				cb_handlestanza(session, stanza);
+				stanza = nil;
+			else
+				stanza:up();
 			end
 		end
 	return xml_handlers;
