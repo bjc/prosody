@@ -101,7 +101,7 @@ function core_process_stanza(origin, stanza)
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
-	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
+	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == "jabber:client" then
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
@@ -116,8 +116,6 @@ function core_process_stanza(origin, stanza)
 			core_handle_stanza(origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
 			core_handle_stanza(origin, stanza);
-		elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
-			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
 			component_handle_stanza(origin, stanza);
 		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
@@ -139,7 +137,7 @@ end
 function core_handle_stanza(origin, stanza)
 	if not modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host or origin.to_host, origin, stanza) then
 		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
-		if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") then
+		if stanza.attr.xmlns == "jabber:client" then
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 			end
