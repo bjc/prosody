@@ -116,8 +116,6 @@ function core_process_stanza(origin, stanza)
 			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
 			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
-			component_handle_stanza(origin, stanza);
 		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 			component_handle_stanza(origin, stanza);
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
@@ -148,9 +146,7 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
-	if hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
-		return component_handle_stanza(origin, stanza);
-	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+	if hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 		return component_handle_stanza(origin, stanza);
 	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 		return component_handle_stanza(origin, stanza);
