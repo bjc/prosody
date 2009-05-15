@@ -14,7 +14,6 @@ local st = stanza;
 local tostring = tostring;
 local pairs = pairs;
 local ipairs = ipairs;
-local type = type;
 local t_insert = table.insert;
 local t_concat = table.concat;
 
@@ -62,15 +61,13 @@ function init_xmlhandlers(session, stream_callbacks)
 			
 			-- FIXME !!!!!
 			for i, k in ipairs(attr) do
-				if type(k) == "string" then
-					local ns, nm = k:match("^([^|]+)|?([^|]-)$")
-					if ns and nm then
-						ns = ns_prefixes[ns]; 
-						if ns then 
-							attr[ns..":"..nm] = attr[k];
-							attr[i] = ns..":"..nm;
-							attr[k] = nil;
-						end
+				local ns, nm = k:match("^([^|]+)|?([^|]-)$")
+				if ns and nm then
+					ns = ns_prefixes[ns]; 
+					if ns then 
+						attr[ns..":"..nm] = attr[k];
+						attr[i] = ns..":"..nm;
+						attr[k] = nil;
 					end
 				end
 			end
