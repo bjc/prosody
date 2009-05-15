@@ -226,7 +226,14 @@ function handle_stanza(host, origin, stanza)
 		(handlers[1])(origin, stanza);
 		return true;
 	else
-		log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns); -- we didn't handle it
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
+		if stanza.attr.xmlns == "jabber:client" then
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			end
+		else
+			origin:close("unsupported-stanza-type");
+		end
 	end
 end
 
