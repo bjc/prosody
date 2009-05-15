@@ -203,8 +203,17 @@ local function new_digest_md5(realm, password_handler)
 			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", decoder)
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
-			
-			local A1 = Y..":"..response["nonce"]..":"..response["cnonce"]--:authzid
+			local A1 = "";
+			if response.authzid then
+				if response.authzid == self.username.."@"..self.realm then
+					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920");
+					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
+				else
+					A1 = "?";
+				end
+			else
+				A1 = Y..":"..response["nonce"]..":"..response["cnonce"];
+			end
 			local A2 = "AUTHENTICATE:"..protocol.."/"..domain;
 			
 			local HA1 = md5(A1, true)
