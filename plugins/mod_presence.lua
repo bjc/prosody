@@ -268,6 +268,7 @@ local function presence_handler(data)
 			core_route_stanza(origin, stanza);
 		end
 	end
+	return true;
 end
 
 local add_handler = require "core.eventmanager2".add_handler;
