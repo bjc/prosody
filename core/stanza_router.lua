@@ -160,7 +160,9 @@ function core_route_stanza(origin, stanza)
 		local user = host_session.sessions[node];
 		if user then
 			local res = user.sessions[resource];
-			if not res then
+			if res then -- resource is online...
+				res.send(stanza); -- Yay \o/
+			else
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
@@ -211,10 +213,6 @@ function core_route_stanza(origin, stanza)
 				elseif stanza.attr.type == "get" or stanza.attr.type == "set" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
-			else
-				-- User + resource is online...
-				stanza.attr.to = res.full_jid; -- reset at the end of function
-				res.send(stanza); -- Yay \o/
 			end
 		else
 			-- user not online
