@@ -15,14 +15,8 @@ local tostring = tostring;
 local pairs = pairs;
 local ipairs = ipairs;
 local type = type;
-local print = print;
-local format = string.format;
-local m_random = math.random;
 local t_insert = table.insert;
-local t_remove = table.remove;
 local t_concat = table.concat;
-local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
-local sm_destroy_session = import("core.sessionmanager", "destroy_session");
 
 local default_log = require "util.logger".init("xmlhandlers");
 
