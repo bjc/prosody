@@ -67,7 +67,6 @@ eventmanager.add_event_hook("server-starting", load_enabled_components);
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);
 	local component = nil;
-	if not component then component = components[stanza.attr.to]; end -- hack to allow hooking node@server/resource and server/resource
 	if not component then component = components[node.."@"..host]; end -- hack to allow hooking node@server
 	if not component then component = components[host]; end
 	if component then
