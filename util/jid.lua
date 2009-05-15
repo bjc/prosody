@@ -15,7 +15,7 @@ local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module "jid"
 
-function split(jid)
+local function _split(jid)
 	if not jid then return; end
 	local node, nodepos = match(jid, "^([^@]+)@()");
 	local host, hostpos = match(jid, "^([^@/]+)()", nodepos)
@@ -24,17 +24,18 @@ function split(jid)
 	if (not host) or ((not resource) and #jid >= hostpos) then return nil, nil, nil; end
 	return node, host, resource;
 end
+split = _split;
 
 function bare(jid)
-	local node, host = split(jid);
+	local node, host = _split(jid);
 	if node and host then
 		return node.."@"..host;
 	end
 	return host;
 end
 
-function prepped_split(jid)
-	local node, host, resource = split(jid);
+local function _prepped_split(jid)
+	local node, host, resource = _split(jid);
 	if host then
 		host = nameprep(host);
 		if not host then return; end
@@ -49,9 +50,10 @@ function prepped_split(jid)
 		return node, host, resource;
 	end
 end
+prepped_split = _prepped_split;
 
 function prep(jid)
-	local node, host, resource = prepped_split(jid);
+	local node, host, resource = _prepped_split(jid);
 	if host then
 		if node then
 			host = node .. "@" .. host;
