@@ -107,7 +107,7 @@ function core_process_stanza(origin, stanza)
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
-				log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from_host, origin.from_host);
+				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
