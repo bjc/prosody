@@ -47,7 +47,9 @@ local fire_event = require "core.eventmanager2".fire_event;
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
-	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
+	-- Currently we guarantee every stanza to have an xmlns, should we keep this rule?
+	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end
+	
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
