@@ -2,6 +2,7 @@
 local ipairs = ipairs;
 local pairs = pairs;
 local t_insert = table.insert;
+local t_sort = table.sort;
 local select = select;
 
 module "events"
@@ -19,14 +20,15 @@ function new()
 			for handler in pairs(_handlers) do
 				t_insert(index, handler);
 			end
+			t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
 		end
 	end;
-	local function add_handler(event, handler)
+	local function add_handler(event, handler, priority)
 		local map = event_map[event];
 		if map then
-			map[handler] = true;
+			map[handler] = priority or 0;
 		else
-			map = {[handler] = true};
+			map = {[handler] = priority or 0};
 			event_map[event] = map;
 		end
 		_rebuild_index();
