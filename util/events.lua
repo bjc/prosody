@@ -11,17 +11,16 @@ function new()
 	local dispatchers = {};
 	local handlers = {};
 	local event_map = {};
-	local function _rebuild_index() -- TODO optimize index rebuilding
-		for event, _handlers in pairs(event_map) do
-			local index = handlers[event];
-			if index then
-				for i=#index,1,-1 do index[i] = nil; end
-			else index = {}; handlers[event] = index; end
-			for handler in pairs(_handlers) do
-				t_insert(index, handler);
-			end
-			t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
+	local function _rebuild_index(event) -- TODO optimize index rebuilding
+		local _handlers = event_map[event];
+		local index = handlers[event];
+		if index then
+			for i=#index,1,-1 do index[i] = nil; end
+		else index = {}; handlers[event] = index; end
+		for handler in pairs(_handlers) do
+			t_insert(index, handler);
 		end
+		t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
 	end;
 	local function add_handler(event, handler, priority)
 		local map = event_map[event];
@@ -31,13 +30,13 @@ function new()
 			map = {[handler] = priority or 0};
 			event_map[event] = map;
 		end
-		_rebuild_index();
+		_rebuild_index(event);
 	end;
 	local function remove_handler(event, handler)
 		local map = event_map[event];
 		if map then
 			map[handler] = nil;
-			_rebuild_index();
+			_rebuild_index(event);
 		end
 	end;
 	local function add_plugin(plugin)
