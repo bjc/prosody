@@ -15,7 +15,7 @@
 -- A table is a list of values, except each value has a name. An 
 -- example would be:
 --
--- logging = { type = "html", directory = "/var/logs", rotate = "daily" }
+-- ssl = { key = "keyfile.key", certificate = "certificate.cert" }
 --
 -- Whitespace (that is tabs, spaces, line breaks) is mostly insignificant, so 
 -- can 
