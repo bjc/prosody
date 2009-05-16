@@ -231,7 +231,7 @@ function handle_stanza(host, origin, stanza)
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 			end
-		else
+		elseif not(name == "features" and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
 			origin:close("unsupported-stanza-type");
 		end
 	end
