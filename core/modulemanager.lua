@@ -17,6 +17,7 @@ local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local register_actions = require "core.actions".register;
+local st = require "util.stanza";
 
 local hosts = hosts;
 
