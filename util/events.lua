@@ -52,9 +52,9 @@ function new()
 	local function _create_dispatcher(event) -- FIXME duplicate code in fire_event
 		local h = handlers[event];
 		if not h then h = {}; handlers[event] = h; end
-		local dispatcher = function(data)
+		local dispatcher = function(...)
 			for _, handler in ipairs(h) do
-				local ret = handler(data);
+				local ret = handler(...);
 				if ret ~= nil then return ret; end
 			end
 		end;
@@ -64,11 +64,11 @@ function new()
 	local function get_dispatcher(event)
 		return dispatchers[event] or _create_dispatcher(event);
 	end;
-	local function fire_event(event, data) -- FIXME duplicates dispatcher code
+	local function fire_event(event, ...) -- FIXME duplicates dispatcher code
 		local h = handlers[event];
 		if h then
 			for _, handler in ipairs(h) do
-				local ret = handler(data);
+				local ret = handler(...);
 				if ret ~= nil then return ret; end
 			end
 		end
