@@ -123,7 +123,9 @@ function core_post_stanza(origin, stanza)
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
 
 	local event_data = {origin=origin, stanza=stanza};
-	if fire_event(tostring(host or origin.host).."/"..stanza.name, event_data) then
+	if host and fire_event(host.."/"..stanza.name, event_data) then
+		-- event handled
+	elseif stanza.name == "presence" and origin.host and fire_event(origin.host.."/"..stanza.name, event_data) then
 		-- event handled
 	elseif not to then
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
