@@ -79,8 +79,10 @@ end
 local function sasl_handler(session, stanza)
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
-		if config.get(session.host or "*", "core", "anonymous_login") and stanza.attr.mechanism ~= "ANONYMOUS" then
-			return session.send(build_reply("failure", "invalid-mechanism"));
+		if config.get(session.host or "*", "core", "anonymous_login") then
+			if stanza.attr.mechanism ~= "ANONYMOUS" then
+				return session.send(build_reply("failure", "invalid-mechanism"));
+			end
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
