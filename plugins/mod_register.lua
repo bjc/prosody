@@ -60,6 +60,8 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 					end
 				end
 				datamanager.store(username, host, "accounts", nil); -- delete accounts datastore at the end
+				module:log("info", "User removed their account: %s@%s", username, host);
+				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register" });
 			else
 				local username = query:child_with_name("username");
 				local password = query:child_with_name("password");
@@ -143,6 +145,9 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					else
 						if usermanager_create_user(username, password, session.host) then
 							session.send(st.reply(stanza)); -- user created!
+							module:log("info", "User account created: %s@%s", username, session.host);
+							module:fire_event("user-registered", { 
+								username = username, host = session.host, source = "mod_register" });
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
 							session.send(st.error_reply(stanza, "wait", "internal-server-error"));
