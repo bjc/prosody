@@ -350,6 +350,10 @@ function api:add_event_hook(name, handler)
 	event_hooks:set(self.host, self.name, name, handler, true);
 end
 
+function api:fire_event(...)
+	return eventmanager.fire_event(...);
+end
+
 --------------------------------------------------------------------
 
 local actions = {};
