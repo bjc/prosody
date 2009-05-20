@@ -15,6 +15,7 @@ local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
+local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
 
@@ -81,7 +82,7 @@ end
 
 function create_component(host, component)
 	-- TODO check for host well-formedness
-	return { type = "component", host = host, connected = true, s2sout = {} };
+	return { type = "component", host = host, connected = true, s2sout = {}, events = events_new() };
 end
 
 function register_component(host, component, session)
