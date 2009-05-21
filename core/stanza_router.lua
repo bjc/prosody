@@ -123,14 +123,14 @@ function core_process_stanza(origin, stanza)
 			core_handle_stanza(origin, stanza);
 		elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
 			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
 			component_handle_stanza(origin, stanza);
 		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 			component_handle_stanza(origin, stanza);
 		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 			component_handle_stanza(origin, stanza);
-		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
 		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
 			core_handle_stanza(origin, stanza);
 		else
