@@ -17,6 +17,7 @@ local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local register_actions = require "core.actions".register;
+local st = require "util.stanza";
 
 local hosts = hosts;
 
@@ -226,7 +227,14 @@ function handle_stanza(host, origin, stanza)
 		(handlers[1])(origin, stanza);
 		return true;
 	else
-		log("debug", "Stanza unhandled by any modules, xmlns: %s", stanza.attr.xmlns); -- we didn't handle it
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
+		if stanza.attr.xmlns == "jabber:client" then
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			end
+		elseif not(name == "features" and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+			origin:close("unsupported-stanza-type");
+		end
 	end
 end
 
@@ -340,6 +348,10 @@ function api:add_event_hook(name, handler)
 		hooked:set(self.host, self.name, name, true);
 	end
 	event_hooks:set(self.host, self.name, name, handler, true);
+end
+
+function api:fire_event(...)
+	return eventmanager.fire_event(...);
 end
 
 --------------------------------------------------------------------

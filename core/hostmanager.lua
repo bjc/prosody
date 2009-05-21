@@ -2,6 +2,7 @@
 local hosts = hosts;
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
+local events_new = require "util.events".new;
 
 local log = require "util.logger".init("hostmanager");
 
@@ -26,7 +27,7 @@ end
 eventmanager.add_event_hook("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {} };
+	hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {}, events = events_new() };
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end

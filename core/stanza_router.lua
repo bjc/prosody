@@ -10,6 +10,8 @@
 
 local log = require "util.logger".init("stanzarouter")
 
+local hosts = _G.hosts;
+
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
@@ -24,9 +26,9 @@ local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
-local handle_outbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
-local handle_inbound_presence_subscriptions_and_probes = require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
-local handle_normal_presence = require "core.presencemanager".handle_normal_presence;
+local handle_outbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
+local handle_inbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
+local handle_normal_presence = function()end;--require "core.presencemanager".handle_normal_presence;
 
 local format = string.format;
 local tostring = tostring;
@@ -40,18 +42,16 @@ local ipairs = ipairs;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
-local function checked_error_reply(origin, stanza)
-	if (stanza.attr.xmlns == "jabber:client" or stanza.attr.xmlns == "jabber:server") and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- FIXME correct error?
-	end
-end
+local fire_event = require "core.eventmanager2".fire_event;
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
-	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end -- FIXME Hack. This should be removed when we fix namespace handling.
+	-- Currently we guarantee every stanza to have an xmlns, should we keep this rule?
+	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end
+	
 	-- TODO verify validity of stanza (as well as JID validity)
-	if stanza.attr.xmlns == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
+	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
 		if (stanza.attr.type == "set" or stanza.attr.type == "get") and #stanza.tags ~= 1 then
 			origin.send(st.error_reply(stanza, "modify", "bad-request"));
@@ -103,69 +103,42 @@ function core_process_stanza(origin, stanza)
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
-	-- FIXME do stanzas not of jabber:client get handled by components?
-	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and (not xmlns or xmlns == "jabber:server" or xmlns == "jabber:client") then			
+	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == "jabber:client" then
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
-				log("warn", "Received a stanza claiming to be from %s, over a conn authed for %s!", from_host, origin.from_host);
+				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
-		if origin.type == "c2s" and stanza.name == "presence" and to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
-			origin.directed = origin.directed or {};
-			origin.directed[to] = true;
-			--t_insert(origin.directed, to); -- FIXME does it make more sense to add to_bare rather than to?
-		end
-		if not to then
-			core_handle_stanza(origin, stanza);
-		elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
-			core_handle_stanza(origin, stanza);
-		elseif stanza.attr.xmlns and stanza.attr.xmlns ~= "jabber:client" and stanza.attr.xmlns ~= "jabber:server" then
-			modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-		elseif origin.type == "c2s" and stanza.name == "presence" and stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		elseif hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
-			component_handle_stanza(origin, stanza);
-		elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
-			component_handle_stanza(origin, stanza);
-		elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
-			component_handle_stanza(origin, stanza);
-		elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
-			core_handle_stanza(origin, stanza);
-		else
-			core_route_stanza(origin, stanza);
-		end
+		core_post_stanza(origin, stanza);
 	else
-		core_handle_stanza(origin, stanza);
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end
 
--- This function handles stanzas which are not routed any further,
--- that is, they are handled by this server
-function core_handle_stanza(origin, stanza)
-	-- Handlers
-	if modules_handle_stanza(select(2, jid_split(stanza.attr.to)) or origin.host, origin, stanza) then return; end
-	if origin.type == "c2s" or origin.type == "s2sin" then
-		if origin.type == "c2s" then
-			if stanza.name == "presence" and origin.roster then
-				if stanza.attr.type == nil or stanza.attr.type == "unavailable" and stanza.attr.type ~= "error" then
-					handle_normal_presence(origin, stanza, core_route_stanza);
-				else
-					log("warn", "Unhandled c2s presence: %s", tostring(stanza));
-					checked_error_reply(origin, stanza);
-				end
-			else
-				log("warn", "Unhandled c2s stanza: %s", tostring(stanza));
-				checked_error_reply(origin, stanza);
-			end
-		else -- s2s stanzas
-			log("warn", "Unhandled s2s stanza: %s", tostring(stanza));
-			checked_error_reply(origin, stanza);
-		end
+function core_post_stanza(origin, stanza)
+	local to = stanza.attr.to;
+	local node, host, resource = jid_split(to);
+	local to_bare = node and (node.."@"..host) or host; -- bare JID
+
+	local event_data = {origin=origin, stanza=stanza};
+	if host and fire_event(host.."/"..stanza.name, event_data) then
+		-- event handled
+	elseif stanza.name == "presence" and origin.host and fire_event(origin.host.."/"..stanza.name, event_data) then
+		-- event handled
+	elseif not to then
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+		component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
+		component_handle_stanza(origin, stanza);
+	elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
+		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	else
-		log("warn", "Unhandled %s stanza: %s", origin.type, tostring(stanza));
-		checked_error_reply(origin, stanza);
+		core_route_stanza(origin, stanza);
 	end
 end
 
@@ -185,9 +158,7 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
-	if hosts[to] and hosts[to].type == "component" then -- hack to allow components to handle node@server/resource and server/resource
-		return component_handle_stanza(origin, stanza);
-	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
+	if hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
 		return component_handle_stanza(origin, stanza);
 	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
 		return component_handle_stanza(origin, stanza);
@@ -201,7 +172,9 @@ function core_route_stanza(origin, stanza)
 		local user = host_session.sessions[node];
 		if user then
 			local res = user.sessions[resource];
-			if not res then
+			if res then -- resource is online...
+				res.send(stanza); -- Yay \o/
+			else
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
@@ -252,10 +225,6 @@ function core_route_stanza(origin, stanza)
 				elseif stanza.attr.type == "get" or stanza.attr.type == "set" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
-			else
-				-- User + resource is online...
-				stanza.attr.to = res.full_jid; -- reset at the end of function
-				res.send(stanza); -- Yay \o/
 			end
 		else
 			-- user not online
