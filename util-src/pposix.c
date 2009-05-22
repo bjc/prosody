@@ -72,10 +72,10 @@ static int lc_daemonize(lua_State *L)
 	}
 
 	/* Close stdin, stdout, stderr */
-/*	close(0);
+	close(0);
 	close(1);
 	close(2);
-*/
+
 	/* Final fork, use it wisely */
 	if(fork())
 		exit(0);
