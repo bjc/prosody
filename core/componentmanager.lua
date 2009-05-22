@@ -15,6 +15,7 @@ local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
+local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
 
@@ -67,9 +68,10 @@ eventmanager.add_event_hook("server-starting", load_enabled_components);
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);
 	local component = nil;
-	if not component then component = components[stanza.attr.to]; end -- hack to allow hooking node@server/resource and server/resource
-	if not component then component = components[node.."@"..host]; end -- hack to allow hooking node@server
-	if not component then component = components[host]; end
+	if host then
+		if node then component = components[node.."@"..host]; end -- hack to allow hooking node@server
+		if not component then component = components[host]; end
+	end
 	if component then
 		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
 		component(origin, stanza, hosts[host]);
@@ -80,8 +82,7 @@ end
 
 function create_component(host, component)
 	-- TODO check for host well-formedness
-	local session = session or { type = "component", host = host, connected = true, s2sout = {} };
-	return session;
+	return { type = "component", host = host, connected = true, s2sout = {}, events = events_new() };
 end
 
 function register_component(host, component, session)

@@ -9,9 +9,9 @@
 
 
 local logger = require "logger";
+local log = logger.init("xmppserver_listener");
 local lxp = require "lxp"
 local init_xmlhandlers = require "core.xmlhandlers"
-local sm_new_session = require "core.sessionmanager".new_session;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
@@ -42,8 +42,9 @@ local t_concat = table.concat;
 local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
 local m_random = math.random;
 local format = string.format;
-local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session; --import("core.sessionmanager", "new_session", "destroy_session");
-local st = stanza;
+local sessionmanager = require "core.sessionmanager";
+local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
+local st = require "util.stanza";
 
 local sessions = {};
 local xmppserver = { default_port = 5269, default_mode = "*a" };

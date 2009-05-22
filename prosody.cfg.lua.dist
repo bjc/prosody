@@ -15,7 +15,7 @@
 -- A table is a list of values, except each value has a name. An 
 -- example would be:
 --
--- logging = { type = "html", directory = "/var/logs", rotate = "daily" }
+-- ssl = { key = "keyfile.key", certificate = "certificate.cert" }
 --
 -- Whitespace (that is tabs, spaces, line breaks) is mostly insignificant, so 
 -- can 
@@ -38,6 +38,7 @@ Host "*"
 	modules_enabled = {
 			-- Generally required
 				"roster"; -- Allow users to have a roster. Recommended ;)
+				"presence"; -- See and broadcast status changes to/from contacts
 				"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 				"tls"; -- Add support for secure TLS on c2s/s2s connections
 				"dialback"; -- s2s dialback support

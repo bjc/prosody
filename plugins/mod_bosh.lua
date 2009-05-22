@@ -1,6 +1,7 @@
 
 module.host = "*" -- Global module
 
+local hosts = _G.hosts;
 local lxp = require "lxp";
 local init_xmlhandlers = require "core.xmlhandlers"
 local server = require "net.server";
