@@ -35,12 +35,12 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 		function (session, stanza)
 			if stanza.tags[1].name == "query" then
 				if stanza.attr.type == "get" then
-					local roster = st.reply(stanza)
-								:query("jabber:iq:roster");
+					local roster = st.reply(stanza);
 					
 					local ver = stanza.tags[1].attr.ver
 					
 					if (not ver) or tonumber(ver) ~= (session.roster[false].version or 1) then
+						roster:query("jabber:iq:roster");
 						-- Client does not support versioning, or has stale roster
 						for jid in pairs(session.roster) do
 							if jid ~= "pending" and jid then
