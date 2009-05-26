@@ -16,13 +16,20 @@ function lookup(handler, qname, qtype, qclass)
 				end
 				log("debug", "Records for %s not in cache, sending query (%s)...", qname, tostring(coroutine.running()));
 				dns.query(qname, qtype, qclass);
-				coroutine.yield(nil); -- Wait for reply
+				coroutine.yield({ qclass or "IN", qtype or "A", qname, coroutine.running()}); -- Wait for reply
 				log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
 				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
 				if not ok then
 					log("debug", "Error in DNS response handler: %s", tostring(err));
 				end
 			end)(dns.peek(qname, qtype, qclass));
+end
+
+function cancel(handle, call_handler)
+	dns.cancel(handle);
+	if call_handler then
+		handle[4]()
+	end
 end
 
 function new_async_socket(sock)
