@@ -11,6 +11,7 @@
 local hosts = hosts;
 local sessions = sessions;
 local core_process_stanza = function(a, b) core_process_stanza(a, b); end
+local add_task = require "util.timer".add_task;
 local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
@@ -37,6 +38,8 @@ local sha256_hash = require "util.hashes".sha256;
 local dialback_secret = sha256_hash(tostring{} .. math.random() .. socket.gettime(), true);
 
 local adns = require "net.adns";
+
+local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 
 incoming_s2s = {};
 local incoming_s2s = incoming_s2s;
@@ -169,8 +172,9 @@ function attempt_connection(host_session, err)
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
-		local answer = 
-		adns.lookup(function (answer)
+		local answer, handle;
+		handle = adns.lookup(function (answer)
+			handle = nil;
 			host_session.connecting = nil;
 			if answer then
 				log("debug", to_host.." has SRV records, handling...");
@@ -193,6 +197,14 @@ function attempt_connection(host_session, err)
 			-- Try with SRV, or just the plain hostname if no SRV
 			return try_connect(host_session, connect_host, connect_port);
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
+		
+		-- Set handler for DNS timeout
+		add_task(dns_timeout, function ()
+			if handle then
+				adns.cancel(handle, true);
+			end
+		end);
+		
 		log("debug", "DNS lookup for %s sent, waiting for response before we can connect", to_host);
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
