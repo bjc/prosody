@@ -21,8 +21,8 @@ local require = require
 local coroutine, io, math, socket, string, table =
       coroutine, io, math, socket, string, table
 
-local ipairs, next, pairs, print, setmetatable, tostring, assert, error =
-      ipairs, next, pairs, print, setmetatable, tostring, assert, error
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack =
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack
 
 local get, set = ztact.get, ztact.set
 
@@ -711,6 +711,12 @@ function resolver:feed(sock, packet)
   return response
 end
 
+function resolver:cancel(data)
+	local cos = get (self.wanted, unpack(data, 1, 3))
+	if cos then
+		cos[data[4]] = nil;
+	end
+end
 
 function resolver:pulse ()    -- - - - - - - - - - - - - - - - - - - - -  pulse
 
@@ -847,6 +853,8 @@ function dns.query (...)    -- - - - - - - - - - - - - - - - - - - - - -  query
 function dns.feed (...)    -- - - - - - - - - - - - - - - - - - - - - -  feed
   return resolve (resolver.feed, ...)  end
 
+function dns.cancel(...)   -- - - - - - - - - - - - - - - - - - - - - -  cancel
+  return resolve(resolver.cancel, ...) end
 
 function dns:socket_wrapper_set (...)    -- - - - - - - - -  socket_wrapper_set
   return resolve (resolver.socket_wrapper_set, ...)  end
