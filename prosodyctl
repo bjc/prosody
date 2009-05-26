@@ -93,6 +93,7 @@ local error_messages = setmetatable({
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
+		["no-pidfile"] = "There is no pidfile option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 hosts = {};
