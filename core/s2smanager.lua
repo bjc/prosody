@@ -306,7 +306,9 @@ end
 
 function streamclosed(session)
 	(session.log or log)("debug", "</stream:stream>");
-	session.sends2s("</stream:stream>");
+	if session.sends2s then
+		session.sends2s("</stream:stream>");
+	end
 	session.notopen = true;
 end
 
