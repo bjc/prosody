@@ -114,19 +114,25 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 									end
 									local success, err_type, err_cond, err_msg = rm_add_to_roster(session, jid, r_item);
 									if success then
+										-- Ok, send success
 										session.send(st.reply(stanza));
+										-- and push change to all resources
 										rm_roster_push(from_node, from_host, jid);
 									else
+										-- Adding to roster failed
 										session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 									end
 								end
 							else
+								-- Trying to add self to roster
 								session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 							end
 						else
+							-- Invalid JID added to roster
 							session.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME what's the correct error?
 						end
 					else
+						-- Roster set didn't include a single item, or its name wasn't  'item'
 						session.send(st.error_reply(stanza, "modify", "bad-request"));
 					end
 					return true;
