@@ -4,7 +4,7 @@ local host = module:get_host();
 local config = require "core.configmanager";
 
 local registration_watchers = config.get(host, "core", "registration_watchers") 
-	or config.get(host, "core", "admin") or {};
+	or config.get(host, "core", "admins") or {};
 
 local registration_alert = config.get(host, "core", "registration_notification") or "User $username just registered on $host from $ip";
 
