@@ -28,7 +28,7 @@ end
 function cancel(handle, call_handler)
 	dns.cancel(handle);
 	if call_handler then
-		handle[4]()
+		coroutine.resume(handle[4]);
 	end
 end
 
