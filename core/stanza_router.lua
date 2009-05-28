@@ -44,6 +44,8 @@ local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
 local fire_event = require "core.eventmanager2".fire_event;
 
+local select_best_resources;
+
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
@@ -199,21 +201,8 @@ function core_route_stanza(origin, stanza)
 						-- Groupchat message sent to offline resource
 						origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 					else
-						local priority = 0;
-						local recipients = {};
-						for _, session in pairs(user.sessions) do -- find resource with greatest priority
-							if session.presence then
-								local p = session.priority;
-								if p > priority then
-									priority = p;
-									recipients = {session};
-								elseif p == priority then
-									t_insert(recipients, session);
-								end
-							end
-						end
 						local count = 0;
-						for _, session in ipairs(recipients) do
+						for _, session in ipairs(select_best_resources(user)) do
 							session.send(stanza);
 							count = count + 1;
 						end
@@ -279,4 +268,21 @@ function core_route_stanza(origin, stanza)
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
 	stanza.attr.to = to; -- reset
+end
+
+function select_best_resources(user)
+	local priority = 0;
+	local recipients = {};
+	for _, session in pairs(user.sessions) do -- find resource with greatest priority
+		if session.presence then
+			local p = session.priority;
+			if p > priority then
+				priority = p;
+				recipients = {session};
+			elseif p == priority then
+				t_insert(recipients, session);
+			end
+		end
+	end
+	return recipients;
 end
