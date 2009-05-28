@@ -26,6 +26,7 @@ function lookup(handler, qname, qtype, qclass)
 end
 
 function cancel(handle, call_handler)
+	log("warn", "Cancelling DNS lookup for %s", tostring(handle[3]));
 	dns.cancel(handle);
 	if call_handler then
 		coroutine.resume(handle[4]);
