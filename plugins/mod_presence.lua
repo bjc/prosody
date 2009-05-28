@@ -132,7 +132,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 		stanza.attr.to = nil; -- reset it
 	else
-		log("error", "presence recieved from client with no roster");
+		log("warn", "presence recieved from client with no roster");
 	end
 end
 
@@ -153,7 +153,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 			end
 		end
 	end
-	log("info", "broadcasted presence of "..count.." resources from "..user.."@"..host.." to "..jid);
+	log("debug", "broadcasted presence of "..count.." resources from "..user.."@"..host.." to "..jid);
 	return count;
 end
 
