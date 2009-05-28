@@ -6,9 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
-local log = require "util.logger".init("mod_presence")
+local log = module._log;
 
 local require = require;
 local pairs, ipairs = pairs, ipairs;
