@@ -141,7 +141,7 @@ function core_post_stanza(origin, stanza)
 
 	local event_data = {origin=origin, stanza=stanza};
 	if origin.full_jid then -- c2s connection
-		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data); then return; end -- do preprocessing
+		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
 	if h then
@@ -149,7 +149,7 @@ function core_post_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 			return;
 		else
-			if h.events.fire_event(stanza.name..to_type, event_data); then return; end -- do processing
+			if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		end
 	else -- non-local recipient
 		core_route_stanza(origin, stanza);
