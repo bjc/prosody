@@ -121,7 +121,10 @@ local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
 module:add_event_hook("stream-features", 
 		function (session, features)												
-			if not session.username and ((not secure_auth_only) or session.secure) then
+			if not session.username then
+				if secure_auth_only and not session.secure then
+					return;
+				end
 				features:tag("mechanisms", mechanisms_attr);
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 					if config.get(session.host or "*", "core", "anonymous_login") then
