@@ -70,11 +70,13 @@ function destroy_session(session, err)
 		if hosts[session.host] and hosts[session.host].sessions[session.username] then
 			if session.resource then
 				hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
+				full_sessions[session.full_jid] = nil;
 			end
 				
 			if not next(hosts[session.host].sessions[session.username].sessions) then
 				log("debug", "All resources of %s are now offline", session.username);
 				hosts[session.host].sessions[session.username] = nil;
+				bare_sessions[session.host..'@'..session.username] = nil;
 			end
 		else
 			log("error", "host or session table didn't exist, please report this! Host: %s [%s] Sessions: %s [%s]", 
@@ -110,7 +112,9 @@ function bind_resource(session, resource)
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	
 	if not hosts[session.host].sessions[session.username] then
-		hosts[session.host].sessions[session.username] = { sessions = {} };
+		local sessions = { sessions = {} };
+		hosts[session.host].sessions[session.username] = sessions;
+		bare_sessions[session.host..'@'..session.username] = sessions;
 	else
 		local sessions = hosts[session.host].sessions[session.username].sessions;
 		local limit = config_get(session.host, "core", "max_resources") or 10;
@@ -150,6 +154,7 @@ function bind_resource(session, resource)
 	session.resource = resource;
 	session.full_jid = session.username .. '@' .. session.host .. '/' .. resource;
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
+	full_sessions[session.full_jid] = session;
 	
 	session.roster = rm_load_roster(session.username, session.host);
 	
