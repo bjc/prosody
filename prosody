@@ -68,7 +68,8 @@ require "util.dependencies"
 --- Load socket framework
 local server = require "net.server"
 
-
+bare_sessions = {};
+full_sessions = {};
 hosts = {};
 
 --- Load and initialise core modules
