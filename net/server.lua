@@ -540,6 +540,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler.sendbuffer = handshake
             handshake( socket )    -- do handshake
         else
+            -- We're not automatically doing SSL, so we're not secure (yet)
+            ssl = false
             handler.starttls = function( now )
                 if not now then
                     --out_put "server.lua: we need to do tls, but delaying until later"
@@ -576,6 +578,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
                 handler.starttls = nil
                 needtls = nil
+                
+                -- Secure now
+                ssl = true
 
                 handler.readbuffer = handshake
                 handler.sendbuffer = handshake
