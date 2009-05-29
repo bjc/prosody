@@ -124,7 +124,38 @@ function core_post_stanza(origin, stanza)
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
 
+	local to_type;
+	if node then
+		if resource then
+			to_type = '/full';
+		else
+			to_type = '/bare';
+		end
+	else
+		if host then
+			to_type = '/host';
+		else
+			to_type = '/bare';
+		end
+	end
+
 	local event_data = {origin=origin, stanza=stanza};
+	if origin.full_jid then -- c2s connection
+		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data); then return; end -- do preprocessing
+	end
+	local h = hosts[to_bare] or hosts[host or origin.host];
+	if h then
+		if h.type == "component" then
+			component_handle_stanza(origin, stanza);
+			return;
+		else
+			if h.events.fire_event(stanza.name..to_type, event_data); then return; end -- do processing
+		end
+	else -- non-local recipient
+		core_route_stanza(origin, stanza);
+		return;
+	end
+
 	if host and fire_event(host.."/"..stanza.name, event_data) then
 		-- event handled
 	elseif stanza.name == "presence" and origin.host and fire_event(origin.host.."/"..stanza.name, event_data) then
