@@ -171,6 +171,12 @@ function streamopened(session, attr)
 		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
 		return;
 	end
+	
+	-- If session.secure is *false* (not nil) then it means we /were/ encrypting
+	-- since we now have a new stream header, session is secured
+	if session.secure == false then
+		session.secure = true;
+	end
 						
 	local features = st.stanza("stream:features");
 	fire_event("stream-features", session, features);

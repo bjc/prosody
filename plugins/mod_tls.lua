@@ -19,6 +19,7 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 				session:reset_stream();
 				session.conn.starttls();
 				session.log("info", "TLS negotiation started...");
+				session.secure = false;
 			else
 				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this connection");
