@@ -19,7 +19,12 @@ local usermanager = require "core.usermanager";
 
 module:add_feature("jabber:iq:auth");
 module:add_event_hook("stream-features", function (session, features)
-	if not session.username then features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up(); end
+	if secure_auth_only and not session.secure then
+		-- Sorry, not offering to insecure streams!
+		return;
+	elseif not session.username then
+		features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up();
+	end
 end);
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:auth", 
