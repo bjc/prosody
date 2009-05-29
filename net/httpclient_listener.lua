@@ -1,6 +1,6 @@
+local log = require "util.logger".init("httpclient_listener");
 
 local connlisteners_register = require "net.connlisteners".register;
-
 
 local requests = {}; -- Open requests
 local buffers = {}; -- Buffers of partial lines
@@ -11,7 +11,7 @@ function httpclient.listener(conn, data)
 	local request = requests[conn];
 
 	if not request then
-		print("NO REQUEST!! for "..tostring(conn));
+		log("warn", "Received response from connection %s with no request attached!", tostring(conn));
 		return;
 	end
 
@@ -29,7 +29,7 @@ function httpclient.disconnect(conn, err)
 end
 
 function httpclient.register_request(conn, req)
-	print("Registering a request for "..tostring(conn));
+	log("debug", "Attaching request %s to connection %s", tostring(req.id or req), tostring(conn));
 	requests[conn] = req;
 end
 
