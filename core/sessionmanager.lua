@@ -15,6 +15,8 @@ local m_random = import("math", "random");
 local format = import("string", "format");
 
 local hosts = hosts;
+local full_sessions = full_sessions;
+local bare_sessions = bare_sessions;
 
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("sessionmanager");
