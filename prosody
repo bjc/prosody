@@ -69,9 +69,6 @@ require "util.dependencies"
 local server = require "net.server"
 
 
-
--- Maps connections to sessions --
-sessions = {};
 hosts = {};
 
 --- Load and initialise core modules
