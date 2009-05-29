@@ -11,6 +11,9 @@
 local st = require "util.stanza";
 local t_concat = table.concat;
 
+local config = require "core.configmanager";
+local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+
 local sessionmanager = require "core.sessionmanager";
 local usermanager = require "core.usermanager";
 
@@ -21,6 +24,11 @@ end);
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:auth", 
 		function (session, stanza)
+			if secure_auth_only and not session.secure then
+				session.send(st.error_reply(stanza, "modify", "not-acceptable", "Encryption (SSL or TLS) is required to connect to this server"));
+				return true;
+			end
+			
 			local username = stanza.tags[1]:child_with_name("username");
 			local password = stanza.tags[1]:child_with_name("password");
 			local resource = stanza.tags[1]:child_with_name("resource");
