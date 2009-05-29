@@ -21,6 +21,8 @@ local jid_split = require "util.jid".split
 local md5 = require "util.hashes".md5;
 local config = require "core.configmanager";
 
+local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+
 local log = module._log;
 
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
@@ -119,7 +121,7 @@ local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
 module:add_event_hook("stream-features", 
 		function (session, features)												
-			if not session.username then
+			if not session.username and ((not secure_auth_only) or session.secure) then
 				features:tag("mechanisms", mechanisms_attr);
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 					if config.get(session.host or "*", "core", "anonymous_login") then
