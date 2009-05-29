@@ -115,6 +115,10 @@ function xmppclient.listener(conn, data)
 		
 		session.log("info", "Client connected");
 		
+		if conn.ssl() then
+			session.secure = true;
+		end
+		
 		session.reset_stream = session_reset_stream;
 		session.close = session_close;
 		
