@@ -66,10 +66,8 @@ function destroy_session(session, err)
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
-		if session.resource then
-			hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
-			full_sessions[session.full_jid] = nil;
-		end
+		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
+		full_sessions[session.full_jid] = nil;
 			
 		if not next(hosts[session.host].sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
