@@ -194,6 +194,53 @@ end
 function def_env.hosts:add(name)
 end
 
+def_env.c2s = {};
+
+local function show_c2s(callback)
+	for hostname, host in pairs(hosts) do
+		for username, user in pairs(host.sessions or {}) do
+			for resource, session in pairs(user.sessions or {}) do
+				local jid = username.."@"..hostname.."/"..resource;
+				callback(jid, session);
+			end
+		end
+	end
+end
+
+function def_env.c2s:show(match_jid)
+	local print, count = self.session.print, 0;
+	show_c2s(function (jid)
+		if (not match_jid) or jid:match(match_jid) then
+			count = count + 1;
+			print(jid);
+		end		
+	end);
+	return true, "Total: "..count.." clients";
+end
+
+function def_env.c2s:show_insecure(match_jid)
+	local print, count = self.session.print, 0;
+	show_c2s(function (jid, session)
+		if ((not match_jid) or jid:match(match_jid)) and not session.secure then
+			count = count + 1;
+			print(jid);
+		end		
+	end);
+	return true, "Total: "..count.." insecure client connections";
+end
+
+function def_env.c2s:show_secure(match_jid)
+	local print, count = self.session.print, 0;
+	show_c2s(function (jid, session)
+		if ((not match_jid) or jid:match(match_jid)) and session.secure then
+			count = count + 1;
+			print(jid);
+		end		
+	end);
+	return true, "Total: "..count.." secure client connections";
+end
+
+
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
 	local _print = self.session.print;
