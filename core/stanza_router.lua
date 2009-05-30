@@ -115,6 +115,20 @@ function core_process_stanza(origin, stanza)
 		end
 		core_post_stanza(origin, stanza);
 	else
+		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
+		if h then
+			local event;
+			if stanza.attr.xmlns == "jabber:client" then
+				if stanza.name == "iq" and (stanza.attr.type == "set" or stanza.attr.type == "get") then
+					event = "stanza/iq/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name;
+				else
+					event = "stanza/"..stanza.name;
+				end
+			else
+				event = "stanza/"..stanza.attr.xmlns..":"..stanza.name;
+			end
+			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
+		end
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end
