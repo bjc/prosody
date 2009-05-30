@@ -10,7 +10,8 @@ local registration_alert = config.get(host, "core", "registration_notification")
 
 local st = require "util.stanza";
 
-module:add_event_hook("user-registered", function (user)
+module:hook("user-registered",
+	function (user)
 		module:log("debug", "Notifying of new registration");
 		local message = st.message{ type = "chat", from = host }
 					:tag("body")
