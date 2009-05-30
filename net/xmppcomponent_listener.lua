@@ -14,7 +14,6 @@ local t_concat = table.concat;
 local lxp = require "lxp";
 local logger = require "util.logger";
 local config = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local connlisteners = require "net.connlisteners";
 local cm_register_component = require "core.componentmanager".register_component;
 local cm_deregister_component = require "core.componentmanager".deregister_component;
