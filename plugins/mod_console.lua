@@ -195,45 +195,48 @@ function def_env.hosts:add(name)
 end
 
 def_env.s2s = {};
-function def_env.s2s:show()
+function def_env.s2s:show(match_jid)
 	local _print = self.session.print;
 	local print = self.session.print;
 	for host, host_session in pairs(hosts) do
 		print = function (...) _print(host); _print(...); print = _print; end
 		for remotehost, session in pairs(host_session.s2sout) do
-			print("    "..host.." -> "..remotehost);
-			if session.sendq then
-				print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
-			end
-			if session.type == "s2sout_unauthed" then
-				if session.connecting then
-					print("        Connection not yet established");
-					if not session.srv_hosts then
-						if not session.conn then
-							print("        We do not yet have a DNS answer for this host's SRV records");
-						else
-							print("        This host has no SRV records, using A record instead");
+			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
+				print("    "..host.." -> "..remotehost);
+				if session.sendq then
+					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
+				end
+				if session.type == "s2sout_unauthed" then
+					if session.connecting then
+						print("        Connection not yet established");
+						if not session.srv_hosts then
+							if not session.conn then
+								print("        We do not yet have a DNS answer for this host's SRV records");
+							else
+								print("        This host has no SRV records, using A record instead");
+							end
+						elseif session.srv_choice then
+							print("        We are on SRV record "..session.srv_choice.." of "..#session.srv_hosts);
+							local srv_choice = session.srv_hosts[session.srv_choice];
+							print("        Using "..(srv_choice.target or ".")..":"..(srv_choice.port or 5269));
 						end
-					elseif session.srv_choice then
-						print("        We are on SRV record "..session.srv_choice.." of "..#session.srv_hosts);
-						local srv_choice = session.srv_hosts[session.srv_choice];
-						print("        Using "..(srv_choice.target or ".")..":"..(srv_choice.port or 5269));
+					elseif session.notopen then
+						print("        The <stream> has not yet been opened");
+					elseif not session.dialback_key then
+						print("        Dialback has not been initiated yet");
+					elseif session.dialback_key then
+						print("        Dialback has been requested, but no result received");
 					end
-				elseif session.notopen then
-					print("        The <stream> has not yet been opened");
-				elseif not session.dialback_key then
-					print("        Dialback has not been initiated yet");
-				elseif session.dialback_key then
-					print("        Dialback has been requested, but no result received");
 				end
 			end
-		end
+		end	
 		
 		for session in pairs(incoming_s2s) do
-			if session.to_host == host then
+			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
+				or (session.from_host and session.from_host:match(match_jid))) then
 				print("    "..host.." <- "..(session.from_host or "(unknown)"));
 				if session.type == "s2sin_unauthed" then
-					print("        Connection not yet authenticated");
+						print("        Connection not yet authenticated");
 				end
 				for name in pairs(session.hosts) do
 					if name ~= session.from_host then
@@ -242,10 +245,12 @@ function def_env.s2s:show()
 				end
 			end
 		end
+		
 		print = _print;
 	end
+	
 	for session in pairs(incoming_s2s) do
-		if not session.to_host then
+		if not session.to_host and ((not match_jid) or session.from_host and session.from_host:match(match_jid)) then
 			print("Other incoming s2s connections");
 			print("    (unknown) <- "..(session.from_host or "(unknown)"));			
 		end
