@@ -20,6 +20,7 @@ local register_actions = require "core.actions".register;
 local st = require "util.stanza";
 
 local hosts = hosts;
+local prosody = prosody;
 
 local loadfile, pcall = loadfile, pcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -358,7 +359,7 @@ function api:hook(event, handler)
 	if self.host ~= '*' then
 		hosts[self.host].events.add_handler(event, handler);
 	else
-		self:log("error", "Global module attempting to hook a host-specific event: %s", event);
+		prosody.events.add_handler(event, handler);
 	end
 end
 
