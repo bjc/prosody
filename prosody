@@ -145,18 +145,12 @@ function prosody.reopen_logfiles()
 	eventmanager.fire_event("reopen-log-files"); -- Handled by appropriate log sinks
 end
 
--- Temporary
-prosody_reopen_logfiles = prosody.reopen_logfiles;
-
 -- Function to initiate prosody shutdown
 function prosody.shutdown(reason)
 	log("info", "Shutting down: %s", reason or "unknown reason");
 	eventmanager.fire_event("server-stopping", { reason = reason });
 	server.setquitting(true);
 end
-
--- Temporary
-prosody_shutdown = prosody.shutdown;
 
 -- Signal to modules that we are ready to start
 eventmanager.fire_event("server-starting");
@@ -212,7 +206,7 @@ function prosody.lock_globals()
 end
 
 -- And lock now...
-lock_globals();
+prosody.lock_globals();
 
 eventmanager.fire_event("server-started");
 
