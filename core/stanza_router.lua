@@ -42,7 +42,7 @@ local ipairs = ipairs;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local print = print;
-local fire_event = require "core.eventmanager2".fire_event;
+local fire_event = prosody.events.fire_event;
 
 local select_best_resources;
 
