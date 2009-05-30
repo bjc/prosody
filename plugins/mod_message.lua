@@ -23,7 +23,7 @@ module:hook("message/bare", function(data)
 	-- message to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	local sessions = bare_sessoins[stanza.attr.to];
+	local sessions = bare_sessions[stanza.attr.to];
 	if sessions then sessions = sessions.sessions; end
 	
 	if sessions then

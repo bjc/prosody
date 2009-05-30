@@ -1,4 +1,7 @@
 
+local full_sessions = full_sessions;
+local bare_sessions = bare_sessions;
+
 module:hook("iq/full", function(data)
 	-- IQ to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
