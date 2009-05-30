@@ -1,5 +1,5 @@
 
-local events = require "util.events".new();
+local events = prosody.events;
 
 module "eventmanager"
 
