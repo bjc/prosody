@@ -13,7 +13,7 @@ local welcome_text = config.get("*", "core", "welcome_message") or "Hello $user,
 
 local st = require "util.stanza";
 
-module:add_event_hook("user-registered", 
+module:hook("user-registered", 
 	function (user)
 		local welcome_stanza = 
 			st.message({ to = user.username.."@"..user.host, from = host })
