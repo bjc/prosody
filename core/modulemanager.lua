@@ -354,6 +354,14 @@ function api:fire_event(...)
 	return eventmanager.fire_event(...);
 end
 
+function api:hook(event, handler)
+	if self.host ~= '*' then
+		hosts[self.host].events.add_handler(event, handler);
+	else
+		self:log("error", "Global module attempting to hook a host-specific event: %s", event);
+	end
+end
+
 --------------------------------------------------------------------
 
 local actions = {};
