@@ -352,9 +352,7 @@ function api:add_event_hook(name, handler)
 end
 
 function api:fire_event(...)
-	local r = (hosts[self.host] or prosody).events.fire_event(...);
-	if r ~= nil then return r; end
-	return eventmanager.fire_event(...);
+	return (hosts[self.host] or prosody).events.fire_event(...);
 end
 
 function api:hook(event, handler)
