@@ -85,6 +85,8 @@ prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR,
 
 prosody.arg = arg;
 
+prosody.events = require "util.events".new();
+
 --- Load and initialise core modules
 require "util.import"
 require "core.xmlhandlers"
