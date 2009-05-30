@@ -267,10 +267,7 @@ local function presence_handler(data)
 	return true;
 end
 
-local add_handler = require "core.eventmanager2".add_handler;
-local remove_handler = require "core.eventmanager2".remove_handler;
-
-add_handler(module:get_host().."/presence", presence_handler);
+prosody.events.add_handler(module:get_host().."/presence", presence_handler);
 module.unload = function()
-	remove_handler(module:get_host().."/presence", presence_handler);
+	prosody.events.remove_handler(module:get_host().."/presence", presence_handler);
 end
