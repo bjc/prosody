@@ -356,11 +356,7 @@ function api:fire_event(...)
 end
 
 function api:hook(event, handler)
-	if self.host ~= '*' then
-		hosts[self.host].events.add_handler(event, handler);
-	else
-		prosody.events.add_handler(event, handler);
-	end
+	(hosts[self.host] or prosody).events.add_handler(event, handler);
 end
 
 --------------------------------------------------------------------
