@@ -49,6 +49,7 @@ local modulehelpers = setmetatable({}, { __index = _G });
 local features_table = multitable_new();
 local handler_table = multitable_new();
 local hooked = multitable_new();
+local hooks = multitable_new();
 local event_hooks = multitable_new();
 
 local NULL = {};
@@ -165,6 +166,13 @@ function unload(host, name, ...)
 		end
 	end
 	event_hooks:remove(host, name);
+	-- unhook event handlers hooked by module:hook
+	for event, handlers in pairs(hooks:get(host, name) or NULL) do
+		for handler in pairs(handlers or NULL) do
+			(hosts[host] or prosody).events.remove_handler(event, handler);
+		end
+	end
+	hooks:remove(host, name);
 	return true;
 end
 
@@ -356,6 +364,7 @@ function api:fire_event(...)
 end
 
 function api:hook(event, handler)
+	hooks:set(self.host, self.name, event, handler, true);
 	(hosts[self.host] or prosody).events.add_handler(event, handler);
 end
 
