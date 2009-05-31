@@ -115,6 +115,7 @@ function xmppclient.listener(conn, data)
 		
 		session.log("info", "Client connected");
 		
+		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
 		if conn.ssl() then
 			session.secure = true;
 		end
