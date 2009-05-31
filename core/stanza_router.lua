@@ -165,9 +165,6 @@ function core_post_stanza(origin, stanza)
 		else
 			if (h.events or prosody.events).fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		end
-	else -- non-local recipient
-		core_route_stanza(origin, stanza);
-		return;
 	end
 
 	if host and fire_event(host.."/"..stanza.name, event_data) then
