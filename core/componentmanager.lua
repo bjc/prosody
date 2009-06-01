@@ -89,6 +89,12 @@ function register_component(host, component, session)
 	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
 		components[host] = component;
 		hosts[host] = session or create_component(host, component);
+		
+		-- Add events object if not already one
+		if not hosts[host].events then
+			hosts[host].events = events_new();
+		end
+		
 		-- add to disco_items
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
