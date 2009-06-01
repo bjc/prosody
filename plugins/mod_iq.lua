@@ -26,8 +26,9 @@ module:hook("iq/bare", function(data)
 	-- IQ to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	if not bare_sessions[stanza.attr.to] then -- quick check for account existance
-		local node, host = jid_split(stanza.attr.to);
+	local to = stanza.attr.to;
+	if to and not bare_sessions[to] then -- quick check for account existance
+		local node, host = jid_split(to);
 		if not user_exists(node, host) then -- full check for account existance
 			if stanza.attr.type == "get" or stanza.attr.type == "set" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
