@@ -11,6 +11,7 @@ local function select_top_resources(user)
 	local recipients = {};
 	for _, session in pairs(user.sessions) do -- find resource with greatest priority
 		if session.presence then
+			-- TODO check active privacy list for session
 			local p = session.priority;
 			if p > priority then
 				priority = p;
@@ -27,12 +28,11 @@ local function process_to_bare(bare, origin, stanza)
 	local user = bare_sessions[bare];
 	
 	local t = stanza.attr.type;
-	if t == "error" then return true; end
-	if t == "groupchat" then
+	if t == "error" then
+		-- discard
+	elseif t == "groupchat" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		return true;
-	end
-	if t == "headline" then
+	elseif t == "headline" then
 		if user then
 			for _, session in pairs(user.sessions) do
 				if session.presence and session.priority >= 0 then
@@ -40,25 +40,24 @@ local function process_to_bare(bare, origin, stanza)
 				end
 			end
 		end  -- current policy is to discard headlines if no recipient is available
-		return true;
-	end
-	-- chat or normal message
-	if user then -- some resources are connected
-		local recipients = select_top_resources(user);
-		if #recipients > 0 then
-			for i=1,#recipients do
-				recipients[i].send(stanza);
+	else -- chat or normal message
+		if user then -- some resources are connected
+			local recipients = select_top_resources(user);
+			if #recipients > 0 then
+				for i=1,#recipients do
+					recipients[i].send(stanza);
+				end
+				return true;
 			end
-			return true;
 		end
-	end
-	-- no resources are online
-	local node, host = jid_split(bare);
-	if user_exists(node, host) then
-		-- TODO apply the default privacy list
-		offlinemanager.store(node, host, stanza);
-	else
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		-- no resources are online
+		local node, host = jid_split(bare);
+		if user_exists(node, host) then
+			-- TODO apply the default privacy list
+			offlinemanager.store(node, host, stanza);
+		else
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
 	end
 	return true;
 end
