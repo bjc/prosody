@@ -27,7 +27,7 @@ module:hook("iq/bare", function(data)
 	-- TODO if not user exists, return an error
 	-- TODO fire post processing events
 	if #stanza.tags == 1 then
-		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name);
+		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		return true; -- TODO do something with results and errors
 	end
@@ -38,7 +38,7 @@ module:hook("iq/host", function(data)
 	local origin, stanza = data.origin, data.stanza;
 
 	if #stanza.tags == 1 then
-		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name);
+		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		return true; -- TODO do something with results and errors
 	end
