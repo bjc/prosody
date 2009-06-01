@@ -7,20 +7,38 @@ local user_exists = require "core.usermanager".user_exists;
 
 local function process_to_bare(bare, origin, stanza)
 	local sessions = bare_sessions[bare];
-	if sessions then sessions = sessions.sessions; end
 	
+	local t = stanza.attr.type;
+	if t == "error" then return true; end
+	if t == "groupchat" then
+		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		return true;
+	end
+
 	if sessions then
-		-- some resources are online
+		-- some resources are connected
+		sessions = sessions.sessions;
+		
+		if t == "headline" then
+			for _, session in pairs(sessions) do
+				if session.presence and session.priority >= 0 then
+					session.send(stanza);
+				end
+			end
+			return true;
+		end
 		-- TODO find top resources willing to accept this message
 		-- TODO then send them each the stanza
-	else
-		-- no resources are online
-		-- TODO check if the user exists
-		-- TODO if it doesn't, return an error reply
-		-- TODO otherwise, apply the default privacy list
-		-- TODO and store into offline storage
-		-- TODO or maybe the offline store can apply privacy lists
+		return;
 	end
+	-- no resources are online
+	if t == "headline" then return true; end -- current policy is to discard headlines
+	-- chat or normal message
+	-- TODO check if the user exists
+	-- TODO if it doesn't, return an error reply
+	-- TODO otherwise, apply the default privacy list
+	-- TODO and store into offline storage
+	-- TODO or maybe the offline store can apply privacy lists
 end
 
 module:hook("message/full", function(data)
