@@ -22,12 +22,20 @@ module:hook("iq/bare", function(data)
 
 	-- TODO if not user exists, return an error
 	-- TODO fire post processing events
-	-- TODO fire event with the xmlns:tag of the child, or with the id of errors and results
+	if #stanza.tags == 1 then
+		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name);
+	else
+		return true; -- TODO do something with results and errors
+	end
 end);
 
 module:hook("iq/host", function(data)
 	-- IQ to a local host recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	-- TODO fire event with the xmlns:tag of the child, or with the id of errors and results
+	if #stanza.tags == 1 then
+		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name);
+	else
+		return true; -- TODO do something with results and errors
+	end
 end);
