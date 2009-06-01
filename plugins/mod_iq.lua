@@ -1,4 +1,6 @@
 
+local st = require "util.stanza";
+
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
@@ -10,10 +12,12 @@ module:hook("iq/full", function(data)
 	if session then
 		-- TODO fire post processing event
 		session.send(stanza);
-		return true;
 	else -- resource not online
-		-- TODO error reply
+		if stanza.attr.type == "get" or stanza.attr.type == "set" then
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
 	end
+	return true;
 end);
 
 module:hook("iq/bare", function(data)
