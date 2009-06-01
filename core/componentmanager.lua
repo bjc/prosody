@@ -51,7 +51,7 @@ function load_enabled_components(config)
 		
 	for host, host_config in pairs(defined_hosts) do
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
-			hosts[host] = { type = "component", host = host, connected = false, s2sout = {} };
+			hosts[host] = { type = "component", host = host, connected = false, s2sout = {}, events = events_new() };
 			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
@@ -87,12 +87,14 @@ end
 
 function register_component(host, component, session)
 	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
+		local old_events = hosts[host] and hosts[host].events;
+
 		components[host] = component;
 		hosts[host] = session or create_component(host, component);
 		
 		-- Add events object if not already one
 		if not hosts[host].events then
-			hosts[host].events = events_new();
+			hosts[host].events = old_events or events_new();
 		end
 		
 		-- add to disco_items
