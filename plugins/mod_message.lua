@@ -4,9 +4,27 @@ local bare_sessions = bare_sessions;
 
 local jid_bare = require "util.jid".bare;
 local user_exists = require "core.usermanager".user_exists;
+local offlinemanager = require "core.offlinemanager";
+
+local function select_top_resources(user)
+	local priority = 0;
+	local recipients = {};
+	for _, session in pairs(user.sessions) do -- find resource with greatest priority
+		if session.presence then
+			local p = session.priority;
+			if p > priority then
+				priority = p;
+				recipients = {session};
+			elseif p == priority then
+				t_insert(recipients, session);
+			end
+		end
+	end
+	return recipients;
+end
 
 local function process_to_bare(bare, origin, stanza)
-	local sessions = bare_sessions[bare];
+	local user = bare_sessions[bare];
 	
 	local t = stanza.attr.type;
 	if t == "error" then return true; end
@@ -14,31 +32,35 @@ local function process_to_bare(bare, origin, stanza)
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		return true;
 	end
-
-	if sessions then
-		-- some resources are connected
-		sessions = sessions.sessions;
-		
-		if t == "headline" then
-			for _, session in pairs(sessions) do
+	if t == "headline" then
+		if user then
+			for _, session in pairs(user.sessions) do
 				if session.presence and session.priority >= 0 then
 					session.send(stanza);
 				end
 			end
+		end  -- current policy is to discard headlines if no recipient is available
+		return true;
+	end
+	-- chat or normal message
+	if user then -- some resources are connected
+		local recipients = select_top_resources(user);
+		if #recipients > 0 then
+			for i=1,#recipients do
+				recipients[i].send(stanza);
+			end
 			return true;
 		end
-		-- TODO find top resources willing to accept this message
-		-- TODO then send them each the stanza
-		return;
 	end
 	-- no resources are online
-	if t == "headline" then return true; end -- current policy is to discard headlines
-	-- chat or normal message
-	-- TODO check if the user exists
-	-- TODO if it doesn't, return an error reply
-	-- TODO otherwise, apply the default privacy list
-	-- TODO and store into offline storage
-	-- TODO or maybe the offline store can apply privacy lists
+	local node, host = jid_split(bare);
+	if user_exists(node, host) then
+		-- TODO apply the default privacy list
+		offlinemanager.store(node, host, stanza);
+	else
+		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+	end
+	return true;
 end
 
 module:hook("message/full", function(data)
