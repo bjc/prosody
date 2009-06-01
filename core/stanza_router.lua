@@ -127,7 +127,7 @@ function core_process_stanza(origin, stanza)
 			else
 				event = "stanza/"..stanza.attr.xmlns..":"..stanza.name;
 			end
-			if (h.events or prosody.events).fire_event(event, {origin = origin, stanza = stanza}) then return; end
+			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
@@ -155,7 +155,7 @@ function core_post_stanza(origin, stanza)
 
 	local event_data = {origin=origin, stanza=stanza};
 	if origin.full_jid then -- c2s connection
-		if (hosts[origin.host].events or prosody.events).fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
+		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
 	if h then
@@ -163,7 +163,7 @@ function core_post_stanza(origin, stanza)
 			component_handle_stanza(origin, stanza);
 			return;
 		else
-			if (h.events or prosody.events).fire_event(stanza.name..to_type, event_data) then return; end -- do processing
+			if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		end
 	else -- non-local recipient
 		core_route_stanza(origin, stanza);
