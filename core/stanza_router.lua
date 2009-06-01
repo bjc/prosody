@@ -81,7 +81,9 @@ function core_process_stanza(origin, stanza)
 		node, host, resource = jid_prepped_split(to);
 		if not host then
 			log("warn", "Received stanza with invalid destination JID: %s", to);
-			origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+			end
 			return;
 		end
 		to_bare = node and (node.."@"..host) or host; -- bare JID
@@ -93,7 +95,9 @@ function core_process_stanza(origin, stanza)
 		from_node, from_host, from_resource = jid_prepped_split(from);
 		if not from_host then
 			log("warn", "Received stanza with invalid source JID: %s", from);
-			origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The source address is invalid: "..from));
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The source address is invalid: "..from));
+			end
 			return;
 		end
 		from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
