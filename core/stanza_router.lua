@@ -244,7 +244,7 @@ function core_route_stanza(origin, stanza)
 								session.send(stanza);
 							end
 						end
-					elseif resource and stanza.attr.type == 'groupchat' then
+					elseif stanza.attr.type == 'groupchat' then
 						-- Groupchat message sent to offline resource
 						origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 					else
