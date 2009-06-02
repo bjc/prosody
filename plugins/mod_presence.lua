@@ -285,6 +285,10 @@ module:hook("pre-presence/full", function(data)
 	local to_bare = jid_bare(to);
 	if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
 		origin.directed = origin.directed or {};
-		origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
+		if stanza.attr.type then -- removing from directed presence list on sending an error or unavailable
+			origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
+		else
+			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
+		end
 	end
 end);
