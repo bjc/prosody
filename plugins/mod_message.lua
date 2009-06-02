@@ -3,8 +3,10 @@ local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
 local jid_bare = require "util.jid".bare;
+local jid_split = require "util.jid".split;
 local user_exists = require "core.usermanager".user_exists;
 local offlinemanager = require "core.offlinemanager";
+local t_insert = table.insert;
 
 local function select_top_resources(user)
 	local priority = 0;
