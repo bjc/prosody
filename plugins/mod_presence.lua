@@ -272,7 +272,7 @@ module.unload = function()
 	prosody.events.remove_handler(module:get_host().."/presence", presence_handler);
 end
 
-module:hook("pre-presence/full", function(data)
+local outbound_presence_handler = function(data)
 	-- outbound presence to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
@@ -292,4 +292,8 @@ module:hook("pre-presence/full", function(data)
 			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
 		end
 	end
-end);
+end
+
+module:hook("pre-presence/full", outbound_presence_handler);
+module:hook("pre-presence/bare", outbound_presence_handler);
+module:hook("pre-presence/host", outbound_presence_handler);
