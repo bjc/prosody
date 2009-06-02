@@ -105,7 +105,7 @@ function bind_resource(session, resource)
 	if not hosts[session.host].sessions[session.username] then
 		local sessions = { sessions = {} };
 		hosts[session.host].sessions[session.username] = sessions;
-		bare_sessions[session.host..'@'..session.username] = sessions;
+		bare_sessions[session.username..'@'..session.host] = sessions;
 	else
 		local sessions = hosts[session.host].sessions[session.username].sessions;
 		local limit = config_get(session.host, "core", "max_resources") or 10;
