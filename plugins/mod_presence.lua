@@ -321,6 +321,7 @@ module:hook("presence/bare", function(data)
 	else
 		handle_normal_presence(origin, stanza, core_route_stanza);
 	end
+	return true;
 end);
 module:hook("presence/full", function(data)
 	-- inbound presence to full JID recieved
@@ -337,4 +338,5 @@ module:hook("presence/full", function(data)
 		-- TODO fire post processing event
 		session.send(stanza);
 	end -- resource not online, discard
+	return true;
 end);
