@@ -307,6 +307,20 @@ module:hook("presence/bare", function(data)
 		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 		return true;
 	end
+	
+	local to = stanza.attr.to;
+	if to then
+		local user = bare_sessions[to];
+		if user then
+			for _, session in pairs(user.sessions) do
+				if session.presence then -- only send to available resources
+					session.send(stanza);
+				end
+			end
+		end -- no resources not online, discard
+	else
+		handle_normal_presence(origin, stanza, core_route_stanza);
+	end
 end);
 module:hook("presence/full", function(data)
 	-- inbound presence to full JID recieved
@@ -317,4 +331,10 @@ module:hook("presence/full", function(data)
 		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 		return true;
 	end
+
+	local session = full_sessions[stanza.attr.to];
+	if session then
+		-- TODO fire post processing event
+		session.send(stanza);
+	end -- resource not online, discard
 end);
