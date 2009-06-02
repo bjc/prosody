@@ -276,22 +276,24 @@ local outbound_presence_handler = function(data)
 	-- outbound presence recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	local t = stanza.attr.type;
-	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
-		handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
-		return true;
-	end
-
 	local to = stanza.attr.to;
-	local to_bare = jid_bare(to);
-	if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
-		origin.directed = origin.directed or {};
-		if t then -- removing from directed presence list on sending an error or unavailable
-			origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
-		else
-			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
+	if to then
+		local t = stanza.attr.type;
+		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+			return true;
 		end
-	end
+
+		local to_bare = jid_bare(to);
+		if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
+			origin.directed = origin.directed or {};
+			if t then -- removing from directed presence list on sending an error or unavailable
+				origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
+			else
+				origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
+			end
+		end
+	end -- TODO maybe handle normal presence here, instead of letting it pass to incoming handlers?
 end
 
 module:hook("pre-presence/full", outbound_presence_handler);
