@@ -297,3 +297,12 @@ end
 module:hook("pre-presence/full", outbound_presence_handler);
 module:hook("pre-presence/bare", outbound_presence_handler);
 module:hook("pre-presence/host", outbound_presence_handler);
+
+module:hook("presence/bare", function(data)
+	-- inbound presence to bare JID recieved
+	local origin, stanza = data.origin, data.stanza;
+end);
+module:hook("presence/full", function(data)
+	-- inbound presence to full JID recieved
+	local origin, stanza = data.origin, data.stanza;
+end);
