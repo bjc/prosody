@@ -273,19 +273,20 @@ module.unload = function()
 end
 
 module:hook("pre-presence/full", function(data)
-	-- presence to full JID recieved
+	-- outbound presence to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+	local t = stanza.attr.type;
+	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
 		handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 		return true;
 	end
-	
+
 	local to = stanza.attr.to;
 	local to_bare = jid_bare(to);
 	if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
 		origin.directed = origin.directed or {};
-		if stanza.attr.type then -- removing from directed presence list on sending an error or unavailable
+		if t then -- removing from directed presence list on sending an error or unavailable
 			origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
 		else
 			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
