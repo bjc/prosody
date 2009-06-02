@@ -273,7 +273,7 @@ module.unload = function()
 end
 
 local outbound_presence_handler = function(data)
-	-- outbound presence to full JID recieved
+	-- outbound presence to recieved
 	local origin, stanza = data.origin, data.stanza;
 
 	local t = stanza.attr.type;
