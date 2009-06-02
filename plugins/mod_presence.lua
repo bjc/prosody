@@ -305,8 +305,8 @@ module:hook("presence/bare", function(data)
 	local origin, stanza = data.origin, data.stanza;
 
 	local to = stanza.attr.to;
+	local t = stanza.attr.type;
 	if to then
-		local t = stanza.attr.type;
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
 			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 			return true;
