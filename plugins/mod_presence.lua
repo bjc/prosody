@@ -302,14 +302,14 @@ module:hook("presence/bare", function(data)
 	-- inbound presence to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	local t = stanza.attr.type;
-	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
-		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
-		return true;
-	end
-	
 	local to = stanza.attr.to;
 	if to then
+		local t = stanza.attr.type;
+		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
+			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+			return true;
+		end
+	
 		local user = bare_sessions[to];
 		if user then
 			for _, session in pairs(user.sessions) do
@@ -318,7 +318,7 @@ module:hook("presence/bare", function(data)
 				end
 			end
 		end -- no resources not online, discard
-	else
+	elseif not t or t == "unavailable" then
 		handle_normal_presence(origin, stanza, core_route_stanza);
 	end
 	return true;
