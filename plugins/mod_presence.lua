@@ -273,11 +273,11 @@ module.unload = function()
 end
 
 local outbound_presence_handler = function(data)
-	-- outbound presence to recieved
+	-- outbound presence recieved
 	local origin, stanza = data.origin, data.stanza;
 
 	local t = stanza.attr.type;
-	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
+	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
 		handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 		return true;
 	end
@@ -301,8 +301,20 @@ module:hook("pre-presence/host", outbound_presence_handler);
 module:hook("presence/bare", function(data)
 	-- inbound presence to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
+
+	local t = stanza.attr.type;
+	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
+		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+		return true;
+	end
 end);
 module:hook("presence/full", function(data)
 	-- inbound presence to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
+
+	local t = stanza.attr.type;
+	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
+		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+		return true;
+	end
 end);
