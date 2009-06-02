@@ -271,3 +271,20 @@ prosody.events.add_handler(module:get_host().."/presence", presence_handler);
 module.unload = function()
 	prosody.events.remove_handler(module:get_host().."/presence", presence_handler);
 end
+
+module:hook("pre-presence/full", function(data)
+	-- presence to full JID recieved
+	local origin, stanza = data.origin, data.stanza;
+
+	if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+		handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+		return true;
+	end
+	
+	local to = stanza.attr.to;
+	local to_bare = jid_bare(to);
+	if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
+		origin.directed = origin.directed or {};
+		origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
+	end
+end);
