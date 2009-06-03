@@ -149,6 +149,9 @@ function core_post_stanza(origin, stanza)
 			to_type = '/full';
 		else
 			to_type = '/bare';
+			if node == origin.username and host == origin.host then
+				stanza.attr.to = nil;
+			end
 		end
 	else
 		if host then
