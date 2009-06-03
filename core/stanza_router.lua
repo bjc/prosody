@@ -134,6 +134,7 @@ function core_process_stanza(origin, stanza)
 			end
 			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
+		if host and not hosts[host] then host = nil; end -- workaround for a Pidgin bug which sets 'to' to the SRV result
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end
