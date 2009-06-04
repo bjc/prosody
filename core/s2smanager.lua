@@ -35,7 +35,7 @@ local log = logger_init("s2smanager");
 
 local sha256_hash = require "util.hashes".sha256;
 
-local dialback_secret = sha256_hash(tostring{} .. math.random() .. socket.gettime(), true);
+local dialback_secret = uuid_gen();
 
 local adns = require "net.adns";
 
