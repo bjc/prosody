@@ -20,9 +20,6 @@ local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
 local offlinemanager = require "core.offlinemanager";
 
-local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
-local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
-
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
