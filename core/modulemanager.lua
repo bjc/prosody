@@ -70,8 +70,13 @@ function load_modules_for_host(host)
 				disabled_set[module] = true;
 			end
 		end
-		for _, module in ipairs(modules_enabled) do
+		for _, module in ipairs({"presence", "message", "iq"}) do
 			if not disabled_set[module] then
+				load(host, module);
+			end
+		end
+		for _, module in ipairs(modules_enabled) do
+			if not disabled_set[module] and not is_loaded(host, module) then
 				load(host, module);
 			end
 		end
