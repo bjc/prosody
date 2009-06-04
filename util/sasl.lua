@@ -138,7 +138,6 @@ local function new_digest_md5(realm, password_handler)
 
 	local object = { mechanism = "DIGEST-MD5", realm = realm, password_handler = password_handler};
 	
-	--TODO: something better than math.random would be nice, maybe OpenSSL's random number generator
 	object.nonce = generate_uuid();
 	object.step = 0;
 	object.nonce_count = {};
@@ -249,7 +248,6 @@ local function new_anonymous(realm, password_handler)
 		function object.feed(self, message)
 			return "success"
 		end
-	--TODO: From XEP-0175 "It is RECOMMENDED for the node identifier to be a UUID as specified in RFC 4122 [5]." So util.uuid() should (or have an option to) behave as specified in RFC 4122.
 	object["username"] = generate_uuid()
 	return object
 end
