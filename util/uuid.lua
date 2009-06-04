@@ -28,10 +28,11 @@ local function new_random(x)
 end
 
 local buffer = new_random(uniq_time());
+local function _seed(x)
+	buffer = new_random(buffer..x);
+end
 local function get_nibbles(n)
-	if #buffer < n then
-		buffer = new_random(buffer..uniq_time());
-	end
+	if #buffer < n then seed(uniq_time()); end
 	local r = buffer:sub(0, n);
 	buffer = buffer:sub(n+1);
 	return r;
@@ -44,5 +45,6 @@ function generate()
 	-- generate RFC 4122 complaint UUIDs (version 4 - random)
 	return get_nibbles(8).."-"..get_nibbles(4).."-4"..get_nibbles(3).."-"..(get_twobits())..get_nibbles(3).."-"..get_nibbles(12);
 end
+seed = _seed;
 
 return _M;
