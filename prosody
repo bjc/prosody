@@ -179,7 +179,9 @@ function net_activate_ports(option, listener, default, conntype)
 				cl.start(listener, { 
 					ssl = conntype ~= "tcp" and global_ssl_ctx,
 					port = port,
-					interface = config.get("*", "core", option.."_interface"),
+					interface = config.get("*", "core", option.."_interface") 
+						or cl.get(listener).default_interface 
+						or config.get("*", "core", "interface"),
 					type = conntype
 				});
 			end
