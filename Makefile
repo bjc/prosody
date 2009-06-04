@@ -16,7 +16,8 @@ all: prosody.install prosodyctl.install prosody.cfg.lua.install
 	$(MAKE) -C util-src install
 
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
-	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE) $(DATA)
+	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
+	install -m750 -d $(DATA)
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
 	install -m755 ./prosody.install $(BIN)/prosody
