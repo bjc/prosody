@@ -653,13 +653,13 @@ addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, st
         err = "luasec not found"
     end
     if err then
-        out_error( "server.lua: ", err )
+        out_error( "server.lua, port ", port, ": ", err )
         return nil, err
     end
     addr = addr or "*"
     local server, err = socket_bind( addr, port )
     if err then
-        out_error( "server.lua: ", err )
+        out_error( "server.lua, port ", port, ": ", err )
         return nil, err
     end
     local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, maxconnections, startssl )    -- wrap new server socket
