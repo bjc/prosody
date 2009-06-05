@@ -8,10 +8,14 @@
 
 module.host = "*";
 
-local hosts = _G.hosts;
+local prosody = _G.prosody;
+local hosts = prosody.hosts;
 local connlisteners_register = require "net.connlisteners".register;
 
 local console_listener = { default_port = 5582; default_mode = "*l"; };
+
+require "util.iterators";
+local set, array = require "util.set", require "util.array";
 
 local commands = {};
 local def_env = {};
@@ -141,31 +145,90 @@ function def_env.server:reload()
 end
 
 def_env.module = {};
-function def_env.module:load(name, host, config)
-	local mm = require "modulemanager";
-	local ok, err = mm.load(host or self.env.host, name, config);
-	if not ok then
-		return false, err or "Unknown error loading module";
+
+local function get_hosts_set(hosts)
+	if type(hosts) == "table" then
+		if hosts[1] then
+			return set.new(hosts);
+		elseif hosts._items then
+			return hosts;
+		end
+	elseif type(hosts) == "string" then
+		return set.new { hosts };
+	elseif hosts == nil then
+		return set.new(array.collect(keys(prosody.hosts)))
+			/ function (host) return prosody.hosts[host].type == "local"; end;
 	end
-	return true, "Module loaded";
 end
 
-function def_env.module:unload(name, host)
+function def_env.module:load(name, hosts, config)
 	local mm = require "modulemanager";
-	local ok, err = mm.unload(host or self.env.host, name);
-	if not ok then
-		return false, err or "Unknown error unloading module";
+	
+	hosts = get_hosts_set(hosts);
+	
+	-- Load the module for each host
+	local ok, err, count = true, nil, 0;
+	for host in hosts do
+		if (not mm.is_loaded(host, name)) then
+			ok, err = mm.load(host, name, config);
+			if not ok then
+				ok = false;
+				self.session.print(err or "Unknown error loading module");
+			else
+				count = count + 1;
+				self.session.print("Loaded for "..host);
+			end
+		end
 	end
-	return true, "Module unloaded";
+	
+	return ok, (ok and "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));	
 end
 
-function def_env.module:reload(name, host)
+function def_env.module:unload(name, hosts)
 	local mm = require "modulemanager";
-	local ok, err = mm.reload(host or self.env.host, name);
-	if not ok then
-		return false, err or "Unknown error reloading module";
+
+	hosts = get_hosts_set(hosts);
+	
+	-- Unload the module for each host
+	local ok, err, count = true, nil, 0;
+	for host in hosts do
+		if mm.is_loaded(host, name) then
+			ok, err = mm.unload(host, name);
+			if not ok then
+				ok = false;
+				self.session.print(err or "Unknown error unloading module");
+			else
+				count = count + 1;
+				self.session.print("Unloaded from "..host);
+			end
+		end
 	end
-	return true, "Module reloaded";
+	return ok, (ok and "Module unloaded from "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
+end
+
+function def_env.module:reload(name, hosts)
+	local mm = require "modulemanager";
+
+	hosts = get_hosts_set(hosts);
+	
+	-- Reload the module for each host
+	local ok, err, count = true, nil, 0;
+	for host in hosts do
+		if mm.is_loaded(host, name) then
+			ok, err = mm.reload(host, name);
+			if not ok then
+				ok = false;
+				self.session.print(err or "Unknown error reloading module");
+			else
+				count = count + 1;
+				if ok == nil then
+					ok = true;
+				end
+				self.session.print("Reloaded on "..host);
+			end
+		end
+	end
+	return ok, (ok and "Module reloaded on "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
 def_env.config = {};
