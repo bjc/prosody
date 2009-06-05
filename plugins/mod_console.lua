@@ -56,6 +56,8 @@ function console_listener.listener(conn, data)
 	if data then
 		-- Handle data
 		(function(session, data)
+			local useglobalenv;
+			
 			if data:match("[!.]$") then
 				local command = data:lower();
 				command = data:match("^%w+") or data:match("%p");
@@ -63,6 +65,11 @@ function console_listener.listener(conn, data)
 					commands[command](session, data);
 					return;
 				end
+			end
+
+			if data:match("^>") then
+				data = data:gsub("^>", "");
+				useglobalenv = true;
 			end
 			
 			session.env._ = data;
@@ -79,7 +86,8 @@ function console_listener.listener(conn, data)
 				end
 			end
 			
-			setfenv(chunk, session.env);
+			setfenv(chunk, (useglobalenv and _G) or session.env or nil);
+			
 			local ranok, taskok, message = pcall(chunk);
 			
 			if not ranok then
