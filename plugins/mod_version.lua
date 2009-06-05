@@ -7,7 +7,7 @@
 --
 
 
-
+local prosody = prosody;
 local st = require "util.stanza";
 
 local xmlns_version = "jabber:iq:version"
@@ -35,7 +35,7 @@ module:add_iq_handler({"c2s", "s2sin"}, xmlns_version, function(session, stanza)
 	if stanza.attr.type == "get" then
 		session.send(st.reply(stanza):query(xmlns_version)
 			:tag("name"):text("Prosody"):up()
-			:tag("version"):text("0.4"):up()
+			:tag("version"):text(prosody.version):up()
 			:tag("os"):text(version));
 	end
 end);
