@@ -12,7 +12,7 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
-all: prosody.install prosodyctl.install prosody.cfg.lua.install
+all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
 
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
@@ -29,12 +29,14 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 plugins/* $(MODULES)
 	test -e $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
+	test -e prosody.version && install prosody.version $(SOURCE)/prosody.version || true
 	$(MAKE) install -C util-src
 
 clean:
 	rm -f prosody.install
 	rm -f prosodyctl.install
 	rm -f prosody.cfg.lua.install
+	rm -f prosody.version
 	$(MAKE) clean -C util-src
 
 util/encodings.so:
@@ -64,3 +66,9 @@ prosodyctl.install: prosodyctl
 prosody.cfg.lua.install:
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
 
+prosody.release:
+	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%01x"' .hg/dirstate \
+	    > prosody.version || true
+
+prosody.version: prosody.release
+	cp prosody.release prosody.version || true
