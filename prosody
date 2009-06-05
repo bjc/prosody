@@ -142,7 +142,7 @@ end);
 ----------- End of out-of-place code --------------
 
 -- Function to reload the config file
-function prosody_reload_config()
+function prosody.reload_config()
 	log("info", "Reloading configuration file");
 	eventmanager.fire_event("reloading-config");
 	local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
