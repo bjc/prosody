@@ -140,7 +140,9 @@ end
 
 def_env.server = {};
 function def_env.server:reload()
+	prosody.unlock_globals();
 	dofile "prosody"
+	prosody = _G.prosody;
 	return true, "Server reloaded";
 end
 
