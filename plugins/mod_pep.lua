@@ -7,6 +7,8 @@ local user_exists = require "core.usermanager".user_exists;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local pairs, ipairs = pairs, ipairs;
 
+local data = {};
+
 local function publish(session, node, item)
 	local stanza = st.message({from=session.full_jid, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
@@ -15,8 +17,14 @@ local function publish(session, node, item)
 			:up()
 		:up();
 
+	local bare = session.username..'@'..session.host;
+	-- store for the future
+	local user_data = data[bare];
+	if not user_data then user_data = {}; data[bare] = user_data; end
+	user_data[node] = stanza;
+	
 	-- broadcast to resources
-	stanza.attr.to = session.username..'@'..session.host;
+	stanza.attr.to = bare;
 	core_route_stanza(session, stanza);
 
 	-- broadcast to contacts
