@@ -378,7 +378,7 @@ function api:hook_stanza(xmlns, name, handler, priority)
 		-- If only 2 options then they specified no xmlns
 		xmlns, name, handler, priority = nil, xmlns, name, handler;
 	elseif not (handler and name and xmlns) then
-		module:log("warn", "Error: Insufficient parameters to module:hook_stanza()");
+		self:log("warn", "Error: Insufficient parameters to module:hook_stanza()");
 		return;
 	end
 	return api.hook(self, "stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
