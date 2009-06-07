@@ -368,9 +368,9 @@ function api:fire_event(...)
 	return (hosts[self.host] or prosody).events.fire_event(...);
 end
 
-function api:hook(event, handler)
+function api:hook(event, handler, priority)
 	hooks:set(self.host, self.name, event, handler, true);
-	(hosts[self.host] or prosody).events.add_handler(event, handler);
+	(hosts[self.host] or prosody).events.add_handler(event, handler, priority);
 end
 
 --------------------------------------------------------------------
