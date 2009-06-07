@@ -61,7 +61,7 @@ module:hook("presence/bare", function(data)
 			end
 		end
 	end
-end);
+end, 10);
 
 module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (session, stanza)
 	if stanza.attr.type == 'set' and (not stanza.attr.to or jid_bare(stanza.attr.from) == stanza.attr.to) then
