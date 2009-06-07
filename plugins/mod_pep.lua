@@ -51,6 +51,6 @@ module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (sess
 			end -- TODO else error
 		end
 	end
-	origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+	session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 end);
 
