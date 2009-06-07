@@ -6,8 +6,10 @@ local hosts = hosts;
 local user_exists = require "core.usermanager".user_exists;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local pairs, ipairs = pairs, ipairs;
+local load_roster = require "core.rostermanager".load_roster;
 
 local data = {};
+local recipients = {};
 
 local function publish(session, node, item)
 	local stanza = st.message({from=session.full_jid, type='headline'})
@@ -35,6 +37,31 @@ local function publish(session, node, item)
 		end
 	end
 end
+
+module:hook("presence/bare", function(data)
+	-- inbound presence to bare JID recieved
+	local origin, stanza = data.origin, data.stanza;
+	
+	local user = stanza.attr.to or (origin.username..'@'..origin.host);
+	local bare = jid_bare(stanza.attr.from);
+	local item = load_roster(jid_split(user))[bare];
+	if not stanza.attr.to or (item and (item.subscription == 'from' or item.subscription == 'both')) then
+		local t = stanza.attr.type;
+		local recipient = stanza.attr.from;
+		if t == "unavailable" or t == "error" then
+			if recipients[user] then recipients[user][recipient] = nil; end
+		elseif not t then
+			recipients[user] = recipients[user][recipient] or {};
+			if not recipients[user][recipient] then
+				recipients[user][recipient] = true;
+				for node, message in pairs(data[user] or {}) do
+					message.attr.to = stanza.attr.from;
+					origin.send(message);
+				end
+			end
+		end
+	end
+end);
 
 module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (session, stanza)
 	if stanza.attr.type == 'set' and (not stanza.attr.to or jid_bare(stanza.attr.from) == stanza.attr.to) then
