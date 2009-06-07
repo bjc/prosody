@@ -2,6 +2,7 @@
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
+local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local user_exists = require "core.usermanager".user_exists;
