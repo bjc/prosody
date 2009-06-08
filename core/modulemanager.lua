@@ -128,7 +128,7 @@ function load(host, module_name, config)
 	
 	local success, ret = pcall(mod);
 	if not success then
-		log("error", "Error initialising module '%s': %s", name or "nil", ret or "nil");
+		log("error", "Error initialising module '%s': %s", module_name or "nil", ret or "nil");
 		return nil, ret;
 	end
 	
