@@ -47,6 +47,7 @@ local handler_info = {};
 local modulehelpers = setmetatable({}, { __index = _G });
 
 local features_table = multitable_new();
+local identities_table = multitable_new();
 local handler_table = multitable_new();
 local hooked = multitable_new();
 local hooks = multitable_new();
@@ -162,6 +163,7 @@ function unload(host, name, ...)
 	end
 	modulemap[host][name] = nil;
 	features_table:remove(host, name);
+	identities_table:remove(host, name);
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
@@ -326,6 +328,22 @@ end
 addDiscoInfoHandler("*host", function(reply, to, from, node)
 	if #node == 0 then
 		local done = {};
+		for module, identities in pairs(identities_table:get(to) or NULL) do -- for each module
+			for identity, attr in pairs(identities) do
+				if not done[identity] then
+					reply:tag("identity", attr):up(); -- TODO cache
+					done[identity] = true;
+				end
+			end
+		end
+		for module, identities in pairs(identities_table:get("*") or NULL) do -- for each module
+			for identity, attr in pairs(identities) do
+				if not done[identity] then
+					reply:tag("identity", attr):up(); -- TODO cache
+					done[identity] = true;
+				end
+			end
+		end
 		for module, features in pairs(features_table:get(to) or NULL) do -- for each module
 			for feature in pairs(features) do
 				if not done[feature] then
@@ -348,6 +366,9 @@ end);
 
 function api:add_feature(xmlns)
 	features_table:set(self.host, self.name, xmlns, true);
+end
+function api:add_identity(category, typ)
+	identities_table:set(self.host, self.name, category.."\0"..typ, {category = category, typ = typ});
 end
 
 local event_hook = function(host, mod_name, event_name, ...)
