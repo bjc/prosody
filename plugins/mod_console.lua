@@ -385,6 +385,48 @@ function def_env.s2s:show(match_jid)
 	return true, "Total: "..count_out.." outgoing, "..count_in.." incoming connections";
 end
 
+function def_env.s2s:close(from, to)
+	local print, count = self.session.print, 0;
+	
+	if not (from and to) then
+		return false, "Syntax: s2s:close('from', 'to') - Closes all s2s sessions from 'from' to 'to'";
+	elseif from == to then
+		return false, "Both from and to are the same... you can't do that :)";
+	end
+	
+	if hosts[from] and not hosts[to] then
+		-- Is an outgoing connection
+		local session = hosts[from].s2sout[to];
+		if not session then 
+			print("No outgoing connection from "..from.." to "..to)
+		else
+			s2smanager.destroy_session(session);
+			count = count + 1;
+			print("Closed outgoing session from "..from.." to "..to);
+		end
+	elseif hosts[to] and not hosts[from] then
+		-- Is an incoming connection
+		for session in pairs(incoming_s2s) do
+			if session.to_host == to and session.from_host == from then
+				s2smanager.destroy_session(session);
+				count = count + 1;
+			end
+		end
+		
+		if count == 0 then
+			print("No incoming connections from "..from.." to "..to);
+		else
+			print("Closed "..count.." incoming session"..((count == 1 and "") or "s").." from "..from.." to "..to);
+		end
+	elseif hosts[to] and hosts[from]
+		return false, "Both of the hostnames you specified are local, there are no s2s sessions to close";
+	else
+		return false, "Neither of the hostnames you specified are being used on this server";
+	end
+	
+	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
+end
+
 -------------
 
 function printbanner(session)
