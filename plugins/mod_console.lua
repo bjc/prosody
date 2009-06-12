@@ -318,10 +318,14 @@ def_env.s2s = {};
 function def_env.s2s:show(match_jid)
 	local _print = self.session.print;
 	local print = self.session.print;
+	
+	local count_in, count_out = 0,0;
+	
 	for host, host_session in pairs(hosts) do
 		print = function (...) _print(host); _print(...); print = _print; end
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
+				count_out = count_out + 1;
 				print("    "..host.." -> "..remotehost);
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
@@ -354,6 +358,7 @@ function def_env.s2s:show(match_jid)
 		for session in pairs(incoming_s2s) do
 			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
 				or (session.from_host and session.from_host:match(match_jid))) then
+				count_in = count_in + 1;
 				print("    "..host.." <- "..(session.from_host or "(unknown)"));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
@@ -371,10 +376,13 @@ function def_env.s2s:show(match_jid)
 	
 	for session in pairs(incoming_s2s) do
 		if not session.to_host and ((not match_jid) or session.from_host and session.from_host:match(match_jid)) then
+			count_in = count_in + 1;
 			print("Other incoming s2s connections");
 			print("    (unknown) <- "..(session.from_host or "(unknown)"));			
 		end
 	end
+	
+	return true, "Total: "..count_out.." outgoing, "..count_in.." incoming connections";
 end
 
 -------------
