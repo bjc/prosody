@@ -8,6 +8,8 @@
 
 module.host = "*";
 
+local _G = _G;
+
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
 local connlisteners_register = require "net.connlisteners".register;
@@ -20,6 +22,10 @@ local set, array = require "util.set", require "util.array";
 local commands = {};
 local def_env = {};
 local default_env_mt = { __index = def_env };
+
+local function redirect_output(_G, session)
+	return setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end, __newindex = function (t, k, v) rawset(_G, k, v); end });
+end
 
 console = {};
 
@@ -86,7 +92,7 @@ function console_listener.listener(conn, data)
 				end
 			end
 			
-			setfenv(chunk, (useglobalenv and _G) or session.env or nil);
+			setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
 			
 			local ranok, taskok, message = pcall(chunk);
 			
