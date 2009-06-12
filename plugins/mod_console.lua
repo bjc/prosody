@@ -418,7 +418,7 @@ function def_env.s2s:close(from, to)
 		else
 			print("Closed "..count.." incoming session"..((count == 1 and "") or "s").." from "..from.." to "..to);
 		end
-	elseif hosts[to] and hosts[from]
+	elseif hosts[to] and hosts[from] then
 		return false, "Both of the hostnames you specified are local, there are no s2s sessions to close";
 	else
 		return false, "Neither of the hostnames you specified are being used on this server";
