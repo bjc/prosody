@@ -51,7 +51,7 @@ module:hook("presence/bare", function(data)
 		if t == "unavailable" or t == "error" then
 			if recipients[user] then recipients[user][recipient] = nil; end
 		elseif not t then
-			recipients[user] = recipients[user][recipient] or {};
+			recipients[user] = recipients[user] or {};
 			if not recipients[user][recipient] then
 				recipients[user][recipient] = true;
 				for node, message in pairs(data[user] or {}) do
