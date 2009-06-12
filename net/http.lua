@@ -9,15 +9,16 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs, xpcall, select, debug_traceback, char = 
-        tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char;
+local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format = 
+        tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char, string.format;
 
 local log = require "util.logger".init("http");
 local print = function () end
 
-local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
-
 module "http"
+
+function urlencode(s) return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end)); end
+function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end)); end
 
 local function expectbody(reqt, code)
     if reqt.method == "HEAD" then return nil end
