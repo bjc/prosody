@@ -11,6 +11,8 @@ local load_roster = require "core.rostermanager".load_roster;
 local data = {};
 local recipients = {};
 
+module:add_identity("pubsub", "pep");
+
 local function publish(session, node, item)
 	local stanza = st.message({from=session.full_jid, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
