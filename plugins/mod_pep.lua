@@ -12,6 +12,7 @@ local data = {};
 local recipients = {};
 
 module:add_identity("pubsub", "pep");
+module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
 	local stanza = st.message({from=session.full_jid, type='headline'})
