@@ -15,11 +15,9 @@ local jid_prep = require "util.jid".prep;
 local t_concat = table.concat;
 local tostring = tostring;
 
-local handle_presence = require "core.presencemanager".handle_presence;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
-local core_route_stanza = core_route_stanza;
 local core_post_stanza = core_post_stanza;
 
 module:add_feature("jabber:iq:roster");
