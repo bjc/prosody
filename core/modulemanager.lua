@@ -268,12 +268,6 @@ function call_module_method(module, method, ...)
 	end
 end
 
-local _modulepath = { plugin_dir, "mod_", nil, ".lua"};
-function get_module_filename(name)
-	_modulepath[3] = name;
-	return t_concat(_modulepath);
-end
-
 ----- API functions exposed to modules -----------
 -- Must all be in api.* 
 
