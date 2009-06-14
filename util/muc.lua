@@ -274,7 +274,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
-			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
+			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
 			self:route_stanza(stanza);
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
