@@ -338,14 +338,10 @@ end
 
 local function room_handle_stanza(self, origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	if to_resource and not to_node then
-		if type == "error" or type == "result" then return; end
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- host/resource
-	elseif to_resource then
+	if to_resource then
 		room_handle_to_occupant(self, origin, stanza);
-	elseif to_node then
-		room_handle_to_room(self, origin, stanza)
-	else -- to the main muc domain
+	else
+		room_handle_to_room(self, origin, stanza);
 	end
 end
 
