@@ -20,6 +20,7 @@ local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
 local core_route_stanza = core_route_stanza;
+local core_post_stanza = core_post_stanza;
 
 module:add_feature("jabber:iq:roster");
 
@@ -83,11 +84,9 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 											rm_roster_push(from_node, from_host, jid);
 											local to_bare = node and (node.."@"..host) or host; -- bare JID
 											if r_item.subscription == "both" or r_item.subscription == "from" then
-												handle_presence(session, st.presence({type="unsubscribed"}), from_bare, to_bare,
-													core_route_stanza, false);
+												core_post_stanza(session, st.presence({type="unsubscribed", from=session.full_jid, to=to_bare}));
 											elseif r_item.subscription == "both" or r_item.subscription == "to" then
-												handle_presence(session, st.presence({type="unsubscribe"}), from_bare, to_bare,
-													core_route_stanza, false);
+												core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=to_bare}));
 											end
 										else
 											session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
