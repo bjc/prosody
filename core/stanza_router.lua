@@ -17,24 +17,18 @@ local send_s2s = require "core.s2smanager".send_to_host;
 local user_exists = require "core.usermanager".user_exists;
 
 local rostermanager = require "core.rostermanager";
-local sessionmanager = require "core.sessionmanager";
 local offlinemanager = require "core.offlinemanager";
 
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
-local format = string.format;
 local tostring = tostring;
-local t_concat = table.concat;
 local t_insert = table.insert;
-local tonumber = tonumber;
-local s_find = string.find;
 local pairs = pairs;
 local ipairs = ipairs;
 
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
-local print = print;
 local fire_event = prosody.events.fire_event;
 
 local select_best_resources;
