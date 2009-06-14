@@ -310,8 +310,8 @@ function core_route_stanza(origin, stanza)
 		stanza.attr.xmlns = xmlns; -- reset
 	elseif origin.type == "component" or origin.type == "local" then
 		-- Route via s2s for components and modules
-		log("debug", "Routing outgoing stanza for %s to %s", origin.host, host);
-		send_s2s(origin.host, host, stanza);
+		log("debug", "Routing outgoing stanza for %s to %s", from_host, host);
+		send_s2s(from_host, host, stanza);
 	else
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
