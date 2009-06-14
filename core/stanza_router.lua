@@ -23,10 +23,6 @@ local offlinemanager = require "core.offlinemanager";
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 
-local handle_outbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_outbound_presence_subscriptions_and_probes;
-local handle_inbound_presence_subscriptions_and_probes = function()end;--require "core.presencemanager".handle_inbound_presence_subscriptions_and_probes;
-local handle_normal_presence = function()end;--require "core.presencemanager".handle_normal_presence;
-
 local format = string.format;
 local tostring = tostring;
 local t_concat = table.concat;
@@ -228,7 +224,7 @@ function core_route_stanza(origin, stanza)
 				-- if we get here, resource was not specified or was unavailable
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
+						-- inbound presence subscriptions and probes, already handled, so should never get here
 					elseif not resource then -- sender is available or unavailable or error
 						for _, session in pairs(user.sessions) do -- presence broadcast to all user resources.
 							if session.full_jid then -- FIXME should this be just for available resources? Do we need to check subscription?
@@ -268,7 +264,7 @@ function core_route_stanza(origin, stanza)
 			if user_exists(node, host) then
 				if stanza.name == "presence" then
 					if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-						handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
+						-- inbound presence subscriptions and probes, already handled, so should never get here
 					else
 						-- TODO send unavailable presence or unsubscribed
 					end
