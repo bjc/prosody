@@ -262,7 +262,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 		elseif type ~= 'result' then -- bad type
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
 		end
-	elseif not current_nick and type ~= "error" then -- not in room
+	elseif not current_nick and type ~= "error" and type ~= "result" then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
