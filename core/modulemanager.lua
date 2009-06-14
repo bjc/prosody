@@ -18,6 +18,7 @@ local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local register_actions = require "core.actions".register;
 local st = require "util.stanza";
+local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
 local prosody = prosody;
@@ -113,7 +114,7 @@ function load(host, module_name, config)
 	end
 	
 
-	local mod, err = loadfile(get_module_filename(module_name));
+	local mod, err = pluginloader.load_code(module_name);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		return nil, err;
@@ -187,7 +188,7 @@ function reload(host, name, ...)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 
-	local _mod, err = loadfile(get_module_filename(name)); -- checking for syntax errors
+	local _mod, err = pluginloader.load_code(name); -- checking for syntax errors
 	if not _mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		return nil, err;
