@@ -195,7 +195,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 				log("debug", "%s leaving %s", current_nick, room);
 				local data = self._participants[current_nick];
 				data.role = 'none';
-				room_broadcast_presence(room, pr);
+				room_broadcast_presence(self, pr);
 				self._participants[current_nick] = nil;
 				self._jid_nick[from] = nil;
 			end
