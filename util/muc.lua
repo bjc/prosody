@@ -195,7 +195,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 				log("debug", "%s leaving %s", current_nick, room);
 				local data = self._participants[current_nick];
 				data.role = 'none';
-				room_broadcast_presence(room, pr);
+				room_broadcast_presence(self, pr);
 				self._participants[current_nick] = nil;
 				self._jid_nick[from] = nil;
 			end
@@ -262,7 +262,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 		elseif type ~= 'result' then -- bad type
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
 		end
-	elseif not current_nick and type ~= "error" then -- not in room
+	elseif not current_nick and type ~= "error" and type ~= "result" then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
@@ -274,7 +274,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
-			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
+			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
 			self:route_stanza(stanza);
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
@@ -338,14 +338,10 @@ end
 
 local function room_handle_stanza(self, origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	if to_resource and not to_node then
-		if type == "error" or type == "result" then return; end
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- host/resource
-	elseif to_resource then
+	if to_resource then
 		room_handle_to_occupant(self, origin, stanza);
-	elseif to_node then
-		room_handle_to_room(self, origin, stanza)
-	else -- to the main muc domain
+	else
+		room_handle_to_room(self, origin, stanza);
 	end
 end
 

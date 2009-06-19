@@ -321,7 +321,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type ~= 'result' then -- bad type
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
 		end
-	elseif not current_nick and type ~= "error" then -- not in room
+	elseif not current_nick and type ~= "error" and type ~= "result" then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
@@ -333,7 +333,7 @@ function handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
-			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
+			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
 			core_route_stanza(component, stanza);
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
