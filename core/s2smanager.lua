@@ -379,6 +379,8 @@ function mark_connected(session)
 			end
 			session.sendq = nil;
 		end
+		
+		session.srv_hosts = nil;
 	end
 end
 
