@@ -12,6 +12,7 @@ local getstyle, getstring = require "util.termcolours".getstyle, require "util.t
 local config = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
+local debug_mode = config.get("*", "core", "debug");
 
 _G.log = logger.init("general");
 
@@ -19,7 +20,7 @@ module "loggingmanager"
 
 -- The log config used if none specified in the config file
 local default_logging = { { to = "console" } };
-local default_file_logging = { { to = "file", levels = { min = "info" } } };
+local default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" } } };
 local default_timestamp = "%b %d %T";
 -- The actual config loggingmanager is using
 local logging_config = config.get("*", "core", "log") or default_logging;
