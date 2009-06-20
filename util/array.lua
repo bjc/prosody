@@ -42,6 +42,7 @@ function array:shuffle()
 		local r = math.random(i,len);
 		self[i], self[r] = self[r], self[i];
 	end
+	return self;
 end
 
 function array:reverse()
@@ -50,6 +51,7 @@ function array:reverse()
 		self:push(self[i]);
 		self:pop(i);
 	end
+	return self;
 end
 
 function array:append(array)
