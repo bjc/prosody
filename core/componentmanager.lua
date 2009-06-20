@@ -8,10 +8,9 @@
 
 
 
-
+local prosody = prosody;
 local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
@@ -34,7 +33,7 @@ require "core.discomanager".addDiscoItemsHandler("*host", function(reply, to, fr
 	end
 end);
 
-require "core.eventmanager".add_event_hook("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
+prosody.events.add_handler("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
 
 module "componentmanager"
 
@@ -63,7 +62,7 @@ function load_enabled_components(config)
 	end
 end
 
-eventmanager.add_event_hook("server-starting", load_enabled_components);
+prosody.events.add_handler("server-starting", load_enabled_components);
 
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);

@@ -48,15 +48,16 @@ function core_process_stanza(origin, stanza)
 		end
 	end
 
-	if origin.type == "c2s" and not origin.full_jid
-		and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
-				and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
-		-- authenticated client isn't bound and current stanza is not a bind request
-		origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
-	end
-
-	-- TODO also, stanzas should be returned to their original state before the function ends
 	if origin.type == "c2s" then
+		if not origin.full_jid
+			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
+					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
+			-- authenticated client isn't bound and current stanza is not a bind request
+			origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			return;
+		end
+
+		-- TODO also, stanzas should be returned to their original state before the function ends
 		stanza.attr.from = origin.full_jid;
 	end
 	local to, xmlns = stanza.attr.to, stanza.attr.xmlns;
@@ -65,19 +66,23 @@ function core_process_stanza(origin, stanza)
 	local from_node, from_host, from_resource;
 	local to_bare, from_bare;
 	if to then
-		node, host, resource = jid_prepped_split(to);
-		if not host then
-			log("warn", "Received stanza with invalid destination JID: %s", to);
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+		if full_sessions[to] or bare_sessions[to] or hosts[to] then
+			node, host = jid_split(to); -- TODO only the host is needed, optimize
+		else
+			node, host, resource = jid_prepped_split(to);
+			if not host then
+				log("warn", "Received stanza with invalid destination JID: %s", to);
+				if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+					origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+				end
+				return;
 			end
-			return;
+			to_bare = node and (node.."@"..host) or host; -- bare JID
+			if resource then to = to_bare.."/"..resource; else to = to_bare; end
+			stanza.attr.to = to;
 		end
-		to_bare = node and (node.."@"..host) or host; -- bare JID
-		if resource then to = to_bare.."/"..resource; else to = to_bare; end
-		stanza.attr.to = to;
 	end
-	if from then
+	if from and not origin.full_jid then
 		-- We only stamp the 'from' on c2s stanzas, so we still need to check validity
 		from_node, from_host, from_resource = jid_prepped_split(from);
 		if not from_host then

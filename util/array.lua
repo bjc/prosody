@@ -5,6 +5,11 @@ local function new_array(_, t)
 	return setmetatable(t or {}, array_mt);
 end
 
+function array_mt.__add(a1, a2)
+	local res = new_array();
+	return res:append(a1):append(a2);
+end
+
 setmetatable(array, { __call = new_array });
 
 function array:map(func, t2)
@@ -42,6 +47,7 @@ function array:shuffle()
 		local r = math.random(i,len);
 		self[i], self[r] = self[r], self[i];
 	end
+	return self;
 end
 
 function array:reverse()
@@ -50,6 +56,15 @@ function array:reverse()
 		self:push(self[i]);
 		self:pop(i);
 	end
+	return self;
+end
+
+function array:append(array)
+	local len,len2  = #self, #array;
+	for i=1,len2 do
+		self[len+i] = array[i];
+	end
+	return self;
 end
 
 function array.collect(f, s, var)
