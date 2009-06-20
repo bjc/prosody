@@ -78,7 +78,7 @@ function core_process_stanza(origin, stanza)
 		if resource then to = to_bare.."/"..resource; else to = to_bare; end
 		stanza.attr.to = to;
 	end
-	if from then
+	if from and not origin.full_jid then
 		-- We only stamp the 'from' on c2s stanzas, so we still need to check validity
 		from_node, from_host, from_resource = jid_prepped_split(from);
 		if not from_host then
