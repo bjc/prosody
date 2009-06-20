@@ -66,17 +66,21 @@ function core_process_stanza(origin, stanza)
 	local from_node, from_host, from_resource;
 	local to_bare, from_bare;
 	if to then
-		node, host, resource = jid_prepped_split(to);
-		if not host then
-			log("warn", "Received stanza with invalid destination JID: %s", to);
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+		if full_sessions[to] or bare_sessions[to] or hosts[to] then
+			node, host = jid_split(to); -- TODO only the host is needed, optimize
+		else
+			node, host, resource = jid_prepped_split(to);
+			if not host then
+				log("warn", "Received stanza with invalid destination JID: %s", to);
+				if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+					origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+				end
+				return;
 			end
-			return;
+			to_bare = node and (node.."@"..host) or host; -- bare JID
+			if resource then to = to_bare.."/"..resource; else to = to_bare; end
+			stanza.attr.to = to;
 		end
-		to_bare = node and (node.."@"..host) or host; -- bare JID
-		if resource then to = to_bare.."/"..resource; else to = to_bare; end
-		stanza.attr.to = to;
 	end
 	if from and not origin.full_jid then
 		-- We only stamp the 'from' on c2s stanzas, so we still need to check validity
