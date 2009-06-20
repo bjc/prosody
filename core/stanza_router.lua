@@ -54,6 +54,7 @@ function core_process_stanza(origin, stanza)
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
 			-- authenticated client isn't bound and current stanza is not a bind request
 			origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			return;
 		end
 
 		-- TODO also, stanzas should be returned to their original state before the function ends
