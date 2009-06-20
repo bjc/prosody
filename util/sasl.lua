@@ -41,7 +41,7 @@ local function new_plain(realm, password_handler)
 		
 		if authentication == nil or password == nil then return "failure", "malformed-request" end
 		
-		local password_encoding, correct_password = self.password_handler(authentication, self.realm, "PLAIN")
+		local password_encoding, correct_password = self.password_handler(authentication, self.realm, self.realm, "PLAIN")
 		
 		if correct_password == nil then return "failure", "not-authorized"
 		elseif correct_password == false then return "failure", "account-disabled" end
@@ -176,7 +176,7 @@ local function new_digest_md5(realm, password_handler)
 			if not response["qop"] then response["qop"] = "auth" end
 			
 			if response["realm"] == nil or response["realm"] == "" then
-				response["realm"] = self.realm;
+				response["realm"] = "";
 			elseif response["realm"] ~= self.realm then
 				return "failure", "not-authorized", "Incorrect realm value";
 			end
@@ -199,12 +199,13 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"];
-			local password_encoding, Y = self.password_handler(response["username"], response["realm"], "DIGEST-MD5", decoder)
+			local password_encoding, Y = self.password_handler(response["username"], domain, response["realm"], "DIGEST-MD5", decoder);
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			local A1 = "";
 			if response.authzid then
 				if response.authzid == self.username.."@"..self.realm then
+					-- COMPAT
 					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
 					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
 				else
