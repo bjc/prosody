@@ -52,6 +52,14 @@ function array:reverse()
 	end
 end
 
+function array:append(array)
+	local len,len2  = #self, #array;
+	for i=1,len2 do
+		self[len+i] = array[i];
+	end
+	return self;
+end
+
 function array.collect(f, s, var)
 	local t, var = {};
 	while true do
