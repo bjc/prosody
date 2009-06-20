@@ -144,7 +144,6 @@ end);
 -- Function to reload the config file
 function prosody.reload_config()
 	log("info", "Reloading configuration file");
-	eventmanager.fire_event("reloading-config");
 	prosody.events.fire_event("reloading-config", {});
 	local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
 	if not ok then
@@ -166,8 +165,7 @@ end
 -- Function to initiate prosody shutdown
 function prosody.shutdown(reason)
 	log("info", "Shutting down: %s", reason or "unknown reason");
-	eventmanager.fire_event("server-stopping", { reason = reason });
-	prosody.events.fire_event("server-stopping", {});
+	prosody.events.fire_event("server-stopping", {reason = reason});
 	server.setquitting(true);
 end
 
@@ -245,7 +243,6 @@ local function catch_uncaught_error(err)
 		log("error", "%s", traceback);
 	end
 	
-	eventmanager.fire_event("very-bad-error", "*", err, traceback);
 	prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
 end
 
@@ -254,7 +251,6 @@ while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
 end
 
 log("info", "Shutdown status: Cleaning up");
-eventmanager.fire_event("server-cleanup");
 prosody.events.fire_event("server-cleanup", {});
 
 -- Ok, we're quitting I know, but we
