@@ -30,7 +30,7 @@ local t_insert, t_concat = table.insert, table.concat;
 local type = type;
 local next = next;
 local rawget = rawget;
-
+local error = error;
 local tostring = tostring;
 
 -- We need this to let modules access the real global namespace
@@ -398,6 +398,15 @@ function api:hook_stanza(xmlns, name, handler, priority)
 		return;
 	end
 	return api.hook(self, "stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
+end
+
+function api:require(lib)
+	local f, n = pluginloader.load_code(self.name, lib..".lib.lua");
+	if not f then
+		f, n = pluginloader.load_code(lib, lib..".lib.lua");
+	end
+	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
+	return f();
 end
 
 --------------------------------------------------------------------
