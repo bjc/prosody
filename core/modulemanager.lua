@@ -197,7 +197,7 @@ function reload(host, name, ...)
 
 	local _mod, err = pluginloader.load_code(name); -- checking for syntax errors
 	if not _mod then
-		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		log("error", "Unable to load module '%s': %s", name or "nil", err or "nil");
 		return nil, err;
 	end
 
