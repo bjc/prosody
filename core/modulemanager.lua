@@ -134,6 +134,13 @@ function load(host, module_name, config)
 		return nil, ret;
 	end
 	
+	if module_has_method(pluginenv, "load") then
+		local ok, err = call_module_method(pluginenv, "load");
+		if (not ok) and err then
+			log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err);
+		end
+	end
+
 	-- Use modified host, if the module set one
 	modulemap[api_instance.host][module_name] = pluginenv;
 	
