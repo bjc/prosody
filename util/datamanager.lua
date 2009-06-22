@@ -50,7 +50,7 @@ local function mkdir(path)
 end
 
 local data_path = "data";
-local callback;
+local callbacks = {};
 
 ------- API -------------
 
@@ -58,8 +58,32 @@ function set_data_path(path)
 	log("debug", "Setting data path to: %s", path);
 	data_path = path;
 end
-function set_callback(func)
-	callback = func;
+
+local function callback(username, host, datastore, data)
+	for _, f in ipairs(callbacks) do
+		username, host, datastore, data = f(username, host, datastore, data);
+		if not username then break; end
+	end
+	
+	return username, host, datastore, data;
+end
+function add_callback(func)
+	if not callbacks[func] then -- Would you really want to set the same callback more than once?
+		callbacks[func] = true;
+		callbacks[#callbacks+1] = func;
+		return true;
+	end
+end
+function remove_callback(func)
+	if callbacks[func] then
+		for i, f in ipairs(callbacks) do
+			if f == func then
+				callbacks[i] = nil;
+				callbacks[f] = nil;
+				return true;
+			end
+		end
+	end
 end
 
 function getpath(username, host, datastore, ext, create)
@@ -97,7 +121,12 @@ function store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
-	if callback and callback(username, host, datastore) then return true; end
+
+	username, host, datastore, data = callback(username, host, datastore, data);
+	if not username then
+		return true; -- Don't save this data at all
+	end
+
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, nil, true), "w+");
 	if not f then
