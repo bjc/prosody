@@ -82,19 +82,24 @@ end
 
 function load_roster(username, host)
 	log("debug", "load_roster: asked for: "..username.."@"..host);
+	local roster;
 	if hosts[host] and hosts[host].sessions[username] then
-		local roster = hosts[host].sessions[username].roster;
+		roster = hosts[host].sessions[username].roster;
 		if not roster then
 			log("debug", "load_roster: loading for new user: "..username.."@"..host);
 			roster = datamanager.load(username, host, "roster") or {};
 			if not roster[false] then roster[false] = { }; end
 			hosts[host].sessions[username].roster = roster;
+			hosts[host].events.fire_event("roster-load", username, host, roster);
 		end
 		return roster;
 	end
+	
 	-- Attempt to load roster for non-loaded user
 	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
-	return datamanager.load(username, host, "roster") or {};
+	roster = datamanager.load(username, host, "roster") or {};
+	hosts[host].events.fire_event("roster-load", username, host, roster);
+	return roster;
 end
 
 function save_roster(username, host)
