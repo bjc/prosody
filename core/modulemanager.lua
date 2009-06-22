@@ -406,6 +406,7 @@ function api:require(lib)
 		f, n = pluginloader.load_code(lib, lib..".lib.lua");
 	end
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
+	setfenv(f, setmetatable({ module = self }, { __index = _G }));
 	return f();
 end
 
