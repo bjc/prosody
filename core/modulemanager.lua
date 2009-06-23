@@ -38,7 +38,8 @@ local _G = _G;
 
 module "modulemanager"
 
-local api = {}; -- Module API container
+api = {};
+local api = api; -- Module API container
 
 local modulemap = { ["*"] = {} };
 
