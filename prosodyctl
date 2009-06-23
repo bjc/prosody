@@ -94,12 +94,14 @@ local error_messages = setmetatable({
 		["no-such-user"] = "The given user does not exist on the server";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no pidfile option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
+		["no-such-method"] = "This module has no commands";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 hosts = {};
 
 require "core.hostmanager"
 require "core.eventmanager".fire_event("server-starting");
+require "core.modulemanager"
 
 require "util.prosodyctl"
 -----------------------
@@ -403,6 +405,41 @@ end
 
 
 ---------------------
+
+if command:match("^mod_") then -- Is a command in a module
+	local module_name = command:match("^mod_(.+)");
+	local ret, err = modulemanager.load("*", module_name);
+	if not ret then
+		show_message("Failed to load module '"..module_name.."': "..err);
+		os.exit(1);
+	end
+	
+	table.remove(arg, 1);
+	
+	local module = modulemanager.get_module("*", module_name);
+	if not module then
+		show_message("Failed to load module '"..module_name.."': Unknown error");
+		os.exit(1);
+	end
+	
+	if not modulemanager.module_has_method(module, "command") then
+		show_message("Fail: mod_"..module_name.." does not support any commands");
+		os.exit(1);
+	end
+	
+	local ok, ret = modulemanager.call_module_method(module, "command", arg);
+	if ok then
+		if type(ret) == "number" then
+			os.exit(ret);
+		elseif type(ret) == "string" then
+			show_message(ret);
+		end
+		os.exit(0); -- :)
+	else
+		show_message("Failed to execute command: "..error_messages[ret]);
+		os.exit(1); -- :(
+	end
+end
 
 if not commands[command] then -- Show help for all commands
 	function show_usage(usage, desc)
