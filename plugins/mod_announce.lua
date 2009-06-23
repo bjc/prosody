@@ -1,5 +1,6 @@
 local st, jid, set = require "util.stanza", require "util.jid", require "util.set";
 
+local is_admin = require "core.usermanager".is_admin;
 local admins = set.new(config.get(module:get_host(), "core", "admins"));
 
 function handle_announcement(data)
@@ -10,7 +11,7 @@ function handle_announcement(data)
 		return; -- Not an announcement
 	end
 	
-	if not admins:contains(jid.bare(origin.full_jid)) then
+	if not is_admin(origin.full_jid) then
 		-- Not an admin? Not allowed!
 		module:log("warn", "Non-admin %s tried to send server announcement", tostring(jid.bare(origin.full_jid)));
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
