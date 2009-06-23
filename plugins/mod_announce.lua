@@ -11,9 +11,9 @@ function handle_announcement(data)
 		return; -- Not an announcement
 	end
 	
-	if not is_admin(origin.full_jid) then
+	if not is_admin(stanza.attr.from) then
 		-- Not an admin? Not allowed!
-		module:log("warn", "Non-admin %s tried to send server announcement", tostring(jid.bare(origin.full_jid)));
+		module:log("warn", "Non-admin %s tried to send server announcement", tostring(jid.bare(stanza.attr.from)));
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		return;
 	end
