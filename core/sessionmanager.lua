@@ -66,6 +66,8 @@ function destroy_session(session, err)
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
+		hosts[session.host].events.fire_event("resource-unbind", session);
+
 		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
 			
