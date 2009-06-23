@@ -149,6 +149,8 @@ function bind_resource(session, resource)
 	
 	session.roster = rm_load_roster(session.username, session.host);
 	
+	hosts[session.host].events.fire_event("resource-bind", session);
+	
 	return true;
 end
 

@@ -27,7 +27,7 @@ end
 function load_code(plugin, resource)
 	local content, err = load_resource(plugin, resource);
 	if not content then return content, err; end
-	return loadstring(content, err), err;
+	return loadstring(content, err);
 end
 
 return _M;

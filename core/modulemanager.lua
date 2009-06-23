@@ -38,7 +38,8 @@ local _G = _G;
 
 module "modulemanager"
 
-local api = {}; -- Module API container
+api = {};
+local api = api; -- Module API container
 
 local modulemap = { ["*"] = {} };
 
@@ -134,6 +135,13 @@ function load(host, module_name, config)
 		return nil, ret;
 	end
 	
+	if module_has_method(pluginenv, "load") then
+		local ok, err = call_module_method(pluginenv, "load");
+		if (not ok) and err then
+			log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err);
+		end
+	end
+
 	-- Use modified host, if the module set one
 	modulemap[api_instance.host][module_name] = pluginenv;
 	
@@ -190,7 +198,7 @@ function reload(host, name, ...)
 
 	local _mod, err = pluginloader.load_code(name); -- checking for syntax errors
 	if not _mod then
-		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		log("error", "Unable to load module '%s': %s", name or "nil", err or "nil");
 		return nil, err;
 	end
 
