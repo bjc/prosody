@@ -40,7 +40,8 @@ module:hook("iq/bare", function(data)
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
-		return true; -- TODO do something with results and errors
+		module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		return true;
 	end
 end);
 
@@ -51,6 +52,7 @@ module:hook("iq/host", function(data)
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
-		return true; -- TODO do something with results and errors
+		module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		return true;
 	end
 end);
