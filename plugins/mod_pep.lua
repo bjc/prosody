@@ -6,6 +6,7 @@ local hosts = hosts;
 local user_exists = require "core.usermanager".user_exists;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local pairs, ipairs = pairs, ipairs;
+local next = next;
 local load_roster = require "core.rostermanager".load_roster;
 
 local data = {};
@@ -15,6 +16,7 @@ module:add_identity("pubsub", "pep");
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
+	local disable = #item.tags ~= 1 or #item.tags[1].tags == 0;
 	local stanza = st.message({from=session.full_jid, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
 			:tag('items', {node=node})
@@ -25,8 +27,13 @@ local function publish(session, node, item)
 	local bare = session.username..'@'..session.host;
 	-- store for the future
 	local user_data = data[bare];
-	if not user_data then user_data = {}; data[bare] = user_data; end
-	user_data[node] = stanza;
+	if disable then
+		if user_data then user_data[node] = nil; end
+		if not next(user_data) then data[bare] = nil; end
+	else
+		if not user_data then user_data = {}; data[bare] = user_data; end
+		user_data[node] = stanza;
+	end
 	
 	-- broadcast to resources
 	stanza.attr.to = bare;
