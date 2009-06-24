@@ -17,14 +17,14 @@ module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
 	local disable = #item.tags ~= 1 or #item.tags[1].tags == 0;
-	local stanza = st.message({from=session.full_jid, type='headline'})
+	local bare = session.username..'@'..session.host;
+	local stanza = st.message({from=bare, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
 			:tag('items', {node=node})
 				:add_child(item)
 			:up()
 		:up();
 
-	local bare = session.username..'@'..session.host;
 	-- store for the future
 	local user_data = data[bare];
 	if disable then
