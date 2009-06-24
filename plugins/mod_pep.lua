@@ -69,12 +69,12 @@ end, 10);
 module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (session, stanza)
 	if stanza.attr.type == 'set' and (not stanza.attr.to or jid_bare(stanza.attr.from) == stanza.attr.to) then
 		local payload = stanza.tags[1];
-		if payload.name == 'pubsub' then
+		if payload.name == 'pubsub' then -- <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 			payload = payload.tags[1];
-			if payload and payload.name == 'publish' and payload.attr.node then
+			if payload and payload.name == 'publish' and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
 				local node = payload.attr.node;
 				payload = payload.tags[1];
-				if payload then
+				if payload then -- <item>
 					publish(session, node, payload);
 					return true;
 				end -- TODO else error
