@@ -73,7 +73,8 @@ module:hook("presence/bare", function(event)
 	end
 end, 10);
 
-module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (session, stanza)
+module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
+	local session, stanza = event.origin, event.stanza;
 	if stanza.attr.type == 'set' and (not stanza.attr.to or jid_bare(stanza.attr.from) == stanza.attr.to) then
 		local payload = stanza.tags[1];
 		if payload.name == 'pubsub' then -- <pubsub xmlns='http://jabber.org/protocol/pubsub'>
@@ -88,6 +89,5 @@ module:add_iq_handler("c2s", "http://jabber.org/protocol/pubsub", function (sess
 			end -- TODO else error
 		end
 	end
-	session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 end);
 
