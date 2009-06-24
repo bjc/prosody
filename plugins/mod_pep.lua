@@ -41,9 +41,9 @@ local function publish(session, node, item)
 	end
 end
 
-module:hook("presence/bare", function(data)
+module:hook("presence/bare", function(event)
 	-- inbound presence to bare JID recieved
-	local origin, stanza = data.origin, data.stanza;
+	local origin, stanza = event.origin, event.stanza;
 	
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local bare = jid_bare(stanza.attr.from);
