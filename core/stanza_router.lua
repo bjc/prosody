@@ -31,8 +31,6 @@ local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local fire_event = prosody.events.fire_event;
 
-local select_best_resources;
-
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
@@ -230,21 +228,4 @@ function core_route_stanza(origin, stanza)
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
 	stanza.attr.to = to; -- reset
-end
-
-function select_best_resources(user)
-	local priority = 0;
-	local recipients = {};
-	for _, session in pairs(user.sessions) do -- find resource with greatest priority
-		if session.presence then
-			local p = session.priority;
-			if p > priority then
-				priority = p;
-				recipients = {session};
-			elseif p == priority then
-				t_insert(recipients, session);
-			end
-		end
-	end
-	return recipients;
 end
