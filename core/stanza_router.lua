@@ -212,6 +212,7 @@ function core_route_stanza(origin, stanza)
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
 		-- old stanza routing code removed
+		core_post_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
 		-- Remote host
 		local xmlns = stanza.attr.xmlns;
