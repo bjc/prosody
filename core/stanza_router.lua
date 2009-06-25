@@ -164,22 +164,11 @@ function core_post_stanza(origin, stanza)
 		else
 			if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		end
-	end
-
-	if host and fire_event(host.."/"..stanza.name, event_data) then
-		-- event handled
-	elseif stanza.name == "presence" and origin.host and fire_event(origin.host.."/"..stanza.name, event_data) then
-		-- event handled
-	elseif not to then
-		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-	elseif hosts[to] and hosts[to].type == "local" then -- directed at a local server
-		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
-	elseif hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
-		component_handle_stanza(origin, stanza);
-	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
-		component_handle_stanza(origin, stanza);
-	elseif hosts[host] and hosts[host].type == "local" and stanza.name == "iq" and not resource then -- directed at bare JID
-		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+		if not modules_handle_stanza(h.host, origin, stanza) then
+			if stanza.attr.xmlns == "jabber:client" and stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			end
+		end
 	else
 		core_route_stanza(origin, stanza);
 	end
