@@ -60,13 +60,14 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 			
 			-- FIXME !!!!!
-			for i, k in ipairs(attr) do
+			for i=1,#attr do
+				local k = attr[i];
+				attr[i] = nil;
 				local ns, nm = k:match("^([^|]+)|?([^|]-)$")
 				if ns and nm then
 					ns = ns_prefixes[ns]; 
 					if ns then 
 						attr[ns..":"..nm] = attr[k];
-						attr[i] = ns..":"..nm;
 						attr[k] = nil;
 					end
 				end
