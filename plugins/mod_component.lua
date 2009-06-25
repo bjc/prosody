@@ -64,7 +64,12 @@ function handle_component_auth(session, stanza)
 	-- If component not already created for this host, create one now
 	if not hosts[session.host].connected then
 		local send = session.send;
-		session.component_session = cm_register_component(session.host, function (_, data) return send(data); end);
+		session.component_session = cm_register_component(session.host, function (_, data) 
+				if data.attr and data.attr.xmlns == "jabber:client" then
+					data.attr.xmlns = nil;
+				end
+				return send(data);
+			end);
 		hosts[session.host].connected = true;
 		log("info", "Component successfully registered");
 	else
