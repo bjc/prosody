@@ -200,6 +200,8 @@ end
 function deserialize(stanza)
 	-- Set metatable
 	if stanza then
+		local attr = stanza.attr;
+		for i=1,#attr do attr[i] = nil; end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
 			if type(child) == "table" then
