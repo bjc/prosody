@@ -182,8 +182,7 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
-	local host_session = hosts[host]
-	if host_session and host_session.type == "local" then
+	if hosts[host] then
 		-- old stanza routing code removed
 		core_post_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
