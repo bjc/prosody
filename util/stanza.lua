@@ -23,6 +23,7 @@ local next          =          next;
 local print         =         print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
+local s_char        =   string.char;
 local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
@@ -116,53 +117,38 @@ function stanza_mt:childtags()
 	                                    
 end
 
-do
-	local xml_entities = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
-	function xml_escape(s) return s_gsub(s, "['&<>\"]", xml_entities); end
-end
-
-local xml_escape = xml_escape;
-
-local function dostring(t, buf, self, xml_escape)
+local xml_escape = (function()
+	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
+	return function(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
+end)();
+local function _dostring(t, buf, self, xml_escape)
 	local nsid, ns, attrk = 0;
-	t_insert(buf, "<");
-	t_insert(buf, t.name);
-	for k, v in pairs(t.attr) do if type(k) == "string" then
-		t_insert(buf, " ");
+	t_insert(buf, "<"..t.name);
+	for k, v in pairs(t.attr) do
 		ns, attrk = s_match(k, "^([^|]+)|(.+)$");
 		if ns then
-			nsid = (nsid or -1) + 1;
-			t_insert(buf, "xmlns:ns"..nsid);
-			t_insert(buf, "='");
-			t_insert(buf, (xml_escape(tostring(ns))));
-			t_insert(buf, "' ");
-			t_insert(buf, "ns"..nsid..":"..attrk);
+			nsid = nsid + 1;
+			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
 		else
-			t_insert(buf, k);
-		end
-		t_insert(buf, "='");
-		t_insert(buf, (xml_escape(tostring(v))));
-		t_insert(buf, "'");
-	end end
-	t_insert(buf, ">");
-	for n, child in ipairs(t) do
-		if child.name then 
-			self(child, buf, self, xml_escape);
-		else
-			t_insert(buf, (xml_escape(child)));
+			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
 		end
 	end
-	t_insert(buf, "</");
-	t_insert(buf, t.name);
 	t_insert(buf, ">");
+	for n=1,#t do
+		local child = t[n];
+		if child.name then
+			self(child, buf, self, xml_escape);
+		else
+			t_insert(buf, xml_escape(child));
+		end
+	end
+	t_insert(buf, "</"..t.name..">");
 end
-
 function stanza_mt.__tostring(t)
 	local buf = {};
-	dostring(t, buf, dostring, xml_escape);
+	_dostring(t, buf, _dostring, xml_escape);
 	return t_concat(buf);
 end
-
 
 function stanza_mt.top_tag(t)
 	local attr_string = "";
