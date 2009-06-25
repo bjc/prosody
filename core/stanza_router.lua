@@ -6,30 +6,16 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local log = require "util.logger".init("stanzarouter")
 
 local hosts = _G.hosts;
-
+local tostring = tostring;
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
-local user_exists = require "core.usermanager".user_exists;
-
-local rostermanager = require "core.rostermanager";
-local offlinemanager = require "core.offlinemanager";
-
 local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
-
-local tostring = tostring;
-local t_insert = table.insert;
-local pairs = pairs;
-local ipairs = ipairs;
-
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
-local fire_event = prosody.events.fire_event;
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
@@ -200,5 +186,4 @@ function core_route_stanza(origin, stanza)
 	else
 		log("warn", "received stanza from unhandled connection type: %s", origin.type);
 	end
-	stanza.attr.to = to; -- reset
 end
