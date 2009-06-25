@@ -175,12 +175,8 @@ function core_post_stanza(origin, stanza)
 end
 
 function core_route_stanza(origin, stanza)
-	local to = stanza.attr.to;
-	local node, host, resource = jid_split(to);
-	local to_bare = node and (node.."@"..host) or host; -- bare JID
-	local from = stanza.attr.from;
-	local from_node, from_host, from_resource = jid_split(from);
-	local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
+	local node, host, resource = jid_split(stanza.attr.to);
+	local from_node, from_host, from_resource = jid_split(stanza.attr.from);
 
 	-- Auto-detect origin if not specified
 	origin = origin or hosts[from_host];
