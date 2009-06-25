@@ -175,10 +175,6 @@ function core_post_stanza(origin, stanza)
 end
 
 function core_route_stanza(origin, stanza)
-	-- Hooks
-	--- ...later
-
-	-- Deliver
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
@@ -190,14 +186,6 @@ function core_route_stanza(origin, stanza)
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 	
-	if hosts[to_bare] and hosts[to_bare].type == "component" then -- hack to allow components to handle node@server
-		return component_handle_stanza(origin, stanza);
-	elseif hosts[host] and hosts[host].type == "component" then -- directed at a component
-		return component_handle_stanza(origin, stanza);
-	end
-
-	if stanza.name == "presence" and (stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error") then resource = nil; end
-
 	local host_session = hosts[host]
 	if host_session and host_session.type == "local" then
 		-- old stanza routing code removed
