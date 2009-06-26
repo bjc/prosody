@@ -85,8 +85,8 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				if payload then -- <item>
 					publish(session, node, payload);
 					return true;
-				end -- TODO else error
-			end -- TODO else error
+				end
+			end
 		end
 	end
 end);
