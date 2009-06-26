@@ -52,6 +52,29 @@ function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, 
 	end
 end
 
+local function select_top_resources(user)
+	local priority = 0;
+	local recipients = {};
+	for _, session in pairs(user.sessions) do -- find resource with greatest priority
+		if session.presence then
+			-- TODO check active privacy list for session
+			local p = session.priority;
+			if p > priority then
+				priority = p;
+				recipients = {session};
+			elseif p == priority then
+				t_insert(recipients, session);
+			end
+		end
+	end
+	return recipients;
+end
+local function recalc_resource_map(origin)
+	local user = hosts[origin.host].sessions[origin.username];
+	user.top_resources = select_top_resources(user);
+	if #user.top_resources == 0 then user.top_resources = nil; end
+end
+
 function handle_normal_presence(origin, stanza, core_route_stanza)
 	if origin.roster then
 		for jid in pairs(origin.roster) do -- broadcast to all interested contacts
@@ -104,9 +127,12 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 				offlinemanager.deleteAll(node, host);
 			end
 		end
-		origin.priority = 0;
 		if stanza.attr.type == "unavailable" then
 			origin.presence = nil;
+			if origin.priority then
+				origin.priority = nil;
+				recalc_resource_map(origin);
+			end
 			if origin.directed then
 				local old_from = stanza.attr.from;
 				stanza.attr.from = origin.full_jid;
@@ -126,8 +152,11 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 					priority = tonumber(priority);
 					if priority < -128 then priority = -128 end
 					if priority > 127 then priority = 127 end
-					origin.priority = priority;
-				end
+				else priority = 0; end
+			else priority = 0; end
+			if origin.priority ~= priority then
+				origin.priority = priority;
+				recalc_resource_map(origin);
 			end
 		end
 		stanza.attr.to = nil; -- reset it
