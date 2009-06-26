@@ -67,3 +67,5 @@ module:hook("message/bare", function(data)
 
 	return process_to_bare(stanza.attr.to or (origin.username..'@'..origin.host), origin, stanza);
 end);
+
+module:add_feature("msgoffline");
