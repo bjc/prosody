@@ -53,8 +53,8 @@ function new()
 		local h = handlers[event];
 		if not h then h = {}; handlers[event] = h; end
 		local dispatcher = function(...)
-			for _, handler in ipairs(h) do
-				local ret = handler(...);
+			for i=1,#h do
+				local ret = h[i](...);
 				if ret ~= nil then return ret; end
 			end
 		end;
@@ -67,8 +67,8 @@ function new()
 	local function fire_event(event, ...) -- FIXME duplicates dispatcher code
 		local h = handlers[event];
 		if h then
-			for _, handler in ipairs(h) do
-				local ret = handler(...);
+			for i=1,#h do
+				local ret = h[i](...);
 				if ret ~= nil then return ret; end
 			end
 		end
