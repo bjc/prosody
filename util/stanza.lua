@@ -158,6 +158,12 @@ function stanza_mt.top_tag(t)
 	return s_format("<%s%s>", t.name, attr_string);
 end
 
+function stanza_mt.get_text(t)
+	if #t.tags == 0 then
+		return t_concat(t);
+	end
+end
+
 function stanza_mt.__add(s1, s2)
 	return s1:add_direct_child(s2);
 end
