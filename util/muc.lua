@@ -315,7 +315,7 @@ local function room_handle_to_room(self, origin, stanza) -- presence changes and
 		local current_nick = self._jid_nick[stanza.attr.from];
 		if current_nick then
 			stanza.attr.to = current_nick;
-			room_handle_to_occupant(origin, stanza);
+			room_handle_to_occupant(self, origin, stanza);
 			stanza.attr.to = to;
 		elseif type ~= "error" and type ~= "result" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
