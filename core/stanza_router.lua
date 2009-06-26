@@ -144,11 +144,11 @@ function core_post_stanza(origin, stanza)
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
 	if h then
+		if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
+
 		if h.type == "component" then
 			component_handle_stanza(origin, stanza);
 			return;
-		else
-			if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		end
 		if not modules_handle_stanza(h.host, origin, stanza) then
 			if stanza.attr.xmlns == "jabber:client" and stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
