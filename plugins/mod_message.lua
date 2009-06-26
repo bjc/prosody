@@ -9,24 +9,6 @@ local user_exists = require "core.usermanager".user_exists;
 local offlinemanager = require "core.offlinemanager";
 local t_insert = table.insert;
 
-local function select_top_resources(user)
-	local priority = 0;
-	local recipients = {};
-	for _, session in pairs(user.sessions) do -- find resource with greatest priority
-		if session.presence then
-			-- TODO check active privacy list for session
-			local p = session.priority;
-			if p > priority then
-				priority = p;
-				recipients = {session};
-			elseif p == priority then
-				t_insert(recipients, session);
-			end
-		end
-	end
-	return recipients;
-end
-
 local function process_to_bare(bare, origin, stanza)
 	local user = bare_sessions[bare];
 	
@@ -45,8 +27,8 @@ local function process_to_bare(bare, origin, stanza)
 		end  -- current policy is to discard headlines if no recipient is available
 	else -- chat or normal message
 		if user then -- some resources are connected
-			local recipients = select_top_resources(user);
-			if #recipients > 0 then
+			local recipients = user.top_resources;
+			if recipients then
 				for i=1,#recipients do
 					recipients[i].send(stanza);
 				end
