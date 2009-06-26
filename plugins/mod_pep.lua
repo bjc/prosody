@@ -48,6 +48,23 @@ local function publish(session, node, item)
 	end
 end
 
+local function get_caps_hash_from_presence(stanza, current)
+	if not stanza.attr.type then
+		for _, child in pairs(stanza.tags) do
+			if child.name == "c" and child.attr.xmlns == "http://jabber.org/protocol/caps" then
+				local attr = child.attr;
+				if attr.hash then -- new caps
+					if attr.hash == 'sha-1' and attr.node and attr.ver then return attr.ver, attr.node.."#"..attr.ver; end
+				else -- legacy caps
+					if attr.node and attr.ver then return attr.node.."#"..attr.ver.."#"..(attr.ext or ""), attr.node.."#"..attr.ver; end
+				end
+				return; -- bad caps format
+			end
+		end
+		return current; -- no caps, could mean caps optimization, so return current
+	end
+end
+
 module:hook("presence/bare", function(event)
 	-- inbound presence to bare JID recieved
 	local origin, stanza = event.origin, event.stanza;
