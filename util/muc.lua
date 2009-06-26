@@ -165,7 +165,7 @@ end
 
 local function room_get_disco_info(self, stanza) end
 local function room_get_disco_items(self, stanza) end
-local function room_set_subject(room, current_nick, room, subject)
+local function room_set_subject(room, current_nick, subject)
 	-- TODO check nick's authority
 	if subject == "" then subject = nil; end
 	room._data['subject'] = subject;
