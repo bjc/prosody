@@ -49,7 +49,8 @@ local function publish(session, node, item)
 end
 
 local function get_caps_hash_from_presence(stanza, current)
-	if not stanza.attr.type then
+	local t = stanza.attr.type;
+	if not t then
 		for _, child in pairs(stanza.tags) do
 			if child.name == "c" and child.attr.xmlns == "http://jabber.org/protocol/caps" then
 				local attr = child.attr;
@@ -61,8 +62,10 @@ local function get_caps_hash_from_presence(stanza, current)
 				return; -- bad caps format
 			end
 		end
-		return current; -- no caps, could mean caps optimization, so return current
+	elseif t == "unavailable" or t == "error" then
+		return;
 	end
+	return current; -- no caps, could mean caps optimization, so return current
 end
 
 module:hook("presence/bare", function(event)
