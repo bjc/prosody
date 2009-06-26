@@ -9,6 +9,7 @@ local pairs, ipairs = pairs, ipairs;
 local next = next;
 local load_roster = require "core.rostermanager".load_roster;
 
+local NULL = {};
 local data = {};
 local recipients = {};
 
@@ -35,16 +36,10 @@ local function publish(session, node, item)
 		user_data[node] = stanza;
 	end
 	
-	-- broadcast to resources
-	stanza.attr.to = bare;
-	core_route_stanza(session, stanza);
-
-	-- broadcast to contacts
-	for jid, item in pairs(session.roster) do
-		if jid and jid ~= "pending" and (item.subscription == 'from' or item.subscription == 'both') then
-			stanza.attr.to = jid;
-			core_route_stanza(session, stanza);
-		end
+	-- broadcast
+	for recipient in pairs(recipients[user] or NULL) do
+		stanza.attr.to = recipient;
+		core_post_stanza(session, stanza);
 	end
 end
 
@@ -76,18 +71,18 @@ module:hook("presence/bare", function(event)
 	local bare = jid_bare(stanza.attr.from);
 	local item = load_roster(jid_split(user))[bare];
 	if not stanza.attr.to or (item and (item.subscription == 'from' or item.subscription == 'both')) then
-		local t = stanza.attr.type;
 		local recipient = stanza.attr.from;
-		if t == "unavailable" or t == "error" then
+		local current = recipients[user] and recipients[user][recipient];
+		local hash = get_caps_hash_from_presence(stanza, current);
+		if current == hash then return; end
+		if not hash then
 			if recipients[user] then recipients[user][recipient] = nil; end
-		elseif not t then
+		else
 			recipients[user] = recipients[user] or {};
-			if not recipients[user][recipient] then
-				recipients[user][recipient] = true;
-				for node, message in pairs(data[user] or {}) do
-					message.attr.to = stanza.attr.from;
-					origin.send(message);
-				end
+			recipients[user][recipient] = hash;
+			for node, message in pairs(data[user] or NULL) do
+				message.attr.to = stanza.attr.from;
+				origin.send(message);
 			end
 		end
 	end
