@@ -91,3 +91,16 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 	end
 end);
 
+module:hook("iq/bare/disco", function(event)
+	local session, stanza = event.origin, event.stanza;
+	if stanza.attr.type == "result" then
+		local disco = stanza.tags[1];
+		if disco and disco.name == "query" and disco.attr.xmlns == "http://jabber.org/protocol/disco#info" then
+			-- Process disco response
+			-- TODO check if waiting for recipient's response
+			local hash; -- TODO calculate hash
+			-- TODO update hash map
+			-- TODO set recipient's data to calculated data
+		end
+	end
+end);
