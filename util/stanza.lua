@@ -24,6 +24,7 @@ local print         =         print;
 local unpack        =        unpack;
 local s_gsub        =   string.gsub;
 local s_char        =   string.char;
+local s_find        =   string.find;
 local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
@@ -122,27 +123,33 @@ local xml_escape = (function()
 	return function(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
 end)();
 local function _dostring(t, buf, self, xml_escape)
-	local nsid, ns, attrk = 0;
-	t_insert(buf, "<"..t.name);
+	local nsid = 0;
+	local name = t.name
+	t_insert(buf, "<"..name);
 	for k, v in pairs(t.attr) do
-		ns, attrk = s_match(k, "^([^|]+)|(.+)$");
-		if ns then
+		if s_find(k, "|", 1, true) then
+			local ns, attrk = s_match(k, "^([^|]+)|(.+)$");
 			nsid = nsid + 1;
 			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
 		else
 			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
 		end
 	end
-	t_insert(buf, ">");
-	for n=1,#t do
-		local child = t[n];
-		if child.name then
-			self(child, buf, self, xml_escape);
-		else
-			t_insert(buf, xml_escape(child));
+	local len = #t;
+	if len == 0 then
+		t_insert(buf, "/>");
+	else
+		t_insert(buf, ">");
+		for n=1,len do
+			local child = t[n];
+			if child.name then
+				self(child, buf, self, xml_escape);
+			else
+				t_insert(buf, xml_escape(child));
+			end
 		end
+		t_insert(buf, "</"..name..">");
 	end
-	t_insert(buf, "</"..t.name..">");
 end
 function stanza_mt.__tostring(t)
 	local buf = {};
