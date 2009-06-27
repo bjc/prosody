@@ -95,7 +95,7 @@ local function session_close(session, reason)
 		end
 		session.send("</stream:stream>");
 		session.conn.close();
-		xmppclient.disconnect(session.conn, "stream error");
+		xmppclient.disconnect(session.conn, reason.condition or reason or "session closed");
 	end
 end
 
@@ -136,7 +136,7 @@ function xmppclient.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err);
-		sm_destroy_session(session);
+		sm_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
 		collectgarbage("collect");
