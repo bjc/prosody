@@ -9,6 +9,7 @@ local pairs, ipairs = pairs, ipairs;
 local next = next;
 local load_roster = require "core.rostermanager".load_roster;
 
+local NULL = {};
 local data = {};
 local recipients = {};
 
@@ -35,17 +36,31 @@ local function publish(session, node, item)
 		user_data[node] = stanza;
 	end
 	
-	-- broadcast to resources
-	stanza.attr.to = bare;
-	core_route_stanza(session, stanza);
-
-	-- broadcast to contacts
-	for jid, item in pairs(session.roster) do
-		if jid and jid ~= "pending" and (item.subscription == 'from' or item.subscription == 'both') then
-			stanza.attr.to = jid;
-			core_route_stanza(session, stanza);
-		end
+	-- broadcast
+	for recipient in pairs(recipients[user] or NULL) do
+		stanza.attr.to = recipient;
+		core_post_stanza(session, stanza);
 	end
+end
+
+local function get_caps_hash_from_presence(stanza, current)
+	local t = stanza.attr.type;
+	if not t then
+		for _, child in pairs(stanza.tags) do
+			if child.name == "c" and child.attr.xmlns == "http://jabber.org/protocol/caps" then
+				local attr = child.attr;
+				if attr.hash then -- new caps
+					if attr.hash == 'sha-1' and attr.node and attr.ver then return attr.ver, attr.node.."#"..attr.ver; end
+				else -- legacy caps
+					if attr.node and attr.ver then return attr.node.."#"..attr.ver.."#"..(attr.ext or ""), attr.node.."#"..attr.ver; end
+				end
+				return; -- bad caps format
+			end
+		end
+	elseif t == "unavailable" or t == "error" then
+		return;
+	end
+	return current; -- no caps, could mean caps optimization, so return current
 end
 
 module:hook("presence/bare", function(event)
@@ -56,18 +71,18 @@ module:hook("presence/bare", function(event)
 	local bare = jid_bare(stanza.attr.from);
 	local item = load_roster(jid_split(user))[bare];
 	if not stanza.attr.to or (item and (item.subscription == 'from' or item.subscription == 'both')) then
-		local t = stanza.attr.type;
 		local recipient = stanza.attr.from;
-		if t == "unavailable" or t == "error" then
+		local current = recipients[user] and recipients[user][recipient];
+		local hash = get_caps_hash_from_presence(stanza, current);
+		if current == hash then return; end
+		if not hash then
 			if recipients[user] then recipients[user][recipient] = nil; end
-		elseif not t then
+		else
 			recipients[user] = recipients[user] or {};
-			if not recipients[user][recipient] then
-				recipients[user][recipient] = true;
-				for node, message in pairs(data[user] or {}) do
-					message.attr.to = stanza.attr.from;
-					origin.send(message);
-				end
+			recipients[user][recipient] = hash;
+			for node, message in pairs(data[user] or NULL) do
+				message.attr.to = stanza.attr.from;
+				origin.send(message);
 			end
 		end
 	end
@@ -85,9 +100,22 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				if payload then -- <item>
 					publish(session, node, payload);
 					return true;
-				end -- TODO else error
-			end -- TODO else error
+				end
+			end
 		end
 	end
 end);
 
+module:hook("iq/bare/disco", function(event)
+	local session, stanza = event.origin, event.stanza;
+	if stanza.attr.type == "result" then
+		local disco = stanza.tags[1];
+		if disco and disco.name == "query" and disco.attr.xmlns == "http://jabber.org/protocol/disco#info" then
+			-- Process disco response
+			-- TODO check if waiting for recipient's response
+			local hash; -- TODO calculate hash
+			-- TODO update hash map
+			-- TODO set recipient's data to calculated data
+		end
+	end
+end);
