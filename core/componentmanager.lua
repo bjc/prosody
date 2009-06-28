@@ -17,6 +17,7 @@ local jid_split = require "util.jid".split;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
+local serialize = require "util.serialization".serialize
 
 local pairs, type, tostring = pairs, type, tostring;
 
@@ -75,7 +76,7 @@ function handle_stanza(origin, stanza)
 		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
 		component(origin, stanza, hosts[host]);
 	else
-		log("error", "Component manager recieved a stanza for a non-existing component: " .. (stanza.attr.to or stanza));
+		log("error", "Component manager recieved a stanza for a non-existing component: " .. (stanza.attr.to or serialize(stanza)));
 	end
 end
 
