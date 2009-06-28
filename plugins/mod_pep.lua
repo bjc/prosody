@@ -48,6 +48,18 @@ local function publish(session, node, item)
 		end
 	end
 end
+local function publish_all(user, recipient, session)
+	local d = data[user];
+	local notify = recipients[user] and recipients[user][recipient];
+	if d and notify then
+		for node, message in pairs(notify) do
+			if d[node] then
+				message.attr.to = recipient;
+				session.send(message);
+			end
+		end
+	end
+end
 
 local function get_caps_hash_from_presence(stanza, current)
 	local t = stanza.attr.type;
@@ -85,11 +97,16 @@ module:hook("presence/bare", function(event)
 			if recipients[user] then recipients[user][recipient] = nil; end
 		else
 			recipients[user] = recipients[user] or {};
-			recipients[user][recipient] = hash;
-			origin.send(
-				st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
-					:query("http://jabber.org/protocol/disco#info")
-			);
+			if hash_map[hash] then
+				recipients[user][recipient] = hash_map[hash];
+				publish_all(user, recipient);
+			else
+				recipients[user][recipient] = hash;
+				origin.send(
+					st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
+						:query("http://jabber.org/protocol/disco#info")
+				);
+			end
 		end
 	end
 end, 10);
@@ -180,15 +197,7 @@ module:hook("iq/bare/disco", function(event)
 			hash_map[ver] = notify; -- update hash map
 			recipients[user][contact] = notify; -- set recipient's data to calculated data
 			-- send messages to recipient
-			local d = data[user];
-			if d then
-				for node, message in pairs(notify) do
-					if d[node] then
-						message.attr.to = stanza.attr.from;
-						session.send(message);
-					end
-				end
-			end
+			publish_all(user, contact, session);
 		end
 	end
 end);
