@@ -75,7 +75,7 @@ function handle_stanza(origin, stanza)
 		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
 		component(origin, stanza, hosts[host]);
 	else
-		log("error", "Component manager recieved a stanza for a non-existing component: " .. stanza.attr.to);
+		log("error", "Component manager recieved a stanza for a non-existing component: " .. (stanza.attr.to or stanza));
 	end
 end
 
