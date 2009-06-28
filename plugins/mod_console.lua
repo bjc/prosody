@@ -162,7 +162,7 @@ end
 
 def_env.module = {};
 
-local function get_hosts_set(hosts)
+local function get_hosts_set(hosts, module)
 	if type(hosts) == "table" then
 		if hosts[1] then
 			return set.new(hosts);
@@ -172,8 +172,9 @@ local function get_hosts_set(hosts)
 	elseif type(hosts) == "string" then
 		return set.new { hosts };
 	elseif hosts == nil then
+		local mm = require "modulemanager";
 		return set.new(array.collect(keys(prosody.hosts)))
-			/ function (host) return prosody.hosts[host].type == "local"; end;
+			/ function (host) return prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module); end;
 	end
 end
 
@@ -203,7 +204,7 @@ end
 function def_env.module:unload(name, hosts)
 	local mm = require "modulemanager";
 
-	hosts = get_hosts_set(hosts);
+	hosts = get_hosts_set(hosts, name);
 	
 	-- Unload the module for each host
 	local ok, err, count = true, nil, 0;
@@ -225,7 +226,7 @@ end
 function def_env.module:reload(name, hosts)
 	local mm = require "modulemanager";
 
-	hosts = get_hosts_set(hosts);
+	hosts = get_hosts_set(hosts, name);
 	
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
