@@ -33,8 +33,10 @@ local function publish(session, node, item)
 	-- store for the future
 	local user_data = data[bare];
 	if disable then
-		if user_data then user_data[node] = nil; end
-		if not next(user_data) then data[bare] = nil; end
+		if user_data then
+			user_data[node] = nil;
+			if not next(user_data) then data[bare] = nil; end
+		end
 	else
 		if not user_data then user_data = {}; data[bare] = user_data; end
 		user_data[node] = stanza;
