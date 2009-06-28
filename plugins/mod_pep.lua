@@ -7,11 +7,15 @@ local user_exists = require "core.usermanager".user_exists;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
+local type = type;
 local load_roster = require "core.rostermanager".load_roster;
+local sha1 = require "util.hashes".sha1;
+local base64 = require "util.encodings".base64.encode;
 
 local NULL = {};
 local data = {};
 local recipients = {};
+local hash_map = {};
 
 module:add_identity("pubsub", "pep");
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
@@ -37,9 +41,11 @@ local function publish(session, node, item)
 	end
 	
 	-- broadcast
-	for recipient in pairs(recipients[user] or NULL) do
-		stanza.attr.to = recipient;
-		core_post_stanza(session, stanza);
+	for recipient, notify in pairs(recipients[bare] or NULL) do
+		if notify[node] then
+			stanza.attr.to = recipient;
+			core_post_stanza(session, stanza);
+		end
 	end
 end
 
@@ -80,10 +86,10 @@ module:hook("presence/bare", function(event)
 		else
 			recipients[user] = recipients[user] or {};
 			recipients[user][recipient] = hash;
-			for node, message in pairs(data[user] or NULL) do
-				message.attr.to = stanza.attr.from;
-				origin.send(message);
-			end
+			origin.send(
+				st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
+					:query("http://jabber.org/protocol/disco#info")
+			);
 		end
 	end
 end, 10);
@@ -106,16 +112,83 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 	end
 end);
 
+local function calculate_hash(disco_info)
+	local identities, features, extensions = {}, {}, {};
+	for _, tag in pairs(disco_info) do
+		if tag.name == "identity" then
+			table.insert(identities, (tag.attr.category or "").."\0"..(tag.attr.type or "").."\0"..(tag.attr["xml:lang"] or "").."\0"..(tag.attr.name or ""));
+		elseif tag.name == "feature" then
+			table.insert(features, tag.attr.var or "");
+		elseif tag.name == "x" and tag.attr.xmlns == "jabber:x:data" then
+			local form = {};
+			local FORM_TYPE;
+			for _, field in pairs(tag.tags) do
+				if field.name == "field" and field.attr.var then
+					local values = {};
+					for _, val in pairs(field.tags) do
+						val = #val.tags == 0 and table.concat(val); -- FIXME use get_text?
+						if val then table.insert(values, val); end
+					end
+					table.sort(values);
+					if field.attr.var == "FORM_TYPE" then
+						FORM_TYPE = values[1];
+					elseif #values > 0 then
+						table.insert(form, field.attr.var.."\0"..table.concat(values, "<"));
+					else
+						table.insert(form, field.attr.var);
+					end
+				end
+			end
+			table.sort(form);
+			form = table.concat(form, "<");
+			if FORM_TYPE then form = FORM_TYPE.."\0"..form; end
+			table.insert(extensions, form);
+		end
+	end
+	table.sort(identities);
+	table.sort(features);
+	table.sort(extensions);
+	if #identities > 0 then identities = table.concat(identities, "<"):gsub("%z", "/").."<"; else identities = ""; end
+	if #features > 0 then features = table.concat(features, "<").."<"; else features = ""; end
+	if #extensions > 0 then extensions = table.concat(extensions, "<"):gsub("%z", "<").."<"; else extensions = ""; end
+	local S = identities..features..extensions;
+	local ver = base64(sha1(S));
+	return ver, S;
+end
+
 module:hook("iq/bare/disco", function(event)
 	local session, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "result" then
 		local disco = stanza.tags[1];
 		if disco and disco.name == "query" and disco.attr.xmlns == "http://jabber.org/protocol/disco#info" then
 			-- Process disco response
-			-- TODO check if waiting for recipient's response
-			local hash; -- TODO calculate hash
-			-- TODO update hash map
-			-- TODO set recipient's data to calculated data
+			local user = stanza.attr.to or (session.username..'@'..session.host);
+			local contact = stanza.attr.from;
+			local current = recipients[user] and recipients[user][contact];
+			if type(current) ~= "string" then return; end -- check if waiting for recipient's response
+			local ver = current;
+			if not string.find(current, "#") then
+				ver = calculate_hash(disco.tags); -- calculate hash
+			end
+			local notify = {};
+			for _, feature in pairs(disco.tags) do
+				if feature.name == "feature" and feature.attr.var then
+					local nfeature = feature.attr.var:match("^(.*)+notify$");
+					if nfeature then notify[nfeature] = true; end
+				end
+			end
+			hash_map[ver] = notify; -- update hash map
+			recipients[user][contact] = notify; -- set recipient's data to calculated data
+			-- send messages to recipient
+			local d = data[user];
+			if d then
+				for node, message in pairs(notify) do
+					if d[node] then
+						message.attr.to = stanza.attr.from;
+						session.send(message);
+					end
+				end
+			end
 		end
 	end
 end);
