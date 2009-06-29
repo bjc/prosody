@@ -151,7 +151,7 @@ function core_post_stanza(origin, stanza)
 			return;
 		end
 		if not modules_handle_stanza(h.host, origin, stanza) then
-			if stanza.attr.xmlns == "jabber:client" and stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
+			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 			end
 		end
