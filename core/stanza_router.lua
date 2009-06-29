@@ -139,7 +139,7 @@ function core_post_stanza(origin, stanza)
 	end
 
 	local event_data = {origin=origin, stanza=stanza};
-	if origin.full_jid then -- c2s connection
+	if origin.full_jid == stanza.attr.from then -- c2s connection
 		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
