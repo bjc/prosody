@@ -165,7 +165,7 @@ function streamopened(session, attr)
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
 	
 	send("<?xml version='1.0'?>");
-	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
 
 	if not hosts[session.host] then
 		-- We don't serve this host...
