@@ -54,8 +54,9 @@ local function publish_all(user, recipient, session)
 	local d = data[user];
 	local notify = recipients[user] and recipients[user][recipient];
 	if d and notify then
-		for node, message in pairs(notify) do
-			if d[node] then
+		for node in pairs(notify) do
+			local message = d[node];
+			if message then
 				message.attr.to = recipient;
 				session.send(message);
 			end
