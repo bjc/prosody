@@ -102,7 +102,7 @@ module:hook("presence/bare", function(event)
 			recipients[user] = recipients[user] or {};
 			if hash_map[hash] then
 				recipients[user][recipient] = hash_map[hash];
-				publish_all(user, recipient);
+				publish_all(user, recipient, origin);
 			else
 				recipients[user][recipient] = hash;
 				origin.send(
