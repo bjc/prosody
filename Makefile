@@ -6,6 +6,7 @@ CONFIG = $(DESTDIR)$(SYSCONFDIR)
 MODULES = $(DESTDIR)$(PREFIX)/lib/prosody/modules
 SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
 DATA = $(DESTDIR)$(DATADIR)
+MAN = $(DESTDIR)$(PREFIX)/share/man
 
 INSTALLEDSOURCE = $(PREFIX)/lib/prosody
 INSTALLEDCONFIG = $(SYSCONFDIR)
@@ -18,6 +19,7 @@ all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
 	install -m750 -d $(DATA)
+	install -d $(MAN)/man1
 	install -d $(CONFIG)/certs
 	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util $(SOURCE)/fallbacks
 	install -m755 ./prosody.install $(BIN)/prosody
@@ -29,6 +31,7 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 plugins/* $(MODULES)
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 plugins/* $(MODULES)
+	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
 	test -e $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
 	test -e prosody.version && install prosody.version $(SOURCE)/prosody.version || true
 	$(MAKE) install -C util-src
