@@ -17,9 +17,12 @@ CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 -- -- -- -- -- -- -- ---- -- -- -- -- -- -- -- --
 
 if CFG_SOURCEDIR then
-	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
-	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
 end
+
+package.path = package.path..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.lua";
+package.cpath = package.cpath..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.so";
 
 if CFG_DATADIR then
 	if os.getenv("HOME") then
