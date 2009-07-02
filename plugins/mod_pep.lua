@@ -193,7 +193,7 @@ module:hook("iq/bare/disco", function(event)
 			local notify = {};
 			for _, feature in pairs(disco.tags) do
 				if feature.name == "feature" and feature.attr.var then
-					local nfeature = feature.attr.var:match("^(.*)+notify$");
+					local nfeature = feature.attr.var:match("^(.*)%+notify$");
 					if nfeature then notify[nfeature] = true; end
 				end
 			end
