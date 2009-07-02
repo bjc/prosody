@@ -164,6 +164,8 @@ local function read_password()
 	end
 	return password;
 end
+
+local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
 local command = arg[1];
@@ -300,7 +302,7 @@ function commands.start(arg)
 				break;
 			elseif i == 5 then
 				show_message("Still waiting...");
-			elseif i >= 10 then
+			elseif i >= prosodyctl_timeout then
 				show_message("Prosody is still not running. Please give it some time or check your log files for errors.");
 				return 2;
 			end
@@ -370,7 +372,7 @@ function commands.stop(arg)
 				break;
 			elseif i == 5 then
 				show_message("Still waiting...");
-			elseif i >= 10 then
+			elseif i >= prosodyctl_timeout then
 				show_message("Prosody is still running. Please give it some time or check your log files for errors.");
 				return 2;
 			end
