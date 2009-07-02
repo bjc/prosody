@@ -62,7 +62,7 @@ end
 local function callback(username, host, datastore, data)
 	for _, f in ipairs(callbacks) do
 		username, host, datastore, data = f(username, host, datastore, data);
-		if not username then break; end
+		if username == false then break; end
 	end
 	
 	return username, host, datastore, data;
@@ -123,7 +123,7 @@ function store(username, host, datastore, data)
 	end
 
 	username, host, datastore, data = callback(username, host, datastore, data);
-	if not username then
+	if username == false then
 		return true; -- Don't save this data at all
 	end
 
@@ -147,7 +147,7 @@ end
 
 function list_append(username, host, datastore, data)
 	if not data then return; end
-	if callback and callback(username, host, datastore) then return true; end
+	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a+");
 	if not f then
@@ -165,7 +165,7 @@ function list_store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
-	if callback and callback(username, host, datastore) then return true; end
+	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "w+");
 	if not f then
