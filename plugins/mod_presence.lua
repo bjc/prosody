@@ -37,21 +37,6 @@ function core_route_stanza(origin, stanza)
 	_core_route_stanza(origin, stanza);
 end
 
-function handle_presence(origin, stanza, from_bare, to_bare, core_route_stanza, inbound)
-	local type = stanza.attr.type;
-	if type and type ~= "unavailable" and type ~= "error" then
-		if inbound then
-			handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		else
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		end
-	elseif not inbound and not stanza.attr.to then
-		handle_normal_presence(origin, stanza, core_route_stanza);
-	else
-		core_route_stanza(origin, stanza);
-	end
-end
-
 local function select_top_resources(user)
 	local priority = 0;
 	local recipients = {};
@@ -266,39 +251,6 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		end
 	end -- discard any other type
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
-end
-
-local function presence_handler(data)
-	local origin, stanza = data.origin, data.stanza;
-	local to = stanza.attr.to;
-	local node, host = jid_split(to);
-	local to_bare = jid_bare(to);
-	local from_bare = jid_bare(stanza.attr.from);
-	if origin.type == "c2s" then
-		if to ~= nil and not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
-			origin.directed = origin.directed or {};
-			origin.directed[to] = true; -- FIXME does it make more sense to add to_bare rather than to?
-		end
-		if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		elseif not to then
-			handle_normal_presence(origin, stanza, core_route_stanza);
-		else
-			core_route_stanza(origin, stanza);
-		end
-	elseif (origin.type == "s2sin" or origin.type == "component") and hosts[host] then
-		if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
-			handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza);
-		else
-			core_route_stanza(origin, stanza);
-		end
-	end
-	return true;
-end
-
-prosody.events.add_handler(module:get_host().."/presence", presence_handler);
-module.unload = function()
-	prosody.events.remove_handler(module:get_host().."/presence", presence_handler);
 end
 
 local outbound_presence_handler = function(data)
