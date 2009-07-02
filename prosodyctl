@@ -104,6 +104,7 @@ require "core.eventmanager".fire_event("server-starting");
 require "core.modulemanager"
 
 require "util.prosodyctl"
+require "socket"
 -----------------------
 
 function show_message(msg, ...)
@@ -291,7 +292,24 @@ function commands.start(arg)
 	end
 	
 	local ok, ret = prosodyctl.start();
-	if ok then return 0; end
+	if ok then
+		local i=1;
+		while true do
+			local ok, running = prosodyctl.isrunning();
+			if ok and running then
+				break;
+			elseif i == 5 then
+				show_message("Still waiting...");
+			elseif i >= 10 then
+				show_message("Prosody is still not running. Please give it some time or check your log files for errors.");
+				return 2;
+			end
+			socket.sleep(0.5);
+			i = i + 1;
+		end
+		show_message("Started");
+		return 0;
+	end
 
 	show_message("Failed to start Prosody");
 	show_message(error_messages[ret])	
@@ -344,7 +362,24 @@ function commands.stop(arg)
 	end
 	
 	local ok, ret = prosodyctl.stop();
-	if ok then return 0; end
+	if ok then
+		local i=1;
+		while true do
+			local ok, running = prosodyctl.isrunning();
+			if ok and not running then
+				break;
+			elseif i == 5 then
+				show_message("Still waiting...");
+			elseif i >= 10 then
+				show_message("Prosody is still running. Please give it some time or check your log files for errors.");
+				return 2;
+			end
+			socket.sleep(0.5);
+			i = i + 1;
+		end
+		show_message("Stopped");
+		return 0;
+	end
 
 	show_message(error_messages[ret]);
 	return 1;
