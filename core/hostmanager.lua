@@ -27,7 +27,12 @@ end
 eventmanager.add_event_hook("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", connected = true, sessions = {}, host = host, s2sout = {}, events = events_new() };
+	hosts[host] = {type = "local", connected = true, sessions = {}, 
+	               host = host, s2sout = {}, events = events_new(), 
+	               disallow_s2s = configmanager.get(host, "core", "disallow_s2s") 
+	                 or (configmanager.get(host, "core", "anonymous_login") 
+	                     and (configmanager.get(host, "core", "disallow_s2s") ~= false))
+	              };
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
