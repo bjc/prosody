@@ -238,7 +238,7 @@ function try_connect(host_session, connect_host, connect_port)
 	conn:settimeout(0);
 	local success, err = conn:connect(connect_host, connect_port);
 	if not success and err ~= "timeout" then
-		log("warn", "s2s connect() failed: %s", err);
+		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host, connect_port, err);
 		return false;
 	end
 	
