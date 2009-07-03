@@ -132,6 +132,7 @@ function bind_resource(session, resource)
 				};
 				if not next(sessions) then
 					hosts[session.host].sessions[session.username] = { sessions = sessions };
+					bare_sessions[session.username.."@"..session.host] = hosts[session.host].sessions[session.username];
 				end
 			end
 			if increment and sessions[resource] then
