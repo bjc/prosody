@@ -173,12 +173,16 @@ function core_route_stanza(origin, stanza)
 		core_post_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
 		-- Remote host
-		local xmlns = stanza.attr.xmlns;
-		--stanza.attr.xmlns = "jabber:server";
-		stanza.attr.xmlns = nil;
-		log("debug", "sending s2s stanza: %s", tostring(stanza));
-		send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
-		stanza.attr.xmlns = xmlns; -- reset
+		if not hosts[from_host].disallow_s2s then
+			local xmlns = stanza.attr.xmlns;
+			--stanza.attr.xmlns = "jabber:server";
+			stanza.attr.xmlns = nil;
+			log("debug", "sending s2s stanza: %s", tostring(stanza));
+			send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
+			stanza.attr.xmlns = xmlns; -- reset
+		else
+			core_route_stanza(hosts[from_host], st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote servers is not allowed"));
+		end
 	elseif origin.type == "component" or origin.type == "local" then
 		-- Route via s2s for components and modules
 		log("debug", "Routing outgoing stanza for %s to %s", from_host, host);
