@@ -62,88 +62,84 @@ end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
 	local roster = origin.roster;
-	if roster then
-		for jid, item in pairs(roster) do -- broadcast to all interested contacts
-			if item.subscription == "both" or item.subscription == "from" then
+	for jid, item in pairs(roster) do -- broadcast to all interested contacts
+		if item.subscription == "both" or item.subscription == "from" then
+			stanza.attr.to = jid;
+			core_route_stanza(origin, stanza);
+		end
+	end
+	local node, host = origin.username, origin.host;
+	for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
+		if res ~= origin and res.presence then -- to resource
+			stanza.attr.to = res.full_jid;
+			core_route_stanza(origin, stanza);
+		end
+	end
+	if stanza.attr.type == nil and not origin.presence then -- initial presence
+		local probe = st.presence({from = origin.full_jid, type = "probe"});
+		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
+			if item.subscription == "both" or item.subscription == "to" then
+				probe.attr.to = jid;
+				core_route_stanza(origin, probe);
+			end
+		end
+		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
+			if res ~= origin and res.presence then
+				res.presence.attr.to = origin.full_jid;
+				core_route_stanza(res, res.presence);
+				res.presence.attr.to = nil;
+			end
+		end
+		if roster.pending then -- resend incoming subscription requests
+			for jid in pairs(roster.pending) do
+				origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+			end
+		end
+		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
+		for jid, item in pairs(roster) do -- resend outgoing subscription requests
+			if item.ask then
+				request.attr.to = jid;
+				core_route_stanza(origin, request);
+			end
+		end
+		local offline = offlinemanager.load(node, host);
+		if offline then
+			for _, msg in ipairs(offline) do
+				origin.send(msg); -- FIXME do we need to modify to/from in any way?
+			end
+			offlinemanager.deleteAll(node, host);
+		end
+	end
+	if stanza.attr.type == "unavailable" then
+		origin.presence = nil;
+		if origin.priority then
+			origin.priority = nil;
+			recalc_resource_map(origin);
+		end
+		if origin.directed then
+			for jid in pairs(origin.directed) do
 				stanza.attr.to = jid;
 				core_route_stanza(origin, stanza);
 			end
+			origin.directed = nil;
 		end
-		local node, host = origin.username, origin.host;
-		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
-			if res ~= origin and res.presence then -- to resource
-				stanza.attr.to = res.full_jid;
-				core_route_stanza(origin, stanza);
-			end
-		end
-		if stanza.attr.type == nil and not origin.presence then -- initial presence
-			local probe = st.presence({from = origin.full_jid, type = "probe"});
-			for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
-				if item.subscription == "both" or item.subscription == "to" then
-					probe.attr.to = jid;
-					core_route_stanza(origin, probe);
-				end
-			end
-			for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
-				if res ~= origin and res.presence then
-					res.presence.attr.to = origin.full_jid;
-					core_route_stanza(res, res.presence);
-					res.presence.attr.to = nil;
-				end
-			end
-			if roster.pending then -- resend incoming subscription requests
-				for jid in pairs(roster.pending) do
-					origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
-				end
-			end
-			local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
-			for jid, item in pairs(roster) do -- resend outgoing subscription requests
-				if item.ask then
-					request.attr.to = jid;
-					core_route_stanza(origin, request);
-				end
-			end
-			local offline = offlinemanager.load(node, host);
-			if offline then
-				for _, msg in ipairs(offline) do
-					origin.send(msg); -- FIXME do we need to modify to/from in any way?
-				end
-				offlinemanager.deleteAll(node, host);
-			end
-		end
-		if stanza.attr.type == "unavailable" then
-			origin.presence = nil;
-			if origin.priority then
-				origin.priority = nil;
-				recalc_resource_map(origin);
-			end
-			if origin.directed then
-				for jid in pairs(origin.directed) do
-					stanza.attr.to = jid;
-					core_route_stanza(origin, stanza);
-				end
-				origin.directed = nil;
-			end
-		else
-			origin.presence = stanza;
-			local priority = stanza:child_with_name("priority");
-			if priority and #priority > 0 then
-				priority = t_concat(priority);
-				if s_find(priority, "^[+-]?[0-9]+$") then
-					priority = tonumber(priority);
-					if priority < -128 then priority = -128 end
-					if priority > 127 then priority = 127 end
-				else priority = 0; end
-			else priority = 0; end
-			if origin.priority ~= priority then
-				origin.priority = priority;
-				recalc_resource_map(origin);
-			end
-		end
-		stanza.attr.to = nil; -- reset it
 	else
-		log("warn", "presence recieved from client with no roster");
+		origin.presence = stanza;
+		local priority = stanza:child_with_name("priority");
+		if priority and #priority > 0 then
+			priority = t_concat(priority);
+			if s_find(priority, "^[+-]?[0-9]+$") then
+				priority = tonumber(priority);
+				if priority < -128 then priority = -128 end
+				if priority > 127 then priority = 127 end
+			else priority = 0; end
+		else priority = 0; end
+		if origin.priority ~= priority then
+			origin.priority = priority;
+			recalc_resource_map(origin);
+		end
 	end
+	stanza.attr.to = nil; -- reset it
 end
 
 function send_presence_of_available_resources(user, host, jid, recipient_session, core_route_stanza)
