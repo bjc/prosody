@@ -238,7 +238,7 @@ function try_connect(host_session, connect_host, connect_port)
 	conn:settimeout(0);
 	local success, err = conn:connect(connect_host, connect_port);
 	if not success and err ~= "timeout" then
-		log("warn", "s2s connect() failed: %s", err);
+		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host, connect_port, err);
 		return false;
 	end
 	
@@ -253,7 +253,7 @@ function try_connect(host_session, connect_host, connect_port)
 	local w = conn.write;
 	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
-	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
+	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
 	return true;
 end

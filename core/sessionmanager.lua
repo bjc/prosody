@@ -40,7 +40,7 @@ module "sessionmanager"
 local open_sessions = 0;
 
 function new_session(conn)
-	local session = { conn = conn,  priority = 0, type = "c2s_unauthed", conntime = gettime() };
+	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
 	if true then
 		session.trace = newproxy(true);
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
@@ -56,17 +56,9 @@ end
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
 	
-	-- Send unavailable presence
-	if session.presence then
-		local pres = st.presence{ type = "unavailable" };
-		if (not err) or err == "closed" then err = "connection closed"; end
-		pres:tag("status"):text("Disconnected: "..err):up();
-		session:dispatch_stanza(pres);
-	end
-	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
-		hosts[session.host].events.fire_event("resource-unbind", session);
+		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
 
 		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
@@ -132,6 +124,7 @@ function bind_resource(session, resource)
 				};
 				if not next(sessions) then
 					hosts[session.host].sessions[session.username] = { sessions = sessions };
+					bare_sessions[session.username.."@"..session.host] = hosts[session.host].sessions[session.username];
 				end
 			end
 			if increment and sessions[resource] then
@@ -151,7 +144,7 @@ function bind_resource(session, resource)
 	
 	session.roster = rm_load_roster(session.username, session.host);
 	
-	hosts[session.host].events.fire_event("resource-bind", session);
+	hosts[session.host].events.fire_event("resource-bind", {session=session});
 	
 	return true;
 end
@@ -165,7 +158,7 @@ function streamopened(session, attr)
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
 	
 	send("<?xml version='1.0'?>");
-	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0'>", session.streamid, session.host));
+	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
 
 	if not hosts[session.host] then
 		-- We don't serve this host...

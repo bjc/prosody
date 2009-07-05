@@ -54,8 +54,9 @@ local function publish_all(user, recipient, session)
 	local d = data[user];
 	local notify = recipients[user] and recipients[user][recipient];
 	if d and notify then
-		for node, message in pairs(notify) do
-			if d[node] then
+		for node in pairs(notify) do
+			local message = d[node];
+			if message then
 				message.attr.to = recipient;
 				session.send(message);
 			end
@@ -101,7 +102,7 @@ module:hook("presence/bare", function(event)
 			recipients[user] = recipients[user] or {};
 			if hash_map[hash] then
 				recipients[user][recipient] = hash_map[hash];
-				publish_all(user, recipient);
+				publish_all(user, recipient, origin);
 			else
 				recipients[user][recipient] = hash;
 				origin.send(
@@ -192,7 +193,7 @@ module:hook("iq/bare/disco", function(event)
 			local notify = {};
 			for _, feature in pairs(disco.tags) do
 				if feature.name == "feature" and feature.attr.var then
-					local nfeature = feature.attr.var:match("^(.*)+notify$");
+					local nfeature = feature.attr.var:match("^(.*)%+notify$");
 					if nfeature then notify[nfeature] = true; end
 				end
 			end

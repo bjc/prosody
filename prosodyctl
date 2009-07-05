@@ -95,6 +95,7 @@ local error_messages = setmetatable({
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no pidfile option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		["no-such-method"] = "This module has no commands";
+		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 hosts = {};
@@ -104,6 +105,7 @@ require "core.eventmanager".fire_event("server-starting");
 require "core.modulemanager"
 
 require "util.prosodyctl"
+require "socket"
 -----------------------
 
 function show_message(msg, ...)
@@ -163,6 +165,8 @@ local function read_password()
 	end
 	return password;
 end
+
+local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
 local command = arg[1];
@@ -291,7 +295,24 @@ function commands.start(arg)
 	end
 	
 	local ok, ret = prosodyctl.start();
-	if ok then return 0; end
+	if ok then
+		local i=1;
+		while true do
+			local ok, running = prosodyctl.isrunning();
+			if ok and running then
+				break;
+			elseif i == 5 then
+				show_message("Still waiting...");
+			elseif i >= prosodyctl_timeout then
+				show_message("Prosody is still not running. Please give it some time or check your log files for errors.");
+				return 2;
+			end
+			socket.sleep(0.5);
+			i = i + 1;
+		end
+		show_message("Started");
+		return 0;
+	end
 
 	show_message("Failed to start Prosody");
 	show_message(error_messages[ret])	
@@ -344,7 +365,24 @@ function commands.stop(arg)
 	end
 	
 	local ok, ret = prosodyctl.stop();
-	if ok then return 0; end
+	if ok then
+		local i=1;
+		while true do
+			local ok, running = prosodyctl.isrunning();
+			if ok and not running then
+				break;
+			elseif i == 5 then
+				show_message("Still waiting...");
+			elseif i >= prosodyctl_timeout then
+				show_message("Prosody is still running. Please give it some time or check your log files for errors.");
+				return 2;
+			end
+			socket.sleep(0.5);
+			i = i + 1;
+		end
+		show_message("Stopped");
+		return 0;
+	end
 
 	show_message(error_messages[ret]);
 	return 1;
