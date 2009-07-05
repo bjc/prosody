@@ -62,9 +62,8 @@ end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
 	if origin.roster then
-		for jid in pairs(origin.roster) do -- broadcast to all interested contacts
-			local subscription = origin.roster[jid].subscription;
-			if subscription == "both" or subscription == "from" then
+		for jid, item in pairs(origin.roster) do -- broadcast to all interested contacts
+			if item.subscription == "both" or item.subscription == "from" then
 				stanza.attr.to = jid;
 				core_route_stanza(origin, stanza);
 			end
@@ -78,9 +77,8 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 		if stanza.attr.type == nil and not origin.presence then -- initial presence
 			local probe = st.presence({from = origin.full_jid, type = "probe"});
-			for jid in pairs(origin.roster) do -- probe all contacts we are subscribed to
-				local subscription = origin.roster[jid].subscription;
-				if subscription == "both" or subscription == "to" then
+			for jid, item in pairs(origin.roster) do -- probe all contacts we are subscribed to
+				if item.subscription == "both" or item.subscription == "to" then
 					probe.attr.to = jid;
 					core_route_stanza(origin, probe);
 				end
