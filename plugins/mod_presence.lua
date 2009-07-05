@@ -62,16 +62,16 @@ end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
 	local roster = origin.roster;
-	for jid, item in pairs(roster) do -- broadcast to all interested contacts
-		if item.subscription == "both" or item.subscription == "from" then
-			stanza.attr.to = jid;
-			core_route_stanza(origin, stanza);
-		end
-	end
 	local node, host = origin.username, origin.host;
 	for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
 		if res ~= origin and res.presence then -- to resource
 			stanza.attr.to = res.full_jid;
+			core_route_stanza(origin, stanza);
+		end
+	end
+	for jid, item in pairs(roster) do -- broadcast to all interested contacts
+		if item.subscription == "both" or item.subscription == "from" then
+			stanza.attr.to = jid;
 			core_route_stanza(origin, stanza);
 		end
 	end
