@@ -119,13 +119,10 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 				recalc_resource_map(origin);
 			end
 			if origin.directed then
-				local old_from = stanza.attr.from;
-				stanza.attr.from = origin.full_jid;
 				for jid in pairs(origin.directed) do
 					stanza.attr.to = jid;
 					core_route_stanza(origin, stanza);
 				end
-				stanza.attr.from = old_from;
 				origin.directed = nil;
 			end
 		else
