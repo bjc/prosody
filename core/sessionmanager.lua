@@ -56,14 +56,6 @@ end
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
 	
-	-- Send unavailable presence
-	if session.presence then
-		local pres = st.presence{ type = "unavailable" };
-		if (not err) or err == "closed" then err = "connection closed"; end
-		pres:tag("status"):text("Disconnected: "..err):up();
-		session:dispatch_stanza(pres);
-	end
-	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
 		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
