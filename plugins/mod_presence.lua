@@ -324,5 +324,14 @@ module:hook("resource-unbind", function(event)
 		if not(err) or err == "closed" then err = "connection closed"; end
 		pres:tag("status"):text("Disconnected: "..err):up();
 		session:dispatch_stanza(pres);
+	elseif session.directed then
+		local pres = st.presence{ type = "unavailable" };
+		if not(err) or err == "closed" then err = "connection closed"; end
+		pres:tag("status"):text("Disconnected: "..err):up();
+		for jid in pairs(session.directed) do
+			pres.attr.to = jid;
+			core_route_stanza(session, pres);
+		end
+		session.directed = nil;
 	end
 end);
