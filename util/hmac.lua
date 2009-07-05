@@ -1,15 +1,18 @@
 local hashes = require "util.hashes"
 local xor = require "bit".bxor
 
+local t_insert, t_concat = table.insert, table.concat;
+local s_char = string.char;
+
 module "hmac"
 
 local function arraystr(array)
     local t = {}
-    for i = 1,table.getn(array) do
-        table.insert(t, string.char(array[i]))
+    for i = 1,#array do
+        t_insert(t, s_char(array[i]))
     end
 
-    return table.concat(t)
+    return t_concat(t)
 end
 
 --[[
