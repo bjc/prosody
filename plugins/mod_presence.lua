@@ -209,7 +209,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	log("debug", "inbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
 	if stanza.attr.type == "probe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
+			if 0 == send_presence_of_available_resources(node, host, st_from, origin, core_route_stanza) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
