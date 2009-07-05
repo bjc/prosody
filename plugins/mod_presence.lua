@@ -61,8 +61,9 @@ local function recalc_resource_map(origin)
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
-	if origin.roster then
-		for jid, item in pairs(origin.roster) do -- broadcast to all interested contacts
+	local roster = origin.roster;
+	if roster then
+		for jid, item in pairs(roster) do -- broadcast to all interested contacts
 			if item.subscription == "both" or item.subscription == "from" then
 				stanza.attr.to = jid;
 				core_route_stanza(origin, stanza);
@@ -77,7 +78,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 		if stanza.attr.type == nil and not origin.presence then -- initial presence
 			local probe = st.presence({from = origin.full_jid, type = "probe"});
-			for jid, item in pairs(origin.roster) do -- probe all contacts we are subscribed to
+			for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 				if item.subscription == "both" or item.subscription == "to" then
 					probe.attr.to = jid;
 					core_route_stanza(origin, probe);
@@ -90,13 +91,13 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 					res.presence.attr.to = nil;
 				end
 			end
-			if origin.roster.pending then -- resend incoming subscription requests
-				for jid in pairs(origin.roster.pending) do
+			if roster.pending then -- resend incoming subscription requests
+				for jid in pairs(roster.pending) do
 					origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
 				end
 			end
 			local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
-			for jid, item in pairs(origin.roster) do -- resend outgoing subscription requests
+			for jid, item in pairs(roster) do -- resend outgoing subscription requests
 				if item.ask then
 					request.attr.to = jid;
 					core_route_stanza(origin, request);
