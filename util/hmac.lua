@@ -4,7 +4,7 @@ local xor = require "bit".bxor
 module "hmac"
 
 local function arraystr(array)
-    t = {}
+    local t = {}
     for i = 1,table.getn(array) do
         table.insert(t, string.char(array[i]))
     end
