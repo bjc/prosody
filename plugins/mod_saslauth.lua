@@ -72,7 +72,7 @@ local function password_callback(node, hostname, realm, mechanism, decoder)
 		if mechanism == "PLAIN" then
 			return func, password;
 		elseif mechanism == "DIGEST-MD5" then
-			if decoder then node, hostname, password = decoder(node), decoder(hostname), decoder(password); end
+			if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
 			return func, md5(node..":"..realm..":"..password);
 		end
 	end
