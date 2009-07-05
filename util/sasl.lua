@@ -19,6 +19,7 @@ local st = require "util.stanza";
 local generate_uuid = require "util.uuid".generate;
 local t_insert, t_concat = table.insert, table.concat;
 local to_byte, to_char = string.byte, string.char;
+local to_unicode = require "util.encodings".idna.to_unicode;
 local s_match = string.match;
 local gmatch = string.gmatch
 local string = string
@@ -199,7 +200,7 @@ local function new_digest_md5(realm, password_handler)
 			
 			--TODO maybe realm support
 			self.username = response["username"];
-			local password_encoding, Y = self.password_handler(response["username"], domain, response["realm"], "DIGEST-MD5", decoder);
+			local password_encoding, Y = self.password_handler(response["username"], to_unicode(domain), response["realm"], "DIGEST-MD5", decoder);
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			local A1 = "";
