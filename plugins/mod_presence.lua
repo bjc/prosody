@@ -315,3 +315,14 @@ module:hook("presence/full", function(data)
 	end -- resource not online, discard
 	return true;
 end);
+
+module:hook("resource-unbind", function(event)
+	local session, err = event.session, event.error;
+	-- Send unavailable presence
+	if session.presence then
+		local pres = st.presence{ type = "unavailable" };
+		if not(err) or err == "closed" then err = "connection closed"; end
+		pres:tag("status"):text("Disconnected: "..err):up();
+		session:dispatch_stanza(pres);
+	end
+end);
