@@ -17,6 +17,7 @@ local connlisteners_register = require "net.connlisteners".register;
 local console_listener = { default_port = 5582; default_mode = "*l"; };
 
 require "util.iterators";
+local jid_bare = require "util.jid".bare;
 local set, array = require "util.set", require "util.array";
 
 local commands = {};
@@ -320,6 +321,16 @@ function def_env.c2s:show_secure(match_jid)
 	return true, "Total: "..count.." secure client connections";
 end
 
+function def_env.c2s:close(match_jid)
+	local print, count = self.session.print, 0;
+	show_c2s(function (jid, session)
+		if jid == match_jid or jid_bare(jid) == match_jid then
+			count = count + 1;
+			session:close();
+		end
+	end);
+	return true, "Total: "..count.." sessions closed";
+end
 
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
