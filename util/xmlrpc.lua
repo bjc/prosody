@@ -66,6 +66,14 @@ function create_error_response(faultCode, faultString)
 	return stanza;
 end
 
+function create_request(method_name, object)
+	local stanza = st.stanza("methodCall")
+		:tag("methodName"):text(method_name):up()
+		:tag("params"):tag("param"):tag("value");
+	_lua_to_xmlrpc(stanza, object);
+	stanza:up():up():up();
+	return stanza;
+end
 
 local _xmlrpc_to_lua;
 local int_parse = function(stanza)
