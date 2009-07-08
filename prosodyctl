@@ -125,17 +125,21 @@ end
 
 local function getchar(n)
 	os.execute("stty raw -echo");
-	local char = io.read(n or 1);
+	local ok, char = pcall(io.read, n or 1);
 	os.execute("stty sane");
-	return char;
+	if ok then
+		return char;
+	end
 end
 	
 local function getpass()
 	os.execute("stty -echo");
-	local pass = io.read("*l");
+	local ok, pass = pcall(io.read, "*l");
 	os.execute("stty sane");
 	io.write("\n");
-	return pass;
+	if ok then
+		return pass;
+	end
 end
 
 function show_yesno(prompt)
