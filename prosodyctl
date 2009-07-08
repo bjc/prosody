@@ -444,7 +444,7 @@ end
 
 ---------------------
 
-if command:match("^mod_") then -- Is a command in a module
+if command and command:match("^mod_") then -- Is a command in a module
 	local module_name = command:match("^mod_(.+)");
 	local ret, err = modulemanager.load("*", module_name);
 	if not ret then
