@@ -161,6 +161,24 @@ function def_env.server:reload()
 	return true, "Server reloaded";
 end
 
+function def_env.server:version()
+	return true, tostring(prosody.version or "unknown");
+end
+
+function def_env.server:uptime()
+	local t = os.time()-prosody.start_time;
+	local seconds = t%60;
+	t = (t - seconds)/60;
+	local minutes = t%60;
+	t = (t - minutes)/60;
+	local hours = t%24;
+	t = (t - hours)/24;
+	local days = t;
+	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
+		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
+		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
+end
+
 def_env.module = {};
 
 local function get_hosts_set(hosts, module)
