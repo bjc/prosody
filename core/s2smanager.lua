@@ -142,6 +142,7 @@ function new_outgoing(from_host, to_host)
 			host_session.log = log;
 		end
 		
+		-- This is the first call, can't fail (the first step is DNS lookup)
 		attempt_connection(host_session);
 		
 		if not host_session.sends2s then		
@@ -195,7 +196,13 @@ function attempt_connection(host_session, err)
 				log("debug", to_host.." has no SRV records, falling back to A");
 			end
 			-- Try with SRV, or just the plain hostname if no SRV
-			return try_connect(host_session, connect_host, connect_port);
+			local ok, err = try_connect(host_session, connect_host, connect_port);
+			if not ok then
+				if not attempt_connection(host_session, err) then
+					-- No more attempts will be made
+					destroy_session(host_session);
+				end
+			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
 		
 		-- Set handler for DNS timeout
@@ -239,7 +246,7 @@ function try_connect(host_session, connect_host, connect_port)
 	local success, err = conn:connect(connect_host, connect_port);
 	if not success and err ~= "timeout" then
 		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host, connect_port, err);
-		return false;
+		return false, err;
 	end
 	
 	local cl = connlisteners_get("xmppserver");
