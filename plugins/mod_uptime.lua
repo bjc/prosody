@@ -13,7 +13,7 @@ local st = require "util.stanza"
 local jid_split = require "util.jid".split;
 local t_concat = table.concat;
 
-local start_time = os.time();
+local start_time = prosody.start_time;
 
 module:add_feature("jabber:iq:last");
 
