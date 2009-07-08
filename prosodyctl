@@ -158,6 +158,10 @@ local function read_password()
 	while true do
 		io.write("Enter new password: ");
 		password = getpass();
+		if not password then
+			show_message("No password - cancelled");
+			return;
+		end
 		io.write("Retype new password: ");
 		if getpass() ~= password then
 			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
