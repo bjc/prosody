@@ -234,6 +234,8 @@ end
 -- And lock now...
 prosody.lock_globals();
 
+prosody.start_time = os.time();
+
 eventmanager.fire_event("server-started");
 prosody.events.fire_event("server-started");
 
