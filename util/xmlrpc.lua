@@ -14,6 +14,7 @@ local t_concat = table.concat;
 local t_insert = table.insert;
 local tostring = tostring;
 local tonumber = tonumber;
+local select = select;
 local st = require "util.stanza";
 
 module "xmlrpc"
@@ -45,12 +46,17 @@ local map = {
 		stanza:tag("nil"):up();
 	end;
 };
-_lua_to_xmlrpc = function(stanza, object)
-	local h = map[type(object)];
-	if h then
-		h(stanza, object);
-	else
-		error("Type not supported by XML-RPC: " .. type(object));
+_lua_to_xmlrpc = function(stanza, ...)
+	for i=1,select('#', ...) do
+		stanza:tag("param"):tag("value");
+		local object = select(i, ...);
+		local h = map[type(object)];
+		if h then
+			h(stanza, object);
+		else
+			error("Type not supported by XML-RPC: " .. type(object));
+		end
+		stanza:up():up();
 	end
 end
 function create_response(object)
@@ -66,11 +72,11 @@ function create_error_response(faultCode, faultString)
 	return stanza;
 end
 
-function create_request(method_name, object)
+function create_request(method_name, ...)
 	local stanza = st.stanza("methodCall")
 		:tag("methodName"):text(method_name):up()
-		:tag("params"):tag("param"):tag("value");
-	_lua_to_xmlrpc(stanza, object);
+		:tag("params");
+	_lua_to_xmlrpc(stanza, ...);
 	stanza:up():up():up();
 	return stanza;
 end
