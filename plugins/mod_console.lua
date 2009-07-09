@@ -134,6 +134,7 @@ function commands.bye(session)
 	session.print("See you! :)");
 	session.disconnect();
 end
+commands.quit, commands.exit = commands.bye, commands.bye;
 
 commands["!"] = function (session, data)
 	if data:match("^!!") then
