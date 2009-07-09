@@ -24,6 +24,8 @@ local commands = {};
 local def_env = {};
 local default_env_mt = { __index = def_env };
 
+prosody.console = { commands = commands, env = def_env };
+
 local function redirect_output(_G, session)
 	return setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end, __newindex = function (t, k, v) rawset(_G, k, v); end });
 end
