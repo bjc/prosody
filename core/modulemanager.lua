@@ -59,35 +59,33 @@ local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
-	if config.get(host, "core", "modules_enable") == false then
-		return; -- Only load for hosts, not components, etc.
-	end
-
-	-- Load modules from global section
-	local modules_enabled = config.get("*", "core", "modules_enabled");
-	local modules_disabled = config.get(host, "core", "modules_disabled");
-	local disabled_set = {};
-	if modules_enabled then
-		if modules_disabled then
-			for _, module in ipairs(modules_disabled) do
-				disabled_set[module] = true;
+	if config.get(host, "core", "load_global_modules") ~= false then
+		-- Load modules from global section
+		local modules_enabled = config.get("*", "core", "modules_enabled");
+		local modules_disabled = config.get(host, "core", "modules_disabled");
+		local disabled_set = {};
+		if modules_enabled then
+			if modules_disabled then
+				for _, module in ipairs(modules_disabled) do
+					disabled_set[module] = true;
+				end
 			end
-		end
-		for _, module in ipairs({"presence", "message", "iq"}) do
-			if not disabled_set[module] then
-				load(host, module);
+			for _, module in ipairs({"presence", "message", "iq"}) do
+				if not disabled_set[module] then
+					load(host, module);
+				end
 			end
-		end
-		for _, module in ipairs(modules_enabled) do
-			if not disabled_set[module] and not is_loaded(host, module) then
-				load(host, module);
+			for _, module in ipairs(modules_enabled) do
+				if not disabled_set[module] and not is_loaded(host, module) then
+					load(host, module);
+				end
 			end
 		end
 	end
-
+	
 	-- Load modules from just this host
 	local modules_enabled = config.get(host, "core", "modules_enabled");
-	if modules_enabled then
+	if modules_enabled and modules_enabled ~= config.get("*", "core", "modules_enabled") then
 		for _, module in pairs(modules_enabled) do
 			if not is_loaded(host, module) then
 				load(host, module);
