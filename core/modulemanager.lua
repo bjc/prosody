@@ -33,6 +33,8 @@ local rawget = rawget;
 local error = error;
 local tostring = tostring;
 
+local autoload_modules = {"presence", "message", "iq"};
+
 -- We need this to let modules access the real global namespace
 local _G = _G;
 
@@ -70,7 +72,7 @@ function load_modules_for_host(host)
 					disabled_set[module] = true;
 				end
 			end
-			for _, module in ipairs({"presence", "message", "iq"}) do
+			for _, module in ipairs(autoload_modules) do
 				if not disabled_set[module] then
 					load(host, module);
 				end
