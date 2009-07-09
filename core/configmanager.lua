@@ -123,7 +123,7 @@ do
 		function env.Component(name)
 			set(name, "core", "component_module", "component");
 			-- Don't load the global modules by default
-			set(name, "core", "modules_enable", false);
+			set(name, "core", "load_global_modules", false);
 			rawset(env, "__currenthost", name);
 	
 			return function (module)
