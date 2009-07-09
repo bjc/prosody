@@ -65,7 +65,10 @@ function console_listener.listener(conn, data)
 		(function(session, data)
 			local useglobalenv;
 			
-			if data:match("[!.]$") then
+			if data:match("^>") then
+				data = data:gsub("^>", "");
+				useglobalenv = true;
+			else
 				local command = data:lower();
 				command = data:match("^%w+") or data:match("%p");
 				if commands[command] then
@@ -74,11 +77,6 @@ function console_listener.listener(conn, data)
 				end
 			end
 
-			if data:match("^>") then
-				data = data:gsub("^>", "");
-				useglobalenv = true;
-			end
-			
 			session.env._ = data;
 			
 			local chunk, err = loadstring("return "..data);
@@ -96,6 +94,11 @@ function console_listener.listener(conn, data)
 			setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
 			
 			local ranok, taskok, message = pcall(chunk);
+			
+			if not (ranok or message or useglobalenv) and commands[data:lower()] then
+				commands[data:lower()](session, data);
+				return;
+			end
 			
 			if not ranok then
 				session.print("Fatal error while running command, it did not complete");
