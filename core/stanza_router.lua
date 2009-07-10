@@ -173,7 +173,10 @@ function core_route_stanza(origin, stanza)
 		core_post_stanza(origin, stanza);
 	elseif origin.type == "c2s" then
 		-- Remote host
-		if not hosts[from_host].disallow_s2s then
+		if not hosts[from_host] then
+			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
+		end
+		if (not hosts[from_host]) or (not hosts[from_host].disallow_s2s) then
 			local xmlns = stanza.attr.xmlns;
 			--stanza.attr.xmlns = "jabber:server";
 			stanza.attr.xmlns = nil;
