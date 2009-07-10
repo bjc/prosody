@@ -33,7 +33,7 @@ module "sasl"
 local function new_plain(realm, password_handler)
 	local object = { mechanism = "PLAIN", realm = realm, password_handler = password_handler}
 	function object.feed(self, message)
-        
+	
 		if message == "" or message == nil then return "failure", "malformed-request" end
 		local response = message
 		local authorization = s_match(response, "([^&%z]+)")
@@ -229,7 +229,7 @@ local function new_digest_md5(realm, password_handler)
 				
 				HA1 = md5(A1, true);
 				HA2 = md5(A2, true);
-        
+				
 				KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
 				local rspauth = md5(KD, true);
 				self.authenticated = true;
