@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
--- Prosody IM v0.4
+-- Prosody IM
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
 -- 

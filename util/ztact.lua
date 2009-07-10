@@ -1,4 +1,4 @@
--- Prosody IM v0.4
+-- Prosody IM
 -- This file is included with Prosody IM. It has modifications,
 -- which are hereby placed in the public domain.
 
