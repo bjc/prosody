@@ -88,6 +88,9 @@ Host "localhost"
 -- Section for example.com
 -- (replace example.com with your domain name)
 Host "example.com"
+
+	enabled = false -- This will disable the host, preserving the config, but denying connections
+
 	-- Assign this host a certificate for TLS, otherwise it would use the one
 	-- set in the global section (if any).
 	-- Note that old-style SSL on port 5223 only supports one certificate, and will always
@@ -96,8 +99,6 @@ Host "example.com"
 		key = "certs/example.com.key";
 		certificate = "certs/example.com.crt";
 		}
-
-	enabled = false -- This will disable the host, preserving the config, but denying connections
 
 -- Set up a MUC (multi-user chat) room server on conference.example.com:
 Component "conference.example.com" "muc"
