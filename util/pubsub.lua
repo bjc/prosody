@@ -49,7 +49,7 @@ function add_subscriber(node, jid)
 	end
 end
 
-function remove_subscriber(node, subscriber)
+function remove_subscriber(node, jid)
 	local subscribers = node.subscribers;
 	if subscribers[jid] then
 		subscribers[subscribers[jid]] = nil;
