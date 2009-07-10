@@ -1,8 +1,5 @@
-- On-the-fly code updates
-- Control/statistics interface
-- External components
 - Ad-hoc commands
 - Clustering
-- Pubsub/PEP
+- Pubsub
 
 
