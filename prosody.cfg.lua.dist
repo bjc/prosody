@@ -8,19 +8,18 @@
 -- sections as you like.
 --
 -- Lists are written { "like", "this", "one" } 
--- Lists can also be of { 1, 2, 3 } numbers, etc. 
+-- Lists can also be of { 1, 2, 3 } numbers, and other things. 
 -- Either commas, or semi-colons; may be used
 -- as seperators.
 --
 -- A table is a list of values, except each value has a name. An 
--- example would be:
+-- example table would be:
 --
 -- ssl = { key = "keyfile.key", certificate = "certificate.cert" }
 --
 -- Whitespace (that is tabs, spaces, line breaks) is mostly insignificant, so 
 -- can 
--- be placed anywhere
--- that 	you deem fitting.
+-- be placed anywhere that 	you deem fitting.
 --
 -- Tip: You can check that the syntax of this file is correct when you have finished
 -- by running: luac -p prosody.cfg.lua
@@ -30,7 +29,7 @@
 -- The only thing left to do is rename this file to remove the .dist ending, and fill in the 
 -- blanks. Good luck, and happy Jabbering!
 
--- Global settings go in this section
+-- Server-wide settings go in this section
 Host "*"
 	
 	-- This is the list of modules Prosody will load on startup.
