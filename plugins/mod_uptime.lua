@@ -15,6 +15,8 @@ local t_concat = table.concat;
 
 local start_time = prosody.start_time;
 
+prosody.events.add_handler("server-started", function () start_time = prosody.start_time end);
+
 module:add_feature("jabber:iq:last");
 
 module:add_iq_handler({"c2s", "s2sin"}, "jabber:iq:last", 
