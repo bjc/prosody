@@ -1,3 +1,11 @@
+-- Prosody IM
+-- Copyright (C) 2008-2009 Matthew Wild
+-- Copyright (C) 2008-2009 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
 local st, jid, set = require "util.stanza", require "util.jid", require "util.set";
 
 local is_admin = require "core.usermanager".is_admin;
