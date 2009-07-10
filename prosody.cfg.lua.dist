@@ -62,6 +62,15 @@ Host "*"
 				--"httpserver"; -- Serve static files from a directory over HTTP
 			  };
 	
+	-- These modules are auto-loaded, should you
+	-- for (for some mad reason) want to disable
+	-- them then uncomment them below
+	modules_disabled = {
+			-- "presence";
+			-- "message";
+			-- "iq";
+	};
+
 	-- Disable account creation by default, for security
 	-- For more information see http://prosody.im/doc/creating_accounts
 	allow_registration = false;
