@@ -58,7 +58,7 @@ function getpid()
 	
 	local file, err = io.open(pidfile);
 	if not file then
-		return false, "pidfile-read-failed", ret;
+		return false, "pidfile-read-failed", err;
 	end
 	
 	local pid = tonumber(file:read("*a"));
