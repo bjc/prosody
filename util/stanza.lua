@@ -177,11 +177,11 @@ end
 
 
 do
-        local id = 0;
-        function new_id()
-                id = id + 1;
-                return "lx"..id;
-        end
+	local id = 0;
+	function new_id()
+		id = id + 1;
+		return "lx"..id;
+	end
 end
 
 function preserialize(stanza)
@@ -226,21 +226,22 @@ function deserialize(stanza)
 end
 
 function clone(stanza)
-    local lookup_table = {};
-    local function _copy(object)
-        if type(object) ~= "table" then
-            return object;
-        elseif lookup_table[object] then
-            return lookup_table[object];
-        end
-        local new_table = {};
-        lookup_table[object] = new_table;
-        for index, value in pairs(object) do
-            new_table[_copy(index)] = _copy(value);
-        end
-        return setmetatable(new_table, getmetatable(object));
-    end
-    return _copy(stanza)
+	local lookup_table = {};
+	local function _copy(object)
+		if type(object) ~= "table" then
+			return object;
+		elseif lookup_table[object] then
+			return lookup_table[object];
+		end
+		local new_table = {};
+		lookup_table[object] = new_table;
+		for index, value in pairs(object) do
+			new_table[_copy(index)] = _copy(value);
+		end
+		return setmetatable(new_table, getmetatable(object));
+	end
+	
+	return _copy(stanza)
 end
 
 function message(attr, body)
