@@ -62,8 +62,6 @@ function read_config()
 	end
 end
 
-read_config();
-
 function load_libraries()
 	--- Initialize logging
 	require "core.loggingmanager"
@@ -74,7 +72,6 @@ function load_libraries()
 	--- Load socket framework
 	server = require "net.server"
 end	
-load_libraries();
 
 function init_global_state()
 	bare_sessions = {};
@@ -95,9 +92,36 @@ function init_global_state()
 	prosody.arg = _G.arg;
 
 	prosody.events = require "util.events".new();
-end
-init_global_state();
+	
+	
+	-- Function to reload the config file
+	function prosody.reload_config()
+		log("info", "Reloading configuration file");
+		prosody.events.fire_event("reloading-config");
+		local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
+		if not ok then
+			if level == "parser" then
+				log("error", "There was an error parsing the configuration file: %s", tostring(err));
+			elseif level == "file" then
+				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+			end
+		end
+	end
 
+	-- Function to reopen logfiles
+	function prosody.reopen_logfiles()
+		log("info", "Re-opening log files");
+		eventmanager.fire_event("reopen-log-files"); -- Handled by appropriate log sinks
+		prosody.events.fire_event("reopen-log-files");
+	end
+
+	-- Function to initiate prosody shutdown
+	function prosody.shutdown(reason)
+		log("info", "Shutting down: %s", reason or "unknown reason");
+		prosody.events.fire_event("server-stopping", {reason = reason});
+		server.setquitting(true);
+	end
+end
 
 function read_version()
 	-- Try to determine version
@@ -112,8 +136,6 @@ function read_version()
 		prosody.version = "unknown";
 	end
 end
-read_version();
-log("info", "Hello and welcome to Prosody version %s", prosody.version);
 
 function load_secondary_libraries()
 	--- Load and initialise core modules
@@ -143,8 +165,6 @@ function load_secondary_libraries()
 	require "util.stanza"
 	require "util.jid"
 end
-load_secondary_libraries();
-
 
 function init_data_store()
 	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
@@ -156,37 +176,8 @@ function init_data_store()
 		return username, host, datastore, data;
 	end);
 end
-init_data_store();
 
--- Function to reload the config file
-function prosody.reload_config()
-	log("info", "Reloading configuration file");
-	prosody.events.fire_event("reloading-config");
-	local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
-	if not ok then
-		if level == "parser" then
-			log("error", "There was an error parsing the configuration file: %s", tostring(err));
-		elseif level == "file" then
-			log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
-		end
-	end
-end
-
--- Function to reopen logfiles
-function prosody.reopen_logfiles()
-	log("info", "Re-opening log files");
-	eventmanager.fire_event("reopen-log-files"); -- Handled by appropriate log sinks
-	prosody.events.fire_event("reopen-log-files");
-end
-
--- Function to initiate prosody shutdown
-function prosody.shutdown(reason)
-	log("info", "Shutting down: %s", reason or "unknown reason");
-	prosody.events.fire_event("server-stopping", {reason = reason});
-	server.setquitting(true);
-end
-
-function prosody.prepare_to_start()
+function prepare_to_start()
 	-- Signal to modules that we are ready to start
 	eventmanager.fire_event("server-starting");
 	prosody.events.fire_event("server-starting");
@@ -235,9 +226,8 @@ function prosody.prepare_to_start()
 
 	prosody.start_time = os.time();
 end	
-prosody.prepare_to_start();
 
-function prosody.init_global_protection()
+function init_global_protection()
 	-- Catch global accesses --
 	local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
 		
@@ -252,13 +242,8 @@ function prosody.init_global_protection()
 	-- And lock now...
 	prosody.lock_globals();
 end
-prosody.init_global_protection();
 
-
-eventmanager.fire_event("server-started");
-prosody.events.fire_event("server-started");
-
-function prosody.loop()
+function loop()
 	-- Error handler for errors that make it this far
 	local function catch_uncaught_error(err)
 		if err:match("%d*: interrupted!$") then
@@ -278,9 +263,8 @@ function prosody.loop()
 		socket.sleep(0.2);
 	end
 end
-prosody.loop();
 
-function prosody.cleanup()
+function cleanup()
 	log("info", "Shutdown status: Cleaning up");
 	prosody.events.fire_event("server-cleanup");
 	
@@ -317,8 +301,25 @@ function prosody.cleanup()
 	
 	server.setquitting(true);
 end
-prosody.cleanup();
 
+read_config();
+load_libraries();
+init_global_state();
+read_version();
+log("info", "Hello and welcome to Prosody version %s", prosody.version);
+load_secondary_libraries();
+init_data_store();
+prepare_to_start();
+init_global_protection();
+
+eventmanager.fire_event("server-started");
+prosody.events.fire_event("server-started");
+
+loop();
+
+log("info", "Shutting down...");
+cleanup();
 eventmanager.fire_event("server-stopped");
 prosody.events.fire_event("server-stopped");
-log("info", "Shutdown status: Complete!");
+log("info", "Shutdown complete");
+
