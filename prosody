@@ -36,7 +36,7 @@ pcall(require, "luarocks.require")
 
 config = require "core.configmanager"
 
-do
+function read_config()
 	-- TODO: Check for other formats when we add support for them
 	-- Use lfs? Make a new conf/ dir?
 	local ok, level, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
@@ -62,90 +62,101 @@ do
 	end
 end
 
---- Initialize logging
-require "core.loggingmanager"
+read_config();
 
---- Check runtime dependencies
-require "util.dependencies"
+function load_libraries()
+	--- Initialize logging
+	require "core.loggingmanager"
+	
+	--- Check runtime dependencies
+	require "util.dependencies"
+	
+	--- Load socket framework
+	server = require "net.server"
+end	
+load_libraries();
 
---- Load socket framework
-local server = require "net.server"
+function init_global_state()
+	bare_sessions = {};
+	full_sessions = {};
+	hosts = {};
 
-bare_sessions = {};
-full_sessions = {};
-hosts = {};
+	-- Global 'prosody' object
+	prosody = {};
+	local prosody = prosody;
+	
+	prosody.bare_sessions = bare_sessions;
+	prosody.full_sessions = full_sessions;
+	prosody.hosts = hosts;
+	
+	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
+	                  plugins = CFG_PLUGINDIR, data = CFG_DATADIR };
+	
+	prosody.arg = _G.arg;
 
--- Global 'prosody' object
-prosody = {};
-local prosody = prosody;
-
-prosody.bare_sessions = bare_sessions;
-prosody.full_sessions = full_sessions;
-prosody.hosts = hosts;
-
-prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
-                  plugins = CFG_PLUGINDIR, data = CFG_DATADIR };
-
-prosody.arg = arg;
-
-prosody.events = require "util.events".new();
-
--- Try to determine version
-local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
-if version_file then
-	prosody.version = version_file:read("*a"):gsub("%s*$", "");
-	version_file:close();
-	if #prosody.version == 12 and prosody.version:match("^[a-f0-9]+$") then
-		prosody.version = "hg:"..prosody.version;
-	end
-else
-	prosody.version = "unknown";
+	prosody.events = require "util.events".new();
 end
+init_global_state();
 
+
+function read_version()
+	-- Try to determine version
+	local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
+	if version_file then
+		prosody.version = version_file:read("*a"):gsub("%s*$", "");
+		version_file:close();
+		if #prosody.version == 12 and prosody.version:match("^[a-f0-9]+$") then
+			prosody.version = "hg:"..prosody.version;
+		end
+	else
+		prosody.version = "unknown";
+	end
+end
+read_version();
 log("info", "Hello and welcome to Prosody version %s", prosody.version);
 
---- Load and initialise core modules
-require "util.import"
-require "core.xmlhandlers"
-require "core.rostermanager"
-require "core.eventmanager"
-require "core.hostmanager"
-require "core.modulemanager"
-require "core.usermanager"
-require "core.sessionmanager"
-require "core.stanza_router"
+function load_secondary_libraries()
+	--- Load and initialise core modules
+	require "util.import"
+	require "core.xmlhandlers"
+	require "core.rostermanager"
+	require "core.eventmanager"
+	require "core.hostmanager"
+	require "core.modulemanager"
+	require "core.usermanager"
+	require "core.sessionmanager"
+	require "core.stanza_router"
 
-require "util.array"
-require "util.iterators"
-require "util.timer"
+	require "util.array"
+	require "util.iterators"
+	require "util.timer"
 
--- Commented to protect us from 
--- the second kind of people
---[[ 
-pcall(require, "remdebug.engine");
-if remdebug then remdebug.engine.start() end
-]]
+	-- Commented to protect us from 
+	-- the second kind of people
+	--[[ 
+	pcall(require, "remdebug.engine");
+	if remdebug then remdebug.engine.start() end
+	]]
 
-local cl = require "net.connlisteners";
+	require "net.connlisteners";
+	
+	require "util.stanza"
+	require "util.jid"
+end
+load_secondary_libraries();
 
-require "util.stanza"
-require "util.jid"
 
-------------------------------------------------------------------------
-
-
-------------- Begin code without a home ---------------------
-
-local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-require "util.datamanager".set_data_path(data_path);
-require "util.datamanager".add_callback(function(username, host, datastore, data)
-	if config.get(host, "core", "anonymous_login") then
-		return false;
-	end
-	return username, host, datastore, data;
-end);
-
------------ End of out-of-place code --------------
+function init_data_store()
+	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+	require "util.datamanager".set_data_path(data_path);
+	require "util.datamanager".add_callback(function(username, host, datastore, data)
+		if config.get(host, "core", "anonymous_login") then
+			return false;
+		end
+		return username, host, datastore, data;
+	end);
+end
+init_data_store();
 
 -- Function to reload the config file
 function prosody.reload_config()
@@ -175,124 +186,138 @@ function prosody.shutdown(reason)
 	server.setquitting(true);
 end
 
--- Signal to modules that we are ready to start
-eventmanager.fire_event("server-starting");
-prosody.events.fire_event("server-starting");
+function prosody.prepare_to_start()
+	-- Signal to modules that we are ready to start
+	eventmanager.fire_event("server-starting");
+	prosody.events.fire_event("server-starting");
 
--- Load SSL settings from config, and create a ctx table
-local global_ssl_ctx = ssl and config.get("*", "core", "ssl");
-if global_ssl_ctx then
-	local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
-	setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
-end
+	-- Load SSL settings from config, and create a ctx table
+	local global_ssl_ctx = ssl and config.get("*", "core", "ssl");
+	if global_ssl_ctx then
+		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
+	end
 
--- start listening on sockets
-function net_activate_ports(option, listener, default, conntype)
-	local ports = config.get("*", "core", option.."_ports") or default;
-	if type(ports) == "number" then ports = {ports} end;
-	
-	if type(ports) ~= "table" then
-		log("error", "core."..option.." is not a table");
-	else
-		for _, port in ipairs(ports) do
-			if type(port) ~= "number" then
-				log("error", "Non-numeric "..option.."_ports: "..tostring(port));
-			else
-				cl.start(listener, { 
-					ssl = conntype ~= "tcp" and global_ssl_ctx,
-					port = port,
-					interface = config.get("*", "core", option.."_interface") 
-						or cl.get(listener).default_interface 
-						or config.get("*", "core", "interface"),
-					type = conntype
-				});
+	local cl = require "net.connlisteners";
+	-- start listening on sockets
+	function net_activate_ports(option, listener, default, conntype)
+		local ports = config.get("*", "core", option.."_ports") or default;
+		if type(ports) == "number" then ports = {ports} end;
+		
+		if type(ports) ~= "table" then
+			log("error", "core."..option.." is not a table");
+		else
+			for _, port in ipairs(ports) do
+				if type(port) ~= "number" then
+					log("error", "Non-numeric "..option.."_ports: "..tostring(port));
+				else
+					cl.start(listener, { 
+						ssl = conntype ~= "tcp" and global_ssl_ctx,
+						port = port,
+						interface = config.get("*", "core", option.."_interface") 
+							or cl.get(listener).default_interface 
+							or config.get("*", "core", "interface"),
+						type = conntype
+					});
+				end
 			end
 		end
 	end
+
+	net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
+	net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
+	net_activate_ports("component", "xmppcomponent", {}, "tcp");
+	net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	
+	if cl.get("console") then
+		cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
+	end
+
+	prosody.start_time = os.time();
+end	
+prosody.prepare_to_start();
+
+function prosody.init_global_protection()
+	-- Catch global accesses --
+	local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
+		
+	function prosody.unlock_globals()
+		setmetatable(_G, nil);
+	end
+	
+	function prosody.lock_globals()
+		setmetatable(_G, locked_globals_mt);
+	end
+
+	-- And lock now...
+	prosody.lock_globals();
 end
+prosody.init_global_protection();
 
-net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
-net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
-net_activate_ports("component", "xmppcomponent", {}, "tcp");
-net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
-
-if cl.get("console") then
-	cl.start("console", { interface = config.get("*", "core", "console_interface") or "127.0.0.1" })
-end
-
--- Catch global accesses --
-local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
-
-function prosody.unlock_globals()
-	setmetatable(_G, nil);
-end
-
-function prosody.lock_globals()
-	setmetatable(_G, locked_globals_mt);
-end
-
--- And lock now...
-prosody.lock_globals();
-
-prosody.start_time = os.time();
 
 eventmanager.fire_event("server-started");
 prosody.events.fire_event("server-started");
 
--- Error handler for errors that make it this far
-local function catch_uncaught_error(err)
-	if err:match("%d*: interrupted!$") then
-		return "quitting";
+function prosody.loop()
+	-- Error handler for errors that make it this far
+	local function catch_uncaught_error(err)
+		if err:match("%d*: interrupted!$") then
+			return "quitting";
+		end
+		
+		log("error", "Top-level error, please report:\n%s", tostring(err));
+		local traceback = debug.traceback("", 2);
+		if traceback then
+			log("error", "%s", traceback);
+		end
+		
+		prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
 	end
 	
-	log("error", "Top-level error, please report:\n%s", tostring(err));
-	local traceback = debug.traceback("", 2);
-	if traceback then
-		log("error", "%s", traceback);
+	while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
+		socket.sleep(0.2);
 	end
+end
+prosody.loop();
+
+function prosody.cleanup()
+	log("info", "Shutdown status: Cleaning up");
+	prosody.events.fire_event("server-cleanup");
 	
-	prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
-end
-
-while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
-	socket.sleep(0.2);
-end
-
-log("info", "Shutdown status: Cleaning up");
-prosody.events.fire_event("server-cleanup");
-
--- Ok, we're quitting I know, but we
--- need to do some tidying before we go :)
-server.setquitting(false);
-
-log("info", "Shutdown status: Closing all active sessions");
-for hostname, host in pairs(hosts) do
-	log("debug", "Shutdown status: Closing client connections for %s", hostname)
-	if host.sessions then
-		for username, user in pairs(host.sessions) do
-			for resource, session in pairs(user.sessions) do
-				log("debug", "Closing connection for %s@%s/%s", username, hostname, resource);
-				session:close("system-shutdown");
+	-- Ok, we're quitting I know, but we
+	-- need to do some tidying before we go :)
+	server.setquitting(false);
+	
+	log("info", "Shutdown status: Closing all active sessions");
+	for hostname, host in pairs(hosts) do
+		log("debug", "Shutdown status: Closing client connections for %s", hostname)
+		if host.sessions then
+			for username, user in pairs(host.sessions) do
+				for resource, session in pairs(user.sessions) do
+					log("debug", "Closing connection for %s@%s/%s", username, hostname, resource);
+					session:close("system-shutdown");
+				end
+			end
+		end
+	
+		log("debug", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
+		if host.s2sout then
+			for remotehost, session in pairs(host.s2sout) do
+				if session.close then
+					session:close("system-shutdown");
+				else
+					log("warn", "Unable to close outgoing s2s session to %s, no session:close()?!", remotehost);
+				end
 			end
 		end
 	end
+
+	log("info", "Shutdown status: Closing all server connections");
+	server.closeall();
 	
-	log("debug", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
-	if host.s2sout then
-		for remotehost, session in pairs(host.s2sout) do
-			if session.close then
-				session:close("system-shutdown");
-			else
-				log("warn", "Unable to close outgoing s2s session to %s, no session:close()?!", remotehost);
-			end
-		end
-	end
+	server.setquitting(true);
 end
-
-log("info", "Shutdown status: Closing all server connections");
-server.closeall();
-
-server.setquitting(true);
+prosody.cleanup();
 
 eventmanager.fire_event("server-stopped");
 prosody.events.fire_event("server-stopped");
