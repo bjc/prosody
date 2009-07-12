@@ -22,6 +22,11 @@ function httpserver.listener(conn, data)
 	if not request then
 		request = new_request(conn);
 		requests[conn] = request;
+		
+		-- If using HTTPS, request is secure
+		if conn.ssl() then
+			request.secure = true;
+		end
 	end
 
 	if data then
