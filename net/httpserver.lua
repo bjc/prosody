@@ -17,7 +17,7 @@ local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
 local s_match, s_gmatch = string.match, string.gmatch;
-local tonumber, tostring, pairs = tonumber, tostring, pairs;
+local tonumber, tostring, pairs, ipairs, type = tonumber, tostring, pairs, ipairs, type;
 
 local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
 
@@ -247,6 +247,26 @@ function new(params)
 	end
 	if params.base then
 		http_server.handlers[params.base] = params.handler;
+	end
+end
+
+function new_from_config(ports, handle_request)
+	for _, options in ipairs(ports) do
+		local port, base, ssl, interface = 5280, "http-bind", false, nil;
+		if type(options) == "number" then
+			port = options;
+		elseif type(options) == "table" then
+			port, base, ssl, interface = options.port or 5280, options.path or "http-bind", options.ssl or false, options.interface;
+		elseif type(options) == "string" then
+			base = options;
+		end
+		
+		if ssl then
+			ssl.mode = "server";
+			ssl.protocol = "sslv23";
+		end
+		
+		new{ port = port, base = base, handler = handle_request, ssl = ssl, type = (ssl and "ssl") or "tcp" }
 	end
 end
 
