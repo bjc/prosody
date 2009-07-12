@@ -546,7 +546,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             socket:settimeout( 0 )
             handler.readbuffer = handshake
             handler.sendbuffer = handshake
-            handshake( socket )    -- do handshake
+            if not handshake( socket ) then   -- do handshake
+                return nil, nil, "ssl handshake failed";
+            end
         else
             -- We're not automatically doing SSL, so we're not secure (yet)
             ssl = false
