@@ -276,16 +276,6 @@ function on_timer()
 end
 
 local ports = config.get(module.host, "core", "bosh_ports") or { 5280 };
-for _, options in ipairs(ports) do
-	local port, base, ssl, interface = 5280, "http-bind", false, nil;
-	if type(options) == "number" then
-		port = options;
-	elseif type(options) == "table" then
-		port, base, ssl, interface = options.port or 5280, options.path or "http-bind", options.ssl or false, options.interface;
-	elseif type(options) == "string" then
-		base = options;
-	end
-	httpserver.new{ port = port, base = base, handler = handle_request, ssl = ssl }
-end
+httpserver.new_from_config(ports, handle_request);
 
 server.addtimer(on_timer);
