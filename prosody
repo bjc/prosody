@@ -152,7 +152,8 @@ function load_secondary_libraries()
 	require "util.array"
 	require "util.iterators"
 	require "util.timer"
-
+	require "util.helpers"
+	
 	-- Commented to protect us from 
 	-- the second kind of people
 	--[[ 
