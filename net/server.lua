@@ -1,19 +1,9 @@
--- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
 -- 
--- This project is MIT/X11 licensed. Please see the
--- COPYING file in the source package for more information.
+-- server.lua by blastbeat of the luadch project
+-- Re-used here under the MIT/X Consortium License
+-- 
+-- Modifications (C) 2008-2009 Matthew Wild, Waqas Hussain
 --
-
---[[
-
-        server.lua by blastbeat
-
-        - this script contains the server loop of the program
-        - other scripts can reg a server here
-
-]]--
 
 -- // wrapping luadch stuff // --
 
