@@ -530,7 +530,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                     end
                 end
                 disconnect( handler, "ssl handshake failed" )
-                handler.close( true )    -- forced disconnect
+                _ = handler and handler.close( true )    -- forced disconnect
                 return false    -- handshake failed
             end
         )
