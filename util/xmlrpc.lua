@@ -46,17 +46,12 @@ local map = {
 		stanza:tag("nil"):up();
 	end;
 };
-_lua_to_xmlrpc = function(stanza, ...)
-	for i=1,select('#', ...) do
-		stanza:tag("param"):tag("value");
-		local object = select(i, ...);
-		local h = map[type(object)];
-		if h then
-			h(stanza, object);
-		else
-			error("Type not supported by XML-RPC: " .. type(object));
-		end
-		stanza:up():up();
+_lua_to_xmlrpc = function(stanza, object)
+	local h = map[type(object)];
+	if h then
+		h(stanza, object);
+	else
+		error("Type not supported by XML-RPC: " .. type(object));
 	end
 end
 function create_response(object)
@@ -76,7 +71,11 @@ function create_request(method_name, ...)
 	local stanza = st.stanza("methodCall")
 		:tag("methodName"):text(method_name):up()
 		:tag("params");
-	_lua_to_xmlrpc(stanza, ...);
+	for i=1,select('#', ...) do
+		stanza:tag("param"):tag("value");
+		_lua_to_xmlrpc(stanza, select(i, ...));
+		stanza:up():up();
+	end
 	stanza:up():up():up();
 	return stanza;
 end
