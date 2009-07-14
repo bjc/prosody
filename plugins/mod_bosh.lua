@@ -276,6 +276,6 @@ function on_timer()
 end
 
 local ports = config.get(module.host, "core", "bosh_ports") or { 5280 };
-httpserver.new_from_config(ports, handle_request);
+httpserver.new_from_config(ports, "http-bind", handle_request);
 
 server.addtimer(on_timer);
