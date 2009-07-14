@@ -28,4 +28,4 @@ local function handle_request(method, body, request)
 end
 
 local ports = config.get(module.host, "core", "http_ports") or { 5280 };
-httpserver.new_from_config(ports, handle_request);
+httpserver.new_from_config(ports, "files", handle_request);

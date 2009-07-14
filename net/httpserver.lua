@@ -250,13 +250,13 @@ function new(params)
 	end
 end
 
-function new_from_config(ports, handle_request)
+function new_from_config(ports, default_base, handle_request)
 	for _, options in ipairs(ports) do
-		local port, base, ssl, interface = 5280, "http-bind", false, nil;
+		local port, base, ssl, interface = 5280, default_base, false, nil;
 		if type(options) == "number" then
 			port = options;
 		elseif type(options) == "table" then
-			port, base, ssl, interface = options.port or 5280, options.path or "http-bind", options.ssl or false, options.interface;
+			port, base, ssl, interface = options.port or 5280, options.path or default_base, options.ssl or false, options.interface;
 		elseif type(options) == "string" then
 			base = options;
 		end
