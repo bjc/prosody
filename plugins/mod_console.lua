@@ -186,6 +186,11 @@ function def_env.server:uptime()
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
+function def_env.server:shutdown(reason)
+	prosody.shutdown(reason);
+	return true, "Shutdown initiated";
+end
+
 def_env.module = {};
 
 local function get_hosts_set(hosts, module)
