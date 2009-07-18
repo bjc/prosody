@@ -106,6 +106,7 @@ function init_global_state()
 				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
 			end
 		end
+		return ok, (err and tostring(level)..": "..tostring(err)) or nil;
 	end
 
 	-- Function to reopen logfiles
