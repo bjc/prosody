@@ -160,6 +160,7 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 def_env.server = {};
+
 function def_env.server:insane_reload()
 	prosody.unlock_globals();
 	dofile "prosody"
@@ -286,6 +287,11 @@ end
 function def_env.config:get(host, section, key)
 	local config_get = require "core.configmanager".get
 	return true, tostring(config_get(host, section, key));
+end
+
+function def_env.config:reload()
+	local ok, err = prosody.reload_config();
+	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
 def_env.hosts = {};
