@@ -160,7 +160,7 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 def_env.server = {};
-function def_env.server:reload()
+function def_env.server:insane_reload()
 	prosody.unlock_globals();
 	dofile "prosody"
 	prosody = _G.prosody;
