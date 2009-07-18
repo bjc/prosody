@@ -119,6 +119,7 @@ function init_global_state()
 	-- Function to initiate prosody shutdown
 	function prosody.shutdown(reason)
 		log("info", "Shutting down: %s", reason or "unknown reason");
+		prosody.shutdown_reason = reason;
 		prosody.events.fire_event("server-stopping", {reason = reason});
 		server.setquitting(true);
 	end
@@ -278,10 +279,14 @@ function cleanup()
 	for hostname, host in pairs(hosts) do
 		log("debug", "Shutdown status: Closing client connections for %s", hostname)
 		if host.sessions then
+			local reason = { condition = "system-shutdown", text = "Server is shutting down" };
+			if prosody.shutdown_reason then
+				reason.text = reason.text..": "..prosody.shutdown_reason;
+			end
 			for username, user in pairs(host.sessions) do
 				for resource, session in pairs(user.sessions) do
 					log("debug", "Closing connection for %s@%s/%s", username, hostname, resource);
-					session:close("system-shutdown");
+					session:close(reason);
 				end
 			end
 		end
