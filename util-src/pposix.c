@@ -173,7 +173,7 @@ int level_constants[] = 	{
 				LOG_INFO,
 				LOG_NOTICE,
 				LOG_WARNING,
-				LOG_EMERG,
+				LOG_CRIT,
 				-1
 			};
 int lc_syslog_log(lua_State* L)
