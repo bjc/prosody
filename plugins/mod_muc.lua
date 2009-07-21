@@ -76,6 +76,8 @@ component = register_component(muc_host, function(origin, stanza)
 	handle_to_domain(origin, stanza);
 end);
 
+prosody.hosts[module:get_host()].muc = { rooms = rooms };
+
 module.unload = function()
 	deregister_component(muc_host);
 end
@@ -84,4 +86,5 @@ module.save = function()
 end
 module.restore = function(data)
 	rooms = data.rooms or {};
+	prosody.hosts[module:get_host()].muc = { rooms = rooms };
 end
