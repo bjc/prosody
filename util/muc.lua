@@ -159,7 +159,7 @@ local function room_send_history(room, to)
 		end
 	end
 	if room._data['subject'] then
-		room:route_stanza(st.message({type='groupchat', from=room, to=to}):tag("subject"):text(room._data['subject']));
+		room:route_stanza(st.message({type='groupchat', from=room.jid, to=to}):tag("subject"):text(room._data['subject']));
 	end
 end
 
