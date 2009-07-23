@@ -189,7 +189,13 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
         end
     end
     if not ssl then
-      out_put("server.lua: ", "ssl not enabled on ", serverport);
+      sslctx = false;
+      if startssl then
+         out_error( "server.lua: Cannot start ssl on port: ", serverport )
+         return nil, "Cannot start ssl,  see log for details"
+       else
+         out_put("server.lua: ", "ssl not enabled on ", serverport);
+       end
     end
 
     local accept = socket.accept
@@ -689,6 +695,7 @@ removeserver = function( port )
         return nil, "no server found on port '" .. tostring( port ) "'"
     end
     handler.close( )
+    _server[ port ] = nil
     return true
 end
 
