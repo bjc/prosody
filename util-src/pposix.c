@@ -25,6 +25,7 @@
 
 #include <syslog.h>
 #include <pwd.h>
+#include <grp.h>
 
 #include <string.h>
 #include <errno.h>
@@ -291,6 +292,64 @@ int lc_setuid(lua_State* L)
 	return 2;
 }
 
+int lc_setgid(lua_State* L)
+{
+	int gid = -1;
+	if(lua_gettop(L) < 1)
+		return 0;
+	if(!lua_isnumber(L, 1) && lua_tostring(L, 1))
+	{
+		/* Passed GID is actually a string, so look up the GID */
+		struct group *g;
+		g = getgrnam(lua_tostring(L, 1));
+		if(!g)
+		{
+			lua_pushboolean(L, 0);
+			lua_pushstring(L, "no-such-group");
+			return 2;
+		}
+		gid = g->gr_gid;
+	}
+	else
+	{
+		gid = lua_tonumber(L, 1);
+	}
+	
+	if(gid>-1)
+	{
+		/* Ok, attempt setgid */
+		errno = 0;
+		if(setgid(gid))
+		{
+			/* Fail */
+			lua_pushboolean(L, 0);
+			switch(errno)
+			{
+			case EINVAL:
+				lua_pushstring(L, "invalid-gid");
+				break;
+			case EPERM:
+				lua_pushstring(L, "permission-denied");
+				break;
+			default:
+				lua_pushstring(L, "unknown-error");
+			}
+			return 2;
+		}
+		else
+		{
+			/* Success! */
+			lua_pushboolean(L, 1);
+			return 1;
+		}
+	}
+	
+	/* Seems we couldn't find a valid GID to switch to */
+	lua_pushboolean(L, 0);
+	lua_pushstring(L, "invalid-gid");
+	return 2;
+}
+
 /*	Like POSIX's setrlimit()/getrlimit() API functions.
  *	
  *	Syntax:
@@ -420,9 +479,13 @@ int luaopen_util_pposix(lua_State *L)
 
 	lua_pushcfunction(L, lc_getuid);
 	lua_setfield(L, -2, "getuid");
+	lua_pushcfunction(L, lc_getgid);
+	lua_setfield(L, -2, "getgid");
 
 	lua_pushcfunction(L, lc_setuid);
 	lua_setfield(L, -2, "setuid");
+	lua_pushcfunction(L, lc_setgid);
+	lua_setfield(L, -2, "setgid");
 	
 	lua_pushcfunction(L, lc_setrlimit);
 	lua_setfield(L, -2, "setrlimit");
