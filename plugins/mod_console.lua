@@ -160,7 +160,8 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 def_env.server = {};
-function def_env.server:reload()
+
+function def_env.server:insane_reload()
 	prosody.unlock_globals();
 	dofile "prosody"
 	prosody = _G.prosody;
@@ -183,6 +184,11 @@ function def_env.server:uptime()
 	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
 		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
+end
+
+function def_env.server:shutdown(reason)
+	prosody.shutdown(reason);
+	return true, "Shutdown initiated";
 end
 
 def_env.module = {};
@@ -286,6 +292,11 @@ end
 function def_env.config:get(host, section, key)
 	local config_get = require "core.configmanager".get
 	return true, tostring(config_get(host, section, key));
+end
+
+function def_env.config:reload()
+	local ok, err = prosody.reload_config();
+	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
 def_env.hosts = {};

@@ -95,7 +95,7 @@ local function session_close(session, reason)
 		end
 		session.send("</stream:stream>");
 		session.conn.close();
-		xmppclient.disconnect(session.conn, (reason and reason.condition) or reason or "session closed");
+		xmppclient.disconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
 	end
 end
 
