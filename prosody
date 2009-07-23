@@ -195,6 +195,7 @@ function prepare_to_start()
 	local cl = require "net.connlisteners";
 	-- start listening on sockets
 	function net_activate_ports(option, listener, default, conntype)
+		if not cl.get(listener) then return; end
 		local ports = config.get("*", "core", option.."_ports") or default;
 		if type(ports) == "number" then ports = {ports} end;
 		
