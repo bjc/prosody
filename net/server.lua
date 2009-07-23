@@ -172,22 +172,24 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
     local ssl = false
 
     if sslctx then
+        ssl = true
         if not ssl_newcontext then
-            return nil, "luasec not found"
+            out_error "luasec not found"
+            ssl = false
         end
         if type( sslctx ) ~= "table" then
             out_error "server.lua: wrong server sslctx"
-            return nil, "wrong server sslctx"
+            ssl = false
         end
         sslctx, err = ssl_newcontext( sslctx )
         if not sslctx then
             err = err or "wrong sslctx parameters"
             out_error( "server.lua: ", err )
-            return nil, err
+            ssl = false
         end
-        ssl = true
-    else
-	out_put("server.lua: ", "ssl not enabled on ", serverport);
+    end
+    if not ssl then
+      out_put("server.lua: ", "ssl not enabled on ", serverport);
     end
 
     local accept = socket.accept
