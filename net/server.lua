@@ -189,6 +189,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
         end
     end
     if not ssl then
+      sslctx = false;
       out_put("server.lua: ", "ssl not enabled on ", serverport);
     end
 
