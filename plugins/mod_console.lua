@@ -14,7 +14,7 @@ local prosody = _G.prosody;
 local hosts = prosody.hosts;
 local connlisteners_register = require "net.connlisteners".register;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; };
+local console_listener = { default_port = 5582; default_mode = "*l"; default_interface = "127.0.0.1" };
 
 require "util.iterators";
 local jid_bare = require "util.jid".bare;
