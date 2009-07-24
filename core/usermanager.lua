@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -23,6 +23,7 @@ module "usermanager"
 function validate_credentials(host, username, password, method)
 	log("debug", "User '%s' is being validated", username);
 	local credentials = datamanager.load(username, host, "accounts") or {};
+
 	if method == nil then method = "PLAIN"; end
 	if method == "PLAIN" and credentials.password then -- PLAIN, do directly
 		if password == credentials.password then
@@ -30,7 +31,7 @@ function validate_credentials(host, username, password, method)
 		else
 			return nil, "Auth failed. Invalid username or password.";
 		end
-	end
+  end
 	-- must do md5
 	-- make credentials md5
 	local pwd = credentials.password;
@@ -49,6 +50,10 @@ function validate_credentials(host, username, password, method)
 	end
 end
 
+function get_password(username, host)
+  return (datamanager.load(username, host, "accounts") or {}).password
+end
+
 function user_exists(username, host)
 	return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
 end
@@ -58,7 +63,7 @@ function create_user(username, password, host)
 end
 
 function get_supported_methods(host)
-	local methods = {["PLAIN"] = true}; -- TODO this should be taken from the config
+  local methods = {["PLAIN"] = true}; -- TODO this should be taken from the config
 	methods["DIGEST-MD5"] = true;
 	return methods;
 end
