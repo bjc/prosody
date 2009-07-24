@@ -16,6 +16,8 @@ local base64 = require "util.encodings".base64;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
+local usermanager_user_exists = require "core.usermanager".user_exists;
+local usermanager_get_password = require "core.usermanager".get_password;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 local jid_split = require "util.jid".split
@@ -65,18 +67,19 @@ local function handle_status(session, status)
 	end
 end
 
-local function password_callback(node, hostname, realm, mechanism, decoder)
-	local password = (datamanager_load(node, hostname, "accounts") or {}).password; -- FIXME handle hashed passwords
-	local func = function(x) return x; end;
-	if password then
-		if mechanism == "PLAIN" then
-			return func, password;
-		elseif mechanism == "DIGEST-MD5" then
-			if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
-			return func, md5(node..":"..realm..":"..password);
-		end
-	end
-	return func, nil;
+local function credentials_callback(mechanism, ...)
+  if mechanism == "PLAIN" then
+    local username, hostname, password = arg[1], arg[2], arg[3];
+    local response = usermanager_validate_credentials(hostname, username, password, mechanism)
+    if response == nil then return false
+    else return response end
+  elseif mechanism == "DIGEST-MD5" then
+    function func(x) return x; end
+    local node, domain, realm, decoder = arg[1], arg[2], arg[3], arg[4];
+    local password = usermanager_get_password(node, domain)
+    if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
+    return func, md5(node..":"..realm..":"..password);
+  end
 end
 
 local function sasl_handler(session, stanza)
@@ -89,7 +92,7 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
-		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, credentials_callback);
 		if not session.sasl_handler then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
