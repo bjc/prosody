@@ -176,14 +176,61 @@ for name, data in pairs(t) do
 		end
 	end
 end
+--print(serialize(t));
 
 for i, row in ipairs(t["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, host, "accounts", {password = password});
 	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
 end
-for i, row in ipairs(t["private_storage"] or NULL) do
-	--local node, password = row.username, row.password;
-	--local ret, err = dm.store(node, host, "accounts", {password = password});
-	--print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
+
+function roster(node, host, jid, item)
+	local roster = dm.load(node, host, "roster") or {};
+	roster[jid] = item;
+	local ret, err = dm.store(node, host, "roster", roster);
+	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+end
+function roster_pending(node, host, jid)
+	local roster = dm.load(node, host, "roster") or {};
+	roster.pending = roster.pending or {};
+	roster.pending[jid] = true;
+	local ret, err = dm.store(node, host, "roster", roster);
+	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+end
+function roster_group(node, host, jid, group)
+	local roster = dm.load(node, host, "roster") or {};
+	local item = roster[jid];
+	if not item then print("Warning: No roster item "..jid.." for user "..user..", can't put in group "..group); return; end
+	item.groups[group] = true;
+	local ret, err = dm.store(node, host, "roster", roster);
+	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+end
+for i, row in ipairs(t["rosterusers"] or NULL) do
+	local node, contact = row.username, row.jid;
+	local name = row.nick;
+	if name == "" then name = nil; end
+	local subscription = row.subscription;
+	if subscription == "N" then
+		subscription = "none"
+	elseif subscription == "B" then
+		subscription = "both"
+	elseif subscription == "F" then
+		subscription = "from"
+	elseif subscription == "T" then
+		subscription = "to"
+	else error("Unknown subscription type: "..subscription) end;
+	local ask = row.ask;
+	if ask == "N" then
+		ask = nil;
+	elseif ask == "O" then
+		ask = "subscribe";
+	elseif ask == "I" then
+		roster_pending(node, host, contact);
+		return;
+	else error("Unknown ask type: "..ask); end
+	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
+	roster(node, host, contact, item);
+end
+for i, row in ipairs(t["rostergroups"] or NULL) do
+	roster_group(row.username, host, row.jid, row.grp);
 end
