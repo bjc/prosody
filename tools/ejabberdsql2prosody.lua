@@ -141,14 +141,13 @@ end
 local arg = ...;
 local help = "/? -? ? /h -h /help -help --help";
 if not arg or help:find(arg, 1, true) then
-	print([[ejabberd SQL db dump importer for Prosody
+	print([[ejabberd SQL DB dump importer for Prosody
 
   Usage: ejabberdsql2prosody.lua filename.txt
 
-The file can be generated from ejabberd using:
-  sudo ./bin/ejabberdctl dump filename.txt
-
-Note: The path of ejabberdctl depends on your ejabberd installation, and ejabberd needs to be running for ejabberdctl to work.]]);
+The file can be generated using mysqldump:
+  mysqldump db_name > filename.txt
+]]);
 	os.exit(1);
 end
 local map = {
