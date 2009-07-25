@@ -69,7 +69,7 @@ function get_supported_methods(host)
 end
 
 function is_admin(jid)
-	local admins = config.get("*", "core", "admins") or {};
+	local admins = config.get("*", "core", "admins");
 	if type(admins) == "table" then
 		jid = jid_bare(jid);
 		for _,admin in ipairs(admins) do
