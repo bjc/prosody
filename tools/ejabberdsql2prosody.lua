@@ -138,16 +138,15 @@ return readFile(filename);
 ------
 end
 
-local arg = ...;
+local arg, host = ...;
 local help = "/? -? ? /h -h /help -help --help";
-if not arg or help:find(arg, 1, true) then
+if not(arg and host) or help:find(arg, 1, true) then
 	print([[ejabberd SQL DB dump importer for Prosody
 
-  Usage: ejabberdsql2prosody.lua filename.txt
+  Usage: ejabberdsql2prosody.lua filename.txt hostname
 
 The file can be generated using mysqldump:
-  mysqldump db_name > filename.txt
-]]);
+  mysqldump db_name > filename.txt]]);
 	os.exit(1);
 end
 local map = {
@@ -178,19 +177,13 @@ for name, data in pairs(t) do
 	end
 end
 
-local host = "ayena.de";
-
 for i, row in ipairs(t["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, host, "accounts", {password = password});
-	--print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
+	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
 end
 for i, row in ipairs(t["private_storage"] or NULL) do
 	--local node, password = row.username, row.password;
 	--local ret, err = dm.store(node, host, "accounts", {password = password});
 	--print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
 end
-
-
-
-print(serialize(t));
