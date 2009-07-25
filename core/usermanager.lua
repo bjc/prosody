@@ -63,9 +63,7 @@ function create_user(username, password, host)
 end
 
 function get_supported_methods(host)
-  local methods = {["PLAIN"] = true}; -- TODO this should be taken from the config
-	methods["DIGEST-MD5"] = true;
-	return methods;
+	return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
 end
 
 function is_admin(jid)
