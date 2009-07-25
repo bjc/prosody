@@ -67,14 +67,14 @@ local function parse_xml(xml)
 end
 
 local function handle_xmlrpc_request(jid, method, args)
-	local is_secure_call = (method:sub(1,7) ~= "secure/");
+	local is_secure_call = (method:sub(1,7) == "secure/");
 	if not is_admin(jid) and not is_secure_call then
 		return create_error_response(401, "not authorized");
 	end
 	method = get_method(method);
 	if not method then return create_error_response(404, "method not found"); end
 	args = args or {};
-	if is_secure_call then t_insert(args, 1, jid); end
+	if is_secure_call then table.insert(args, 1, jid); end
 	local success, result = pcall(method, unpack(args));
 	if success then
 		success, result = pcall(create_response, result or "nil");
