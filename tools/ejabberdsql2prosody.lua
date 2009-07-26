@@ -178,14 +178,14 @@ local t = parseFile(arg);
 for name, data in pairs(t) do
 	local m = map[name];
 	if m then
+		if #data > 0 and #data[1] ~= #m then
+			print("[warning] expected "..#m.." columns for table `"..name.."`, found "..#data[1]);
+		end
 		for i=1,#data do
 			local row = data[i];
-			for j=1,#row do
-				local n = m[j];
-				if n then
-					row[n] = row[j];
-					row[j] = nil;
-				else print("[warning] expected "..#n.." columns for table `"..name.."`, found "..#row); break; end
+			for j=1,#m do
+				row[m[j]] = row[j];
+				row[j] = nil;
 			end
 		end
 	end
