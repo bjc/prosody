@@ -36,11 +36,21 @@ local function peek()
 	return last;
 end
 
+local escapes = {
+	["\\0"] = "\0";
+	["\\'"] = "'";
+	["\\\""] = "\"";
+	["\\b"] = "\b";
+	["\\n"] = "\n";
+	["\\r"] = "\r";
+	["\\t"] = "\t";
+	["\\Z"] = "\26";
+	["\\\\"] = "\\";
+	["\\%"] = "%";
+	["\\_"] = "_";
+}
 local function unescape(s)
-	if s == "\\'" then return "'"; end
-	if s == "\\n" then return "\n"; end
-	if s == "\\\\" then return "\\"; end
-	error("Unknown escape sequence: "..s);
+	return escapes[s] or error("Unknown escape sequence: "..s);
 end
 local function readString()
 	read("'");
