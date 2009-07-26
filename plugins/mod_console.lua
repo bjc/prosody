@@ -359,10 +359,19 @@ end
 
 function def_env.c2s:show(match_jid)
 	local print, count = self.session.print, 0;
-	show_c2s(function (jid)
+	show_c2s(function (jid, session)
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
-			print(jid);
+			local status, priority = "unavailable", tostring(session.priority or "-");
+			if session.presence then
+				status = session.presence:child_with_name("show");
+				if status then
+					status = status:get_text() or "[invalid!]";
+				else
+					status = "available";
+				end
+			end
+			print(jid.." - "..status.."("..priority..")");
 		end		
 	end);
 	return true, "Total: "..count.." clients";
