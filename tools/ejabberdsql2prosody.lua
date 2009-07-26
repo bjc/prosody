@@ -226,6 +226,7 @@ for i, row in ipairs(t["rosterusers"] or NULL) do
 		ask = "subscribe";
 	elseif ask == "I" then
 		roster_pending(node, host, contact);
+		ask = nil;
 	else error("Unknown ask type: "..ask); end
 	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
 	roster(node, host, contact, item);
