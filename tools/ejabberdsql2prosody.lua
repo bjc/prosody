@@ -181,8 +181,11 @@ for name, data in pairs(t) do
 		for i=1,#data do
 			local row = data[i];
 			for j=1,#row do
-				row[m[j]] = row[j];
-				row[j] = nil;
+				local n = m[j];
+				if n then
+					row[n] = row[j];
+					row[j] = nil;
+				else print("[warning] expected "..#n.." columns for table `"..name.."`, found "..#row); break; end
 			end
 		end
 	end
