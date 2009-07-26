@@ -214,7 +214,7 @@ end
 function roster_group(node, host, jid, group)
 	local roster = dm.load(node, host, "roster") or {};
 	local item = roster[jid];
-	if not item then print("Warning: No roster item "..jid.." for user "..user..", can't put in group "..group); return; end
+	if not item then print("Warning: No roster item "..jid.." for user "..node..", can't put in group "..group); return; end
 	item.groups[group] = true;
 	local ret, err = dm.store(node, host, "roster", roster);
 	print("["..(err or "success").."] roster-group: " ..node.."@"..host.." - "..jid.." - "..group);
