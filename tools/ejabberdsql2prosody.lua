@@ -39,6 +39,7 @@ end
 local function unescape(s)
 	if s == "\\'" then return "'"; end
 	if s == "\\n" then return "\n"; end
+	if s == "\\\\" then return "\\"; end
 	error("Unknown escape sequence: "..s);
 end
 local function readString()
