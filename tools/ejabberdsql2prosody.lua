@@ -195,7 +195,7 @@ function roster_pending(node, host, jid)
 	roster.pending = roster.pending or {};
 	roster.pending[jid] = true;
 	local ret, err = dm.store(node, host, "roster", roster);
-	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+	print("["..(err or "success").."] roster-pending: " ..node.."@"..host.." - "..jid);
 end
 function roster_group(node, host, jid, group)
 	local roster = dm.load(node, host, "roster") or {};
@@ -203,7 +203,7 @@ function roster_group(node, host, jid, group)
 	if not item then print("Warning: No roster item "..jid.." for user "..user..", can't put in group "..group); return; end
 	item.groups[group] = true;
 	local ret, err = dm.store(node, host, "roster", roster);
-	print("["..(err or "success").."] roster: " ..node.."@"..host.." - "..jid);
+	print("["..(err or "success").."] roster-group: " ..node.."@"..host.." - "..jid.." - "..group);
 end
 for i, row in ipairs(t["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
@@ -226,7 +226,6 @@ for i, row in ipairs(t["rosterusers"] or NULL) do
 		ask = "subscribe";
 	elseif ask == "I" then
 		roster_pending(node, host, contact);
-		return;
 	else error("Unknown ask type: "..ask); end
 	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
 	roster(node, host, contact, item);
