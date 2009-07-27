@@ -330,7 +330,7 @@ module:hook("resource-unbind", function(event)
 		pres:tag("status"):text("Disconnected: "..err):up();
 		session:dispatch_stanza(pres);
 	elseif session.directed then
-		local pres = st.presence{ type = "unavailable" };
+		local pres = st.presence{ type = "unavailable", from = session.full_jid };
 		if not(err) or err == "closed" then err = "connection closed"; end
 		pres:tag("status"):text("Disconnected: "..err):up();
 		for jid in pairs(session.directed) do
