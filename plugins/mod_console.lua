@@ -156,6 +156,51 @@ commands["!"] = function (session, data)
 	session.print("Sorry, not sure what you want");
 end
 
+function commands.help(session, data)
+	local print = session.print;
+	local section = data:match("^help (%w+)");
+	if not section then
+		print [[Commands are divided into multiple sections. For help on a particular section, ]]
+		print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
+		print [[]]
+		print [[c2s - Commands to manage local client-to-server sessions]]
+		print [[s2s - Commands to manage sessions between this server and others]]
+		print [[module - Commands to load/reload/unload modules/plugins]]
+		print [[server - Uptime, version, shutting down, etc.]]
+		print [[console - Help regarding the console itself]]
+	elseif section == "c2s" then
+		print [[c2s:show(jid) - Show all client sessions with the specified JID (or all if no JID given)]]
+		print [[c2s:show_insecure() - Show all unencrypted client connections]]
+		print [[c2s:show_secure() - Show all encrypted client connections]]
+		print [[c2s:close(jid) - Close all sessions for the specified JID]]
+	elseif section == "s2s" then
+		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
+		print [[s2s:close(from, to) - Close a connection from one domain to another]]
+	elseif section == "module" then
+		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
+		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
+		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
+	elseif section == "server" then
+		print [[server:version() - Show the server's version number]]
+		print [[server:uptime() - Show how long the server has been running]]
+		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+	elseif section == "console" then
+		print [[Hey! Welcome to Prosody's admin console.]]
+		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
+		print [[Secondly, note that we don't support the full telnet protocol yet (it's coming)]]
+		print [[so you may have trouble using the arrow keys, etc. depending on your system.]]
+		print [[]]
+		print [[For now we offer a couple of handy shortcuts:]]
+		print [[!! - Repeat the last command]]
+		print [[!old!new! - repeat the last command, but with 'old' replaced by 'new']]
+		print [[]]
+		print [[For those well-versed in Prosody's internals, or taking instruction from those who are,]]
+		print [[you can prefix a command with > to escape the console sandbox, and access everything in]]
+		print [[the running server. Great fun, but be careful not to break anything :)]]
+	end
+	print [[]]
+end
+
 -- Session environment --
 -- Anything in def_env will be accessible within the session as a global variable
 
