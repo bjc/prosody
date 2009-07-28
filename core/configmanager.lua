@@ -113,6 +113,7 @@ do
 											set(env.__currenthost or "*", "core", k, v);
 										end});
 		
+		rawset(env, "__currenthost", "*") -- Default is global
 		function env.Host(name)
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
