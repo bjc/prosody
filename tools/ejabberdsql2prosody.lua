@@ -136,7 +136,14 @@ local function readFile(filename)
 	while true do
 		local tname, tuples = readInsert();
 		if tname then
-			t[tname] = tuples;
+			if t[name] then
+				local t_name = t[name];
+				for i=1,#tuples do
+					table.insert(t_name, tuples[i]);
+				end
+			else
+				t[tname] = tuples;
+			end
 		elseif peek() == nil then
 			break;
 		end
