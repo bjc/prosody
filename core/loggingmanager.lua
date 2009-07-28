@@ -222,7 +222,7 @@ function log_sink_types.file(config)
 
 	local timestamps = config.timestamps;
 
-	if timestamps == true then
+	if timestamps == nil or timestamps == true then
 		timestamps = default_timestamp; -- Default format
 	end
 

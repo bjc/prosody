@@ -70,9 +70,14 @@ end
 
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
+local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
+		if session.notopen then
+			session.sends2s("<?xml version='1.0'?>");
+			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
+		end
 		if reason then
 			if type(reason) == "string" then -- assume stream error
 				log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
