@@ -41,6 +41,11 @@ function activate(host, host_config)
 	                 or (configmanager.get(host, "core", "anonymous_login") 
 	                     and (configmanager.get(host, "core", "disallow_s2s") ~= false))
 	              };
+	for option_name in pairs(host_config.core) do
+		if option_name:match("_ports$") then
+			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in global Host \"*\" instead", host, option_name);
+		end
+	end
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
