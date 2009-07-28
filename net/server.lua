@@ -181,20 +181,41 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
             out_error "server.lua: wrong server sslctx"
             ssl = false
         end
-        sslctx, err = ssl_newcontext( sslctx )
-        if not sslctx then
+        local ctx;
+        ctx, err = ssl_newcontext( sslctx )
+        if not ctx then
             err = err or "wrong sslctx parameters"
-            out_error( "server.lua: ", err )
+            local file;
+            file = err:match("^error loading (.-) %(");
+            if file then
+            	if file == "private key" then
+            		file = sslctx.key or "your private key";
+            	elseif file == "certificate" then
+            		file = sslctx.certificate or "your certificate file";
+            	end
+	        local reason = err:match("%((.+)%)$") or "some reason";
+	        if reason == "Permission denied" then
+	        	reason = "Check that the permissions allow Prosody to read this file.";
+	        elseif reason == "No such file or directory" then
+	        	reason = "Check that the path is correct, and the file exists.";
+	        elseif reason == "system lib" then
+	        	reason = "Previous error (see logs), or other system error.";
+	        else
+	        	reason = "Reason: "..tostring(reason or "unknown"):lower();
+	        end
+	        log("error", "SSL/TLS: Failed to load %s: %s", file, reason);
+	    else
+                log("error", "SSL/TLS: Error initialising for port %d: %s", serverport, err );
+            end
             ssl = false
         end
+        sslctx = ctx;
     end
     if not ssl then
       sslctx = false;
       if startssl then
-         out_error( "server.lua: Cannot start ssl on port: ", serverport )
+         log("error", "Failed to listen on port %d due to SSL/TLS to SSL/TLS initialisation errors (see logs)", serverport )
          return nil, "Cannot start ssl,  see log for details"
-       else
-         out_put("server.lua: ", "ssl not enabled on ", serverport);
        end
     end
 
