@@ -30,6 +30,7 @@ module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
 	local disable = #item.tags ~= 1 or #item.tags[1].tags == 0;
+	if #item.tags == 0 then item.name = "retract"; end
 	local bare = session.username..'@'..session.host;
 	local stanza = st.message({from=bare, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
@@ -128,7 +129,7 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 		local payload = stanza.tags[1];
 		if payload.name == 'pubsub' then -- <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 			payload = payload.tags[1];
-			if payload and payload.name == 'publish' and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
+			if payload and (payload.name == 'publish' or payload.name == 'retract') and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
 				local node = payload.attr.node;
 				payload = payload.tags[1];
 				if payload then -- <item>
