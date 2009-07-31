@@ -70,6 +70,9 @@ function console_listener.listener(conn, data)
 			if data:match("^>") then
 				data = data:gsub("^>", "");
 				useglobalenv = true;
+			elseif data == "\004" then
+				commands["bye"](session, data);
+				return;
 			else
 				local command = data:lower();
 				command = data:match("^%w+") or data:match("%p");
