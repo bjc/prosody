@@ -278,6 +278,12 @@ function roster_group(node, host, jid, group)
 	local ret, err = dm.store(node, host, "roster", roster);
 	print("["..(err or "success").."] roster-group: " ..node.."@"..host.." - "..jid.." - "..group);
 end
+function private_storage(node, host, xmlns, stanza)
+	local private = dm.load(node, host, "private") or {};
+	private[stanza.name..":"..xmlns] = st.preserialize(stanza);
+	local ret, err = dm.store(node, host, "private", private);
+	print("["..(err or "success").."] private: " ..node.."@"..host.." - "..xmlns);
+end
 for i, row in ipairs(t["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
 	local name = row.nick;
@@ -313,4 +319,7 @@ end
 for i, row in ipairs(t["vcard"] or NULL) do
 	local ret, err = dm.store(row.username, host, "vcard", st.preserialize(parse_xml(row.vcard)));
 	print("["..(err or "success").."] vCard: "..row.username.."@"..host);
+end
+for i, row in ipairs(t["private_storage"] or NULL) do
+	private_storage(row.username, host, row.namespace, st.preserialize(parse_xml(row.data)));
 end
