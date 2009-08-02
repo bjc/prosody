@@ -310,3 +310,7 @@ end
 for i, row in ipairs(t["rostergroups"] or NULL) do
 	roster_group(row.username, host, row.jid, row.grp);
 end
+for i, row in ipairs(t["vcard"] or NULL) do
+	local ret, err = dm.store(row.username, host, "vcard", st.preserialize(parse_xml(row.vcard)));
+	print("["..(err or "success").."] vCard: "..row.username.."@"..host);
+end
