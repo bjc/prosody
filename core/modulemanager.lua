@@ -418,6 +418,10 @@ function api:require(lib)
 	return f();
 end
 
+function api:get_option(name, default_value)
+	return config.get(self.host, self.name, name) or config.get(self.host, "core", name) or default_value;
+end
+
 --------------------------------------------------------------------
 
 local actions = {};
