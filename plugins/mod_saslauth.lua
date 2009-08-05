@@ -69,16 +69,21 @@ end
 
 local function credentials_callback(mechanism, ...)
 	if mechanism == "PLAIN" then
-		local username, hostname, password = arg[1], arg[2], arg[3];
-		local response = usermanager_validate_credentials(hostname, username, password, mechanism)
-		if response == nil then return false
-		else return response end
+		local username, hostname, password = ...;
+		local response = usermanager_validate_credentials(hostname, username, password, mechanism);
+		if response == nil then
+			return false;
+		else
+			return response;
+		end
 	elseif mechanism == "DIGEST-MD5" then
 		function func(x) return x; end
-		local node, domain, realm, decoder = arg[1], arg[2], arg[3], arg[4];
-		local password = usermanager_get_password(node, domain)
+		local node, domain, realm, decoder = ...;
+		local password = usermanager_get_password(node, domain);
 		if password then
-			if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
+			if decoder then
+				node, realm, password = decoder(node), decoder(realm), decoder(password);
+			end
 			return func, md5(node..":"..realm..":"..password);
 		else
 			return func, nil;
