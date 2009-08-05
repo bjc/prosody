@@ -77,8 +77,12 @@ local function credentials_callback(mechanism, ...)
     function func(x) return x; end
     local node, domain, realm, decoder = arg[1], arg[2], arg[3], arg[4];
     local password = usermanager_get_password(node, domain)
-    if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
-    return func, md5(node..":"..realm..":"..password);
+    if password then
+      if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
+      return func, md5(node..":"..realm..":"..password);
+    else
+      return func, nil;
+    end
   end
 end
 
