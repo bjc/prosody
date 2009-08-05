@@ -136,8 +136,8 @@ function stream_callbacks.streamopened(request, attr)
 		if not hosts[attr.to] then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
-			session_close_reply.attr.condition = "host-unknown";
-			request:send{ headers = default_headers, body = tostring(session_close_reply) };
+			session_close_reply.body.attr.condition = "host-unknown";
+			request:send(session_close_reply);
 			request.notopen = nil
 			return;
 		end
