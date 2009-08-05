@@ -37,6 +37,7 @@ local function send_response(request, response)
 	-- Write status line
 	local resp;
 	if response.body then
+		local body = tostring(response.body);
 		log("debug", "Sending response to %s", request.id);
 		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
 		local h = response.headers;
@@ -48,15 +49,15 @@ local function send_response(request, response)
 				t_insert(resp, "\r\n");
 			end
 		end
-		if response.body and not (h and h["Content-Length"]) then
+		if not (h and h["Content-Length"]) then
 			t_insert(resp, "Content-Length: ");
-			t_insert(resp, #response.body);
+			t_insert(resp, #body);
 			t_insert(resp, "\r\n");
 		end
 		t_insert(resp, "\r\n");
 		
-		if response.body and request.method ~= "HEAD" then
-			t_insert(resp, response.body);
+		if request.method ~= "HEAD" then
+			t_insert(resp, body);
 		end
 	else
 		-- Response we have is just a string (the body)
