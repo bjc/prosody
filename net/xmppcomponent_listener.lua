@@ -167,6 +167,7 @@ function component_listener.disconnect(conn, err)
 			hosts[session.host].connected = nil;
 		end
 		sessions[conn]  = nil;
+		for k in pairs(session) do session[k] = nil; end
 		session = nil;
 		collectgarbage("collect");
 	end
