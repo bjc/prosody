@@ -83,7 +83,7 @@ local function handle_xmlrpc_request(jid, method, args)
 		end
 		return create_error_response(500, "Error in creating response: "..result);
 	end
-	return create_error_response(0, (result and result:gmatch("[^:]*:[^:]*: (.*)")()) or "nil");
+	return create_error_response(0, tostring(result):gsub("^[^:]+:%d+: ", ""));
 end
 
 local function handle_xmpp_request(origin, stanza)
