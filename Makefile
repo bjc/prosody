@@ -71,7 +71,7 @@ prosody.cfg.lua.install:
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
 
 prosody.release:
-	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%01x"' .hg/dirstate \
+	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%02x"' .hg/dirstate \
 	    > prosody.version || true
 
 prosody.version: prosody.release
