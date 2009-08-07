@@ -16,6 +16,7 @@ local unpack = unpack;
 local tostring = tostring;
 local is_admin = require "core.usermanager".is_admin;
 local jid_split = require "util.jid".split;
+local jid_bare = require "util.jid".bare;
 local b64_decode = require "util.encodings".base64.decode;
 local get_method = require "core.objectmanager".get_object;
 local validate_credentials = require "core.usermanager".validate_credentials;
@@ -65,10 +66,15 @@ local function parse_xml(xml)
 	return stanza.tags[1];
 end
 
-local function handle_xmlrpc_request(method, args)
+local function handle_xmlrpc_request(jid, method, args)
+	local is_secure_call = (method:sub(1,7) == "secure/");
+	if not is_admin(jid) and not is_secure_call then
+		return create_error_response(401, "not authorized");
+	end
 	method = get_method(method);
 	if not method then return create_error_response(404, "method not found"); end
 	args = args or {};
+	if is_secure_call then table.insert(args, 1, jid); end
 	local success, result = pcall(method, unpack(args));
 	if success then
 		success, result = pcall(create_response, result or "nil");
@@ -77,22 +83,20 @@ local function handle_xmlrpc_request(method, args)
 		end
 		return create_error_response(500, "Error in creating response: "..result);
 	end
-	return create_error_response(0, result or "nil");
+	return create_error_response(0, tostring(result):gsub("^[^:]+:%d+: ", ""));
 end
 
 local function handle_xmpp_request(origin, stanza)
 	local query = stanza.tags[1];
 	if query.name == "query" then
 		if #query.tags == 1 then
-			if is_admin(stanza.attr.from) then
-				local success, method, args = pcall(translate_request, query.tags[1]);
-				if success then
-					local result = handle_xmlrpc_request(method, args);
-					origin.send(st.reply(stanza):tag('query', {xmlns='jabber:iq:rpc'}):add_child(result));
-				else
-					origin.send(st.error_reply(stanza, "modify", "bad-request", method));
-				end
-			else origin.send(st.error_reply(stanza, "auth", "forbidden", "No content in XML-RPC request")); end
+			local success, method, args = pcall(translate_request, query.tags[1]);
+			if success then
+				local result = handle_xmlrpc_request(jid_bare(stanza.attr.from), method, args);
+				origin.send(st.reply(stanza):tag('query', {xmlns='jabber:iq:rpc'}):add_child(result));
+			else
+				origin.send(st.error_reply(stanza, "modify", "bad-request", method));
+			end
 		else origin.send(st.error_reply(stanza, "modify", "bad-request", "No content in XML-RPC request")); end
 	else origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); end
 end
@@ -106,7 +110,7 @@ local function handle_http_request(method, body, request)
 	-- authenticate user
 	local username, password = b64_decode(request['authorization'] or ''):gmatch('([^:]*):(.*)')(); -- TODO digest auth
 	local node, host = jid_split(username);
-	if not validate_credentials(host, node, password) and is_admin(username) then
+	if not validate_credentials(host, node, password) then
 		return unauthorized_response;
 	end
 	-- parse request
@@ -117,7 +121,7 @@ local function handle_http_request(method, body, request)
 	-- execute request
 	local success, method, args = pcall(translate_request, stanza);
 	if success then
-		return { headers = default_headers; body = tostring(handle_xmlrpc_request(method, args)) };
+		return { headers = default_headers; body = tostring(handle_xmlrpc_request(node.."@"..host, method, args)) };
 	end
 	return "<html><body>Error parsing XML-RPC request: "..tostring(method).."</body></html>";
 end
