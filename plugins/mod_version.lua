@@ -16,7 +16,7 @@ module:add_feature(xmlns_version);
 
 local version = "the best operating system ever!";
 
-if not require "core.configmanager".get("*", "core", "hide_os_type") then
+if not module:get_option("hide_os_type") then
 	if os.getenv("WINDIR") then
 		version = "Windows";
 	else
