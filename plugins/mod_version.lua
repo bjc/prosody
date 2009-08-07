@@ -6,13 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-
-local prosody = prosody;
 local st = require "util.stanza";
 
-local xmlns_version = "jabber:iq:version"
-
-module:add_feature(xmlns_version);
+module:add_feature("jabber:iq:version");
 
 local version = "the best operating system ever!";
 
@@ -31,11 +27,15 @@ end
 
 version = version:match("^%s*(.-)%s*$") or version;
 
-module:add_iq_handler({"c2s", "s2sin"}, xmlns_version, function(session, stanza)
-	if stanza.attr.type == "get" then
-		session.send(st.reply(stanza):query(xmlns_version)
-			:tag("name"):text("Prosody"):up()
-			:tag("version"):text(prosody.version):up()
-			:tag("os"):text(version));
+local query = st.stanza("query", {xmlns = "jabber:iq:version"})
+	:tag("name"):text("Prosody"):up()
+	:tag("version"):text(prosody.version):up()
+	:tag("os"):text(version);
+
+module:hook("iq/host/jabber:iq:version:query", function(event)
+	local stanza = event.stanza;
+	if stanza.attr.type == "get" and stanza.attr.to == module.host then
+		event.origin.send(st.reply(stanza):add_child(query));
+		return true;
 	end
 end);
