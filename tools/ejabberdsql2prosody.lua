@@ -136,8 +136,8 @@ local function readFile(filename)
 	while true do
 		local tname, tuples = readInsert();
 		if tname then
-			if t[name] then
-				local t_name = t[name];
+			if t[tname] then
+				local t_name = t[tname];
 				for i=1,#tuples do
 					table.insert(t_name, tuples[i]);
 				end
