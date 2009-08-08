@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-
+module.host = "*" -- Global module
 
 local st = require "util.stanza";
 local register_component = require "core.componentmanager".register_component;
