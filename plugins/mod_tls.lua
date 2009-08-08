@@ -6,14 +6,11 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local st = require "util.stanza";
 
 local xmlns_starttls ='urn:ietf:params:xml:ns:xmpp-tls';
 
-local config = require "core.configmanager";
-local secure_auth_only = config.get("*", "core", "require_encryption");
+local secure_auth_only = module:get_option("require_encryption");
 
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
