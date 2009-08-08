@@ -327,7 +327,7 @@ for i, row in ipairs(t["vcard"] or NULL) do
 	print("["..(err or "success").."] vCard: "..row.username.."@"..host);
 end
 for i, row in ipairs(t["private_storage"] or NULL) do
-	private_storage(row.username, host, row.namespace, st.preserialize(parse_xml(row.data)));
+	private_storage(row.username, host, row.namespace, parse_xml(row.data));
 end
 table.sort(t["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
 local time_offset = os.difftime(os.time(os.date("!*t")), os.time(os.date("*t"))) -- to deal with timezones
