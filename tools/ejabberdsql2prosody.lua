@@ -284,6 +284,12 @@ function private_storage(node, host, xmlns, stanza)
 	local ret, err = dm.store(node, host, "private", private);
 	print("["..(err or "success").."] private: " ..node.."@"..host.." - "..xmlns);
 end
+function offline_msg(node, host, t, stanza)
+	stanza.attr.stamp = os.date("!%Y-%m-%dT%H:%M:%SZ", t);
+	stanza.attr.stamp_legacy = os.date("!%Y%m%dT%H:%M:%S", t);
+	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));
+	print("["..(err or "success").."] offline: " ..node.."@"..host.." - "..os.date("!%Y-%m-%dT%H:%M:%SZ", t));
+end
 for i, row in ipairs(t["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
 	local name = row.nick;
@@ -322,4 +328,19 @@ for i, row in ipairs(t["vcard"] or NULL) do
 end
 for i, row in ipairs(t["private_storage"] or NULL) do
 	private_storage(row.username, host, row.namespace, st.preserialize(parse_xml(row.data)));
+end
+table.sort(t["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
+local time_offset = os.difftime(os.time(os.date("!*t")), os.time(os.date("*t"))) -- to deal with timezones
+local date_parse = function(s)
+	local year, month, day, hour, min, sec = s:match("(....)-?(..)-?(..)T(..):(..):(..)");
+	return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec-time_offset});
+end
+for i, row in ipairs(t["spool"] or NULL) do
+	local stanza = parse_xml(row.xml);
+	local last_child = stanza.tags[#stanza.tags];
+	if not last_child or last_child ~= stanza[#stanza] then error("Last child of offline message is not a tag"); end
+	if last_child.name ~= "x" and last_child.attr.xmlns ~= "jabber:x:delay" then error("Last child of offline message is not a timestamp"); end
+	stanza[#stanza], stanza.tags[#stanza.tags] = nil, nil;
+	local t = date_parse(last_child.attr.stamp);
+	offline_msg(row.username, host, t, stanza);
 end
