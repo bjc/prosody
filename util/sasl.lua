@@ -198,7 +198,7 @@ local function new_digest_md5(realm, credentials_handler)
 
 			--TODO maybe realm support
 			self.username = response["username"];
-			local password_encoding, Y = self.credentials_handler("DIGEST-MD5", response["username"], to_unicode(domain), response["realm"], decoder);
+			local password_encoding, Y = self.credentials_handler("DIGEST-MD5", response["username"], self.realm, response["realm"], decoder);
 			if Y == nil then return "failure", "not-authorized"
 			elseif Y == false then return "failure", "account-disabled" end
 			local A1 = "";
