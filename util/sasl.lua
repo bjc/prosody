@@ -70,11 +70,11 @@ local function new_digest_md5(realm, credentials_handler)
 		if type(message) ~= "table" then error("serialize needs an argument of type table.") end
 
 		-- testing all possible values
+		if message["realm"] then data = data..[[realm="]]..message.realm..[[",]] end
 		if message["nonce"] then data = data..[[nonce="]]..message.nonce..[[",]] end
 		if message["qop"] then data = data..[[qop="]]..message.qop..[[",]] end
 		if message["charset"] then data = data..[[charset=]]..message.charset.."," end
 		if message["algorithm"] then data = data..[[algorithm=]]..message.algorithm.."," end
-		if message["realm"] then data = data..[[realm="]]..message.realm..[[",]] end
 		if message["rspauth"] then data = data..[[rspauth=]]..message.rspauth.."," end
 		data = data:gsub(",$", "")
 		return data
