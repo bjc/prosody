@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
 module.host = "*" -- Global module
 
 local hosts = _G.hosts;
@@ -23,14 +22,13 @@ local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
 local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind|body" };
-local config = require "core.configmanager";
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
 
-local BOSH_DEFAULT_HOLD = tonumber(config.get("*", "core", "bosh_default_hold")) or 1;
-local BOSH_DEFAULT_INACTIVITY = tonumber(config.get("*", "core", "bosh_max_inactivity")) or 60;
-local BOSH_DEFAULT_POLLING = tonumber(config.get("*", "core", "bosh_max_polling")) or 5;
-local BOSH_DEFAULT_REQUESTS = tonumber(config.get("*", "core", "bosh_max_requests")) or 2;
-local BOSH_DEFAULT_MAXPAUSE = tonumber(config.get("*", "core", "bosh_max_pause")) or 300;
+local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
+local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
+local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 5;
+local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
+local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 
@@ -275,7 +273,7 @@ function on_timer()
 	end
 end
 
-local ports = config.get(module.host, "core", "bosh_ports") or { 5280 };
+local ports = module:get_option("bosh_ports") or { 5280 };
 httpserver.new_from_config(ports, "http-bind", handle_request);
 
 server.addtimer(on_timer);
