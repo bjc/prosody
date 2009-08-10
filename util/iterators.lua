@@ -78,6 +78,18 @@ function count(f, s, var)
 	return x;
 end
 
+-- Return the first n items an iterator returns
+function head(n, f, s, var)
+	local c = 0;
+	return function (s, var)
+		if c >= n then
+			return nil;
+		end
+		c = c + 1;
+		return f(s, var);
+	end, s;
+end
+
 -- Convert the values returned by an iterator to an array
 function it2array(f, s, var)
 	local t, var = {};
