@@ -208,16 +208,16 @@ function stream_callbacks.streamopened(request, attr)
 	
 	if session.rid then
 		local rid = tonumber(attr.rid);
-		if rid - session.rid > 1 then
+		local diff = rid - session.rid;
+		if diff > 1 then
 			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
-		elseif session.rid >= rid then
+		elseif diff <= 0 then
 			-- Repeated, ignore
 			session.log("debug", "rid repeated (on request %s), ignoring: %d", request.id, session.rid);
 			request.notopen = nil;
 			t_insert(session.requests, request);
 			return;
 		end
-		request.rid = rid;
 		session.rid = rid;
 	end
 	
