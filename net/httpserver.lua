@@ -61,7 +61,7 @@ local function send_response(request, response)
 		end
 	else
 		-- Response we have is just a string (the body)
-		log("debug", "Sending response to %s: %s", request.id or "<none>", response or "<none>");
+		log("debug", "Sending 200 response to %s", request.id or "<none>");
 		
 		resp = { "HTTP/1.0 200 OK\r\n" };
 		t_insert(resp, "Connection: close\r\n");
