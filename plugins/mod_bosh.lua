@@ -31,6 +31,7 @@ local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) o
 local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
@@ -110,11 +111,9 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	session_close_reply.attr.condition = reason;
-	local session_close_reply = tostring(session_close_reply);
 	for _, held_request in ipairs(session.requests) do
 		held_request:send(session_close_reply);
 		held_request:destroy();
