@@ -21,8 +21,9 @@ local core_process_stanza = core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
-local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind|body" };
+
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
+local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind|body", default_ns = xmlns_bosh };
 
 local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
 local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
