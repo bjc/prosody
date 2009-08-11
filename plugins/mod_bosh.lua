@@ -141,7 +141,7 @@ function stream_callbacks.streamopened(request, attr)
 		
 		-- New session
 		sid = new_uuid();
-		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = attr.rid, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
+		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid), host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
 						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
 						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid), secure = request.secure };
@@ -204,6 +204,21 @@ function stream_callbacks.streamopened(request, attr)
 		request:send{ headers = default_headers, body = tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })) };
 		request.notopen = nil;
 		return;
+	end
+	
+	if session.rid then
+		local rid = tonumber(attr.rid);
+		if rid - session.rid > 1 then
+			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
+		elseif session.rid >= rid then
+			-- Repeated, ignore
+			session.log("debug", "rid repeated (on request %s), ignoring: %d", request.id, session.rid);
+			request.notopen = nil;
+			t_insert(session.requests, request);
+			return;
+		end
+		request.rid = rid;
+		session.rid = rid;
 	end
 	
 	if attr.type == "terminate" then
