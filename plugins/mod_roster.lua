@@ -24,7 +24,7 @@ module:add_feature("jabber:iq:roster");
 
 local rosterver_stream_feature = st.stanza("ver", {xmlns="urn:xmpp:features:rosterver"}):tag("optional"):up();
 module:add_event_hook("stream-features", 
-		function (session, features)												
+		function (session, features)
 			if session.username then
 				features:add_child(rosterver_stream_feature);
 			end
