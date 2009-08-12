@@ -13,13 +13,13 @@ local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
 
 
-module:add_event_hook("stream-features", 
+module:add_event_hook("stream-features",
 		function (session, features)
 			features:add_child(compression_stream_feature);
 		end
 );
 
-module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol, 
+module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
