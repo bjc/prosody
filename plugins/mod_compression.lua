@@ -45,7 +45,7 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 				session:reset_stream();
 				
 				-- create deflate and inflate streams
-				local deflate_stream = zlib.deflate(9);
+				local deflate_stream = zlib.deflate(compression_level);
 				local inflate_stream = zlib.inflate();
 				
 				-- setup compression for session.w
