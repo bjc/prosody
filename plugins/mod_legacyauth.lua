@@ -11,8 +11,7 @@
 local st = require "util.stanza";
 local t_concat = table.concat;
 
-local config = require "core.configmanager";
-local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+local secure_auth_only = module:get_option("require_encryption");
 
 local sessionmanager = require "core.sessionmanager";
 local usermanager = require "core.usermanager";
