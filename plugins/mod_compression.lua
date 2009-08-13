@@ -6,6 +6,7 @@
 --
 
 local st = require "util.stanza";
+local zlib = require "zlib";
 local print = print
 
 local xmlns_compression_feature = "http://jabber.org/features/compress"
@@ -15,7 +16,7 @@ local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compres
 
 module:add_event_hook("stream-features",
 		function (session, features)
-			features:add_child(compression_stream_feature);
+			if not session.compressed then features:add_child(compression_stream_feature); end
 		end
 );
 
@@ -26,6 +27,37 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 			if method == "zlib" then
 				session.log("info", method.." compression selected.");
 				session.send(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
+				session:reset_stream();
+				
+				-- create deflate and inflate streams
+				local deflate_stream = zlib.deflate(9);
+				local inflate_stream = zlib.inflate();
+				
+				-- setup compression for session.w
+				local old_send = session.send;
+				
+				session.send = function(t)
+						local compressed, eof = deflate_stream(tostring(t), 'sync');
+						old_send(compressed);
+					end;
+					
+				-- setup decompression for session.data
+				local function setup_decompression(session)
+					local old_data = session.data
+					session.data = function(conn, data)
+							local decompressed, eof = inflate_stream(data);
+							old_data(conn, decompressed);
+						end;
+				end
+				setup_decompression(session);
+				
+				local session_reset_stream = session.reset_stream;
+				session.reset_stream = function(session)
+						session_reset_stream(session);
+						setup_decompression(session);
+						return true;
+					end;
+				session.compressed = true;
 			else
 				session.log("info", method.." compression selected. But we don't support it.");
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
