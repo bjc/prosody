@@ -7,7 +7,8 @@
 
 local st = require "util.stanza";
 local zlib = require "zlib";
-local print = print
+local print = print;
+local pcall = pcall;
 
 local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
@@ -45,14 +46,38 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 				session:reset_stream();
 				
 				-- create deflate and inflate streams
-				local deflate_stream = zlib.deflate(compression_level);
-				local inflate_stream = zlib.inflate();
+				local status, deflate_stream = pcall(zlib.deflate, compression_level);
+				if status == false then
+					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
+					session.send(error_st);
+					session:log("error", "Failed to create zlib.deflate filter.");
+					module:log("error", inflate_stream);
+					return
+				end
+				
+				local status, inflate_stream = pcall(zlib.inflate);
+				if status == false then
+					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
+					session.send(error_st);
+					session:log("error", "Failed to create zlib.deflate filter.");
+					module:log("error", inflate_stream);
+					return
+				end
 				
 				-- setup compression for session.w
 				local old_send = session.send;
 				
 				session.send = function(t)
-						local compressed, eof = deflate_stream(tostring(t), 'sync');
+						local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
+						if status == false then
+							session:close({
+							  condition = "undefined-condition";
+							  text = compressed;
+							  extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+							});
+							module:log("error", compressed);
+							return;
+						end
 						old_send(compressed);
 					end;
 					
@@ -60,7 +85,16 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 				local function setup_decompression(session)
 					local old_data = session.data
 					session.data = function(conn, data)
-							local decompressed, eof = inflate_stream(data);
+							local status, decompressed, eof = pcall(inflate_stream, data);
+							if status == false then
+								session:close({
+								  condition = "undefined-condition";
+								  text = compressed;
+								  extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+								});
+								module:log("error", compressed);
+								return;
+							end
 							old_data(conn, decompressed);
 						end;
 				end
