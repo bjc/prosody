@@ -42,7 +42,6 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 					:tag("username"):up()
 					:tag("password"):up()
 					:tag("resource"):up());
-				return true;			
 			else
 				username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
 				local reply = st.reply(stanza);
@@ -58,15 +57,9 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 						end
 					end
 					session.send(st.reply(stanza));
-					return true;
 				else
-					local reply = st.reply(stanza);
-					reply.attr.type = "error";
-					reply:tag("error", { code = "401", type = "auth" })
-						:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-					session.send(reply);
-					return true;
+					session.send(st.error_reply(stanza, "auth", "not-authorized"));
 				end
 			end
-			
+			return true;
 		end);
