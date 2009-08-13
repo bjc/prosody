@@ -13,6 +13,17 @@ local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
 
+local compression_level = module:get_option("compression_level");
+
+-- if not defined assume admin wants best compression
+if compression_level == nil then compression_level = 9 end;
+
+compression_level = tonumber(compression_level);
+if not compression_level or compression_level < 1 or compression_level > 9 then
+	module:log("warn", "Invalid compression level in config: %s", tostring(compression_level));
+	module:log("warn", "Module loading aborted. Compression won't be available.");
+	return;
+end
 
 module:add_event_hook("stream-features",
 		function (session, features)
