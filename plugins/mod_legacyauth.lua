@@ -47,7 +47,6 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 			else
 				username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
 				local reply = st.reply(stanza);
-				require "core.usermanager"
 				if usermanager.validate_credentials(session.host, username, password) then
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
