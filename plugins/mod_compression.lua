@@ -17,12 +17,13 @@ local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compres
 module:add_event_hook("stream-features",
 		function (session, features)
 			if not session.compressed then
-				--FIXME only advertise compression support when TLS layer has no compression enabled
+				-- FIXME only advertise compression support when TLS layer has no compression enabled
 				features:add_child(compression_stream_feature);
 			end
 		end
 );
 
+-- TODO Support compression on S2S level too.
 module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- checking if the compression method is supported
