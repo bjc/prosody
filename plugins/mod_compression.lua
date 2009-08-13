@@ -16,7 +16,7 @@ local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compres
 
 module:add_event_hook("stream-features",
 		function (session, features)
-			if not session.compressed then 
+			if not session.compressed then
 				--FIXME only advertise compression support when TLS layer has no compression enabled
 				features:add_child(compression_stream_feature);
 			end
