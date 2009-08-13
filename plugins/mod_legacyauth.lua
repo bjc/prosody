@@ -53,7 +53,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 						success, err_type, err, err_msg = sessionmanager.bind_resource(session, resource);
 						if not success then
 							session.send(st.error_reply(stanza, err_type, err, err_msg));
-							return true;
+							return true; -- FIXME need to unauthenticate here
 						end
 					end
 					session.send(st.reply(stanza));
