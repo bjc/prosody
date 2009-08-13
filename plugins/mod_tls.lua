@@ -28,7 +28,7 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		
 local starttls_attr = { xmlns = xmlns_starttls };
 module:add_event_hook("stream-features", 
-		function (session, features)												
+		function (session, features)
 			if session.conn.starttls then
 				features:tag("starttls", starttls_attr);
 				if secure_auth_only then
