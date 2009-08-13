@@ -7,7 +7,6 @@
 
 local st = require "util.stanza";
 local zlib = require "zlib";
-local print = print;
 local pcall = pcall;
 
 local xmlns_compression_feature = "http://jabber.org/features/compress"
