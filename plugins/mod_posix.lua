@@ -29,12 +29,22 @@ module:add_event_hook("server-started", function ()
 		local uid = config_get("*", "core", "setuid");
 		local gid = config_get("*", "core", "setgid");
 		if gid then
-			pposix.setgid(gid);
-			module:log("debug", "Change group to "..gid..".");
+			local success, msg = pposix.setgid(gid);
+			if success then
+				module:log("debug", "Changed group to "..gid.." successfully.");
+			else
+				module:log("error", "Failed to change group to "..gid..". Error: "..msg);
+				prosody.shutdown("Failed to change group to "..gid);
+			end
 		end
 		if uid then
-			pposix.setuid(uid);
-			module:log("debug", "Change user to "..uid..".");
+			local success, msg = pposix.setuid(uid);
+			if success then
+				module:log("debug", "Changed user to "..uid.." successfully.");
+			else
+				module:log("error", "Failed to change user to "..uid..". Error: "..msg);
+				prosody.shutdown("Failed to change user to "..uid);
+			end
 		end
 	end);
 
