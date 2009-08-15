@@ -24,6 +24,20 @@ local prosody = _G.prosody;
 
 module.host = "*"; -- we're a global module
 
+-- Allow switching away from root, some people like strange ports.
+module:add_event_hook("server-started", function ()
+		local uid = config_get("*", "core", "setuid");
+		local gid = config_get("*", "core", "setgid");
+		if gid then
+			pposix.setgid(gid);
+			module:log("debug", "Change group to "..gid..".");
+		end
+		if uid then
+			pposix.setuid(uid);
+			module:log("debug", "Change user to "..uid..".");
+		end
+	end);
+
 -- Don't even think about it!
 module:add_event_hook("server-starting", function ()
 		if pposix.getuid() == 0 and not config_get("*", "core", "run_as_root") then
