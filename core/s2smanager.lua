@@ -126,6 +126,7 @@ function new_incoming(conn)
 	end
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
+	session.log = log;
 	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	incoming_s2s[session] = true;
 	return session;
