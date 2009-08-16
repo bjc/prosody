@@ -116,9 +116,6 @@ function xmppclient.listener(conn, data)
 
 		-- Logging functions --
 
-		local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
-		session.log = logger.init(conn_name);
-		
 		session.log("info", "Client connected");
 		
 		-- Client is using legacy SSL (otherwise mod_tls sets this flag)

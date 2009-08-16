@@ -19,7 +19,8 @@ local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
 local modulemanager = require "core.modulemanager";
-local log = require "util.logger".init("sessionmanager");
+local logger = require "util.logger";
+local log = logger.init("sessionmanager");
 local error = error;
 local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
@@ -50,6 +51,9 @@ function new_session(conn)
 	local w = conn.write;
 	session.send = function (t) w(tostring(t)); end
 	session.ip = conn.ip();
+	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
+	session.log = logger.init(conn_name);
+		
 	return session;
 end
 
