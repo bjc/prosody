@@ -114,8 +114,6 @@ function xmppclient.listener(conn, data)
 		session = sm_new_session(conn);
 		sessions[conn] = session;
 
-		-- Logging functions --
-
 		session.log("info", "Client connected");
 		
 		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
