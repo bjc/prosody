@@ -114,12 +114,6 @@ function xmppserver.listener(conn, data)
 		session = s2s_new_incoming(conn);
 		sessions[conn] = session;
 
-		-- Logging functions --
-
-		
-		local conn_name = "s2sin"..tostring(conn):match("[a-f0-9]+$");
-		session.log = logger.init(conn_name);
-		
 		session.log("info", "Incoming s2s connection");
 		
 		session.reset_stream = session_reset_stream;
