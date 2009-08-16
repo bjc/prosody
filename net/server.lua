@@ -246,7 +246,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
         _socketlist[ socket ] = nil
         handler = nil
         socket = nil
-        mem_free( )
+        --mem_free( )
         out_put "server.lua: closed server handler and removed sockets from list"
     end
     handler.ip = function( )
@@ -373,7 +373,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler = nil
         end
         socket = nil
-        mem_free( )
+        --mem_free( )
 	if server then
 		server.remove( )
 	end
@@ -559,7 +559,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
             if err then
                 out_put( "server.lua: ssl error: ", tostring(err) )
-                mem_free( )
+                --mem_free( )
                 return nil, nil, err    -- fatal error
             end
             socket:settimeout( 0 )
@@ -664,7 +664,7 @@ closesocket = function( socket )
     _readlistlen = removesocket( _readlist, socket, _readlistlen )
     _socketlist[ socket ] = nil
     socket:close( )
-    mem_free( )
+    --mem_free( )
 end
 
 ----------------------------------// PUBLIC //--
@@ -733,7 +733,7 @@ closeall = function( )
     _sendlist = { }
     _timerlist = { }
     _socketlist = { }
-    mem_free( )
+    --mem_free( )
 end
 
 getsettings = function( )
