@@ -37,6 +37,30 @@ local keys = keys
 local array = require "util.array"
 module "sasl"
 
+--[[
+Authentication Backend Prototypes:
+
+plain:
+	function(username, realm)
+		return password, state;
+	end
+
+plain-test:
+	function(username, realm, password)
+		return true or false, state;
+	end
+
+digest-md5:
+	function(username, realm, encoding)
+		return digesthash, state;
+	end
+
+digest-md5-test:
+	function(username, realm, encoding, digesthash)
+		return true or false, state;
+	end
+]]
+
 local method = {};
 method.__index = method;
 local mechanisms = {};
@@ -71,6 +95,7 @@ function method:mechanisms()
 				end
 		end
 	end
+	self["possible_mechanisms"] = mechanisms;
 	return array.collect(keys(mechanisms));
 end
 
