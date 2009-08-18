@@ -7,12 +7,12 @@
 --
 
 local componentmanager_get_children = require "core.componentmanager".get_children;
+local st = require "util.stanza"
 
+module:add_identity("server", "im", "Prosody"); -- FIXME should be in the non-existing mod_router
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
 
-module:add_identity("server", "im", "Prosody");
-local st = require "util.stanza"
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
