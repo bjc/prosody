@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local prosody = prosody;
 local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
@@ -25,14 +23,6 @@ local components = {};
 
 local disco_items = require "util.multitable".new();
 local NULL = {};
-require "core.discomanager".addDiscoItemsHandler("*host", function(reply, to, from, node)
-	if #node == 0 and hosts[to] then
-		for jid in pairs(disco_items:get(to) or NULL) do
-			reply:tag("item", {jid = jid}):up();
-		end
-		return true;
-	end
-end);
 
 prosody.events.add_handler("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
 
