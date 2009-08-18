@@ -443,6 +443,19 @@ function api:remove_item(key, value)
 	end
 end
 
+function api:get_host_items(key)
+	local result = {};
+	for mod_name, module in pairs(modulemap[self.host]) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items[key] or NULL) do
+				t_insert(result, item);
+			end
+		end
+	end
+	return result;
+end
+
 --------------------------------------------------------------------
 
 local actions = {};
