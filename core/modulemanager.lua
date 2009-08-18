@@ -6,13 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
-local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
@@ -50,8 +47,6 @@ local handler_info = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local features_table = multitable_new();
-local identities_table = multitable_new();
 local handler_table = multitable_new();
 local hooked = multitable_new();
 local hooks = multitable_new();
