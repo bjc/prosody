@@ -18,6 +18,7 @@ module:add_iq_handler({"c2s", "s2sin"}, "http://jabber.org/protocol/disco#items"
 	session.send(discomanager_handle(stanza));
 end);
 
+module:add_identity("server", "im", "Prosody");
 local st = require "util.stanza"
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
