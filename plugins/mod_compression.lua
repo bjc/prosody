@@ -37,6 +37,13 @@ module:add_event_hook("stream-features",
 -- TODO Support compression on S2S level too.
 module:add_handler({"c2s_unauthed", "c2s_authed"}, "compress", xmlns_compression_protocol,
 		function(session, stanza)
+			-- fail if we are already compressed
+			if session.compressed then
+				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
+				session.send(error_st);
+				session:log("warn", "Tried to establish another compression layer.");
+			end
+			
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
 			if method == "zlib" then
@@ -74,7 +81,7 @@ module:add_handler({"c2s_unauthed", "c2s_authed"}, "compress", xmlns_compression
 								text = compressed;
 								extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 							});
-							module:log("error", compressed);
+							module:log("warn", compressed);
 							return;
 						end
 						old_send(compressed);
@@ -91,7 +98,7 @@ module:add_handler({"c2s_unauthed", "c2s_authed"}, "compress", xmlns_compression
 									text = decompressed;
 									extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 								});
-								module:log("error", decompressed);
+								module:log("warn", decompressed);
 								return;
 							end
 							old_data(conn, decompressed);
