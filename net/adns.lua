@@ -50,6 +50,12 @@ function new_async_socket(sock)
 	function listener.disconnect()
 	end
 	newconn.handler, newconn._socket = server.wrapclient(sock, "dns", 53, listener);
+	if not newconn.handler then
+		log("warn", "handler is nil");
+	end
+	if not newconn._socket then
+		log("warn", "socket is nil");
+	end
 	newconn.handler.settimeout = function () end
 	newconn.handler.setsockname = function (_, ...) return sock:setsockname(...); end
 	newconn.handler.setpeername = function (_, ...) local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
