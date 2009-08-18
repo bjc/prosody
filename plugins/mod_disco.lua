@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local discomanager_handle = require "core.discomanager".handle;
 local componentmanager_get_children = require "core.componentmanager".get_children;
 
 module:add_feature("http://jabber.org/protocol/disco#info");
