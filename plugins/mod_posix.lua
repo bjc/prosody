@@ -17,7 +17,6 @@ if type(signal) == "string" then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
-local config_get = require "core.configmanager".get;
 local logger_set = require "util.logger".setwriter;
 
 local prosody = _G.prosody;
@@ -26,8 +25,8 @@ module.host = "*"; -- we're a global module
 
 -- Allow switching away from root, some people like strange ports.
 module:add_event_hook("server-started", function ()
-		local uid = config_get("*", "core", "setuid");
-		local gid = config_get("*", "core", "setgid");
+		local uid = module:get_option("setuid");
+		local gid = module:get_option("setgid");
 		if gid then
 			local success, msg = pposix.setgid(gid);
 			if success then
@@ -50,9 +49,9 @@ module:add_event_hook("server-started", function ()
 
 -- Don't even think about it!
 module:add_event_hook("server-starting", function ()
-		local suid = config_get("*", "core", "setuid");
+		local suid = module:get_option("setuid");
 		if not suid or suid == 0 or suid == "root" then
-			if pposix.getuid() == 0 and not config_get("*", "core", "run_as_root") then
+			if pposix.getuid() == 0 and not module:get_option("run_as_root") then
 				module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
 				module:log("error", "For more information on running Prosody as root, see http://prosody.im/doc/root");
 				prosody.shutdown("Refusing to run as root");
@@ -73,7 +72,7 @@ local function write_pidfile()
 	if pidfile_written then
 		remove_pidfile();
 	end
-	local pidfile = config_get("*", "core", "pidfile");
+	local pidfile = module:get_option("pidfile");
 	if pidfile then
 		local pf, err = io.open(pidfile, "w+");
 		if not pf then
@@ -103,7 +102,7 @@ function syslog_sink_maker(config)
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
-if not config_get("*", "core", "no_daemonize") then
+if not module:get_option("no_daemonize") then
 	local function daemonize_server()
 		local ok, ret = pposix.daemonize();
 		if not ok then
