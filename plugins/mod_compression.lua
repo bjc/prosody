@@ -35,7 +35,7 @@ module:add_event_hook("stream-features",
 );
 
 -- TODO Support compression on S2S level too.
-module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
+module:add_handler({"c2s_unauthed", "c2s_authed"}, "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
@@ -70,9 +70,9 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 						local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 						if status == false then
 							session:close({
-							  condition = "undefined-condition";
-							  text = compressed;
-							  extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+								condition = "undefined-condition";
+								text = compressed;
+								extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 							});
 							module:log("error", compressed);
 							return;
@@ -87,9 +87,9 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 							local status, decompressed, eof = pcall(inflate_stream, data);
 							if status == false then
 								session:close({
-								  condition = "undefined-condition";
-								  text = decompressed;
-								  extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+									condition = "undefined-condition";
+									text = decompressed;
+									extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 								});
 								module:log("error", decompressed);
 								return;
