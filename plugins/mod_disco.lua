@@ -12,13 +12,6 @@ local componentmanager_get_children = require "core.componentmanager".get_childr
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
 
-module:add_iq_handler({"c2s", "s2sin"}, "http://jabber.org/protocol/disco#info", function (session, stanza)
-	session.send(discomanager_handle(stanza));
-end);
-module:add_iq_handler({"c2s", "s2sin"}, "http://jabber.org/protocol/disco#items", function (session, stanza)
-	session.send(discomanager_handle(stanza));
-end);
-
 module:add_identity("server", "im", "Prosody");
 local st = require "util.stanza"
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
