@@ -509,9 +509,12 @@ function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
 		local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
 		if address then  self:addnameserver (address)  end
 	  end
-  else -- FIXME correct for windows, using opendns nameservers for now
-	self:addnameserver ("208.67.222.222")
-	self:addnameserver ("208.67.220.220")
+  elseif os.getenv("WINDIR") then
+  	self:addnameserver ("208.67.222.222")
+  	self:addnameserver ("208.67.220.220")  	
+  end
+  if not self.server or #self.server == 0 then
+  	self:addnameserver("127.0.0.1");
   end
 end
 
