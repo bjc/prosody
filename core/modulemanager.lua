@@ -422,6 +422,25 @@ function api:get_option(name, default_value)
 	return config.get(self.host, self.name, name) or config.get(self.host, "core", name) or default_value;
 end
 
+local t_remove = _G.table.remove;
+local module_items = multitable_new();
+function api:add_item(key, value)
+	self.items = self.items or {};
+	self.items[key] = self.items[key] or {};
+	t_insert(self.items[key], value);
+	self:fire_event("item-added/"..key, {source = self, item = value});
+end
+function api:remove_item(key, value)
+	local t = self.items and self.items[key] or NULL;
+	for i = #t,1,-1 do
+		if t[i] == value then
+			t_remove(self.items[key], i);
+			self:fire_event("item-removed/"..key, {source = self, item = value});
+			return value;
+		end
+	end
+end
+
 --------------------------------------------------------------------
 
 local actions = {};
