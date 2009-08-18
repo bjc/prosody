@@ -7,6 +7,7 @@
 --
 
 local discomanager_handle = require "core.discomanager".handle;
+local componentmanager_get_children = require "core.componentmanager".get_children;
 
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
@@ -40,6 +41,19 @@ module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(even
 			reply:tag("feature", {var=feature}):up();
 			done[feature] = true;
 		end
+	end
+	origin.send(reply);
+	return true;
+end);
+module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(event)
+	local origin, stanza = event.origin, event.stanza;
+	if stanza.attr.type ~= "get" then return; end
+	local node = stanza.tags[1].attr.node;
+	if node and node ~= "" then return; end -- TODO fire event?
+
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
+	for jid in pairs(componentmanager_get_children(module.host)) do
+		reply:tag("item", {jid = jid}):up();
 	end
 	origin.send(reply);
 	return true;
