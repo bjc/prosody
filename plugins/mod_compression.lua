@@ -50,7 +50,7 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 					session.send(error_st);
 					session:log("error", "Failed to create zlib.deflate filter.");
-					module:log("error", inflate_stream);
+					module:log("error", deflate_stream);
 					return
 				end
 				
@@ -88,10 +88,10 @@ module:add_handler("c2s_unauthed", "compress", xmlns_compression_protocol,
 							if status == false then
 								session:close({
 								  condition = "undefined-condition";
-								  text = compressed;
+								  text = decompressed;
 								  extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 								});
-								module:log("error", compressed);
+								module:log("error", decompressed);
 								return;
 							end
 							old_data(conn, decompressed);
