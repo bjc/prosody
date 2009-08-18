@@ -328,45 +328,6 @@ function api:add_iq_handler(origin_type, xmlns, handler)
 	self:add_handler(origin_type, "iq", xmlns, handler);
 end
 
-addDiscoInfoHandler("*host", function(reply, to, from, node)
-	if #node == 0 then
-		local done = {};
-		for module, identities in pairs(identities_table:get(to) or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, identities in pairs(identities_table:get("*") or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get(to) or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get("*") or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		return next(done) ~= nil;
-	end
-end);
-
 function api:add_feature(xmlns)
 	self:add_item("feature", xmlns);
 end
