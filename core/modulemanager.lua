@@ -171,8 +171,6 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
-	features_table:remove(host, name);
-	identities_table:remove(host, name);
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
