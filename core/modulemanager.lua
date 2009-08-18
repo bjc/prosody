@@ -370,8 +370,8 @@ end);
 function api:add_feature(xmlns)
 	features_table:set(self.host, self.name, xmlns, true);
 end
-function api:add_identity(category, type)
-	identities_table:set(self.host, self.name, category.."\0"..type, {category = category, type = type});
+function api:add_identity(category, type, name)
+	identities_table:set(self.host, self.name, category.."\0"..type, {category = category, type = type, name = name});
 end
 
 local event_hook = function(host, mod_name, event_name, ...)
