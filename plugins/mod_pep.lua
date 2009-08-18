@@ -25,7 +25,7 @@ local data = {};
 local recipients = {};
 local hash_map = {};
 
-module:add_identity("pubsub", "pep");
+module:add_identity("pubsub", "pep", "Prosody");
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
