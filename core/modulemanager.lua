@@ -368,9 +368,11 @@ addDiscoInfoHandler("*host", function(reply, to, from, node)
 end);
 
 function api:add_feature(xmlns)
+	self:add_item("feature", xmlns);
 	features_table:set(self.host, self.name, xmlns, true);
 end
 function api:add_identity(category, type, name)
+	self:add_item("identity", {category = category, type = type, name = name});
 	identities_table:set(self.host, self.name, category.."\0"..type, {category = category, type = type, name = name});
 end
 
