@@ -483,13 +483,19 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
     end
     local _sendbuffer = function( )    -- this function sends data
-        local buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
-        local succ, err, byte = send( socket, buffer, 1, bufferlen )
-        local count = ( succ or byte or 0 ) * STAT_UNIT
-        sendtraffic = sendtraffic + count
-        _sendtraffic = _sendtraffic + count
-        _ = _cleanqueue and clean( bufferqueue )
-        --out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
+    	local succ, err, byte, buffer, count;
+    	local count;
+    	if socket then
+            buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
+            succ, err, byte = send( socket, buffer, 1, bufferlen )
+            count = ( succ or byte or 0 ) * STAT_UNIT
+            sendtraffic = sendtraffic + count
+            _sendtraffic = _sendtraffic + count
+            _ = _cleanqueue and clean( bufferqueue )
+            --out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
+        else
+            succ, err, count = false, "closed", 0;
+        end
         if succ then    -- sending succesful
             bufferqueuelen = 0
             bufferlen = 0
