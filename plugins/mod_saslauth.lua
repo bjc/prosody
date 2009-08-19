@@ -12,7 +12,7 @@ local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
-
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local t_concat, t_insert = table.concat, table.insert;
@@ -65,8 +65,12 @@ local function handle_status(session, status)
 end
 
 local function password_callback(node, hostname, realm, mechanism, decoder)
-	local password = (datamanager_load(node, hostname, "accounts") or {}).password; -- FIXME handle hashed passwords
 	local func = function(x) return x; end;
+	local node = nodeprep(node);
+	if not node then
+		return func, nil;
+	end
+	local password = (datamanager_load(node, hostname, "accounts") or {}).password; -- FIXME handle hashed passwords
 	if password then
 		if mechanism == "PLAIN" then
 			return func, password;
