@@ -20,7 +20,7 @@ local generate_uuid = require "util.uuid".generate;
 local t_insert, t_concat = table.insert, table.concat;
 local to_byte, to_char = string.byte, string.char;
 local to_unicode = require "util.encodings".idna.to_unicode;
-local saslprep = require "utii.encodings".stringprep.saslprep;
+local saslprep = require "util.encodings".stringprep.saslprep;
 local s_match = string.match;
 local gmatch = string.gmatch
 local string = string
@@ -37,9 +37,9 @@ local function new_plain(realm, password_handler)
 	
 		if message == "" or message == nil then return "failure", "malformed-request" end
 		local response = message
-		local authorization = s_match(response, "([^&%z]+)")
-		local authentication = s_match(response, "%z([^&%z]+)%z")
-		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+		local authorization = s_match(response, "([^%z]+)")
+		local authentication = s_match(response, "%z([^%z]+)%z")
+		local password = s_match(response, "%z[^%z]+%z([^%z]+)")
 		authorization, authentication, password = saslprep(authorization), saslprep(authentication), saslprep(password);
 		
 		if authentication == nil or password == nil then return "failure", "malformed-request" end
