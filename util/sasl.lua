@@ -20,6 +20,7 @@ local generate_uuid = require "util.uuid".generate;
 local t_insert, t_concat = table.insert, table.concat;
 local to_byte, to_char = string.byte, string.char;
 local to_unicode = require "util.encodings".idna.to_unicode;
+local u_e_saslprep = require "utii.encodings".stringprep.saslprep;
 local s_match = string.match;
 local gmatch = string.gmatch
 local string = string
@@ -39,6 +40,7 @@ local function new_plain(realm, password_handler)
 		local authorization = s_match(response, "([^&%z]+)")
 		local authentication = s_match(response, "%z([^&%z]+)%z")
 		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+		authorization, authentication, password = u_e_saslprep(authorization), u_e_saslprep(authentication), u_e_saslprep(password);
 		
 		if authentication == nil or password == nil then return "failure", "malformed-request" end
 		
@@ -50,6 +52,7 @@ local function new_plain(realm, password_handler)
 		local claimed_password = ""
 		if password_encoding == nil then claimed_password = password
 		else claimed_password = password_encoding(password) end
+		caimed_password = u_e_saslprep(claimed_password);
 		
 		self.username = authentication
 		if claimed_password == correct_password then
