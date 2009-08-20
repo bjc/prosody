@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
---
+-- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -13,6 +13,7 @@ local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
@@ -70,6 +71,10 @@ end
 local function credentials_callback(mechanism, ...)
 	if mechanism == "PLAIN" then
 		local username, hostname, password = ...;
+		username = nodeprep(username);
+		if not username then
+			return false;
+		end
 		local response = usermanager_validate_credentials(hostname, username, password, mechanism);
 		if response == nil then
 			return false;

@@ -38,9 +38,9 @@ local function new_plain(realm, credentials_handler)
 	function object.feed(self, message)
 		if message == "" or message == nil then return "failure", "malformed-request" end
 		local response = message
-		local authorization = s_match(response, "([^&%z]+)")
-		local authentication = s_match(response, "%z([^&%z]+)%z")
-		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+		local authorization = s_match(response, "([^%z]+)")
+		local authentication = s_match(response, "%z([^%z]+)%z")
+		local password = s_match(response, "%z[^%z]+%z([^%z]+)")
 
     if authentication == nil or password == nil then return "failure", "malformed-request" end
     self.username = authentication
@@ -128,7 +128,7 @@ local function new_digest_md5(realm, credentials_handler)
 		return t_concat(p);
 	end
 	local function parse(data)
-		message = {}
+		local message = {}
 		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
 			message[k] = v;
 		end
