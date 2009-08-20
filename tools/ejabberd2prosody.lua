@@ -9,9 +9,14 @@
 
 
 
+package.path = package.path ..";../?.lua";
+
+if arg[0]:match("^./") then
+	package.path = package.path .. ";"..arg[0]:gsub("/ejabberd2prosody.lua$", "/?.lua");
+end
+
 require "erlparse";
 
-package.path = package.path ..";../?.lua";
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 package.loaded["util.logger"] = {init = function() return function() end; end}
