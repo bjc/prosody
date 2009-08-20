@@ -52,7 +52,7 @@ local function new_plain(realm, password_handler)
 		local claimed_password = ""
 		if password_encoding == nil then claimed_password = password
 		else claimed_password = password_encoding(password) end
-		caimed_password = saslprep(claimed_password);
+		claimed_password = saslprep(claimed_password);
 		
 		self.username = authentication
 		if claimed_password == correct_password then
@@ -133,7 +133,7 @@ local function new_digest_md5(realm, password_handler)
 		return t_concat(p);
 	end
 	local function parse(data)
-		message = {}
+		local message = {}
 		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
 			message[k] = v;
 		end
