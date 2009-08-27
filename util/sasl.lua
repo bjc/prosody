@@ -101,38 +101,45 @@ end
 
 -- select a mechanism to use
 function method:select(mechanism)
-
+	self.mech_i = mechanisms[mechanism]
+	if self.mech_i == nil then return false; end
+	return true;
 end
 
 -- feed new messages to process into the library
 function method:process(message)
-
+	if message == "" or message == nil then return "failure", "malformed-request" end
+	return self.mech_i(self, message);
 end
 
 --=========================
 --SASL PLAIN
-local function sasl_mechanism_plain(realm, credentials_handler)
-	local object = { mechanism = "PLAIN", realm = realm, credentials_handler = credentials_handler}
-	function object.feed(self, message)
-		if message == "" or message == nil then return "failure", "malformed-request" end
-		local response = message
-		local authorization = s_match(response, "([^&%z]+)")
-		local authentication = s_match(response, "%z([^&%z]+)%z")
-		local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+local function sasl_mechanism_plain(self, message)
+	local response = message
+	local authorization = s_match(response, "([^&%z]+)")
+	local authentication = s_match(response, "%z([^&%z]+)%z")
+	local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
 
-		if authentication == nil or password == nil then return "failure", "malformed-request" end
-		self.username = authentication
-		local auth_success = self.credentials_handler("PLAIN", self.username, self.realm, password)
+	if authentication == nil or password == nil then return "failure", "malformed-request" end
 
-		if auth_success then
-			return "success"
-		elseif auth_success == nil then
-			return "failure", "account-disabled"
-		else
-			return "failure", "not-authorized"
-		end
+	local correct, state = false, false, false;
+	if self.profile.plain then
+		local correct_password, state = self.profile.plain(authentication, self.realm);
+		if correct_password == password then correct = true; else correct = false; end
+	else if self.profile.plain_test then
+		correct, state = self.profile.plain_test(authentication, self.realm, password);
 	end
-	return object
+
+	self.username = authentication
+	if not state then
+		return "failure", "account-disabled";
+	end
+
+	if correct then
+		return "success";
+	else
+		return "failure", "not-authorized";
+	end
 end
 registerMechanism("PLAIN", {"plain", "plain_test"}, sasl_mechanism_plain);
 
