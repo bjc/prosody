@@ -102,6 +102,10 @@ end
 
 -- select a mechanism to use
 function method:select(mechanism)
+	if self.mech_i then
+		return false;
+	end
+	
 	self.mech_i = mechanisms[mechanism]
 	if self.mech_i == nil then 
 		return false;
