@@ -116,7 +116,7 @@ function method:process(message)
 end
 
 --=========================
---SASL PLAIN
+--SASL PLAIN according to RFC 4616
 local function sasl_mechanism_plain(self, message)
 	local response = message
 	local authorization = s_match(response, "([^%z]+)")
@@ -149,4 +149,6 @@ local function sasl_mechanism_plain(self, message)
 end
 registerMechanism("PLAIN", {"plain", "plain_test"}, sasl_mechanism_plain);
 
+--=========================
+--SASL DIGEST-MD5
 return _M;
