@@ -34,6 +34,12 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
+default_authentication_profile = {
+	plain = function(username, realm)
+			return usermanager_get_password(username, realm), true;
+		end
+};
+
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
@@ -101,8 +107,8 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
-		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, credentials_callback);
-		if not session.sasl_handler then
+		local valid_mechanism = session.sasl_handler:select(stanza.attr.mechanism);
+		if not valid_mechanism then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
 	elseif not session.sasl_handler then
@@ -118,7 +124,7 @@ local function sasl_handler(session, stanza)
 			return;
 		end
 	end
-	local status, ret, err_msg = session.sasl_handler:feed(text);
+	local status, ret, err_msg = session.sasl_handler:process(text);
 	handle_status(session, status);
 	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
@@ -138,14 +144,14 @@ module:add_event_hook("stream-features",
 				if secure_auth_only and not session.secure then
 					return;
 				end
+				session.sasl_handler = new_sasl(session.host, default_authentication_profile);
 				features:tag("mechanisms", mechanisms_attr);
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 					if config.get(session.host or "*", "core", "anonymous_login") then
 						features:tag("mechanism"):text("ANONYMOUS"):up();
 					else
-						mechanisms = usermanager_get_supported_methods(session.host or "*");
-						for k, v in pairs(mechanisms) do
-							features:tag("mechanism"):text(k):up();
+						for k, v in pairs(session.sasl_handler:mechanisms()) do
+							features:tag("mechanism"):text(v):up();
 						end
 					end
 				features:up();

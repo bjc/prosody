@@ -81,6 +81,7 @@ end
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, profile)
 	sasl_i = {profile = profile};
+	sasl_i.realm = realm;
 	return setmetatable(sasl_i, method);
 end
 
@@ -92,7 +93,7 @@ function method:mechanisms()
 		if backend_mechanism[backend] then
 			for _, mechanism in ipairs(backend_mechanism[backend]) do
 				mechanisms[mechanism] = true;
-				end
+			end
 		end
 	end
 	self["possible_mechanisms"] = mechanisms;
@@ -102,7 +103,9 @@ end
 -- select a mechanism to use
 function method:select(mechanism)
 	self.mech_i = mechanisms[mechanism]
-	if self.mech_i == nil then return false; end
+	if self.mech_i == nil then 
+		return false;
+	end
 	return true;
 end
 
@@ -120,13 +123,16 @@ local function sasl_mechanism_plain(self, message)
 	local authentication = s_match(response, "%z([^&%z]+)%z")
 	local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
 
-	if authentication == nil or password == nil then return "failure", "malformed-request" end
+	if authentication == nil or password == nil then
+		return "failure", "malformed-request";
+	end
 
-	local correct, state = false, false, false;
+	local correct, state = false, false;
 	if self.profile.plain then
-		local correct_password, state = self.profile.plain(authentication, self.realm);
+		local correct_password;
+		correct_password, state = self.profile.plain(authentication, self.realm);
 		if correct_password == password then correct = true; else correct = false; end
-	else if self.profile.plain_test then
+	elseif self.profile.plain_test then
 		correct, state = self.profile.plain_test(authentication, self.realm, password);
 	end
 
