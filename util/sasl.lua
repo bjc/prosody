@@ -150,5 +150,5 @@ end
 registerMechanism("PLAIN", {"plain", "plain_test"}, sasl_mechanism_plain);
 
 --=========================
---SASL DIGEST-MD5
+--SASL DIGEST-MD5 according to RFC 2831
 return _M;
