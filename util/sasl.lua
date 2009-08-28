@@ -119,9 +119,9 @@ end
 --SASL PLAIN
 local function sasl_mechanism_plain(self, message)
 	local response = message
-	local authorization = s_match(response, "([^&%z]+)")
-	local authentication = s_match(response, "%z([^&%z]+)%z")
-	local password = s_match(response, "%z[^&%z]+%z([^&%z]+)")
+	local authorization = s_match(response, "([^%z]+)")
+	local authentication = s_match(response, "%z([^%z]+)%z")
+	local password = s_match(response, "%z[^%z]+%z([^%z]+)")
 
 	if authentication == nil or password == nil then
 		return "failure", "malformed-request";
