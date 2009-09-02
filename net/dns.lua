@@ -17,6 +17,7 @@
 require 'socket'
 local ztact = require 'util.ztact'
 local require = require
+local os = os;
 
 local coroutine, io, math, socket, string, table =
       coroutine, io, math, socket, string, table
