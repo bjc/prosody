@@ -35,7 +35,7 @@ module:add_event_hook("stream-features",
 );
 
 -- TODO Support compression on S2S level too.
-module:add_handler({"c2s_unauthed", "c2s_authed"}, "compress", xmlns_compression_protocol,
+module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- fail if we are already compressed
 			if session.compressed then
