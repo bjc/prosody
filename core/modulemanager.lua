@@ -228,7 +228,7 @@ function reload(host, name, ...)
 end
 
 function handle_stanza(host, origin, stanza)
-	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
 	if name == "iq" and xmlns == "jabber:client" then
 		if stanza.attr.type == "get" or stanza.attr.type == "set" then
 			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
