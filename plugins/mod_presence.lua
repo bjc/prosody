@@ -29,7 +29,7 @@ function core_route_stanza(origin, stanza)
 	if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
 		local node, host = jid_split(stanza.attr.to);
 		host = hosts[host];
-		if host and host.type == "local" then
+		if node and host and host.type == "local" then
 			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
 			return;
 		end
