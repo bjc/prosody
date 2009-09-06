@@ -84,7 +84,11 @@ local function credentials_callback(mechanism, ...)
 	elseif mechanism == "DIGEST-MD5" then
 		function func(x) return x; end
 		local node, domain, realm, decoder = ...;
-		local password = usermanager_get_password(node, domain);
+		local prepped_node = nodeprep(node);
+		if not prepped_node then
+			return func, nil;
+		end
+		local password = usermanager_get_password(prepped_node, domain);
 		if password then
 			if decoder then
 				node, realm, password = decoder(node), decoder(realm), decoder(password);
