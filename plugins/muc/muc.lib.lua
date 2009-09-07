@@ -515,7 +515,7 @@ end
 
 local _M = {}; -- module "muc"
 
-function _M:new_room(jid)
+function _M.new_room(jid)
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
