@@ -93,6 +93,15 @@ end -- TODO allow non-private rooms]]
 --
 
 local room_mt = {};
+room_mt.__index = room_mt;
+
+function room_mt:get_default_role(affiliation)
+	if affiliation == "owner" or affiliation == "admin" then
+		return "moderator";
+	elseif affiliation == "member" or not affiliation then
+		return "participant";
+	end
+end
 
 function room_mt:broadcast_presence(stanza, code, nick)
 	stanza = get_filtered_presence(stanza);
@@ -253,8 +262,12 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 --						rooms_info:set(room, 'name', (jid_split(room)));
 --						data = {affiliation='owner', role='moderator', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 --					end
+					if not next(self._affiliations) then -- new room, no owners
+						self._affiliations[jid_bare(from)] = "owner";
+					end
 					if not data then -- new occupant
-						data = {affiliation='none', role='participant', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+						local affiliation = self:get_affiliation(from);
+						data = {affiliation=affiliation, role=self:get_default_role(affiliation), jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 					end
 					self._participants[to] = data;
 					self._jid_nick[from] = to;
@@ -352,14 +365,33 @@ end
 
 function room_mt:route_stanza(stanza) end -- Replace with a routing function, e.g., function(room, stanza) core_route_stanza(origin, stanza); end
 
-module "muc"
+function room_mt:get_affiliation(jid)
+	local node, host, resource = jid_split(jid);
+	local bare = node and node.."@"..host or host;
+	local result = self._affiliations[bare]; -- Affiliations are granted, revoked, and maintained based on the user's bare JID.
+	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
+	return result;
+end
 
-function new_room(jid)
+function room_mt:set_affiliation(jid, affiliation)
+	local node, host, resource = jid_split(jid);
+	local bare = node and node.."@"..host or host;
+	if affiliation == "none" then affiliation = nil; end
+	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then return false; end
+	self._affiliations[bare] = affiliation;
+	-- TODO set roles based on new affiliation
+	return true;
+end
+
+local _M = {}; -- module "muc"
+
+function _M:new_room(jid)
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
 		_participants = {};
 		_data = {};
+		_affiliations = {};
 	}, room_mt);
 end
 
