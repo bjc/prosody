@@ -445,12 +445,13 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback)
 	if jid_bare(actor) == jid then return nil, "cancel", "not-allowed"; end
 	self._affiliations[jid] = affiliation;
 	local role = self:get_default_role(affiliation);
-	local p = st.presence({type = "unavailable"})
+	local p = st.presence()
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
 	local x = p.tags[1];
 	local item = x.tags[1];
 	if not role then -- getting kicked
+		p.attr.type = "unavailable";
 		if affiliation == "outcast" then
 			x:tag("status", {code="301"}):up(); -- banned
 		else
@@ -492,10 +493,11 @@ function room_mt:set_role(actor, nick, role, callback)
 	local occupant = self._occupants[nick];
 	if not occupant then return nil, "modify", "not-acceptable"; end
 	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
-	local p = st.presence({from = nick, type = "unavailable"})
+	local p = st.presence({from = nick})
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=occupant.affiliation or "none", nick=nick, role=role or "none"}):up();
 	if not role then -- kick
+		p.attr.type = "unavailable";
 		self._occupants[nick] = nil;
 		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
 			self._jid_nick[jid] = nil;
