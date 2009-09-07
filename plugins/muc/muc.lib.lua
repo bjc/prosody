@@ -454,7 +454,7 @@ function room_mt:set_role(actor, nick, role, callback)
 	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
 	local occupant = self._occupants[nick];
 	if not occupant then return nil, "modify", "not-acceptable"; end
-	if jid_bare(actor) == occupant.jid then return nil, "cancel", "not-allowed"; end
+	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
 	local p = st.presence({from = nick, type = "unavailable"})
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=occupant.affiliation, nick=nick, role=role or "none"}):up();
