@@ -327,7 +327,11 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		if item and item.name == "item" then
 			if type == "set" then
 				local callback = function() origin.send(st.reply(stanza)); end
-				if item.attr.affiliation and item.attr.jid and not item.attr.role and not item.attr.nick then
+				if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
+					local occupant = self._occupants[self.jid.."/"..item.attr.nick];
+					if occupant then item.attr.jid = occupant.jid; end
+				end
+				if item.attr.affiliation and item.attr.jid and not item.attr.role then
 					local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback);
 					if not success then origin.send(st.error_reply(stanza, errtype, err)); end
 				elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
