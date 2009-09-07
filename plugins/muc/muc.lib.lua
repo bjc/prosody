@@ -309,8 +309,8 @@ end
 
 function room_mt:handle_to_room(origin, stanza) -- presence changes and groupchat messages, along with disco/etc
 	local type = stanza.attr.type;
-	if stanza.name == "iq" and type == "get" then -- disco requests
-		local xmlns = stanza.tags[1].attr.xmlns;
+	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
+	if stanza.name == "iq" and type == "get" and xmlns ~= "http://jabber.org/protocol/muc#admin" then -- disco requests
 		if xmlns == "http://jabber.org/protocol/disco#info" then
 			origin.send(room_get_disco_info(self, stanza));
 		elseif xmlns == "http://jabber.org/protocol/disco#items" then
@@ -318,20 +318,20 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		else
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
-	elseif stanza.name == "iq" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#admin" then
+	elseif stanza.name == "iq" and xmlns == "http://jabber.org/protocol/muc#admin" then
 		local actor = stanza.attr.from;
 		local affiliation = self:get_affiliation(actor);
 		local current_nick = self._jid_nick[actor];
 		local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
-		local item = stanza.tags[1] and stanza.tags[1].tags[1];
+		local item = stanza.tags[1].tags[1];
 		if item and item.name == "item" then
 			if type == "set" then
 				local callback = function() origin.send(st.reply(stanza)); end
 				if item.attr.affiliation and item.attr.jid and not item.attr.role and not item.attr.nick then
 					local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback);
 					if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-				elseif item.attr.role and item.attr.nick and not item.attr.affiliation and not item.attr.jid then
-					local success, errtype, err = self:set_role(actor, item.attr.nick, item.attr.role, callback);
+				elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
+					local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback);
 					if not success then origin.send(st.error_reply(stanza, errtype, err)); end
 				else
 					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
