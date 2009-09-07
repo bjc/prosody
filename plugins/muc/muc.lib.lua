@@ -257,24 +257,21 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					origin.send(st.error_reply(stanza, "cancel", "conflict"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 				else
 					log("debug", "%s joining as %s", from, to);
-					local data;
---					if not rooms:get(room) and not rooms_info:get(room) then -- new room
---						rooms_info:set(room, 'name', (jid_split(room)));
---						data = {affiliation='owner', role='moderator', jid=from, sessions={[from]=get_filtered_presence(stanza)}};
---					end
 					if not next(self._affiliations) then -- new room, no owners
 						self._affiliations[jid_bare(from)] = "owner";
 					end
-					if not data then -- new occupant
-						local affiliation = self:get_affiliation(from);
-						data = {affiliation=affiliation, role=self:get_default_role(affiliation), jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+					local affiliation = self:get_affiliation(from);
+					local role = self:get_default_role(affiliation)
+					if role then -- new occupant
+						self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+						self._jid_nick[from] = to;
+						self:send_occupant_list(from);
+						pr.attr.from = to;
+						self:broadcast_presence(pr);
+						self:send_history(from);
+					else -- banned
+						origin.send(st.error_reply(stanza, "auth", "forbidden"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 					end
-					self._occupants[to] = data;
-					self._jid_nick[from] = to;
-					self:send_occupant_list(from);
-					pr.attr.from = to;
-					self:broadcast_presence(pr);
-					self:send_history(from);
 				end
 			end
 		elseif type ~= 'result' then -- bad type
