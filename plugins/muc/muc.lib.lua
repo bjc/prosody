@@ -94,7 +94,7 @@ end -- TODO allow non-private rooms]]
 
 local room_mt = {};
 
-local function room_mt:broadcast_presence(stanza, code, nick)
+function room_mt:broadcast_presence(stanza, code, nick)
 	stanza = get_filtered_presence(stanza);
 	local data = self._participants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
@@ -121,7 +121,7 @@ local function room_mt:broadcast_presence(stanza, code, nick)
 		end
 	end
 end
-local function room_mt:broadcast_message(stanza, historic)
+function room_mt:broadcast_message(stanza, historic)
 	for occupant, o_data in pairs(self._participants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
