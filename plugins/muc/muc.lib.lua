@@ -526,7 +526,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback)
 			end
 		end
 	end
-	if room.save then room:save(); end
+	if self.save then self:save(); end
 	if callback then callback(); end
 	for _, nick in ipairs(modified_nicks) do
 		p.attr.from = nick;
