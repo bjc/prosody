@@ -105,14 +105,14 @@ end
 
 function room_mt:broadcast_presence(stanza, code, nick)
 	stanza = get_filtered_presence(stanza);
-	local data = self._participants[stanza.attr.from];
+	local data = self._occupants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 		:tag("item", {affiliation=data.affiliation, role=data.role, nick=nick}):up();
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
 	local me;
-	for occupant, o_data in pairs(self._participants) do
+	for occupant, o_data in pairs(self._occupants) do
 		if occupant ~= stanza.attr.from then
 			for jid in pairs(o_data.sessions) do
 				stanza.attr.to = jid;
@@ -131,7 +131,7 @@ function room_mt:broadcast_presence(stanza, code, nick)
 	end
 end
 function room_mt:broadcast_message(stanza, historic)
-	for occupant, o_data in pairs(self._participants) do
+	for occupant, o_data in pairs(self._occupants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
 			self:route_stanza(stanza);
@@ -151,7 +151,7 @@ end
 
 function room_mt:send_occupant_list(to)
 	local current_nick = self._jid_nick[to];
-	for occupant, o_data in pairs(self._participants) do
+	for occupant, o_data in pairs(self._occupants) do
 		if occupant ~= current_nick then
 			local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
 			pres.attr.to, pres.attr.from = to, occupant;
@@ -206,10 +206,10 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
-				local data = self._participants[current_nick];
+				local data = self._occupants[current_nick];
 				data.role = 'none';
 				self:broadcast_presence(pr);
-				self._participants[current_nick] = nil;
+				self._occupants[current_nick] = nil;
 				self._jid_nick[from] = nil;
 			end
 		elseif not type then -- available
@@ -217,24 +217,24 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
 					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
-						self._participants[current_nick].sessions[from] = pr;
+						self._occupants[current_nick].sessions[from] = pr;
 						self:broadcast_presence(pr);
 					else -- change nick
-						if self._participants[to] then
+						if self._occupants[to] then
 							log("debug", "%s couldn't change nick", current_nick);
 							origin.send(st.error_reply(stanza, "cancel", "conflict"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 						else
-							local data = self._participants[current_nick];
+							local data = self._occupants[current_nick];
 							local to_nick = select(3, jid_split(to));
 							if to_nick then
 								log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
 								local p = st.presence({type='unavailable', from=current_nick});
 								self:broadcast_presence(p, '303', to_nick);
-								self._participants[current_nick] = nil;
-								self._participants[to] = data;
+								self._occupants[current_nick] = nil;
+								self._occupants[to] = data;
 								self._jid_nick[from] = to;
 								pr.attr.from = to;
-								self._participants[to].sessions[from] = pr;
+								self._occupants[to].sessions[from] = pr;
 								self:broadcast_presence(pr);
 							else
 								--TODO malformed-jid
@@ -249,7 +249,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				--end
 			else -- enter room
 				local new_nick = to;
-				if self._participants[to] then
+				if self._occupants[to] then
 					new_nick = nil;
 				end
 				if not new_nick then
@@ -269,7 +269,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						local affiliation = self:get_affiliation(from);
 						data = {affiliation=affiliation, role=self:get_default_role(affiliation), jid=from, sessions={[from]=get_filtered_presence(stanza)}};
 					end
-					self._participants[to] = data;
+					self._occupants[to] = data;
 					self._jid_nick[from] = to;
 					self:send_occupant_list(from);
 					pr.attr.from = to;
@@ -288,7 +288,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		log("debug", "%s kicked from %s for sending an error message", current_nick, room);
 		self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	else -- private stanza
-		local o_data = self._participants[to];
+		local o_data = self._occupants[to];
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
@@ -389,7 +389,7 @@ function _M:new_room(jid)
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
-		_participants = {};
+		_occupants = {};
 		_data = {};
 		_affiliations = {};
 	}, room_mt);
