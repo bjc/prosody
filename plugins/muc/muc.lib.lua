@@ -184,8 +184,12 @@ function room_mt:send_history(to)
 	end
 end
 
-local function room_get_disco_info(self, stanza) end
-local function room_get_disco_items(self, stanza) end
+local function room_get_disco_info(self, stanza)
+	return st.reply(stanza):query("http://jabber.org/protocol/disco#info"):tag("identity", {category="conference", type="text"});
+end
+local function room_get_disco_items(self, stanza)
+	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
+end
 function room_mt:set_subject(current_nick, subject)
 	-- TODO check nick's authority
 	if subject == "" then subject = nil; end
