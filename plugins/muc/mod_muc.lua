@@ -20,6 +20,7 @@ local register_component = require "core.componentmanager".register_component;
 local deregister_component = require "core.componentmanager".deregister_component;
 local jid_split = require "util.jid".split;
 local st = require "util.stanza";
+local uuid_gen = require "util.uuid".generate;
 
 local rooms = {};
 local component;
@@ -48,6 +49,8 @@ local function handle_to_domain(origin, stanza)
 			origin.send(get_disco_info(stanza));
 		elseif xmlns == "http://jabber.org/protocol/disco#items" then
 			origin.send(get_disco_items(stanza));
+		elseif xmlns == "http://jabber.org/protocol/muc#unique" then
+			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions
 		else
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- TODO disco/etc
 		end
