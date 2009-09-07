@@ -148,8 +148,8 @@ function room_mt:broadcast_message(stanza, historic)
 	end
 end
 function room_mt:broadcast_except_nick(stanza, nick)
-	for nick, occupant in pairs(self._occupants) do
-		if nick ~= nick then
+	for rnick, occupant in pairs(self._occupants) do
+		if rnick ~= nick then
 			for jid in pairs(occupant.sessions) do
 				stanza.attr.to = jid;
 				self:route_stanza(stanza);
