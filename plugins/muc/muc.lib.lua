@@ -488,6 +488,7 @@ function room_mt:get_role(nick)
 	return session and session.role or nil;
 end
 function room_mt:set_role(actor, nick, role, callback)
+	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
 	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
 	local occupant = self._occupants[nick];
