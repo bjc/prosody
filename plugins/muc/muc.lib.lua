@@ -147,7 +147,16 @@ function room_mt:broadcast_message(stanza, historic)
 		while #history > history_length do t_remove(history, 1) end
 	end
 end
-
+function room_mt:broadcast_except_nick(stanza, nick)
+	for nick, occupant in pairs(self._occupants) do
+		if nick ~= nick then
+			for jid in pairs(occupant.sessions) do
+				stanza.attr.to = jid;
+				self:route_stanza(stanza);
+			end
+		end
+	end
+end
 
 function room_mt:send_occupant_list(to)
 	local current_nick = self._jid_nick[to];
@@ -309,6 +318,26 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		else
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
+	elseif stanza.name == "iq" and type == "set" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#admin" then
+		local actor = stanza.attr.from;
+		local affiliation = self:get_affiliation(actor);
+		local current_nick = self._jid_nick[actor];
+		local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
+		local item = stanza.tags[1].tags[1];
+		if item and item.name == "item" then
+			local callback = function() origin.send(st.reply(stanza)); end
+			if item.attr.affiliation and item.attr.jid and not item.attr.role and not item.attr.nick then
+				local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback);
+				if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+			elseif item.attr.role and item.attr.nick and not item.attr.affiliation and not item.attr.jid then
+				local success, errtype, err = self:set_role(actor, item.attr.nick, item.attr.role, callback);
+				if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+			else
+				origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+			end
+		else
+			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		end
 	elseif stanza.name == "message" and type == "groupchat" then
 		local from, to = stanza.attr.from, stanza.attr.to;
 		local room = jid_bare(to);
@@ -369,14 +398,81 @@ function room_mt:get_affiliation(jid)
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
-
-function room_mt:set_affiliation(jid, affiliation)
-	local node, host, resource = jid_split(jid);
-	local bare = node and node.."@"..host or host;
+function room_mt:set_affiliation(actor, jid, affiliation, callback)
+	jid = jid_bare(jid);
 	if affiliation == "none" then affiliation = nil; end
-	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then return false; end
-	self._affiliations[bare] = affiliation;
-	-- TODO set roles based on new affiliation
+	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
+		return nil, "modify", "not-acceptable";
+	end
+	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
+	if jid_bare(actor) == jid then return nil, "cancel", "not-allowed"; end
+	self._affiliations[jid] = affiliation;
+	local role = self:get_default_role(affiliation);
+	local p = st.presence({type = "unavailable"})
+		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+			:tag("item", {affiliation=affiliation, role=role or "none"}):up();
+	local x = p.tags[1];
+	local item = x.tags[1];
+	if not role then -- getting kicked
+		if affiliation == "outcast" then
+			x:tag("status", {code="301"}):up(); -- banned
+		else
+			x:tag("status", {code="321"}):up(); -- affiliation change
+		end
+	end
+	local modified_nicks = {};
+	for nick, occupant in pairs(self._occupants) do
+		if jid_bare(occupant.jid) == jid then
+			if not role then -- getting kicked
+				self._occupants[nick] = nil;
+			else
+				t_insert(modified_nicks, nick);
+				occupant.affiliation, occupant.role = affiliation, role;
+			end
+			p.attr.from = nick;
+			for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
+				if not role then self._jid_nick[jid] = nil; end
+				p.attr.to = jid;
+				self:route_stanza(p);
+			end
+		end
+	end
+	if callback then callback(); end
+	for _, nick in ipairs(modified_nicks) do
+		p.attr.from = nick;
+		self:broadcast_except_nick(p, nick);
+	end
+	return true;
+end
+
+function room_mt:get_role(nick)
+	local session = self._occupants[nick];
+	return session and session.role or nil;
+end
+function room_mt:set_role(actor, nick, role, callback)
+	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
+	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
+	local occupant = self._occupants[nick];
+	if not occupant then return nil, "modify", "not-acceptable"; end
+	if jid_bare(actor) == occupant.jid then return nil, "cancel", "not-allowed"; end
+	local p = st.presence({from = nick, type = "unavailable"})
+		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+			:tag("item", {affiliation=occupant.affiliation, nick=nick, role=role or "none"}):up();
+	if not role then -- kick
+		self._occupants[nick] = nil;
+		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
+			self._jid_nick[jid] = nil;
+		end
+		p:tag("status", {code = "307"}):up();
+	else
+		occupant.role = role;
+	end
+	for jid in pairs(occupant.sessions) do -- send to all sessions of the nick
+		p.attr.to = jid;
+		self:route_stanza(p);
+	end
+	if callback then callback(); end
+	self:broadcast_except_nick(p, nick);
 	return true;
 end
 
