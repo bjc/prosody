@@ -313,7 +313,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 end
 
 function room_mt:handle_form(origin, stanza)
-	if self:get_affiliation(stanza.attr.from) ~= "owner" then origin.send(st.error_reply(nil, "auth", "forbidden")); return; end
+	if self:get_affiliation(stanza.attr.from) ~= "owner" then origin.send(st.error_reply(stanza, "auth", "forbidden")); return; end
 	if stanza.attr.type == "get" then
 		local title = "Configuration for "..self.jid;
 		origin.send(st.reply(stanza):query("http://jabber.org/protocol/muc#owner")
