@@ -89,12 +89,13 @@ module.save = function()
 end
 module.restore = function(data)
 	rooms = {};
-	for jid, oldroom in pairs(data.rooms) do
+	for jid, oldroom in pairs(data.rooms or {}) do
 		local room = muc_new_room(jid);
 		room._jid_nick = oldroom._jid_nick;
 		room._occupants = oldroom._occupants;
 		room._data = oldroom._data;
 		room._affiliations = oldroom._affiliations;
+		room.route_stanza = function(room, stanza) core_post_stanza(component, stanza); end;
 		rooms[jid] = room;
 	end
 	prosody.hosts[module:get_host()].muc = { rooms = rooms };
