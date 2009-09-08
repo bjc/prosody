@@ -29,9 +29,10 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 util/* $(SOURCE)/util
 	install -m644 fallbacks/* $(SOURCE)/fallbacks
 	install -m644 plugins/*.lua $(MODULES)
+	install -d $(MODULES)/muc
 	install -m644 plugins/muc/* $(MODULES)/muc
 	install -m644 certs/* $(CONFIG)/certs
-	install -m644 plugins/* $(MODULES)
+	install -m644 plugins/*.lua $(MODULES)
 	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
 	test -e $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
 	test -e prosody.version && install prosody.version $(SOURCE)/prosody.version || true
