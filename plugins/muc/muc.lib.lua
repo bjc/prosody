@@ -295,9 +295,6 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-	elseif stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
-		log("debug", "%s kicked from %s for sending an error message", current_nick, room);
-		self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to}):tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	else -- private stanza
 		local o_data = self._occupants[to];
 		if o_data then
@@ -446,6 +443,11 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 				self:broadcast_message(stanza, true);
 			end
 		end
+	elseif stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
+		local current_nick = self._jid_nick[stanza.attr.from];
+		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
+		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
+			:tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	elseif stanza.name == "presence" then -- hack - some buggy clients send presence updates to the room rather than their nick
 		local to = stanza.attr.to;
 		local current_nick = self._jid_nick[stanza.attr.from];
