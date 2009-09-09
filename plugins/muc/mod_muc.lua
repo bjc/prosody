@@ -114,6 +114,9 @@ component = register_component(muc_host, function(origin, stanza)
 				rooms[bare] = room;
 			end
 			room:handle_stanza(origin, stanza);
+			if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+				rooms[bare] = nil; -- discard room
+			end
 		else --[[not for us?]] end
 		return;
 	end
