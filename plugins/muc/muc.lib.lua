@@ -300,9 +300,10 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
-			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
+			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
 			self:route_stanza(stanza);
+			stanza.attr.to, stanza.attr.from = to, from;
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 		end
