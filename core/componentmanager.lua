@@ -10,7 +10,6 @@ local prosody = prosody;
 local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
-local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
@@ -23,14 +22,12 @@ local components = {};
 local disco_items = require "util.multitable".new();
 local NULL = {};
 
-prosody.events.add_handler("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
-
 module "componentmanager"
 
 local function default_component_handler(origin, stanza)
 	log("warn", "Stanza being handled by default component, bouncing error");
 	if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-		core_route_stanza(nil, st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+		origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 	end
 end
 
