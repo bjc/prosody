@@ -11,6 +11,7 @@ local datamanager = require "util.datamanager";
 local st = require "util.stanza";
 local datetime = require "util.datetime";
 local ipairs = ipairs;
+local jid_split = require "util.jid".split;
 
 module:add_feature("msgoffline");
 
