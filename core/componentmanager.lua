@@ -31,7 +31,6 @@ local function default_component_handler(origin, stanza)
 	end
 end
 
-local components_loaded_once;
 function load_enabled_components(config)
 	local defined_hosts = config or configmanager.getconfig();
 		
