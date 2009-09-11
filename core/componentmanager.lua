@@ -29,7 +29,7 @@ module "componentmanager"
 
 local function default_component_handler(origin, stanza)
 	log("warn", "Stanza being handled by default component, bouncing error");
-	if stanza.attr.type ~= "error" then
+	if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 		core_route_stanza(nil, st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 	end
 end
