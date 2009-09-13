@@ -123,6 +123,11 @@ component = register_component(muc_host, function(origin, stanza)
 	-- to the main muc domain
 	handle_to_domain(origin, stanza);
 end);
+function component.send(stanza) -- FIXME do a generic fix
+	if stanza.attr.type == "result" or stanza.attr.type == "error" then
+		core_post_stanza(component, stanza);
+	else error("component.send only supports result and error stanzas at the moment"); end
+end
 
 prosody.hosts[module:get_host()].muc = { rooms = rooms };
 
