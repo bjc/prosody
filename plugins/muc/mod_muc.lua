@@ -31,9 +31,7 @@ local function room_route_stanza(room, stanza) core_post_stanza(component, stanz
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	persistent_rooms[room.jid] = room._data.persistent;
-	module:log("debug", "1, %s, %s", room.jid, tostring(room._data.persistent));
 	if room._data.persistent then
-		module:log("debug", "2");
 		local history = room._data.history;
 		room._data.history = nil;
 		local data = {
@@ -44,10 +42,8 @@ local function room_save(room, forced)
 		datamanager.store(node, muc_host, "config", data);
 		room._data.history = history;
 	elseif forced then
-		module:log("debug", "3");
 		datamanager.store(node, muc_host, "config", nil);
 	end
-	module:log("debug", "4");
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
 
