@@ -16,6 +16,8 @@ local log = require "util.logger".init("mod_muc");
 local multitable_new = require "util.multitable".new;
 local t_insert, t_remove = table.insert, table.remove;
 local setmetatable = setmetatable;
+local base64 = require "util.encodings".base64;
+local md5 = require "util.hashes".md5;
 
 local muc_domain = nil; --module:get_host();
 local history_length = 20;
@@ -291,8 +293,28 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type ~= 'result' then -- bad type
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
 		end
-	elseif not current_nick and type ~= "error" and type ~= "result" then -- not in room
-		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+	elseif not current_nick then -- not in room
+		if type == "error" or type == "result" then
+			local id = stanza.name == "iq" and stanza.attr.id and base64.decode(stanza.attr.id);
+			local _nick, _id, _hash = (id or ""):match("^(.+)%z(.*)%z(.+)$");
+			local occupant = self._occupants[stanza.attr.to];
+			if occupant and _nick and self._jid_nick[_nick] and _id and _hash then
+				local id, _to = stanza.attr.id;
+				for jid in pairs(occupant.sessions) do
+					if md5(jid) == _hash then
+						_to = jid;
+						break;
+					end
+				end
+				if _to then
+					stanza.attr.to, stanza.attr.from, stanza.attr.id = _to, self._jid_nick[_nick], _id;
+					self:route_stanza(stanza);
+					stanza.attr.to, stanza.attr.from, stanza.attr.id = to, from, id;
+				end
+			end
+		else
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+		end
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	else -- private stanza
@@ -300,10 +322,15 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if o_data then
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			local jid = o_data.jid;
+			local bare = jid_bare(jid);
 			stanza.attr.to, stanza.attr.from = jid, current_nick;
-			-- TODO if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then jid = jid_bare(jid); end
+			local id = stanza.attr.id;
+			if stanza.name=='iq' and type=='get' and stanza.tags[1].attr.xmlns == 'vcard-temp' and bare ~= jid then
+				stanza.attr.to = bare;
+				stanza.attr.id = base64.encode(jid.."\0"..id.."\0"..md5(from));
+			end
 			self:route_stanza(stanza);
-			stanza.attr.to, stanza.attr.from = to, from;
+			stanza.attr.to, stanza.attr.from, stanza.attr.id = to, from, id;
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 		end
