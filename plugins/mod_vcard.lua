@@ -19,7 +19,7 @@ local jid_split = jid.split;
 
 module:add_feature("vcard-temp");
 
-module:add_iq_handler({"c2s", "s2sin"}, "vcard-temp", 
+module:add_iq_handler({"c2s", "s2sin", "component"}, "vcard-temp", 
 		function (session, stanza)
 			if stanza.tags[1].name == "vCard" then
 				local to = stanza.attr.to;
