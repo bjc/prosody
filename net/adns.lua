@@ -11,6 +11,7 @@ local dns = require "net.dns";
 
 local log = require "util.logger".init("adns");
 
+local t_insert, t_remove = table.insert, table.remove;
 local coroutine, tostring, pcall = coroutine, tostring, pcall;
 
 module "adns"
@@ -41,13 +42,20 @@ function cancel(handle, call_handler)
 	end
 end
 
-function new_async_socket(sock)
-	local newconn = {};
+function new_async_socket(sock, resolver)
+	local newconn, peername = {}, "<unknown>";
 	local listener = {};
 	function listener.incoming(conn, data)
 		dns.feed(sock, data);
 	end
-	function listener.disconnect()
+	function listener.disconnect(conn, err)
+		log("warn", "DNS socket for %s disconnected: %s", peername, err);
+		local servers = resolver.server;
+		if resolver.socketset[newconn.handler] == resolver.best_server and resolver.best_server == #servers then
+			log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
+		end
+		
+		resolver:servfail(conn); -- Let the magic commence
 	end
 	newconn.handler, newconn._socket = server.wrapclient(sock, "dns", 53, listener);
 	if not newconn.handler then
@@ -58,7 +66,7 @@ function new_async_socket(sock)
 	end
 	newconn.handler.settimeout = function () end
 	newconn.handler.setsockname = function (_, ...) return sock:setsockname(...); end
-	newconn.handler.setpeername = function (_, ...) local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
+	newconn.handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
 	newconn.handler.connect = function (_, ...) return sock:connect(...) end	
 	newconn.handler.send = function (_, data) _.write(data); return _.sendbuffer(); end	
 	return newconn.handler;
