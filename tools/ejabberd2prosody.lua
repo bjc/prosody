@@ -104,7 +104,11 @@ local filters = {
 		else error("Unknown ask type: "..ask); end
 		if subscription ~= "both" and subscription ~= "from" and subscription ~= "to" and subscription ~= "none" then error(subscription) end
 		local item = {name = name, ask = ask, subscription = subscription, groups = {}};
-		for _, g in ipairs(groups) do item.groups[g] = true; end
+		for _, g in ipairs(groups) do
+			if type(g) == "string" then
+				item.groups[g] = true;
+			end
+		end
 		roster(node, host, contact, item);
 	end;
 	private_storage = function(tuple)
