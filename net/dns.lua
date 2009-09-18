@@ -17,6 +17,7 @@
 require 'socket'
 local ztact = require 'util.ztact'
 local require = require
+local os = os;
 
 local coroutine, io, math, socket, string, table =
       coroutine, io, math, socket, string, table
@@ -487,7 +488,7 @@ function resolver:decode (packet, force)    -- - - - - - - - - - - - - - decode
 -- socket layer -------------------------------------------------- socket layer
 
 
-resolver.delays = { 1, 3, 11, 45 }
+resolver.delays = { 1, 3  }
 
 
 function resolver:addnameserver (address)    -- - - - - - - - - - addnameserver
@@ -509,9 +510,12 @@ function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
 		local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
 		if address then  self:addnameserver (address)  end
 	  end
-  else -- FIXME correct for windows, using opendns nameservers for now
-	self:addnameserver ("208.67.222.222")
-	self:addnameserver ("208.67.220.220")
+  elseif os.getenv("WINDIR") then
+  	self:addnameserver ("208.67.222.222")
+  	self:addnameserver ("208.67.220.220")  	
+  end
+  if not self.server or #self.server == 0 then
+  	self:addnameserver("127.0.0.1");
   end
 end
 
@@ -525,16 +529,25 @@ function resolver:getsocket (servernum)    -- - - - - - - - - - - - - getsocket
   if sock then  return sock  end
 
   sock = socket.udp ()
-  if self.socket_wrapper then  sock = self.socket_wrapper (sock)  end
+  if self.socket_wrapper then  sock = self.socket_wrapper (sock, self)  end
   sock:settimeout (0)
   -- todo: attempt to use a random port, fallback to 0
   sock:setsockname ('*', 0)
   sock:setpeername (self.server[servernum], 53)
   self.socket[servernum] = sock
-  self.socketset[sock] = sock
+  self.socketset[sock] = servernum
   return sock
   end
 
+function resolver:voidsocket (sock)
+  if self.socket[sock] then
+    self.socketset[self.socket[sock]] = nil
+    self.socket[sock] = nil
+  elseif self.socketset[sock] then
+    self.socket[self.socketset[sock]] = nil
+    self.socketset[sock] = nil
+  end
+end
 
 function resolver:socket_wrapper_set (func)  -- - - - - - - socket_wrapper_set
   self.socket_wrapper = func
@@ -608,10 +621,9 @@ function resolver:query (qname, qtype, qclass)    -- - - - - - - - - - -- query
   local header, id = encodeHeader ()
   --print ('query  id', id, qclass, qtype, qname)
   local o = { packet = header..question,
-              server = 1,
+              server = self.best_server,
               delay  = 1,
               retry  = socket.gettime () + self.delays[1] }
-  self:getsocket (o.server):send (o.packet)
 
   -- remember the query
   self.active[id] = self.active[id] or {}
@@ -623,9 +635,49 @@ function resolver:query (qname, qtype, qclass)    -- - - - - - - - - - -- query
     set (self.wanted, qclass, qtype, qname, co, true)
     --set (self.yielded, co, qclass, qtype, qname, true)
   end
+  
+  self:getsocket (o.server):send (o.packet)
+
 end
 
+function resolver:servfail(sock)
+  -- Resend all queries for this server
+  
+  local num = self.socketset[sock]
+  
+  -- Socket is dead now
+  self:voidsocket(sock);
+  
+  -- Find all requests to the down server, and retry on the next server
+  self.time = socket.gettime ()
+  for id,queries in pairs (self.active) do
+    for question,o in pairs (queries) do
+      if o.server == num then -- This request was to the broken server
+        o.server = o.server + 1 -- Use next server
+        if o.server > #self.server then
+          o.server = 1
+        end
 
+        o.retries = (o.retries or 0) + 1;
+        if o.retries >= #self.server then
+          --print ('timeout')
+          queries[question] = nil
+        else
+          local _a = self:getsocket(o.server);
+          if _a then _a:send (o.packet) end
+        end
+      end
+    end
+  end
+   
+   if num == self.best_server then
+   	self.best_server = self.best_server + 1
+   	if self.best_server > #self.server then
+   		-- Exhausted all servers, try first again
+   		self.best_server = 1
+   	end
+   end
+end
 
 function resolver:receive (rset)    -- - - - - - - - - - - - - - - - -  receive
 
@@ -828,7 +880,8 @@ function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
 
   -- this function seems to be redundant with resolver.new ()
 
-  local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, yielded = {} }
+  local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, yielded = {}, 
+              best_server = 1 }
   setmetatable (r, resolver)
   setmetatable (r.cache, cache_metatable)
   setmetatable (r.unsorted, { __mode = 'kv' })
