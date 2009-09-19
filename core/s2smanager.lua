@@ -37,7 +37,7 @@ local sha256_hash = require "util.hashes".sha256;
 
 local dialback_secret = uuid_gen();
 
-local adns = require "net.adns";
+local adns, dns = require "net.adns", require "net.dns";
 
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 
@@ -240,6 +240,16 @@ function try_connect(host_session, connect_host, connect_port)
 	handle = adns.lookup(function (reply)
 		handle = nil;
 		host_session.connecting = nil;
+		
+		-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
+		if not (reply and reply[1] and reply[1].a) then
+			reply = dns.peek(connect_host, "CNAME", "IN");
+			while reply and reply[1] and not reply[1].a and reply[1].cname do
+				reply = dns.peek(reply[1].cname, "A", "IN") or dns.peek(reply[1].cname, "CNAME", "IN");
+			end
+		end
+		-- end of CNAME resolving
+		
 		if reply and reply[1] and reply[1].a then
 			log("debug", "DNS reply for %s gives us %s", connect_host, reply[1].a);
 			return make_connect(host_session, reply[1].a, connect_port);
