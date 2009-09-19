@@ -100,6 +100,11 @@ function init_global_state()
 		prosody.platform = "posix";
 	end
 	
+	prosody.installed = nil;
+	if CFG_SOURCEDIR and (prosody.platform == "windows" or CFG_SOURCEDIR:match("^/")) then
+		prosody.installed = true;
+	end
+	
 	-- Function to reload the config file
 	function prosody.reload_config()
 		log("info", "Reloading configuration file");
