@@ -174,7 +174,7 @@ function attempt_connection(host_session, err)
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
-		local answer, handle;
+		local handle;
 		handle = adns.lookup(function (answer)
 			handle = nil;
 			host_session.connecting = nil;
@@ -236,6 +236,34 @@ function attempt_connection(host_session, err)
 end
 
 function try_connect(host_session, connect_host, connect_port)
+	host_session.connecting = true;
+	local handle;
+	handle = adns.lookup(function (reply)
+		handle = nil;
+		host_session.connecting = nil;
+		if reply and reply[1] and reply[1].a then
+			log("debug", "DNS reply for %s gives us %s", connect_host, reply[1].a);
+			return make_connect(host_session, reply[1].a, connect_port);
+		else
+			log("debug", "DNS lookup failed to get a response for %s", connect_host);
+			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+				log("debug", "No other records to try for %s - destroying", host_session.to_host);
+				destroy_session(host_session); -- End of the line, we can't
+			end
+		end
+	end, connect_host, "A", "IN");
+
+	-- Set handler for DNS timeout
+	add_task(dns_timeout, function ()
+		if handle then
+			adns.cancel(handle, true);
+		end
+	end);
+		
+	return true;
+end
+
+function make_connect(host_session, connect_host, connect_port)
 	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
