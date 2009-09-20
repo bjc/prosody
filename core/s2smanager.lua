@@ -39,6 +39,7 @@ local dialback_secret = uuid_gen();
 
 local adns, dns = require "net.adns", require "net.dns";
 
+local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 
 incoming_s2s = {};
@@ -129,6 +130,16 @@ function new_incoming(conn)
 	session.log = log;
 	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	incoming_s2s[session] = true;
+	add_task(connect_timeout, function ()
+		if session.conn ~= conn or
+		   session.type == "s2sin" then
+			return; -- Ok, we're connect[ed|ing]
+		end
+		-- Not connected, need to close session and clean up
+		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		    session.from_host or "(unknown)", session.to_host or "(unknown)");
+		session:close("connection-timeout");
+	end);
 	return session;
 end
 
@@ -301,6 +312,17 @@ function make_connect(host_session, connect_host, connect_port)
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
+	add_task(connect_timeout, function ()
+		if host_session.conn ~= conn or
+		   host_session.type == "s2sout" or
+		   host_session.connecting then
+			return; -- Ok, we're connect[ed|ing]
+		end
+		-- Not connected, need to close session and clean up
+		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		    host_session.from_host or "(unknown)", host_session.to_host or "(unknown)");
+		host_session:close("connection-timeout");
+	end);
 	return true;
 end
 
