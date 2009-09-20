@@ -14,6 +14,7 @@ function log_events(events, name, logger)
 	name = name or tostring(events);
 	function events.fire_event(event, ...)
 		logger("debug", "%s firing event: %s", name, event);
+		return f(event, ...);
 	end
 	events[events.fire_event] = f;
 	return events;
