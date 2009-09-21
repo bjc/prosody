@@ -504,7 +504,6 @@ function resolver:setnameserver (address)    -- - - - - - - - - - setnameserver
 
 
 function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
-  self:addnameserver("4.2.2.1"); do return; end
   local resolv_conf = io.open("/etc/resolv.conf");
   if resolv_conf then
 	  for line in resolv_conf:lines() do
