@@ -363,6 +363,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 send( socket, table_concat( bufferqueue, "", 1, bufferqueuelen ), 1, bufferlen )    -- forced send
             end
         end
+        if not handler then return true; end
         _ = shutdown and shutdown( socket )
         socket:close( )
         _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
