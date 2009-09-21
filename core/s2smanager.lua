@@ -41,6 +41,7 @@ local adns, dns = require "net.adns", require "net.dns";
 
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
+local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 
 incoming_s2s = {};
 local incoming_s2s = incoming_s2s;
@@ -254,9 +255,12 @@ function try_connect(host_session, connect_host, connect_port)
 		
 		-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
 		if not (reply and reply[1] and reply[1].a) then
+			local count = max_dns_depth;
 			reply = dns.peek(connect_host, "CNAME", "IN");
-			while reply and reply[1] and not reply[1].a and reply[1].cname do
+			while count > 0 and reply and reply[1] and not reply[1].a and reply[1].cname do
+				log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[1].cname), count);
 				reply = dns.peek(reply[1].cname, "A", "IN") or dns.peek(reply[1].cname, "CNAME", "IN");
+				count = count - 1;
 			end
 		end
 		-- end of CNAME resolving
