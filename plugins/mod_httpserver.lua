@@ -13,7 +13,7 @@ local open = io.open;
 local t_concat = table.concat;
 local check_http_path;
 
-local http_base = "www_files";
+local http_base = config.get("*", "core", "http_path") or "www_files";
 
 local response_403 = { status = "403 Forbidden", body = "<h1>Invalid URL</h1>Sorry, we couldn't find what you were looking for :(" };
 local response_404 = { status = "404 Not Found", body = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(" };
