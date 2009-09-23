@@ -9,7 +9,7 @@
 local config = require "core.configmanager";
 
 local host = module:get_host();
-local welcome_text = config.get("*", "core", "welcome_message") or "Hello $user, welcome to the $host IM server!";
+local welcome_text = config.get("*", "core", "welcome_message") or "Hello $username, welcome to the $host IM server!";
 
 local st = require "util.stanza";
 
