@@ -95,7 +95,10 @@ local function prune (rrs, time, soft)    -- - - - - - - - - - - - - - -  prune
     if rr.tod then
       -- rr.tod = rr.tod - 50    -- accelerated decripitude
       rr.ttl = math.floor (rr.tod - time)
-      if rr.ttl <= 0 then  rrs[i] = nil  end
+      if rr.ttl <= 0 then
+        table.remove(rrs, i);
+        return prune(rrs, time, soft); -- Re-iterate
+      end
 
     elseif soft == 'soft' then    -- What is this?  I forget!
       assert (rr.ttl == 0)
