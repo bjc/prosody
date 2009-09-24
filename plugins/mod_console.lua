@@ -496,7 +496,7 @@ function def_env.s2s:close(from, to)
 		if not session then 
 			print("No outgoing connection from "..from.." to "..to)
 		else
-			s2smanager.destroy_session(session);
+			(session.close or s2smanager.destroy_session)(session);
 			count = count + 1;
 			print("Closed outgoing session from "..from.." to "..to);
 		end
@@ -504,7 +504,7 @@ function def_env.s2s:close(from, to)
 		-- Is an incoming connection
 		for session in pairs(incoming_s2s) do
 			if session.to_host == to and session.from_host == from then
-				s2smanager.destroy_session(session);
+				(session.close or s2smanager.destroy_session)(session);
 				count = count + 1;
 			end
 		end
