@@ -187,7 +187,9 @@ function room_mt:send_history(to)
 end
 
 local function room_get_disco_info(self, stanza)
-	return st.reply(stanza):query("http://jabber.org/protocol/disco#info"):tag("identity", {category="conference", type="text"});
+	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
+		:tag("identity", {category="conference", type="text"}):up()
+		:tag("feature", {var="http://jabber.org/protocol/muc"});
 end
 local function room_get_disco_items(self, stanza)
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
