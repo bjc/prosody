@@ -507,8 +507,8 @@ function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
   local resolv_conf = io.open("/etc/resolv.conf");
   if resolv_conf then
 	  for line in resolv_conf:lines() do
-		local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
-		if address then  self:addnameserver (address)  end
+		local address = string.match (line, '^%s*nameserver%s+(%d+%.%d+%.%d+%.%d+)')
+		if address then self:addnameserver (address)  end
 	  end
   elseif os.getenv("WINDIR") then
   	self:addnameserver ("208.67.222.222")
