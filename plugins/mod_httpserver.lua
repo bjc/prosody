@@ -12,7 +12,7 @@ local httpserver = require "net.httpserver";
 local open = io.open;
 local t_concat = table.concat;
 
-local http_base = "www_files";
+local http_base = config.get("*", "core", "http_path") or "www_files";
 
 local response_400 = { status = "400 Bad Request", body = "<h1>Bad Request</h1>Sorry, we didn't understand your request :(" };
 local response_404 = { status = "404 Not Found", body = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(" };
