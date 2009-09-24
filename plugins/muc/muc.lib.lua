@@ -292,7 +292,9 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						self:broadcast_presence(pr);
 						self:send_history(from);
 					else -- banned
-						origin.send(st.error_reply(stanza, "auth", "forbidden"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
+						reply.tags[1].attr.code = "403";
+						origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 					end
 				end
 			end
