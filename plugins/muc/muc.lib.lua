@@ -107,9 +107,9 @@ end
 
 function room_mt:broadcast_presence(stanza, code, nick)
 	stanza = get_filtered_presence(stanza);
-	local data = self._occupants[stanza.attr.from];
+	local occupant = self._occupants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-		:tag("item", {affiliation=data.affiliation, role=data.role, nick=nick}):up();
+		:tag("item", {affiliation=occupant.affiliation, role=occupant.role, nick=nick}):up();
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
