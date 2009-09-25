@@ -113,17 +113,8 @@ function room_mt:broadcast_presence(stanza, code, nick)
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
-	local me;
-	for occupant, o_data in pairs(self._occupants) do
-		if occupant ~= stanza.attr.from then
-			for jid in pairs(o_data.sessions) do
-				stanza.attr.to = jid;
-				self:route_stanza(stanza);
-			end
-		else
-			me = o_data;
-		end
-	end
+	self:broadcast_except_nick(stanza, stanza.attr.from);
+	local me = self._occupants[stanza.attr.from];
 	if me then
 		stanza:tag("status", {code='110'});
 		for jid in pairs(me.sessions) do
