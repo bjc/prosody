@@ -215,10 +215,22 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
-				local data = self._occupants[current_nick];
-				data.role = 'none';
-				self:broadcast_presence(pr);
-				self._occupants[current_nick] = nil;
+				local occupant = self._occupants[current_nick];
+				local old_session = occupant.sessions[from];
+				local new_jid = next(occupant.sessions);
+				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
+				if new_jid then
+					occupant.jid = new_jid;
+					occupant.sessions[from] = nil;
+					local pr = st.clone(occupant[new_jid])
+						:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+						:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
+					self:broadcast_except_nick(pr, current_nick);
+				else
+					occupant.role = 'none';
+					self:broadcast_presence(pr);
+					self._occupants[current_nick] = nil;
+				end
 				self._jid_nick[from] = nil;
 			end
 		elseif not type then -- available
