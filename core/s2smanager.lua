@@ -255,20 +255,20 @@ function try_connect(host_session, connect_host, connect_port)
 		host_session.connecting = nil;
 		
 		-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
-		if not (reply and reply[1] and reply[1].a) then
+		if not (reply and reply[#reply] and reply[#reply].a) then
 			local count = max_dns_depth;
 			reply = dns.peek(connect_host, "CNAME", "IN");
-			while count > 0 and reply and reply[1] and not reply[1].a and reply[1].cname do
-				log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[1].cname), count);
-				reply = dns.peek(reply[1].cname, "A", "IN") or dns.peek(reply[1].cname, "CNAME", "IN");
+			while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
+				log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
+				reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
 				count = count - 1;
 			end
 		end
 		-- end of CNAME resolving
 		
-		if reply and reply[1] and reply[1].a then
-			log("debug", "DNS reply for %s gives us %s", connect_host, reply[1].a);
-			return make_connect(host_session, reply[1].a, connect_port);
+		if reply and reply[#reply] and reply[#reply].a then
+			log("debug", "DNS reply for %s gives us %s", connect_host, reply[#reply].a);
+			return make_connect(host_session, reply[#reply].a, connect_port);
 		else
 			log("debug", "DNS lookup failed to get a response for %s", connect_host);
 			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
