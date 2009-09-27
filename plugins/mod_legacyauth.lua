@@ -52,7 +52,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 				resource = resourceprep(resource)
 				local reply = st.reply(stanza);
 				require "core.usermanager"
-				if username and usermanager.validate_credentials(session.host, username, password) then
+				if username and resource and usermanager.validate_credentials(session.host, username, password) then
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
 					if success then
@@ -61,6 +61,10 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 						if not success then
 							session.send(st.error_reply(stanza, err_type, err, err_msg));
 							session.username, session.type = nil, "c2s_unauthed"; -- FIXME should this be placed in sessionmanager?
+							return true;
+						elseif resource ~= session.resource then -- server changed resource, not supported by legacy auth
+							session.send(st.error_reply(stanza, "cancel", "conflict", "The requested resource could not be assigned to this session."));
+							session:close(); -- FIXME undo resource bind and auth instead of closing the session?
 							return true;
 						end
 					end
