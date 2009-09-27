@@ -107,23 +107,14 @@ end
 
 function room_mt:broadcast_presence(stanza, code, nick)
 	stanza = get_filtered_presence(stanza);
-	local data = self._occupants[stanza.attr.from];
+	local occupant = self._occupants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-		:tag("item", {affiliation=data.affiliation, role=data.role, nick=nick}):up();
+		:tag("item", {affiliation=occupant.affiliation, role=occupant.role, nick=nick}):up();
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
-	local me;
-	for occupant, o_data in pairs(self._occupants) do
-		if occupant ~= stanza.attr.from then
-			for jid in pairs(o_data.sessions) do
-				stanza.attr.to = jid;
-				self:route_stanza(stanza);
-			end
-		else
-			me = o_data;
-		end
-	end
+	self:broadcast_except_nick(stanza, stanza.attr.from);
+	local me = self._occupants[stanza.attr.from];
 	if me then
 		stanza:tag("status", {code='110'});
 		for jid in pairs(me.sessions) do
@@ -224,10 +215,22 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
-				local data = self._occupants[current_nick];
-				data.role = 'none';
-				self:broadcast_presence(pr);
-				self._occupants[current_nick] = nil;
+				local occupant = self._occupants[current_nick];
+				local old_session = occupant.sessions[from];
+				local new_jid = next(occupant.sessions);
+				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
+				if new_jid then
+					occupant.jid = new_jid;
+					occupant.sessions[from] = nil;
+					local pr = st.clone(occupant[new_jid])
+						:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+						:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
+					self:broadcast_except_nick(pr, current_nick);
+				else
+					occupant.role = 'none';
+					self:broadcast_presence(pr);
+					self._occupants[current_nick] = nil;
+				end
 				self._jid_nick[from] = nil;
 			end
 		elseif not type then -- available
