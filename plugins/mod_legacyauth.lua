@@ -60,6 +60,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 						success, err_type, err, err_msg = sessionmanager.bind_resource(session, resource);
 						if not success then
 							session.send(st.error_reply(stanza, err_type, err, err_msg));
+							session.username, session.type = nil, "c2s_unauthed"; -- FIXME should this be placed in sessionmanager?
 							return true;
 						end
 					end
