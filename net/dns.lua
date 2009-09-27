@@ -95,7 +95,10 @@ local function prune (rrs, time, soft)    -- - - - - - - - - - - - - - -  prune
     if rr.tod then
       -- rr.tod = rr.tod - 50    -- accelerated decripitude
       rr.ttl = math.floor (rr.tod - time)
-      if rr.ttl <= 0 then  rrs[i] = nil  end
+      if rr.ttl <= 0 then
+        table.remove(rrs, i);
+        return prune(rrs, time, soft); -- Re-iterate
+      end
 
     elseif soft == 'soft' then    -- What is this?  I forget!
       assert (rr.ttl == 0)
@@ -507,8 +510,8 @@ function resolver:adddefaultnameservers ()    -- - - - -  adddefaultnameservers
   local resolv_conf = io.open("/etc/resolv.conf");
   if resolv_conf then
 	  for line in resolv_conf:lines() do
-		local address = string.match (line, 'nameserver%s+(%d+%.%d+%.%d+%.%d+)')
-		if address then  self:addnameserver (address)  end
+		local address = line:gsub("#.*$", ""):match('^%s*nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$')
+		if address then self:addnameserver (address)  end
 	  end
   elseif os.getenv("WINDIR") then
   	self:addnameserver ("208.67.222.222")
