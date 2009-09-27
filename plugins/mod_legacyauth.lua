@@ -16,6 +16,8 @@ local secure_auth_only = config.get(module:get_host(), "core", "require_encrypti
 
 local sessionmanager = require "core.sessionmanager";
 local usermanager = require "core.usermanager";
+local nodeprep = require "util.encodings".stringprep.nodeprep;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module:add_feature("jabber:iq:auth");
 module:add_event_hook("stream-features", function (session, features)
@@ -46,9 +48,11 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 				return true;			
 			else
 				username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
+				username = nodeprep(username);
+				resource = resourceprep(resource)
 				local reply = st.reply(stanza);
 				require "core.usermanager"
-				if usermanager.validate_credentials(session.host, username, password) then
+				if username and usermanager.validate_credentials(session.host, username, password) then
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
 					if success then
