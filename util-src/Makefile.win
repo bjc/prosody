@@ -1,7 +1,7 @@
 
 LUA_PATH=$(LUA_DEV)
-IDN_PATH=.\libidn-1.9
-OPENSSL_PATH=.\openssl-0.9.8i
+IDN_PATH=..\..\libidn-1.15
+OPENSSL_PATH=..\..\openssl-0.9.8k
 
 LUA_INCLUDE=$(LUA_PATH)\include
 LUA_LIB=$(LUA_PATH)\lib\lua5.1.lib

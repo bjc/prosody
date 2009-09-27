@@ -172,11 +172,11 @@ static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 	int ret = idna_to_ascii_8z(s, &output, 0);
 	if (ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
-		if (output) free(output);
+		idn_free(output);
 		return 1;
 	} else {
 		lua_pushnil(L);
-		if (output) free(output);
+		idn_free(output);
 		return 1; // TODO return error message
 	}
 }
@@ -189,11 +189,11 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 	int ret = idna_to_unicode_8z8z(s, &output, 0);
 	if (ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
-		if (output) free(output);
+		idn_free(output);
 		return 1;
 	} else {
 		lua_pushnil(L);
-		if (output) free(output);
+		idn_free(output);
 		return 1; // TODO return error message
 	}
 }
