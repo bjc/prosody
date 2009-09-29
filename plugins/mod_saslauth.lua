@@ -12,9 +12,13 @@ local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
+
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
+local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
+local usermanager_user_exists = require "core.usermanager".user_exists;
+local usermanager_get_password = require "core.usermanager".get_password;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 local jid_split = require "util.jid".split
@@ -56,6 +60,7 @@ local function handle_status(session, status)
 		session.sasl_handler = nil;
 		if not username then -- TODO move this to sessionmanager
 			module:log("warn", "SASL succeeded but we didn't get a username!");
+			session.sasl_handler = nil;
 			session:reset_stream();
 			return;
 		end 
@@ -64,22 +69,36 @@ local function handle_status(session, status)
 	end
 end
 
-local function password_callback(node, hostname, realm, mechanism, decoder)
-	local func = function(x) return x; end;
-	local node = nodeprep(node);
-	if not node then
-		return func, nil;
-	end
-	local password = (datamanager_load(node, hostname, "accounts") or {}).password; -- FIXME handle hashed passwords
-	if password then
-		if mechanism == "PLAIN" then
-			return func, password;
-		elseif mechanism == "DIGEST-MD5" then
-			if decoder then node, realm, password = decoder(node), decoder(realm), decoder(password); end
+local function credentials_callback(mechanism, ...)
+	if mechanism == "PLAIN" then
+		local username, hostname, password = ...;
+		username = nodeprep(username);
+		if not username then
+			return false;
+		end
+		local response = usermanager_validate_credentials(hostname, username, password, mechanism);
+		if response == nil then
+			return false;
+		else
+			return response;
+		end
+	elseif mechanism == "DIGEST-MD5" then
+		function func(x) return x; end
+		local node, domain, realm, decoder = ...;
+		local prepped_node = nodeprep(node);
+		if not prepped_node then
+			return func, nil;
+		end
+		local password = usermanager_get_password(prepped_node, domain);
+		if password then
+			if decoder then
+				node, realm, password = decoder(node), decoder(realm), decoder(password);
+			end
 			return func, md5(node..":"..realm..":"..password);
+		else
+			return func, nil;
 		end
 	end
-	return func, nil;
 end
 
 local function sasl_handler(session, stanza)
@@ -92,7 +111,7 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
-		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, password_callback);
+		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, credentials_callback);
 		if not session.sasl_handler then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
@@ -111,7 +130,7 @@ local function sasl_handler(session, stanza)
 	end
 	local status, ret, err_msg = session.sasl_handler:feed(text);
 	handle_status(session, status);
-	local s = build_reply(status, ret, err_msg); 
+	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
 end
@@ -123,8 +142,8 @@ module:add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
-module:add_event_hook("stream-features", 
-		function (session, features)												
+module:add_event_hook("stream-features",
+		function (session, features)
 			if not session.username then
 				if secure_auth_only and not session.secure then
 					return;
@@ -134,8 +153,10 @@ module:add_event_hook("stream-features",
 					if config.get(session.host or "*", "core", "anonymous_login") then
 						features:tag("mechanism"):text("ANONYMOUS"):up();
 					else
-						features:tag("mechanism"):text("DIGEST-MD5"):up();
-						features:tag("mechanism"):text("PLAIN"):up();
+						mechanisms = usermanager_get_supported_methods(session.host or "*");
+						for k, v in pairs(mechanisms) do
+							features:tag("mechanism"):text(k):up();
+						end
 					end
 				features:up();
 			else
@@ -143,8 +164,8 @@ module:add_event_hook("stream-features",
 				features:tag("session", xmpp_session_attr):up();
 			end
 		end);
-					
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", 
+
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 		function (session, stanza)
 			log("debug", "Client requesting a resource bind");
 			local resource;
@@ -166,8 +187,8 @@ module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
 					:tag("jid"):text(session.full_jid));
 			end
 		end);
-		
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", 
+
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session",
 		function (session, stanza)
 			log("debug", "Client requesting a session");
 			session.send(st.reply(stanza));
