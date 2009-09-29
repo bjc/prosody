@@ -52,14 +52,14 @@ local function handle_status(session, status)
 	if status == "failure" then
 		session.sasl_handler = nil;
 	elseif status == "success" then
-		if not session.sasl_handler.username then -- TODO move this to sessionmanager
+		local username = nodeprep(session.sasl_handler.username);
+		session.sasl_handler = nil;
+		if not username then -- TODO move this to sessionmanager
 			module:log("warn", "SASL succeeded but we didn't get a username!");
-			session.sasl_handler = nil;
 			session:reset_stream();
 			return;
 		end 
-		sm_make_authenticated(session, session.sasl_handler.username);
-		session.sasl_handler = nil;
+		sm_make_authenticated(session, username);
 		session:reset_stream();
 	end
 end
