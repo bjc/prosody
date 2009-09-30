@@ -24,7 +24,7 @@ local function load_enabled_hosts(config)
 	local defined_hosts = config or configmanager.getconfig();
 	
 	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) then
+		if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) and not host_config.core.component_module then
 			activate(host, host_config);
 		end
 	end
