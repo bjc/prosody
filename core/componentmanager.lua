@@ -6,14 +6,18 @@
 -- COPYING file in the source package for more information.
 --
 
+
+
 local prosody = prosody;
 local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
+local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
+local serialize = require "util.serialization".serialize
 
 local pairs, type, tostring = pairs, type, tostring;
 
@@ -21,22 +25,34 @@ local components = {};
 
 local disco_items = require "util.multitable".new();
 local NULL = {};
+require "core.discomanager".addDiscoItemsHandler("*host", function(reply, to, from, node)
+	if #node == 0 and hosts[to] then
+		for jid in pairs(disco_items:get(to) or NULL) do
+			reply:tag("item", {jid = jid}):up();
+		end
+		return true;
+	end
+end);
+
+prosody.events.add_handler("server-starting", function () core_route_stanza = _G.core_route_stanza; end);
 
 module "componentmanager"
 
 local function default_component_handler(origin, stanza)
 	log("warn", "Stanza being handled by default component, bouncing error");
-	if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-		origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+	if stanza.attr.type ~= "error" then
+		core_route_stanza(nil, st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 	end
 end
 
+local components_loaded_once;
 function load_enabled_components(config)
 	local defined_hosts = config or configmanager.getconfig();
 		
 	for host, host_config in pairs(defined_hosts) do
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
-			hosts[host] = { type = "component", host = host, connected = false, s2sout = {}, events = events_new() };
+			hosts[host] = create_component(host);
+			hosts[host].connected = false;
 			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
@@ -61,7 +77,7 @@ function handle_stanza(origin, stanza)
 		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
 		component(origin, stanza, hosts[host]);
 	else
-		log("error", "Component manager recieved a stanza for a non-existing component: "..tostring(stanza));
+		log("error", "Component manager recieved a stanza for a non-existing component: " .. (stanza.attr.to or serialize(stanza)));
 	end
 end
 
@@ -121,10 +137,6 @@ end
 
 function set_component_handler(host, handler)
 	components[host] = handler;
-end
-
-function get_children(host)
-	return disco_items:get(host) or NULL;
 end
 
 return _M;
