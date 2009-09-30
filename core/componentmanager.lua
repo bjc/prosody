@@ -14,6 +14,7 @@ local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local core_route_stanza = core_route_stanza;
 local jid_split = require "util.jid".split;
+local fire_event = require "core.eventmanager".fire_event;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
@@ -58,6 +59,7 @@ function load_enabled_components(config)
 			if not ok then
 				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
 			else
+				fire_event("component-activated", host, host_config);
 				log("debug", "Activated %s component: %s", host_config.core.component_module, host);
 			end
 		end
