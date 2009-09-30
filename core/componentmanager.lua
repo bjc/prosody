@@ -83,9 +83,9 @@ function handle_stanza(origin, stanza)
 	end
 end
 
-function create_component(host, component)
+function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	return { type = "component", host = host, connected = true, s2sout = {}, events = events_new() };
+	return { type = "component", host = host, connected = true, s2sout = {}, events = events or events_new() };
 end
 
 function register_component(host, component, session)
@@ -93,7 +93,7 @@ function register_component(host, component, session)
 		local old_events = hosts[host] and hosts[host].events;
 
 		components[host] = component;
-		hosts[host] = session or create_component(host, component);
+		hosts[host] = session or create_component(host, component, old_events);
 		
 		-- Add events object if not already one
 		if not hosts[host].events then
