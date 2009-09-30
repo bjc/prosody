@@ -11,6 +11,7 @@ local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local jid_split = require "util.jid".split;
+local fire_event = require "core.eventmanager".fire_event;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
 local hosts = hosts;
@@ -36,12 +37,14 @@ function load_enabled_components(config)
 		
 	for host, host_config in pairs(defined_hosts) do
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
-			hosts[host] = { type = "component", host = host, connected = false, s2sout = {}, events = events_new() };
+			hosts[host] = create_component(host);
+			hosts[host].connected = false;
 			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
 				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
 			else
+				fire_event("component-activated", host, host_config);
 				log("debug", "Activated %s component: %s", host_config.core.component_module, host);
 			end
 		end
@@ -65,9 +68,9 @@ function handle_stanza(origin, stanza)
 	end
 end
 
-function create_component(host, component)
+function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	return { type = "component", host = host, connected = true, s2sout = {}, events = events_new() };
+	return { type = "component", host = host, connected = true, s2sout = {}, events = events or events_new() };
 end
 
 function register_component(host, component, session)
@@ -75,7 +78,7 @@ function register_component(host, component, session)
 		local old_events = hosts[host] and hosts[host].events;
 
 		components[host] = component;
-		hosts[host] = session or create_component(host, component);
+		hosts[host] = session or create_component(host, component, old_events);
 		
 		-- Add events object if not already one
 		if not hosts[host].events then

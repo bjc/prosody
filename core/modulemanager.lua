@@ -91,6 +91,7 @@ function load_modules_for_host(host)
 	end
 end
 eventmanager.add_event_hook("host-activated", load_modules_for_host);
+eventmanager.add_event_hook("component-activated", load_modules_for_host);
 --
 
 function load(host, module_name, config)
