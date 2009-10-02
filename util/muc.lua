@@ -209,7 +209,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 					else -- change nick
 						if self._participants[to] then
 							log("debug", "%s couldn't change nick", current_nick);
-							origin.send(st.error_reply(stanza, "cancel", "conflict"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+							origin.send(st.error_reply(stanza, "cancel", "conflict"):up():tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 						else
 							local data = self._participants[current_nick];
 							local to_nick = select(3, jid_split(to));
@@ -240,7 +240,7 @@ local function room_handle_to_occupant(self, origin, stanza) -- PM, vCards, etc
 				end
 				if not new_nick then
 					log("debug", "%s couldn't join due to nick conflict: %s", from, to);
-					origin.send(st.error_reply(stanza, "cancel", "conflict"):tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+					origin.send(st.error_reply(stanza, "cancel", "conflict"):up():tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 				else
 					log("debug", "%s joining as %s", from, to);
 					local data;
