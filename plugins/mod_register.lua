@@ -131,7 +131,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 							
 							if os_time() - ip.time < min_seconds_between_registrations then
 								ip.time = os_time();
-								session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+								session.send(st.error_reply(stanza, "wait", "not-acceptable"));
 								return;
 							end
 							ip.time = os_time();
