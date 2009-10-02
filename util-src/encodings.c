@@ -125,9 +125,14 @@ static const luaL_Reg Reg_base64[] =
 static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 {
 	size_t len;
-	const char *s = luaL_checklstring(L, 1, &len);
+	const char *s;
 	char string[1024];
 	int ret;
+	if(!lua_isstring(L, 1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	s = lua_tolstring(L, 1, &len);
 	if (len >= 1024) {
 		lua_pushnil(L);
 		return 1; // TODO return error message
