@@ -245,6 +245,7 @@ function stream_callbacks.handlestanza(request, stanza)
 	end
 end
 
+local dead_sessions = {};
 function on_timer()
 	-- log("debug", "Checking for requests soon to timeout...");
 	-- Identify requests timing out within the next few seconds
@@ -261,17 +262,25 @@ function on_timer()
 	end
 	
 	now = now - 3;
+	local n_dead_sessions = 0;
 	for session, inactive_since in pairs(inactive_sessions) do
 		if session.bosh_max_inactive then
 			if now - inactive_since > session.bosh_max_inactive then
 				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
 				sessions[session.sid]  = nil;
 				inactive_sessions[session] = nil;
-				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
+				n_dead_sessions = n_dead_sessions + 1;
+				dead_sessions[n_dead_sessions] = session;
 			end
 		else
 			inactive_sessions[session] = nil;
 		end
+	end
+
+	for i=1,n_dead_sessions do
+		local session = dead_sessions[i];
+		dead_sessions[i] = nil;
+		sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 	end
 end
 
