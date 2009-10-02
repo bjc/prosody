@@ -140,14 +140,17 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					-- FIXME shouldn't use table.concat
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
-					if usermanager_user_exists(username, session.host) then
+					local host = module.host;
+					if not username then
+						session.send(st.error_reply(stanza, "modify", "not-acceptable"));
+					elseif usermanager_user_exists(username, host) then
 						session.send(st.error_reply(stanza, "cancel", "conflict"));
 					else
-						if usermanager_create_user(username, password, session.host) then
+						if usermanager_create_user(username, password, host) then
 							session.send(st.reply(stanza)); -- user created!
-							module:log("info", "User account created: %s@%s", username, session.host);
+							module:log("info", "User account created: %s@%s", username, host);
 							module:fire_event("user-registered", { 
-								username = username, host = session.host, source = "mod_register",
+								username = username, host = host, source = "mod_register",
 								session = session });
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
