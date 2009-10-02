@@ -58,4 +58,4 @@ end
 
 local ports = config.get(module.host, "core", "http_ports") or { 5280 };
 httpserver.set_default_handler(handle_default_request);
-httpserver.new_from_config(ports, "files", handle_file_request);
+httpserver.new_from_config(ports, handle_file_request, { base = "files" });
