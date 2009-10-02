@@ -118,19 +118,18 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 				if username and password then
 					-- Check that the user is not blacklisted or registering too often
 					if blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
-							session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
-							return;
+						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
+						return;
 					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
 						if not recent_ips[session.ip] then
 							recent_ips[session.ip] = { time = os_time(), count = 1 };
 						else
-						
 							local ip = recent_ips[session.ip];
 							ip.count = ip.count + 1;
 							
 							if os_time() - ip.time < min_seconds_between_registrations then
 								ip.time = os_time();
-								session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+								session.send(st.error_reply(stanza, "wait", "not-acceptable"));
 								return;
 							end
 							ip.time = os_time();
@@ -139,18 +138,21 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					-- FIXME shouldn't use table.concat
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
-					if usermanager_user_exists(username, session.host) then
-						session.send(st.error_reply(stanza, "cancel", "conflict"));
+					local host = module.host;
+					if not username then
+						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
+					elseif usermanager_user_exists(username, host) then
+						session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
 					else
-						if usermanager_create_user(username, password, session.host) then
+						if usermanager_create_user(username, password, host) then
 							session.send(st.reply(stanza)); -- user created!
-							module:log("info", "User account created: %s@%s", username, session.host);
+							module:log("info", "User account created: %s@%s", username, host);
 							module:fire_event("user-registered", { 
-								username = username, host = session.host, source = "mod_register",
+								username = username, host = host, source = "mod_register",
 								session = session });
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
-							session.send(st.error_reply(stanza, "wait", "internal-server-error"));
+							session.send(st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk."));
 						end
 					end
 				else
