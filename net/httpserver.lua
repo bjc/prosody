@@ -252,13 +252,23 @@ function set_default_handler(handler)
 	default_handler = handler;
 end
 
-function new_from_config(ports, default_base, handle_request)
+function new_from_config(ports, handle_request, default_options)
+	if type(handle_request) == "string" then -- COMPAT with old plugins
+		log("warn", "Old syntax of httpserver.new_from_config being used to register %s", handle_request);
+		handle_request, default_options = default_options, { base = handle_request };
+	end
 	for _, options in ipairs(ports) do
-		local port, base, ssl, interface = 5280, default_base, false, nil;
+		local port = default_options.port or 5280;
+		local base = default_options.base;
+		local ssl = default_options.ssl or false;
+		local interface = default_options.interface;
 		if type(options) == "number" then
 			port = options;
 		elseif type(options) == "table" then
-			port, base, ssl, interface = options.port or 5280, options.path or default_base, options.ssl or false, options.interface;
+			port = options.port or port;
+			base = options.path or base;
+			ssl = options.ssl or ssl;
+			interface = options.interface or interface;
 		elseif type(options) == "string" then
 			base = options;
 		end
