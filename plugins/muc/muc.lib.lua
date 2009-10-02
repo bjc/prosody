@@ -11,6 +11,7 @@ local datetime = require "util.datetime";
 
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
+local jid_prep = require "util.jid".prep;
 local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
 local multitable_new = require "util.multitable".new;
@@ -412,6 +413,13 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			if item and item.name == "item" then
 				if type == "set" then
 					local callback = function() origin.send(st.reply(stanza)); end
+					if item.attr.jid then -- Validate provided JID
+						item.attr.jid = jid_prep(item.attr.jid);
+						if not item.attr.jid then
+							origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
+							return;
+						end
+					end
 					if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 						local occupant = self._occupants[self.jid.."/"..item.attr.nick];
 						if occupant then item.attr.jid = occupant.jid; end
