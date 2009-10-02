@@ -9,6 +9,7 @@
 
 local hosts = _G.hosts;
 local st = require "util.stanza";
+local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
@@ -89,16 +90,16 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 end);
 
 local recent_ips = {};
-local min_seconds_between_registrations = module:get_option("min_seconds_between_registrations");
-local whitelist_only = module:get_option("whitelist_registration_only");
-local whitelisted_ips = module:get_option("registration_whitelist") or { "127.0.0.1" };
-local blacklisted_ips = module:get_option("registration_blacklist") or {};
+local min_seconds_between_registrations = config.get(module.host, "core", "min_seconds_between_registrations");
+local whitelist_only = config.get(module.host, "core", "whitelist_registration_only");
+local whitelisted_ips = config.get(module.host, "core", "registration_whitelist") or { "127.0.0.1" };
+local blacklisted_ips = config.get(module.host, "core", "registration_blacklist") or {};
 
 for _, ip in ipairs(whitelisted_ips) do whitelisted_ips[ip] = true; end
 for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
-	if module:get_option("allow_registration") == false then
+	if config.get(module.host, "core", "allow_registration") == false then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	elseif stanza.tags[1].name == "query" then
 		local query = stanza.tags[1];
@@ -139,14 +140,17 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					-- FIXME shouldn't use table.concat
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
-					if usermanager_user_exists(username, session.host) then
+					local host = module.host;
+					if not username then
+						session.send(st.error_reply(stanza, "modify", "not-acceptable"));
+					elseif usermanager_user_exists(username, host) then
 						session.send(st.error_reply(stanza, "cancel", "conflict"));
 					else
-						if usermanager_create_user(username, password, session.host) then
+						if usermanager_create_user(username, password, host) then
 							session.send(st.reply(stanza)); -- user created!
-							module:log("info", "User account created: %s@%s", username, session.host);
+							module:log("info", "User account created: %s@%s", username, host);
 							module:fire_event("user-registered", { 
-								username = username, host = session.host, source = "mod_register",
+								username = username, host = host, source = "mod_register",
 								session = session });
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
