@@ -108,7 +108,6 @@ static int Lbase64_decode(lua_State *L)		/** decode(s) */
 				break;
 		}
 	}
-	return 0;
 }
 
 static const luaL_Reg Reg_base64[] =
