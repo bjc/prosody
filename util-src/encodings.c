@@ -168,6 +168,7 @@ static const luaL_Reg Reg_stringprep[] =
 /***************** IDNA *****************/
 
 #include <idna.h>
+#include <idn-free.h>
 
 static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 {
