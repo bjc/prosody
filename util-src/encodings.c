@@ -108,7 +108,6 @@ static int Lbase64_decode(lua_State *L)		/** decode(s) */
 				break;
 		}
 	}
-	return 0;
 }
 
 static const luaL_Reg Reg_base64[] =
@@ -124,14 +123,15 @@ static const luaL_Reg Reg_base64[] =
 
 static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 {
+	size_t len;
+	const char *s;
+	char string[1024];
+	int ret;
 	if(!lua_isstring(L, 1)) {
 		lua_pushnil(L);
 		return 1;
 	}
-	size_t len;
-	const char *s = lua_tolstring(L, 1, &len);
-	char string[1024];
-	int ret;
+	s = lua_tolstring(L, 1, &len);
 	if (len >= 1024) {
 		lua_pushnil(L);
 		return 1; // TODO return error message
@@ -167,6 +167,7 @@ static const luaL_Reg Reg_stringprep[] =
 /***************** IDNA *****************/
 
 #include <idna.h>
+#include <idn-free.h>
 
 static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 {
