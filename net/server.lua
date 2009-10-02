@@ -720,7 +720,7 @@ end
 removeserver = function( port )
     local handler = _server[ port ]
     if not handler then
-        return nil, "no server found on port '" .. tostring( port ) "'"
+        return nil, "no server found on port '" .. tostring( port ) .. "'"
     end
     handler.close( )
     _server[ port ] = nil
