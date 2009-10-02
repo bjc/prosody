@@ -91,10 +91,14 @@ static int lc_daemonize(lua_State *L)
 
 const char * const facility_strings[] = {
 					"auth",
+#if !(defined(sun) || defined(__sun))
 					"authpriv",
+#endif
 					"cron",
 					"daemon",
+#if !(defined(sun) || defined(__sun))
 					"ftp",
+#endif
 					"kern",
 					"local0",
 					"local1",
@@ -113,10 +117,14 @@ const char * const facility_strings[] = {
 				};
 int facility_constants[] =	{
 					LOG_AUTH,
+#if !(defined(sun) || defined(__sun))
 					LOG_AUTHPRIV,
+#endif
 					LOG_CRON,
 					LOG_DAEMON,
+#if !(defined(sun) || defined(__sun))
 					LOG_FTP,
+#endif
 					LOG_KERN,
 					LOG_LOCAL0,
 					LOG_LOCAL1,
@@ -365,11 +373,13 @@ int string2resource(const char *s) {
 	if (!strcmp(s, "CPU")) return RLIMIT_CPU;
 	if (!strcmp(s, "DATA")) return RLIMIT_DATA;
 	if (!strcmp(s, "FSIZE")) return RLIMIT_FSIZE;
-	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
 	if (!strcmp(s, "NOFILE")) return RLIMIT_NOFILE;
+	if (!strcmp(s, "STACK")) return RLIMIT_STACK;
+#if !(defined(sun) || defined(__sun))
+	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
 	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
 	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
-	if (!strcmp(s, "STACK")) return RLIMIT_STACK;
+#endif
 	return -1;
 }
 
