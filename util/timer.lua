@@ -42,7 +42,7 @@ ns_addtimer(function()
 		local t, func = d[1], d[2];
 		if t <= current_time then
 			data[i] = nil;
-			local r = func();
+			local r = func(current_time);
 			if type(r) == "number" then _add_task(r, func); end
 		end
 	end
