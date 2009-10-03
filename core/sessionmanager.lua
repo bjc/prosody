@@ -28,10 +28,12 @@ local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
 local fire_event = require "core.eventmanager".fire_event;
-
+local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
 
 local st = require "util.stanza";
+
+local c2s_timeout = config_get("*", "core", "c2s_timeout");
 
 local newproxy = newproxy;
 local getmetatable = getmetatable;
@@ -53,6 +55,14 @@ function new_session(conn)
 	session.ip = conn.ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
+	
+	if c2s_timeout then
+		add_task(c2s_timeout, function ()
+			if session.type == "c2s_unauthed" then
+				session:close("connection-timeout");
+			end
+		end);
+	end
 		
 	return session;
 end
