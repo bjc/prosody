@@ -11,7 +11,6 @@
 local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
 local collectgarbage = collectgarbage;
-local m_random = import("math", "random");
 local format = import("string", "format");
 
 local hosts = hosts;
@@ -168,7 +167,7 @@ function streamopened(session, attr)
 	session.host = attr.to or error("Client failed to specify destination hostname");
 	session.host = nameprep(session.host);
 	session.version = tonumber(attr.version) or 0;
-	session.streamid = m_random(1000000, 99999999);
+	session.streamid = uuid_generate();
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
 	
 	send("<?xml version='1.0'?>");
