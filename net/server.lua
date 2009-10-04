@@ -230,6 +230,9 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
     handler.ssl = function( )
         return ssl
     end
+    handler.sslctx = function( )
+        return sslctx
+    end
     handler.remove = function( )
         connections = connections - 1
     end
