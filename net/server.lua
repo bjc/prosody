@@ -339,6 +339,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.ssl = function( )
         return ssl
     end
+    handler.sslctx = function ( )
+        return sslctx
+    end
     handler.send = function( _, data, i, j )
         return send( socket, data, i, j )
     end
