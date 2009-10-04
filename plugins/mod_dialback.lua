@@ -10,6 +10,7 @@
 local hosts = _G.hosts;
 local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
+local s2s_initiate_dialback = require "core.s2smanager".initiate_dialback;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
@@ -17,6 +18,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 
+local xmlns_stream = "http://etherx.jabber.org/streams";
 local xmlns_dialback = "jabber:server:dialback";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
@@ -113,3 +115,8 @@ module:add_handler({ "s2sout_unauthed", "s2sout" }, "result", xmlns_dialback,
 			s2s_destroy_session(origin)
 		end
 	end);
+
+module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
+		s2s_initiate_dialback(origin);
+		return true;
+	end, 100);
