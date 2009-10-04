@@ -157,6 +157,7 @@ _cleanqueue = false    -- clean bufferqueue after using
 
 _maxclientsperserver = 1000
 
+_maxsslhandshake = 30 -- max handshake round-trips
 ----------------------------------// PRIVATE //--
 
 wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxconnections, startssl )    -- this function wraps a server
@@ -534,7 +535,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         local read
         local handshake = coroutine_wrap( function( client )    -- create handshake coroutine
                 local err
-                for i = 1, 10 do    -- 10 handshake attemps
+                for i = 1, _maxsslhandshake do
                     _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
                     _readlistlen = ( read and removesocket( _readlist, socket, _readlistlen ) ) or _readlistlen
                     read, wrote = nil, nil
@@ -751,7 +752,7 @@ closeall = function( )
 end
 
 getsettings = function( )
-    return  _selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver
+    return  _selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver, _maxsslhandshake
 end
 
 changesettings = function( new )
@@ -767,6 +768,7 @@ changesettings = function( new )
     _readtimeout = tonumber( new.readtimeout ) or _readtimeout
     _cleanqueue = new.cleanqueue
     _maxclientsperserver = new._maxclientsperserver or _maxclientsperserver
+    _maxsslhandshake = new._maxsslhandshake or _maxsslhandshake
     return true
 end
 
