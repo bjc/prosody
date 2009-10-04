@@ -187,6 +187,7 @@ do
 		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
 			local namelen = #name;
+			
 			if timestamps then
 				io_write(os_date(timestamps), " ");
 			end
