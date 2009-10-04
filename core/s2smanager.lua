@@ -145,7 +145,9 @@ function new_incoming(conn)
 end
 
 function new_outgoing(from_host, to_host)
-		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+		local host_session = { to_host = to_host, from_host = from_host, host = from_host, 
+		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
 		local log;
