@@ -481,10 +481,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             readtraffic = readtraffic + count
             _readtraffic = _readtraffic + count
             _readtimes[ handler ] = _currenttime
-            --out_put( "server.lua: read data '", buffer, "', error: ", err )
+            --out_put( "server.lua: read data '", buffer:gsub("[^%w%p ]", "."), "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
-            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
 	    _ = handler and handler.close( )
@@ -521,7 +521,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             _writetimes[ handler ] = _currenttime
             return true
         else    -- connection was closed during sending or fatal error
-            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
             _ = handler and handler.close( )
