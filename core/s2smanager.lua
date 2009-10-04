@@ -337,7 +337,7 @@ function streamopened(session, attr)
 	local send = session.sends2s;
 	
 	-- TODO: #29: SASL/TLS on s2s streams
-	session.version = 0; --tonumber(attr.version) or 0;
+	session.version = tonumber(attr.version) or 0;
 	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
 		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
@@ -387,6 +387,7 @@ function streamopened(session, attr)
 		-- If server is pre-1.0, don't wait for features, just do dialback
 		if session.version < 1.0 then
 			if not session.dialback_verifying then
+				log("debug", "Initiating dialback...");
 				initiate_dialback(session);
 			else
 				mark_connected(session);

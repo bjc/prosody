@@ -231,7 +231,7 @@ function prepare_to_start()
 	end
 
 	net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
-	net_activate_ports("s2s", "xmppserver", {5269}, "tcp");
+	net_activate_ports("s2s", "xmppserver", {5269}, (global_ssl_ctx and "tls") or "tcp");
 	net_activate_ports("component", "xmppcomponent", {}, "tcp");
 	net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 	net_activate_ports("console", "console", {5582}, "tcp");
