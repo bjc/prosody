@@ -102,9 +102,16 @@ function load_roster(username, host)
 	return roster;
 end
 
-function save_roster(username, host)
+function save_roster(username, host, roster)
 	log("debug", "save_roster: saving roster for "..username.."@"..host);
-	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
+	if not roster then
+		roster = hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster;
+		--if not roster then
+		--	--roster = load_roster(username, host);
+		--	return true; -- roster unchanged, no reason to save
+		--end
+	end
+	if roster then
 		local roster = hosts[host].sessions[username].roster;
 		roster[false].version = (roster[false].version or 1) + 1;
 		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
