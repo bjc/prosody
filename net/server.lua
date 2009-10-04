@@ -300,6 +300,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     local ssl
 
     local dispatch = listeners.incoming or listeners.listener
+    local status = listeners.status
     local disconnect = listeners.disconnect
 
     local bufferqueue = { }    -- buffer array
@@ -542,7 +543,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                         out_put( "server.lua: ssl handshake done" )
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
-                        -- return dispatch( handler )
+                        _ = status and status( handler, "ssl-handshake-complete" )
                         return true
                     else
                         out_put( "server.lua: error during ssl handshake: ", tostring(err) )
