@@ -6,15 +6,19 @@
 -- COPYING file in the source package for more information.
 --
 
+local ssl = ssl
 
 local hosts = hosts;
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local events_new = require "util.events".new;
 
+-- These are the defaults if not overridden in the config
+local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+
 local log = require "util.logger".init("hostmanager");
 
-local pairs = pairs;
+local pairs, setmetatable = pairs, setmetatable;
 
 module "hostmanager"
 
@@ -46,6 +50,12 @@ function activate(host, host_config)
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in global Host \"*\" instead", host, option_name);
 		end
 	end
+	
+	local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
+	if ssl_config then
+        	hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
+        end
+
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
