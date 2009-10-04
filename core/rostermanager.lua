@@ -130,7 +130,7 @@ function process_inbound_subscription_approval(username, host, jid)
 			item.subscription = "both";
 		end
 		item.ask = nil;
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -152,7 +152,7 @@ function process_inbound_subscription_cancellation(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -174,7 +174,7 @@ function process_inbound_unsubscribe(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -196,7 +196,7 @@ function set_contact_pending_in(username, host, jid, pending)
 	end
 	if not roster.pending then roster.pending = {}; end
 	roster.pending[jid] = true;
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function is_contact_pending_out(username, host, jid)
 	local roster = load_roster(username, host);
@@ -215,7 +215,7 @@ function set_contact_pending_out(username, host, jid) -- subscribe
 	end
 	item.ask = "subscribe";
 	log("debug", "set_contact_pending_out: saving roster; set "..username.."@"..host..".roster["..jid.."].ask=subscribe");
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function unsubscribe(username, host, jid)
 	local roster = load_roster(username, host);
@@ -230,7 +230,7 @@ function unsubscribe(username, host, jid)
 	elseif item.subscription == "to" then
 		item.subscription = "none";
 	end
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function subscribed(username, host, jid)
 	if is_contact_pending_in(username, host, jid) then
@@ -247,7 +247,7 @@ function subscribed(username, host, jid)
 		end
 		roster.pending[jid] = nil;
 		-- TODO maybe remove roster.pending if empty
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end -- TODO else implement optional feature pre-approval (ask = subscribed)
 end
 function unsubscribed(username, host, jid)
@@ -269,7 +269,7 @@ function unsubscribed(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -278,7 +278,7 @@ function process_outbound_subscription_request(username, host, jid)
 	local item = roster[jid];
 	if item and (item.subscription == "none" or item.subscription == "from") then
 		item.ask = "subscribe";
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -287,7 +287,7 @@ end
 	local item = roster[jid];
 	if item and (item.subscription == "none" or item.subscription == "from" then
 		item.ask = "subscribe";
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end]]
 
