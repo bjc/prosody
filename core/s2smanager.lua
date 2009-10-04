@@ -384,10 +384,13 @@ function streamopened(session, attr)
 		end
 		session.send_buffer = nil;
 	
-		if not session.dialback_verifying then
-			initiate_dialback(session);
-		else
-			mark_connected(session);
+		-- If server is pre-1.0, don't wait for features, just do dialback
+		if session.version < 1.0 then
+			if not session.dialback_verifying then
+				initiate_dialback(session);
+			else
+				mark_connected(session);
+			end
 		end
 	end
 
