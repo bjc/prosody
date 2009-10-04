@@ -27,6 +27,7 @@ local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
+local fire_event = require "core.eventmanager".fire_event;
 local uuid_gen = require "util.uuid".generate;
 
 local logger_init = require "util.logger".init;
@@ -358,8 +359,11 @@ function streamopened(session, attr)
 			return;
 		end
 		if session.version >= 1.0 then
-			send(st.stanza("stream:features")
-					:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up());
+			local features = st.stanza("stream:features");
+			fire_event("s2s-stream-features", session, features);
+			
+			log("debug", "Sending stream features: %s", tostring(features));
+			send(features);
 		end
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
