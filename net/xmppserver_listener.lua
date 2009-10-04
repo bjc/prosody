@@ -69,7 +69,6 @@ local function session_reset_stream(session)
 		return true;
 end
 
-
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
