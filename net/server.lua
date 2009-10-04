@@ -821,7 +821,7 @@ loop = function( )    -- this is the main loop of the program
         _currenttime = os_time( )
         if os_difftime( _currenttime - _timer ) >= 1 then
             for i = 1, _timerlistlen do
-                _timerlist[ i ]( )    -- fire timers
+                _timerlist[ i ]( _currenttime )    -- fire timers
             end
             _timer = _currenttime
         end
