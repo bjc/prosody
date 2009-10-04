@@ -34,7 +34,7 @@ local log = require "util.logger".init("stanza");
 
 module "stanza"
 
-stanza_mt = {};
+stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
 
 function stanza(name, attr)
