@@ -440,6 +440,7 @@ function make_authenticated(session, host)
 	return true;
 end
 
+-- Stream is authorised, and ready for normal stanzas
 function mark_connected(session)
 	local sendq, send = session.sendq, session.sends2s;
 	
