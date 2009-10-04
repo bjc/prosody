@@ -59,7 +59,7 @@ module:add_event_hook("s2s-stream-features",
 			-- This hook is possibly called once per host (at least if the
 			-- remote server does not specify a to/from.
 			if session.conn.starttls and not features:child_with_ns(xmlns_starttls) then
-				features:tag("starttls", starttls_attr);
+				features:tag("starttls", starttls_attr):up();
 				-- TODO: Make this optional :P
 				--features:tag("required"):up():up();
 			end
