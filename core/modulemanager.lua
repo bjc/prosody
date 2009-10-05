@@ -106,6 +106,7 @@ function load(host, module_name, config)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
+		hosts[host].modules = modulemap[host];
 	end
 	
 	if modulemap[host][module_name] then
