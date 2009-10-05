@@ -33,11 +33,22 @@ function array_base.map(outa, ina, func)
 end
 
 function array_base.filter(outa, ina, func)
-	for k,v in ipairs(ina) do
+	local inplace, start_length = ina == outa, #ina;
+	local write = 1;
+	for read=1,start_length do
+		local v = ina[read];
 		if func(v) then
-			outa:push(v);
+			outa[write] = v;
+			write = write + 1;
 		end
 	end
+	
+	if inplace and write < start_length then
+		for i=write,start_length do
+			outa[i] = nil;
+		end
+	end
+	
 	return outa;
 end
 
