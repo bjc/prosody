@@ -25,7 +25,7 @@ local jid_split = require "util.jid".split
 local md5 = require "util.hashes".md5;
 local config = require "core.configmanager";
 
-local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+local secure_auth_only = config.get(module:get_host(), "core", "c2s_require_encryption") or config.get(module:get_host(), "core", "require_encryption");
 
 local log = module._log;
 
