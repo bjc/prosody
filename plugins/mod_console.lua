@@ -318,6 +318,31 @@ function def_env.module:reload(name, hosts)
 	return ok, (ok and "Module reloaded on "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+function def_env.module:list(hosts)
+	if hosts == nil then
+		hosts = array.collect(keys(prosody.hosts));
+	end
+	if type(hosts) == "string" then
+		hosts = { hosts };
+	end
+	if type(hosts) ~= "table" then
+		return false, "Please supply a host or a list of hosts you would like to see";
+	end
+	
+	local print = self.session.print;
+	for _, host in ipairs(hosts) do
+		print(host..":");
+		local modules = array.collect(keys(prosody.hosts[host].modules or {})):sort();
+		if #modules == 0 then
+			print("    No modules loaded");
+		else
+			for _, name in ipairs(modules) do
+				print("    "..name);
+			end
+		end
+	end
+end
+
 def_env.config = {};
 function def_env.config:load(filename, format)
 	local config_load = require "core.configmanager".load;
