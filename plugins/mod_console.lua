@@ -467,7 +467,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost);
+				print("    "..host.." -> "..remotehost..(session.secure and "(encrypted)" or ""));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -500,7 +500,7 @@ function def_env.s2s:show(match_jid)
 			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
 				or (session.from_host and session.from_host:match(match_jid))) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)"));
+				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and "(encrypted)" or ""));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
