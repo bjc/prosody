@@ -339,6 +339,10 @@ function streamopened(session, attr)
 	-- TODO: #29: SASL/TLS on s2s streams
 	session.version = tonumber(attr.version) or 0;
 	
+	if session.secure == false then
+		session.secure = true;
+	end
+	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
 		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
 	end
