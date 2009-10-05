@@ -29,7 +29,7 @@ function lookup(handler, qname, qtype, qclass)
 				log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
 				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
 				if not ok then
-					log("debug", "Error in DNS response handler: %s", tostring(err));
+					log("error", "Error in DNS response handler: %s", tostring(err));
 				end
 			end)(dns.peek(qname, qtype, qclass));
 end
