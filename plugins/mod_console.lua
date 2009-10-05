@@ -70,9 +70,6 @@ function console_listener.listener(conn, data)
 			if data:match("^>") then
 				data = data:gsub("^>", "");
 				useglobalenv = true;
-			elseif data == "\004" then
-				commands["bye"](session, data);
-				return;
 			else
 				local command = data:lower();
 				command = data:match("^%w+") or data:match("%p");
@@ -208,8 +205,7 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 def_env.server = {};
-
-function def_env.server:insane_reload()
+function def_env.server:reload()
 	prosody.unlock_globals();
 	dofile "prosody"
 	prosody = _G.prosody;
@@ -232,11 +228,6 @@ function def_env.server:uptime()
 	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
 		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
-end
-
-function def_env.server:shutdown(reason)
-	prosody.shutdown(reason);
-	return true, "Shutdown initiated";
 end
 
 def_env.module = {};
@@ -327,6 +318,31 @@ function def_env.module:reload(name, hosts)
 	return ok, (ok and "Module reloaded on "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+function def_env.module:list(hosts)
+	if hosts == nil then
+		hosts = array.collect(keys(prosody.hosts));
+	end
+	if type(hosts) == "string" then
+		hosts = { hosts };
+	end
+	if type(hosts) ~= "table" then
+		return false, "Please supply a host or a list of hosts you would like to see";
+	end
+	
+	local print = self.session.print;
+	for _, host in ipairs(hosts) do
+		print(host..":");
+		local modules = array.collect(keys(prosody.hosts[host].modules or {})):sort();
+		if #modules == 0 then
+			print("    No modules loaded");
+		else
+			for _, name in ipairs(modules) do
+				print("    "..name);
+			end
+		end
+	end
+end
+
 def_env.config = {};
 function def_env.config:load(filename, format)
 	local config_load = require "core.configmanager".load;
@@ -340,11 +356,6 @@ end
 function def_env.config:get(host, section, key)
 	local config_get = require "core.configmanager".get
 	return true, tostring(config_get(host, section, key));
-end
-
-function def_env.config:reload()
-	local ok, err = prosody.reload_config();
-	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
 def_env.hosts = {};
@@ -373,12 +384,7 @@ end
 
 function def_env.c2s:show(match_jid)
 	local print, count = self.session.print, 0;
-	local curr_host;
 	show_c2s(function (jid, session)
-		if curr_host ~= session.host then
-			curr_host = session.host;
-			print(curr_host);
-		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
 			local status, priority = "unavailable", tostring(session.priority or "-");
@@ -390,7 +396,7 @@ function def_env.c2s:show(match_jid)
 					status = "available";
 				end
 			end
-			print("   "..jid.." - "..status.."("..priority..")");
+			print(jid.." - "..status.."("..priority..")");
 		end		
 	end);
 	return true, "Total: "..count.." clients";
