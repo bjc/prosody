@@ -6,13 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
-local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
@@ -50,8 +47,6 @@ local handler_info = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local features_table = multitable_new();
-local identities_table = multitable_new();
 local handler_table = multitable_new();
 local hooked = multitable_new();
 local hooks = multitable_new();
@@ -173,8 +168,6 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
-	features_table:remove(host, name);
-	identities_table:remove(host, name);
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
@@ -330,50 +323,11 @@ function api:add_iq_handler(origin_type, xmlns, handler)
 	self:add_handler(origin_type, "iq", xmlns, handler);
 end
 
-addDiscoInfoHandler("*host", function(reply, to, from, node)
-	if #node == 0 then
-		local done = {};
-		for module, identities in pairs(identities_table:get(to) or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, identities in pairs(identities_table:get("*") or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get(to) or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get("*") or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		return next(done) ~= nil;
-	end
-end);
-
 function api:add_feature(xmlns)
-	features_table:set(self.host, self.name, xmlns, true);
+	self:add_item("feature", xmlns);
 end
-function api:add_identity(category, type)
-	identities_table:set(self.host, self.name, category.."\0"..type, {category = category, type = type});
+function api:add_identity(category, type, name)
+	self:add_item("identity", {category = category, type = type, name = name});
 end
 
 local event_hook = function(host, mod_name, event_name, ...)
@@ -418,6 +372,42 @@ function api:require(lib)
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
 	setfenv(f, setmetatable({ module = self }, { __index = _G }));
 	return f();
+end
+
+function api:get_option(name, default_value)
+	return config.get(self.host, self.name, name) or config.get(self.host, "core", name) or default_value;
+end
+
+local t_remove = _G.table.remove;
+local module_items = multitable_new();
+function api:add_item(key, value)
+	self.items = self.items or {};
+	self.items[key] = self.items[key] or {};
+	t_insert(self.items[key], value);
+	self:fire_event("item-added/"..key, {source = self, item = value});
+end
+function api:remove_item(key, value)
+	local t = self.items and self.items[key] or NULL;
+	for i = #t,1,-1 do
+		if t[i] == value then
+			t_remove(self.items[key], i);
+			self:fire_event("item-removed/"..key, {source = self, item = value});
+			return value;
+		end
+	end
+end
+
+function api:get_host_items(key)
+	local result = {};
+	for mod_name, module in pairs(modulemap[self.host]) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items[key] or NULL) do
+				t_insert(result, item);
+			end
+		end
+	end
+	return result;
 end
 
 --------------------------------------------------------------------

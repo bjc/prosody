@@ -70,6 +70,9 @@ function console_listener.listener(conn, data)
 			if data:match("^>") then
 				data = data:gsub("^>", "");
 				useglobalenv = true;
+			elseif data == "\004" then
+				commands["bye"](session, data);
+				return;
 			else
 				local command = data:lower();
 				command = data:match("^%w+") or data:match("%p");
@@ -206,7 +209,8 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 def_env.server = {};
-function def_env.server:reload()
+
+function def_env.server:insane_reload()
 	prosody.unlock_globals();
 	dofile "prosody"
 	prosody = _G.prosody;
@@ -229,6 +233,11 @@ function def_env.server:uptime()
 	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
 		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
+end
+
+function def_env.server:shutdown(reason)
+	prosody.shutdown(reason);
+	return true, "Shutdown initiated";
 end
 
 def_env.module = {};
@@ -359,6 +368,11 @@ function def_env.config:get(host, section, key)
 	return true, tostring(config_get(host, section, key));
 end
 
+function def_env.config:reload()
+	local ok, err = prosody.reload_config();
+	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
+end
+
 def_env.hosts = {};
 function def_env.hosts:list()
 	for host, host_session in pairs(hosts) do
@@ -385,7 +399,12 @@ end
 
 function def_env.c2s:show(match_jid)
 	local print, count = self.session.print, 0;
+	local curr_host;
 	show_c2s(function (jid, session)
+		if curr_host ~= session.host then
+			curr_host = session.host;
+			print(curr_host);
+		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
 			local status, priority = "unavailable", tostring(session.priority or "-");
@@ -397,7 +416,7 @@ function def_env.c2s:show(match_jid)
 					status = "available";
 				end
 			end
-			print(jid.." - "..status.."("..priority..")");
+			print("   "..jid.." - "..status.."("..priority..")");
 		end		
 	end);
 	return true, "Total: "..count.." clients";
@@ -448,7 +467,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost);
+				print("    "..host.." -> "..remotehost..(session.secure and "(encrypted)" or ""));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -481,7 +500,7 @@ function def_env.s2s:show(match_jid)
 			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
 				or (session.from_host and session.from_host:match(match_jid))) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)"));
+				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and "(encrypted)" or ""));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
