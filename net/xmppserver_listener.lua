@@ -139,7 +139,7 @@ function xmppserver.status(conn, status)
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
-			session.log("warn", "Sending stream header...");
+			session.log("debug", "Sending stream header...");
 			session.sends2s(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 		end
 	end
