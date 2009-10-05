@@ -12,6 +12,7 @@ local xmlns_stream = 'http://etherx.jabber.org/streams';
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 
 local secure_auth_only = module:get_option("require_encryption");
+local secure_s2s_only = module:get_option("require_s2s_encryption");
 
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
@@ -61,8 +62,11 @@ module:add_event_hook("s2s-stream-features",
 			-- remote server does not specify a to/from.
 			if session.to_host and session.conn.starttls and not features:child_with_ns(xmlns_starttls) then
 				features:tag("starttls", starttls_attr):up();
-				-- TODO: Make this optional :P
-				--features:tag("required"):up():up();
+				if secure_s2s_only then
+					features:tag("required"):up():up();
+				else
+					features:up();
+				end
 			end
 		end);
 
