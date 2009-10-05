@@ -34,6 +34,7 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 				session:reset_stream();
 				session.conn.starttls();
 				session.log("info", "TLS negotiation started for incoming s2s...");
+				session.secure = false;
 			else
 				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
