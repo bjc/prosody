@@ -11,7 +11,7 @@ local st = require "util.stanza";
 local xmlns_stream = 'http://etherx.jabber.org/streams';
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 
-local secure_auth_only = module:get_option("require_encryption");
+local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local secure_s2s_only = module:get_option("require_s2s_encryption");
 
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
