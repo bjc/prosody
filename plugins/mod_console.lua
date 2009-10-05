@@ -180,6 +180,7 @@ function commands.help(session, data)
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
+		print [[module:list(host) - List the modules loaded on the specified host]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
