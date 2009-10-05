@@ -43,7 +43,7 @@ function array_base.filter(outa, ina, func)
 		end
 	end
 	
-	if inplace and write < start_length then
+	if inplace and write <= start_length then
 		for i=write,start_length do
 			outa[i] = nil;
 		end
