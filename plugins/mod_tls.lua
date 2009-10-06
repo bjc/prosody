@@ -87,5 +87,6 @@ module:hook_stanza(xmlns_starttls, "proceed",
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
 			session:reset_stream();
 			session.conn.starttls(true);
+			session.secure = false;
 			return true;
 		end);
