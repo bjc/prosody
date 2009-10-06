@@ -118,10 +118,13 @@ function stanza_mt:childtags()
 	                                    
 end
 
-local xml_escape = (function()
+local xml_escape
+do
 	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
-	return function(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
-end)();
+	function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
+	_M.xml_escape = xml_escape;
+end
+
 local function _dostring(t, buf, self, xml_escape)
 	local nsid = 0;
 	local name = t.name
