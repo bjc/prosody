@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
 local t_insert      =  table.insert;
 local t_concat      =  table.concat;
 local t_remove      =  table.remove;
@@ -28,7 +27,15 @@ local s_find        =   string.find;
 local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local getstyle, getstring;
+if do_pretty_printing then
+	local ok, termcolours = pcall(require, "util.termcolours");
+	if ok then
+		getstyle, getstring = termcolours.getstyle, termcolours.getstring;
+	else
+		do_pretty_printing = nil;
+	end
+end
 
 local log = require "util.logger".init("stanza");
 
