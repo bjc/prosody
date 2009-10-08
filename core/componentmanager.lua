@@ -101,6 +101,7 @@ function register_component(host, component, session)
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
 		end
 		modulemanager.load(host, "dialback");
+		modulemanager.load(host, "tls");
 		log("debug", "component added: "..host);
 		return session or hosts[host];
 	else
