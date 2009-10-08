@@ -100,7 +100,6 @@ function register_component(host, component, session)
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
 		end
-		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
 		modulemanager.load(host, "dialback");
 		log("debug", "component added: "..host);
 		return session or hosts[host];
