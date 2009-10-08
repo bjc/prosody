@@ -75,7 +75,7 @@ function create_component(host, component, events)
 		-- We need to find SSL context to use...
 		-- Discussion in prosody@ concluded that
 		-- 1 level back is usually enough by default
-		local base_host = host:gsub("^[^%.]+", "");
+		local base_host = host:gsub("^[^%.]+%.", "");
 		if hosts[base_host] then
 			ssl_ctx = hosts[base_host].ssl_ctx;
 		end
