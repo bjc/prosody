@@ -56,11 +56,10 @@ module:add_event_hook("stream-features",
 			end
 		end);
 
-module:add_event_hook("s2s-stream-features", 
-		function (session, features)
-			-- This hook is possibly called once per host (at least if the
-			-- remote server does not specify a to/from.
-			if session.to_host and session.conn.starttls and not features:child_with_ns(xmlns_starttls) then
+module:hook("s2s-stream-features", 
+		function (data)
+			local session, features = data.session, data.features;
+			if session.to_host and session.conn.starttls then
 				features:tag("starttls", starttls_attr):up();
 				if secure_s2s_only then
 					features:tag("required"):up():up();
