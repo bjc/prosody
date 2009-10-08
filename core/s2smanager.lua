@@ -366,7 +366,12 @@ function streamopened(session, attr)
 		end
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
-			fire_event("s2s-stream-features", session, features);
+							
+			if session.to_host then
+				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
+			else
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
+			end
 			
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);
