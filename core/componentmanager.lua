@@ -70,7 +70,18 @@ end
 
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	return { type = "component", host = host, connected = true, s2sout = {}, events = events or events_new() };
+	local ssl_ctx;
+	if host then
+		-- We need to find SSL context to use...
+		-- Discussion in prosody@ concluded that
+		-- 1 level back is usually enough by default
+		local base_host = host:gsub("^[^%.]+", "");
+		if hosts[base_host] then
+			ssl_ctx = hosts[base_host].ssl_ctx;
+		end
+	end
+	return { type = "component", host = host, connected = true, s2sout = {}, 
+			ssl_ctx = ssl_ctx, events = events or events_new() };
 end
 
 function register_component(host, component, session)
