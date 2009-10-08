@@ -37,8 +37,6 @@ if do_pretty_printing then
 	end
 end
 
-local log = require "util.logger".init("stanza");
-
 module "stanza"
 
 stanza_mt = { __type = "stanza" };
