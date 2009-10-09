@@ -73,7 +73,7 @@ module:hook("s2s-stream-features",
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			module:log("debug", "Received features element");
-			if stanza:child_with_ns(xmlns_starttls) then
+			if session.conn.starttls and stanza:child_with_ns(xmlns_starttls) then
 				module:log("%s is offering TLS, taking up the offer...", session.to_host);
 				session.sends2s("<starttls xmlns='"..xmlns_starttls.."'/>");
 				return true;
