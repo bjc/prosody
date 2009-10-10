@@ -106,6 +106,9 @@ field_readers["text-single"] =
 field_readers["text-private"] = 
 	field_readers["text-single"];
 
+field_readers["jid-single"] =
+	field_readers["text-single"];
+
 field_readers["text-multi"] = 
 	function (field_tag)
 		local result = {};
