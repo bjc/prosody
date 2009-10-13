@@ -558,8 +558,11 @@ function resolver:socket_wrapper_set (func)  -- - - - - - - socket_wrapper_set
 
 
 function resolver:closeall ()    -- - - - - - - - - - - - - - - - - -  closeall
-  for i,sock in ipairs (self.socket) do  self.socket[i]:close ()  end
-  self.socket = {}
+  for i,sock in ipairs (self.socket) do
+    self.socket[i] = nil;
+    self.socketset[sock] = nil;
+    sock:close();
+    end
   end
 
 
