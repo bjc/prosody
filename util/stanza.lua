@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
 local t_insert      =  table.insert;
 local t_concat      =  table.concat;
 local t_remove      =  table.remove;
@@ -28,9 +27,15 @@ local s_find        =   string.find;
 local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
-
-local log = require "util.logger".init("stanza");
+local getstyle, getstring;
+if do_pretty_printing then
+	local ok, termcolours = pcall(require, "util.termcolours");
+	if ok then
+		getstyle, getstring = termcolours.getstyle, termcolours.getstring;
+	else
+		do_pretty_printing = nil;
+	end
+end
 
 module "stanza"
 
@@ -118,10 +123,13 @@ function stanza_mt:childtags()
 	                                    
 end
 
-local xml_escape = (function()
+local xml_escape
+do
 	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
-	return function(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
-end)();
+	function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
+	_M.xml_escape = xml_escape;
+end
+
 local function _dostring(t, buf, self, xml_escape)
 	local nsid = 0;
 	local name = t.name

@@ -111,7 +111,6 @@ end
 
 -- Setup methods from array_base
 for method, f in pairs(array_base) do
-	local method = method; -- Yes, this is necessary :)
 	local base_method = f;
 	-- Setup global array method which makes new array
 	array[method] = function (old_a, ...)

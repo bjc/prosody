@@ -56,11 +56,10 @@ module:add_event_hook("stream-features",
 			end
 		end);
 
-module:add_event_hook("s2s-stream-features", 
-		function (session, features)
-			-- This hook is possibly called once per host (at least if the
-			-- remote server does not specify a to/from.
-			if session.to_host and session.conn.starttls and not features:child_with_ns(xmlns_starttls) then
+module:hook("s2s-stream-features", 
+		function (data)
+			local session, features = data.session, data.features;
+			if session.to_host and session.conn.starttls then
 				features:tag("starttls", starttls_attr):up();
 				if secure_s2s_only then
 					features:tag("required"):up():up();
@@ -74,7 +73,7 @@ module:add_event_hook("s2s-stream-features",
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			module:log("debug", "Received features element");
-			if stanza:child_with_ns(xmlns_starttls) then
+			if session.conn.starttls and stanza:child_with_ns(xmlns_starttls) then
 				module:log("%s is offering TLS, taking up the offer...", session.to_host);
 				session.sends2s("<starttls xmlns='"..xmlns_starttls.."'/>");
 				return true;
@@ -87,5 +86,6 @@ module:hook_stanza(xmlns_starttls, "proceed",
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
 			session:reset_stream();
 			session.conn.starttls(true);
+			session.secure = false;
 			return true;
 		end);

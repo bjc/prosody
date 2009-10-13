@@ -344,7 +344,9 @@ function streamopened(session, attr)
 	end
 	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
-		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
+		
+		(session.log or log)("warn", "Remote of stream "..(session.from_host or "(unknown)").."->"..(session.to_host or "(unknown)")
+			.." failed to specify to (%s) and/or from (%s) hostname as per RFC", tostring(attr.to), tostring(attr.from));
 	end
 	
 	if session.direction == "incoming" then
@@ -356,7 +358,7 @@ function streamopened(session, attr)
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version="1.0" }):top_tag());
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
@@ -364,7 +366,12 @@ function streamopened(session, attr)
 		end
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
-			fire_event("s2s-stream-features", session, features);
+							
+			if session.to_host then
+				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
+			else
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
+			end
 			
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);

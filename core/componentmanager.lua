@@ -70,7 +70,18 @@ end
 
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	return { type = "component", host = host, connected = true, s2sout = {}, events = events or events_new() };
+	local ssl_ctx;
+	if host then
+		-- We need to find SSL context to use...
+		-- Discussion in prosody@ concluded that
+		-- 1 level back is usually enough by default
+		local base_host = host:gsub("^[^%.]+%.", "");
+		if hosts[base_host] then
+			ssl_ctx = hosts[base_host].ssl_ctx;
+		end
+	end
+	return { type = "component", host = host, connected = true, s2sout = {}, 
+			ssl_ctx = ssl_ctx, events = events or events_new() };
 end
 
 function register_component(host, component, session)
@@ -89,8 +100,8 @@ function register_component(host, component, session)
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
 		end
-		-- FIXME only load for a.b.c if b.c has dialback, and/or check in config
 		modulemanager.load(host, "dialback");
+		modulemanager.load(host, "tls");
 		log("debug", "component added: "..host);
 		return session or hosts[host];
 	else
