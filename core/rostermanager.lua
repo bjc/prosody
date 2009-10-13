@@ -112,9 +112,9 @@ function save_roster(username, host, roster)
 		--end
 	end
 	if roster then
-		local roster = hosts[host].sessions[username].roster;
-		roster[false].version = (roster[false].version or 1) + 1;
-		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
+		if not roster[false] then roster[false] = {}; end
+		roster[false].version = (roster[false].version or 0) + 1;
+		return datamanager.store(username, host, "roster", roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
 	return nil;
