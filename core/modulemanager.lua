@@ -408,6 +408,14 @@ function api:get_host_items(key)
 			end
 		end
 	end
+	for mod_name, module in pairs(modulemap["*"]) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items[key] or NULL) do
+				t_insert(result, item);
+			end
+		end
+	end
 	return result;
 end
 
