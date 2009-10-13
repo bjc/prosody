@@ -169,29 +169,30 @@ function streamopened(session, attr)
 	session.version = tonumber(attr.version) or 0;
 	session.streamid = uuid_generate();
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
-	
-	send("<?xml version='1.0'?>");
-	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
 
 	if not hosts[session.host] then
 		-- We don't serve this host...
 		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
 		return;
 	end
-	
+
+	send("<?xml version='1.0'?>");
+	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
+
+	(session.log or log)("debug", "Sent reply <stream:stream> to client");
+	session.notopen = nil;
+
 	-- If session.secure is *false* (not nil) then it means we /were/ encrypting
 	-- since we now have a new stream header, session is secured
 	if session.secure == false then
 		session.secure = true;
 	end
-						
+
 	local features = st.stanza("stream:features");
 	fire_event("stream-features", session, features);
-	
+
 	send(features);
-	
-	(session.log or log)("debug", "Sent reply <stream:stream> to client");
-	session.notopen = nil;
+
 end
 
 function streamclosed(session)

@@ -51,9 +51,11 @@ function activate(host, host_config)
 		end
 	end
 	
-	local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
-	if ssl_config then
-        	hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
+	if ssl then
+		local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
+		if ssl_config then
+        		hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
+        	end
         end
 
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);

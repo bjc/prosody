@@ -37,7 +37,7 @@ function form_t.form(layout, data)
 		-- Add field tag
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
 
-		local value = data[field.name] or field.value;
+		local value = (data and data[field.name]) or field.value;
 		
 		-- Add value, depending on type
 		if field_type == "hidden" then
@@ -104,6 +104,9 @@ field_readers["text-single"] =
 	end
 
 field_readers["text-private"] = 
+	field_readers["text-single"];
+
+field_readers["jid-single"] =
 	field_readers["text-single"];
 
 field_readers["text-multi"] = 
