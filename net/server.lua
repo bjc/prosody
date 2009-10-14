@@ -363,17 +363,20 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 send( socket, table_concat( bufferqueue, "", 1, bufferqueuelen ), 1, bufferlen )    -- forced send
             end
         end
-        if not handler then return true; end
-        _ = shutdown and shutdown( socket )
-        socket:close( )
-        _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
-        _socketlist[ socket ] = nil
+        if socket then
+          _ = shutdown and shutdown( socket )
+          socket:close( )
+          _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+          _socketlist[ socket ] = nil
+          socket = nil
+        else
+          out_put "server.lua: socket already closed"
+        end
         if handler then
             _writetimes[ handler ] = nil
             _closelist[ handler ] = nil
             handler = nil
         end
-        socket = nil
         mem_free( )
 	if server then
 		server.remove( )
