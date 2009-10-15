@@ -61,7 +61,7 @@ module:add_iq_handler({"c2s", "s2sin", "component"}, xmlns_vcard, handle_vcard);
 if module:get_option("vcard_compatibility") then
 	module:hook("iq/full", function (data)
 		local stanza = data.stanza;
-		if stanza.attr.type == "get" and stanza.tags[1] 
+		if stanza.attr.type == "get" and stanza.tags[1]
 			and stanza.tags[1].attr.xmlns == xmlns_vcard then
 				return handle_vcard(data.origin, stanza);
 		end
