@@ -61,13 +61,12 @@ local function session_reset_stream(session)
 		function session.data(conn, data)
 			local ok, err = parser:parse(data);
 			if ok then return; end
-			session.log("warn", "Received invalid XML: %s", data);
-			session.log("warn", "Problem was: %s", err);
 			session:close("xml-not-well-formed");
 		end
 		
 		return true;
 end
+
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
@@ -100,7 +99,7 @@ local function session_close(session, reason)
 			end
 		end
 		session.sends2s("</stream:stream>");
-		if sesson.notopen or not session.conn.close() then
+		if session.notopen or not session.conn.close() then
 			session.conn.close(true); -- Force FIXME: timer?
 		end
 		session.conn.close();
@@ -137,17 +136,6 @@ function xmppserver.listener(conn, data)
 	end
 end
 	
-function xmppserver.status(conn, status)
-	if status == "ssl-handshake-complete" then
-		local session = sessions[conn];
-		if session and session.direction == "outgoing" then
-			local format, to_host, from_host = string.format, session.to_host, session.from_host;
-			session.log("debug", "Sending stream header...");
-			session.sends2s(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
-		end
-	end
-end
-
 function xmppserver.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
