@@ -24,4 +24,13 @@ function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :)
 end
 
+function get_upvalue(f, get_name)
+	local i, name, value = 0;
+	repeat
+		i = i + 1;
+		name, value = debug.getupvalue(f, i);
+	until name == get_name or name == nil;
+	return value;
+end
+
 return _M;
