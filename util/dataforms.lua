@@ -10,7 +10,6 @@ local setmetatable = setmetatable;
 local pairs, ipairs = pairs, ipairs;
 local tostring, type = tostring, type;
 local t_concat = table.concat;
-
 local st = require "util.stanza";
 
 module "dataforms"
@@ -66,6 +65,14 @@ function form_t.form(layout, data)
 			for line in value:gmatch("([^\r\n]+)\r?\n*") do
 				form:tag("value"):text(line):up();
 			end
+		elseif field_type == "list-single" then
+			for _, val in ipairs(value) do
+				if type(val) == "table" then
+					form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+				else
+					form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+				end
+			end
 		end
 		
 		if field.required then
@@ -119,6 +126,9 @@ field_readers["text-multi"] =
 		end
 		return t_concat(result, "\n");
 	end
+
+field_readers["list-single"] =
+	field_readers["text-single"];
 
 field_readers["boolean"] = 
 	function (field_tag)
