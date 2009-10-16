@@ -11,6 +11,7 @@
 function run_all_tests()
 	dotest "util.jid"
 	dotest "util.multitable"
+	dotest "core.modulemanager"
 	dotest "core.stanza_router"
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
