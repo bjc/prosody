@@ -39,7 +39,7 @@ local sha256_hash = require "util.hashes".sha256;
 local dialback_secret = uuid_gen();
 
 local adns, dns = require "net.adns", require "net.dns";
-
+local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
