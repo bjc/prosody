@@ -119,7 +119,7 @@ function dotest(unitname)
 		return;
 	end
 	
-	local unit = setmetatable({}, { __index = setmetatable({ module = function () end }, { __index = _G }) });
+	local unit = setmetatable({}, { __index = setmetatable({ module = function () _M = getfenv(2); end }, { __index = _G }) });
 
 	local fn = "../"..unitname:gsub("%.", "/")..".lua";
 	local chunk, err = loadfile(fn);
