@@ -330,8 +330,8 @@ read_version();
 log("info", "Hello and welcome to Prosody version %s", prosody.version);
 load_secondary_libraries();
 init_data_store();
-prepare_to_start();
 init_global_protection();
+prepare_to_start();
 
 eventmanager.fire_event("server-started");
 prosody.events.fire_event("server-started");
