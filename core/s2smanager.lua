@@ -45,6 +45,7 @@ local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 
 incoming_s2s = {};
+_G.prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
