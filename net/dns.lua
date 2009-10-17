@@ -443,7 +443,7 @@ function resolver:rr ()    -- - - - - - - - - - - - - - - - - - - - - - - -  rr
   rr.ttl      = 0x10000*self:word () + self:word ()
   rr.rdlength = self:word ()
 
-  if rr.ttl == 0 then  -- pass
+  if rr.ttl <= 0 then rr.tod = self.time;
   else  rr.tod = self.time + rr.ttl  end
 
   local remember = self.offset
