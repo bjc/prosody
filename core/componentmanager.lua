@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local prosody = prosody;
+local prosody = _G.prosody;
 local log = require "util.logger".init("componentmanager");
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
@@ -51,7 +51,9 @@ function load_enabled_components(config)
 	end
 end
 
-prosody.events.add_handler("server-starting", load_enabled_components);
+if prosody and prosody.events then
+	prosody.events.add_handler("server-starting", load_enabled_components);
+end
 
 function handle_stanza(origin, stanza)
 	local node, host = jid_split(stanza.attr.to);
