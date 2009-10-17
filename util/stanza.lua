@@ -6,6 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
+
 local t_insert      =  table.insert;
 local t_concat      =  table.concat;
 local t_remove      =  table.remove;
@@ -130,7 +131,7 @@ do
 	_M.xml_escape = xml_escape;
 end
 
-local function _dostring(t, buf, self, xml_escape)
+local function _dostring(t, buf, self, xml_escape, parentns)
 	local nsid = 0;
 	local name = t.name
 	t_insert(buf, "<"..name);
@@ -139,7 +140,7 @@ local function _dostring(t, buf, self, xml_escape)
 			local ns, attrk = s_match(k, "^([^|]+)|(.+)$");
 			nsid = nsid + 1;
 			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
-		else
+               elseif not(k == "xmlns" and v == parentns) then
 			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
 		end
 	end
@@ -151,7 +152,7 @@ local function _dostring(t, buf, self, xml_escape)
 		for n=1,len do
 			local child = t[n];
 			if child.name then
-				self(child, buf, self, xml_escape);
+                               self(child, buf, self, xml_escape, t.attr.xmlns);
 			else
 				t_insert(buf, xml_escape(child));
 			end
@@ -161,7 +162,7 @@ local function _dostring(t, buf, self, xml_escape)
 end
 function stanza_mt.__tostring(t)
 	local buf = {};
-	_dostring(t, buf, _dostring, xml_escape);
+       _dostring(t, buf, _dostring, xml_escape, nil);
 	return t_concat(buf);
 end
 
