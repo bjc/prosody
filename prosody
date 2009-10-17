@@ -162,10 +162,15 @@ function load_secondary_libraries()
 	require "core.sessionmanager"
 	require "core.stanza_router"
 
+	require "net.http"
+	
 	require "util.array"
+	require "util.datetime"
 	require "util.iterators"
 	require "util.timer"
 	require "util.helpers"
+	
+	pcall(require, "util.signal") -- Not on Windows
 	
 	-- Commented to protect us from 
 	-- the second kind of people
