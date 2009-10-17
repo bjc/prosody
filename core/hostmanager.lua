@@ -83,3 +83,4 @@ end
 function getconfig(name)
 end
 
+return _M;
