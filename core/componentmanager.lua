@@ -114,6 +114,7 @@ end
 
 function deregister_component(host)
 	if components[host] then
+		modulemanager.unload(host, "tls");
 		modulemanager.unload(host, "dialback");
 		hosts[host].connected = nil;
 		local host_config = configmanager.getconfig()[host];
