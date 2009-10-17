@@ -106,7 +106,7 @@ function room_mt:get_default_role(affiliation)
 	end
 end
 
-function room_mt:broadcast_presence(stanza, code, nick)
+function room_mt:broadcast_presence(stanza, sid, code, nick)
 	stanza = get_filtered_presence(stanza);
 	local occupant = self._occupants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
@@ -118,10 +118,8 @@ function room_mt:broadcast_presence(stanza, code, nick)
 	local me = self._occupants[stanza.attr.from];
 	if me then
 		stanza:tag("status", {code='110'});
-		for jid in pairs(me.sessions) do
-			stanza.attr.to = jid;
-			self:route_stanza(stanza);
-		end
+		stanza.attr.to = sid;
+		self:route_stanza(stanza);
 	end
 end
 function room_mt:broadcast_message(stanza, historic)
@@ -217,19 +215,26 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
 				local occupant = self._occupants[current_nick];
-				local old_session = occupant.sessions[from];
 				local new_jid = next(occupant.sessions);
 				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
 				if new_jid then
+					local jid = occupant.jid;
 					occupant.jid = new_jid;
 					occupant.sessions[from] = nil;
-					local pr = st.clone(occupant[new_jid])
-						:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-						:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
-					self:broadcast_except_nick(pr, current_nick);
+					pr.attr.to = from;
+					pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+						:tag("item", {affiliation=occupant.affiliation, role='none'}):up()
+						:tag("status", {code='110'});
+					self:route_stanza(pr);
+					if jid ~= new_jid then
+						pr = st.clone(occupant.sessions[new_jid])
+							:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+							:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
+						self:broadcast_except_nick(pr, current_nick);
+					end
 				else
 					occupant.role = 'none';
-					self:broadcast_presence(pr);
+					self:broadcast_presence(pr, from);
 					self._occupants[current_nick] = nil;
 				end
 				self._jid_nick[from] = nil;
@@ -240,9 +245,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					if current_nick == to then -- simple presence
 						log("debug", "%s broadcasted presence", current_nick);
 						self._occupants[current_nick].sessions[from] = pr;
-						self:broadcast_presence(pr);
+						self:broadcast_presence(pr, from);
 					else -- change nick
-						if self._occupants[to] then
+						local occupant = self._occupants[current_nick];
+						local is_multisession = next(occupant, next(occupant));
+						if self._occupants[to] or is_multisession then
 							log("debug", "%s couldn't change nick", current_nick);
 							local reply = st.error_reply(stanza, "cancel", "conflict"):up();
 							reply.tags[1].attr.code = "409";
@@ -253,13 +260,13 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							if to_nick then
 								log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
 								local p = st.presence({type='unavailable', from=current_nick});
-								self:broadcast_presence(p, '303', to_nick);
+								self:broadcast_presence(p, from, '303', to_nick);
 								self._occupants[current_nick] = nil;
 								self._occupants[to] = data;
 								self._jid_nick[from] = to;
 								pr.attr.from = to;
 								self._occupants[to].sessions[from] = pr;
-								self:broadcast_presence(pr);
+								self:broadcast_presence(pr, from);
 							else
 								--TODO malformed-jid
 							end
@@ -273,8 +280,12 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				--end
 			else -- enter room
 				local new_nick = to;
+				local is_merge;
 				if self._occupants[to] then
-					new_nick = nil;
+					if jid_bare(from) ~= jid_bare(self._occupants[to].jid) then
+						new_nick = nil;
+					end
+					is_merge = true;
 				end
 				if not new_nick then
 					log("debug", "%s couldn't join due to nick conflict: %s", from, to);
@@ -289,11 +300,22 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					local affiliation = self:get_affiliation(from);
 					local role = self:get_default_role(affiliation)
 					if role then -- new occupant
-						self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+						if not is_merge then
+							self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+						else
+							self._occupants[to].sessions[from] = get_filtered_presence(stanza);
+						end
 						self._jid_nick[from] = to;
 						self:send_occupant_list(from);
 						pr.attr.from = to;
-						self:broadcast_presence(pr);
+						if not is_merge then
+							self:broadcast_presence(pr, from);
+						else
+							pr.attr.to = from;
+							self:route_stanza(pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+								:tag("item", {affiliation=affiliation, role=role}):up()
+								:tag("status", {code='110'}));
+						end
 						self:send_history(from);
 					else -- banned
 						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
