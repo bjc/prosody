@@ -128,7 +128,12 @@ function load(host, module_name, config)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	
 	setfenv(mod, pluginenv);
-	if not hosts[host] then hosts[host] = { type = "component", host = host, connected = false, s2sout = {} }; end
+	if not hosts[host] then
+		local create_component = _G.require "core.componentmanager".create_component;
+		hosts[host] = create_component(host);
+		hosts[host].connected = false;
+		log("debug", "Created new component: %s", host);
+	end
 	hosts[host].modules = modulemap[host];
 	
 	local success, ret = pcall(mod);
