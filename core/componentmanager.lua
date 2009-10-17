@@ -123,7 +123,7 @@ function deregister_component(host)
 			components[host] = default_component_handler;
 		else
 			-- Component not in config, or disabled, remove
-			hosts[host] = nil;
+			hosts[host] = nil; -- FIXME do proper unload of all modules and other cleanup before removing
 			components[host] = nil;
 		end
 		-- remove from disco_items
