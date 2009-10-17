@@ -8,7 +8,7 @@
 
 local log = require "util.logger".init("stanzarouter")
 
-local hosts = _G.hosts;
+local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
@@ -16,6 +16,9 @@ local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
+
+local full_sessions = _G.prosody.full_sessions;
+local bare_sessions = _G.prosody.bare_sessions;
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
