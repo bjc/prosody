@@ -104,7 +104,6 @@ function load(host, module_name, config)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-		hosts[host].modules = modulemap[host];
 	end
 	
 	if modulemap[host][module_name] then
@@ -128,6 +127,7 @@ function load(host, module_name, config)
 	
 	setfenv(mod, pluginenv);
 	if not hosts[host] then hosts[host] = { type = "component", host = host, connected = false, s2sout = {} }; end
+	hosts[host].modules = modulemap[host];
 	
 	local success, ret = pcall(mod);
 	if not success then
