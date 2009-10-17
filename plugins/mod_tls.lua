@@ -19,6 +19,9 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 			if session.conn.starttls then
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
+				if session.host and hosts[session.host].ssl_ctx_in then
+					session.conn.set_sslctx(hosts[session.host].ssl_ctx_in);
+				end
 				session.conn.starttls();
 				session.log("info", "TLS negotiation started...");
 				session.secure = false;
@@ -33,6 +36,9 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 			if session.conn.starttls then
 				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
+				if session.to_host and hosts[session.to_host].ssl_ctx_in then
+					session.conn.set_sslctx(hosts[session.to_host].ssl_ctx_in);
+				end
 				session.conn.starttls();
 				session.log("info", "TLS negotiation started for incoming s2s...");
 				session.secure = false;
