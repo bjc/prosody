@@ -170,7 +170,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	modulemap[host][name] = nil;
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
@@ -187,6 +186,7 @@ function unload(host, name, ...)
 		end
 	end
 	hooks:remove(host, name);
+	modulemap[host][name] = nil;
 	return true;
 end
 
