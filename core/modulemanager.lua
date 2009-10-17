@@ -65,9 +65,11 @@ function load_modules_for_host(host)
 	end
 
 	-- Load auto-loaded modules for this host
-	for _, module in ipairs(autoload_modules) do
-		if not disabled_set[module] then
-			load(host, module);
+	if hosts[host].type == "local" then
+		for _, module in ipairs(autoload_modules) do
+			if not disabled_set[module] then
+				load(host, module);
+			end
 		end
 	end
 
