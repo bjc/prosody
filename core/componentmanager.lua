@@ -67,6 +67,7 @@ function handle_stanza(origin, stanza)
 		component(origin, stanza, hosts[host]);
 	else
 		log("error", "Component manager recieved a stanza for a non-existing component: "..tostring(stanza));
+		default_component_handler(origin, stanza);
 	end
 end
 
