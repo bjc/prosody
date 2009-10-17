@@ -32,7 +32,7 @@ end
 
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
-
+require "util.require";
 
 config = require "core.configmanager"
 
