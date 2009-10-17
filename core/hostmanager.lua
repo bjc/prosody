@@ -11,7 +11,13 @@ local ssl = ssl
 local hosts = hosts;
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
+local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
+
+if not _G.prosody.incoming_s2s then
+	require "core.s2smanager";
+end
+local incoming_s2s = _G.prosody.incoming_s2s;
 
 -- These are the defaults if not overridden in the config
 local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
@@ -62,19 +68,44 @@ function activate(host, host_config)
 	eventmanager.fire_event("host-activated", host, host_config);
 end
 
-function deactivate(host)
+function deactivate(host, reason)
 	local host_session = hosts[host];
 	log("info", "Deactivating host: %s", host);
 	eventmanager.fire_event("host-deactivating", host, host_session);
 	
+	reason = reason or { condition = "host-gone", text = "This server has stopped serving "..host };
+	
 	-- Disconnect local users, s2s connections
-	for user, session_list in pairs(host_session.sessions) do
-		for resource, session in pairs(session_list) do
-			session:close("host-gone");
+	if host_session.sessions then
+		for username, user in pairs(host_session.sessions) do
+			for resource, session in pairs(user.sessions) do
+				log("debug", "Closing connection for %s@%s/%s", username, host, resource);
+				session:close(reason);
+			end
 		end
 	end
-	-- Components?
-	
+	if host_session.s2sout then
+		for remotehost, session in pairs(host_session.s2sout) do
+			if session.close then
+				log("debug", "Closing outgoing connection to %s", remotehost);
+				if session.srv_hosts then session.srv_hosts = nil; end
+				session:close(reason);
+			end
+		end
+	end
+	for remote_session in pairs(incoming_s2s) do
+		if remote_session.to_host == host then
+			log("debug", "Closing incoming connection from %s", remote_session.from_host or "<unknown>");
+			remote_session:close(reason);
+		end
+	end
+
+	if host_session.modules then
+		for module in pairs(host_session.modules) do
+			modulemanager.unload(host, module);
+		end
+	end
+
 	hosts[host] = nil;
 	eventmanager.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
