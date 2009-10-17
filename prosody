@@ -205,7 +205,7 @@ function prepare_to_start()
 
 	local cl = require "net.connlisteners";
 	-- start listening on sockets
-	function net_activate_ports(option, listener, default, conntype)
+	function prosody.net_activate_ports(option, listener, default, conntype)
 		if not cl.get(listener) then return; end
 		local ports = config.get("*", "core", option.."_ports") or default;
 		if type(ports) == "number" then ports = {ports} end;
@@ -230,11 +230,11 @@ function prepare_to_start()
 		end
 	end
 
-	net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
-	net_activate_ports("s2s", "xmppserver", {5269}, (global_ssl_ctx and "tls") or "tcp");
-	net_activate_ports("component", "xmppcomponent", {}, "tcp");
-	net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
-	net_activate_ports("console", "console", {5582}, "tcp");
+	prosody.net_activate_ports("c2s", "xmppclient", {5222}, (global_ssl_ctx and "tls") or "tcp");
+	prosody.net_activate_ports("s2s", "xmppserver", {5269}, (global_ssl_ctx and "tls") or "tcp");
+	prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
+	prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	prosody.net_activate_ports("console", "console", {5582}, "tcp");
 
 	prosody.start_time = os.time();
 end	
