@@ -21,6 +21,7 @@ local incoming_s2s = _G.prosody.incoming_s2s;
 
 -- These are the defaults if not overridden in the config
 local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+local default_ssl_ctx_in = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
 
 local log = require "util.logger".init("hostmanager");
 
@@ -61,6 +62,7 @@ function activate(host, host_config)
 		local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
 		if ssl_config then
         		hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
+        		hosts[host].ssl_ctx_in = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx_in }));
         	end
         end
 
