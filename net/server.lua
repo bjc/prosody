@@ -531,11 +531,14 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
     end
 
-    if sslctx then    -- ssl?
+    -- Set the sslctx
+    local handshake;
+    function handler.set_sslctx(new_sslctx)
         ssl = true
+        sslctx = new_sslctx;
         local wrote
         local read
-        local handshake = coroutine_wrap( function( client )    -- create handshake coroutine
+        handshake = coroutine_wrap( function( client )    -- create handshake coroutine
                 local err
                 for i = 1, _maxsslhandshake do
                     _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
@@ -549,20 +552,20 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                         _ = status and status( handler, "ssl-handshake-complete" )
                         return true
                     else
-                        out_put( "server.lua: error during ssl handshake: ", tostring(err) )
-                        if err == "wantwrite" and not wrote then
-                            _sendlistlen = _sendlistlen + 1
-                            _sendlist[ _sendlistlen ] = client
-                            wrote = true
-                        elseif err == "wantread" and not read then
-                                _readlistlen = _readlistlen + 1
-                                _readlist [ _readlistlen ] = client
-                                read = true
-                        else
-                        	break;
-                        end
-                        --coroutine_yield( handler, nil, err )    -- handshake not finished
-                        coroutine_yield( )
+                       out_put( "server.lua: error during ssl handshake: ", tostring(err) )
+                       if err == "wantwrite" and not wrote then
+                           _sendlistlen = _sendlistlen + 1
+                           _sendlist[ _sendlistlen ] = client
+                           wrote = true
+                       elseif err == "wantread" and not read then
+                           _readlistlen = _readlistlen + 1
+                           _readlist [ _readlistlen ] = client
+                           read = true
+                       else
+                           break;
+                       end
+                       --coroutine_yield( handler, nil, err )    -- handshake not finished
+                       coroutine_yield( )
                     end
                 end
                 disconnect( handler, "ssl handshake failed" )
@@ -570,6 +573,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 return false    -- handshake failed
             end
         )
+    end
+    if sslctx then    -- ssl?
+    	handler.set_sslctx(sslctx);
         if startssl then    -- ssl now?
             --out_put("server.lua: ", "starting ssl handshake")
 	    local err
