@@ -6,19 +6,13 @@
 -- COPYING file in the source package for more information.
 --
 
-local hosts = _G.hosts;
+local st = require "util.stanza"
+local jid_split = require "util.jid".split;
 local datamanager = require "util.datamanager"
 
-local st = require "util.stanza"
-local t_concat, t_insert = table.concat, table.insert;
+module:add_feature("vcard-temp");
 
-local jid = require "util.jid"
-local jid_split = jid.split;
-
-local xmlns_vcard = "vcard-temp";
-module:add_feature(xmlns_vcard);
-
-function handle_vcard(event)
+local function handle_vcard(event)
 	local session, stanza = event.origin, event.stanza;
 	local to = stanza.attr.to;
 	if stanza.attr.type == "get" then
@@ -57,7 +51,7 @@ if module:get_option("vcard_compatibility") then
 	module:hook("iq/full", function(data)
 		local stanza = data.stanza;
 		local payload = stanza.tags[1];
-		if stanza.attr.type == "get" or stanza.attr.type == "set" and payload.name == "vCard" and payload.attr.xmlns == xmlns_vcard then
+		if stanza.attr.type == "get" or stanza.attr.type == "set" and payload.name == "vCard" and payload.attr.xmlns == "vcard-temp" then
 			return handle_vcard(data);
 		end
 	end, 1);
