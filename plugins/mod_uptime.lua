@@ -6,10 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza"
-
-local jid_split = require "util.jid".split;
-local t_concat = table.concat;
+local st = require "util.stanza";
 
 local start_time = prosody.start_time;
 prosody.events.add_handler("server-started", function() start_time = prosody.start_time end);
