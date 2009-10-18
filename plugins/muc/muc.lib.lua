@@ -520,7 +520,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		local current_nick = self._jid_nick[stanza.attr.from];
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
 		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-			:tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
+			:tag('status'):text('This participant is kicked from the room because he sent an error message')); -- send unavailable
 	elseif stanza.name == "presence" then -- hack - some buggy clients send presence updates to the room rather than their nick
 		local to = stanza.attr.to;
 		local current_nick = self._jid_nick[stanza.attr.from];
