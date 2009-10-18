@@ -45,7 +45,7 @@ local function filter_xmlns_from_stanza(stanza, filters)
 end
 local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
 local function get_filtered_presence(stanza)
-	return filter_xmlns_from_stanza(st.clone(stanza), presence_filters);
+	return filter_xmlns_from_stanza(st.clone(stanza):reset(), presence_filters);
 end
 local kickable_error_conditions = {
 	["gone"] = true;
@@ -57,19 +57,24 @@ local kickable_error_conditions = {
 	["remote-server-not-found"] = true;
 	["remote-server-timeout"] = true;
 	["service-unavailable"] = true;
+	["malformed error"] = true;
 };
-local function get_kickable_error(stanza)
+local function get_error_condition(stanza)
 	for _, tag in ipairs(stanza.tags) do
-		if tag.name == "error" and tag.attr.xmlns == "jabber:client" then
+		if tag.name == "error" and (not(tag.attr.xmlns) or tag.attr.xmlns == "jabber:client") then
 			for _, cond in ipairs(tag.tags) do
 				if cond.attr.xmlns == "urn:ietf:params:xml:ns:xmpp-stanzas" then
-					return kickable_error_conditions[cond.name] and cond.name;
+					return cond.name;
 				end
 			end
-			return true; -- malformed error message
+			return "malformed error";
 		end
 	end
-	return true; -- malformed error message
+	return "malformed error";
+end
+local function is_kickable_error(stanza)
+	local cond = get_error_condition(stanza);
+	return kickable_error_conditions[cond] and cond;
 end
 local function getUsingPath(stanza, path, getText)
 	local tag = stanza;
@@ -209,7 +214,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			if current_nick then
 				log("debug", "kicking %s from %s", current_nick, room);
 				self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
-					:tag('status'):text('This participant is kicked from the room because he sent an error presence')); -- send unavailable
+					:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
@@ -353,10 +358,10 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		end
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-	elseif current_nick and stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
+	elseif current_nick and stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
 		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-			:tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
+			:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
 	else -- private stanza
 		local o_data = self._occupants[to];
 		if o_data then
@@ -518,11 +523,11 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 				self:broadcast_message(stanza, true);
 			end
 		end
-	elseif stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
+	elseif stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
 		local current_nick = self._jid_nick[stanza.attr.from];
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
 		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-			:tag('status'):text('This participant is kicked from the room because he sent an error message')); -- send unavailable
+			:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
 	elseif stanza.name == "presence" then -- hack - some buggy clients send presence updates to the room rather than their nick
 		local to = stanza.attr.to;
 		local current_nick = self._jid_nick[stanza.attr.from];
