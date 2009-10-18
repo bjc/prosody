@@ -21,7 +21,8 @@ local xmlns_vcard = "vcard-temp";
 
 module:add_feature(xmlns_vcard);
 
-function handle_vcard(session, stanza)
+function handle_vcard(event)
+	local session, stanza = event.origin, event.stanza;
 	if stanza.tags[1].name == "vCard" then
 		local to = stanza.attr.to;
 		if stanza.attr.type == "get" then
@@ -55,7 +56,9 @@ function handle_vcard(session, stanza)
 	end
 end
 
-module:add_iq_handler({"c2s", "s2sin", "component"}, xmlns_vcard, handle_vcard);
+--module:add_iq_handler({"c2s", "s2sin", "component"}, xmlns_vcard, handle_vcard);
+module:hook("iq/bare/vcard-temp:vCard", handle_vcard);
+module:hook("iq/host/vcard-temp:vCard", handle_vcard);
 
 -- COMPAT: https://support.process-one.net/browse/EJAB-1045
 if module:get_option("vcard_compatibility") then
@@ -63,7 +66,7 @@ if module:get_option("vcard_compatibility") then
 		local stanza = data.stanza;
 		if stanza.attr.type == "get" and stanza.tags[1]
 			and stanza.tags[1].attr.xmlns == xmlns_vcard then
-				return handle_vcard(data.origin, stanza);
+				return handle_vcard(data);
 		end
 	end, 1);
 end
