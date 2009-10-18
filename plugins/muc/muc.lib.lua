@@ -325,7 +325,9 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				end
 			end
 		elseif type ~= 'result' then -- bad type
-			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
+			if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
+				origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
+			end
 		end
 	elseif not current_nick then -- not in room
 		if type == "error" or type == "result" then
