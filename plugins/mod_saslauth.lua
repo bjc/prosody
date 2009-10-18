@@ -161,7 +161,7 @@ module:add_event_hook("stream-features",
 				features:up();
 			else
 				features:tag("bind", bind_attr):tag("required"):up():up();
-				features:tag("session", xmpp_session_attr):up();
+				features:tag("session", xmpp_session_attr):tag("optional"):up():up();
 			end
 		end);
 
