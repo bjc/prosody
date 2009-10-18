@@ -539,15 +539,33 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	elseif stanza.name == "message" and not stanza.attr.type and #stanza.tags == 1 and self._jid_nick[stanza.attr.from]
-		and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" and #stanza.tags[1].tags == 1
-		and stanza.tags[1].tags[1].name == "invite" and stanza.tags[1].tags[1].attr.to then
-		local _from, _to = stanza.attr.from, stanza.attr.to;
-		local _invitee = stanza.tags[1].tags[1].attr.to;
-		stanza.attr.from, stanza.attr.to = _to, _invitee;
-		stanza.tags[1].tags[1].attr.from, stanza.tags[1].tags[1].attr.to = _from, nil;
-		self:route_stanza(stanza);
-		stanza.tags[1].tags[1].attr.from, stanza.tags[1].tags[1].attr.to = nil, _invitee;
-		stanza.attr.from, stanza.attr.to = _from, _to;
+		and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" then
+		local x = stanza.tags[1];
+		local payload = (#x.tags == 1 and x.tags[1]);
+		if payload and payload.name == "invite" and payload.attr.to then
+			local _from, _to = stanza.attr.from, stanza.attr.to;
+			local _invitee = jid_prep(payload.attr.to);
+			if _invitee then
+				local _reason = payload.tags[1] and payload.tags[1].name == 'reason' and #payload.tags[1].tags == 0 and payload.tags[1][1];
+				local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
+					:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+						:tag('invite', {from=_from})
+							:tag('reason'):text(_reason or ""):up()
+						:up()
+					:up()
+					:tag('x', {xmlns="jabber:x:conference", jid=_to}) -- COMPAT: Some older clients expect this
+						:text(_reason or "")
+					:up()
+					:tag('body') -- Add a plain message for clients which don't support invites
+						:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
+					:up();
+				self:route_stanza(invite);
+			else
+				origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
+			end
+		else
+			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		end
 	else
 		if type == "error" or type == "result" then return; end
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
