@@ -135,28 +135,32 @@ function load(host, module_name, config)
 		log("debug", "Created new component: %s", host);
 	end
 	hosts[host].modules = modulemap[host];
+	modulemap[host][module_name] = pluginenv;
 	
-	local success, ret = pcall(mod);
-	if not success then
-		log("error", "Error initialising module '%s': %s", module_name or "nil", ret or "nil");
-		return nil, ret;
-	end
-	
-	if module_has_method(pluginenv, "load") then
-		local ok, err = call_module_method(pluginenv, "load");
-		if (not ok) and err then
-			log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err);
+	local success, err = pcall(mod);
+	if success then
+		if module_has_method(pluginenv, "load") then
+			success, err = call_module_method(pluginenv, "load");
+			if not success then
+				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+			end
 		end
-	end
 
-	-- Use modified host, if the module set one
-	modulemap[api_instance.host][module_name] = pluginenv;
-	
-	if api_instance.host == "*" and host ~= "*" then
-		api_instance:set_global();
+		-- Use modified host, if the module set one
+		if api_instance.host == "*" and host ~= "*" then
+			modulemap[host][module_name] = nil;
+			modulemap["*"][module_name] = pluginenv;
+			api_instance:set_global();
+		end
+	else
+		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
-		
-	return true;
+	if success then
+		return true;
+	else -- load failed, unloading
+		unload(api_instance.host, module_name);
+		return nil, err;
+	end
 end
 
 function get_module(host, name)
