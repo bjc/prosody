@@ -253,7 +253,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						self:broadcast_presence(pr, from);
 					else -- change nick
 						local occupant = self._occupants[current_nick];
-						local is_multisession = next(occupant, next(occupant));
+						local is_multisession = next(occupant.sessions, next(occupant.sessions));
 						if self._occupants[to] or is_multisession then
 							log("debug", "%s couldn't change nick", current_nick);
 							local reply = st.error_reply(stanza, "cancel", "conflict"):up();
