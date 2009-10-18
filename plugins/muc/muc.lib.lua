@@ -457,11 +457,12 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 						local occupant = self._occupants[self.jid.."/"..item.attr.nick];
 						if occupant then item.attr.jid = occupant.jid; end
 					end
+					local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
 					if item.attr.affiliation and item.attr.jid and not item.attr.role then
-						local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback);
+						local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
 						if not success then origin.send(st.error_reply(stanza, errtype, err)); end
 					elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
-						local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback);
+						local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback, reason);
 						if not success then origin.send(st.error_reply(stanza, errtype, err)); end
 					else
 						origin.send(st.error_reply(stanza, "cancel", "bad-request"));
@@ -590,7 +591,7 @@ function room_mt:get_affiliation(jid)
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
-function room_mt:set_affiliation(actor, jid, affiliation, callback)
+function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	jid = jid_bare(jid);
 	if affiliation == "none" then affiliation = nil; end
 	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
@@ -602,7 +603,9 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback)
 	local role = self:get_default_role(affiliation);
 	local p = st.presence()
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
+			:tag("item", {affiliation=affiliation or "none", role=role or "none"})
+				:tag("reason"):text(reason or ""):up()
+			:up();
 	local x = p.tags[1];
 	local item = x.tags[1];
 	if not role then -- getting kicked
@@ -643,7 +646,7 @@ function room_mt:get_role(nick)
 	local session = self._occupants[nick];
 	return session and session.role or nil;
 end
-function room_mt:set_role(actor, nick, role, callback)
+function room_mt:set_role(actor, nick, role, callback, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
 	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
@@ -652,7 +655,9 @@ function room_mt:set_role(actor, nick, role, callback)
 	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
 	local p = st.presence({from = nick})
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=occupant.affiliation or "none", nick=nick, role=role or "none"}):up();
+			:tag("item", {affiliation=occupant.affiliation or "none", nick=nick, role=role or "none"})
+				:tag("reason"):text(reason or ""):up()
+			:up();
 	if not role then -- kick
 		p.attr.type = "unavailable";
 		self._occupants[nick] = nil;
