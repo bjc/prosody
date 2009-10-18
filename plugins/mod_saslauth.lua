@@ -83,7 +83,7 @@ local function credentials_callback(mechanism, ...)
 			return response;
 		end
 	elseif mechanism == "DIGEST-MD5" then
-		function func(x) return x; end
+		local function func(x) return x; end
 		local node, domain, realm, decoder = ...;
 		local prepped_node = nodeprep(node);
 		if not prepped_node then
@@ -153,7 +153,7 @@ module:add_event_hook("stream-features",
 					if config.get(session.host or "*", "core", "anonymous_login") then
 						features:tag("mechanism"):text("ANONYMOUS"):up();
 					else
-						mechanisms = usermanager_get_supported_methods(session.host or "*");
+						local mechanisms = usermanager_get_supported_methods(session.host or "*");
 						for k, v in pairs(mechanisms) do
 							features:tag("mechanism"):text(k):up();
 						end
