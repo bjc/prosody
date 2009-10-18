@@ -345,9 +345,13 @@ function def_env.module:list(hosts)
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
 		print(host..":");
-		local modules = array.collect(keys(prosody.hosts[host].modules or {})):sort();
+		local modules = array.collect(keys(prosody.hosts[host] and prosody.hosts[host].modules or {})):sort();
 		if #modules == 0 then
-			print("    No modules loaded");
+			if prosody.hosts[host] then
+				print("    No modules loaded");
+			else
+				print("    Host not found");
+			end
 		else
 			for _, name in ipairs(modules) do
 				print("    "..name);
