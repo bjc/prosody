@@ -315,7 +315,7 @@ function make_connect(host_session, connect_host, connect_port)
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
 	
-	local w = conn.write;
+	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
