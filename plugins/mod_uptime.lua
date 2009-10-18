@@ -20,10 +20,3 @@ module:hook("iq/host/jabber:iq:last:query", function(event)
 		return true;
 	end
 end);
-
-module:hook("iq/bare/jabber:iq:last:query", function(event)
-	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type == "get" then
-		-- TODO last activity
-	end
-end);
