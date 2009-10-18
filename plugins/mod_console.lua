@@ -600,6 +600,16 @@ function def_env.host:deactivate(hostname, reason)
 	return true, "Host "..tostring(hostname).." deactivated";
 end
 
+function def_env.host:list()
+	local print = self.session.print;
+	local i = 0;
+	for host in values(array.collect(keys(prosody.hosts)):sort()) do
+		i = i + 1;
+		print(host);
+	end
+	return true, i.." hosts";
+end
+
 -------------
 
 function printbanner(session)
