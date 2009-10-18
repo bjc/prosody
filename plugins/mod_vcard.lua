@@ -40,7 +40,7 @@ function handle_vcard(session, stanza)
 				session.send(st.error_reply(stanza, "cancel", "item-not-found"));
 			end
 		elseif stanza.attr.type == "set" then
-			if not to or to == session.username.."@"..session.host then
+			if not to then
 				if datamanager.store(session.username, session.host, "vcard", st.preserialize(stanza.tags[1])) then
 					session.send(st.reply(stanza));
 				else
