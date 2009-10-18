@@ -65,9 +65,11 @@ function load_modules_for_host(host)
 	end
 
 	-- Load auto-loaded modules for this host
-	for _, module in ipairs(autoload_modules) do
-		if not disabled_set[module] then
-			load(host, module);
+	if hosts[host].type == "local" then
+		for _, module in ipairs(autoload_modules) do
+			if not disabled_set[module] then
+				load(host, module);
+			end
 		end
 	end
 
@@ -104,7 +106,6 @@ function load(host, module_name, config)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-		hosts[host].modules = modulemap[host];
 	end
 	
 	if modulemap[host][module_name] then
@@ -127,29 +128,39 @@ function load(host, module_name, config)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	
 	setfenv(mod, pluginenv);
-	if not hosts[host] then hosts[host] = { type = "component", host = host, connected = false, s2sout = {} }; end
-	
-	local success, ret = pcall(mod);
-	if not success then
-		log("error", "Error initialising module '%s': %s", module_name or "nil", ret or "nil");
-		return nil, ret;
+	if not hosts[host] then
+		local create_component = _G.require "core.componentmanager".create_component;
+		hosts[host] = create_component(host);
+		hosts[host].connected = false;
+		log("debug", "Created new component: %s", host);
 	end
+	hosts[host].modules = modulemap[host];
+	modulemap[host][module_name] = pluginenv;
 	
-	if module_has_method(pluginenv, "load") then
-		local ok, err = call_module_method(pluginenv, "load");
-		if (not ok) and err then
-			log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err);
+	local success, err = pcall(mod);
+	if success then
+		if module_has_method(pluginenv, "load") then
+			success, err = call_module_method(pluginenv, "load");
+			if not success then
+				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+			end
 		end
-	end
 
-	-- Use modified host, if the module set one
-	modulemap[api_instance.host][module_name] = pluginenv;
-	
-	if api_instance.host == "*" and host ~= "*" then
-		api_instance:set_global();
+		-- Use modified host, if the module set one
+		if api_instance.host == "*" and host ~= "*" then
+			modulemap[host][module_name] = nil;
+			modulemap["*"][module_name] = pluginenv;
+			api_instance:set_global();
+		end
+	else
+		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
-		
-	return true;
+	if success then
+		return true;
+	else -- load failed, unloading
+		unload(api_instance.host, module_name);
+		return nil, err;
+	end
 end
 
 function get_module(host, name)
@@ -170,7 +181,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	modulemap[host][name] = nil;
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
@@ -187,6 +197,7 @@ function unload(host, name, ...)
 		end
 	end
 	hooks:remove(host, name);
+	modulemap[host][name] = nil;
 	return true;
 end
 

@@ -29,12 +29,9 @@ function core_process_stanza(origin, stanza)
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
-		local can_reply = stanza.attr.type == "set" or stanza.attr.type == "get"
-		local missing_id = not stanza.attr.id;
-		if can_reply and (#stanza.tags ~= 1 or missing_id) then
+		if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
+		if (stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1) then
 			origin.send(st.error_reply(stanza, "modify", "bad-request"));
-			return;
-		elseif missing_id then
 			return;
 		end
 	end

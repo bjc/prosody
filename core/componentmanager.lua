@@ -67,6 +67,7 @@ function handle_stanza(origin, stanza)
 		component(origin, stanza, hosts[host]);
 	else
 		log("error", "Component manager recieved a stanza for a non-existing component: "..tostring(stanza));
+		default_component_handler(origin, stanza);
 	end
 end
 
@@ -113,6 +114,7 @@ end
 
 function deregister_component(host)
 	if components[host] then
+		modulemanager.unload(host, "tls");
 		modulemanager.unload(host, "dialback");
 		hosts[host].connected = nil;
 		local host_config = configmanager.getconfig()[host];
@@ -121,7 +123,7 @@ function deregister_component(host)
 			components[host] = default_component_handler;
 		else
 			-- Component not in config, or disabled, remove
-			hosts[host] = nil;
+			hosts[host] = nil; -- FIXME do proper unload of all modules and other cleanup before removing
 			components[host] = nil;
 		end
 		-- remove from disco_items
