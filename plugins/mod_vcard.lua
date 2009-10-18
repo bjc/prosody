@@ -62,10 +62,3 @@ if module:get_option("vcard_compatibility") then
 		end
 	end, 1);
 end
-
-local feature_vcard = st.stanza("feature", { var = xmlns_vcard });
-module:add_event_hook("stream-features", function(session, features)
-	if session.type == "c2s" then
-		features:add_child(feature_vcard);
-	end
-end);
