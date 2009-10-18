@@ -170,6 +170,7 @@ function commands.help(session, data)
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[server - Uptime, version, shutting down, etc.]]
+		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
 		print [[c2s:show(jid) - Show all client sessions with the specified JID (or all if no JID given)]]
@@ -188,6 +189,8 @@ function commands.help(session, data)
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
 		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+	elseif section == "config" then
+		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
 		print [[Hey! Welcome to Prosody's admin console.]]
 		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
