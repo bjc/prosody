@@ -351,6 +351,10 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		end
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+	elseif current_nick and stanza.name == "message" and type == "error" and get_kickable_error(stanza) then
+		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
+		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
+			:tag('status'):text('This participant is kicked from the room because he sent an error message to another occupant')); -- send unavailable
 	else -- private stanza
 		local o_data = self._occupants[to];
 		if o_data then
