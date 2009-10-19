@@ -278,7 +278,9 @@ function new_from_config(ports, handle_request, default_options)
 			ssl.protocol = "sslv23";
 		end
 		
-		new{ port = port, base = base, handler = handle_request, ssl = ssl, type = (ssl and "ssl") or "tcp" }
+		new{ port = port, interface = interface, 
+			base = base, handler = handle_request, 
+			ssl = ssl, type = (ssl and "ssl") or "tcp" };
 	end
 end
 
