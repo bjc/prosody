@@ -47,5 +47,5 @@ lsignal.o: lsignal.c
 signal.so: lsignal.o
 	MACOSX_DEPLOYMENT_TARGET="10.3";
 	export MACOSX_DEPLOYMENT_TARGET;
-	$(LD) $(LFLAGS) -o signal.so lsignal.o
+	$(LD) $(LFLAGS) -o signal.so lsignal.o -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX)
 	
