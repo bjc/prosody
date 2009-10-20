@@ -12,7 +12,8 @@ if module:get_host_type() ~= "component" then
 end
 
 local muc_host = module:get_host();
-local muc_name = "Chatrooms";
+local muc_name = module:get_option("name");
+if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local history_length = 20;
 
 local muc_new_room = module:require "muc".new_room;
