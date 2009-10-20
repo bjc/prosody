@@ -42,3 +42,11 @@ module:hook("iq/bare/jabber:iq:last:query", function(event)
 		return true;
 	end
 end);
+
+module.save = function()
+	return {map = map};
+end
+module.restore = function(data)
+	map = data.map or {};
+end
+
