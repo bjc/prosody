@@ -29,7 +29,7 @@ module:hook("iq/bare/jabber:iq:last:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "get" then
 		local username = jid_split(stanza.attr.to) or origin.username;
-		if is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+		if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
 			local seconds, text = "0", "";
 			if map[username] then
 				seconds = tostring(os.difftime(os.time(), map[username].t));
