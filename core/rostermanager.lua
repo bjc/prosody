@@ -83,26 +83,17 @@ end
 function load_roster(username, host)
 	local jid = username.."@"..host;
 	log("debug", "load_roster: asked for: "..jid);
+	local user = bare_sessions[jid];
 	local roster;
-	if hosts[host] and hosts[host].sessions[username] then
-		roster = hosts[host].sessions[username].roster;
-		if not roster then
-			log("debug", "load_roster: loading for new user: "..username.."@"..host);
-			roster = datamanager.load(username, host, "roster") or {};
-			if not roster[false] then roster[false] = { }; end
-			if roster[jid] then
-				roster[jid] = nil;
-				log("warn", "roster for "..jid.." has a self-contact");
-			end
-			hosts[host].sessions[username].roster = roster;
-			hosts[host].events.fire_event("roster-load", username, host, roster);
-		end
-		return roster;
+	if user then
+		roster = user.roster;
+		if roster then return roster; end
+		log("debug", "load_roster: loading for new user: "..username.."@"..host);
+	else -- Attempt to load roster for non-loaded user
+		log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	end
-	
-	-- Attempt to load roster for non-loaded user
-	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	roster = datamanager.load(username, host, "roster") or {};
+	if user then user.roster = roster; end
 	if not roster[false] then roster[false] = { }; end
 	if roster[jid] then
 		roster[jid] = nil;
