@@ -23,7 +23,7 @@ module:hook("pre-presence/bare", function(event)
 		s = s and #s.tags == 0 and s[1] or "";
 		map[event.origin.username] = {s = s, t = t};
 	end
-end);
+end, 10);
 
 module:hook("iq/bare/jabber:iq:last:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
