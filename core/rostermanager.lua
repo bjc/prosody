@@ -18,6 +18,7 @@ local pairs, ipairs = pairs, ipairs;
 local tostring = tostring;
 
 local hosts = hosts;
+local bare_sessions = bare_sessions;
 
 local datamanager = require "util.datamanager"
 local st = require "util.stanza";
