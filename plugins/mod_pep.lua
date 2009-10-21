@@ -25,6 +25,15 @@ local data = {};
 local recipients = {};
 local hash_map = {};
 
+module.save = function()
+	return { data = data, recipients = recipients, hash_map = hash_map };
+end
+module.restore = function(state)
+	data = state.data or {};
+	recipients = state.recipients or {};
+	hash_map = state.hash_map or {};
+end
+
 module:add_identity("pubsub", "pep", "Prosody");
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
