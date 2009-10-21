@@ -134,8 +134,8 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				local node = payload.attr.node;
 				payload = payload.tags[1];
 				if payload and payload.name == "item" then -- <item>
-					publish(session, node, st.clone(payload));
 					session.send(st.reply(stanza));
+					publish(session, node, st.clone(payload));
 					return true;
 				end
 			end
