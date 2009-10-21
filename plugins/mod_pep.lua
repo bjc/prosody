@@ -133,7 +133,7 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 			if payload and (payload.name == 'publish' or payload.name == 'retract') and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
 				local node = payload.attr.node;
 				payload = payload.tags[1];
-				if payload then -- <item>
+				if payload and payload.name == "item" then -- <item>
 					publish(session, node, st.clone(payload));
 					session.send(st.reply(stanza));
 					return true;
