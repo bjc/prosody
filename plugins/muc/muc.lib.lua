@@ -187,7 +187,11 @@ local function room_get_disco_info(self, stanza)
 		:tag("feature", {var="http://jabber.org/protocol/muc"});
 end
 local function room_get_disco_items(self, stanza)
-	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
+	for room_jid in pairs(self._occupants) do
+		reply:tag("item", {jid = room_jid, name = room_jid:match("/(.*)")}):up();
+	end
+	return reply;
 end
 function room_mt:set_subject(current_nick, subject)
 	-- TODO check nick's authority
