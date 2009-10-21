@@ -114,12 +114,13 @@ function init_xmlhandlers(session, stream_callbacks)
 					if cb_streamclosed then
 						cb_streamclosed(session);
 					end
-					return;
 				elseif name == "error" then
 					cb_error(session, "stream-error", stanza);
 				else
 					cb_error(session, "parse-error", "unexpected-element-close", name);
 				end
+				stanza, chardata = nil, {};
+				return;
 			end
 			if #chardata > 0 then
 				-- We have some character data in the buffer
