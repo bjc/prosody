@@ -6,10 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
-require "util.datamanager"
-local datamanager = datamanager;
+local datamanager = require "util.datamanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local error = error;
