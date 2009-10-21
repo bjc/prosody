@@ -14,19 +14,27 @@ end
 local muc_host = module:get_host();
 local muc_name = module:get_option("name");
 if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
+local restrict_room_creation = module:get_option("restrict_room_creation");
+if restrict_room_creation and restrict_room_creation ~= true then restrict_room_creation = nil; end
 local history_length = 20;
 
 local muc_new_room = module:require "muc".new_room;
 local register_component = require "core.componentmanager".register_component;
 local deregister_component = require "core.componentmanager".deregister_component;
 local jid_split = require "util.jid".split;
+local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
+local um_is_admin = require "core.usermanager".is_admin;
 
 local rooms = {};
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
 local component;
+
+local function is_admin(jid)
+	return um_is_admin(jid) or um_is_admin(jid, module.host);
+end
 
 local function room_route_stanza(room, stanza) core_post_stanza(component, stanza); end
 local function room_save(room, forced)
@@ -105,14 +113,20 @@ component = register_component(muc_host, function(origin, stanza)
 		if to_host == muc_host or bare == muc_host then
 			local room = rooms[bare];
 			if not room then
-				room = muc_new_room(bare);
-				room.route_stanza = room_route_stanza;
-				room.save = room_save;
-				rooms[bare] = room;
+				if not(restrict_room_creation) or is_admin(stanza.attr.from) then
+					room = muc_new_room(bare);
+					room.route_stanza = room_route_stanza;
+					room.save = room_save;
+					rooms[bare] = room;
+				end
 			end
-			room:handle_stanza(origin, stanza);
-			if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
-				rooms[bare] = nil; -- discard room
+			if room then
+				room:handle_stanza(origin, stanza);
+				if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+					rooms[bare] = nil; -- discard room
+				end
+			else
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 			end
 		else --[[not for us?]] end
 		return;
