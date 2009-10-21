@@ -81,7 +81,8 @@ function roster_push(username, host, jid)
 end
 
 function load_roster(username, host)
-	log("debug", "load_roster: asked for: "..username.."@"..host);
+	local jid = username.."@"..host;
+	log("debug", "load_roster: asked for: "..jid);
 	local roster;
 	if hosts[host] and hosts[host].sessions[username] then
 		roster = hosts[host].sessions[username].roster;
@@ -89,7 +90,10 @@ function load_roster(username, host)
 			log("debug", "load_roster: loading for new user: "..username.."@"..host);
 			roster = datamanager.load(username, host, "roster") or {};
 			if not roster[false] then roster[false] = { }; end
-			roster[username.."@"..host] = nil;
+			if roster[jid] then
+				roster[jid] = nil;
+				log("warn", "roster for "..jid.." has a self-contact");
+			end
 			hosts[host].sessions[username].roster = roster;
 			hosts[host].events.fire_event("roster-load", username, host, roster);
 		end
@@ -100,7 +104,10 @@ function load_roster(username, host)
 	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	roster = datamanager.load(username, host, "roster") or {};
 	if not roster[false] then roster[false] = { }; end
-	roster[username.."@"..host] = nil;
+	if roster[jid] then
+		roster[jid] = nil;
+		log("warn", "roster for "..jid.." has a self-contact");
+	end
 	hosts[host].events.fire_event("roster-load", username, host, roster);
 	return roster;
 end
