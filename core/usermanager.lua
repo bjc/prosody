@@ -77,7 +77,7 @@ function is_admin(jid, host)
 		for _,admin in ipairs(admins) do
 			if admin == jid then return true; end
 		end
-	else log("debug", "Option core.admins is not a table"); end
+	elseif admins then log("warn", "Option 'admins' for host '%s' is not a table", host); end
 	return nil;
 end
 
