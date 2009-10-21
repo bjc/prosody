@@ -99,6 +99,7 @@ function load_roster(username, host)
 	-- Attempt to load roster for non-loaded user
 	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	roster = datamanager.load(username, host, "roster") or {};
+	if not roster[false] then roster[false] = { }; end
 	roster[username.."@"..host] = nil;
 	hosts[host].events.fire_event("roster-load", username, host, roster);
 	return roster;
