@@ -66,8 +66,12 @@ function get_supported_methods(host)
 	return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
 end
 
-function is_admin(jid)
-	local admins = config.get("*", "core", "admins");
+function is_admin(jid, host)
+	host = host or "*";
+	local admins = config.get(host, "core", "admins");
+	if host ~= "*" and admins == config.get("*", "core", "admins") then
+		return nil;
+	end
 	if type(admins) == "table" then
 		jid = jid_bare(jid);
 		for _,admin in ipairs(admins) do
