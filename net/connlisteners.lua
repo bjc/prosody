@@ -11,6 +11,7 @@
 local listeners_dir = (CFG_SOURCEDIR or ".").."/net/";
 local server = require "net.server";
 local log = require "util.logger".init("connlisteners");
+local tostring = tostring;
 
 local dofile, pcall, error = 
 	dofile, pcall, error
