@@ -239,6 +239,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						pr = st.clone(occupant.sessions[new_jid])
 							:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 							:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
+						pr.attr.from = current_nick;
 						self:broadcast_except_nick(pr, current_nick);
 					end
 				else
