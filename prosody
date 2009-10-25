@@ -282,7 +282,7 @@ end
 function loop()
 	-- Error handler for errors that make it this far
 	local function catch_uncaught_error(err)
-		if err:match("%d*: interrupted!$") then
+		if type(err) == "string" and err:match("%d*: interrupted!$") then
 			return "quitting";
 		end
 		
