@@ -127,7 +127,11 @@ function console_listener.listener(conn, data)
 end
 
 function console_listener.disconnect(conn, err)
-	
+	local session = sessions[conn];
+	if session then
+		session.disconnect();
+		sessions[conn] = nil;
+	end
 end
 
 connlisteners_register('console', console_listener);

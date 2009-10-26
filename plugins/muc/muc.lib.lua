@@ -115,7 +115,7 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	stanza = get_filtered_presence(stanza);
 	local occupant = self._occupants[stanza.attr.from];
 	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-		:tag("item", {affiliation=occupant.affiliation, role=occupant.role, nick=nick}):up();
+		:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none", nick=nick}):up();
 	if code then
 		stanza:tag("status", {code=code}):up();
 	end
@@ -162,7 +162,7 @@ function room_mt:send_occupant_list(to)
 			local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
 			pres.attr.to, pres.attr.from = to, occupant;
 			pres:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag("item", {affiliation=o_data.affiliation, role=o_data.role}):up();
+				:tag("item", {affiliation=o_data.affiliation or "none", role=o_data.role or "none"}):up();
 			self:route_stanza(pres);
 		end
 	end
@@ -232,13 +232,14 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					occupant.sessions[from] = nil;
 					pr.attr.to = from;
 					pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-						:tag("item", {affiliation=occupant.affiliation, role='none'}):up()
+						:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
 						:tag("status", {code='110'});
 					self:route_stanza(pr);
 					if jid ~= new_jid then
 						pr = st.clone(occupant.sessions[new_jid])
 							:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-							:tag("item", {affiliation=occupant.affiliation, role=occupant.role});
+							:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none"});
+						pr.attr.from = current_nick;
 						self:broadcast_except_nick(pr, current_nick);
 					end
 				else
@@ -322,7 +323,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						else
 							pr.attr.to = from;
 							self:route_stanza(pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-								:tag("item", {affiliation=affiliation, role=role}):up()
+								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
 								:tag("status", {code='110'}));
 						end
 						self:send_history(from);

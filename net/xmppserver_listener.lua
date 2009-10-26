@@ -61,8 +61,8 @@ local function session_reset_stream(session)
 		function session.data(conn, data)
 			local ok, err = parser:parse(data);
 			if ok then return; end
-			(log or session.log)("warn", "Received invalid XML: %s", data);
-			(log or session.log)("warn", "Problem was: %s", err);
+			(session.log or log)("warn", "Received invalid XML: %s", data);
+			(session.log or log)("warn", "Problem was: %s", err);
 			session:close("xml-not-well-formed");
 		end
 		
