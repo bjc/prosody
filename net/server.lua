@@ -407,9 +407,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler.write = idfalse    -- dont write anymore
             return false
         elseif socket and not _sendlist[ socket ] then
-            _sendlistlen = _sendlistlen + 1
-            _sendlist[ _sendlistlen ] = socket
-            _sendlist[ socket ] = _sendlistlen
+            _sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
         end
         bufferqueuelen = bufferqueuelen + 1
         bufferqueue[ bufferqueuelen ] = data
@@ -457,9 +455,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler.write = write
             if noread then
                 noread = false
-                _readlistlen = _readlistlen + 1
-                _readlist[ socket ] = _readlistlen
-                _readlist[ _readlistlen ] = socket
+                _readlistlen = addsocket(_readlist, socket, _readlistlen)
                 _readtimes[ handler ] = _currenttime
             end
             if nosend then
@@ -550,16 +546,15 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
                         _ = status and status( handler, "ssl-handshake-complete" )
+                        _readlistlen = addsocket(_readlist, socket, _readlistlen)
                         return true
                     else
                        out_put( "server.lua: error during ssl handshake: ", tostring(err) )
                        if err == "wantwrite" and not wrote then
-                           _sendlistlen = _sendlistlen + 1
-                           _sendlist[ _sendlistlen ] = client
+                           _sendlistlen = addsocket(_sendlist, client, _sendlistlen)
                            wrote = true
                        elseif err == "wantread" and not read then
-                           _readlistlen = _readlistlen + 1
-                           _readlist [ _readlistlen ] = client
+                           _readlistlen = addsocket(_readlist, client, _readlistlen)
                            read = true
                        else
                            break;
@@ -619,9 +614,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 shutdown = id
 
                 _socketlist[ socket ] = handler
-                _readlistlen = _readlistlen + 1
-                _readlist[ _readlistlen ] = socket
-                _readlist[ socket ] = _readlistlen
+                _readlistlen = addsocket(_readlist, socket, _readlistlen)
 
                 -- remove traces of the old socket
 
@@ -653,9 +646,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     shutdown = ( ssl and id ) or socket.shutdown
 
     _socketlist[ socket ] = handler
-    _readlistlen = _readlistlen + 1
-    _readlist[ _readlistlen ] = socket
-    _readlist[ socket ] = _readlistlen
+    _readlistlen = addsocket(_readlist, socket, _readlistlen)
 
     return handler, socket
 end
@@ -665,6 +656,15 @@ end
 
 idfalse = function( )
     return false
+end
+
+addsocket = function( list, socket, len )
+    if not list[ socket ] then
+      len = len + 1
+      list[ len ] = socket
+      list[ socket ] = len
+    end
+    return len;
 end
 
 removesocket = function( list, socket, len )    -- this function removes sockets from a list ( copied from copas )
@@ -721,8 +721,7 @@ addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, st
         return nil, err
     end
     server:settimeout( 0 )
-    _readlistlen = _readlistlen + 1
-    _readlist[ _readlistlen ] = server
+    _readlistlen = addsocket(_readlist, server, _readlistlen)
     _server[ port ] = handler
     _socketlist[ server ] = handler
     out_put( "server.lua: new server listener on '", addr, ":", port, "'" )
@@ -844,9 +843,7 @@ end
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx, startssl )
     local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, startssl )
     _socketlist[ socket ] = handler
-    _sendlistlen = _sendlistlen + 1
-    _sendlist[ _sendlistlen ] = socket
-    _sendlist[ socket ] = _sendlistlen
+    _sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
     return handler, socket
 end
 
