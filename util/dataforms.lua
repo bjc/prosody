@@ -38,39 +38,41 @@ function form_t.form(layout, data)
 
 		local value = (data and data[field.name]) or field.value;
 		
-		-- Add value, depending on type
-		if field_type == "hidden" then
-			if type(value) == "table" then
-				-- Assume an XML snippet
-				form:tag("value")
-					:add_child(value)
-					:up();
-			elseif value then
-				form:tag("value"):text(tostring(value)):up();
-			end
-		elseif field_type == "boolean" then
-			form:tag("value"):text((value and "1") or "0"):up();
-		elseif field_type == "fixed" then
-			
-		elseif field_type == "jid-multi" then
-			for _, jid in ipairs(value) do
-				form:tag("value"):text(jid):up();
-			end
-		elseif field_type == "jid-single" then
-			form:tag("value"):text(value):up();
-		elseif field_type == "text-single" or field_type == "text-private" then
-			form:tag("value"):text(value):up();
-		elseif field_type == "text-multi" then
-			-- Split into multiple <value> tags, one for each line
-			for line in value:gmatch("([^\r\n]+)\r?\n*") do
-				form:tag("value"):text(line):up();
-			end
-		elseif field_type == "list-single" then
-			for _, val in ipairs(value) do
-				if type(val) == "table" then
-					form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+		if value then
+			-- Add value, depending on type
+			if field_type == "hidden" then
+				if type(value) == "table" then
+					-- Assume an XML snippet
+					form:tag("value")
+						:add_child(value)
+						:up();
 				else
-					form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					form:tag("value"):text(tostring(value)):up();
+				end
+			elseif field_type == "boolean" then
+				form:tag("value"):text((value and "1") or "0"):up();
+			elseif field_type == "fixed" then
+				
+			elseif field_type == "jid-multi" then
+				for _, jid in ipairs(value) do
+					form:tag("value"):text(jid):up();
+				end
+			elseif field_type == "jid-single" then
+				form:tag("value"):text(value):up();
+			elseif field_type == "text-single" or field_type == "text-private" then
+				form:tag("value"):text(value):up();
+			elseif field_type == "text-multi" then
+				-- Split into multiple <value> tags, one for each line
+				for line in value:gmatch("([^\r\n]+)\r?\n*") do
+					form:tag("value"):text(line):up();
+				end
+			elseif field_type == "list-single" then
+				for _, val in ipairs(value) do
+					if type(val) == "table" then
+						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+					else
+						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					end
 				end
 			end
 		end
