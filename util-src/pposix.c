@@ -463,11 +463,19 @@ int lc_getrlimit(lua_State *L) {
 	return 3;
 }
 
+void lc_abort(lua_State* L)
+{
+	abort();
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
 {
 	lua_newtable(L);
+
+	lua_pushcfunction(L, lc_abort);
+	lua_setfield(L, -2, "abort");
 
 	lua_pushcfunction(L, lc_daemonize);
 	lua_setfield(L, -2, "daemonize");
