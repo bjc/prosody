@@ -124,14 +124,14 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	if me then
 		stanza:tag("status", {code='110'});
 		stanza.attr.to = sid;
-		self:route_stanza(stanza);
+		self:_route_stanza(stanza);
 	end
 end
 function room_mt:broadcast_message(stanza, historic)
 	for occupant, o_data in pairs(self._occupants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
-			self:route_stanza(stanza);
+			self:_route_stanza(stanza);
 		end
 	end
 	if historic then -- add to history
@@ -149,7 +149,7 @@ function room_mt:broadcast_except_nick(stanza, nick)
 		if rnick ~= nick then
 			for jid in pairs(occupant.sessions) do
 				stanza.attr.to = jid;
-				self:route_stanza(stanza);
+				self:_route_stanza(stanza);
 			end
 		end
 	end
@@ -163,7 +163,7 @@ function room_mt:send_occupant_list(to)
 			pres.attr.to, pres.attr.from = to, occupant;
 			pres:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 				:tag("item", {affiliation=o_data.affiliation or "none", role=o_data.role or "none"}):up();
-			self:route_stanza(pres);
+			self:_route_stanza(pres);
 		end
 	end
 end
@@ -173,11 +173,11 @@ function room_mt:send_history(to)
 		for _, msg in ipairs(history) do
 			msg = st.deserialize(msg);
 			msg.attr.to=to;
-			self:route_stanza(msg);
+			self:_route_stanza(msg);
 		end
 	end
 	if self._data['subject'] then
-		self:route_stanza(st.message({type='groupchat', from=self.jid, to=to}):tag("subject"):text(self._data['subject']));
+		self:_route_stanza(st.message({type='groupchat', from=self.jid, to=to}):tag("subject"):text(self._data['subject']));
 	end
 end
 
@@ -234,7 +234,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 						:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
 						:tag("status", {code='110'});
-					self:route_stanza(pr);
+					self:_route_stanza(pr);
 					if jid ~= new_jid then
 						pr = st.clone(occupant.sessions[new_jid])
 							:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
@@ -322,7 +322,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							self:broadcast_presence(pr, from);
 						else
 							pr.attr.to = from;
-							self:route_stanza(pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+							self:_route_stanza(pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
 								:tag("status", {code='110'}));
 						end
@@ -354,7 +354,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				end
 				if _to then
 					stanza.attr.to, stanza.attr.from, stanza.attr.id = _to, self._jid_nick[_nick], _id;
-					self:route_stanza(stanza);
+					self:_route_stanza(stanza);
 					stanza.attr.to, stanza.attr.from, stanza.attr.id = to, from, id;
 				end
 			end
@@ -379,7 +379,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				stanza.attr.to = bare;
 				stanza.attr.id = base64.encode(jid.."\0"..id.."\0"..md5(from));
 			end
-			self:route_stanza(stanza);
+			self:_route_stanza(stanza);
 			stanza.attr.to, stanza.attr.from, stanza.attr.id = to, from, id;
 		elseif type ~= "error" and type ~= "result" then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
@@ -565,7 +565,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					:tag('body') -- Add a plain message for clients which don't support invites
 						:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 					:up();
-				self:route_stanza(invite);
+				self:_route_stanza(invite);
 			else
 				origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 			end
@@ -634,7 +634,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
 				if not role then self._jid_nick[jid] = nil; end
 				p.attr.to = jid;
-				self:route_stanza(p);
+				self:_route_stanza(p);
 			end
 		end
 	end
@@ -675,11 +675,49 @@ function room_mt:set_role(actor, nick, role, callback, reason)
 	end
 	for jid in pairs(occupant.sessions) do -- send to all sessions of the nick
 		p.attr.to = jid;
-		self:route_stanza(p);
+		self:_route_stanza(p);
 	end
 	if callback then callback(); end
 	self:broadcast_except_nick(p, nick);
 	return true;
+end
+
+function room_mt:_route_stanza(stanza)
+	local muc_child;
+	local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
+	local from_occupant = self._occupants[stanza.attr.from];
+	if stanza.name == "presence" then
+		if to_occupant and from_occupant then
+			if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
+				for i=#stanza.tags,1,-1 do
+					local tag = stanza.tags[i];
+					if tag.name == "x" and tag.attr.xmlns == "http://jabber.org/protocol/muc#user" then
+						muc_child = tag;
+						break;
+					end
+				end
+			end
+		end
+	end
+	if muc_child then
+		for _, item in pairs(muc_child.tags) do
+			if item.name == "item" then
+				if from_occupant == to_occupant then
+					item.attr.jid = stanza.attr.to;
+				else
+					item.attr.jid = from_occupant.jid;
+				end
+			end
+		end
+	end
+	self:route_stanza(stanza);
+	if muc_child then
+		for _, item in pairs(muc_child.tags) do
+			if item.name == "item" then
+				item.attr.jid = nil;
+			end
+		end
+	end
 end
 
 local _M = {}; -- module "muc"
