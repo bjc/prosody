@@ -230,7 +230,7 @@ function destroy_request(request)
 		end
 		request.handler.close()
 		if request.conn then
-			listener.disconnect(request.conn, "closed");
+			listener.disconnect(request.handler, "closed");
 		end
 	end
 end
