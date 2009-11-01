@@ -889,7 +889,6 @@ function resolver.print (response)    -- - - - - - - - - - - - - resolver.print
 
 
 local function resolve (func, ...)    -- - - - - - - - - - - - - - resolver_get
-  dns._resolver = dns._resolver or dns.resolver ()
   return func (dns._resolver, ...)
   end
 
@@ -930,5 +929,6 @@ function dns.cancel(...)   -- - - - - - - - - - - - - - - - - - - - - -  cancel
 function dns:socket_wrapper_set (...)    -- - - - - - - - -  socket_wrapper_set
   return resolve (resolver.socket_wrapper_set, ...)  end
 
+dns._resolver = dns.resolver ()
 
 return dns
