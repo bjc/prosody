@@ -118,6 +118,17 @@ field_readers["text-private"] =
 field_readers["jid-single"] =
 	field_readers["text-single"];
 
+field_readers["jid-multi"] = 
+	function (field_tag)
+		local result = {};
+		for value_tag in field_tag:childtags() do
+			if value_tag.name == "value" then
+				result[#result+1] = value_tag[1];
+			end
+		end
+		return result;
+	end
+
 field_readers["text-multi"] = 
 	function (field_tag)
 		local result = {};
