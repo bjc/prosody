@@ -102,7 +102,12 @@ function syslog_sink_maker(config)
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
-if not module:get_option("no_daemonize") then
+local daemonize = module:get_option("daemonize");
+if daemonize == nil then
+	daemonize = not module:get_option("no_daemonize"); --COMPAT w/ 0.5
+end
+
+if daemonize then
 	local function daemonize_server()
 		local ok, ret = pposix.daemonize();
 		if not ok then
