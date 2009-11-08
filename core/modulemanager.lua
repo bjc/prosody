@@ -390,7 +390,14 @@ function api:require(lib)
 end
 
 function api:get_option(name, default_value)
-	return config.get(self.host, self.name, name) or config.get(self.host, "core", name) or default_value;
+	local value = config.get(self.host, self.name, name);
+	if value == nil then
+		value = config.get(self.host, "core", name);
+		if value == nil then
+			value = default_value;
+		end
+	end
+	return value;
 end
 
 local t_remove = _G.table.remove;
