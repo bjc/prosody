@@ -38,7 +38,10 @@ function get(name)
 	local h = listeners[name];
 	if not h then
 		local ok, ret = pcall(dofile, listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua");
-		if not ok then return nil, ret; end
+		if not ok then
+			log("error", "Error while loading listener '%s': %s", tostring(name), tostring(ret));
+			return nil, ret;
+		end
 		h = listeners[name];
 	end
 	return h;
