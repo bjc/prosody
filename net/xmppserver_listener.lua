@@ -17,7 +17,7 @@ local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", 
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", 
 		default_ns = "jabber:server",
 		streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
 
@@ -53,7 +53,7 @@ local xmppserver = { default_port = 5269, default_mode = "*a" };
 
 local function session_reset_stream(session)
 	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "|");
+		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "\1");
 		session.parser = parser;
 		
 		session.notopen = true;
@@ -70,7 +70,7 @@ local function session_reset_stream(session)
 end
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:match("[^\1]*"), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then

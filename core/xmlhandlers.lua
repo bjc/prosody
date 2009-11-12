@@ -29,7 +29,6 @@ local ns_prefixes = {
 
 function init_xmlhandlers(session, stream_callbacks)
 		local ns_stack = { "" };
-		local curr_ns, name = "";
 		local curr_tag;
 		local chardata = {};
 		local xml_handlers = {};
@@ -50,7 +49,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				stanza:text(t_concat(chardata));
 				chardata = {};
 			end
-			local curr_ns,name = tagname:match("^(.-)|?([^%|]-)$");
+			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
 			if not name then
 				curr_ns, name = "", curr_ns;
 			end
@@ -63,7 +62,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			for i=1,#attr do
 				local k = attr[i];
 				attr[i] = nil;
-				local ns, nm = k:match("^([^|]+)|?([^|]-)$")
+				local ns, nm = k:match("^([^\1]*)\1?(.*)$");
 				if ns and nm then
 					ns = ns_prefixes[ns]; 
 					if ns then 
@@ -105,7 +104,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 		end
 		function xml_handlers:EndElement(tagname)
-			curr_ns,name = tagname:match("^(.-)|?([^%|]-)$");
+			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
 			if not name then
 				curr_ns, name = "", curr_ns;
 			end
