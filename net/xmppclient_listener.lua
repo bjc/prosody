@@ -27,7 +27,7 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = require "util.stanza";
 
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", 
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", 
 		default_ns = "jabber:client",
 		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
@@ -53,7 +53,7 @@ local xmppclient = { default_port = 5222, default_mode = "*a" };
 
 local function session_reset_stream(session)
 	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "|");
+		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "\1");
 		session.parser = parser;
 		
 		session.notopen = true;
@@ -70,7 +70,7 @@ end
 
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:match("[^\1]*"), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then

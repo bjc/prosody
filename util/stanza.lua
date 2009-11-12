@@ -136,11 +136,11 @@ local function _dostring(t, buf, self, xml_escape, parentns)
 	local name = t.name
 	t_insert(buf, "<"..name);
 	for k, v in pairs(t.attr) do
-		if s_find(k, "|", 1, true) then
-			local ns, attrk = s_match(k, "^([^|]+)|(.+)$");
+		if s_find(k, "\1", 1, true) then
+			local ns, attrk = s_match(k, "^([^\1]*)\1?(.*)$");
 			nsid = nsid + 1;
 			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
-               elseif not(k == "xmlns" and v == parentns) then
+		elseif not(k == "xmlns" and v == parentns) then
 			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
 		end
 	end
@@ -152,7 +152,7 @@ local function _dostring(t, buf, self, xml_escape, parentns)
 		for n=1,len do
 			local child = t[n];
 			if child.name then
-                               self(child, buf, self, xml_escape, t.attr.xmlns);
+				self(child, buf, self, xml_escape, t.attr.xmlns);
 			else
 				t_insert(buf, xml_escape(child));
 			end
@@ -162,7 +162,7 @@ local function _dostring(t, buf, self, xml_escape, parentns)
 end
 function stanza_mt.__tostring(t)
 	local buf = {};
-       _dostring(t, buf, _dostring, xml_escape, nil);
+	_dostring(t, buf, _dostring, xml_escape, nil);
 	return t_concat(buf);
 end
 
@@ -210,6 +210,17 @@ function deserialize(stanza)
 	if stanza then
 		local attr = stanza.attr;
 		for i=1,#attr do attr[i] = nil; end
+		local attrx = {};
+		for att in pairs(attr) do
+			if s_find(att, "|", 1, true) and not s_find(k, "\1", 1, true) then
+				local ns,na = s_match(k, "^([^|]+)|(.+)$");
+				attrx[ns.."\1"..na] = attr[att];
+				attr[att] = nil;
+			end
+		end
+		for a,v in pairs(attrx) do
+			attr[x] = v;
+		end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
 			if type(child) == "table" then
