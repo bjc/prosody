@@ -208,7 +208,7 @@ local function new_digest_md5(realm, credentials_handler)
 					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
 					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
 				else
-					A1 = "?";
+					return "failure", "invalid-authzid";
 				end
 			else
 				A1 = Y..":"..response["nonce"]..":"..response["cnonce"];
