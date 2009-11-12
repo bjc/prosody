@@ -26,7 +26,7 @@ local NULL = {};
 module "componentmanager"
 
 local function default_component_handler(origin, stanza)
-	log("warn", "Stanza being handled by default component, bouncing error");
+	log("warn", "Stanza being handled by default component; bouncing error for: %s", stanza:top_tag());
 	if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 		origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 	end
