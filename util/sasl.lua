@@ -30,6 +30,8 @@ local error = error
 local print = print
 local setmetatable = setmetatable;
 local assert = assert;
+local dofile = dofile;
+local require = require;
 
 require "util.iterators"
 local keys = keys
@@ -120,8 +122,9 @@ function method:process(message)
 end
 
 -- load the mechanisms
-require "sasl.plain"
-require "sasl.digest-md5"
-require "sasl.scram"
+m = require "util.sasl.plain"
+m.init(registerMechanism)
+--dofile "util/sasl/digest-md5.lua"
+--dofile "util/sasl/scram.lua"
 
 return _M;
