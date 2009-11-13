@@ -203,7 +203,7 @@ local function new_digest_md5(realm, credentials_handler)
 			elseif Y == false then return "failure", "account-disabled" end
 			local A1 = "";
 			if response.authzid then
-				if response.authzid == self.username.."@"..self.realm then
+				if response.authzid == self.username or response.authzid == self.username.."@"..self.realm then
 					-- COMPAT
 					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
 					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
