@@ -205,7 +205,7 @@ local function new_digest_md5(realm, credentials_handler)
 			if response.authzid then
 				if response.authzid == self.username or response.authzid == self.username.."@"..self.realm then
 					-- COMPAT
-					log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
+					log("warn", "Client is violating RFC 3920 (section 6.1, point 7).");
 					A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
 				else
 					return "failure", "invalid-authzid";
