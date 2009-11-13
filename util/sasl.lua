@@ -61,7 +61,7 @@ digest-md5:
 	end
 
 digest-md5-test:
-	function(username, realm, encoding, digesthash)
+	function(username, domain, realm, encoding, digesthash)
 		return true or false, state;
 	end
 ]]

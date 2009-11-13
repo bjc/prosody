@@ -175,7 +175,9 @@ local function digest(self, message)
 			elseif state == false then return "failure", "account-disabled" end
 			Y = md5(response["username"]..":"..response["realm"]..":"..password);
 		elseif self.profile["digest-md5"] then
-			--local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["charset"])
+			local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["realm"] response["charset"])
+			if state == nil then return "failure", "not-authorized"
+			elseif state == false then return "failure", "account-disabled" end
 		elseif self.profile["digest-md5-test"] then
 			-- TODO
 		end
