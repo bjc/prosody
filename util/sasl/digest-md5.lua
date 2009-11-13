@@ -173,11 +173,11 @@ local function digest(self, message)
 			local password, state = self.profile.plain(response["username"], self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
-			Y = md5(response["username"]..":"..self.realm..":"..password);
+			Y = md5(response["username"]..":"..response["realm"]..":"..password);
 		elseif self.profile["digest-md5"] then
 			--local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["charset"])
 		elseif self.profile["digest-md5-test"] then
-		
+			-- TODO
 		end
 		--local password_encoding, Y = self.credentials_handler("DIGEST-MD5", response["username"], self.realm, response["realm"], decoder);
 		--if Y == nil then return "failure", "not-authorized"
