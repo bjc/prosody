@@ -11,10 +11,29 @@
 --
 --    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+local tostring = tostring;
+local type = type;
+
+local s_gmatch = string.gmatch;
+local s_match = string.match;
+local t_concat = table.concat;
+local t_insert = table.insert;
+local to_byte, to_char = string.byte, string.char;
+
+local md5 = require "util.hashes".md5;
+local log = require "util.logger".init("sasl");
+local generate_uuid = require "util.uuid".generate;
+
+module "plain"
 
 --=========================
 --SASL DIGEST-MD5 according to RFC 2831
-local function sasl_mechanism_digest_md5(self, message)
+local function digest_response()
+	
+	return response, A1, A2
+end
+
+local function digest(self, message)
 	--TODO complete support for authzid
 
 	local function serialize(message)
@@ -68,7 +87,7 @@ local function sasl_mechanism_digest_md5(self, message)
 	end
 	local function latin1toutf8(str)
 		local p = {};
-		for ch in gmatch(str, ".") do
+		for ch in s_gmatch(str, ".") do
 			ch = to_byte(ch);
 			if (ch < 0x80) then
 				t_insert(p, to_char(ch));
@@ -82,7 +101,7 @@ local function sasl_mechanism_digest_md5(self, message)
 	end
 	local function parse(data)
 		local message = {}
-		for k, v in gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
+		for k, v in s_gmatch(data, [[([%w%-]+)="?([^",]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
 			message[k] = v;
 		end
 		return message;
@@ -96,7 +115,7 @@ local function sasl_mechanism_digest_md5(self, message)
 
 	self.step = self.step + 1;
 	if (self.step == 1) then
-		local challenge = serialize({	nonce = object.nonce,
+		local challenge = serialize({	nonce = self.nonce,
 										qop = "auth",
 										charset = "utf-8",
 										algorithm = "md5-sess",
@@ -150,9 +169,19 @@ local function sasl_mechanism_digest_md5(self, message)
 
 		--TODO maybe realm support
 		self.username = response["username"];
-		local password_encoding, Y = self.credentials_handler("DIGEST-MD5", response["username"], self.realm, response["realm"], decoder);
-		if Y == nil then return "failure", "not-authorized"
-		elseif Y == false then return "failure", "account-disabled" end
+		if self.profile.plain then
+			local password, state = self.profile.plain(response["username"], self.realm)
+			if state == nil then return "failure", "not-authorized"
+			elseif state == false then return "failure", "account-disabled" end
+			Y = md5(response["username"]..":"..self.realm..":"..password);
+		elseif self.profile["digest-md5"] then
+			--local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["charset"])
+		elseif self.profile["digest-md5-test"] then
+		
+		end
+		--local password_encoding, Y = self.credentials_handler("DIGEST-MD5", response["username"], self.realm, response["realm"], decoder);
+		--if Y == nil then return "failure", "not-authorized"
+		--elseif Y == false then return "failure", "account-disabled" end
 		local A1 = "";
 		if response.authzid then
 			if response.authzid == self.username.."@"..self.realm then
@@ -192,3 +221,9 @@ local function sasl_mechanism_digest_md5(self, message)
 		else return "failure", "malformed-request" end
 	end
 end
+
+function init(registerMechanism)
+	registerMechanism("DIGEST-MD5", {"plain"}, digest);
+end
+
+return _M;
