@@ -55,7 +55,8 @@ plain-test:
 	end
 
 digest-md5:
-	function(username, realm, encoding)
+	function(username, domain, realm, encoding) -- domain and realm are usually the same; for some broken
+												-- implementations it's not
 		return digesthash, state;
 	end
 
