@@ -16,10 +16,8 @@ local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
-local generate_uuid = require "util.uuid".generate;
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
-local to_byte, to_char = string.byte, string.char;
 local to_unicode = require "util.encodings".idna.to_unicode;
 local s_match = string.match;
 local gmatch = string.gmatch
@@ -41,6 +39,10 @@ module "sasl"
 
 --[[
 Authentication Backend Prototypes:
+
+state = false : disabled
+state = true : enabled
+state = nil : non-existant
 
 plain:
 	function(username, realm)
@@ -117,14 +119,16 @@ end
 
 -- feed new messages to process into the library
 function method:process(message)
-	if message == "" or message == nil then return "failure", "malformed-request" end
+	--if message == "" or message == nil then return "failure", "malformed-request" end
 	return self.mech_i(self, message);
 end
 
 -- load the mechanisms
-m = require "util.sasl.plain"
-m.init(registerMechanism)
---dofile "util/sasl/digest-md5.lua"
---dofile "util/sasl/scram.lua"
+load_mechs = {"plain", "digest-md5"}
+for _, mech in ipairs(load_mechs) do
+	local name = "util.sasl."..mech;
+	local m = require(name);
+	m.init(registerMechanism)
+end
 
 return _M;
