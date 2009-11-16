@@ -28,9 +28,11 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 net/* $(SOURCE)/net
 	install -m644 util/* $(SOURCE)/util
 	install -m644 fallbacks/* $(SOURCE)/fallbacks
-	install -m644 plugins/* $(MODULES)
+	install -m644 plugins/*.lua $(MODULES)
+	install -d $(MODULES)/muc
+	install -m644 plugins/muc/* $(MODULES)/muc
 	install -m644 certs/* $(CONFIG)/certs
-	install -m644 plugins/* $(MODULES)
+	install -m644 plugins/*.lua $(MODULES)
 	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
 	test -e $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
 	test -e prosody.version && install prosody.version $(SOURCE)/prosody.version || true
@@ -71,7 +73,7 @@ prosody.cfg.lua.install:
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
 
 prosody.release:
-	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%01x"' .hg/dirstate \
+	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%02x"' .hg/dirstate \
 	    > prosody.version || true
 
 prosody.version: prosody.release

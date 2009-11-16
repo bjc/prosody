@@ -32,6 +32,12 @@
 -- Server-wide settings go in this section
 Host "*"
 	
+	-- This is a (by default, empty) list of accounts that are admins 
+	-- for the server. Note that you must create the accounts separately
+	-- (see http://prosody.im/doc/creating_accounts for info)
+	-- Example: admins = { "user1@example.com", "user2@example.net" }
+	admins = { }
+	
 	-- This is the list of modules Prosody will load on startup.
 	-- It looks for mod_modulename.lua in the plugins folder, so make sure that exists too.
 	modules_enabled = {

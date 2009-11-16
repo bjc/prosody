@@ -45,16 +45,26 @@ local function isSpace(ch)
 	return ch <= _space;
 end
 
+local escapes = {["\\b"]="\b", ["\\d"]="\d", ["\\e"]="\e", ["\\f"]="\f", ["\\n"]="\n", ["\\r"]="\r", ["\\s"]="\s", ["\\t"]="\t", ["\\v"]="\v", ["\\\""]="\"", ["\\'"]="'", ["\\\\"]="\\"};
 local function readString()
 	read("\""); -- skip quote
 	local slash = nil;
 	local str = "";
 	while true do
 		local ch = read();
-		if ch == "\"" and not slash then break; end
-		str = str..ch;
+		if slash then
+			slash = slash..ch;
+			if not escapes[slash] then error("Unknown escape sequence: "..slash); end
+			str = str..escapes[slash];
+			slash = nil;
+		elseif ch == "\"" then
+			break;
+		elseif ch == "\\" then
+			slash = ch;
+		else
+			str = str..ch;
+		end
 	end
-	str = str:gsub("\\.", {["\\b"]="\b", ["\\d"]="\d", ["\\e"]="\e", ["\\f"]="\f", ["\\n"]="\n", ["\\r"]="\r", ["\\s"]="\s", ["\\t"]="\t", ["\\v"]="\v", ["\\\""]="\"", ["\\'"]="'", ["\\\\"]="\\"});
 	return str;
 end
 local function readAtom1()

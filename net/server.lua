@@ -157,6 +157,7 @@ _cleanqueue = false    -- clean bufferqueue after using
 
 _maxclientsperserver = 1000
 
+_maxsslhandshake = 30 -- max handshake round-trips
 ----------------------------------// PRIVATE //--
 
 wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxconnections, startssl )    -- this function wraps a server
@@ -230,6 +231,9 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
     handler.ssl = function( )
         return ssl
     end
+    handler.sslctx = function( )
+        return sslctx
+    end
     handler.remove = function( )
         connections = connections - 1
     end
@@ -246,7 +250,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
         _socketlist[ socket ] = nil
         handler = nil
         socket = nil
-        mem_free( )
+        --mem_free( )
         out_put "server.lua: closed server handler and removed sockets from list"
     end
     handler.ip = function( )
@@ -297,6 +301,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     local ssl
 
     local dispatch = listeners.incoming or listeners.listener
+    local status = listeners.status
     local disconnect = listeners.disconnect
 
     local bufferqueue = { }    -- buffer array
@@ -336,6 +341,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.ssl = function( )
         return ssl
     end
+    handler.sslctx = function ( )
+        return sslctx
+    end
     handler.send = function( _, data, i, j )
         return send( socket, data, i, j )
     end
@@ -363,17 +371,20 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 send( socket, table_concat( bufferqueue, "", 1, bufferqueuelen ), 1, bufferlen )    -- forced send
             end
         end
-        _ = shutdown and shutdown( socket )
-        socket:close( )
-        _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
-        _socketlist[ socket ] = nil
+        if socket then
+          _ = shutdown and shutdown( socket )
+          socket:close( )
+          _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+          _socketlist[ socket ] = nil
+          socket = nil
+        else
+          out_put "server.lua: socket already closed"
+        end
         if handler then
             _writetimes[ handler ] = nil
             _closelist[ handler ] = nil
             handler = nil
         end
-        socket = nil
-        mem_free( )
 	if server then
 		server.remove( )
 	end
@@ -396,9 +407,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler.write = idfalse    -- dont write anymore
             return false
         elseif socket and not _sendlist[ socket ] then
-            _sendlistlen = _sendlistlen + 1
-            _sendlist[ _sendlistlen ] = socket
-            _sendlist[ socket ] = _sendlistlen
+            _sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
         end
         bufferqueuelen = bufferqueuelen + 1
         bufferqueue[ bufferqueuelen ] = data
@@ -446,9 +455,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             handler.write = write
             if noread then
                 noread = false
-                _readlistlen = _readlistlen + 1
-                _readlist[ socket ] = _readlistlen
-                _readlist[ _readlistlen ] = socket
+                _readlistlen = addsocket(_readlist, socket, _readlistlen)
                 _readtimes[ handler ] = _currenttime
             end
             if nosend then
@@ -472,10 +479,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             readtraffic = readtraffic + count
             _readtraffic = _readtraffic + count
             _readtimes[ handler ] = _currenttime
-            --out_put( "server.lua: read data '", buffer, "', error: ", err )
+            --out_put( "server.lua: read data '", buffer:gsub("[^%w%p ]", "."), "', error: ", err )
             return dispatch( handler, buffer, err )
         else    -- connections was closed or fatal error
-            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
 	    _ = handler and handler.close( )
@@ -483,13 +490,19 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
     end
     local _sendbuffer = function( )    -- this function sends data
-        local buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
-        local succ, err, byte = send( socket, buffer, 1, bufferlen )
-        local count = ( succ or byte or 0 ) * STAT_UNIT
-        sendtraffic = sendtraffic + count
-        _sendtraffic = _sendtraffic + count
-        _ = _cleanqueue and clean( bufferqueue )
-        --out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
+    	local succ, err, byte, buffer, count;
+    	local count;
+    	if socket then
+            buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
+            succ, err, byte = send( socket, buffer, 1, bufferlen )
+            count = ( succ or byte or 0 ) * STAT_UNIT
+            sendtraffic = sendtraffic + count
+            _sendtraffic = _sendtraffic + count
+            _ = _cleanqueue and clean( bufferqueue )
+            --out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
+        else
+            succ, err, count = false, "closed", 0;
+        end
         if succ then    -- sending succesful
             bufferqueuelen = 0
             bufferlen = 0
@@ -506,7 +519,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             _writetimes[ handler ] = _currenttime
             return true
         else    -- connection was closed during sending or fatal error
-            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " error: ", tostring(err) )
+            out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
             fatalerror = true
             disconnect( handler, err )
             _ = handler and handler.close( )
@@ -514,38 +527,40 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         end
     end
 
-    if sslctx then    -- ssl?
+    -- Set the sslctx
+    local handshake;
+    function handler.set_sslctx(new_sslctx)
         ssl = true
+        sslctx = new_sslctx;
         local wrote
         local read
-        local handshake = coroutine_wrap( function( client )    -- create handshake coroutine
+        handshake = coroutine_wrap( function( client )    -- create handshake coroutine
                 local err
-                for i = 1, 10 do    -- 10 handshake attemps
-                    _sendlistlen = ( wrote and removesocket( _sendlist, socket, _sendlistlen ) ) or _sendlistlen
-                    _readlistlen = ( read and removesocket( _readlist, socket, _readlistlen ) ) or _readlistlen
+                for i = 1, _maxsslhandshake do
+                    _sendlistlen = ( wrote and removesocket( _sendlist, client, _sendlistlen ) ) or _sendlistlen
+                    _readlistlen = ( read and removesocket( _readlist, client, _readlistlen ) ) or _readlistlen
                     read, wrote = nil, nil
                     _, err = client:dohandshake( )
                     if not err then
                         out_put( "server.lua: ssl handshake done" )
                         handler.readbuffer = _readbuffer    -- when handshake is done, replace the handshake function with regular functions
                         handler.sendbuffer = _sendbuffer
-                        -- return dispatch( handler )
+                        _ = status and status( handler, "ssl-handshake-complete" )
+                        _readlistlen = addsocket(_readlist, client, _readlistlen)
                         return true
                     else
-                        out_put( "server.lua: error during ssl handshake: ", tostring(err) )
-                        if err == "wantwrite" and not wrote then
-                            _sendlistlen = _sendlistlen + 1
-                            _sendlist[ _sendlistlen ] = client
-                            wrote = true
-                        elseif err == "wantread" and not read then
-                                _readlistlen = _readlistlen + 1
-                                _readlist [ _readlistlen ] = client
-                                read = true
-                        else
-                        	break;
-                        end
-                        --coroutine_yield( handler, nil, err )    -- handshake not finished
-                        coroutine_yield( )
+                       out_put( "server.lua: error during ssl handshake: ", tostring(err) )
+                       if err == "wantwrite" and not wrote then
+                           _sendlistlen = addsocket(_sendlist, client, _sendlistlen)
+                           wrote = true
+                       elseif err == "wantread" and not read then
+                           _readlistlen = addsocket(_readlist, client, _readlistlen)
+                           read = true
+                       else
+                           break;
+                       end
+                       --coroutine_yield( handler, nil, err )    -- handshake not finished
+                       coroutine_yield( )
                     end
                 end
                 disconnect( handler, "ssl handshake failed" )
@@ -553,13 +568,16 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 return false    -- handshake failed
             end
         )
+    end
+    if sslctx then    -- ssl?
+    	handler.set_sslctx(sslctx);
         if startssl then    -- ssl now?
             --out_put("server.lua: ", "starting ssl handshake")
 	    local err
             socket, err = ssl_wrap( socket, sslctx )    -- wrap socket
             if err then
                 out_put( "server.lua: ssl error: ", tostring(err) )
-                mem_free( )
+                --mem_free( )
                 return nil, nil, err    -- fatal error
             end
             socket:settimeout( 0 )
@@ -596,9 +614,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                 shutdown = id
 
                 _socketlist[ socket ] = handler
-                _readlistlen = _readlistlen + 1
-                _readlist[ _readlistlen ] = socket
-                _readlist[ socket ] = _readlistlen
+                _readlistlen = addsocket(_readlist, socket, _readlistlen)
 
                 -- remove traces of the old socket
 
@@ -630,9 +646,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     shutdown = ( ssl and id ) or socket.shutdown
 
     _socketlist[ socket ] = handler
-    _readlistlen = _readlistlen + 1
-    _readlist[ _readlistlen ] = socket
-    _readlist[ socket ] = _readlistlen
+    _readlistlen = addsocket(_readlist, socket, _readlistlen)
 
     return handler, socket
 end
@@ -642,6 +656,15 @@ end
 
 idfalse = function( )
     return false
+end
+
+addsocket = function( list, socket, len )
+    if not list[ socket ] then
+      len = len + 1
+      list[ len ] = socket
+      list[ socket ] = len
+    end
+    return len;
 end
 
 removesocket = function( list, socket, len )    -- this function removes sockets from a list ( copied from copas )
@@ -664,7 +687,7 @@ closesocket = function( socket )
     _readlistlen = removesocket( _readlist, socket, _readlistlen )
     _socketlist[ socket ] = nil
     socket:close( )
-    mem_free( )
+    --mem_free( )
 end
 
 ----------------------------------// PUBLIC //--
@@ -698,8 +721,7 @@ addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, st
         return nil, err
     end
     server:settimeout( 0 )
-    _readlistlen = _readlistlen + 1
-    _readlist[ _readlistlen ] = server
+    _readlistlen = addsocket(_readlist, server, _readlistlen)
     _server[ port ] = handler
     _socketlist[ server ] = handler
     out_put( "server.lua: new server listener on '", addr, ":", port, "'" )
@@ -713,7 +735,7 @@ end
 removeserver = function( port )
     local handler = _server[ port ]
     if not handler then
-        return nil, "no server found on port '" .. tostring( port ) "'"
+        return nil, "no server found on port '" .. tostring( port ) .. "'"
     end
     handler.close( )
     _server[ port ] = nil
@@ -733,11 +755,11 @@ closeall = function( )
     _sendlist = { }
     _timerlist = { }
     _socketlist = { }
-    mem_free( )
+    --mem_free( )
 end
 
 getsettings = function( )
-    return  _selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver
+    return  _selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver, _maxsslhandshake
 end
 
 changesettings = function( new )
@@ -753,6 +775,7 @@ changesettings = function( new )
     _readtimeout = tonumber( new.readtimeout ) or _readtimeout
     _cleanqueue = new.cleanqueue
     _maxclientsperserver = new._maxclientsperserver or _maxclientsperserver
+    _maxsslhandshake = new._maxsslhandshake or _maxsslhandshake
     return true
 end
 
@@ -805,7 +828,7 @@ loop = function( )    -- this is the main loop of the program
         _currenttime = os_time( )
         if os_difftime( _currenttime - _timer ) >= 1 then
             for i = 1, _timerlistlen do
-                _timerlist[ i ]( )    -- fire timers
+                _timerlist[ i ]( _currenttime )    -- fire timers
             end
             _timer = _currenttime
         end
@@ -820,9 +843,7 @@ end
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx, startssl )
     local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, startssl )
     _socketlist[ socket ] = handler
-    _sendlistlen = _sendlistlen + 1
-    _sendlist[ _sendlistlen ] = socket
-    _sendlist[ socket ] = _sendlistlen
+    _sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
     return handler, socket
 end
 

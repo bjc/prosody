@@ -108,7 +108,6 @@ static int Lbase64_decode(lua_State *L)		/** decode(s) */
 				break;
 		}
 	}
-	return 0;
 }
 
 static const luaL_Reg Reg_base64[] =
@@ -125,9 +124,14 @@ static const luaL_Reg Reg_base64[] =
 static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 {
 	size_t len;
-	const char *s = luaL_checklstring(L, 1, &len);
+	const char *s;
 	char string[1024];
 	int ret;
+	if(!lua_isstring(L, 1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	s = lua_tolstring(L, 1, &len);
 	if (len >= 1024) {
 		lua_pushnil(L);
 		return 1; // TODO return error message
@@ -163,6 +167,7 @@ static const luaL_Reg Reg_stringprep[] =
 /***************** IDNA *****************/
 
 #include <idna.h>
+#include <idn-free.h>
 
 static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 {
@@ -172,11 +177,11 @@ static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 	int ret = idna_to_ascii_8z(s, &output, 0);
 	if (ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
-		if (output) free(output);
+		idn_free(output);
 		return 1;
 	} else {
 		lua_pushnil(L);
-		if (output) free(output);
+		idn_free(output);
 		return 1; // TODO return error message
 	}
 }
@@ -189,11 +194,11 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 	int ret = idna_to_unicode_8z8z(s, &output, 0);
 	if (ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
-		if (output) free(output);
+		idn_free(output);
 		return 1;
 	} else {
 		lua_pushnil(L);
-		if (output) free(output);
+		idn_free(output);
 		return 1; // TODO return error message
 	}
 }

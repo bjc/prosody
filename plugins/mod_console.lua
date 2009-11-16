@@ -127,7 +127,11 @@ function console_listener.listener(conn, data)
 end
 
 function console_listener.disconnect(conn, err)
-	
+	local session = sessions[conn];
+	if session then
+		session.disconnect();
+		sessions[conn] = nil;
+	end
 end
 
 connlisteners_register('console', console_listener);
@@ -170,6 +174,7 @@ function commands.help(session, data)
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[server - Uptime, version, shutting down, etc.]]
+		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
 		print [[c2s:show(jid) - Show all client sessions with the specified JID (or all if no JID given)]]
@@ -183,10 +188,13 @@ function commands.help(session, data)
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
+		print [[module:list(host) - List the modules loaded on the specified host]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
 		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+	elseif section == "config" then
+		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
 		print [[Hey! Welcome to Prosody's admin console.]]
 		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
@@ -327,6 +335,35 @@ function def_env.module:reload(name, hosts)
 	return ok, (ok and "Module reloaded on "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+function def_env.module:list(hosts)
+	if hosts == nil then
+		hosts = array.collect(keys(prosody.hosts));
+	end
+	if type(hosts) == "string" then
+		hosts = { hosts };
+	end
+	if type(hosts) ~= "table" then
+		return false, "Please supply a host or a list of hosts you would like to see";
+	end
+	
+	local print = self.session.print;
+	for _, host in ipairs(hosts) do
+		print(host..":");
+		local modules = array.collect(keys(prosody.hosts[host] and prosody.hosts[host].modules or {})):sort();
+		if #modules == 0 then
+			if prosody.hosts[host] then
+				print("    No modules loaded");
+			else
+				print("    Host not found");
+			end
+		else
+			for _, name in ipairs(modules) do
+				print("    "..name);
+			end
+		end
+	end
+end
+
 def_env.config = {};
 function def_env.config:load(filename, format)
 	local config_load = require "core.configmanager".load;
@@ -373,7 +410,12 @@ end
 
 function def_env.c2s:show(match_jid)
 	local print, count = self.session.print, 0;
+	local curr_host;
 	show_c2s(function (jid, session)
+		if curr_host ~= session.host then
+			curr_host = session.host;
+			print(curr_host);
+		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
 			local status, priority = "unavailable", tostring(session.priority or "-");
@@ -385,7 +427,7 @@ function def_env.c2s:show(match_jid)
 					status = "available";
 				end
 			end
-			print(jid.." - "..status.."("..priority..")");
+			print("   "..jid.." - "..status.."("..priority..")");
 		end		
 	end);
 	return true, "Total: "..count.." clients";
@@ -436,7 +478,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost);
+				print("    "..host.." -> "..remotehost..(session.secure and " (encrypted)" or ""));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -464,12 +506,16 @@ function def_env.s2s:show(match_jid)
 				end
 			end
 		end	
-		
+		local subhost_filter = function (h) 
+				return (match_jid and h:match(match_jid));
+			end
 		for session in pairs(incoming_s2s) do
 			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
-				or (session.from_host and session.from_host:match(match_jid))) then
+				or (session.from_host and session.from_host:match(match_jid))
+				-- Pft! is what I say to list comprehensions
+				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)"));
+				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and " (encrypted)" or ""));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
@@ -510,7 +556,7 @@ function def_env.s2s:close(from, to)
 		if not session then 
 			print("No outgoing connection from "..from.." to "..to)
 		else
-			s2smanager.destroy_session(session);
+			(session.close or s2smanager.destroy_session)(session);
 			count = count + 1;
 			print("Closed outgoing session from "..from.." to "..to);
 		end
@@ -518,7 +564,7 @@ function def_env.s2s:close(from, to)
 		-- Is an incoming connection
 		for session in pairs(incoming_s2s) do
 			if session.to_host == to and session.from_host == from then
-				s2smanager.destroy_session(session);
+				(session.close or s2smanager.destroy_session)(session);
 				count = count + 1;
 			end
 		end
@@ -535,6 +581,44 @@ function def_env.s2s:close(from, to)
 	end
 	
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
+end
+
+def_env.host = {}; def_env.hosts = def_env.host;
+function def_env.host:activate(hostname, config)
+	local hostmanager_activate = require "core.hostmanager".activate;
+	if hosts[hostname] then
+		return false, "The host "..tostring(hostname).." is already activated";
+	end
+	
+	local defined_hosts = config or configmanager.getconfig();
+	if not config and not defined_hosts[hostname] then
+		return false, "Couldn't find "..tostring(hostname).." defined in the config, perhaps you need to config:reload()?";
+	end
+	hostmanager_activate(hostname, config or defined_hosts[hostname]);
+	return true, "Host "..tostring(hostname).." activated";
+end
+
+function def_env.host:deactivate(hostname, reason)
+	local hostmanager_deactivate = require "core.hostmanager".deactivate;
+	local host = hosts[hostname];
+	if not host then
+		return false, "The host "..tostring(hostname).." is not activated";
+	end
+	if reason then
+		reason = { condition = "host-gone", text = reason };
+	end
+	hostmanager_deactivate(hostname, reason);
+	return true, "Host "..tostring(hostname).." deactivated";
+end
+
+function def_env.host:list()
+	local print = self.session.print;
+	local i = 0;
+	for host in values(array.collect(keys(prosody.hosts)):sort()) do
+		i = i + 1;
+		print(host);
+	end
+	return true, i.." hosts";
 end
 
 -------------

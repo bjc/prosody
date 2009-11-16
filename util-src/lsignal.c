@@ -301,7 +301,7 @@ static int l_raise(lua_State *L)
   return 1;
 }
 
-#ifdef _POSIX_SOURCE
+#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
 
 /* define some posix only functions */
 

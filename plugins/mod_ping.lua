@@ -6,15 +6,16 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local st = require "util.stanza";
 
 module:add_feature("urn:xmpp:ping");
 
-module:add_iq_handler({"c2s", "s2sin"}, "urn:xmpp:ping",
-	function(session, stanza)
-		if stanza.attr.type == "get" then
-			session.send(st.reply(stanza));
-		end
-	end);
+local function ping_handler(event)
+	if event.stanza.attr.type == "get" then
+		event.origin.send(st.reply(event.stanza));
+		return true;
+	end
+end
+
+module:hook("iq/bare/urn:xmpp:ping:ping", ping_handler);
+module:hook("iq/host/urn:xmpp:ping:ping", ping_handler);

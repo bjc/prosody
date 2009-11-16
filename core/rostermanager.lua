@@ -18,6 +18,7 @@ local pairs, ipairs = pairs, ipairs;
 local tostring = tostring;
 
 local hosts = hosts;
+local bare_sessions = bare_sessions;
 
 local datamanager = require "util.datamanager"
 local st = require "util.stanza";
@@ -81,33 +82,41 @@ function roster_push(username, host, jid)
 end
 
 function load_roster(username, host)
-	log("debug", "load_roster: asked for: "..username.."@"..host);
+	local jid = username.."@"..host;
+	log("debug", "load_roster: asked for: "..jid);
+	local user = bare_sessions[jid];
 	local roster;
-	if hosts[host] and hosts[host].sessions[username] then
-		roster = hosts[host].sessions[username].roster;
-		if not roster then
-			log("debug", "load_roster: loading for new user: "..username.."@"..host);
-			roster = datamanager.load(username, host, "roster") or {};
-			if not roster[false] then roster[false] = { }; end
-			hosts[host].sessions[username].roster = roster;
-			hosts[host].events.fire_event("roster-load", username, host, roster);
-		end
-		return roster;
+	if user then
+		roster = user.roster;
+		if roster then return roster; end
+		log("debug", "load_roster: loading for new user: "..username.."@"..host);
+	else -- Attempt to load roster for non-loaded user
+		log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	end
-	
-	-- Attempt to load roster for non-loaded user
-	log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	roster = datamanager.load(username, host, "roster") or {};
+	if user then user.roster = roster; end
+	if not roster[false] then roster[false] = { }; end
+	if roster[jid] then
+		roster[jid] = nil;
+		log("warn", "roster for "..jid.." has a self-contact");
+	end
 	hosts[host].events.fire_event("roster-load", username, host, roster);
 	return roster;
 end
 
-function save_roster(username, host)
+function save_roster(username, host, roster)
 	log("debug", "save_roster: saving roster for "..username.."@"..host);
-	if hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster then
-		local roster = hosts[host].sessions[username].roster;
-		roster[false].version = (roster[false].version or 1) + 1;
-		return datamanager.store(username, host, "roster", hosts[host].sessions[username].roster);
+	if not roster then
+		roster = hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster;
+		--if not roster then
+		--	--roster = load_roster(username, host);
+		--	return true; -- roster unchanged, no reason to save
+		--end
+	end
+	if roster then
+		if not roster[false] then roster[false] = {}; end
+		roster[false].version = (roster[false].version or 0) + 1;
+		return datamanager.store(username, host, "roster", roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
 	return nil;
@@ -123,7 +132,7 @@ function process_inbound_subscription_approval(username, host, jid)
 			item.subscription = "both";
 		end
 		item.ask = nil;
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -145,7 +154,7 @@ function process_inbound_subscription_cancellation(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -167,7 +176,7 @@ function process_inbound_unsubscribe(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -189,7 +198,7 @@ function set_contact_pending_in(username, host, jid, pending)
 	end
 	if not roster.pending then roster.pending = {}; end
 	roster.pending[jid] = true;
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function is_contact_pending_out(username, host, jid)
 	local roster = load_roster(username, host);
@@ -208,7 +217,7 @@ function set_contact_pending_out(username, host, jid) -- subscribe
 	end
 	item.ask = "subscribe";
 	log("debug", "set_contact_pending_out: saving roster; set "..username.."@"..host..".roster["..jid.."].ask=subscribe");
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function unsubscribe(username, host, jid)
 	local roster = load_roster(username, host);
@@ -223,7 +232,7 @@ function unsubscribe(username, host, jid)
 	elseif item.subscription == "to" then
 		item.subscription = "none";
 	end
-	return datamanager.store(username, host, "roster", roster);
+	return save_roster(username, host, roster);
 end
 function subscribed(username, host, jid)
 	if is_contact_pending_in(username, host, jid) then
@@ -240,7 +249,7 @@ function subscribed(username, host, jid)
 		end
 		roster.pending[jid] = nil;
 		-- TODO maybe remove roster.pending if empty
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end -- TODO else implement optional feature pre-approval (ask = subscribed)
 end
 function unsubscribed(username, host, jid)
@@ -262,7 +271,7 @@ function unsubscribed(username, host, jid)
 		end
 	end
 	if changed then
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -271,7 +280,7 @@ function process_outbound_subscription_request(username, host, jid)
 	local item = roster[jid];
 	if item and (item.subscription == "none" or item.subscription == "from") then
 		item.ask = "subscribe";
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end
 
@@ -280,7 +289,7 @@ end
 	local item = roster[jid];
 	if item and (item.subscription == "none" or item.subscription == "from" then
 		item.ask = "subscribe";
-		return datamanager.store(username, host, "roster", roster);
+		return save_roster(username, host, roster);
 	end
 end]]
 

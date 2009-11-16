@@ -10,7 +10,6 @@ local setmetatable = setmetatable;
 local pairs, ipairs = pairs, ipairs;
 local tostring, type = tostring, type;
 local t_concat = table.concat;
-
 local st = require "util.stanza";
 
 module "dataforms"
@@ -37,34 +36,44 @@ function form_t.form(layout, data)
 		-- Add field tag
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
 
-		local value = data[field.name] or field.value;
+		local value = (data and data[field.name]) or field.value;
 		
-		-- Add value, depending on type
-		if field_type == "hidden" then
-			if type(value) == "table" then
-				-- Assume an XML snippet
-				form:tag("value")
-					:add_child(value)
-					:up();
-			elseif value then
-				form:tag("value"):text(tostring(value)):up();
-			end
-		elseif field_type == "boolean" then
-			form:tag("value"):text((value and "1") or "0"):up();
-		elseif field_type == "fixed" then
-			
-		elseif field_type == "jid-multi" then
-			for _, jid in ipairs(value) do
-				form:tag("value"):text(jid):up();
-			end
-		elseif field_type == "jid-single" then
-			form:tag("value"):text(value):up();
-		elseif field_type == "text-single" or field_type == "text-private" then
-			form:tag("value"):text(value):up();
-		elseif field_type == "text-multi" then
-			-- Split into multiple <value> tags, one for each line
-			for line in value:gmatch("([^\r\n]+)\r?\n*") do
-				form:tag("value"):text(line):up();
+		if value then
+			-- Add value, depending on type
+			if field_type == "hidden" then
+				if type(value) == "table" then
+					-- Assume an XML snippet
+					form:tag("value")
+						:add_child(value)
+						:up();
+				else
+					form:tag("value"):text(tostring(value)):up();
+				end
+			elseif field_type == "boolean" then
+				form:tag("value"):text((value and "1") or "0"):up();
+			elseif field_type == "fixed" then
+				
+			elseif field_type == "jid-multi" then
+				for _, jid in ipairs(value) do
+					form:tag("value"):text(jid):up();
+				end
+			elseif field_type == "jid-single" then
+				form:tag("value"):text(value):up();
+			elseif field_type == "text-single" or field_type == "text-private" then
+				form:tag("value"):text(value):up();
+			elseif field_type == "text-multi" then
+				-- Split into multiple <value> tags, one for each line
+				for line in value:gmatch("([^\r\n]+)\r?\n*") do
+					form:tag("value"):text(line):up();
+				end
+			elseif field_type == "list-single" then
+				for _, val in ipairs(value) do
+					if type(val) == "table" then
+						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+					else
+						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					end
+				end
 			end
 		end
 		
@@ -106,6 +115,20 @@ field_readers["text-single"] =
 field_readers["text-private"] = 
 	field_readers["text-single"];
 
+field_readers["jid-single"] =
+	field_readers["text-single"];
+
+field_readers["jid-multi"] = 
+	function (field_tag)
+		local result = {};
+		for value_tag in field_tag:childtags() do
+			if value_tag.name == "value" then
+				result[#result+1] = value_tag[1];
+			end
+		end
+		return result;
+	end
+
 field_readers["text-multi"] = 
 	function (field_tag)
 		local result = {};
@@ -116,6 +139,9 @@ field_readers["text-multi"] =
 		end
 		return t_concat(result, "\n");
 	end
+
+field_readers["list-single"] =
+	field_readers["text-single"];
 
 field_readers["boolean"] = 
 	function (field_tag)

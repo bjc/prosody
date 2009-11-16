@@ -32,7 +32,7 @@ local xmlns_component = 'jabber:component:accept';
 
 --- Callbacks/data for xmlhandlers to handle streams for us ---
 
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams|stream", default_ns = xmlns_component };
+local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", default_ns = xmlns_component };
 
 function stream_callbacks.error(session, error, data, data2)
 	log("warn", "Error processing component stream: "..tostring(error));
@@ -87,7 +87,7 @@ end
 
 --- Closing a component connection
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:gsub("%|[^|]+$", ""), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:match("[^\1]*"), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
@@ -138,7 +138,7 @@ function component_listener.listener(conn, data)
 		
 		session.log("info", "Incoming Jabber component connection");
 		
-		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "|");
+		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "\1");
 		session.parser = parser;
 		
 		session.notopen = true;

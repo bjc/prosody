@@ -11,6 +11,7 @@
 function run_all_tests()
 	dotest "util.jid"
 	dotest "util.multitable"
+	dotest "core.modulemanager"
 	dotest "core.stanza_router"
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
@@ -29,9 +30,11 @@ else
 	package.cpath = package.cpath..";../?.so";
 end
 
+local _realG = _G;
+
 require "util.import"
 
-local env_mt = { __index = function (t,k) return rawget(_G, k) or print("WARNING: Attempt to access nil global '"..tostring(k).."'"); end };
+local env_mt = { __index = function (t,k) return rawget(_realG, k) or print("WARNING: Attempt to access nil global '"..tostring(k).."'"); end };
 function testlib_new_env(t)
 	return setmetatable(t or {}, env_mt);
 end
@@ -65,7 +68,7 @@ end
 
 
 function dosingletest(testname, fname)
-	local tests = setmetatable({}, { __index = _G });
+	local tests = setmetatable({}, { __index = _realG });
 	tests.__unit = testname;
 	tests.__test = fname;
 	local chunk, err = loadfile(testname);
@@ -103,7 +106,7 @@ function dosingletest(testname, fname)
 end
 
 function dotest(unitname)
-	local tests = setmetatable({}, { __index = _G });
+	local tests = setmetatable({}, { __index = _realG });
 	tests.__unit = unitname;
 	local chunk, err = loadfile("test_"..unitname:gsub("%.", "_")..".lua");
 	if not chunk then
@@ -118,8 +121,9 @@ function dotest(unitname)
 		return;
 	end
 	
-	local unit = setmetatable({}, { __index = setmetatable({ module = function () end }, { __index = _G }) });
-
+	if tests.env then setmetatable(tests.env, { __index = _realG }); end
+	local unit = setmetatable({}, { __index = setmetatable({ _G = tests.env or _G }, { __index = tests.env or _G }) });
+	unit._G = unit; _realG._G = unit;
 	local fn = "../"..unitname:gsub("%.", "/")..".lua";
 	local chunk, err = loadfile(fn);
 	if not chunk then

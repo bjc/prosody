@@ -9,7 +9,6 @@
 
 local hosts = _G.hosts;
 local st = require "util.stanza";
-local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
@@ -90,16 +89,16 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 end);
 
 local recent_ips = {};
-local min_seconds_between_registrations = config.get(module.host, "core", "min_seconds_between_registrations");
-local whitelist_only = config.get(module.host, "core", "whitelist_registration_only");
-local whitelisted_ips = config.get(module.host, "core", "registration_whitelist") or { "127.0.0.1" };
-local blacklisted_ips = config.get(module.host, "core", "registration_blacklist") or {};
+local min_seconds_between_registrations = module:get_option("min_seconds_between_registrations");
+local whitelist_only = module:get_option("whitelist_registration_only");
+local whitelisted_ips = module:get_option("registration_whitelist") or { "127.0.0.1" };
+local blacklisted_ips = module:get_option("registration_blacklist") or {};
 
 for _, ip in ipairs(whitelisted_ips) do whitelisted_ips[ip] = true; end
 for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
 
 module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, stanza)
-	if config.get(module.host, "core", "allow_registration") == false then
+	if module:get_option("allow_registration") == false then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	elseif stanza.tags[1].name == "query" then
 		local query = stanza.tags[1];
@@ -119,19 +118,18 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 				if username and password then
 					-- Check that the user is not blacklisted or registering too often
 					if blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
-							session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
-							return;
+						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
+						return;
 					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
 						if not recent_ips[session.ip] then
 							recent_ips[session.ip] = { time = os_time(), count = 1 };
 						else
-						
 							local ip = recent_ips[session.ip];
 							ip.count = ip.count + 1;
 							
 							if os_time() - ip.time < min_seconds_between_registrations then
 								ip.time = os_time();
-								session.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+								session.send(st.error_reply(stanza, "wait", "not-acceptable"));
 								return;
 							end
 							ip.time = os_time();
@@ -140,18 +138,21 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					-- FIXME shouldn't use table.concat
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
-					if usermanager_user_exists(username, session.host) then
-						session.send(st.error_reply(stanza, "cancel", "conflict"));
+					local host = module.host;
+					if not username then
+						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
+					elseif usermanager_user_exists(username, host) then
+						session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
 					else
-						if usermanager_create_user(username, password, session.host) then
+						if usermanager_create_user(username, password, host) then
 							session.send(st.reply(stanza)); -- user created!
-							module:log("info", "User account created: %s@%s", username, session.host);
+							module:log("info", "User account created: %s@%s", username, host);
 							module:fire_event("user-registered", { 
-								username = username, host = session.host, source = "mod_register",
+								username = username, host = host, source = "mod_register",
 								session = session });
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
-							session.send(st.error_reply(stanza, "wait", "internal-server-error"));
+							session.send(st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk."));
 						end
 					end
 				else

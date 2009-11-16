@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
 module.host = "*" -- Global module
 
 local hosts = _G.hosts;
@@ -22,17 +21,18 @@ local core_process_stanza = core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
-local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind|body" };
-local config = require "core.configmanager";
-local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
 
-local BOSH_DEFAULT_HOLD = tonumber(config.get("*", "core", "bosh_default_hold")) or 1;
-local BOSH_DEFAULT_INACTIVITY = tonumber(config.get("*", "core", "bosh_max_inactivity")) or 60;
-local BOSH_DEFAULT_POLLING = tonumber(config.get("*", "core", "bosh_max_polling")) or 5;
-local BOSH_DEFAULT_REQUESTS = tonumber(config.get("*", "core", "bosh_max_requests")) or 2;
-local BOSH_DEFAULT_MAXPAUSE = tonumber(config.get("*", "core", "bosh_max_pause")) or 300;
+local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
+local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind\1body", default_ns = xmlns_bosh };
+
+local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
+local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
+local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 5;
+local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
+local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
@@ -70,7 +70,7 @@ function handle_request(method, body, request)
 	--log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
 	request.notopen = true;
 	request.log = log;
-	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "|");
+	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
 	
 	parser:parse(body);
 	
@@ -112,11 +112,9 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	session_close_reply.attr.condition = reason;
-	local session_close_reply = tostring(session_close_reply);
 	for _, held_request in ipairs(session.requests) do
 		held_request:send(session_close_reply);
 		held_request:destroy();
@@ -144,7 +142,7 @@ function stream_callbacks.streamopened(request, attr)
 		
 		-- New session
 		sid = new_uuid();
-		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = attr.rid, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
+		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid), host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
 						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
 						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid), secure = request.secure };
@@ -209,6 +207,21 @@ function stream_callbacks.streamopened(request, attr)
 		return;
 	end
 	
+	if session.rid then
+		local rid = tonumber(attr.rid);
+		local diff = rid - session.rid;
+		if diff > 1 then
+			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
+		elseif diff <= 0 then
+			-- Repeated, ignore
+			session.log("debug", "rid repeated (on request %s), ignoring: %d", request.id, session.rid);
+			request.notopen = nil;
+			t_insert(session.requests, request);
+			return;
+		end
+		session.rid = rid;
+	end
+	
 	if attr.type == "terminate" then
 		-- Client wants to end this session
 		session:close();
@@ -245,6 +258,7 @@ function stream_callbacks.handlestanza(request, stanza)
 	end
 end
 
+local dead_sessions = {};
 function on_timer()
 	-- log("debug", "Checking for requests soon to timeout...");
 	-- Identify requests timing out within the next few seconds
@@ -261,21 +275,29 @@ function on_timer()
 	end
 	
 	now = now - 3;
+	local n_dead_sessions = 0;
 	for session, inactive_since in pairs(inactive_sessions) do
 		if session.bosh_max_inactive then
 			if now - inactive_since > session.bosh_max_inactive then
 				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
 				sessions[session.sid]  = nil;
 				inactive_sessions[session] = nil;
-				sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
+				n_dead_sessions = n_dead_sessions + 1;
+				dead_sessions[n_dead_sessions] = session;
 			end
 		else
 			inactive_sessions[session] = nil;
 		end
 	end
+
+	for i=1,n_dead_sessions do
+		local session = dead_sessions[i];
+		dead_sessions[i] = nil;
+		sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
+	end
 end
 
-local ports = config.get(module.host, "core", "bosh_ports") or { 5280 };
-httpserver.new_from_config(ports, "http-bind", handle_request);
+local ports = module:get_option("bosh_ports") or { 5280 };
+httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
 
 server.addtimer(on_timer);

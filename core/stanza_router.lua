@@ -8,7 +8,7 @@
 
 local log = require "util.logger".init("stanzarouter")
 
-local hosts = _G.hosts;
+local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
@@ -16,6 +16,9 @@ local modules_handle_stanza = require "core.modulemanager".handle_stanza;
 local component_handle_stanza = require "core.componentmanager".handle_stanza;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
+
+local full_sessions = _G.prosody.full_sessions;
+local bare_sessions = _G.prosody.bare_sessions;
 
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
@@ -26,7 +29,8 @@ function core_process_stanza(origin, stanza)
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
-		if (stanza.attr.type == "set" or stanza.attr.type == "get") and #stanza.tags ~= 1 then
+		if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
+		if (stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1) then
 			origin.send(st.error_reply(stanza, "modify", "bad-request"));
 			return;
 		end
@@ -110,7 +114,7 @@ function core_process_stanza(origin, stanza)
 			end
 			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
-		if host and not hosts[host] then host = nil; end -- workaround for a Pidgin bug which sets 'to' to the SRV result
+		if host and not hosts[host] then host = nil; end -- COMPAT: workaround for a Pidgin bug which sets 'to' to the SRV result
 		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end

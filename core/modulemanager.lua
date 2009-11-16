@@ -6,13 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
-local addDiscoInfoHandler = require "core.discomanager".addDiscoInfoHandler;
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
@@ -50,8 +47,6 @@ local handler_info = {};
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local features_table = multitable_new();
-local identities_table = multitable_new();
 local handler_table = multitable_new();
 local hooked = multitable_new();
 local hooks = multitable_new();
@@ -61,22 +56,27 @@ local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
+	local disabled_set = {};
+	local modules_disabled = config.get(host, "core", "modules_disabled");
+	if modules_disabled then
+		for _, module in ipairs(modules_disabled) do
+			disabled_set[module] = true;
+		end
+	end
+
+	-- Load auto-loaded modules for this host
+	if hosts[host].type == "local" then
+		for _, module in ipairs(autoload_modules) do
+			if not disabled_set[module] then
+				load(host, module);
+			end
+		end
+	end
+
+	-- Load modules from global section
 	if config.get(host, "core", "load_global_modules") ~= false then
-		-- Load modules from global section
 		local modules_enabled = config.get("*", "core", "modules_enabled");
-		local modules_disabled = config.get(host, "core", "modules_disabled");
-		local disabled_set = {};
 		if modules_enabled then
-			if modules_disabled then
-				for _, module in ipairs(modules_disabled) do
-					disabled_set[module] = true;
-				end
-			end
-			for _, module in ipairs(autoload_modules) do
-				if not disabled_set[module] then
-					load(host, module);
-				end
-			end
 			for _, module in ipairs(modules_enabled) do
 				if not disabled_set[module] and not is_loaded(host, module) then
 					load(host, module);
@@ -96,6 +96,7 @@ function load_modules_for_host(host)
 	end
 end
 eventmanager.add_event_hook("host-activated", load_modules_for_host);
+eventmanager.add_event_hook("component-activated", load_modules_for_host);
 --
 
 function load(host, module_name, config)
@@ -127,29 +128,39 @@ function load(host, module_name, config)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	
 	setfenv(mod, pluginenv);
-	if not hosts[host] then hosts[host] = { type = "component", host = host, connected = false, s2sout = {} }; end
-	
-	local success, ret = pcall(mod);
-	if not success then
-		log("error", "Error initialising module '%s': %s", module_name or "nil", ret or "nil");
-		return nil, ret;
+	if not hosts[host] then
+		local create_component = _G.require "core.componentmanager".create_component;
+		hosts[host] = create_component(host);
+		hosts[host].connected = false;
+		log("debug", "Created new component: %s", host);
 	end
+	hosts[host].modules = modulemap[host];
+	modulemap[host][module_name] = pluginenv;
 	
-	if module_has_method(pluginenv, "load") then
-		local ok, err = call_module_method(pluginenv, "load");
-		if (not ok) and err then
-			log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err);
+	local success, err = pcall(mod);
+	if success then
+		if module_has_method(pluginenv, "load") then
+			success, err = call_module_method(pluginenv, "load");
+			if not success then
+				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+			end
 		end
-	end
 
-	-- Use modified host, if the module set one
-	modulemap[api_instance.host][module_name] = pluginenv;
-	
-	if api_instance.host == "*" and host ~= "*" then
-		api_instance:set_global();
+		-- Use modified host, if the module set one
+		if api_instance.host == "*" and host ~= "*" then
+			modulemap[host][module_name] = nil;
+			modulemap["*"][module_name] = pluginenv;
+			api_instance:set_global();
+		end
+	else
+		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
-		
-	return true;
+	if success then
+		return true;
+	else -- load failed, unloading
+		unload(api_instance.host, module_name);
+		return nil, err;
+	end
 end
 
 function get_module(host, name)
@@ -170,9 +181,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	modulemap[host][name] = nil;
-	features_table:remove(host, name);
-	identities_table:remove(host, name);
 	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
 	for _, param in pairs(params or NULL) do
 		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
@@ -189,6 +197,7 @@ function unload(host, name, ...)
 		end
 	end
 	hooks:remove(host, name);
+	modulemap[host][name] = nil;
 	return true;
 end
 
@@ -235,7 +244,7 @@ function reload(host, name, ...)
 end
 
 function handle_stanza(host, origin, stanza)
-	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns, origin.type;
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
 	if name == "iq" and xmlns == "jabber:client" then
 		if stanza.attr.type == "get" or stanza.attr.type == "set" then
 			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
@@ -252,12 +261,13 @@ function handle_stanza(host, origin, stanza)
 		(handlers[1])(origin, stanza);
 		return true;
 	else
-		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
 		if stanza.attr.xmlns == "jabber:client" then
+			log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 			end
 		elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+			log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
 			origin:close("unsupported-stanza-type");
 		end
 	end
@@ -328,50 +338,11 @@ function api:add_iq_handler(origin_type, xmlns, handler)
 	self:add_handler(origin_type, "iq", xmlns, handler);
 end
 
-addDiscoInfoHandler("*host", function(reply, to, from, node)
-	if #node == 0 then
-		local done = {};
-		for module, identities in pairs(identities_table:get(to) or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, identities in pairs(identities_table:get("*") or NULL) do -- for each module
-			for identity, attr in pairs(identities) do
-				if not done[identity] then
-					reply:tag("identity", attr):up(); -- TODO cache
-					done[identity] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get(to) or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		for module, features in pairs(features_table:get("*") or NULL) do -- for each module
-			for feature in pairs(features) do
-				if not done[feature] then
-					reply:tag("feature", {var = feature}):up(); -- TODO cache
-					done[feature] = true;
-				end
-			end
-		end
-		return next(done) ~= nil;
-	end
-end);
-
 function api:add_feature(xmlns)
-	features_table:set(self.host, self.name, xmlns, true);
+	self:add_item("feature", xmlns);
 end
-function api:add_identity(category, type)
-	identities_table:set(self.host, self.name, category.."\0"..type, {category = category, type = type});
+function api:add_identity(category, type, name)
+	self:add_item("identity", {category = category, type = type, name = name});
 end
 
 local event_hook = function(host, mod_name, event_name, ...)
@@ -419,7 +390,54 @@ function api:require(lib)
 end
 
 function api:get_option(name, default_value)
-	return config.get(self.host, self.name, name) or config.get(self.host, "core", name) or default_value;
+	local value = config.get(self.host, self.name, name);
+	if value == nil then
+		value = config.get(self.host, "core", name);
+		if value == nil then
+			value = default_value;
+		end
+	end
+	return value;
+end
+
+local t_remove = _G.table.remove;
+local module_items = multitable_new();
+function api:add_item(key, value)
+	self.items = self.items or {};
+	self.items[key] = self.items[key] or {};
+	t_insert(self.items[key], value);
+	self:fire_event("item-added/"..key, {source = self, item = value});
+end
+function api:remove_item(key, value)
+	local t = self.items and self.items[key] or NULL;
+	for i = #t,1,-1 do
+		if t[i] == value then
+			t_remove(self.items[key], i);
+			self:fire_event("item-removed/"..key, {source = self, item = value});
+			return value;
+		end
+	end
+end
+
+function api:get_host_items(key)
+	local result = {};
+	for mod_name, module in pairs(modulemap[self.host]) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items[key] or NULL) do
+				t_insert(result, item);
+			end
+		end
+	end
+	for mod_name, module in pairs(modulemap["*"]) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items[key] or NULL) do
+				t_insert(result, item);
+			end
+		end
+	end
+	return result;
 end
 
 --------------------------------------------------------------------

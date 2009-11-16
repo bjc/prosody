@@ -25,10 +25,20 @@ local data = {};
 local recipients = {};
 local hash_map = {};
 
-module:add_identity("pubsub", "pep");
+module.save = function()
+	return { data = data, recipients = recipients, hash_map = hash_map };
+end
+module.restore = function(state)
+	data = state.data or {};
+	recipients = state.recipients or {};
+	hash_map = state.hash_map or {};
+end
+
+module:add_identity("pubsub", "pep", "Prosody");
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
+	item.attr.xmlns = nil;
 	local disable = #item.tags ~= 1 or #item.tags[1].tags == 0;
 	if #item.tags == 0 then item.name = "retract"; end
 	local bare = session.username..'@'..session.host;
@@ -132,9 +142,9 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 			if payload and (payload.name == 'publish' or payload.name == 'retract') and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
 				local node = payload.attr.node;
 				payload = payload.tags[1];
-				if payload then -- <item>
-					publish(session, node, payload);
+				if payload and payload.name == "item" then -- <item>
 					session.send(st.reply(stanza));
+					publish(session, node, st.clone(payload));
 					return true;
 				end
 			end

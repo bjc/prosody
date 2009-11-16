@@ -9,9 +9,14 @@
 
 
 
+package.path = package.path ..";../?.lua";
+
+if arg[0]:match("^./") then
+	package.path = package.path .. ";"..arg[0]:gsub("/ejabberd2prosody.lua$", "/?.lua");
+end
+
 require "erlparse";
 
-package.path = package.path ..";../?.lua";
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 package.loaded["util.logger"] = {init = function() return function() end; end}
@@ -86,13 +91,24 @@ local filters = {
 		local name = tuple[5]; local subscription = tuple[6];
 		local ask = tuple[7]; local groups = tuple[8];
 		if type(name) ~= type("") then name = nil; end
-		if ask == "none" then ask = nil; elseif ask == "out" then ask = "subscribe" elseif ask == "in" then
+		if ask == "none" then
+			ask = nil;
+		elseif ask == "out" then
+			ask = "subscribe"
+		elseif ask == "in" then
 			roster_pending(node, host, contact);
-			return;
-		else error(ask) end
+			ask = nil;
+		elseif ask == "both" then
+			roster_pending(node, host, contact);
+			ask = "subscribe";
+		else error("Unknown ask type: "..ask); end
 		if subscription ~= "both" and subscription ~= "from" and subscription ~= "to" and subscription ~= "none" then error(subscription) end
 		local item = {name = name, ask = ask, subscription = subscription, groups = {}};
-		for _, g in ipairs(groups) do item.groups[g] = true; end
+		for _, g in ipairs(groups) do
+			if type(g) == "string" then
+				item.groups[g] = true;
+			end
+		end
 		roster(node, host, contact, item);
 	end;
 	private_storage = function(tuple)

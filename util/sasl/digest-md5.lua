@@ -175,7 +175,7 @@ local function digest(self, message)
 			elseif state == false then return "failure", "account-disabled" end
 			Y = md5(response["username"]..":"..response["realm"]..":"..password);
 		elseif self.profile["digest-md5"] then
-			local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["realm"] response["charset"])
+			local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["realm"], response["charset"])
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
 		elseif self.profile["digest-md5-test"] then
@@ -186,12 +186,12 @@ local function digest(self, message)
 		--elseif Y == false then return "failure", "account-disabled" end
 		local A1 = "";
 		if response.authzid then
-			if response.authzid == self.username.."@"..self.realm then
+			if response.authzid == self.username or response.authzid == self.username.."@"..self.realm then
 				-- COMPAT
-				log("warn", "Client is violating XMPP RFC. See section 6.1 of RFC 3920.");
+				log("warn", "Client is violating RFC 3920 (section 6.1, point 7).");
 				A1 = Y..":"..response["nonce"]..":"..response["cnonce"]..":"..response.authzid;
 			else
-				A1 = "?";
+				return "failure", "invalid-authzid";
 			end
 		else
 			A1 = Y..":"..response["nonce"]..":"..response["cnonce"];

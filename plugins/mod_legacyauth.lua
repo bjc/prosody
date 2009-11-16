@@ -11,11 +11,12 @@
 local st = require "util.stanza";
 local t_concat = table.concat;
 
-local config = require "core.configmanager";
-local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 
 local sessionmanager = require "core.sessionmanager";
 local usermanager = require "core.usermanager";
+local nodeprep = require "util.encodings".stringprep.nodeprep;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module:add_feature("jabber:iq:auth");
 module:add_event_hook("stream-features", function (session, features)
@@ -43,11 +44,11 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 					:tag("username"):up()
 					:tag("password"):up()
 					:tag("resource"):up());
-				return true;			
 			else
 				username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
+				username = nodeprep(username);
+				resource = resourceprep(resource)
 				local reply = st.reply(stanza);
-				require "core.usermanager"
 				if usermanager.validate_credentials(session.host, username, password) then
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
@@ -56,19 +57,18 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 						success, err_type, err, err_msg = sessionmanager.bind_resource(session, resource);
 						if not success then
 							session.send(st.error_reply(stanza, err_type, err, err_msg));
+							session.username, session.type = nil, "c2s_unauthed"; -- FIXME should this be placed in sessionmanager?
+							return true;
+						elseif resource ~= session.resource then -- server changed resource, not supported by legacy auth
+							session.send(st.error_reply(stanza, "cancel", "conflict", "The requested resource could not be assigned to this session."));
+							session:close(); -- FIXME undo resource bind and auth instead of closing the session?
 							return true;
 						end
 					end
 					session.send(st.reply(stanza));
-					return true;
 				else
-					local reply = st.reply(stanza);
-					reply.attr.type = "error";
-					reply:tag("error", { code = "401", type = "auth" })
-						:tag("not-authorized", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" });
-					session.send(reply);
-					return true;
+					session.send(st.error_reply(stanza, "auth", "not-authorized"));
 				end
 			end
-			
+			return true;
 		end);

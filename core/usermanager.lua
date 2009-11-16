@@ -6,10 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
-require "util.datamanager"
-local datamanager = datamanager;
+local datamanager = require "util.datamanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local error = error;
@@ -66,14 +63,18 @@ function get_supported_methods(host)
 	return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
 end
 
-function is_admin(jid)
-	local admins = config.get("*", "core", "admins");
+function is_admin(jid, host)
+	host = host or "*";
+	local admins = config.get(host, "core", "admins");
+	if host ~= "*" and admins == config.get("*", "core", "admins") then
+		return nil;
+	end
 	if type(admins) == "table" then
 		jid = jid_bare(jid);
 		for _,admin in ipairs(admins) do
 			if admin == jid then return true; end
 		end
-	else log("debug", "Option core.admins is not a table"); end
+	elseif admins then log("warn", "Option 'admins' for host '%s' is not a table", host); end
 	return nil;
 end
 

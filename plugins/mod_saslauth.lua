@@ -13,6 +13,7 @@ local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
 local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
@@ -24,7 +25,7 @@ local jid_split = require "util.jid".split
 local md5 = require "util.hashes".md5;
 local config = require "core.configmanager";
 
-local secure_auth_only = config.get(module:get_host(), "core", "require_encryption");
+local secure_auth_only = config.get(module:get_host(), "core", "c2s_require_encryption") or config.get(module:get_host(), "core", "require_encryption");
 
 local log = module._log;
 
@@ -36,9 +37,24 @@ local new_sasl = require "util.sasl".new;
 
 default_authentication_profile = {
 	plain = function(username, realm)
-			return usermanager_get_password(username, realm), true;
+			local prepped_username = nodeprep(username);
+			if not prepped_username then
+				log("debug", "NODEprep failed on username: %s", username);
+				return "", nil;
+			end
+			local password = usermanager_get_password(prepped_username, realm);
+			if not password then
+				return "", nil;
+			end
+			return password, true;
 		end
 };
+
+anonymous_authentication_profile = {
+	anonymous = function(username, realm)
+			return true; -- for normal usage you should always return true here
+		end
+}
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
@@ -61,7 +77,8 @@ local function handle_status(session, status)
 	if status == "failure" then
 		session.sasl_handler = nil;
 	elseif status == "success" then
-		if not session.sasl_handler.username then -- TODO move this to sessionmanager
+		local username = nodeprep(session.sasl_handler.username);
+		if not username then -- TODO move this to sessionmanager
 			module:log("warn", "SASL succeeded but we didn't get a username!");
 			session.sasl_handler = nil;
 			session:reset_stream();
@@ -70,30 +87,6 @@ local function handle_status(session, status)
 		sm_make_authenticated(session, session.sasl_handler.username);
 		session.sasl_handler = nil;
 		session:reset_stream();
-	end
-end
-
-local function credentials_callback(mechanism, ...)
-	if mechanism == "PLAIN" then
-		local username, hostname, password = ...;
-		local response = usermanager_validate_credentials(hostname, username, password, mechanism);
-		if response == nil then
-			return false;
-		else
-			return response;
-		end
-	elseif mechanism == "DIGEST-MD5" then
-		function func(x) return x; end
-		local node, domain, realm, decoder = ...;
-		local password = usermanager_get_password(node, domain);
-		if password then
-			if decoder then
-				node, realm, password = decoder(node), decoder(realm), decoder(password);
-			end
-			return func, md5(node..":"..realm..":"..password);
-		else
-			return func, nil;
-		end
 	end
 end
 
@@ -144,20 +137,20 @@ module:add_event_hook("stream-features",
 				if secure_auth_only and not session.secure then
 					return;
 				end
-				session.sasl_handler = new_sasl(session.host, default_authentication_profile);
+				if config.get(session.host or "*", "core", "anonymous_login") then
+					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
+				else
+					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
+				end
 				features:tag("mechanisms", mechanisms_attr);
 				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
-					if config.get(session.host or "*", "core", "anonymous_login") then
-						features:tag("mechanism"):text("ANONYMOUS"):up();
-					else
-						for k, v in pairs(session.sasl_handler:mechanisms()) do
-							features:tag("mechanism"):text(v):up();
-						end
-					end
+				for k, v in pairs(session.sasl_handler:mechanisms()) do
+					features:tag("mechanism"):text(v):up();
+				end
 				features:up();
 			else
 				features:tag("bind", bind_attr):tag("required"):up():up();
-				features:tag("session", xmpp_session_attr):up();
+				features:tag("session", xmpp_session_attr):tag("optional"):up():up();
 			end
 		end);
 

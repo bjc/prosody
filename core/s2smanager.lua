@@ -27,6 +27,7 @@ local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
+local fire_event = require "core.eventmanager".fire_event;
 local uuid_gen = require "util.uuid".generate;
 
 local logger_init = require "util.logger".init;
@@ -37,11 +38,14 @@ local sha256_hash = require "util.hashes".sha256;
 
 local dialback_secret = uuid_gen();
 
-local adns = require "net.adns";
-
+local adns, dns = require "net.adns", require "net.dns";
+local config = require "core.configmanager";
+local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
+local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 
 incoming_s2s = {};
+_G.prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
@@ -126,13 +130,26 @@ function new_incoming(conn)
 	end
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
+	session.log = log;
 	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	incoming_s2s[session] = true;
+	add_task(connect_timeout, function ()
+		if session.conn ~= conn or
+		   session.type == "s2sin" then
+			return; -- Ok, we're connect[ed|ing]
+		end
+		-- Not connected, need to close session and clean up
+		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		    session.from_host or "(unknown)", session.to_host or "(unknown)");
+		session:close("connection-timeout");
+	end);
 	return session;
 end
 
 function new_outgoing(from_host, to_host)
-		local host_session = { to_host = to_host, from_host = from_host, notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+		local host_session = { to_host = to_host, from_host = from_host, host = from_host, 
+		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
 		local log;
@@ -173,7 +190,7 @@ function attempt_connection(host_session, err)
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
-		local answer, handle;
+		local handle;
 		handle = adns.lookup(function (answer)
 			handle = nil;
 			host_session.connecting = nil;
@@ -235,6 +252,47 @@ function attempt_connection(host_session, err)
 end
 
 function try_connect(host_session, connect_host, connect_port)
+	host_session.connecting = true;
+	local handle;
+	handle = adns.lookup(function (reply)
+		handle = nil;
+		host_session.connecting = nil;
+		
+		-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
+		if not (reply and reply[#reply] and reply[#reply].a) then
+			local count = max_dns_depth;
+			reply = dns.peek(connect_host, "CNAME", "IN");
+			while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
+				log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
+				reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
+				count = count - 1;
+			end
+		end
+		-- end of CNAME resolving
+		
+		if reply and reply[#reply] and reply[#reply].a then
+			log("debug", "DNS reply for %s gives us %s", connect_host, reply[#reply].a);
+			return make_connect(host_session, reply[#reply].a, connect_port);
+		else
+			log("debug", "DNS lookup failed to get a response for %s", connect_host);
+			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+				log("debug", "No other records to try for %s - destroying", host_session.to_host);
+				destroy_session(host_session); -- End of the line, we can't
+			end
+		end
+	end, connect_host, "A", "IN");
+
+	-- Set handler for DNS timeout
+	add_task(dns_timeout, function ()
+		if handle then
+			adns.cancel(handle, true);
+		end
+	end);
+		
+	return true;
+end
+
+function make_connect(host_session, connect_host, connect_port)
 	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
@@ -257,11 +315,22 @@ function try_connect(host_session, connect_host, connect_port)
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
 	
-	local w = conn.write;
+	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
+	add_task(connect_timeout, function ()
+		if host_session.conn ~= conn or
+		   host_session.type == "s2sout" or
+		   host_session.connecting then
+			return; -- Ok, we're connect[ed|ing]
+		end
+		-- Not connected, need to close session and clean up
+		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		    host_session.from_host or "(unknown)", host_session.to_host or "(unknown)");
+		host_session:close("connection-timeout");
+	end);
 	return true;
 end
 
@@ -269,10 +338,16 @@ function streamopened(session, attr)
 	local send = session.sends2s;
 	
 	-- TODO: #29: SASL/TLS on s2s streams
-	session.version = 0; --tonumber(attr.version) or 0;
+	session.version = tonumber(attr.version) or 0;
+	
+	if session.secure == false then
+		session.secure = true;
+	end
 	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
-		log("warn", (session.to_host or "(unknown)").." failed to specify 'to' or 'from' hostname as per RFC");
+		
+		(session.log or log)("warn", "Remote of stream "..(session.from_host or "(unknown)").."->"..(session.to_host or "(unknown)")
+			.." failed to specify to (%s) and/or from (%s) hostname as per RFC", tostring(attr.to), tostring(attr.from));
 	end
 	
 	if session.direction == "incoming" then
@@ -284,15 +359,23 @@ function streamopened(session, attr)
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host }):top_tag());
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
 			return;
 		end
 		if session.version >= 1.0 then
-			send(st.stanza("stream:features")
-					:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up());
+			local features = st.stanza("stream:features");
+							
+			if session.to_host then
+				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
+			else
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
+			end
+			
+			log("debug", "Sending stream features: %s", tostring(features));
+			send(features);
 		end
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
@@ -313,10 +396,14 @@ function streamopened(session, attr)
 		end
 		session.send_buffer = nil;
 	
-		if not session.dialback_verifying then
-			initiate_dialback(session);
-		else
-			mark_connected(session);
+		-- If server is pre-1.0, don't wait for features, just do dialback
+		if session.version < 1.0 then
+			if not session.dialback_verifying then
+				log("debug", "Initiating dialback...");
+				initiate_dialback(session);
+			else
+				mark_connected(session);
+			end
 		end
 	end
 
@@ -366,6 +453,7 @@ function make_authenticated(session, host)
 	return true;
 end
 
+-- Stream is authorised, and ready for normal stanzas
 function mark_connected(session)
 	local sendq, send = session.sendq, session.sends2s;
 	

@@ -78,6 +78,39 @@ function count(f, s, var)
 	return x;
 end
 
+-- Return the first n items an iterator returns
+function head(n, f, s, var)
+	local c = 0;
+	return function (s, var)
+		if c >= n then
+			return nil;
+		end
+		c = c + 1;
+		return f(s, var);
+	end, s;
+end
+
+function tail(n, f, s, var)
+	local results, count = {}, 0;
+	while true do
+		local ret = { f(s, var) };
+		var = ret[1];
+	        if var == nil then break; end
+		results[(count%n)+1] = ret;
+		count = count + 1;
+	end
+
+	if n > count then n = count; end
+
+	local pos = 0;
+	return function ()
+		pos = pos + 1;
+		if pos > n then return nil; end
+		return unpack(results[((count-1+pos)%n)+1]);
+	end
+	--return reverse(head(n, reverse(f, s, var)));
+end
+
 -- Convert the values returned by an iterator to an array
 function it2array(f, s, var)
 	local t, var = {};

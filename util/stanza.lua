@@ -28,13 +28,19 @@ local s_find        =   string.find;
 local os            =            os;
 
 local do_pretty_printing = not os.getenv("WINDIR");
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
-
-local log = require "util.logger".init("stanza");
+local getstyle, getstring;
+if do_pretty_printing then
+	local ok, termcolours = pcall(require, "util.termcolours");
+	if ok then
+		getstyle, getstring = termcolours.getstyle, termcolours.getstring;
+	else
+		do_pretty_printing = nil;
+	end
+end
 
 module "stanza"
 
-stanza_mt = {};
+stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
 
 function stanza(name, attr)
@@ -118,20 +124,23 @@ function stanza_mt:childtags()
 	                                    
 end
 
-local xml_escape = (function()
+local xml_escape
+do
 	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
-	return function(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
-end)();
-local function _dostring(t, buf, self, xml_escape)
+	function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
+	_M.xml_escape = xml_escape;
+end
+
+local function _dostring(t, buf, self, xml_escape, parentns)
 	local nsid = 0;
 	local name = t.name
 	t_insert(buf, "<"..name);
 	for k, v in pairs(t.attr) do
-		if s_find(k, "|", 1, true) then
-			local ns, attrk = s_match(k, "^([^|]+)|(.+)$");
+		if s_find(k, "\1", 1, true) then
+			local ns, attrk = s_match(k, "^([^\1]*)\1?(.*)$");
 			nsid = nsid + 1;
 			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
-		else
+		elseif not(k == "xmlns" and v == parentns) then
 			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
 		end
 	end
@@ -143,7 +152,7 @@ local function _dostring(t, buf, self, xml_escape)
 		for n=1,len do
 			local child = t[n];
 			if child.name then
-				self(child, buf, self, xml_escape);
+				self(child, buf, self, xml_escape, t.attr.xmlns);
 			else
 				t_insert(buf, xml_escape(child));
 			end
@@ -153,7 +162,7 @@ local function _dostring(t, buf, self, xml_escape)
 end
 function stanza_mt.__tostring(t)
 	local buf = {};
-	_dostring(t, buf, _dostring, xml_escape);
+	_dostring(t, buf, _dostring, xml_escape, nil);
 	return t_concat(buf);
 end
 
@@ -201,6 +210,17 @@ function deserialize(stanza)
 	if stanza then
 		local attr = stanza.attr;
 		for i=1,#attr do attr[i] = nil; end
+		local attrx = {};
+		for att in pairs(attr) do
+			if s_find(att, "|", 1, true) and not s_find(k, "\1", 1, true) then
+				local ns,na = s_match(k, "^([^|]+)|(.+)$");
+				attrx[ns.."\1"..na] = attr[att];
+				attr[att] = nil;
+			end
+		end
+		for a,v in pairs(attrx) do
+			attr[x] = v;
+		end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
 			if type(child) == "table" then

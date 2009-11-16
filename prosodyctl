@@ -32,7 +32,6 @@ end
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
 
-
 config = require "core.configmanager"
 
 do
@@ -102,15 +101,20 @@ local error_messages = setmetatable({
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
-		["no-pidfile"] = "There is no pidfile option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
+		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-hosts = {};
+local events = require "util.events".new();
 
-require "core.hostmanager"
-require "core.eventmanager".fire_event("server-starting");
+hosts = {};
+prosody = { hosts = hosts, events = events };
+
+for hostname, config in pairs(config.getconfig()) do
+	hosts[hostname] = { events = events };
+end
+	
 require "core.modulemanager"
 
 require "util.prosodyctl"
