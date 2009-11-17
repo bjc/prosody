@@ -12,7 +12,8 @@
 --    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local s_match = string.match;
-
+local type = type
+local string = string
 local base64 = require "util.encodings".base64;
 local xor = require "bit".bxor
 local hmac_sha1 = require "util.hmac".sha1;
@@ -34,7 +35,7 @@ local function bp( b )
 end
 
 local function binaryXOR( a, b )
-	if string.len(a) > string.len(b) then
+	if a:len() > b:len() then
 		b = string.rep("\0", a:len() - b:len())..b
 	elseif string.len(a) < string.len(b) then
 		a = string.rep("\0", b:len() - a:len())..a
@@ -60,8 +61,12 @@ end
 
 local function validate_username(username)
 	-- check for forbidden char sequences
-	for eq in s:gmatch("=(.?.?)") do
-		if eq ~= "2D" and eq ~= "3D" then return false end end return true;
+	for eq in username:gmatch("=(.?.?)") do
+		if eq ~= "2D" and eq ~= "3D" then
+			return false 
+		end 
+	end
+	
 	-- replace =2D with , and =3D with =
 	
 	-- apply SASLprep
@@ -74,6 +79,7 @@ local function scram_sha_1(self, message)
 	if not self.state.name then
 		-- we are processing client_first_message
 		local client_first_message = message;
+		self.state["client_first_message"] = client_first_message;
 		self.state["name"] = client_first_message:match("n=(.+),r=")
 		self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
 		
@@ -85,8 +91,10 @@ local function scram_sha_1(self, message)
 		self.state["salt"] = generate_uuid();
 		
 		local server_first_message = "r="..self.state.clientnonce..self.state.servernonce..",s="..base64.encode(self.state.salt)..",i="..default_i;
+		self.state["server_first_message"] = server_first_message;
 		return "challenge", server_first_message
 	else
+		if type(message) ~= "string" then return "failure", "malformed-request" end
 		-- we are processing client_final_message
 		local client_final_message = message;
 		
@@ -108,13 +116,14 @@ local function scram_sha_1(self, message)
 		local ClientKey = hmac_sha1(SaltedPassword, "Client Key")
 		local ServerKey = hmac_sha1(SaltedPassword, "Server Key")
 		local StoredKey = sha1(ClientKey)
-		local AuthMessage = "n=" .. s_match(client_first_message,"n=(.+)") .. "," .. server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
+		local AuthMessage = "n=" .. s_match(self.state.client_first_message,"n=(.+)") .. "," .. self.state.server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
 		local ClientSignature = hmac_sha1(StoredKey, AuthMessage)
 		local ClientProof     = binaryXOR(ClientKey, ClientSignature)
 		local ServerSignature = hmac_sha1(ServerKey, AuthMessage)
 		
 		if base64.encode(ClientProof) == self.state.proof then
 			local server_final_message = "v="..base64.encode(ServerSignature);
+			self["username"] = self.state.name;
 			return "success", server_final_message;
 		else
 			return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated.";

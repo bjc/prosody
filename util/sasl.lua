@@ -125,7 +125,7 @@ function method:process(message)
 end
 
 -- load the mechanisms
-load_mechs = {"plain", "digest-md5", "anonymous"}
+load_mechs = {"plain", "digest-md5", "anonymous", "scram"}
 for _, mech in ipairs(load_mechs) do
 	local name = "util.sasl."..mech;
 	local m = require(name);
