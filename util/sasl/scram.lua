@@ -60,7 +60,8 @@ end
 
 local function validate_username(username)
 	-- check for forbidden char sequences
-	
+	for eq in s:gmatch("=(.?.?)") do
+		if eq ~= "2D" and eq ~= "3D" then return false end end return true;
 	-- replace =2D with , and =3D with =
 	
 	-- apply SASLprep
