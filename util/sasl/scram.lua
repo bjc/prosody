@@ -19,6 +19,8 @@ local xor = require "bit".bxor
 local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
 local generate_uuid = require "util.uuid".generate;
+local saslprep = require "util.encodings".stringprep.saslprep;
+local log = require "util.logger".init("sasl");
 
 module "plain"
 
@@ -70,6 +72,7 @@ local function validate_username(username)
 	-- replace =2D with , and =3D with =
 	
 	-- apply SASLprep
+	username = saslprep(username);
 	return username;
 end
 
@@ -83,10 +86,16 @@ local function scram_sha_1(self, message)
 		self.state["name"] = client_first_message:match("n=(.+),r=")
 		self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
 		
-		self.state.name = validate_username(self.state.name);
 		if not self.state.name or not self.state.clientnonce then
 			return "failure", "malformed-request";
 		end
+		
+		self.state.name = validate_username(self.state.name);
+		if not self.state.name then
+			log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
+			return "failure", "malformed-request";
+		end
+		
 		self.state["servernonce"] = generate_uuid();
 		self.state["salt"] = generate_uuid();
 		
@@ -110,6 +119,11 @@ local function scram_sha_1(self, message)
 			password, state = self.profile.plain(self.state.name, self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
+			password = saslprep(password);
+			if not password then
+				log("debug", "Password violates SASLprep.");
+				return "failure", "not-authorized"
+			end
 		end
 		
 		local SaltedPassword = Hi(hmac_sha1, password, self.state.salt, default_i)
