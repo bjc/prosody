@@ -141,9 +141,11 @@ module:add_event_hook("stream-features",
 					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
 				else
 					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
+					if not session.secure then 
+						session.sasl_handler:forbidden({"PLAIN"});
+					end
 				end
 				features:tag("mechanisms", mechanisms_attr);
-				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
 				for k, v in pairs(session.sasl_handler:mechanisms()) do
 					features:tag("mechanism"):text(v):up();
 				end
