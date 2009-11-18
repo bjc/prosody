@@ -129,6 +129,7 @@ local function new_digest_md5(realm, credentials_handler)
 	end
 	local function parse(data)
 		local message = {}
+		-- COMPAT: %z in the pattern to work around jwchat bug (sends "charset=utf-8\0")
 		for k, v in gmatch(data, [[([%w%-]+)="?([^",%z]*)"?,?]]) do -- FIXME The hacky regex makes me shudder
 			message[k] = v;
 		end
