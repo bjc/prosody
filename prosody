@@ -259,7 +259,6 @@ function prepare_to_start()
 	prosody.net_activate_ports("s2s", "xmppserver", {5269});
 	prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
 	prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
-	prosody.net_activate_ports("console", "console", {5582}, "tcp");
 
 	prosody.start_time = os.time();
 end	
