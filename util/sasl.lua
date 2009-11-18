@@ -16,6 +16,8 @@ local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
 local tostring = tostring;
 local st = require "util.stanza";
+local set = require "util.set";
+local array = require "util.array";
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
 local to_unicode = require "util.encodings".idna.to_unicode;
@@ -84,20 +86,34 @@ local function registerMechanism(name, backends, f)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-function new(realm, profile)
+function new(realm, profile, forbidden)
 	sasl_i = {profile = profile};
 	sasl_i.realm = realm;
-	return setmetatable(sasl_i, method);
+	s = setmetatable(sasl_i, method);
+	s:forbidden(sasl_i, forbidden)
+	return s;
+end
+
+-- set the forbidden mechanisms
+function method:forbidden( forbidden )
+	if forbidden then
+		-- set forbidden
+		self.forbidden = set.new(forbidden);
+	else
+		-- get forbidden
+		return array.collect(self.forbidden:items());
+	end
 end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
 	local mechanisms = {}
 	for backend, f in pairs(self.profile) do
-		print(backend)
 		if backend_mechanism[backend] then
 			for _, mechanism in ipairs(backend_mechanism[backend]) do
-				mechanisms[mechanism] = true;
+				if not sasl_i.forbidden:contains(mechanism) then
+					mechanisms[mechanism] = true;
+				end
 			end
 		end
 	end
