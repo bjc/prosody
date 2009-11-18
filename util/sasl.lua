@@ -14,23 +14,19 @@
 
 local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
-local tostring = tostring;
 local st = require "util.stanza";
 local set = require "util.set";
 local array = require "util.array";
+local to_unicode = require "util.encodings".idna.to_unicode;
+
+local tostring = tostring;
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
-local to_unicode = require "util.encodings".idna.to_unicode;
 local s_match = string.match;
-local gmatch = string.gmatch
-local string = string
-local math = require "math"
 local type = type
 local error = error
-local print = print
 local setmetatable = setmetatable;
 local assert = assert;
-local dofile = dofile;
 local require = require;
 
 require "util.iterators"
