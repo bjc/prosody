@@ -91,13 +91,13 @@ function new(realm, profile, forbidden)
 end
 
 -- set the forbidden mechanisms
-function method:forbidden( forbidden )
-	if forbidden then
+function method:forbidden( restrict )
+	if restrict then
 		-- set forbidden
-		self.forbidden = set.new(forbidden);
+		self.restrict = set.new(restrict);
 	else
 		-- get forbidden
-		return array.collect(self.forbidden:items());
+		return array.collect(self.restrict:items());
 	end
 end
 
@@ -107,7 +107,7 @@ function method:mechanisms()
 	for backend, f in pairs(self.profile) do
 		if backend_mechanism[backend] then
 			for _, mechanism in ipairs(backend_mechanism[backend]) do
-				if not sasl_i.forbidden:contains(mechanism) then
+				if not sasl_i.restrict:contains(mechanism) then
 					mechanisms[mechanism] = true;
 				end
 			end
