@@ -726,7 +726,8 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 			local packet = sock:receive();
 			if packet then
 				response = self:decode(packet);
-				if response then
+				if response and self.active[response.header.id] 
+					and self.active[response.header.id][response.question.raw] then
 					--print('received response');
 					--self.print(response);
 
