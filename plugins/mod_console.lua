@@ -650,3 +650,5 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 	end
 end
 end
+
+prosody.net_activate_ports("console", "console", {5582}, "tcp");
