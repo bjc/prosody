@@ -34,7 +34,8 @@ local function plain(self, message)
 	password = saslprep(password);
 	
 	if (not password) or (password == "") or (not authentication) or (authentication == "") then
-		log("debug", "Username or password violates either SASLprep.");
+		log("debug", "Username or password violates SASLprep.");
+		return "failure", "malformed-request";
 	end
 
 	local correct, state = false, false;
