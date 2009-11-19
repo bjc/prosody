@@ -117,7 +117,9 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 				local password = query:child_with_name("password");
 				if username and password then
 					-- Check that the user is not blacklisted or registering too often
-					if blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
+					if not session.ip then
+						module:log("debug", "User's IP not known; can't apply blacklist/whitelist");
+					elseif blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return;
 					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then

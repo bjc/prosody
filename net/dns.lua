@@ -726,21 +726,21 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 			local packet = sock:receive();
 			if packet then
 				response = self:decode(packet);
-				if response then
+				if response and self.active[response.header.id] 
+					and self.active[response.header.id][response.question.raw] then
 					--print('received response');
 					--self.print(response);
 
-					for i,section in pairs({ 'answer', 'authority', 'additional' }) do
-						for j,rr in pairs(response[section]) do
+					for j,rr in pairs(response.answer) do
+						if rr.name:sub(-#response.question[1].name, -1) == response.question[1].name then
 							self:remember(rr, response.question[1].type)
 						end
 					end
 
 					-- retire the query
 					local queries = self.active[response.header.id];
-					if queries[response.question.raw] then
-						queries[response.question.raw] = nil;
-					end
+					queries[response.question.raw] = nil;
+					
 					if not next(queries) then self.active[response.header.id] = nil; end
 					if not next(self.active) then self:closeall(); end
 
