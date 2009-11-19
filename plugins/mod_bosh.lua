@@ -254,6 +254,7 @@ function stream_callbacks.handlestanza(request, stanza)
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = "jabber:client";
 		end
+		session.ip = request.handler.ip();
 		core_process_stanza(session, stanza);
 	end
 end
