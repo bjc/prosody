@@ -35,7 +35,7 @@ local function plain(self, message)
 	
 	if (not password) or (password == "") or (not authentication) or (authentication == "") then
 		log("debug", "Username or password violates SASLprep.");
-		return "failure", "malformed-request";
+		return "failure", "malformed-request", "Invalid username or password.";
 	end
 
 	local correct, state = false, false;
@@ -55,7 +55,7 @@ local function plain(self, message)
 	if correct then
 		return "success";
 	else
-		return "failure", "not-authorized";
+		return "failure", "not-authorized", "Unable to authorize you with the authentication credentials you've sent.";
 	end
 end
 

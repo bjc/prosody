@@ -95,7 +95,7 @@ local function scram_sha_1(self, message)
 		self.state.name = validate_username(self.state.name);
 		if not self.state.name then
 			log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
-			return "failure", "malformed-request";
+			return "failure", "malformed-request", "Invalid username.";
 		end
 		
 		self.state["servernonce"] = generate_uuid();
@@ -113,7 +113,7 @@ local function scram_sha_1(self, message)
 		self.state["nonce"] = client_final_message:match("r=(.+),p=");
 		self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
 		if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
-			return "failure", "malformed-request";
+			return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 		end
 		
 		local password;
@@ -124,7 +124,7 @@ local function scram_sha_1(self, message)
 			password = saslprep(password);
 			if not password then
 				log("debug", "Password violates SASLprep.");
-				return "failure", "not-authorized"
+				return "failure", "not-authorized", "Invalid password."
 			end
 		end
 		
