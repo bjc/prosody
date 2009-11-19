@@ -22,7 +22,7 @@ local generate_uuid = require "util.uuid".generate;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local log = require "util.logger".init("sasl");
 
-module "plain"
+module "scram"
 
 --=========================
 --SASL SCRAM-SHA-1 according to draft-ietf-sasl-scram-10
