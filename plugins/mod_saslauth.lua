@@ -137,7 +137,7 @@ module:add_event_hook("stream-features",
 				if secure_auth_only and not session.secure then
 					return;
 				end
-				if config.get(session.host or "*", "core", "anonymous_login") then
+				if module:get_option("anonymous_login") then
 					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
 				else
 					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
