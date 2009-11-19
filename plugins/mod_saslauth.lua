@@ -141,7 +141,7 @@ module:add_event_hook("stream-features",
 					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
 				else
 					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
-					if not session.secure then 
+					if not (module:get_option("allow_unencrypted_plain_auth")) and not session.secure then
 						session.sasl_handler:forbidden({"PLAIN"});
 					end
 				end
