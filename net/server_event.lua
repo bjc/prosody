@@ -71,11 +71,6 @@ local bitor = ( function( ) -- thx Rici Lake
 	end
 end )( )
 
-local getid = function( )
-	return function( )
-	end
-end
-
 local event = require "luaevent.core"
 local base = event.new( )
 local EV_READ = event.EV_READ
