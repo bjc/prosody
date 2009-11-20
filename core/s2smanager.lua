@@ -106,6 +106,7 @@ function send_to_host(from_host, to_host, data)
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = new_outgoing(from_host, to_host);
+
 		-- Store in buffer
 		host_session.sendq = { {tostring(data), st.reply(data)} };
 		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
@@ -155,7 +156,7 @@ function new_outgoing(from_host, to_host)
 			host_session.log = log;
 		end
 		
-		-- This is the first call, can't fail (the first step is DNS lookup)
+		-- Kick the connection attempting machine
 		attempt_connection(host_session);
 		
 		if not host_session.sends2s then		
@@ -182,6 +183,10 @@ end
 function attempt_connection(host_session, err)
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
+	
+	if not connect_host then
+		return false;
+	end
 	
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
