@@ -639,9 +639,9 @@ do
 end
 
 local addserver = ( function( )
-	return function( addr, port, listener, pattern, backlog, sslcfg, startssl )  -- TODO: check arguments
+	return function( addr, port, listener, pattern, sslcfg, startssl )  -- TODO: check arguments
 		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslcfg or "nil", startssl or "nil")
-		local server, err = socket.bind( addr, port, backlog )  -- create server socket
+		local server, err = socket.bind( addr, port, cfg.ACCEPT_QUEUE )  -- create server socket
 		if not server then
 			debug( "creating server socket failed because:", err )
 			return nil, err
