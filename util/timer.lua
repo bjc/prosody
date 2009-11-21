@@ -9,6 +9,7 @@
 
 local ns_addtimer = require "net.server".addtimer;
 local event = require "net.server".event;
+local event_base = require "net.server".event_base;
 
 local get_time = os.time;
 local t_insert = table.insert;
@@ -54,7 +55,7 @@ if not event then
 else
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
 	function _add_task(delay, func)
-		event.base:addevent(nil, event.EV_TIMEOUT, function ()
+		event_base:addevent(nil, event.EV_TIMEOUT, function ()
 			local ret = func();
 			if ret then
 				_add_task(ret, func);
