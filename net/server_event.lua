@@ -740,6 +740,7 @@ return {
 	base = base,
 	loop = loop,
 	event = event,
+	event_base = base,
 	addevent = newevent,
 	addserver = addserver,
 	addclient = addclient,
