@@ -128,7 +128,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^([^>]*>?)")); w(tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -317,7 +317,7 @@ function make_connect(host_session, connect_host, connect_port)
 	cl.register_outgoing(conn, host_session);
 	
 	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(tostring(t)); end
 	
 	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
