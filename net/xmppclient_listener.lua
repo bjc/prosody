@@ -100,7 +100,7 @@ local function session_close(session, reason)
 			end
 		end
 		session.send("</stream:stream>");
-		session.conn.close();
+		session.conn:close();
 		xmppclient.disconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
 	end
 end
@@ -117,7 +117,7 @@ function xmppclient.onincoming(conn, data)
 		session.log("info", "Client connected");
 		
 		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
-		if conn.ssl() then
+		if conn:ssl() then
 			session.secure = true;
 		end
 		
