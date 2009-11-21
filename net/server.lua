@@ -9,7 +9,7 @@ if have_luaevent and use_luaevent == true then
 	
 	-- Backwards compatibility for timers, addtimer
 	-- called a function roughly every second
-	local add_task = require "util.timer";
+	local add_task = require "util.timer".add_task;
 	function server.addtimer(f)
 		return add_task(1, function (...) f(...); return 1; end);
 	end
