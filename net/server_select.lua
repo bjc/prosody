@@ -692,7 +692,7 @@ end
 
 ----------------------------------// PUBLIC //--
 
-addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, startssl )    -- this function provides a way for other scripts to reg a server
+addserver = function( addr, port, listeners, pattern, sslctx, startssl )    -- this function provides a way for other scripts to reg a server
     local err
     --out_put("server.lua: autossl on ", port, " is ", startssl)
     if type( listeners ) ~= "table" then
@@ -715,7 +715,7 @@ addserver = function( listeners, port, addr, pattern, sslctx, maxconnections, st
         out_error( "server.lua, port ", port, ": ", err )
         return nil, err
     end
-    local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, maxconnections, startssl )    -- wrap new server socket
+    local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, _maxclientsperserver, startssl )    -- wrap new server socket
     if not handler then
         server:close( )
         return nil, err
