@@ -402,7 +402,7 @@ function streamopened(session, attr)
 		if send_buffer and #send_buffer > 0 then
 			log("debug", "Sending s2s send_buffer now...");
 			for i, data in ipairs(send_buffer) do
-				session.sends2s(tostring(data));
+				session.sends2s(data);
 				send_buffer[i] = nil;
 			end
 		end
