@@ -108,7 +108,7 @@ end
 
 -- End of session methods --
 
-function xmppclient.listener(conn, data)
+function xmppclient.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		session = sm_new_session(conn);
