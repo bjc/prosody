@@ -61,9 +61,14 @@ function start(name, udata)
 		end
 	end
 	
-	return server.addserver(h, 
-			(udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0), 
-				(udata and udata.interface) or h.default_interface or "*", (udata and udata.mode) or h.default_mode or 1, (udata and udata.ssl) or nil, 99999999, udata and udata.type == "ssl");
+	local interface = (udata and udata.interface) or h.default_interface or "*";
+	local port = (udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0);
+	local mode = (udata and udata.mode) or h.default_mode or 1;
+	local ssl = (udata and udata.ssl) or nil;
+	local maxclients = 99999999;
+	local autossl = udata and udata.type == "ssl";
+	
+	return server.addserver(interface, port, h, mode, ssl, autossl);
 end
 
 return _M;
