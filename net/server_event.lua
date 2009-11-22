@@ -444,6 +444,7 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
+		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
 			if interface.nowriting or ( interface.fatalerror and ( "client to close" ~= interface.fatalerror ) ) then  -- leave this event
@@ -592,6 +593,7 @@ do
 			fatalerror = false; -- error message
 			nointerface = true;  -- lock/unlock parameter
 		}
+		interface.id = tostring(interface):match("%x+$");
 		interface.readcallback = function( event )  -- server handler, called on incoming connections
 			--vdebug( "server can accept, id/addr/port:", interface, addr, port )
 			if interface.fatalerror then
