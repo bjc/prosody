@@ -127,7 +127,7 @@ function component_listener.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		local _send = conn.write;
-		session = { type = "component", conn = conn, send = function (data) return _send(tostring(data)); end };
+		session = { type = "component", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
 		sessions[conn] = session;
 
 		-- Logging functions --
