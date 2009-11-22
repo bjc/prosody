@@ -140,14 +140,14 @@ do
 					self.fatalerror = "connection timeout"
 					self.listener.ontimeout( self )  -- call timeout listener
 					self:_close()
-					debug( "new connection failed. id:", self, "error:", self.fatalerror )
+					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
 					if plainssl then  -- start ssl session
 						self:_start_ssl( self.listener.onconnect )
 					else  -- normal connection
 						self:_start_session( self.listener.onconnect )
 					end
-					debug( "new connection established. id:", self )
+					debug( "new connection established. id:", self.id )
 				end
 				self.eventconnect = nil
 				return -1
@@ -159,7 +159,7 @@ do
 		if self.type == "client" then
 			local callback = function( )
 				self:_lock( false,  false, false )
-				--vdebug( "start listening on client socket with id:", self )      
+				--vdebug( "start listening on client socket with id:", self.id )      
 				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT )  -- register callback
 				onconnect( self )
 				self.eventsession = nil
@@ -168,13 +168,13 @@ do
 			self.eventsession = addevent( base, nil, EV_TIMEOUT, callback, 0 )
 		else
 			self:_lock( false )
-			--vdebug( "start listening on server socket with id:", self )
+			--vdebug( "start listening on server socket with id:", self.id )
 			self.eventread = addevent( base, self.conn, EV_READ, self.readcallback )  -- register callback
 		end
 		return true
 	end
 	function interface_mt:_start_ssl(arg) -- old socket will be destroyed, therefore we have to close read/write events first
-			--vdebug( "starting ssl session with client id:", self )
+			--vdebug( "starting ssl session with client id:", self.id )
 			local _
 			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
 			_ = self.eventwrite and self.eventwrite:close( )
@@ -199,7 +199,7 @@ do
 					local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPS
 					while attempt < 1000 do  -- no endless loop
 						attempt = attempt + 1
-						debug( "ssl handshake of client with id:", self, "attemp:", attempt )
+						debug( "ssl handshake of client with id:"..tostring(self).."attemp:"..attempt )
 						if attempt > maxattempt then
 							self.fatalerror = "max handshake attemps exceeded"
 						elseif EV_TIMEOUT == event then
@@ -249,7 +249,7 @@ do
 			return true
 	end
 	function interface_mt:_destroy()  -- close this interface + events and call last listener
-			debug( "closing client with id:", self )
+			debug( "closing client with id:", self.id )
 			self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
 			local _
 			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
@@ -289,7 +289,7 @@ do
 	
 	-- Public methods
 	function interface_mt:write(data)
-		--vdebug( "try to send data to client, id/data:", self, data )
+		vdebug( "try to send data to client, id/data:", self.id, data )
 		data = tostring( data )
 		local len = string_len( data )
 		local total = len + self.writebufferlen
@@ -307,7 +307,7 @@ do
 		return true
 	end
 	function interface_mt:close(now)
-		debug( "try to close client connection with id:", self )
+		debug( "try to close client connection with id:", self.id )
 		if self.type == "client" then
 			self.fatalerror = "client to close"
 			if ( not self.eventwrite ) or now then  -- try to close immediately
@@ -320,7 +320,7 @@ do
 				return nil, "writebuffer not empty, waiting"
 			end
 		else
-			debug( "try to close server with id:", self, "args:", now )
+			debug( "try to close server with id:", self.id, "args:", now )
 			self.fatalerror = "server to close"
 			self:_lock( true )
 			local count = 0
@@ -372,7 +372,7 @@ do
 			
 	
 	function interface_mt:starttls()
-		debug( "try to start ssl at client id:", self )
+		debug( "try to start ssl at client id:", self.id )
 		local err
 		if not self.sslctx then  -- no ssl available
 			err = "no ssl context available"
