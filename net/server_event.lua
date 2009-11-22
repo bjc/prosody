@@ -370,7 +370,9 @@ do
 		return self.addr
 	end
 	
-			
+	function interface_mt:set_sslctx(sslctx)
+		self._sslctx = sslctx;
+	end
 	
 	function interface_mt:starttls()
 		debug( "try to start ssl at client id:", self.id )
