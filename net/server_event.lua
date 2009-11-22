@@ -291,7 +291,7 @@ do
 	-- Public methods
 	function interface_mt:write(data)
 		if self.nowriting then return nil, "locked" end
-		vdebug( "try to send data to client, id/data:", self.id, data )
+		--vdebug( "try to send data to client, id/data:", self.id, data )
 		data = tostring( data )
 		local len = string_len( data )
 		local total = len + self.writebufferlen
