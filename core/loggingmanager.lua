@@ -17,6 +17,12 @@ local math_max, rep = math.max, string.rep;
 local os_date, os_getenv = os.date, os.getenv;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 
+if os.getenv("__FLUSH_LOG") then
+	local io_flush = io.flush;
+	local _io_write = io_write;
+	io_write = function(...) _io_write(...); io_flush(); end
+end
+
 local config = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
