@@ -290,6 +290,7 @@ do
 	
 	-- Public methods
 	function interface_mt:write(data)
+		if self.nowriting then return nil, "locked" end
 		vdebug( "try to send data to client, id/data:", self.id, data )
 		data = tostring( data )
 		local len = string_len( data )
@@ -308,6 +309,7 @@ do
 		return true
 	end
 	function interface_mt:close(now)
+		if self.nointerface then return nil, "locked"; end
 		debug( "try to close client connection with id:", self.id )
 		if self.type == "client" then
 			self.fatalerror = "client to close"
