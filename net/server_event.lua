@@ -212,9 +212,9 @@ do
 								self.receive = self.conn.receive
 								local onsomething
 								if "onconnect" == arg then  -- trigger listener
-									onsomething = self.listener.onconnect
+									onsomething = self.onconnect
 								else
-									onsomething = self.listener.onsslconnection
+									onsomething = self.onsslconnection
 								end
 								self:_start_session( onsomething )
 								debug( "ssl handshake done" )
