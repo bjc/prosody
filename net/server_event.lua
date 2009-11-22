@@ -473,7 +473,7 @@ do
 						interface.eventwritetimeout = false
 					end
 				end
-				local succ, err, byte = interface.send( interface.conn, interface.writebuffer, 1, interface.writebufferlen )
+				local succ, err, byte = interface.conn:send( interface.writebuffer, 1, interface.writebufferlen )
 				--vdebug( "write data:", interface.writebuffer, "error:", err, "part:", byte )
 				if succ then  -- writing succesful
 					interface.writebuffer = ""
@@ -539,8 +539,8 @@ do
 						interface.eventreadtimeout = nil
 					end
 				end
-				local buffer, err, part = receive( client, pattern )  -- receive buffer with "pattern"
 				--vdebug( "read data:", buffer, "error:", err, "part:", part )        
+				local buffer, err, part = interface.conn:receive( pattern )  -- receive buffer with "pattern"
 				buffer = buffer or part or ""
 				local len = string_len( buffer )
 				if len > cfg.MAX_READ_LENGTH then  -- check buffer length
