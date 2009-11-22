@@ -118,12 +118,12 @@ local function session_close(session, reason)
 		end
 		session.send("</stream:stream>");
 		session.conn.close();
-		component_listener.disconnect(session.conn, "stream error");
+		component_listener.ondisconnect(session.conn, "stream error");
 	end
 end
 
 --- Component connlistener
-function component_listener.listener(conn, data)
+function component_listener.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		local _send = conn.write;
@@ -157,7 +157,7 @@ function component_listener.listener(conn, data)
 	end
 end
 	
-function component_listener.disconnect(conn, err)
+function component_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));

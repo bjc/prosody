@@ -101,7 +101,7 @@ local function session_close(session, reason)
 		end
 		session.send("</stream:stream>");
 		session.conn:close();
-		xmppclient.disconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
+		xmppclient.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
 	end
 end
 
@@ -133,7 +133,7 @@ function xmppclient.onincoming(conn, data)
 	end
 end
 	
-function xmppclient.disconnect(conn, err)
+function xmppclient.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err);
