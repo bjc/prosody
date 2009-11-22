@@ -128,7 +128,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^([^>]*>?)"); w(conn, tostring(t)); end
+	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
