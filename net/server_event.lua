@@ -161,7 +161,7 @@ do
 				self:_lock( false,  false, false )
 				--vdebug( "start listening on client socket with id:", self.id )      
 				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT )  -- register callback
-				onconnect( self )
+				self:onconnect()
 				self.eventsession = nil
 				return -1
 			end
