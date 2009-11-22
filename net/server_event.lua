@@ -180,7 +180,7 @@ do
 			_ = self.eventwrite and self.eventwrite:close( )
 			self.eventread, self.eventwrite = nil, nil
 			local err
-			self.conn, err = ssl.wrap( self.conn, self.sslctx )
+			self.conn, err = ssl.wrap( self.conn, self._sslctx )
 			if err then
 				self.fatalerror = err
 				self.conn = nil  -- cannot be used anymore
@@ -374,7 +374,7 @@ do
 	function interface_mt:starttls()
 		debug( "try to start ssl at client id:", self.id )
 		local err
-		if not self.sslctx then  -- no ssl available
+		if not self._sslctx then  -- no ssl available
 			err = "no ssl context available"
 		elseif self.usingssl then  -- startssl was already called
 			err = "ssl already active"
