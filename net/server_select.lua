@@ -166,7 +166,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 
     local connections = 0
 
-    local dispatch, disconnect = listeners.incoming or listeners.listener, listeners.disconnect
+    local dispatch, disconnect = listeners.onincoming, listeners.ondisconnect
 
     local err
 
@@ -241,7 +241,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
         for _, handler in pairs( _socketlist ) do
             if handler.serverport == serverport then
                 handler.disconnect( handler, "server closed" )
-                handler.close( true )
+                handler:close( true )
             end
         end
         socket:close( )
@@ -300,9 +300,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
     local ssl
 
-    local dispatch = listeners.incoming or listeners.listener
+    local dispatch = listeners.onincoming
     local status = listeners.status
-    local disconnect = listeners.disconnect
+    local disconnect = listeners.ondisconnect
 
     local bufferqueue = { }    -- buffer array
     local bufferqueuelen = 0    -- end of buffer array
@@ -331,9 +331,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.disconnect = function( )
         return disconnect
     end
-    handler.setlistener = function( listeners )
-        dispatch = listeners.incoming
-        disconnect = listeners.disconnect
+    handler.setlistener = function( self, listeners )
+        dispatch = listeners.onincoming
+        disconnect = listeners.ondisconnect
     end
     handler.getstats = function( )
         return readtraffic, sendtraffic
@@ -400,7 +400,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.clientport = function( )
         return clientport
     end
-    local write = function( data )
+    local write = function( self, data )
         bufferlen = bufferlen + string_len( data )
         if bufferlen > maxsendlen then
             _closelist[ handler ] = "send buffer exceeded"   -- cannot close the client at the moment, have to wait to the end of the cycle
@@ -417,26 +417,26 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         return true
     end
     handler.write = write
-    handler.bufferqueue = function( )
+    handler.bufferqueue = function( self )
         return bufferqueue
     end
-    handler.socket = function( )
+    handler.socket = function( self )
         return socket
     end
-    handler.pattern = function( new )
+    handler.pattern = function( self, new )
         pattern = new or pattern
         return pattern
     end
-    handler.setsend = function ( newsend )
+    handler.setsend = function ( self, newsend )
         send = newsend or send
         return send
     end
-    handler.bufferlen = function( readlen, sendlen )
+    handler.bufferlen = function( self, readlen, sendlen )
         maxsendlen = sendlen or maxsendlen
         maxreadlen = readlen or maxreadlen
         return maxreadlen, maxsendlen
     end
-    handler.lock = function( switch )
+    handler.lock = function( self, switch )
         if switch == true then
             handler.write = idfalse
             local tmp = _sendlistlen
@@ -507,7 +507,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             bufferqueuelen = 0
             bufferlen = 0
             _sendlistlen = removesocket( _sendlist, socket, _sendlistlen )    -- delete socket from writelist
-            _ = needtls and handler.starttls(true)
+            _ = needtls and handler:starttls(true)
             _writetimes[ handler ] = nil
 	    _ = toclose and handler.close( )
             return true
@@ -529,7 +529,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
     -- Set the sslctx
     local handshake;
-    function handler.set_sslctx(new_sslctx)
+    function handler.set_sslctx(self, new_sslctx)
         ssl = true
         sslctx = new_sslctx;
         local wrote
@@ -564,13 +564,13 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
                     end
                 end
                 disconnect( handler, "ssl handshake failed" )
-                _ = handler and handler.close( true )    -- forced disconnect
+                _ = handler and handler:close( true )    -- forced disconnect
                 return false    -- handshake failed
             end
         )
     end
     if sslctx then    -- ssl?
-    	handler.set_sslctx(sslctx);
+    	handler:set_sslctx(sslctx);
         if startssl then    -- ssl now?
             --out_put("server.lua: ", "starting ssl handshake")
 	    local err
@@ -590,7 +590,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         else
             -- We're not automatically doing SSL, so we're not secure (yet)
             ssl = false
-            handler.starttls = function( now )
+            handler.starttls = function( self, now )
                 if not now then
                     --out_put "server.lua: we need to do tls, but delaying until later"
                     needtls = true
@@ -737,14 +737,14 @@ removeserver = function( port )
     if not handler then
         return nil, "no server found on port '" .. tostring( port ) .. "'"
     end
-    handler.close( )
+    handler:close( )
     _server[ port ] = nil
     return true
 end
 
 closeall = function( )
     for _, handler in pairs( _socketlist ) do
-        handler.close( )
+        handler:close( )
         _socketlist[ _ ] = nil
     end
     _readlistlen = 0
@@ -822,7 +822,7 @@ loop = function( )    -- this is the main loop of the program
         end
         for handler, err in pairs( _closelist ) do
             handler.disconnect( )( handler, err )
-            handler.close( true )    -- forced disconnect
+            handler:close( true )    -- forced disconnect
         end
         clean( _closelist )
         _currenttime = os_time( )
@@ -880,14 +880,14 @@ addtimer( function( )
                 if os_difftime( _currenttime - timestamp ) > _sendtimeout then
                     --_writetimes[ handler ] = nil
                     handler.disconnect( )( handler, "send timeout" )
-                    handler.close( true )    -- forced disconnect
+                    handler:close( true )    -- forced disconnect
                 end
             end
             for handler, timestamp in pairs( _readtimes ) do
                 if os_difftime( _currenttime - timestamp ) > _readtimeout then
                     --_readtimes[ handler ] = nil
                     handler.disconnect( )( handler, "read timeout" )
-                    handler.close( )    -- forced disconnect?
+                    handler:close( )    -- forced disconnect?
                 end
             end
         end
