@@ -45,10 +45,10 @@ end
 function new_async_socket(sock, resolver)
 	local newconn, peername = {}, "<unknown>";
 	local listener = {};
-	function listener.incoming(conn, data)
+	function listener.onincoming(conn, data)
 		dns.feed(sock, data);
 	end
-	function listener.disconnect(conn, err)
+	function listener.ondisconnect(conn, err)
 		log("warn", "DNS socket for %s disconnected: %s", peername, err);
 		local servers = resolver.server;
 		if resolver.socketset[newconn.handler] == resolver.best_server and resolver.best_server == #servers then
@@ -68,7 +68,7 @@ function new_async_socket(sock, resolver)
 	newconn.handler.setsockname = function (_, ...) return sock:setsockname(...); end
 	newconn.handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
 	newconn.handler.connect = function (_, ...) return sock:connect(...) end	
-	newconn.handler.send = function (_, data) _.write(data); return _.sendbuffer(); end	
+	newconn.handler.send = function (_, data) _.write(_, data); return _.sendbuffer(); end	
 	return newconn.handler;
 end
 
