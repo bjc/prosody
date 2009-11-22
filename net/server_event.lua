@@ -552,7 +552,7 @@ do
 					interface.eventread = nil
 					return -1
 				end
-				if err and ( "timeout" ~= err ) then
+				if err and ( err ~= "timeout" and err ~= "wantread" ) then
 					if "wantwrite" == err then -- need to read on write event
 						if not interface.eventwrite then  -- register new write event if needed
 							interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
