@@ -48,7 +48,7 @@ function connlistener.listener(conn, data)
 			module:log("debug", "new session found ... ")
 			session.setup = true;
 			sessions[conn] = session;
-			conn.write(string.char(5, 0));
+			conn:write(string.char(5, 0));
 		end
 		return;
 	end
@@ -56,7 +56,7 @@ function connlistener.listener(conn, data)
 		if session.sha ~= nil and transfers[session.sha] ~= nil then
 			local sha = session.sha;
 			if transfers[sha].activated == true and transfers[sha].initiator == conn and transfers[sha].target ~= nil then
-				transfers[sha].target.write(data);
+				transfers[sha].target:write(data);
 				return;
 			end
 		end
@@ -81,7 +81,7 @@ function connlistener.listener(conn, data)
 				session.sha = sha;
 				module:log("debug", "initiator connected ... ");
 			end
-			conn.write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
+			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 		else
 			log:module("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
 			conn.close();
