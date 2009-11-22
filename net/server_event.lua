@@ -355,7 +355,7 @@ do
 	end
 	
 	function interface_mt:ssl()
-		return self.usingssl
+		return self._usingssl
 	end
 
 	function interface_mt:type()
@@ -377,14 +377,14 @@ do
 		local err
 		if not self._sslctx then  -- no ssl available
 			err = "no ssl context available"
-		elseif self.usingssl then  -- startssl was already called
+		elseif self._usingssl then  -- startssl was already called
 			err = "ssl already active"
 		end
 		if err then
 			debug( "error:", err )
 			return nil, err      
 		end
-		self.usingssl = true
+		self._usingssl = true
 		self.startsslcallback = function( )  -- we have to start the handshake outside of a read/write event
 			self:_start_ssl();
 			self.eventstarthandshake = nil
@@ -460,7 +460,7 @@ do
 				interface.eventwrite = false
 				return -1
 			else  -- can write :)
-				if interface.usingssl then  -- handle luasec
+				if interface._usingssl then  -- handle luasec
 					if interface.eventreadtimeout then  -- we have to read first
 						local ret = interface.readcallback( )  -- call readcallback
 						--vdebug( "tried to read in writecallback, result:", ret )
