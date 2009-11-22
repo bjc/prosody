@@ -33,7 +33,7 @@ end
 console = {};
 
 function console:new_session(conn)
-	local w = function(s) conn.write(s:gsub("\n", "\r\n")); end;
+	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
 			print = function (t) w("| "..tostring(t).."\n"); end;
@@ -53,7 +53,7 @@ end
 
 local sessions = {};
 
-function console_listener.listener(conn, data)
+function console_listener.onincoming(conn, data)
 	local session = sessions[conn];
 	
 	if not session then
@@ -126,7 +126,7 @@ function console_listener.listener(conn, data)
 	session.send(string.char(0));
 end
 
-function console_listener.disconnect(conn, err)
+function console_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		session.disconnect();
