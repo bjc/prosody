@@ -152,7 +152,7 @@ function request(u, ex, callback)
 	end
 	
 	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
-	req.write = req.handler.write;
+	req.write = function (...) return req.handler:write(...); end
 	req.conn:settimeout(0);
 	local ok, err = req.conn:connect(req.host, req.port or 80);
 	if not ok and err ~= "timeout" then
@@ -200,7 +200,7 @@ end
 function destroy_request(request)
 	if request.conn then
 		request.handler.close()
-		listener.disconnect(request.conn, "closed");
+		listener.ondisconnect(request.conn, "closed");
 	end
 end
 

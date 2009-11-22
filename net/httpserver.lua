@@ -209,7 +209,7 @@ end
 
 function new_request(handler)
 	return { handler = handler, conn = handler.socket, 
-			write = handler.write, state = "request", 
+			write = function (...) return handler:write(...); end, state = "request", 
 			server = http_servers[handler.serverport()],
 			send = send_response,
 			destroy = destroy_request,
@@ -230,7 +230,7 @@ function destroy_request(request)
 		end
 		request.handler.close()
 		if request.conn then
-			listener.disconnect(request.handler, "closed");
+			listener.ondisconnect(request.handler, "closed");
 		end
 	end
 end
