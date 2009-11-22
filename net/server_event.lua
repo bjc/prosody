@@ -221,7 +221,7 @@ do
 								self.eventhandshake = nil
 								return -1
 							end
-							debug( "error during ssl handshake:", err )  
+							debug( "error during ssl handshake:", err ) 
 							if err == "wantwrite" then
 								event = EV_WRITE
 							elseif err == "wantread" then
@@ -275,6 +275,7 @@ do
 			interfacelist( "delete", self )
 			return true
 	end
+	
 	function interface_mt:_lock(nointerface, noreading, nowriting)  -- lock or unlock this interface or events
 			self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
 			return nointerface, noreading, nowriting
