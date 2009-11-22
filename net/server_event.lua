@@ -541,8 +541,8 @@ do
 						interface.eventreadtimeout = nil
 					end
 				end
-				--vdebug( "read data:", buffer, "error:", err, "part:", part )        
 				local buffer, err, part = interface.conn:receive( pattern )  -- receive buffer with "pattern"
+				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )        
 				buffer = buffer or part or ""
 				local len = string_len( buffer )
 				if len > cfg.MAX_READ_LENGTH then  -- check buffer length
