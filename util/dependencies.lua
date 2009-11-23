@@ -42,7 +42,7 @@ local socket = softreq "socket"
 
 if not socket then
 	missingdep("luasocket", {
-			["Ubuntu"] = "sudo apt-get install liblua5.1-socket2";
+			["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-socket2";
 			["luarocks"] = "luarocks install luasocket";
 			["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
 		});
