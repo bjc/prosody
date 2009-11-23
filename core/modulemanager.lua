@@ -28,7 +28,9 @@ local type = type;
 local next = next;
 local rawget = rawget;
 local error = error;
-local tostring = tostring;
+local tostring, tonumber = tostring, tonumber;
+
+local array, set = require "util.array", require "util.set";
 
 local autoload_modules = {"presence", "message", "iq"};
 
@@ -398,6 +400,85 @@ function api:get_option(name, default_value)
 		end
 	end
 	return value;
+end
+
+function api:get_option_string(...)
+	local value = self:get_option(...);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	if value == nil then
+		return nil;
+	end
+	return tostring(value);
+end
+
+function api:get_option_number(name, ...)
+	local value = self:get_option(name, ...);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	local ret = tonumber(value);
+	if value ~= nil and ret == nil then
+		self:log("error", "Config option '%s' not understood, expecting a number", name);
+	end
+	return ret;
+end
+
+function api:get_option_boolean(name, ...)
+	local value = self:get_option(name, ...);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	if value == nil then
+		return nil;
+	end
+	local ret = value == true or value == "true" or value == 1 or nil;
+	if ret == nil then
+		ret = (value == false or value == "false" or value == 0);
+		if ret then
+			ret = false;
+		else
+			ret = nil;
+		end
+	end
+	if ret == nil then
+		self:log("error", "Config option '%s' not understood, expecting true/false", name);
+	end
+	return ret;
+end
+
+function api:get_option_array(name, ...)
+	local value = self:get_option(name, ...);
+
+	if value == nil then
+		return nil;
+	end
+	
+	if type(value) ~= "table" then
+		return array{ value }; -- Assume any non-list is a single-item list
+	end
+	
+	return array():append(value); -- Clone
+end
+
+function api:get_option_set(name, ...)
+	local value = self:get_option_array(name, ...);
+	
+	if value == nil then
+		return nil;
+	end
+	
+	return set.new(value);
 end
 
 local t_remove = _G.table.remove;
