@@ -34,24 +34,46 @@ end
 local lxp = softreq "lxp"
 
 if not lxp then
-	missingdep("luaexpat", { ["Ubuntu 8.04 (Hardy)"] = "sudo apt-get install liblua5.1-expat0"; ["luarocks"] = "luarocks install luaexpat"; });
+	missingdep("luaexpat", {
+			["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-expat0";
+			["luarocks"] = "luarocks install luaexpat";
+			["Source"] = "http://www.keplerproject.org/luaexpat/";
+		});
 	fatal = true;
 end
 
 local socket = softreq "socket"
 
 if not socket then
-	missingdep("luasocket", { ["Ubuntu 8.04 (Hardy)"] = "sudo apt-get install liblua5.1-socket2"; ["luarocks"] = "luarocks install luasocket"; });
+	missingdep("luasocket", {
+			["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-socket2";
+			["luarocks"] = "luarocks install luasocket";
+			["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
+		});
 	fatal = true;
 end
 	
+local lfs, err = softreq "lfs"
+if not lfs then
+	missingdep("luafilesystem", {
+			["luarocks"] = "luarocks install luafilesystem";
+	 		["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-luafilesystem0";
+	 		["Source"] = "http://www.keplerproject.org/luafilesystem/";
+	 	});
+	fatal = true;
+end
+
 local ssl = softreq "ssl"
 
 if not ssl then
 	if config.get("*", "core", "run_without_ssl") then
 		log("warn", "Running without SSL support because run_without_ssl is defined in the config");
 	else
-		missingdep("LuaSec", { ["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/" }, "SSL/TLS support will not be available");
+		missingdep("LuaSec", {
+				["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
+				["luarocks"] = "luarocks install luasec";
+				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
+			}, "SSL/TLS support will not be available");
 	end
 end
 
