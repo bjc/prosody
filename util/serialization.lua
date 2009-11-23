@@ -47,7 +47,7 @@ local function _simplesave(o, ind, t, func)
 				else
 					_simplesave(v, ind+1, t, func);
 				end
-				func(t, ",\n");
+				func(t, ";\n");
 			end
 			func(t, indent(ind-1));
 			func(t, "}");
