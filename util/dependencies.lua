@@ -41,6 +41,15 @@ if not socket then
 	fatal = true;
 end
 	
+local lfs, err = softreq "lfs"
+if not lfs then
+	missingdep("luafilesystem", { ["luarocks"] = "luarocks install luafilesystem";
+	 				["Ubuntu 8.04 (Hardy)"] = "sudo apt-get install liblua5.1-luafilesystem0";
+	 				["Source"] = "http://www.keplerproject.org/luafilesystem/";
+	 			});
+	fatal = true;
+end
+
 local ssl = softreq "ssl"
 
 if not ssl then
