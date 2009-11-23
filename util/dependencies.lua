@@ -17,8 +17,12 @@ local function missingdep(name, sources, msg)
 	print("Prosody was unable to find "..tostring(name));
 	print("This package can be obtained in the following ways:");
 	print("");
-	for k,v in pairs(sources) do
-		print("", k, v);
+	local longest_platform = 0;
+	for platform in pairs(sources) do
+		longest_platform = math.max(longest_platform, #platform);
+	end
+	for platform, source in pairs(sources) do
+		print("", platform..":"..(" "):rep(4+longest_platform-#platform)..source);
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
