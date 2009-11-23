@@ -13,6 +13,7 @@ local t_insert = table.insert;
 local t_concat = table.concat;
 local error = error;
 local pairs = pairs;
+local next = next;
 
 local debug_traceback = debug.traceback;
 local log = require "util.logger".init("serialization");
@@ -34,21 +35,25 @@ local function _simplesave(o, ind, t, func)
 	elseif type(o) == "string" then
 		func(t, (("%q"):format(o):gsub("\\\n", "\\n")));
 	elseif type(o) == "table" then
-		func(t, "{\n");
-		for k,v in pairs(o) do
-			func(t, indent(ind));
-			func(t, "[");
-			func(t, basicSerialize(k));
-			func(t, "] = ");
-			if ind == 0 then
-				_simplesave(v, 0, t, func);
-			else
-				_simplesave(v, ind+1, t, func);
+		if next(o) then
+			func(t, "{\n");
+			for k,v in pairs(o) do
+				func(t, indent(ind));
+				func(t, "[");
+				func(t, basicSerialize(k));
+				func(t, "] = ");
+				if ind == 0 then
+					_simplesave(v, 0, t, func);
+				else
+					_simplesave(v, ind+1, t, func);
+				end
+				func(t, ",\n");
 			end
-			func(t, ",\n");
+			func(t, indent(ind-1));
+			func(t, "}");
+		else
+			func(t, "{}");
 		end
-		func(t, indent(ind-1));
-		func(t, "}");
 	elseif type(o) == "boolean" then
 		func(t, (o and "true" or "false"));
 	else
