@@ -1,9 +1,16 @@
-local have_luaevent = pcall(require, "luaevent.core");
+
 local use_luaevent = require "core.configmanager".get("*", "core", "use_libevent");
+
+if use_luaevent then
+	use_luaevent = pcall(require, "luaevent.core");
+	if not use_luaevent then
+		log("error", "libevent not found, falling back to select()");
+	end
+end
 
 local server;
 
-if have_luaevent and use_luaevent == true then
+if use_luaevent then
 	server = require "net.server_event";
 	-- util.timer requires "net.server", so instead of having
 	-- Lua look for, and load us again (causing a loop) - set this here
