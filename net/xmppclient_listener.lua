@@ -140,7 +140,6 @@ function xmppclient.ondisconnect(conn, err)
 		sm_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
-		collectgarbage("collect");
 	end
 end
 
