@@ -10,7 +10,6 @@
 
 local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local collectgarbage = collectgarbage;
 local format = import("string", "format");
 
 local hosts = hosts;
