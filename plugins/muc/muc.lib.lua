@@ -435,6 +435,26 @@ function room_mt:process_form(origin, stanza)
 	origin.send(st.reply(stanza));
 end
 
+function room_mt:destroy(newjid, reason, password)
+	local pr = st.presence({type = "unavailable"})
+		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+			:tag("item", { affiliation='none', role='none' }):up()
+			:tag("destroy", {jid=newjid})
+	if reason then pr:tag("reason"):text(reason):up(); end
+	if password then pr:tag("password"):text(password):up(); end
+	for nick, occupant in pairs(self._occupants) do
+		pr.attr.from = nick;
+		for jid in pairs(occupant.sessions) do
+			pr.attr.to = jid;
+			self:_route_stanza(pr);
+			self._jid_nick[jid] = nil;
+		end
+		self._occupants[nick] = nil;
+	end
+	self._data.persistent = nil;
+	if self.save then self:save(true); end
+end
+
 function room_mt:handle_to_room(origin, stanza) -- presence changes and groupchat messages, along with disco/etc
 	local type = stanza.attr.type;
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
@@ -515,7 +535,24 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			elseif stanza.attr.type == "get" then
 				self:send_form(origin, stanza);
 			elseif stanza.attr.type == "set" then
-				self:process_form(origin, stanza)
+				local child = stanza.tags[1].tags[1];
+				if not child then
+					origin.send(st.error_reply(stanza, "auth", "bad-request"));
+				elseif child.name == "destroy" then
+					local newjid = child.attr.jid;
+					local reason, password;
+					for _,tag in ipairs(child.tags) do
+						if tag.name == "reason" then
+							reason = #tag.tags == 0 and tag[1];
+						elseif tag.name == "password" then
+							password = #tag.tags == 0 and tag[1];
+						end
+					end
+					self:destroy(newjid, reason, password);
+					origin.send(st.reply(stanza));
+				else
+					self:process_form(origin, stanza);
+				end
 			end
 		elseif type == "set" or type == "get" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
