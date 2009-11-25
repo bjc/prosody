@@ -529,7 +529,12 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			stanza.attr.from = current_nick;
 			local subject = getText(stanza, {"subject"});
 			if subject then
-				self:set_subject(current_nick, subject); -- TODO use broadcast_message_stanza
+				if occupant.role == "moderator" then
+					self:set_subject(current_nick, subject); -- TODO use broadcast_message_stanza
+				else
+					stanza.attr.from = from;
+					origin.send(st.error_reply(stanza, "cancel", "forbidden"));
+				end
 			else
 				self:broadcast_message(stanza, true);
 			end
