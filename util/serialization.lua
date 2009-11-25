@@ -35,7 +35,7 @@ local function _simplesave(o, ind, t, func)
 	elseif type(o) == "string" then
 		func(t, (("%q"):format(o):gsub("\\\n", "\\n")));
 	elseif type(o) == "table" then
-		if next(o) then
+		if next(o) ~= nil then
 			func(t, "{\n");
 			for k,v in pairs(o) do
 				func(t, indent(ind));
