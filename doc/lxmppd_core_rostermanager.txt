@@ -1,9 +1,0 @@
-lxmppd -> core -> rostermanager.lua
-	requires	"util.datamanager"
-	module		"rostermanager"
-	
-function log(type, message)
-	logs a message of type "rostermanager"
-
-function getroster(username, host)
-	Retrieves the user's roster from the server and loads it with the datamanager
