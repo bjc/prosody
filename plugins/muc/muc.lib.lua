@@ -128,19 +128,21 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	end
 end
 function room_mt:broadcast_message(stanza, historic)
+	local to = stanza.attr.to;
 	for occupant, o_data in pairs(self._occupants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
 			self:_route_stanza(stanza);
 		end
 	end
+	stanza.attr.to = to;
 	if historic then -- add to history
 		local history = self._data['history'];
 		if not history then history = {}; self._data['history'] = history; end
-		-- stanza = st.clone(stanza);
+		stanza = st.clone(stanza);
 		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		t_insert(history, st.clone(st.preserialize(stanza)));
+		t_insert(history, st.preserialize(stanza));
 		while #history > history_length do t_remove(history, 1) end
 	end
 end
@@ -528,6 +530,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			else
 				self:broadcast_message(stanza, true);
 			end
+			stanza.attr.from = from;
 		end
 	elseif stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
 		local current_nick = self._jid_nick[stanza.attr.from];
