@@ -93,7 +93,13 @@ function form_t.data(layout, stanza)
 	local data = {};
 	
 	for field_tag in stanza:childtags() do
-		local field_type = field_tag.attr.type;
+		local field_type;
+		for n, field in ipairs(layout) do
+			if field.name == field_tag.attr.var then
+				field_type = field.type;
+				break;
+			end
+		end
 		
 		local reader = field_readers[field_type];
 		if reader then
