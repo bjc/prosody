@@ -519,8 +519,11 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		local from, to = stanza.attr.from, stanza.attr.to;
 		local room = jid_bare(to);
 		local current_nick = self._jid_nick[from];
-		if not current_nick then -- not in room
+		local occupant = self._occupants[current_nick];
+		if not occupant then -- not in room
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+		elseif occupant.role == "visitor" then
+			origin.send(st.error_reply(stanza, "cancel", "forbidden"));
 		else
 			local from = stanza.attr.from;
 			stanza.attr.from = current_nick;
