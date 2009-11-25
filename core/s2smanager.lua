@@ -79,6 +79,10 @@ local function bounce_sendq(session)
 end
 
 function send_to_host(from_host, to_host, data)
+	if not hosts[from_host] then
+		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
+		return false;
+	end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
