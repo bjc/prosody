@@ -17,8 +17,12 @@ local function missingdep(name, sources, msg)
 	print("Prosody was unable to find "..tostring(name));
 	print("This package can be obtained in the following ways:");
 	print("");
-	for k,v in pairs(sources) do
-		print("", k, v);
+	local longest_platform = 0;
+	for platform in pairs(sources) do
+		longest_platform = math.max(longest_platform, #platform);
+	end
+	for platform, source in pairs(sources) do
+		print("", platform..":"..(" "):rep(4+longest_platform-#platform)..source);
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
@@ -30,24 +34,51 @@ end
 local lxp = softreq "lxp"
 
 if not lxp then
-	missingdep("luaexpat", { ["Ubuntu 8.04 (Hardy)"] = "sudo apt-get install liblua5.1-expat0"; ["luarocks"] = "luarocks install luaexpat"; });
+	missingdep("luaexpat", {
+			["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-expat0";
+			["luarocks"] = "luarocks install luaexpat";
+			["Source"] = "http://www.keplerproject.org/luaexpat/";
+		});
 	fatal = true;
 end
 
 local socket = softreq "socket"
 
 if not socket then
-	missingdep("luasocket", { ["Ubuntu 8.04 (Hardy)"] = "sudo apt-get install liblua5.1-socket2"; ["luarocks"] = "luarocks install luasocket"; });
+	missingdep("luasocket", {
+			["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-socket2";
+			["luarocks"] = "luarocks install luasocket";
+			["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
+		});
 	fatal = true;
 end
 	
+local lfs, err = softreq "lfs"
+if not lfs then
+	missingdep("luafilesystem", {
+			["luarocks"] = "luarocks install luafilesystem";
+	 		["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-luafilesystem0";
+	 		["Source"] = "http://www.keplerproject.org/luafilesystem/";
+	 	});
+	fatal = true;
+end
+
 local ssl = softreq "ssl"
 
 if not ssl then
 	if config.get("*", "core", "run_without_ssl") then
 		log("warn", "Running without SSL support because run_without_ssl is defined in the config");
 	else
-		missingdep("LuaSec", { ["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/" }, "SSL/TLS support will not be available");
+		missingdep("LuaSec", {
+				["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
+				["luarocks"] = "luarocks install luasec";
+				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
+			}, "SSL/TLS support will not be available");
+	end
+else
+	local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
+	if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
+		log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
 	end
 end
 

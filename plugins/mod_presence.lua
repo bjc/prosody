@@ -233,6 +233,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
+			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
 				if rostermanager.set_contact_pending_in(node, host, from_bare) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
@@ -241,14 +242,17 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		end
 	elseif stanza.attr.type == "unsubscribe" then
 		if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	elseif stanza.attr.type == "subscribed" then
 		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	elseif stanza.attr.type == "unsubscribed" then
 		if rostermanager.process_inbound_subscription_cancellation(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	end -- discard any other type

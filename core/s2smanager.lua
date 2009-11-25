@@ -79,15 +79,15 @@ local function bounce_sendq(session)
 end
 
 function send_to_host(from_host, to_host, data)
+	if not hosts[from_host] then
+		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
+		return false;
+	end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and data.name ~= "db:verify" and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
+		if host.type == "s2sout_unauthed" and (data.name ~= "db:verify" or not host.dialback_key) and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
-			if not host.notopen and not host.dialback_key and host.sends2s then
-				host.log("debug", "dialback had not been initiated");
-				initiate_dialback(host);
-			end
 			
 			-- Queue stanza until we are able to send it
 			if host.sendq then t_insert(host.sendq, {tostring(data), st.reply(data)});
@@ -110,6 +110,7 @@ function send_to_host(from_host, to_host, data)
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = new_outgoing(from_host, to_host);
+
 		-- Store in buffer
 		host_session.sendq = { {tostring(data), st.reply(data)} };
 		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
@@ -131,7 +132,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -159,7 +160,7 @@ function new_outgoing(from_host, to_host)
 			host_session.log = log;
 		end
 		
-		-- This is the first call, can't fail (the first step is DNS lookup)
+		-- Kick the connection attempting machine
 		attempt_connection(host_session);
 		
 		if not host_session.sends2s then		
@@ -186,6 +187,10 @@ end
 function attempt_connection(host_session, err)
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
+	
+	if not connect_host then
+		return false;
+	end
 	
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
@@ -316,9 +321,9 @@ function make_connect(host_session, connect_host, connect_port)
 	cl.register_outgoing(conn, host_session);
 	
 	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
-	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
+	conn:write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
 	add_task(connect_timeout, function ()
 		if host_session.conn ~= conn or
