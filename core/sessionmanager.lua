@@ -10,7 +10,6 @@
 
 local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local collectgarbage = collectgarbage;
 local format = import("string", "format");
 
 local hosts = hosts;
@@ -50,8 +49,8 @@ function new_session(conn)
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
 	local w = conn.write;
-	session.send = function (t) w(tostring(t)); end
-	session.ip = conn.ip();
+	session.send = function (t) w(conn, tostring(t)); end
+	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 	

@@ -100,15 +100,15 @@ local function session_close(session, reason)
 			end
 		end
 		session.send("</stream:stream>");
-		session.conn.close();
-		xmppclient.disconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
+		session.conn:close();
+		xmppclient.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
 	end
 end
 
 
 -- End of session methods --
 
-function xmppclient.listener(conn, data)
+function xmppclient.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		session = sm_new_session(conn);
@@ -117,7 +117,7 @@ function xmppclient.listener(conn, data)
 		session.log("info", "Client connected");
 		
 		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
-		if conn.ssl() then
+		if conn:ssl() then
 			session.secure = true;
 		end
 		
@@ -133,14 +133,13 @@ function xmppclient.listener(conn, data)
 	end
 end
 	
-function xmppclient.disconnect(conn, err)
+function xmppclient.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err);
 		sm_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
-		collectgarbage("collect");
 	end
 end
 
