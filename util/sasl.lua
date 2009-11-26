@@ -90,6 +90,11 @@ function new(realm, profile, forbidden)
 	return s;
 end
 
+-- get a fresh clone with the same realm, profiles and forbidden mechanisms
+function method:clean_clone()
+	return new(self.realm, self.profile, self:forbidden())
+end
+
 -- set the forbidden mechanisms
 function method:forbidden( restrict )
 	if restrict then
