@@ -138,7 +138,7 @@ do
 			local callback = function( event )
 				if EV_TIMEOUT == event then  -- timout during connection
 					self.fatalerror = "connection timeout"
-					self.listener.ontimeout( self )  -- call timeout listener
+					self:ontimeout()  -- call timeout listener
 					self:_close()
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
@@ -432,6 +432,7 @@ do
 			onconnect = listener.onconnect;  -- will be called when client disconnects
 			ondisconnect = listener.ondisconnect;  -- will be called when client disconnects
 			onincoming = listener.onincoming;  -- will be called when client sends data
+			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
 			eventread = false, eventwrite = false, eventclose = false,
 			eventhandshake = false, eventstarthandshake = false;  -- event handler
 			eventconnect = false, eventsession = false;  -- more event handler...
