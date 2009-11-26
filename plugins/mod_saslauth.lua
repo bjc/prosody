@@ -75,7 +75,7 @@ end
 
 local function handle_status(session, status)
 	if status == "failure" then
-		session.sasl_handler = nil;
+		session.sasl_handler = sesion.sasl_handler:clean_clone();
 	elseif status == "success" then
 		local username = nodeprep(session.sasl_handler.username);
 		if not username then -- TODO move this to sessionmanager
