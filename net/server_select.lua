@@ -427,7 +427,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         pattern = new or pattern
         return pattern
     end
-    handler.setsend = function ( self, newsend )
+    handler.set_send = function ( self, newsend )
         send = newsend or send
         return send
     end
