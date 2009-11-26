@@ -374,6 +374,12 @@ do
 	
 	function interface_mt:set_sslctx(sslctx)
 		self._sslctx = sslctx;
+		if sslctx then
+			self.starttls = nil; -- use starttls() of interface_mt
+		else
+			self.starttls = false; -- prevent starttls()
+		end
+	end
 	end
 	
 	function interface_mt:starttls()
@@ -458,6 +464,9 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
+		if not sslctx then
+			interface.starttls = false -- don't allow TLS
+		end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
