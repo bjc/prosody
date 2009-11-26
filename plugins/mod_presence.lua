@@ -200,9 +200,6 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 			rostermanager.roster_push(node, host, to_bare);
 		end
 		core_route_stanza(origin, stanza);
-		-- COMPAT: Some legacy clients keep displaying unsubscribed contacts as online unless an unavailable presence is sent:
-		send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza,
-			st.presence({ type="unavailable", from=from_bare, to=to_bare, id=stanza.attr.id }));
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
 end
