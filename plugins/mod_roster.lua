@@ -74,18 +74,20 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 						if not resource and host then
 							if jid ~= from_node.."@"..from_host then
 								if item.attr.subscription == "remove" then
-									local r_item = session.roster[jid];
+									local roster = session.roster;
+									local r_item = roster[jid];
 									if r_item then
+										local to_bare = node and (node.."@"..host) or host; -- bare JID
+										if r_item.subscription == "both" or r_item.subscription == "from" or (roster.pending and roster.pending[jid]) then
+											core_post_stanza(session, st.presence({type="unsubscribed", from=session.full_jid, to=to_bare}));
+										end
+										if r_item.subscription == "both" or r_item.subscription == "to" or r_item.ask then
+											core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=to_bare}));
+										end
 										local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, jid);
 										if success then
 											session.send(st.reply(stanza));
 											rm_roster_push(from_node, from_host, jid);
-											local to_bare = node and (node.."@"..host) or host; -- bare JID
-											if r_item.subscription == "both" or r_item.subscription == "from" then
-												core_post_stanza(session, st.presence({type="unsubscribed", from=session.full_jid, to=to_bare}));
-											elseif r_item.subscription == "both" or r_item.subscription == "to" then
-												core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=to_bare}));
-											end
 										else
 											session.send(st.error_reply(stanza, err_type, err_cond, err_msg));
 										end
