@@ -230,7 +230,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
 				if rostermanager.set_contact_pending_in(node, host, from_bare) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
