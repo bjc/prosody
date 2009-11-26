@@ -263,7 +263,7 @@ do
 				_ = self.eventreadtimeout and self.eventreadtimeout:close( )
 				_ = self.ondisconnect and self:ondisconnect( self.fatalerror )  -- call ondisconnect listener (wont be the case if handshake failed on connect)
 				_ = self.conn and self.conn:close( ) -- close connection, must also be called outside of any socket registered events!
-				self._server:counter(-1);
+				_ = self._server and self._server:counter(-1);
 				self.eventread, self.eventwrite = nil, nil
 				self.eventstarthandshake, self.eventhandshake, self.eventclose = nil, nil, nil
 				self.readcallback, self.writecallback = nil, nil
@@ -283,7 +283,7 @@ do
 
 	function interface_mt:counter(c)
 		if c then
-			self._connections = self._connections - c
+			self._connections = self._connections + c
 		end
 		return self._connections
 	end
