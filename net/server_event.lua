@@ -380,6 +380,9 @@ do
 			self.starttls = false; -- prevent starttls()
 		end
 	end
+	
+	function interface_mt:set_send(new_send)
+		-- No-op, we always use the underlying connection's send
 	end
 	
 	function interface_mt:starttls()
