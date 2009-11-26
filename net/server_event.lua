@@ -693,26 +693,16 @@ local addserver = ( function( )
 	end
 end )( )
 
-local wrapclient = ( function( )
-	return function( client, addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
-		debug( "try to connect to:", addr, serverport, "with parameters:", pattern, localaddr, localport, sslcfg, startssl )
-		local sslctx
-		if sslcfg then  -- handle ssl/new context
-			if not ssl then
-				debug "need luasec, but not available" 
-				return nil, "luasec not found"
-			end
-			sslctx, err = ssl.newcontext( sslcfg )
-			if err then
-				debug( "cannot create new ssl context:", err )
-				return nil, err
-			end
-		end
+local addclient, wrapclient
+do
+	function wrapclient( client, ip, port, listeners, pattern, sslctx, startssl )
+		local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
+		interface:_start_session()
+		return interface
+		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
-end )( )
-
-local addclient = ( function( )
-	return function( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
+	
+	function addclient( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
 		local client, err = socket.tcp()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err ) 
@@ -726,23 +716,35 @@ local addclient = ( function( )
 				return nil, err
 			end
 		end
+		local sslctx
+		if sslcfg then  -- handle ssl/new context
+			if not ssl then
+				debug "need luasec, but not available" 
+				return nil, "luasec not found"
+			end
+			sslctx, err = ssl.newcontext( sslcfg )
+			if err then
+				debug( "cannot create new ssl context:", err )
+				return nil, err
+			end
+		end
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" ) then
 			local ip, port = client:getsockname( )
 			local server = function( )
 				return nil, "this is a dummy server interface"
 			end
-			local interface = handleclient( client, ip, port, server, pattern, listener, sslctx )
+			local interface = wrapclient( client, ip, serverport, listeners, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
-			debug( "new connection id:", interface )
+			debug( "new connection id:", interface.id )
 			return interface, err
 		else
 			debug( "new connection failed:", err )
 			return nil, err
 		end
-		return wrapclient( client, addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )    
 	end
-end )( )
+end
+
 
 local loop = function( )  -- starts the event loop
 	return base:loop( )
