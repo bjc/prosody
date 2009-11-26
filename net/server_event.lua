@@ -538,9 +538,9 @@ do
 		end
 		
 		interface.readcallback = function( event )  -- called on read events
-			--vdebug( "new client read event, id/ip/port:", interface, ip, port )
+			--vdebug( "new client read event, id/ip/port:", tostring(interface.id), tostring(ip), tostring(port) )
 			if interface.noreading or interface.fatalerror then  -- leave this event
-				--vdebug( "leaving this event because:", interface.noreading or interface.fatalerror )
+				--vdebug( "leaving this event because:", tostring(interface.noreading or interface.fatalerror) )
 				interface.eventread = nil
 				return -1
 			end
@@ -554,7 +554,7 @@ do
 				if interface._usingssl then  -- handle luasec
 					if interface.eventwritetimeout then  -- ok, in the past writecallback was regged
 						local ret = interface.writecallback( )  -- call it
-						--vdebug( "tried to write in readcallback, result:", ret )
+						--vdebug( "tried to write in readcallback, result:", tostring(ret) )
 					end
 					if interface.eventreadtimeout then
 						interface.eventreadtimeout:close( )
