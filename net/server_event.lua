@@ -405,7 +405,14 @@ do
 		return true
 	end
 	
-	function interface_mt.onconnect()
+	-- Stub handlers
+	function interface_mt:onconnect()
+	end
+	function interface_mt:onincoming()
+	end
+	function interface_mt:ondisconnect()
+	end
+	function interface_mt:ontimeout()
 	end
 end			
 
