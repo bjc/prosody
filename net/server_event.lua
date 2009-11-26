@@ -138,7 +138,7 @@ do
 			local callback = function( event )
 				if EV_TIMEOUT == event then  -- timout during connection
 					self.fatalerror = "connection timeout"
-					self.listener.ontimeout( self )  -- call timeout listener
+					self:ontimeout()  -- call timeout listener
 					self:_close()
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
@@ -263,7 +263,7 @@ do
 				_ = self.eventreadtimeout and self.eventreadtimeout:close( )
 				_ = self.ondisconnect and self:ondisconnect( self.fatalerror )  -- call ondisconnect listener (wont be the case if handshake failed on connect)
 				_ = self.conn and self.conn:close( ) -- close connection, must also be called outside of any socket registered events!
-				self._server:counter(-1);
+				_ = self._server and self._server:counter(-1);
 				self.eventread, self.eventwrite = nil, nil
 				self.eventstarthandshake, self.eventhandshake, self.eventclose = nil, nil, nil
 				self.readcallback, self.writecallback = nil, nil
@@ -283,7 +283,7 @@ do
 
 	function interface_mt:counter(c)
 		if c then
-			self._connections = self._connections - c
+			self._connections = self._connections + c
 		end
 		return self._connections
 	end
@@ -374,6 +374,15 @@ do
 	
 	function interface_mt:set_sslctx(sslctx)
 		self._sslctx = sslctx;
+		if sslctx then
+			self.starttls = nil; -- use starttls() of interface_mt
+		else
+			self.starttls = false; -- prevent starttls()
+		end
+	end
+	
+	function interface_mt:set_send(new_send)
+		-- No-op, we always use the underlying connection's send
 	end
 	
 	function interface_mt:starttls()
@@ -405,7 +414,14 @@ do
 		return true
 	end
 	
-	function interface_mt.onconnect()
+	-- Stub handlers
+	function interface_mt:onconnect()
+	end
+	function interface_mt:onincoming()
+	end
+	function interface_mt:ondisconnect()
+	end
+	function interface_mt:ontimeout()
 	end
 end			
 
@@ -432,6 +448,7 @@ do
 			onconnect = listener.onconnect;  -- will be called when client disconnects
 			ondisconnect = listener.ondisconnect;  -- will be called when client disconnects
 			onincoming = listener.onincoming;  -- will be called when client sends data
+			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
 			eventread = false, eventwrite = false, eventclose = false,
 			eventhandshake = false, eventstarthandshake = false;  -- event handler
 			eventconnect = false, eventsession = false;  -- more event handler...
@@ -450,6 +467,9 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
+		if not sslctx then
+			interface.starttls = false -- don't allow TLS
+		end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
@@ -518,9 +538,9 @@ do
 		end
 		
 		interface.readcallback = function( event )  -- called on read events
-			--vdebug( "new client read event, id/ip/port:", interface, ip, port )
+			--vdebug( "new client read event, id/ip/port:", tostring(interface.id), tostring(ip), tostring(port) )
 			if interface.noreading or interface.fatalerror then  -- leave this event
-				--vdebug( "leaving this event because:", interface.noreading or interface.fatalerror )
+				--vdebug( "leaving this event because:", tostring(interface.noreading or interface.fatalerror) )
 				interface.eventread = nil
 				return -1
 			end
@@ -534,7 +554,7 @@ do
 				if interface._usingssl then  -- handle luasec
 					if interface.eventwritetimeout then  -- ok, in the past writecallback was regged
 						local ret = interface.writecallback( )  -- call it
-						--vdebug( "tried to write in readcallback, result:", ret )
+						--vdebug( "tried to write in readcallback, result:", tostring(ret) )
 					end
 					if interface.eventreadtimeout then
 						interface.eventreadtimeout:close( )
@@ -673,26 +693,16 @@ local addserver = ( function( )
 	end
 end )( )
 
-local wrapclient = ( function( )
-	return function( client, addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
-		debug( "try to connect to:", addr, serverport, "with parameters:", pattern, localaddr, localport, sslcfg, startssl )
-		local sslctx
-		if sslcfg then  -- handle ssl/new context
-			if not ssl then
-				debug "need luasec, but not available" 
-				return nil, "luasec not found"
-			end
-			sslctx, err = ssl.newcontext( sslcfg )
-			if err then
-				debug( "cannot create new ssl context:", err )
-				return nil, err
-			end
-		end
+local addclient, wrapclient
+do
+	function wrapclient( client, ip, port, listeners, pattern, sslctx, startssl )
+		local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
+		interface:_start_session()
+		return interface
+		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
-end )( )
-
-local addclient = ( function( )
-	return function( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
+	
+	function addclient( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
 		local client, err = socket.tcp()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err ) 
@@ -706,23 +716,35 @@ local addclient = ( function( )
 				return nil, err
 			end
 		end
+		local sslctx
+		if sslcfg then  -- handle ssl/new context
+			if not ssl then
+				debug "need luasec, but not available" 
+				return nil, "luasec not found"
+			end
+			sslctx, err = ssl.newcontext( sslcfg )
+			if err then
+				debug( "cannot create new ssl context:", err )
+				return nil, err
+			end
+		end
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" ) then
 			local ip, port = client:getsockname( )
 			local server = function( )
 				return nil, "this is a dummy server interface"
 			end
-			local interface = handleclient( client, ip, port, server, pattern, listener, sslctx )
+			local interface = wrapclient( client, ip, serverport, listeners, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
-			debug( "new connection id:", interface )
+			debug( "new connection id:", interface.id )
 			return interface, err
 		else
 			debug( "new connection failed:", err )
 			return nil, err
 		end
-		return wrapclient( client, addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )    
 	end
-end )( )
+end
+
 
 local loop = function( )  -- starts the event loop
 	return base:loop( )
