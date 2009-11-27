@@ -31,7 +31,7 @@ local proxy_acl = config_get(host, "core", "proxy65_acl");
 
 local connlistener = { default_port = proxy_port, default_interface = proxy_interface, default_mode = "*a" };
 
-function connlistener.listener(conn, data)
+function connlistener.onincoming(conn, data)
 	local session = sessions[conn] or {};
 	
 	if session.setup == nil and data ~= nil and data:sub(1):byte() == 0x05 and data:len() > 2 then
@@ -94,7 +94,7 @@ function connlistener.listener(conn, data)
 	end
 end
 
-function connlistener.disconnect(conn, err)
+function connlistener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		if session.sha and transfers[session.sha] then
