@@ -149,6 +149,9 @@ function dotest(unitname)
 				print("WARNING: ", unitname.."."..name.." has no test!");
 			end
 		else
+			if verbosity >= 4 then
+				print("INFO: ", "Testing "..unitname.."."..name);
+			end
 			local line_hook, line_info = new_line_coverage_monitor(fn);
 			debug.sethook(line_hook, "l")
 			local success, ret = pcall(test, f, unit);
