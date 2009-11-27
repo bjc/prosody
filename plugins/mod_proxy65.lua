@@ -14,7 +14,7 @@ if module:get_host_type() ~= "component" then
 	error("proxy65 should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
-local jid_split = require "util.jid".split;
+local jid_split, jid_join = require "util.jid".split, require "util.jid".join;
 local st = require "util.stanza";
 local componentmanager = require "core.componentmanager";
 local config_get = require "core.configmanager".get;
@@ -137,19 +137,6 @@ local function get_disco_items(stanza)
 	return reply;
 end
 
-local function _jid_join(node, host, resource)
-	local ret = host;
-	if ret then
-		if node then
-			ret = node .. "@" .. ret;
-		end
-		if resource then
-			ret = ret .. "/" .. resource;
-		end
-	end
-	return ret;
-end
-
 local function get_stream_host(origin, stanza)
 	local reply = replies_cache.stream_host;
 	local err_reply = replies_cache.stream_host_err;
@@ -185,7 +172,7 @@ local function get_stream_host(origin, stanza)
 			replies_cache.stream_host = reply;
 		end
 	else
-		module:log("warn", "Denying use of proxy for %s", tostring(_jid_join(jid_node, jid_host, jid_resource)));
+		module:log("warn", "Denying use of proxy for %s", tostring(jid_join(jid_node, jid_host, jid_resource)));
 		if err_reply == nil then
 			err_reply = st.iq({type="error", from=host})
 				:query("http://jabber.org/protocol/bytestreams")
