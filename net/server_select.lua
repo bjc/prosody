@@ -353,7 +353,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.shutdown = function( pattern )
         return shutdown( socket, pattern )
     end
-    handler.close = function( forced )
+    handler.close = function( self, forced )
         if not handler then return true; end
         _readlistlen = removesocket( _readlist, socket, _readlistlen )
         _readtimes[ handler ] = nil
