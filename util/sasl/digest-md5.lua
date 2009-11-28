@@ -28,10 +28,6 @@ module "digest-md5"
 
 --=========================
 --SASL DIGEST-MD5 according to RFC 2831
-local function digest_response()
-	
-	return response, A1, A2
-end
 
 local function digest(self, message)
 	--TODO complete support for authzid
@@ -174,7 +170,7 @@ local function digest(self, message)
 			local password, state = self.profile.plain(response["username"], self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
-			Y = md5(response["username"]..":"..response["realm"]..":"..password);
+			local Y = md5(response["username"]..":"..response["realm"]..":"..password);
 		elseif self.profile["digest-md5"] then
 			local Y, state = self.profile["digest-md5"](response["username"], self.realm, response["realm"], response["charset"])
 			if state == nil then return "failure", "not-authorized"

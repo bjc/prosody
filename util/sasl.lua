@@ -83,10 +83,11 @@ end
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, profile, forbidden)
-	sasl_i = {profile = profile};
+	local sasl_i = {profile = profile};
 	sasl_i.realm = realm;
-	s = setmetatable(sasl_i, method);
-	s:forbidden(sasl_i, forbidden)
+	local s = setmetatable(sasl_i, method);
+	if forbidden == nil then forbidden = {} end
+	s:forbidden(forbidden)
 	return s;
 end
 
@@ -112,7 +113,7 @@ function method:mechanisms()
 	for backend, f in pairs(self.profile) do
 		if backend_mechanism[backend] then
 			for _, mechanism in ipairs(backend_mechanism[backend]) do
-				if not sasl_i.restrict:contains(mechanism) then
+				if not self.restrict:contains(mechanism) then
 					mechanisms[mechanism] = true;
 				end
 			end
