@@ -54,7 +54,7 @@ local function Hi(hmac, str, salt, i)
 	local Ust = hmac(str, salt.."\0\0\0\1");
 	local res = Ust;	
 	for n=1,i-1 do
-		Und = hmac(str, Ust)
+		local Und = hmac(str, Ust)
 		res = binaryXOR(res, Und)
 		Ust = Und
 	end
@@ -118,7 +118,7 @@ local function scram_sha_1(self, message)
 		
 		local password;
 		if self.profile.plain then
-			password, state = self.profile.plain(self.state.name, self.realm)
+			local password, state = self.profile.plain(self.state.name, self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
 			password = saslprep(password);
