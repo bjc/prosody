@@ -43,21 +43,21 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 					session:close({condition = "not-authorized", text = "Account deleted"});
 				end
 				-- TODO datamanager should be able to delete all user data itself
-				datamanager.store(username, host, "roster", nil);
 				datamanager.store(username, host, "vcard", nil);
 				datamanager.store(username, host, "private", nil);
 				datamanager.store(username, host, "offline", nil);
-				--local bare = username.."@"..host;
+				local bare = username.."@"..host;
 				for jid, item in pairs(roster) do
-					if jid ~= "pending" then
-						if item.subscription == "both" or item.subscription == "to" then
-							-- TODO unsubscribe
+					if jid and jid ~= "pending" then
+						if item.subscription == "both" or item.subscription == "from" or (roster.pending and roster.pending[jid]) then
+							core_post_stanza(hosts[host], st.presence({type="unsubscribed", from=bare, to=jid}));
 						end
-						if item.subscription == "both" or item.subscription == "from" then
-							-- TODO unsubscribe
+						if item.subscription == "both" or item.subscription == "to" or item.ask then
+							core_post_stanza(hosts[host], st.presence({type="unsubscribe", from=bare, to=jid}));
 						end
 					end
 				end
+				datamanager.store(username, host, "roster", nil);
 				datamanager.store(username, host, "accounts", nil); -- delete accounts datastore at the end
 				module:log("info", "User removed their account: %s@%s", username, host);
 				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
