@@ -100,10 +100,10 @@ local function session_close(session, reason)
 			end
 		end
 		session.sends2s("</stream:stream>");
-		if session.notopen or not session.conn.close() then
-			session.conn.close(true); -- Force FIXME: timer?
+		if session.notopen or not session.conn:close() then
+			session.conn:close(true); -- Force FIXME: timer?
 		end
-		session.conn.close();
+		session.conn:close();
 		xmppserver.ondisconnect(session.conn, "stream error");
 	end
 end
