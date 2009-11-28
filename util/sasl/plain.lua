@@ -21,10 +21,14 @@ module "plain"
 --SASL PLAIN according to RFC 4616
 local function plain(self, message)
 	local response = message
-	local authorization = s_match(response, "([^%z]+)")
-	local authentication = s_match(response, "%z([^%z]+)%z")
-	local password = s_match(response, "%z[^%z]+%z([^%z]+)")
-
+	
+	local authorization, authentication, password;
+	if response then
+		authorization = s_match(response, "([^%z]+)")
+		authentication = s_match(response, "%z([^%z]+)%z")
+		password = s_match(response, "%z[^%z]+%z([^%z]+)")
+	end
+	
 	if authentication == nil or password == nil then
 		return "failure", "malformed-request";
 	end
