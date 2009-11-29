@@ -109,9 +109,9 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 				
 				-- setup compression for session.w
 				local function setup_compression(session)
-					local old_send = session.send;
-				
-					session.send = function(t)
+					local old_send = (session.sends2s or session.send);
+					
+					local new_send = function(t)
 							local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 							if status == false then
 								session:close({
@@ -124,6 +124,9 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 							end
 							old_send(compressed);
 						end;
+					
+					if session.sends2s then session.sends2s = new_send
+					elseif session.send then session.send = new_send end
 				end
 				setup_compression(session);
 					
