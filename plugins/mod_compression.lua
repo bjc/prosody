@@ -11,12 +11,13 @@ local pcall = pcall;
 
 local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
+local xmlns_stream = "http://etherx.jabber.org/streams";
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
 
 local compression_level = module:get_option("compression_level");
-
 -- if not defined assume admin wants best compression
 if compression_level == nil then compression_level = 9 end;
+
 
 compression_level = tonumber(compression_level);
 if not compression_level or compression_level < 1 or compression_level > 9 then
@@ -34,29 +35,60 @@ module:add_event_hook("stream-features",
 		end
 );
 
+module:hook("s2s-stream-features",
+		function (data)
+			local session, features = data.session, data.features;
+			-- FIXME only advertise compression support when TLS layer has no compression enabled
+			features:add_child(compression_stream_feature);
+		end
+);
+
+-- S2Sout handling aka the client perspective in the S2S connection
+module:hook_stanza(xmlns_stream, "features",
+		function (session, stanza)
+			if not session.compressed then
+				module:log("debug", "FEATURES: "..stanza:pretty_print())
+				-- does remote server support compression?
+				local comp_st = stanza:child_with_name("compression");
+				if comp_st then
+					-- do we support the mechanism
+					for a in comp_st:children() do
+						local algorithm = a[1]
+						if algorithm == "zlib" then
+							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):text("zlib"))
+							session.log("info", "Enabled compression using zlib.")
+							return true;
+						end
+					end
+					session.log("debug", "Remote server supports no compression algorithm we support.")
+				end
+			end
+		end
+, 250);
+
 -- TODO Support compression on S2S level too.
-module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protocol,
+module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- fail if we are already compressed
 			if session.compressed then
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
-				session:log("warn", "Tried to establish another compression layer.");
+				session.log("warn", "Tried to establish another compression layer.");
 			end
 			
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
 			if method == "zlib" then
 				session.log("info", method.." compression selected.");
-				session.send(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
+				(session.sends2s or session.send)(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
 				session:reset_stream();
 				
 				-- create deflate and inflate streams
 				local status, deflate_stream = pcall(zlib.deflate, compression_level);
 				if status == false then
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
-					session.send(error_st);
-					session:log("error", "Failed to create zlib.deflate filter.");
+					(session.sends2s or session.send)(error_st);
+					session.log("error", "Failed to create zlib.deflate filter.");
 					module:log("error", deflate_stream);
 					return
 				end
@@ -64,8 +96,8 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 				local status, inflate_stream = pcall(zlib.inflate);
 				if status == false then
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
-					session.send(error_st);
-					session:log("error", "Failed to create zlib.deflate filter.");
+					(session.sends2s or session.send)(error_st);
+					session.log("error", "Failed to create zlib.deflate filter.");
 					module:log("error", inflate_stream);
 					return
 				end
@@ -116,7 +148,8 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			else
 				session.log("info", method.." compression selected. But we don't support it.");
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
-				session.send(error_st);
+				(session.sends2s or session.send)(error_st);
 			end
 		end
 );
+
