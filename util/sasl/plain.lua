@@ -17,26 +17,23 @@ local log = require "util.logger".init("sasl");
 
 module "plain"
 
---=========================
---SASL PLAIN according to RFC 4616
+-- ================================
+-- SASL PLAIN according to RFC 4616
 local function plain(self, message)
-	local response = message
-	
-	local authorization, authentication, password;
-	if response then
-		authorization = s_match(response, "([^%z]+)")
-		authentication = s_match(response, "%z([^%z]+)%z")
-		password = s_match(response, "%z[^%z]+%z([^%z]+)")
-	end
-	
-	if authentication == nil or password == nil then
+	if not message then
 		return "failure", "malformed-request";
 	end
-	
+
+	local authorization, authentication, password = s_match(message, "^([^%z]+)%z([^%z]+)%z([^%z]+)");
+
+	if not authorization then
+		return "failure", "malformed-request";
+	end
+
 	-- SASLprep password and authentication
 	authentication = saslprep(authentication);
 	password = saslprep(password);
-	
+
 	if (not password) or (password == "") or (not authentication) or (authentication == "") then
 		log("debug", "Username or password violates SASLprep.");
 		return "failure", "malformed-request", "Invalid username or password.";
