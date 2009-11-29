@@ -108,21 +108,24 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 				end
 				
 				-- setup compression for session.w
-				local old_send = session.send;
+				local function setup_compression(session)
+					local old_send = session.send;
 				
-				session.send = function(t)
-						local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
-						if status == false then
-							session:close({
-								condition = "undefined-condition";
-								text = compressed;
-								extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
-							});
-							module:log("warn", compressed);
-							return;
-						end
-						old_send(compressed);
-					end;
+					session.send = function(t)
+							local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
+							if status == false then
+								session:close({
+									condition = "undefined-condition";
+									text = compressed;
+									extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+								});
+								module:log("warn", compressed);
+								return;
+							end
+							old_send(compressed);
+						end;
+				end
+				setup_compression(session);
 					
 				-- setup decompression for session.data
 				local function setup_decompression(session)
