@@ -180,7 +180,7 @@ function core_route_stanza(origin, stanza)
 			local xmlns = stanza.attr.xmlns;
 			--stanza.attr.xmlns = "jabber:server";
 			stanza.attr.xmlns = nil;
-			log("debug", "sending s2s stanza: %s", tostring(stanza));
+			log("debug", "sending s2s stanza: %s", tostring(stanza.top_tag and stanza:top_tag()) or stanza);
 			send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
 			stanza.attr.xmlns = xmlns; -- reset
 		else

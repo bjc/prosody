@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -35,6 +35,27 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
 
+default_authentication_profile = {
+	plain = function(username, realm)
+			local prepped_username = nodeprep(username);
+			if not prepped_username then
+				log("debug", "NODEprep failed on username: %s", username);
+				return "", nil;
+			end
+			local password = usermanager_get_password(prepped_username, realm);
+			if not password then
+				return "", nil;
+			end
+			return password, true;
+		end
+};
+
+anonymous_authentication_profile = {
+	anonymous = function(username, realm)
+			return true; -- for normal usage you should always return true here
+		end
+}
+
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
 	if status == "challenge" then
@@ -54,50 +75,18 @@ end
 
 local function handle_status(session, status)
 	if status == "failure" then
-		session.sasl_handler = nil;
+		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
 		local username = nodeprep(session.sasl_handler.username);
-		session.sasl_handler = nil;
 		if not username then -- TODO move this to sessionmanager
 			module:log("warn", "SASL succeeded but we didn't get a username!");
 			session.sasl_handler = nil;
 			session:reset_stream();
 			return;
-		end 
-		sm_make_authenticated(session, username);
+		end
+		sm_make_authenticated(session, session.sasl_handler.username);
+		session.sasl_handler = nil;
 		session:reset_stream();
-	end
-end
-
-local function credentials_callback(mechanism, ...)
-	if mechanism == "PLAIN" then
-		local username, hostname, password = ...;
-		username = nodeprep(username);
-		if not username then
-			return false;
-		end
-		local response = usermanager_validate_credentials(hostname, username, password, mechanism);
-		if response == nil then
-			return false;
-		else
-			return response;
-		end
-	elseif mechanism == "DIGEST-MD5" then
-		local function func(x) return x; end
-		local node, domain, realm, decoder = ...;
-		local prepped_node = nodeprep(node);
-		if not prepped_node then
-			return func, nil;
-		end
-		local password = usermanager_get_password(prepped_node, domain);
-		if password then
-			if decoder then
-				node, realm, password = decoder(node), decoder(realm), decoder(password);
-			end
-			return func, md5(node..":"..realm..":"..password);
-		else
-			return func, nil;
-		end
 	end
 end
 
@@ -111,8 +100,8 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
-		session.sasl_handler = new_sasl(stanza.attr.mechanism, session.host, credentials_callback);
-		if not session.sasl_handler then
+		local valid_mechanism = session.sasl_handler:select(stanza.attr.mechanism);
+		if not valid_mechanism then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
 	elseif not session.sasl_handler then
@@ -128,7 +117,7 @@ local function sasl_handler(session, stanza)
 			return;
 		end
 	end
-	local status, ret, err_msg = session.sasl_handler:feed(text);
+	local status, ret, err_msg = session.sasl_handler:process(text);
 	handle_status(session, status);
 	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
@@ -148,16 +137,18 @@ module:add_event_hook("stream-features",
 				if secure_auth_only and not session.secure then
 					return;
 				end
-				features:tag("mechanisms", mechanisms_attr);
-				-- TODO: Provide PLAIN only if TLS is active, this is a SHOULD from the introduction of RFC 4616. This behavior could be overridden via configuration but will issuing a warning or so.
-					if config.get(session.host or "*", "core", "anonymous_login") then
-						features:tag("mechanism"):text("ANONYMOUS"):up();
-					else
-						local mechanisms = usermanager_get_supported_methods(session.host or "*");
-						for k, v in pairs(mechanisms) do
-							features:tag("mechanism"):text(k):up();
-						end
+				if module:get_option("anonymous_login") then
+					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
+				else
+					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
+					if not (module:get_option("allow_unencrypted_plain_auth")) and not session.secure then
+						session.sasl_handler:forbidden({"PLAIN"});
 					end
+				end
+				features:tag("mechanisms", mechanisms_attr);
+				for k, v in pairs(session.sasl_handler:mechanisms()) do
+					features:tag("mechanism"):text(v):up();
+				end
 				features:up();
 			else
 				features:tag("bind", bind_attr):tag("required"):up():up();

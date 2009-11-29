@@ -15,13 +15,13 @@ local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
 local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
-local io_popen = io.popen;
 local tostring, tonumber = tostring, tonumber;
 local error = error;
 local next = next;
 local t_insert = table.insert;
 local append = require "util.serialization".append;
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
+local lfs_mkdir = require "lfs".mkdir;
 
 module "datamanager"
 
@@ -43,7 +43,7 @@ local _mkdir = {};
 local function mkdir(path)
 	path = path:gsub("/", path_separator); -- TODO as an optimization, do this during path creation rather than here
 	if not _mkdir[path] then
-		local x = io_popen("mkdir \""..path.."\" 2>&1"):read("*a");
+		lfs_mkdir(path);
 		_mkdir[path] = true;
 	end
 	return path;

@@ -200,9 +200,6 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 			rostermanager.roster_push(node, host, to_bare);
 		end
 		core_route_stanza(origin, stanza);
-		-- COMPAT: Some legacy clients keep displaying unsubscribed contacts as online unless an unavailable presence is sent:
-		send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza,
-			st.presence({ type="unavailable", from=from_bare, to=to_bare, id=stanza.attr.id }));
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
 end
@@ -223,16 +220,17 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
 		end
 	elseif stanza.attr.type == "subscribe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
 			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
 				if rostermanager.set_contact_pending_in(node, host, from_bare) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
@@ -241,14 +239,17 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		end
 	elseif stanza.attr.type == "unsubscribe" then
 		if rostermanager.process_inbound_unsubscribe(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	elseif stanza.attr.type == "subscribed" then
 		if rostermanager.process_inbound_subscription_approval(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	elseif stanza.attr.type == "unsubscribed" then
 		if rostermanager.process_inbound_subscription_cancellation(node, host, from_bare) then
+			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
 	end -- discard any other type

@@ -100,18 +100,18 @@ local function session_close(session, reason)
 			end
 		end
 		session.sends2s("</stream:stream>");
-		if session.notopen or not session.conn.close() then
-			session.conn.close(true); -- Force FIXME: timer?
+		if session.notopen or not session.conn:close() then
+			session.conn:close(true); -- Force FIXME: timer?
 		end
-		session.conn.close();
-		xmppserver.disconnect(session.conn, "stream error");
+		session.conn:close();
+		xmppserver.ondisconnect(session.conn, "stream error");
 	end
 end
 
 
 -- End of session methods --
 
-function xmppserver.listener(conn, data)
+function xmppserver.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		session = s2s_new_incoming(conn);
@@ -148,7 +148,7 @@ function xmppserver.status(conn, status)
 	end
 end
 
-function xmppserver.disconnect(conn, err)
+function xmppserver.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		if err and err ~= "closed" and session.srv_hosts then
@@ -162,7 +162,6 @@ function xmppserver.disconnect(conn, err)
 		s2s_destroy_session(session);
 		sessions[conn]  = nil;
 		session = nil;
-		collectgarbage("collect");
 	end
 end
 

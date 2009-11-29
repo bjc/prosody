@@ -16,7 +16,7 @@ local requests = {}; -- Open requests
 
 local httpserver = { default_port = 80, default_mode = "*a" };
 
-function httpserver.listener(conn, data)
+function httpserver.onincoming(conn, data)
 	local request = requests[conn];
 
 	if not request then
@@ -34,7 +34,7 @@ function httpserver.listener(conn, data)
 	end
 end
 
-function httpserver.disconnect(conn, err)
+function httpserver.ondisconnect(conn, err)
 	local request = requests[conn];
 	if request and not request.destroyed then
 		request.conn = nil;

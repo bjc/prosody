@@ -10,7 +10,6 @@
 
 local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local collectgarbage = collectgarbage;
 local format = import("string", "format");
 
 local hosts = hosts;
@@ -50,8 +49,8 @@ function new_session(conn)
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
 	local w = conn.write;
-	session.send = function (t) w(tostring(t)); end
-	session.ip = conn.ip();
+	session.send = function (t) w(conn, tostring(t)); end
+	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 	
@@ -201,22 +200,32 @@ function streamclosed(session)
 end
 
 function send_to_available_resources(user, host, stanza)
+	local jid = user.."@"..host;
 	local count = 0;
-	local to = stanza.attr.to;
-	stanza.attr.to = nil;
-	local h = hosts[host];
-	if h and h.type == "local" then
-		local u = h.sessions[user];
-		if u then
-			for k, session in pairs(u.sessions) do
-				if session.presence then
-					session.send(stanza);
-					count = count + 1;
-				end
+	local user = bare_sessions[jid];
+	if user then
+		for k, session in pairs(user.sessions) do
+			if session.presence then
+				session.send(stanza);
+				count = count + 1;
 			end
 		end
 	end
-	stanza.attr.to = to;
+	return count;
+end
+
+function send_to_interested_resources(user, host, stanza)
+	local jid = user.."@"..host;
+	local count = 0;
+	local user = bare_sessions[jid];
+	if user then
+		for k, session in pairs(user.sessions) do
+			if session.interested then
+				session.send(stanza);
+				count = count + 1;
+			end
+		end
+	end
 	return count;
 end
 

@@ -65,4 +65,17 @@ function prep(jid)
 	return host;
 end
 
+function join(node, host, resource)
+	if node and host and resource then
+		return node.."@"..host.."/"..resource;
+	elseif node and host then
+		return node.."@"..host;
+	elseif host and resource then
+		return host.."/"..resource;
+	elseif host then
+		return host;
+	end
+	return nil; -- Invalid JID
+end
+
 return _M;
