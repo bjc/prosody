@@ -8,7 +8,6 @@
 local st = require "util.stanza";
 local zlib = require "zlib";
 local pcall = pcall;
-
 local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
 local xmlns_stream = "http://etherx.jabber.org/streams";
@@ -55,7 +54,7 @@ module:hook_stanza(xmlns_stream, "features",
 					for a in comp_st:children() do
 						local algorithm = a[1]
 						if algorithm == "zlib" then
-							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):text("zlib"))
+							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):tag("method"):text("zlib"))
 							session.log("info", "Enabled compression using zlib.")
 							return true;
 						end
@@ -67,6 +66,12 @@ module:hook_stanza(xmlns_stream, "features",
 , 250);
 
 -- TODO Support compression on S2S level too.
+module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compression_protocol, 
+		function(session ,stanza)
+			session.log("debug", "Activating compression...")
+		end
+);
+
 module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress", xmlns_compression_protocol,
 		function(session, stanza)
 			-- fail if we are already compressed
