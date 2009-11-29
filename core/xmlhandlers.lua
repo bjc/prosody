@@ -50,7 +50,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				chardata = {};
 			end
 			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
-			if not name then
+			if name == "" then
 				curr_ns, name = "", curr_ns;
 			end
 
@@ -63,7 +63,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				local k = attr[i];
 				attr[i] = nil;
 				local ns, nm = k:match("^([^\1]*)\1?(.*)$");
-				if ns and nm then
+				if nm ~= "" then
 					ns = ns_prefixes[ns]; 
 					if ns then 
 						attr[ns..":"..nm] = attr[k];
@@ -105,7 +105,7 @@ function init_xmlhandlers(session, stream_callbacks)
 		end
 		function xml_handlers:EndElement(tagname)
 			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
-			if not name then
+			if name == "" then
 				curr_ns, name = "", curr_ns;
 			end
 			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 

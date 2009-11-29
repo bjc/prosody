@@ -220,11 +220,11 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
 			end
 		else
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
 		end
 	elseif stanza.attr.type == "subscribe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			core_route_stanza(origin, st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
 			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
 				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
