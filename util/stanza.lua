@@ -93,6 +93,17 @@ function stanza_mt:add_child(child)
 	return self;
 end
 
+function stanza_mt:get_child(name, xmlns)
+	for _, child in ipairs(self.tags) do
+		if (not name or child.name == name) 
+			and ((not xmlns and self.attr.xmlns == child.attr.xmlns)
+				or child.attr.xmlns == xmlns) then
+			
+			return child;
+		end
+	end
+end
+
 function stanza_mt:child_with_name(name)
 	for _, child in ipairs(self.tags) do	
 		if child.name == name then return child; end
