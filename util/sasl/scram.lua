@@ -116,9 +116,9 @@ local function scram_sha_1(self, message)
 			return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 		end
 		
-		local password;
+		local password, state;
 		if self.profile.plain then
-			local password, state = self.profile.plain(self.state.name, self.realm)
+			password, state = self.profile.plain(self.state.name, self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
 			password = saslprep(password);
