@@ -70,8 +70,8 @@ local function validate_username(username)
 	end
 	
 	-- replace =2D with , and =3D with =
-	username:gsub("=2D", ",");
-	username:gsub("=3D", "=");
+	username = username:gsub("=2D", ",");
+	username = username:gsub("=3D", "=");
 	
 	-- apply SASLprep
 	username = saslprep(username);
