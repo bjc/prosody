@@ -39,7 +39,6 @@ module:hook("s2s-stream-features",
 			local session, features = data.session, data.features;
 			-- FIXME only advertise compression support when TLS layer has no compression enabled
 			if not session.compressed then 
-				module:log("debug", "s2s-stream-features YAY YAHOO")
 				features:add_child(compression_stream_feature);
 			end
 		end
@@ -49,7 +48,6 @@ module:hook("s2s-stream-features",
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			if not session.compressed then
-				module:log("debug", "FEATURES: "..stanza:pretty_print())
 				-- does remote server support compression?
 				local comp_st = stanza:child_with_name("compression");
 				if comp_st then
