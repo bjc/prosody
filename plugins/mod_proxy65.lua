@@ -83,7 +83,7 @@ function connlistener.onincoming(conn, data)
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 		else
-			log:module("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
+			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
 			conn.close();
 		end
 	else
