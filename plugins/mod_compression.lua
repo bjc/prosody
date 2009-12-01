@@ -44,7 +44,7 @@ module:hook("s2s-stream-features",
 		end
 );
 
--- S2Sout handling aka the client perspective in the S2S connection
+-- Hook to activate compression if remote server supports it.
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			if not session.compressed then
@@ -135,7 +135,6 @@ local function setup_decompression(session, inflate_stream)
 		end;
 end
 
--- TODO Support compression on S2S level too.
 module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compression_protocol, 
 		function(session ,stanza)
 			session.log("debug", "Activating compression...")
