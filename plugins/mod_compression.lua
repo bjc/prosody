@@ -160,7 +160,7 @@ module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compressio
 			local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
 										["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
 			session.sends2s("<?xml version='1.0'?>");
-			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());			
+			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
 			session.compressed = true;
 		end
 );
