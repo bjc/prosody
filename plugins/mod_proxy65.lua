@@ -67,7 +67,7 @@ function connlistener.onincoming(conn, data)
 			data:sub(4):byte() == 0x03 and -- ATYP must be 3
 			data:sub(5):byte() == 40 and -- SHA1 HASH length must be 40 (0x28)
 			data:sub(-2):byte() == 0x00 and -- PORT must be 0, size 2 byte
-			data:sub(-1):byte() == 0x00 		
+			data:sub(-1):byte() == 0x00
 		then
 			local sha = data:sub(6, 45); -- second param is not count! it's the ending index (included!)
 			if transfers[sha] == nil then
@@ -83,7 +83,7 @@ function connlistener.onincoming(conn, data)
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 		else
-			log:module("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
+			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
 			conn.close();
 		end
 	else
