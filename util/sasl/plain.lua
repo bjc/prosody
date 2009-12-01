@@ -24,7 +24,7 @@ local function plain(self, message)
 		return "failure", "malformed-request";
 	end
 
-	local authorization, authentication, password = s_match(message, "^([^%z]*)%z([^%z]+)%z([^%z]+)");
+	local authorization, authentication, password = s_match(message, "^([^%z]+)%z([^%z]+)%z([^%z]+)");
 
 	if not authorization then
 		return "failure", "malformed-request";
