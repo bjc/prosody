@@ -139,10 +139,10 @@ module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compressio
 		function(session ,stanza)
 			session.log("debug", "Activating compression...")
 			-- create deflate and inflate streams
-			deflate_stream = get_deflate_stream(session);
+			local deflate_stream = get_deflate_stream(session);
 			if not deflate_stream then return end
 			
-			inflate_stream = get_inflate_stream(session);
+			local inflate_stream = get_inflate_stream(session);
 			if not inflate_stream then return end
 			
 			-- setup compression for session.w
@@ -180,10 +180,10 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 				session.log("info", method.." compression selected.");
 				
 				-- create deflate and inflate streams
-				deflate_stream = get_deflate_stream(session);
+				local deflate_stream = get_deflate_stream(session);
 				if not deflate_stream then return end
 				
-				inflate_stream = get_inflate_stream(session);
+				local inflate_stream = get_inflate_stream(session);
 				if not inflate_stream then return end
 				
 				(session.sends2s or session.send)(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
