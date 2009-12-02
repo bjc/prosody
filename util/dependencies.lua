@@ -17,12 +17,8 @@ local function missingdep(name, sources, msg)
 	print("Prosody was unable to find "..tostring(name));
 	print("This package can be obtained in the following ways:");
 	print("");
-	local longest_platform = 0;
-	for platform in pairs(sources) do
-		longest_platform = math.max(longest_platform, #platform);
-	end
-	for platform, source in pairs(sources) do
-		print("", platform..":"..(" "):rep(4+longest_platform-#platform)..source);
+	for k,v in pairs(sources) do
+		print("", k, v);
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
@@ -57,7 +53,7 @@ local lfs, err = softreq "lfs"
 if not lfs then
 	missingdep("luafilesystem", {
 			["luarocks"] = "luarocks install luafilesystem";
-	 		["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-luafilesystem0";
+	 		["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-filesystem0";
 	 		["Source"] = "http://www.keplerproject.org/luafilesystem/";
 	 	});
 	fatal = true;
