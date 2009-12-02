@@ -462,6 +462,28 @@ function commands.unregister(arg)
 	return 1;
 end
 
+function commands.addplugin(arg)
+	local url = arg[1];
+	if url:match("^http://") then
+		local http = require "socket.http";
+		show_message("Fetching...");
+		local code, err = http.request(url);
+		if not code then
+			show_message("Failed: "..err);
+			return 1;
+		end
+		if url:match("%.lua$") then
+			local ok, err = datamanager.store(url:match("/mod_([^/]+)$"), "*", "plugins", {code});
+			if not ok then
+				show_message("Failed to save to data store: "..err);
+				return 1;
+			end
+		end
+		show_message("Saved. Don't forget to load the module using the config file or admin console!");
+	else
+		show_message("Sorry, I don't understand how to fetch plugins from there.");
+	end
+end
 
 ---------------------
 
