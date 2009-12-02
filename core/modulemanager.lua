@@ -158,6 +158,7 @@ function load(host, module_name, config)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	if success then
+		hosts[host].events.fire_event("module-loaded", { module = module_name, host = host });
 		return true;
 	else -- load failed, unloading
 		unload(api_instance.host, module_name);
@@ -174,7 +175,7 @@ function is_loaded(host, name)
 end
 
 function unload(host, name, ...)
-	local mod = get_module(host, name); 
+	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 	
 	if module_has_method(mod, "unload") then
@@ -200,6 +201,7 @@ function unload(host, name, ...)
 	end
 	hooks:remove(host, name);
 	modulemap[host][name] = nil;
+	hosts[host].events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
@@ -280,7 +282,7 @@ function module_has_method(module, method)
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then	
+	if module_has_method(module, method) then
 		local f = module.module[method];
 		return pcall(f, ...);
 	else
@@ -289,7 +291,7 @@ function call_module_method(module, method, ...)
 end
 
 ----- API functions exposed to modules -----------
--- Must all be in api.* 
+-- Must all be in api.*
 
 -- Returns the name of the current module
 function api:get_name()
