@@ -175,7 +175,7 @@ function is_loaded(host, name)
 end
 
 function unload(host, name, ...)
-	local mod = get_module(host, name); 
+	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 	
 	if module_has_method(mod, "unload") then
@@ -282,7 +282,7 @@ function module_has_method(module, method)
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then	
+	if module_has_method(module, method) then
 		local f = module.module[method];
 		return pcall(f, ...);
 	else
@@ -291,7 +291,7 @@ function call_module_method(module, method, ...)
 end
 
 ----- API functions exposed to modules -----------
--- Must all be in api.* 
+-- Must all be in api.*
 
 -- Returns the name of the current module
 function api:get_name()
