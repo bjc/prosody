@@ -216,7 +216,7 @@ end
 function new_request(handler)
 	return { handler = handler, conn = handler.socket, 
 			write = function (...) return handler:write(...); end, state = "request", 
-			server = http_servers[handler.serverport()],
+			server = http_servers[handler:serverport()],
 			send = send_response,
 			destroy = destroy_request,
 			id = tostring{}:match("%x+$")
