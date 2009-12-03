@@ -44,7 +44,7 @@ module:hook("s2s-stream-features",
 		end
 );
 
--- S2Sout handling aka the client perspective in the S2S connection
+-- Hook to activate compression if remote server supports it.
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			if not session.compressed then
@@ -135,15 +135,14 @@ local function setup_decompression(session, inflate_stream)
 		end;
 end
 
--- TODO Support compression on S2S level too.
 module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compression_protocol, 
 		function(session ,stanza)
 			session.log("debug", "Activating compression...")
 			-- create deflate and inflate streams
-			deflate_stream = get_deflate_stream(session);
+			local deflate_stream = get_deflate_stream(session);
 			if not deflate_stream then return end
 			
-			inflate_stream = get_inflate_stream(session);
+			local inflate_stream = get_inflate_stream(session);
 			if not inflate_stream then return end
 			
 			-- setup compression for session.w
@@ -161,7 +160,7 @@ module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compressio
 			local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
 										["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
 			session.sends2s("<?xml version='1.0'?>");
-			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());			
+			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
 			session.compressed = true;
 		end
 );
@@ -181,10 +180,10 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 				session.log("info", method.." compression selected.");
 				
 				-- create deflate and inflate streams
-				deflate_stream = get_deflate_stream(session);
+				local deflate_stream = get_deflate_stream(session);
 				if not deflate_stream then return end
 				
-				inflate_stream = get_inflate_stream(session);
+				local inflate_stream = get_inflate_stream(session);
 				if not inflate_stream then return end
 				
 				(session.sends2s or session.send)(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
