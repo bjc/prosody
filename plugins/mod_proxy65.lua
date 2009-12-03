@@ -80,6 +80,7 @@ function connlistener.onincoming(conn, data)
 				transfers[sha].initiator = conn;
 				session.sha = sha;
 				module:log("debug", "initiator connected ... ");
+				throttle_sending(conn, transfers[sha].target);
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 		else
@@ -253,3 +254,25 @@ end
 
 connlisteners.start(module.host .. ':proxy65');
 component = componentmanager.register_component(host, handle_to_domain);
+local sender_lock_threshold = 1024;
+function throttle_sending(sender, receiver)
+	sender:pattern(sender_lock_threshold);
+	local sender_locked;
+	local _sendbuffer = receiver.sendbuffer;
+	function receiver.sendbuffer()
+		_sendbuffer();
+		if sender_locked and receiver.bufferlen() < sender_lock_threshold then
+			sender:lock(false); -- Unlock now
+			sender_locked = nil;
+		end
+	end
+	
+	local _readbuffer = sender.readbuffer;
+	function sender.readbuffer()
+		_readbuffer();
+		if not sender_locked and receiver.bufferlen() >= sender_lock_threshold then
+			sender_locked = true;
+			sender:lock(true);
+		end
+	end
+end
