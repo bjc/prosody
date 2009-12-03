@@ -262,7 +262,7 @@ function throttle_sending(sender, receiver)
 	function receiver.sendbuffer()
 		_sendbuffer();
 		if sender_locked and receiver.bufferlen() < sender_lock_threshold then
-			sender:lock(false); -- Unlock now
+			sender:lock_read(false); -- Unlock now
 			sender_locked = nil;
 		end
 	end
@@ -272,7 +272,7 @@ function throttle_sending(sender, receiver)
 		_readbuffer();
 		if not sender_locked and receiver.bufferlen() >= sender_lock_threshold then
 			sender_locked = true;
-			sender:lock(true);
+			sender:lock_read(true);
 		end
 	end
 end
