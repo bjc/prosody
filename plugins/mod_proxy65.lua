@@ -55,8 +55,12 @@ function connlistener.onincoming(conn, data)
 	if session.setup then
 		if session.sha ~= nil and transfers[session.sha] ~= nil then
 			local sha = session.sha;
-			if transfers[sha].activated == true and transfers[sha].initiator == conn and transfers[sha].target ~= nil then
-				transfers[sha].target:write(data);
+			if transfers[sha].activated == true and transfers[sha].target ~= nil then
+				if  transfers[sha].initiator == conn then
+					transfers[sha].target:write(data);
+				else
+					transfers[sha].initiator:write(data);
+				end
 				return;
 			end
 		end
@@ -80,7 +84,8 @@ function connlistener.onincoming(conn, data)
 				transfers[sha].initiator = conn;
 				session.sha = sha;
 				module:log("debug", "initiator connected ... ");
-				throttle_sending(conn, transfers[sha].target);
+				throttle_sending(conn, transfers[sha].target);          
+				throttle_sending(transfers[sha].target, conn);          
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 		else
