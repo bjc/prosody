@@ -254,7 +254,7 @@ end
 
 connlisteners.start(module.host .. ':proxy65');
 component = componentmanager.register_component(host, handle_to_domain);
-local sender_lock_threshold = 1024;
+local sender_lock_threshold = 4096;
 function throttle_sending(sender, receiver)
 	sender:pattern(sender_lock_threshold);
 	local sender_locked;
