@@ -247,8 +247,8 @@ function handle_to_domain(origin, stanza)
 end
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
-	error("mod_proxy65: Could not establish a connection listener. Check your configuration please.");
-	error(" one possible cause for this would be that two proxy65 components share the same port.");
+	module:log("error", "mod_proxy65: Could not establish a connection listener. Check your configuration please.");
+	module:log("error", "Possibly two proxy65 components are configured to share the same port.");
 end
 
 connlisteners.start(module.host .. ':proxy65');
