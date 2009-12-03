@@ -745,7 +745,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					if not next(self.active) then self:closeall(); end
 
 					-- was the query on the wanted list?
-					local q = response.question;
+					local q = response.question[1];
 					local cos = get(self.wanted, q.class, q.type, q.name);
 					if cos then
 						for co in pairs(cos) do
