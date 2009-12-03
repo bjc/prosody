@@ -434,7 +434,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.bufferlen = function( readlen, sendlen )
         maxsendlen = sendlen or maxsendlen
         maxreadlen = readlen or maxreadlen
-        return maxreadlen, maxsendlen
+        return bufferlen, maxreadlen, maxsendlen
     end
     handler.lock = function( switch )
         if switch == true then
