@@ -21,6 +21,9 @@ local sha1 = require "util.hashes".sha1;
 local generate_uuid = require "util.uuid".generate;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local log = require "util.logger".init("sasl");
+local t_concat = table.concat;
+local char = string.char;
+local byte = string.byte;
 
 module "scram"
 
@@ -36,17 +39,19 @@ local function bp( b )
 	return result
 end
 
+local xor_map = {0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;1;0;3;2;5;4;7;6;9;8;11;10;13;12;15;14;2;3;0;1;6;7;4;5;10;11;8;9;14;15;12;13;3;2;1;0;7;6;5;4;11;10;9;8;15;14;13;12;4;5;6;7;0;1;2;3;12;13;14;15;8;9;10;11;5;4;7;6;1;0;3;2;13;12;15;14;9;8;11;10;6;7;4;5;2;3;0;1;14;15;12;13;10;11;8;9;7;6;5;4;3;2;1;0;15;14;13;12;11;10;9;8;8;9;10;11;12;13;14;15;0;1;2;3;4;5;6;7;9;8;11;10;13;12;15;14;1;0;3;2;5;4;7;6;10;11;8;9;14;15;12;13;2;3;0;1;6;7;4;5;11;10;9;8;15;14;13;12;3;2;1;0;7;6;5;4;12;13;14;15;8;9;10;11;4;5;6;7;0;1;2;3;13;12;15;14;9;8;11;10;5;4;7;6;1;0;3;2;14;15;12;13;10;11;8;9;6;7;4;5;2;3;0;1;15;14;13;12;11;10;9;8;7;6;5;4;3;2;1;0;};
+
+local result = {};
 local function binaryXOR( a, b )
-	if a:len() > b:len() then
-		b = string.rep("\0", a:len() - b:len())..b
-	elseif string.len(a) < string.len(b) then
-		a = string.rep("\0", b:len() - a:len())..a
+	for i=1, #a do
+		local x, y = byte(a, i), byte(b, i);
+		local lowx, lowy = x % 16, y % 16;
+		local hix, hiy = (x - lowx) / 16, (y - lowy) / 16;
+		local lowr, hir = xor_map[lowx * 16 + lowy + 1], xor_map[hix * 16 + hiy + 1];
+		local r = hir * 16 + lowr;
+		result[i] = char(r)
 	end
-	local result = ""
-	for i=1, a:len() do
-		result = result..string.char(xor(a:byte(i), b:byte(i)))
-	end
-	return result
+	return t_concat(result);
 end
 
 -- hash algorithm independent Hi(PBKDF2) implementation
@@ -116,9 +121,9 @@ local function scram_sha_1(self, message)
 			return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 		end
 		
-		local password;
+		local password, state;
 		if self.profile.plain then
-			local password, state = self.profile.plain(self.state.name, self.realm)
+			password, state = self.profile.plain(self.state.name, self.realm)
 			if state == nil then return "failure", "not-authorized"
 			elseif state == false then return "failure", "account-disabled" end
 			password = saslprep(password);
