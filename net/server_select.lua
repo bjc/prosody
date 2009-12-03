@@ -436,7 +436,25 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         maxreadlen = readlen or maxreadlen
         return bufferlen, maxreadlen, maxsendlen
     end
+    handler.lock_read  = function (self, switch)
+        if switch == true then
+            local tmp = _readlistlen
+            _readlistlen = removesocket( _readlist, socket, _readlistlen )
+            _readtimes[ handler ] = nil
+            if _readlistlen ~= tmp then
+                noread = true
+            end
+        elseif switch == false then
+            if noread then
+                noread = false
+                _readlistlen = addsocket(_readlist, socket, _readlistlen)
+                _readtimes[ handler ] = _currenttime
+            end
+        end
+        return noread
+    end
     handler.lock = function( self, switch )
+        handler.lock_read (switch)
         if switch == true then
             handler.write = idfalse
             local tmp = _sendlistlen
@@ -445,19 +463,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
             if _sendlistlen ~= tmp then
                 nosend = true
             end
-            tmp = _readlistlen
-            _readlistlen = removesocket( _readlist, socket, _readlistlen )
-            _readtimes[ handler ] = nil
-            if _readlistlen ~= tmp then
-                noread = true
-            end
         elseif switch == false then
             handler.write = write
-            if noread then
-                noread = false
-                _readlistlen = addsocket(_readlist, socket, _readlistlen)
-                _readtimes[ handler ] = _currenttime
-            end
             if nosend then
                 nosend = false
                 write( "" )
