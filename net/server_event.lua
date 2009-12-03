@@ -572,6 +572,7 @@ do
 					interface.eventread = nil
 					return -1
 				end
+				interface.onincoming( interface, buffer, err )  -- send new data to listener
 				if err and ( err ~= "timeout" and err ~= "wantread" ) then
 					if "wantwrite" == err then -- need to read on write event
 						if not interface.eventwrite then  -- register new write event if needed
@@ -592,7 +593,6 @@ do
 						return -1
 					end
 				end
-				interface.onincoming( interface, buffer, err )  -- send new data to listener
 				return EV_READ, cfg.READ_TIMEOUT
 			end
 		end
