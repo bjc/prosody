@@ -88,6 +88,7 @@ function connlistener.onincoming(conn, data)
 				throttle_sending(transfers[sha].target, conn);          
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
+			conn:lock_read(true)
 		else
 			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
 			conn.close();
@@ -243,6 +244,8 @@ function handle_to_domain(origin, stanza)
 				elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
 					origin.send(reply);
 					transfers[sha].activated = true;
+					transfers[sha].target:lock_read(false);
+					transfers[sha].initiator:lock_read(false);
 				end
 			else
 				module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
