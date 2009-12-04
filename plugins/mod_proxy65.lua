@@ -84,8 +84,8 @@ function connlistener.onincoming(conn, data)
 				transfers[sha].initiator = conn;
 				session.sha = sha;
 				module:log("debug", "initiator connected ... ");
-				throttle_sending(conn, transfers[sha].target);          
-				throttle_sending(transfers[sha].target, conn);          
+				throttle_sending(conn, transfers[sha].target);
+				throttle_sending(transfers[sha].target, conn);
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:lock_read(true)
