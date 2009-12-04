@@ -177,7 +177,7 @@ function init_global_state()
 	-- Load SSL settings from config, and create a ctx table
 	local global_ssl_ctx = rawget(_G, "ssl") and config.get("*", "core", "ssl");
 	if global_ssl_ctx then
-		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
 	end
 
