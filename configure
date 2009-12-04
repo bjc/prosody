@@ -152,9 +152,9 @@ then
 	fi
         if [ "$OSTYPE" = "linux" ]
         then LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yet
+        LUA_INCDIR_SET=yes
         LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yet
+        LUA_LIBDIR_SET=yes
         CFLAGS="-Wall -fPIC"
         LDFLAGS="-shared"
         fi
