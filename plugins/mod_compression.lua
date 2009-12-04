@@ -177,7 +177,7 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
 			if method == "zlib" then
-				session.log("info", method.." compression selected.");
+				session.log("debug", method.." compression selected.");
 				
 				-- create deflate and inflate streams
 				local deflate_stream = get_deflate_stream(session);
@@ -203,7 +203,7 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 					end;
 				session.compressed = true;
 			else
-				session.log("info", method.." compression selected. But we don't support it.");
+				session.log("warn", method.." compression selected. But we don't support it.");
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				(session.sends2s or session.send)(error_st);
 			end
