@@ -282,6 +282,7 @@ function new_from_config(ports, handle_request, default_options)
 		if ssl then
 			ssl.mode = "server";
 			ssl.protocol = "sslv23";
+			ssl.options = "no_sslv2";
 		end
 		
 		new{ port = port, interface = interface, 
