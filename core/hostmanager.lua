@@ -20,8 +20,8 @@ end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
 -- These are the defaults if not overridden in the config
-local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
-local default_ssl_ctx_in = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
+local default_ssl_ctx_in = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 
 local log = require "util.logger".init("hostmanager");
 
