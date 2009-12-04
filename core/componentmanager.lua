@@ -14,9 +14,10 @@ local jid_split = require "util.jid".split;
 local fire_event = require "core.eventmanager".fire_event;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
-local hosts = hosts;
+local prosody, hosts = prosody, prosody.hosts;
+local ssl = ssl;
 
-local pairs, type, tostring = pairs, type, tostring;
+local pairs, setmetatable, type, tostring = pairs, setmetatable, type, tostring;
 
 local components = {};
 
@@ -73,18 +74,24 @@ end
 
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	local ssl_ctx;
-	if host then
+	local ssl_ctx, ssl_ctx_in;
+	if host and ssl then
 		-- We need to find SSL context to use...
 		-- Discussion in prosody@ concluded that
 		-- 1 level back is usually enough by default
 		local base_host = host:gsub("^[^%.]+%.", "");
 		if hosts[base_host] then
 			ssl_ctx = hosts[base_host].ssl_ctx;
+			ssl_ctx_in = hosts[base_host].ssl_ctx_in;
+		elseif prosody.global_ssl_ctx then
+			-- We have no cert, and no parent host to borrow a cert from
+			-- Use global/default cert if there is one
+			ssl_ctx = ssl.newcontext(prosody.global_ssl_ctx);
+			ssl_ctx_in = ssl.newcontext(setmetatable({ mode = "server" }, { __index = prosody.global_ssl_ctx }));
 		end
 	end
 	return { type = "component", host = host, connected = true, s2sout = {}, 
-			ssl_ctx = ssl_ctx, events = events or events_new() };
+			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new() };
 end
 
 function register_component(host, component, session)
