@@ -179,6 +179,7 @@ function init_global_state()
 	if global_ssl_ctx then
 		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
+		prosody.global_ssl_ctx = global_ssl_ctx;
 	end
 
 	local cl = require "net.connlisteners";
