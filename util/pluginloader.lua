@@ -17,7 +17,7 @@ local datamanager = require "util.datamanager";
 module "pluginloader"
 
 local function load_from_datastore(name)
-	local content = datamanager.load(name, "*", "plugins");
+	local content = datamanager.load(name, nil, "plugins");
 	if not content or not content[1] then return nil, "Resource not found"; end
 	return content[1], name;
 end
@@ -57,7 +57,7 @@ function store_resource(plugin, resource, content, metadata)
 			store[k] = v;
 		end
 	end
-	datamanager.store(plugin.."/"..resource, "*", "plugins", store);
+	datamanager.store(plugin.."/"..resource, nil, "plugins", store);
 end
 
 function load_code(plugin, resource)
