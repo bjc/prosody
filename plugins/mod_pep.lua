@@ -39,7 +39,7 @@ module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function publish(session, node, item)
 	item.attr.xmlns = nil;
-	local disable = #item.tags ~= 1 or #item.tags[1].tags == 0;
+	local disable = #item.tags ~= 1 or #item.tags[1] == 0;
 	if #item.tags == 0 then item.name = "retract"; end
 	local bare = session.username..'@'..session.host;
 	local stanza = st.message({from=bare, type='headline'})
