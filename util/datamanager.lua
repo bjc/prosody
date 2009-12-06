@@ -88,7 +88,7 @@ end
 
 function getpath(username, host, datastore, ext, create)
 	ext = ext or "dat";
-	host = host and encode(host);
+	host = (host and encode(host)) or "_global";
 	username = username and encode(username);
 	if username then
 		if create then mkdir(mkdir(mkdir(data_path).."/"..host).."/"..datastore); end
