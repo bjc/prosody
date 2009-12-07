@@ -146,4 +146,11 @@ if signal.signal then
 		prosody.reload_config();
 		prosody.reopen_logfiles();
 	end);
+	
+	signal.signal("SIGINT", function ()
+		module:log("info", "Received SIGINT");
+		prosody.unlock_globals();
+		prosody.shutdown("Received SIGINT");
+		prosody.lock_globals();
+	end);
 end
