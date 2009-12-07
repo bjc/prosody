@@ -760,8 +760,8 @@ end )( )
 
 local closeallservers = function( arg )
 	for _, item in ipairs( interfacelist( ) ) do
-		if item "type" == "server" then
-			item( "close", arg )
+		if item.type == "server" then
+			item:close( arg )
 		end
 	end
 end
