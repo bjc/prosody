@@ -766,6 +766,14 @@ local closeallservers = function( arg )
 	end
 end
 
+local function setquitting(yes)
+	if yes then
+		 -- Quit now
+		 closeallservers();
+		 base:loopexit();
+	end
+end
+
 return {
 
 	cfg = cfg,
