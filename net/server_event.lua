@@ -785,7 +785,8 @@ return {
 	addserver = addserver,
 	addclient = addclient,
 	wrapclient = wrapclient,
-	closeallservers = closeallservers,
+	setquitting = setquitting,
+	closeall = closeallservers,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,
