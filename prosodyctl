@@ -462,14 +462,18 @@ function commands.unregister(arg)
 	return 1;
 end
 
+local http_errors = {
+	[404] = "Plugin not found, did you type the address correctly?"
+	};
+
 function commands.addplugin(arg)
 	local url = arg[1];
 	if url:match("^http://") then
 		local http = require "socket.http";
 		show_message("Fetching...");
 		local code, err = http.request(url);
-		if not code then
-			show_message("Failed: "..err);
+		if not code or not tostring(err):match("^[23]") then
+			show_message("Failed: "..(http_errors[err] or ("HTTP error "..err)));
 			return 1;
 		end
 		if url:match("%.lua$") then
