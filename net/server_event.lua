@@ -747,7 +747,8 @@ end
 
 
 local loop = function( )  -- starts the event loop
-	return base:loop( )
+	base:loop( )
+	return "quitting";
 end
 
 local newevent = ( function( )
