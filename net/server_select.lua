@@ -845,6 +845,10 @@ loop = function( )    -- this is the main loop of the program
     return "quitting"
 end
 
+local function get_backend()
+	return "select";
+end
+
 --// EXPERIMENTAL //--
 
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx, startssl )
@@ -917,5 +921,6 @@ return {
     getsettings = getsettings,
     setquitting = setquitting,
     removeserver = removeserver,
+    get_backend = get_backend,
     changesettings = changesettings,
 }
