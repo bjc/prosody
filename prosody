@@ -16,6 +16,7 @@ CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+-- Tell Lua where to find our libraries
 if CFG_SOURCEDIR then
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
@@ -24,6 +25,7 @@ end
 package.path = package.path..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.lua";
 package.cpath = package.cpath..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.so";
 
+-- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
 		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
@@ -31,9 +33,10 @@ if CFG_DATADIR then
 end
 
 -- Required to be able to find packages installed with luarocks
-pcall(require, "luarocks.require")
+pcall(require, "luarocks.require");
 
--- Replace require with one that doesn't pollute _G
+-- Replace require() with one that doesn't pollute _G, required
+-- for neat sandboxing of modules
 do
 	local _realG = _G;
 	local _real_require = require;
@@ -52,8 +55,13 @@ do
 	end
 end
 
-
+-- Load the config-parsing module
 config = require "core.configmanager"
+
+-- -- -- --
+-- Define the functions we call during startup, the 
+-- actual startup happens right at the end, where these
+-- functions get called
 
 function read_config()
 	-- TODO: Check for other formats when we add support for them
@@ -363,6 +371,7 @@ function cleanup()
 	server.setquitting(true);
 end
 
+-- Are you ready? :)
 read_config();
 load_libraries();
 init_global_state();
