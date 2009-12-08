@@ -774,6 +774,10 @@ local function setquitting(yes)
 	end
 end
 
+function get_backend()
+	return base:method();
+end
+
 return {
 
 	cfg = cfg,
@@ -787,6 +791,7 @@ return {
 	wrapclient = wrapclient,
 	setquitting = setquitting,
 	closeall = closeallservers,
+	get_backend = get_backend,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,
