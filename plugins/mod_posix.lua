@@ -149,6 +149,7 @@ if signal.signal then
 	
 	signal.signal("SIGINT", function ()
 		module:log("info", "Received SIGINT");
+		signal.signal("SIGINT", function () end); -- Fixes us getting into some kind of loop
 		prosody.unlock_globals();
 		prosody.shutdown("Received SIGINT");
 		prosody.lock_globals();
