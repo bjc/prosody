@@ -28,9 +28,7 @@ local type = type;
 local next = next;
 local rawget = rawget;
 local error = error;
-local tostring, tonumber = tostring, tonumber;
-
-local array, set = require "util.array", require "util.set";
+local tostring = tostring;
 
 local autoload_modules = {"presence", "message", "iq"};
 
@@ -158,7 +156,6 @@ function load(host, module_name, config)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	if success then
-		hosts[host].events.fire_event("module-loaded", { module = module_name, host = host });
 		return true;
 	else -- load failed, unloading
 		unload(api_instance.host, module_name);
@@ -175,7 +172,7 @@ function is_loaded(host, name)
 end
 
 function unload(host, name, ...)
-	local mod = get_module(host, name);
+	local mod = get_module(host, name); 
 	if not mod then return nil, "module-not-loaded"; end
 	
 	if module_has_method(mod, "unload") then
@@ -200,8 +197,16 @@ function unload(host, name, ...)
 		end
 	end
 	hooks:remove(host, name);
+	if mod.module.items then -- remove items
+		for key,t in pairs(mod.module.items) do
+			for i = #t,1,-1 do
+				local value = t[i];
+				t[i] = nil;
+				hosts[host].events.fire_event("item-removed/"..key, {source = self, item = value});
+			end
+		end
+	end
 	modulemap[host][name] = nil;
-	hosts[host].events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
@@ -282,7 +287,7 @@ function module_has_method(module, method)
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then
+	if module_has_method(module, method) then	
 		local f = module.module[method];
 		return pcall(f, ...);
 	else
@@ -291,7 +296,7 @@ function call_module_method(module, method, ...)
 end
 
 ----- API functions exposed to modules -----------
--- Must all be in api.*
+-- Must all be in api.* 
 
 -- Returns the name of the current module
 function api:get_name()
@@ -402,85 +407,6 @@ function api:get_option(name, default_value)
 		end
 	end
 	return value;
-end
-
-function api:get_option_string(...)
-	local value = self:get_option(...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	if value == nil then
-		return nil;
-	end
-	return tostring(value);
-end
-
-function api:get_option_number(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	local ret = tonumber(value);
-	if value ~= nil and ret == nil then
-		self:log("error", "Config option '%s' not understood, expecting a number", name);
-	end
-	return ret;
-end
-
-function api:get_option_boolean(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	if value == nil then
-		return nil;
-	end
-	local ret = value == true or value == "true" or value == 1 or nil;
-	if ret == nil then
-		ret = (value == false or value == "false" or value == 0);
-		if ret then
-			ret = false;
-		else
-			ret = nil;
-		end
-	end
-	if ret == nil then
-		self:log("error", "Config option '%s' not understood, expecting true/false", name);
-	end
-	return ret;
-end
-
-function api:get_option_array(name, ...)
-	local value = self:get_option(name, ...);
-
-	if value == nil then
-		return nil;
-	end
-	
-	if type(value) ~= "table" then
-		return array{ value }; -- Assume any non-list is a single-item list
-	end
-	
-	return array():append(value); -- Clone
-end
-
-function api:get_option_set(name, ...)
-	local value = self:get_option_array(name, ...);
-	
-	if value == nil then
-		return nil;
-	end
-	
-	return set.new(value);
 end
 
 local t_remove = _G.table.remove;
