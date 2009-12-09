@@ -185,7 +185,7 @@ function init_global_state()
 	-- Load SSL settings from config, and create a ctx table
 	local global_ssl_ctx = rawget(_G, "ssl") and config.get("*", "core", "ssl");
 	if global_ssl_ctx then
-		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
+		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2" };
 		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
 		prosody.global_ssl_ctx = global_ssl_ctx;
 	end
@@ -294,8 +294,11 @@ function prepare_to_start()
 end	
 
 function init_global_protection()
-	-- Catch global accesses --
-	local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
+	-- Catch global accesses
+	local locked_globals_mt = {
+		__index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end;
+		__newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end;
+	};
 		
 	function prosody.unlock_globals()
 		setmetatable(_G, nil);
