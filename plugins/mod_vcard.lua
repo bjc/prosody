@@ -51,7 +51,7 @@ if module:get_option("vcard_compatibility") then
 	module:hook("iq/full", function(data)
 		local stanza = data.stanza;
 		local payload = stanza.tags[1];
-		if stanza.attr.type == "get" or stanza.attr.type == "set" and payload.name == "vCard" and payload.attr.xmlns == "vcard-temp" then
+		if stanza.attr.type == "get" and payload.name == "vCard" and payload.attr.xmlns == "vcard-temp" then
 			return handle_vcard(data);
 		end
 	end, 1);
