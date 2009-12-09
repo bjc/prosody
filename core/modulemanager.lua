@@ -200,6 +200,15 @@ function unload(host, name, ...)
 		end
 	end
 	hooks:remove(host, name);
+	if mod.module.items then -- remove items
+		for key,t in pairs(mod.module.items) do
+			for i = #t,1,-1 do
+				local value = t[i];
+				t[i] = nil;
+				hosts[host].events.fire_event("item-removed/"..key, {source = self, item = value});
+			end
+		end
+	end
 	modulemap[host][name] = nil;
 	hosts[host].events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
