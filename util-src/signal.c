@@ -348,7 +348,7 @@ static int l_kill(lua_State *L)
 static const struct luaL_Reg lsignal_lib[] = {
   {"signal", l_signal},
   {"raise", l_raise},
-#ifdef _POSIX_SOURCE
+#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
   {"kill", l_kill},
 #endif
   {NULL, NULL}
