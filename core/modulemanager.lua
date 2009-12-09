@@ -404,8 +404,8 @@ function api:get_option(name, default_value)
 	return value;
 end
 
-function api:get_option_string(...)
-	local value = self:get_option(...);
+function api:get_option_string(name, default_value)
+	local value = self:get_option(name, default_value);
 	if type(value) == "table" then
 		if #value > 1 then
 			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
