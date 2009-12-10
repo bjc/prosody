@@ -193,8 +193,9 @@ function init_global_state()
 	local cl = require "net.connlisteners";
 	function prosody.net_activate_ports(option, listener, default, conntype)
 		conntype = conntype or (global_ssl_ctx and "tls") or "tcp";
+		option = option and option.."_ports" or "ports";
 		if not cl.get(listener) then return; end
-		local ports = config.get("*", "core", option.."_ports") or default;
+		local ports = config.get("*", "core", option) or default;
 		if type(ports) == "number" then ports = {ports} end;
 		
 		if type(ports) ~= "table" then
