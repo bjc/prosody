@@ -30,7 +30,7 @@ function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(
 
 local function expectbody(reqt, code)
     if reqt.method == "HEAD" then return nil end
-    if code == 204 or code == 304 then return nil end
+    if code == 204 or code == 304 or code == 301 then return nil end
     if code >= 100 and code < 200 then return nil end
     return 1
 end
