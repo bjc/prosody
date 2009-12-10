@@ -288,6 +288,9 @@ function prepare_to_start()
 	-- start listening on sockets
 	if config.get("*", "core", "ports") then
 		prosody.net_activate_ports(nil, "multiplex", {5222, 5269});
+		if config.get("*", "core", "ssl_ports") then
+			prosody.net_activate_ports("ssl", "multiplex", {5223}, "ssl");
+		end
 	else
 		prosody.net_activate_ports("c2s", "xmppclient", {5222});
 		prosody.net_activate_ports("s2s", "xmppserver", {5269});
