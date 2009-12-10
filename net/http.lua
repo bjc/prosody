@@ -30,7 +30,7 @@ function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(
 
 local function expectbody(reqt, code)
     if reqt.method == "HEAD" then return nil end
-    if code == 204 or code == 304 then return nil end
+    if code == 204 or code == 304 or code == 301 then return nil end
     if code >= 100 and code < 200 then return nil end
     return 1
 end
@@ -152,7 +152,7 @@ function request(u, ex, callback)
 	end
 	
 	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
-	req.write = function (...) return req.handler:write(...); end
+	req.write = req.handler.write;
 	req.conn:settimeout(0);
 	local ok, err = req.conn:connect(req.host, req.port or 80);
 	if not ok and err ~= "timeout" then
@@ -200,7 +200,7 @@ end
 function destroy_request(request)
 	if request.conn then
 		request.handler.close()
-		listener.ondisconnect(request.conn, "closed");
+		listener.disconnect(request.conn, "closed");
 	end
 end
 
