@@ -298,7 +298,14 @@ function on_timer()
 	end
 end
 
-local ports = module:get_option("bosh_ports") or { 5280 };
-httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
 
-server.addtimer(on_timer);
+local function setup()
+	local ports = module:get_option("bosh_ports") or { 5280 };
+	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
+	server.addtimer(on_timer);
+end
+if prosody.start_time then -- already started
+	setup();
+else
+	prosody.events.add_handler("server-started", setup);
+end
