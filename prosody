@@ -286,10 +286,14 @@ function prepare_to_start()
 	prosody.events.fire_event("server-starting");
 
 	-- start listening on sockets
-	prosody.net_activate_ports("c2s", "xmppclient", {5222});
-	prosody.net_activate_ports("s2s", "xmppserver", {5269});
-	prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
-	prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	if config.get("*", "core", "ports") then
+		prosody.net_activate_ports(nil, "multiplex", {5222, 5269});
+	else
+		prosody.net_activate_ports("c2s", "xmppclient", {5222});
+		prosody.net_activate_ports("s2s", "xmppserver", {5269});
+		prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
+		prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	end
 
 	prosody.start_time = os.time();
 end	
