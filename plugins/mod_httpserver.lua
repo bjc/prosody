@@ -17,6 +17,17 @@ local http_base = config.get("*", "core", "http_path") or "www_files";
 local response_400 = { status = "400 Bad Request", body = "<h1>Bad Request</h1>Sorry, we didn't understand your request :(" };
 local response_404 = { status = "404 Not Found", body = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(" };
 
+-- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
+local mime_map = {
+	html = "text/html";
+	htm = "text/html";
+	xml = "text/xml";
+	xsl = "text/xml";
+	txt = "plain/text; charset=utf-8";
+	js = "text/javascript";
+	css = "text/css";
+};
+
 local function preprocess_path(path)
 	if path:sub(1,1) ~= "/" then
 		path = "/"..path;
@@ -40,7 +51,16 @@ function serve_file(path)
 	if not f then return response_404; end
 	local data = f:read("*a");
 	f:close();
-	return data;
+	local ext = path:match("%.([^.]*)$");
+	local mime = mime_map[ext];
+	if not mime then
+		mime = ext and "application/octet-stream" or "text/html";
+	end
+	module:log("warn", "ext: %s, mime: %s", ext, mime);
+	return {
+		headers = { ["Content-Type"] = mime; };
+		body = data;
+	};
 end
 
 local function handle_file_request(method, body, request)
