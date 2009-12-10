@@ -52,11 +52,8 @@ function serve_file(path)
 	local data = f:read("*a");
 	f:close();
 	local ext = path:match("%.([^.]*)$");
-	local mime = mime_map[ext];
-	if not mime then
-		mime = ext and "application/octet-stream" or "text/html";
-	end
-	module:log("warn", "ext: %s, mime: %s", ext, mime);
+	local mime = mime_map[ext]; -- Content-Type should be nil when not known
+	module:log("warn", "ext: %s, mime: %s", ext or "(nil)", mime or "(nil)");
 	return {
 		headers = { ["Content-Type"] = mime; };
 		body = data;
