@@ -47,7 +47,7 @@ local function preprocess_path(path)
 end
 
 function serve_file(path)
-	local f, err = open(http_base..path, "r");
+	local f, err = open(http_base..path, "rb");
 	if not f then return response_404; end
 	local data = f:read("*a");
 	f:close();
