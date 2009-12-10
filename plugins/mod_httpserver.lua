@@ -23,7 +23,7 @@ local mime_map = {
 	htm = "text/html";
 	xml = "text/xml";
 	xsl = "text/xml";
-	txt = "plain/text; charset=utf-8";
+	txt = "text/plain; charset=utf-8";
 	js = "text/javascript";
 	css = "text/css";
 };
