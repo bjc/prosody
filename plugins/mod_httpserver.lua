@@ -53,7 +53,6 @@ function serve_file(path)
 	f:close();
 	local ext = path:match("%.([^.]*)$");
 	local mime = mime_map[ext]; -- Content-Type should be nil when not known
-	module:log("warn", "ext: %s, mime: %s", ext or "(nil)", mime or "(nil)");
 	return {
 		headers = { ["Content-Type"] = mime; };
 		body = data;
