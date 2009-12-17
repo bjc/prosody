@@ -55,10 +55,10 @@ if not event then
 else
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
 	function _add_task(delay, func)
-		event_base:addevent(nil, event.EV_TIMEOUT, function ()
+		event_base:addevent(nil, 0, function ()
 			local ret = func();
 			if ret then
-				_add_task(ret, func);
+				return 0, ret;
 			else
 				return EVENT_LEAVE;
 			end
