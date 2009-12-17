@@ -159,7 +159,7 @@ function xmppserver.disconnect(conn, err)
 			end
 		end
 		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
-		s2s_destroy_session(session);
+		s2s_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
 		collectgarbage("collect");
