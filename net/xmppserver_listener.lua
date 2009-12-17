@@ -152,9 +152,9 @@ function xmppserver.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		if err and err ~= "closed" and session.srv_hosts then
-			(session.log or log)("debug", "s2s connection closed unexpectedly");
+			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2s_attempt_connect(session, err) then
-				(session.log or log)("debug", "...so we're going to try again");
+				(session.log or log)("debug", "...so we're going to try another target");
 				return; -- Session lives for now
 			end
 		end
