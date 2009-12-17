@@ -352,6 +352,10 @@ do
 		return self._port
 	end
 	
+	function interface_mt:serverport()
+		return self._serverport
+	end
+	
 	function interface_mt:ip()
 		return self._ip
 	end
@@ -464,6 +468,7 @@ do
 			
 			-- Properties
 			_ip = ip, _port = port, _server = server, _pattern = pattern,
+			_serverport = (server and server:port() or nil),
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
