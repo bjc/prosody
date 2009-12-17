@@ -623,6 +623,9 @@ do
 			readcallback = false; -- read event callback
 			fatalerror = false; -- error message
 			nointerface = true;  -- lock/unlock parameter
+			
+			_ip = addr, _port = port, _pattern = pattern,
+			_sslctx = sslctx;
 		}
 		interface.id = tostring(interface):match("%x+$");
 		interface.readcallback = function( event )  -- server handler, called on incoming connections
