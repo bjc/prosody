@@ -412,7 +412,6 @@ function streamopened(session, attr)
 			end
 		end
 	end
-
 	session.notopen = nil;
 end
 
