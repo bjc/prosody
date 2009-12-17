@@ -51,7 +51,7 @@ module "s2smanager"
 
 local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
 
-local function bounce_sendq(session)
+local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if sendq then
 		session.log("info", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
@@ -69,6 +69,9 @@ local function bounce_sendq(session)
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
+				if reason then
+					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):text("Connection failed: "..reason):up();
+				end
 				core_process_stanza(dummy, reply);
 			end
 			sendq[i] = nil;
@@ -483,12 +486,12 @@ function mark_connected(session)
 	end
 end
 
-function destroy_session(session)
+function destroy_session(session, reason)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
-		bounce_sendq(session);
+		bounce_sendq(session, reason);
 	elseif session.direction == "incoming" then
 		incoming_s2s[session] = nil;
 	end
