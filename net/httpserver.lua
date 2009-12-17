@@ -183,7 +183,7 @@ local function request_reader(request, data, startpos)
 		
 		request.url = url_parse(request.path);
 		
-		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler.serverport());
+		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
 		
 		if request.onlystatus then
 			if not call_callback(request) then
@@ -201,7 +201,7 @@ end
 
 -- The default handler for requests
 default_handler = function (method, body, request)
-	log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler.serverport());
+	log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
 	return { status = "404 Not Found", 
 			headers = { ["Content-Type"] = "text/html" },
 			body = "<html><head><title>Page Not Found</title></head><body>Not here :(</body></html>" };
@@ -229,7 +229,7 @@ function destroy_request(request)
 		else
 			log("debug", "Request has no destroy callback");
 		end
-		request.handler.close()
+		request.handler:close()
 		if request.conn then
 			listener.ondisconnect(request.handler, "closed");
 		end
