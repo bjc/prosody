@@ -24,7 +24,7 @@ function httpserver.onincoming(conn, data)
 		requests[conn] = request;
 		
 		-- If using HTTPS, request is secure
-		if conn.ssl() then
+		if conn:ssl() then
 			request.secure = true;
 		end
 	end
