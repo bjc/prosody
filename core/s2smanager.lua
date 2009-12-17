@@ -374,7 +374,6 @@ function streamopened(session, attr)
 		end
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
-							
 			if session.to_host then
 				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
 			else
@@ -391,7 +390,7 @@ function streamopened(session, attr)
 	
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
-		-- Note that this is *not* the stanza queue (which 
+		-- Note that this is *not* the stanza queue (which
 		-- we can only send if auth succeeds) :)
 		local send_buffer = session.send_buffer;
 		if send_buffer and #send_buffer > 0 then
@@ -479,7 +478,6 @@ function mark_connected(session)
 			end
 			session.sendq = nil;
 		end
-		
 		session.srv_hosts = nil;
 	end
 end
