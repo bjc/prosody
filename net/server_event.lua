@@ -44,8 +44,8 @@ local tostring = use "tostring"
 local coroutine = use "coroutine"
 local setmetatable = use "setmetatable"
 
-local ssl = use "ssl"
-local socket = use "socket"
+local ssl = use "ssl" or require "ssl"
+local socket = use "socket" or require "socket"
 
 local log = require ("util.logger").init("socket")
 
