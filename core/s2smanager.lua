@@ -224,7 +224,7 @@ function attempt_connection(host_session, err)
 			if not ok then
 				if not attempt_connection(host_session, err) then
 					-- No more attempts will be made
-					destroy_session(host_session);
+					destroy_session(host_session, err);
 				end
 			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
@@ -284,7 +284,7 @@ function try_connect(host_session, connect_host, connect_port)
 			log("debug", "DNS lookup failed to get a response for %s", connect_host);
 			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
 				log("debug", "No other records to try for %s - destroying", host_session.to_host);
-				destroy_session(host_session); -- End of the line, we can't
+				destroy_session(host_session, "DNS resolution failed"); -- End of the line, we can't
 			end
 		end
 	end, connect_host, "A", "IN");
