@@ -366,6 +366,7 @@ function streamopened(session, attr)
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
+		session.notopen = nil;
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
@@ -412,8 +413,6 @@ function streamopened(session, attr)
 			end
 		end
 	end
-
-	session.notopen = nil;
 end
 
 function streamclosed(session)
