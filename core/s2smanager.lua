@@ -352,7 +352,6 @@ function streamopened(session, attr)
 	end
 	
 	if session.version >= 1.0 and not (attr.to and attr.from) then
-		
 		(session.log or log)("warn", "Remote of stream "..(session.from_host or "(unknown)").."->"..(session.to_host or "(unknown)")
 			.." failed to specify to (%s) and/or from (%s) hostname as per RFC", tostring(attr.to), tostring(attr.from));
 	end
