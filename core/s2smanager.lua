@@ -363,17 +363,17 @@ function streamopened(session, attr)
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
-		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
-		session.notopen = nil;
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
 			return;
 		end
+		send("<?xml version='1.0'?>");
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
+			
 			if session.to_host then
 				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
 			else
@@ -390,7 +390,7 @@ function streamopened(session, attr)
 	
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
-		-- Note that this is *not* the stanza queue (which
+		-- Note that this is *not* the stanza queue (which 
 		-- we can only send if auth succeeds) :)
 		local send_buffer = session.send_buffer;
 		if send_buffer and #send_buffer > 0 then
@@ -412,6 +412,7 @@ function streamopened(session, attr)
 			end
 		end
 	end
+	session.notopen = nil;
 end
 
 function streamclosed(session)
@@ -478,6 +479,7 @@ function mark_connected(session)
 			end
 			session.sendq = nil;
 		end
+		
 		session.srv_hosts = nil;
 	end
 end
