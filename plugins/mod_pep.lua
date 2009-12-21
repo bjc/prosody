@@ -291,7 +291,7 @@ module:hook("account-disco-items", function(event)
 
 	if user_data then
 		for node, _ in pairs(user_data) do
-			stanza:tag('item', {jid=bare, node=node}):up();
+			stanza:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
 		end
 	end
 end);
