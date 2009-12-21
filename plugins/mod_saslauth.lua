@@ -115,6 +115,9 @@ local function sasl_handler(session, stanza)
 		if not session.sasl_handler then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
+		if secure_auth_only and not session.secure then
+			return session.send(build_reply("failure", "encryption-required"));
+		end
 	elseif not session.sasl_handler then
 		return; -- FIXME ignoring out of order stanzas because ejabberd does
 	end
