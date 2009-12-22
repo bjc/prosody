@@ -33,7 +33,15 @@ local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
-local new_sasl = require "util.sasl".new;
+local new_sasl
+if config.get(module:get_host(), "core", "use_cyrus") then
+	cyrus_new = require "util.sasl_cyrus".new;
+	new_sasl = function(realm)
+			return cyrus_new(realm, "prosody")
+		end
+else
+	new_sasl = require "util.sasl".new;
+end
 
 default_authentication_profile = {
 	plain = function(username, realm)
