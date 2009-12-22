@@ -34,10 +34,10 @@ local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl
-if config.get(module:get_host(), "core", "use_cyrus") then
+if config.get(module:get_host(), "core", "cyrus_service_name") then
 	cyrus_new = require "util.sasl_cyrus".new;
 	new_sasl = function(realm)
-			return cyrus_new(realm, "prosody")
+			return cyrus_new(realm, config.get(module:get_host(), "core", "cyrus_service_name"))
 		end
 else
 	new_sasl = require "util.sasl".new;
