@@ -31,17 +31,7 @@ method.__index = method;
 local mechanisms = {};
 local backend_mechanism = {};
 
--- register a new SASL mechanims
-local function registerMechanism(name, backends, f)
-	assert(type(name) == "string", "Parameter name MUST be a string.");
-	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
-	assert(type(f) == "function", "Parameter f MUST be a function.");
-	mechanisms[name] = f
-	for _, backend_name in ipairs(backends) do
-		if backend_mechanism[backend_name] == nil then backend_mechanism[backend_name] = {}; end
-		t_insert(backend_mechanism[backend_name], name);
-	end
-end
+pcall(cyrussasl.server_init, "prosody")
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, service_name)
