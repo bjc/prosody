@@ -19,17 +19,17 @@ local tostring = tostring;
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
 local s_match = string.match;
+local setmetatable = setmetatable
 
 local keys = keys;
 
 local print = print
+local pcall = pcall
 
 module "sasl_cyrus"
 
 local method = {};
 method.__index = method;
-local mechanisms = {};
-local backend_mechanism = {};
 
 pcall(cyrussasl.server_init, "prosody")
 
