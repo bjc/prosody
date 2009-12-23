@@ -121,7 +121,7 @@ local function sasl_handler(session, stanza)
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
-		log("debug", "%s", text);
+		log("debug", "%s", text); -- FIXME: binary output will screw up the terminal
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
