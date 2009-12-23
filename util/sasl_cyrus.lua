@@ -25,6 +25,7 @@ local keys = keys;
 
 local print = print
 local pcall = pcall
+local s_match, s_gmatch = string.match, string.gmatch
 
 module "sasl_cyrus"
 
@@ -38,7 +39,7 @@ function new(realm, service_name)
 	local sasl_i = {};
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
-	sasl_i.cyrus = cyrussasl.server_new(service_name, realm, realm, nil, nil)
+	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, nil, nil, nil)
 	if sasl_i.cyrus == 0 then
 		log("error", "got NULL return value from server_new")
 		return nil;
@@ -62,7 +63,7 @@ end
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
 	local mechanisms = {}
-	local cyrus_mechs = cyrussasl.listmech(self.cyrus)
+	local cyrus_mechs = cyrussasl.listmech(self.cyrus, nil, "", " ", "")
 	for w in s_gmatch(cyrus_mechs, "%a+") do
 		mechanisms[w] = true;
 	end
@@ -73,17 +74,18 @@ end
 -- select a mechanism to use
 function method:select(mechanism)
 	self.mechanism = mechanism;
-	return not self.mechanisms[mechanisms];
+	return self.mechanisms[mechanism];
 end
 
 -- feed new messages to process into the library
 function method:process(message)
 	local err;
 	local data;
+
 	if self.mechanism then
-		err, data = cyrussasl.server_start(self.cyrus, self.mechanism, message)
+		err, data = cyrussasl.server_start(self.cyrus, self.mechanism, message or "")
 	else
-		err, data = cyrussasl.server_step(self.cyrus, message)
+		err, data = cyrussasl.server_step(self.cyrus, message or "")
 	end
 
 	self.username = cyrussasl.get_username(self.cyrus)
