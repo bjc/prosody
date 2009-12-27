@@ -39,40 +39,35 @@ local function send_response(request, response)
 	if response.body then
 		local body = tostring(response.body);
 		log("debug", "Sending response to %s", request.id);
-		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
+		resp = { "HTTP/1.0 "..(response.status or "200 OK").."\r\n" };
 		local h = response.headers;
 		if h then
 			for k, v in pairs(h) do
-				t_insert(resp, k);
-				t_insert(resp, ": ");
-				t_insert(resp, v);
-				t_insert(resp, "\r\n");
+				t_insert(resp, k..": "..v.."\r\n");
 			end
 		end
 		if not (h and h["Content-Length"]) then
-			t_insert(resp, "Content-Length: ");
-			t_insert(resp, #body);
-			t_insert(resp, "\r\n");
+			t_insert(resp, "Content-Length: "..#body.."\r\n");
 		end
 		t_insert(resp, "\r\n");
 		
 		if request.method ~= "HEAD" then
 			t_insert(resp, body);
 		end
+		request.write(t_concat(resp));
 	else
 		-- Response we have is just a string (the body)
 		log("debug", "Sending 200 response to %s", request.id or "<none>");
 		
-		resp = { "HTTP/1.0 200 OK\r\n" };
-		t_insert(resp, "Connection: close\r\n");
-		t_insert(resp, "Content-Type: text/html\r\n");
-		t_insert(resp, "Content-Length: ");
-		t_insert(resp, #response);
-		t_insert(resp, "\r\n\r\n");
+		local resp = "HTTP/1.0 200 OK\r\n"
+			.. "Connection: close\r\n"
+			.. "Content-Type: text/html\r\n"
+			.. "Content-Length: "..#response.."\r\n"
+			.. "\r\n"
+			.. response;
 		
-		t_insert(resp, response);
+		request.write(resp);
 	end
-	request.write(t_concat(resp));
 	if not request.stayopen then
 		request:destroy();
 	end
