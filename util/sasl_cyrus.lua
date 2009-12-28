@@ -67,14 +67,14 @@ function method:mechanisms()
 	for w in s_gmatch(cyrus_mechs, "[^ ]+") do
 		mechanisms[w] = true;
 	end
-	self.mechanisms = mechanisms
+	self.mechs = mechanisms
 	return array.collect(keys(mechanisms));
 end
 
 -- select a mechanism to use
 function method:select(mechanism)
 	self.mechanism = mechanism;
-	return self.mechanisms[mechanism];
+	return self.mechs[mechanism];
 end
 
 -- feed new messages to process into the library
