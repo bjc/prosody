@@ -64,7 +64,7 @@ end
 function method:mechanisms()
 	local mechanisms = {}
 	local cyrus_mechs = cyrussasl.listmech(self.cyrus, nil, "", " ", "")
-	for w in s_gmatch(cyrus_mechs, "%a+") do
+	for w in s_gmatch(cyrus_mechs, "[^ ]+") do
 		mechanisms[w] = true;
 	end
 	self.mechanisms = mechanisms
