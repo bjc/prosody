@@ -402,8 +402,22 @@ function room_mt:send_form(origin, stanza)
 			:tag("field", {type='boolean', label='Make Room Publicly Searchable?', var='muc#roomconfig_publicroom'})
 				:tag("value"):text(self._data.hidden and "0" or "1"):up()
 			:up()
+			:tag("field", {type='list-single', label='Who May Discover Real JIDs?', var='muc#roomconfig_whois'})
+			    :tag("value"):text(self._data.whois or 'moderators'):up()
+			    :tag("option", {label = 'Moderators Only'})
+				:tag("value"):text('moderators'):up()
+				:up()
+			    :tag("option", {label = 'Anyone'})
+				:tag("value"):text('anyone'):up()
+				:up()
+			:up()
 	);
 end
+
+local valid_whois = {
+    moderators = true,
+    anyone = true,
+}
 
 function room_mt:process_form(origin, stanza)
 	local query = stanza.tags[1];
@@ -430,6 +444,14 @@ function room_mt:process_form(origin, stanza)
 	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	self._data.hidden = not public and true or nil;
+
+	local whois = fields['muc#roomconfig_whois'];
+	if not valid_whois[whois] then
+	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request'));
+	    return;
+	end
+	self._data.whois = whois
+	module:log('debug', 'whois=%s', tostring(whois))
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
@@ -735,19 +757,26 @@ function room_mt:set_role(actor, nick, role, callback, reason)
 	return true;
 end
 
+local function _get_muc_child(stanza)
+	for i=#stanza.tags,1,-1 do
+		local tag = stanza.tags[i];
+		if tag.name == "x" and tag.attr.xmlns == "http://jabber.org/protocol/muc#user" then
+			return tag;
+		end
+	end
+end
+
 function room_mt:_route_stanza(stanza)
 	local muc_child;
 	local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
 	local from_occupant = self._occupants[stanza.attr.from];
 	if stanza.name == "presence" then
 		if to_occupant and from_occupant then
-			if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
-				for i=#stanza.tags,1,-1 do
-					local tag = stanza.tags[i];
-					if tag.name == "x" and tag.attr.xmlns == "http://jabber.org/protocol/muc#user" then
-						muc_child = tag;
-						break;
-					end
+			if self._data.whois == 'anyone' then
+			    muc_child = _get_muc_child(stanza)
+			else
+				if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
+					muc_child = _get_muc_child(stanza)
 				end
 			end
 		end
@@ -761,6 +790,9 @@ function room_mt:_route_stanza(stanza)
 					item.attr.jid = from_occupant.jid;
 				end
 			end
+		end
+		if self._data.whois == 'anyone' then
+		    muc_child:tag('status', { code = '100' });
 		end
 	end
 	self:route_stanza(stanza);
@@ -780,7 +812,9 @@ function _M.new_room(jid)
 		jid = jid;
 		_jid_nick = {};
 		_occupants = {};
-		_data = {};
+		_data = {
+		    whois = 'moderators',
+		};
 		_affiliations = {};
 	}, room_mt);
 end
