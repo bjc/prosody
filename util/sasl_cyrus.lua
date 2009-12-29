@@ -31,12 +31,22 @@ module "sasl_cyrus"
 
 local method = {};
 method.__index = method;
+local initialized = false;
 
-pcall(cyrussasl.server_init, "prosody")
+local function init(service_name)
+	if not initialized then
+		if pcall(cyrussasl.server_init, service_name) then
+			initialized = true;
+		end
+	end
+end
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, service_name)
 	local sasl_i = {};
+	
+	init(service_name);
+	
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
 	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, nil, nil, nil)
