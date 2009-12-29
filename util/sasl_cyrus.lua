@@ -44,9 +44,9 @@ end
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, service_name)
 	local sasl_i = {};
-	
+
 	init(service_name);
-	
+
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
 	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, nil, nil, nil)
