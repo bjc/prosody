@@ -434,15 +434,19 @@ function room_mt:process_form(origin, stanza)
 	end
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 
+	local dirty = false
+
 	local persistent = fields['muc#roomconfig_persistentroom'];
 	if persistent == "0" or persistent == "false" then persistent = nil; elseif persistent == "1" or persistent == "true" then persistent = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
+	dirty = dirty or (self._data.persistent ~= persistent)
 	self._data.persistent = persistent;
 	module:log("debug", "persistent=%s", tostring(persistent));
 
 	local public = fields['muc#roomconfig_publicroom'];
 	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
+	dirty = dirty or (self._data.hidden ~= (not public and true or nil))
 	self._data.hidden = not public and true or nil;
 
 	local whois = fields['muc#roomconfig_whois'];
@@ -450,11 +454,27 @@ function room_mt:process_form(origin, stanza)
 	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request'));
 	    return;
 	end
+	local whois_changed = self._data.whois ~= whois
 	self._data.whois = whois
 	module:log('debug', 'whois=%s', tostring(whois))
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
+
+	if dirty or whois_changed then
+	    local msg = st.message({type='groupchat', from=self.jid})
+		    :tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
+
+	    if dirty then
+		msg.tags[1]:tag('status', {code = '104'})
+	    end
+	    if whois_changed then
+		local code = (whois == 'moderators') and 173 or 172
+		msg.tags[1]:tag('status', {code = code})
+	    end
+
+	    self:broadcast_message(msg, false)
+	end
 end
 
 function room_mt:destroy(newjid, reason, password)
