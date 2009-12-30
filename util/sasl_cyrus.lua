@@ -35,8 +35,11 @@ local initialized = false;
 
 local function init(service_name)
 	if not initialized then
-		if pcall(cyrussasl.server_init, service_name) then
+		local st, errmsg = pcall(cyrussasl.server_init, service_name);
+		if st then
 			initialized = true;
+		else
+			log("error", "Failed to initialize CyrusSASL: %s", errmsg);
 		end
 	end
 end
