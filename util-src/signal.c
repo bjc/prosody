@@ -1,5 +1,5 @@
 /*
- * lsignal.h -- Signal Handler Library for Lua
+ * signal.c -- Signal Handler Library for Lua
  *
  * Version: 1.000
  *
