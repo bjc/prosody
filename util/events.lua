@@ -47,13 +47,13 @@ function new()
 			_rebuild_index(event);
 		end
 	end;
-	local function add_plugin(plugin)
-		for event, handler in pairs(plugin) do
+	local function add_handlers(handlers)
+		for event, handler in pairs(handlers) do
 			add_handler(event, handler);
 		end
 	end;
-	local function remove_plugin(plugin)
-		for event, handler in pairs(plugin) do
+	local function remove_handlers(handlers)
+		for event, handler in pairs(handlers) do
 			remove_handler(event, handler);
 		end
 	end;
