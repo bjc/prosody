@@ -15,6 +15,7 @@ local t_concat = table.concat;
 local http_base = config.get("*", "core", "http_path") or "www_files";
 
 local response_400 = { status = "400 Bad Request", body = "<h1>Bad Request</h1>Sorry, we didn't understand your request :(" };
+local response_403 = { status = "403 Forbidden", body = "<h1>Forbidden</h1>You don't have permission to view the contents of this directory :(" };
 local response_404 = { status = "404 Not Found", body = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(" };
 
 -- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
@@ -51,6 +52,9 @@ function serve_file(path)
 	if not f then return response_404; end
 	local data = f:read("*a");
 	f:close();
+	if not data then
+		return response_403;
+	end
 	local ext = path:match("%.([^.]*)$");
 	local mime = mime_map[ext]; -- Content-Type should be nil when not known
 	return {
