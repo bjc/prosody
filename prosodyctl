@@ -137,18 +137,33 @@ function show_usage(usage, desc)
 end
 
 local function getchar(n)
-	os.execute("stty raw -echo");
-	local ok, char = pcall(io.read, n or 1);
-	os.execute("stty sane");
+	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
+	local ok, char;
+	if stty_ret == 0 then
+		ok, char = pcall(io.read, n or 1);
+		os.execute("stty sane");
+	else
+		ok, char = pcall(io.read, "*l");
+		if ok then
+			char = char:sub(1, n or 1);
+		end
+	end
 	if ok then
 		return char;
 	end
 end
 	
 local function getpass()
-	os.execute("stty -echo");
+	local stty_ret = os.execute("stty -echo 2>/dev/null");
+	if stty_ret ~= 0 then
+		io.write("\027[08m"); -- ANSI 'hidden' text attribute
+	end
 	local ok, pass = pcall(io.read, "*l");
-	os.execute("stty sane");
+	if stty_ret == 0 then
+		os.execute("stty sane");
+	else
+		io.write("\027[00m");
+	end
 	io.write("\n");
 	if ok then
 		return pass;
