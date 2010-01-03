@@ -41,7 +41,7 @@ if sasl_backend == "cyrus" then
 			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp")
 		end
 else
-	if sasl_backend ~= "backend" then log("warning", "Unknown SASL backend %s", sasl_backend) end;
+	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend) end;
 	new_sasl = require "util.sasl".new;
 end
 
