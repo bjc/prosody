@@ -142,7 +142,7 @@ function new_incoming(conn)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
 		    session.from_host or "(unknown)", session.to_host or "(unknown)");
 		session:close("connection-timeout");
 	end);
@@ -150,7 +150,7 @@ function new_incoming(conn)
 end
 
 function new_outgoing(from_host, to_host)
-		local host_session = { to_host = to_host, from_host = from_host, host = from_host, 
+		local host_session = { to_host = to_host, from_host = from_host, host = from_host,
 		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
 		
 		hosts[from_host].s2sout[to_host] = host_session;
@@ -165,7 +165,7 @@ function new_outgoing(from_host, to_host)
 		-- Kick the connection attempting machine
 		attempt_connection(host_session);
 		
-		if not host_session.sends2s then		
+		if not host_session.sends2s then
 			-- A sends2s which buffers data (until the stream is opened)
 			-- note that data in this buffer will be sent before the stream is authed
 			-- and will not be ack'd in any way, successful or otherwise
@@ -295,7 +295,7 @@ function try_connect(host_session, connect_host, connect_port)
 			adns.cancel(handle, true);
 		end
 	end);
-		
+	
 	return true;
 end
 
@@ -334,7 +334,7 @@ function make_connect(host_session, connect_host, connect_port)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
 		    host_session.from_host or "(unknown)", host_session.to_host or "(unknown)");
 		host_session:close("connection-timeout");
 	end);
@@ -369,7 +369,7 @@ function streamopened(session, attr)
 			return;
 		end
 		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
@@ -390,7 +390,7 @@ function streamopened(session, attr)
 	
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
-		-- Note that this is *not* the stanza queue (which 
+		-- Note that this is *not* the stanza queue (which
 		-- we can only send if auth succeeds) :)
 		local send_buffer = session.send_buffer;
 		if send_buffer and #send_buffer > 0 then
