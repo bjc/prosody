@@ -41,7 +41,6 @@ local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
-local dialback_secret = config.get("*", "core", "dialback_secret") or uuid_gen();
 
 incoming_s2s = {};
 _G.prosody.incoming_s2s = incoming_s2s;
@@ -431,7 +430,7 @@ function initiate_dialback(session)
 end
 
 function generate_dialback(id, to, from)
-	return sha256_hash(id..to..from..dialback_secret, true);
+	return sha256_hash(id..to..from..hosts[from].dialback_secret, true);
 end
 
 function verify_dialback(id, to, from, key)
