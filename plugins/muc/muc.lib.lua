@@ -777,15 +777,6 @@ function room_mt:set_role(actor, nick, role, callback, reason)
 	return true;
 end
 
-local function _get_muc_child(stanza)
-	for i=#stanza.tags,1,-1 do
-		local tag = stanza.tags[i];
-		if tag.name == "x" and tag.attr.xmlns == "http://jabber.org/protocol/muc#user" then
-			return tag;
-		end
-	end
-end
-
 function room_mt:_route_stanza(stanza)
 	local muc_child;
 	local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
@@ -793,10 +784,10 @@ function room_mt:_route_stanza(stanza)
 	if stanza.name == "presence" then
 		if to_occupant and from_occupant then
 			if self._data.whois == 'anyone' then
-			    muc_child = _get_muc_child(stanza)
+			    muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 			else
 				if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
-					muc_child = _get_muc_child(stanza)
+					muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 				end
 			end
 		end
