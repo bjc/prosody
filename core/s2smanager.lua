@@ -148,7 +148,7 @@ function new_incoming(conn)
 	return session;
 end
 
-function new_outgoing(from_host, to_host)
+function new_outgoing(from_host, to_host, connect)
 		local host_session = { to_host = to_host, from_host = from_host, host = from_host,
 		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
 		
@@ -161,8 +161,10 @@ function new_outgoing(from_host, to_host)
 			host_session.log = log;
 		end
 		
-		-- Kick the connection attempting machine
-		attempt_connection(host_session);
+		if connect ~= false then
+			-- Kick the connection attempting machine into life
+			attempt_connection(host_session);
+		end
 		
 		if not host_session.sends2s then
 			-- A sends2s which buffers data (until the stream is opened)
