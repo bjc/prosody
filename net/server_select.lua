@@ -905,6 +905,14 @@ addtimer( function( )
     end
 )
 
+local function set_logger(new_logger)
+	local old_logger = log;
+	if new_logger then
+		log = new_logger;
+	end
+	return old_logger;
+end
+
 ----------------------------------// PUBLIC INTERFACE //--
 
 return {
@@ -918,6 +926,7 @@ return {
     addtimer = addtimer,
     addserver = addserver,
     getserver = getserver,
+    setlogger = setlogger,
     getsettings = getsettings,
     setquitting = setquitting,
     removeserver = removeserver,
