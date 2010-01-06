@@ -905,7 +905,7 @@ addtimer( function( )
     end
 )
 
-local function set_logger(new_logger)
+local function setlogger(new_logger)
 	local old_logger = log;
 	if new_logger then
 		log = new_logger;
