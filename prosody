@@ -192,6 +192,7 @@ function init_global_state()
 			log("error", "core."..option.." is not a table");
 		else
 			for _, port in ipairs(ports) do
+				port = tonumber(port);
 				if type(port) ~= "number" then
 					log("error", "Non-numeric "..option.."_ports: "..tostring(port));
 				else
