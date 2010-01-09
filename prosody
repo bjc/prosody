@@ -64,8 +64,6 @@ config = require "core.configmanager"
 -- functions get called
 
 function read_config()
-	-- TODO: Check for other formats when we add support for them
-	-- Use lfs? Make a new conf/ dir?
 	local filenames = {};
 	
 	local filename;
@@ -75,7 +73,9 @@ function read_config()
 			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
 		end
 	else
-		table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+		for _, format in ipairs(config.parsers()) do
+			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
+		end
 	end
 	for _,_filename in ipairs(filenames) do
 		filename = _filename;
