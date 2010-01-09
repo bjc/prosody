@@ -9,8 +9,8 @@
 
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type = 
-		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type;
+local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table =
+		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table;
 
 local eventmanager = require "core.eventmanager";
 
@@ -92,6 +92,15 @@ function addparser(format, parser)
 	if format and parser then
 		parsers[format] = parser;
 	end
+end
+
+-- _M needed to avoid name clash with local 'parsers'
+function _M.parsers()
+	local p = {};
+	for format in pairs(parsers) do
+		table.insert(p, format);
+	end
+	return p;
 end
 
 -- Built-in Lua parser
