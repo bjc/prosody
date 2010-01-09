@@ -150,7 +150,8 @@ end
 
 function new_outgoing(from_host, to_host, connect)
 		local host_session = { to_host = to_host, from_host = from_host, host = from_host,
-		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing",
+		                       open_stream = session_open_stream };
 		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
@@ -326,7 +327,8 @@ function make_connect(host_session, connect_host, connect_port)
 	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
-	conn:write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
+	host_session:open_stream();
+	
 	log("debug", "Connection attempt in progress...");
 	add_task(connect_timeout, function ()
 		if host_session.conn ~= conn or
@@ -340,6 +342,13 @@ function make_connect(host_session, connect_host, connect_port)
 		host_session:close("connection-timeout");
 	end);
 	return true;
+end
+
+function session_open_stream(session, from, to)
+	session.sends2s(st.stanza("stream:stream", {
+		xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
+		["xmlns:stream"]='http://etherx.jabber.org/streams',
+		from=from, to=to, version='1.0', ["xml:lang"]='en'}):top_tag());
 end
 
 function streamopened(session, attr)
