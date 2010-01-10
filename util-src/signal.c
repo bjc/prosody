@@ -165,6 +165,9 @@ static struct signal_event *last_event = NULL;
 
 static void sighook(lua_State *L, lua_Debug *ar)
 {
+  /* restore the old hook */
+  lua_sethook(L, Hsig, Hmask, Hcount);
+
   lua_pushstring(L, LUA_SIGNAL);
   lua_gettable(L, LUA_REGISTRYINDEX);
 
@@ -180,8 +183,6 @@ static void sighook(lua_State *L, lua_Debug *ar)
 
   lua_pop(L, 1); /* pop lua_signal table */
 
-  /* restore the old hook */
-  lua_sethook(L, Hsig, Hmask, Hcount);
 }
 
 static void handle(int sig)
