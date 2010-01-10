@@ -486,47 +486,32 @@ int lc_abort(lua_State* L)
 
 int luaopen_util_pposix(lua_State *L)
 {
-	lua_newtable(L);
+	luaL_Reg exports[] = {
+		{ "abort", lc_abort },
 
-	lua_pushcfunction(L, lc_abort);
-	lua_setfield(L, -2, "abort");
+		{ "daemonize", lc_daemonize },
 
-	lua_pushcfunction(L, lc_daemonize);
-	lua_setfield(L, -2, "daemonize");
+		{ "syslog_open", lc_syslog_open },
+		{ "syslog_close", lc_syslog_close },
+		{ "syslog_log", lc_syslog_log },
+		{ "syslog_setminlevel", lc_syslog_setmask },
 
-	lua_pushcfunction(L, lc_syslog_open);
-	lua_setfield(L, -2, "syslog_open");
+		{ "getpid", lc_getpid },
+		{ "getuid", lc_getuid },
+		{ "getgid", lc_getgid },
 
-	lua_pushcfunction(L, lc_syslog_close);
-	lua_setfield(L, -2, "syslog_close");
+		{ "setuid", lc_setuid },
+		{ "setgid", lc_setgid },
 
-	lua_pushcfunction(L, lc_syslog_log);
-	lua_setfield(L, -2, "syslog_log");
+		{ "umask", lc_umask },
 
-	lua_pushcfunction(L, lc_syslog_setmask);
-	lua_setfield(L, -2, "syslog_setminlevel");
+		{ "setrlimit", lc_setrlimit },
+		{ "getrlimit", lc_getrlimit },
 
-	lua_pushcfunction(L, lc_getpid);
-	lua_setfield(L, -2, "getpid");
+		{ NULL, NULL }
+	};
 
-	lua_pushcfunction(L, lc_getuid);
-	lua_setfield(L, -2, "getuid");
-	lua_pushcfunction(L, lc_getgid);
-	lua_setfield(L, -2, "getgid");
-
-	lua_pushcfunction(L, lc_setuid);
-	lua_setfield(L, -2, "setuid");
-	lua_pushcfunction(L, lc_setgid);
-	lua_setfield(L, -2, "setgid");
-
-	lua_pushcfunction(L, lc_umask);
-	lua_setfield(L, -2, "umask");
-
-	lua_pushcfunction(L, lc_setrlimit);
-	lua_setfield(L, -2, "setrlimit");
-
-	lua_pushcfunction(L, lc_getrlimit);
-	lua_setfield(L, -2, "getrlimit");
+	luaL_register(L, "pposix",  exports);
 
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
