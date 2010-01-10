@@ -23,6 +23,23 @@ if use_luaevent then
 	function server.addtimer(f)
 		return add_task(1, function (...) f(...); return 1; end);
 	end
+	
+	-- Overwrite signal.signal() because we need to ask libevent to
+	-- handle them instead
+	local ok, signal = pcall(require, "util.signal");
+	if ok and signal then
+		local _signal_signal = signal.signal;
+		function signal.signal(signal_id, handler)
+			if type(signal_id) == "string" then
+				signal_id = signal[signal_id:upper()];
+			end
+			if type(signal_id) ~= "number" then
+				return false, "invalid-signal";
+			end
+			--_signal_signal(signal_id, handler);
+			return server.hook_signal(signal_id, handler);
+		end
+	end
 else
 	server = require "net.server_select";
 	package.loaded["net.server"] = server;
