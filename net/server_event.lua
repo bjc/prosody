@@ -13,7 +13,6 @@
 
 --]]
 
-
 local SCRIPT_NAME           = "server_event.lua"
 local SCRIPT_VERSION        = "0.05"
 local SCRIPT_AUTHOR         = "blastbeat"
@@ -77,6 +76,7 @@ local base = event.new( )
 local EV_READ = event.EV_READ
 local EV_WRITE = event.EV_WRITE
 local EV_TIMEOUT = event.EV_TIMEOUT
+local EV_SIGNAL = event.EV_SIGNAL
 
 local EV_READWRITE = bitor( EV_READ, EV_WRITE )
 
@@ -786,6 +786,21 @@ function get_backend()
 	return base:method();
 end
 
+-- We need to hold onto the events to stop them
+-- being garbage-collected
+local signal_events = {}; -- [signal_num] -> event object
+function hook_signal(signal_num, handler)
+	local function _handler(event)
+		local ret = handler();
+		if ret ~= false then -- Continue handling this signal?
+			return EV_SIGNAL; -- Yes
+		end
+		return -1; -- Close this event
+	end
+	signal_events[signal_num] = base:addevent(signal_num, EV_SIGNAL, _handler);
+	return signal_events[signal_num];
+end
+
 return {
 
 	cfg = cfg,
@@ -800,6 +815,7 @@ return {
 	setquitting = setquitting,
 	closeall = closeallservers,
 	get_backend = get_backend,
+	hook_signal = hook_signal,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,
