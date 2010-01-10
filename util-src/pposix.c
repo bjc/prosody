@@ -13,9 +13,10 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.1"
+#define MODULE_VERSION "0.3.2"
 
 #include <stdlib.h>
+#include <math.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <sys/resource.h>
@@ -358,6 +359,18 @@ int lc_setgid(lua_State* L)
 	return 2;
 }
 
+int lc_umask(lua_State* L)
+{
+	char old_mode_string[7];
+	mode_t old_mode = umask(strtoul(luaL_checkstring(L, 1), NULL, 8));
+
+	snprintf(old_mode_string, sizeof(old_mode_string), "%03o", old_mode);
+	old_mode_string[sizeof(old_mode_string)-1] = 0;
+	lua_pushstring(L, old_mode_string);
+
+	return 1;
+}
+
 /*	Like POSIX's setrlimit()/getrlimit() API functions.
  *
  *	Syntax:
@@ -505,6 +518,9 @@ int luaopen_util_pposix(lua_State *L)
 	lua_setfield(L, -2, "setuid");
 	lua_pushcfunction(L, lc_setgid);
 	lua_setfield(L, -2, "setgid");
+
+	lua_pushcfunction(L, lc_umask);
+	lua_setfield(L, -2, "umask");
 
 	lua_pushcfunction(L, lc_setrlimit);
 	lua_setfield(L, -2, "setrlimit");

@@ -7,7 +7,7 @@
 --
 
 
-local want_pposix_version = "0.3.1";
+local want_pposix_version = "0.3.2";
 
 local pposix = assert(require "util.pposix");
 if pposix._VERSION ~= want_pposix_version then module:log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
