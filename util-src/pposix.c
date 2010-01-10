@@ -371,6 +371,21 @@ int lc_umask(lua_State* L)
 	return 1;
 }
 
+int lc_mkdir(lua_State* L)
+{
+	int ret = mkdir(luaL_checkstring(L, 1), S_IRUSR | S_IWUSR | S_IXUSR
+		| S_IRGRP | S_IWGRP | S_IXGRP
+		| S_IROTH | S_IXOTH); /* mode 775 */
+
+	lua_pushboolean(L, ret==0);
+	if(ret)
+	{
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	return 1;
+}
+
 /*	Like POSIX's setrlimit()/getrlimit() API functions.
  *
  *	Syntax:
@@ -504,6 +519,8 @@ int luaopen_util_pposix(lua_State *L)
 		{ "setgid", lc_setgid },
 
 		{ "umask", lc_umask },
+
+		{ "mkdir", lc_mkdir },
 
 		{ "setrlimit", lc_setrlimit },
 		{ "getrlimit", lc_getrlimit },
