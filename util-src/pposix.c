@@ -463,9 +463,10 @@ int lc_getrlimit(lua_State *L) {
 	return 3;
 }
 
-void lc_abort(lua_State* L)
+int lc_abort(lua_State* L)
 {
 	abort();
+	return 0;
 }
 
 /* Register functions */
