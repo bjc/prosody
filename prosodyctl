@@ -60,6 +60,8 @@ do
 	end
 end
 
+prosody = { hosts = {}, events = events, platform = "posix" };
+
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
 
@@ -111,8 +113,7 @@ local error_messages = setmetatable({
 
 local events = require "util.events".new();
 
-hosts = {};
-prosody = { hosts = hosts, events = events };
+hosts = prosody.hosts;
 
 for hostname, config in pairs(config.getconfig()) do
 	hosts[hostname] = { events = events };
