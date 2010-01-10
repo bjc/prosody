@@ -19,6 +19,8 @@ end
 
 local logger_set = require "util.logger".setwriter;
 
+local lfs = require "lfs";
+
 local prosody = _G.prosody;
 
 module.host = "*"; -- we're a global module
@@ -62,28 +64,37 @@ module:add_event_hook("server-starting", function ()
 		end
 	end);
 
-local pidfile_written;
+local pidfile;
+local pidfile_handle;
 
 local function remove_pidfile()
-	if pidfile_written then
-		os.remove(pidfile_written);
-		pidfile_written = nil;
+	if pidfile_handle then
+		pidfile_handle:close();
+		os.remove(pidfile);
+		pidfile, pidfile_handle = nil, nil;
 	end
 end
 
 local function write_pidfile()
-	if pidfile_written then
+	if pidfile_handle then
 		remove_pidfile();
 	end
-	local pidfile = module:get_option("pidfile");
+	pidfile = module:get_option("pidfile");
 	if pidfile then
-		local pf, err = io.open(pidfile, "w+");
-		if not pf then
-			module:log("error", "Couldn't write pidfile; %s", err);
+		pidfile_handle, err = io.open(pidfile, "a+");
+		if not pidfile_handle then
+			module:log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
+			prosody.shutdown("Couldn't write pidfile");
 		else
-			pf:write(tostring(pposix.getpid()));
-			pf:close();
-			pidfile_written = pidfile;
+			if not lfs.lock(pidfile_handle, "w") then -- Exclusive lock
+				local other_pid = pidfile_handle:read("*a");
+				module:log("error", "Another Prosody instance seems to be running with PID %s, quitting", other_pid);
+				pidfile_handle = nil;
+				prosody.shutdown("Prosody already running");
+			else
+				pidfile_handle:write(tostring(pposix.getpid()));
+				pidfile_handle:flush();
+			end
 		end
 	end
 end
