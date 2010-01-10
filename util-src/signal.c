@@ -27,6 +27,7 @@
 */
 
 #include <signal.h>
+#include <malloc.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -149,43 +150,66 @@ static const struct lua_signal lua_signals[] = {
   {NULL, 0}
 };
 
-static int Nsig = 0;
 static lua_State *Lsig = NULL;
 static lua_Hook Hsig = NULL;
 static int Hmask = 0;
 static int Hcount = 0;
 
+static struct signal_event
+{
+	int Nsig;
+	struct signal_event *next_event;
+} *signal_queue = NULL;
+
+static struct signal_event *last_event = NULL;
+
 static void sighook(lua_State *L, lua_Debug *ar)
 {
   lua_pushstring(L, LUA_SIGNAL);
   lua_gettable(L, LUA_REGISTRYINDEX);
-  lua_pushnumber(L, Nsig);
-  lua_gettable(L, -2);
 
-  lua_call(L, 0, 0);
+  struct signal_event *event;
+  while((event = signal_queue))
+  {
+    lua_pushnumber(L, event->Nsig);
+    lua_gettable(L, -2);
+    lua_call(L, 0, 0);
+    signal_queue = event->next_event;
+    free(event);
+  };
 
-  /* set the old hook */
+  lua_pop(L, 1); /* pop lua_signal table */
+
+  /* restore the old hook */
   lua_sethook(L, Hsig, Hmask, Hcount);
 }
 
 static void handle(int sig)
 {
-  Hsig = lua_gethook(Lsig);
-  Hmask = lua_gethookmask(Lsig);
-  Hcount = lua_gethookcount(Lsig);
-  Nsig = sig;
-
-  lua_sethook(Lsig, sighook, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
-  /*
-  switch (sig)
+  if(!signal_queue)
   {
-    case SIGABRT: ;
-    case SIGFPE: ;
-    case SIGILL: ;
-    case SIGINT: ;
-    case SIGSEGV: ;
-    case SIGTERM: ;
-  } */
+    /* Store the existing debug hook (if any) and its parameters */
+    Hsig = lua_gethook(Lsig);
+    Hmask = lua_gethookmask(Lsig);
+    Hcount = lua_gethookcount(Lsig);
+    
+    signal_queue = malloc(sizeof(struct signal_event));
+    signal_queue->Nsig = sig;
+    signal_queue->next_event = NULL;
+
+    last_event = signal_queue;
+    
+    /* Set our new debug hook */
+    lua_sethook(Lsig, sighook, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
+  }
+  else
+  {
+    last_event->next_event = malloc(sizeof(struct signal_event));
+    last_event->next_event->Nsig = sig;
+    last_event->next_event->next_event = NULL;
+    
+    last_event = last_event->next_event;
+  }
 }
 
 /*
