@@ -21,13 +21,19 @@ local next = next;
 local t_insert = table.insert;
 local append = require "util.serialization".append;
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
-local lfs_mkdir = require "lfs".mkdir;
+local raw_mkdir;
+
+if prosody.platform == "posix" then
+	raw_mkdir = require "util.pposix".mkdir; -- Doesn't trample on umask
+else
+	raw_mkdir = require "lfs".mkdir;
+end
 
 module "datamanager"
 
 ---- utils -----
 local encode, decode;
-do 
+do
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
 
 	decode = function (s)
@@ -43,7 +49,7 @@ local _mkdir = {};
 local function mkdir(path)
 	path = path:gsub("/", path_separator); -- TODO as an optimization, do this during path creation rather than here
 	if not _mkdir[path] then
-		lfs_mkdir(path);
+		raw_mkdir(path);
 		_mkdir[path] = true;
 	end
 	return path;
