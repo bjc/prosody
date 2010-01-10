@@ -1,9 +1,9 @@
 /*
  * signal.c -- Signal Handler Library for Lua
  *
- * Version: 1.000
+ * Version: 1.000+changes
  *
- * Copyright (C) 2007  Patrick J. Donnelly (batrick@unm.edu)
+ * Copyright (C) 2007  Patrick J. Donnelly (batrick@batbytes.com)
  *
  * This software is distributed under the same license as Lua 5.0:
  *
