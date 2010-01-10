@@ -136,7 +136,6 @@ module:add_event_hook("server-stopped", remove_pidfile);
 if signal.signal then
 	signal.signal("SIGTERM", function ()
 		module:log("warn", "Received SIGTERM");
-		signal.signal("SIGTERM", function () end); -- Fixes us getting into some kind of loop
 		prosody.unlock_globals();
 		prosody.shutdown("Received SIGTERM");
 		prosody.lock_globals();
@@ -150,7 +149,6 @@ if signal.signal then
 	
 	signal.signal("SIGINT", function ()
 		module:log("info", "Received SIGINT");
-		signal.signal("SIGINT", function () end); -- Fix to not loop
 		prosody.unlock_globals();
 		prosody.shutdown("Received SIGINT");
 		prosody.lock_globals();
