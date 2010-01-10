@@ -23,6 +23,9 @@ local prosody = _G.prosody;
 
 module.host = "*"; -- we're a global module
 
+local umask = module:get_option("umask") or "027";
+pposix.umask(umask);
+
 -- Allow switching away from root, some people like strange ports.
 module:add_event_hook("server-started", function ()
 		local uid = module:get_option("setuid");
