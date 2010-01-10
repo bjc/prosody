@@ -66,7 +66,7 @@ require "util.datamanager".set_data_path(data_path);
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 
-local want_pposix_version = "0.3.1";
+local want_pposix_version = "0.3.2";
 local ok, pposix = pcall(require, "util.pposix");
 
 if ok and pposix then
@@ -89,6 +89,9 @@ if ok and pposix then
 			print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 		end
 	end
+	
+	-- Set our umask to protect data files
+	pposix.umask(config.get("*", "core", "umask") or "027");
 else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 	print("For more help send the below error to us through http://prosody.im/discuss");
