@@ -24,6 +24,7 @@ local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 local fire_event = require "core.eventmanager".fire_event;
 local add_task = require "util.timer".add_task;
@@ -105,7 +106,8 @@ function bind_resource(session, resource)
 	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
-	resource = resource or uuid_generate();
+	resource = resourceprep(resource);
+	resource = resource ~= "" and resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	
 	if not hosts[session.host].sessions[session.username] then
