@@ -16,6 +16,7 @@ local events_new = require "util.events".new;
 local st = require "util.stanza";
 local prosody, hosts = prosody, prosody.hosts;
 local ssl = ssl;
+local uuid_gen = require "util.uuid".generate;
 
 local pairs, setmetatable, type, tostring = pairs, setmetatable, type, tostring;
 
@@ -91,7 +92,8 @@ function create_component(host, component, events)
 		end
 	end
 	return { type = "component", host = host, connected = true, s2sout = {}, 
-			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new() };
+			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new(),
+			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen() };
 end
 
 function register_component(host, component, session)
@@ -100,12 +102,16 @@ function register_component(host, component, session)
 
 		components[host] = component;
 		hosts[host] = session or create_component(host, component, old_events);
-		
+
 		-- Add events object if not already one
 		if not hosts[host].events then
 			hosts[host].events = old_events or events_new();
 		end
-		
+
+		if not hosts[host].dialback_secret then
+			hosts[host].dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
+		end
+
 		-- add to disco_items
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
