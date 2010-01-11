@@ -36,7 +36,7 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl
 if sasl_backend == "cyrus" then
-	cyrus_new = require "util.sasl_cyrus".new;
+	local cyrus_new = require "util.sasl_cyrus".new;
 	new_sasl = function(realm)
 			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp")
 		end
@@ -45,26 +45,26 @@ else
 	new_sasl = require "util.sasl".new;
 end
 
-default_authentication_profile = {
+local default_authentication_profile = {
 	plain = function(username, realm)
-			local prepped_username = nodeprep(username);
-			if not prepped_username then
-				log("debug", "NODEprep failed on username: %s", username);
-				return "", nil;
-			end
-			local password = usermanager_get_password(prepped_username, realm);
-			if not password then
-				return "", nil;
-			end
-			return password, true;
+		local prepped_username = nodeprep(username);
+		if not prepped_username then
+			log("debug", "NODEprep failed on username: %s", username);
+			return "", nil;
 		end
+		local password = usermanager_get_password(prepped_username, realm);
+		if not password then
+			return "", nil;
+		end
+		return password, true;
+	end
 };
 
-anonymous_authentication_profile = {
+local anonymous_authentication_profile = {
 	anonymous = function(username, realm)
-			return true; -- for normal usage you should always return true here
-		end
-}
+		return true; -- for normal usage you should always return true here
+	end
+};
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
