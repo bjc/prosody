@@ -21,7 +21,7 @@ local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_get_password = require "core.usermanager".get_password;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
-local jid_split = require "util.jid".split
+local jid_split = require "util.jid".split;
 local md5 = require "util.hashes".md5;
 local config = require "core.configmanager";
 
@@ -38,10 +38,10 @@ local new_sasl
 if sasl_backend == "cyrus" then
 	local cyrus_new = require "util.sasl_cyrus".new;
 	new_sasl = function(realm)
-			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp")
-		end
+		return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
+	end
 else
-	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend) end;
+	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend); end;
 	new_sasl = require "util.sasl".new;
 end
 
@@ -144,56 +144,53 @@ module:add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
-module:add_event_hook("stream-features",
-		function (session, features)
-			if not session.username then
-				if secure_auth_only and not session.secure then
-					return;
-				end
-				if module:get_option("anonymous_login") then
-					session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
-				else
-					session.sasl_handler = new_sasl(session.host, default_authentication_profile);
-					if not (module:get_option("allow_unencrypted_plain_auth")) and not session.secure then
-						session.sasl_handler:forbidden({"PLAIN"});
-					end
-				end
-				features:tag("mechanisms", mechanisms_attr);
-				for k, v in pairs(session.sasl_handler:mechanisms()) do
-					features:tag("mechanism"):text(v):up();
-				end
-				features:up();
-			else
-				features:tag("bind", bind_attr):tag("required"):up():up();
-				features:tag("session", xmpp_session_attr):tag("optional"):up():up();
+module:add_event_hook("stream-features", function(session, features)
+	if not session.username then
+		if secure_auth_only and not session.secure then
+			return;
+		end
+		if module:get_option("anonymous_login") then
+			session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
+		else
+			session.sasl_handler = new_sasl(session.host, default_authentication_profile);
+			if not (module:get_option("allow_unencrypted_plain_auth")) and not session.secure then
+				session.sasl_handler:forbidden({"PLAIN"});
 			end
-		end);
+		end
+		features:tag("mechanisms", mechanisms_attr);
+		for k, v in pairs(session.sasl_handler:mechanisms()) do
+			features:tag("mechanism"):text(v):up();
+		end
+		features:up();
+	else
+		features:tag("bind", bind_attr):tag("required"):up():up();
+		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
+	end
+end);
 
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind",
-		function (session, stanza)
-			log("debug", "Client requesting a resource bind");
-			local resource;
-			if stanza.attr.type == "set" then
-				local bind = stanza.tags[1];
-				if bind and bind.attr.xmlns == xmlns_bind then
-					resource = bind:child_with_name("resource");
-					if resource then
-						resource = resource[1];
-					end
-				end
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", function(session, stanza)
+	log("debug", "Client requesting a resource bind");
+	local resource;
+	if stanza.attr.type == "set" then
+		local bind = stanza.tags[1];
+		if bind and bind.attr.xmlns == xmlns_bind then
+			resource = bind:child_with_name("resource");
+			if resource then
+				resource = resource[1];
 			end
-			local success, err_type, err, err_msg = sm_bind_resource(session, resource);
-			if not success then
-				session.send(st.error_reply(stanza, err_type, err, err_msg));
-			else
-				session.send(st.reply(stanza)
-					:tag("bind", { xmlns = xmlns_bind})
-					:tag("jid"):text(session.full_jid));
-			end
-		end);
+		end
+	end
+	local success, err_type, err, err_msg = sm_bind_resource(session, resource);
+	if not success then
+		session.send(st.error_reply(stanza, err_type, err, err_msg));
+	else
+		session.send(st.reply(stanza)
+			:tag("bind", { xmlns = xmlns_bind})
+			:tag("jid"):text(session.full_jid));
+	end
+end);
 
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session",
-		function (session, stanza)
-			log("debug", "Client requesting a session");
-			session.send(st.reply(stanza));
-		end);
+module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", function(session, stanza)
+	log("debug", "Client requesting a session");
+	session.send(st.reply(stanza));
+end);
