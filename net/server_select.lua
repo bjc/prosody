@@ -353,6 +353,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.shutdown = function( pattern )
         return shutdown( socket, pattern )
     end
+    handler.setoption = function (self, option, value)
+    	return socket:setoption(option, value);
+    end
     handler.close = function( self, forced )
         if not handler then return true; end
         _readlistlen = removesocket( _readlist, socket, _readlistlen )
