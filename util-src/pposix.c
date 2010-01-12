@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.2"
+#define MODULE_VERSION "0.3.3"
 
 #include <stdlib.h>
 #include <math.h>
