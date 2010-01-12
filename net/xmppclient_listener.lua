@@ -27,6 +27,9 @@ local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = require "util.stanza";
 
+local config = require "core.configmanager";
+local opt_keepalives = config.get("*", "core", "tcp_keepalives");
+
 local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", 
 		default_ns = "jabber:client",
 		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
@@ -119,6 +122,10 @@ function xmppclient.onincoming(conn, data)
 		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
 		if conn:ssl() then
 			session.secure = true;
+		end
+		
+		if opt_keepalives ~= nil then
+			conn:setoption("keepalive", opt_keepalives);
 		end
 		
 		session.reset_stream = session_reset_stream;
