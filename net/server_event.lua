@@ -418,6 +418,10 @@ do
 		return true
 	end
 	
+	function interface_mt:setoption(option, value)
+		return self.conn:setoption(option, value);
+	end
+	
 	-- Stub handlers
 	function interface_mt:onconnect()
 	end
