@@ -16,7 +16,6 @@ local muc_name = module:get_option("name");
 if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local restrict_room_creation = module:get_option("restrict_room_creation");
 if restrict_room_creation and restrict_room_creation ~= true then restrict_room_creation = nil; end
-local history_length = 20;
 
 local muc_new_room = module:require "muc".new_room;
 local register_component = require "core.componentmanager".register_component;
