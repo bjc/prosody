@@ -20,6 +20,7 @@ end
 local logger_set = require "util.logger".setwriter;
 
 local lfs = require "lfs";
+local stat = lfs.attributes;
 
 local prosody = _G.prosody;
 
@@ -78,7 +79,8 @@ local function write_pidfile()
 	end
 	pidfile = module:get_option("pidfile");
 	if pidfile then
-		pidfile_handle, err = io.open(pidfile, "a+");
+		local mode = stat(pidfile) and "r+" or "w+";
+		pidfile_handle, err = io.open(pidfile, mode);
 		if not pidfile_handle then
 			module:log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
 			prosody.shutdown("Couldn't write pidfile");
