@@ -65,7 +65,7 @@ function getpid()
 		return false, "no-pidfile";
 	end
 	
-	local file, err = io.open(pidfile, "w");
+	local file, err = io.open(pidfile, "r+");
 	if not file then
 		return false, "pidfile-read-failed", err;
 	end
