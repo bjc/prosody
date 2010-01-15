@@ -27,7 +27,7 @@
 */
 
 #include <signal.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "lua.h"
 #include "lauxlib.h"
