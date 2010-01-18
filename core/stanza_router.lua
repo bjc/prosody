@@ -180,7 +180,7 @@ function core_route_stanza(origin, stanza)
 			local xmlns = stanza.attr.xmlns;
 			--stanza.attr.xmlns = "jabber:server";
 			stanza.attr.xmlns = nil;
-			log("debug", "sending s2s stanza: %s", tostring(stanza.top_tag and stanza:top_tag()) or stanza);
+			log("debug", "sending s2s stanza: %s", tostring(stanza));
 			send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
 			stanza.attr.xmlns = xmlns; -- reset
 		else
@@ -191,6 +191,6 @@ function core_route_stanza(origin, stanza)
 		log("debug", "Routing outgoing stanza for %s to %s", from_host, host);
 		send_s2s(from_host, host, stanza);
 	else
-		log("warn", "received stanza from unhandled connection type: %s", origin.type);
+		log("warn", "received %s stanza from unhandled connection type: %s", tostring(stanza.name), tostring(origin.type));
 	end
 end
