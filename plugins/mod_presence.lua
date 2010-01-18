@@ -309,6 +309,13 @@ module:hook("presence/bare", function(data)
 	end
 	return true;
 end);
+module:hook("presence/host", function (data)
+	local stanza = data.stanza;
+	local reply = st.reply(stanza);
+	reply.attr.type = "unsubscribed";
+	handle_inbound_presence_subscriptions_and_probes(data.origin, reply, jid_bare(stanza.attr.to), jid_bare(stanza.attr.from), core_route_stanza);
+	return true;
+end);
 module:hook("presence/full", function(data)
 	-- inbound presence to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
