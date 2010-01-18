@@ -26,6 +26,8 @@ module "xmlhandlers"
 local ns_prefixes = {
 						["http://www.w3.org/XML/1998/namespace"] = "xml";
 				}
+local ns_separator = "\1";
+local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
 function init_xmlhandlers(session, stream_callbacks)
 		local ns_stack = { "" };
@@ -49,7 +51,7 @@ function init_xmlhandlers(session, stream_callbacks)
 				stanza:text(t_concat(chardata));
 				chardata = {};
 			end
-			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
+			local curr_ns,name = tagname:match(ns_pattern);
 			if name == "" then
 				curr_ns, name = "", curr_ns;
 			end
@@ -62,7 +64,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			for i=1,#attr do
 				local k = attr[i];
 				attr[i] = nil;
-				local ns, nm = k:match("^([^\1]*)\1?(.*)$");
+				local ns, nm = k:match(ns_pattern);
 				if nm ~= "" then
 					ns = ns_prefixes[ns]; 
 					if ns then 
@@ -104,7 +106,7 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 		end
 		function xml_handlers:EndElement(tagname)
-			local curr_ns,name = tagname:match("^([^\1]*)\1?(.*)$");
+			local curr_ns,name = tagname:match(ns_pattern);
 			if name == "" then
 				curr_ns, name = "", curr_ns;
 			end
