@@ -415,6 +415,7 @@ do
 			self:_lock( true, true, false )
 			debug "ssl session delayed until writebuffer is empty..."
 		end
+		self.starttls = false;
 		return true
 	end
 	
