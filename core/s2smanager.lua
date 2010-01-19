@@ -327,7 +327,7 @@ function make_connect(host_session, connect_host, connect_port)
 	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
-	host_session:open_stream();
+	host_session:open_stream(from_host, to_host);
 	
 	log("debug", "Connection attempt in progress...");
 	add_task(connect_timeout, function ()
