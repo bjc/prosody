@@ -30,8 +30,7 @@ local st = require "util.stanza";
 local config = require "core.configmanager";
 local opt_keepalives = config.get("*", "core", "tcp_keepalives");
 
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", 
-		default_ns = "jabber:client",
+local stream_callbacks = { default_ns = "jabber:client",
 		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
 function stream_callbacks.error(session, error, data)
@@ -71,9 +70,8 @@ local function session_reset_stream(session)
 		return true;
 end
 
-
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:match("[^\1]*"), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
