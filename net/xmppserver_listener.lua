@@ -70,7 +70,7 @@ end
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
-local function session_close(session, reason)
+local function session_close(session, reason, remote_reason)
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
@@ -103,7 +103,7 @@ local function session_close(session, reason)
 			session.conn:close(true); -- Force FIXME: timer?
 		end
 		session.conn:close();
-		xmppserver.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "stream closed");
+		xmppserver.ondisconnect(session.conn, remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed");
 	end
 end
 
