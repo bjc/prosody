@@ -116,13 +116,11 @@ function init_xmlhandlers(session, stream_callbacks)
 			if name == "" then
 				curr_ns, name = "", curr_ns;
 			end
-			if (not stanza) or (#stanza.last_add > 0 and name ~= stanza.last_add[#stanza.last_add].name) then 
+			if not stanza then
 				if tagname == stream_tag then
 					if cb_streamclosed then
 						cb_streamclosed(session);
 					end
-				elseif name == "error" then
-					cb_error(session, "stream-error", stanza);
 				else
 					cb_error(session, "parse-error", "unexpected-element-close", name);
 				end
@@ -136,7 +134,11 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 			-- Complete stanza
 			if #stanza.last_add == 0 then
-				cb_handlestanza(session, stanza);
+				if tagname ~= stream_error_tag then
+					cb_handlestanza(session, stanza);
+				else
+					cb_error(session, "stream-error", stanza);
+				end
 				stanza = nil;
 			else
 				stanza:up();
