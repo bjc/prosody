@@ -104,7 +104,7 @@ local function session_close(session, reason)
 			session.conn:close(true); -- Force FIXME: timer?
 		end
 		session.conn:close();
-		xmppserver.ondisconnect(session.conn, "stream error");
+		xmppserver.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "stream closed");
 	end
 end
 
