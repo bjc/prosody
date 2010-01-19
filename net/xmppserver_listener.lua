@@ -20,12 +20,31 @@ local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
 local stream_callbacks = { default_ns = "jabber:server",
 		streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
 
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
+
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
 		session:close("invalid-namespace");
-	else
+	elseif error == "parse-error" then
 		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
 		session:close("xml-not-well-formed");
+	elseif error == "stream-error" then
+		local condition, text = "undefined-condition";
+		for child in data:children() do
+			if child.attr.xmlns == xmlns_xmpp_streams then
+				if child.name ~= "text" then
+					condition = child.name;
+				else
+					text = child:get_text();
+				end
+				if condition ~= "undefined-condition" and text then
+					break;
+				end
+			end
+		end
+		text = condition .. (text and (" ("..text..")") or "");
+		session.log("info", "Session closed by remote with error: %s", text);
+		session:close(nil, text);
 	end
 end
 
