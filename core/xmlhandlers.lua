@@ -26,6 +26,9 @@ module "xmlhandlers"
 local ns_prefixes = {
 						["http://www.w3.org/XML/1998/namespace"] = "xml";
 				}
+
+local xmlns_streams = "http://etherx.jabber.org/streams";
+
 local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
@@ -41,7 +44,10 @@ function init_xmlhandlers(session, stream_callbacks)
 		local cb_error = stream_callbacks.error or function (session, e) error("XML stream error: "..tostring(e)); end;
 		local cb_handlestanza = stream_callbacks.handlestanza;
 		
-		local stream_tag = stream_callbacks.stream_tag;
+		local stream_ns = stream_callbacks.stream_ns or xmlns_streams;
+		local stream_tag = stream_ns..ns_separator..(stream_callbacks.stream_tag or "stream");
+		local stream_error_tag = stream_ns..ns_separator..(stream_callbacks.error_tag or "error");
+		
 		local stream_default_ns = stream_callbacks.default_ns;
 		
 		local stanza
