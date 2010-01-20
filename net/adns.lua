@@ -43,32 +43,33 @@ function cancel(handle, call_handler)
 end
 
 function new_async_socket(sock, resolver)
-	local peername = "<unknown>";
+	local newconn, peername = {}, "<unknown>";
 	local listener = {};
-	local handler = {};
-	function listener.onincoming(conn, data)
-		dns.feed(handler, data);
+	function listener.incoming(conn, data)
+		dns.feed(sock, data);
 	end
-	function listener.ondisconnect(conn, err)
+	function listener.disconnect(conn, err)
 		log("warn", "DNS socket for %s disconnected: %s", peername, err);
 		local servers = resolver.server;
-		if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
+		if resolver.socketset[newconn.handler] == resolver.best_server and resolver.best_server == #servers then
 			log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
 		end
 		
 		resolver:servfail(conn); -- Let the magic commence
 	end
-	handler = server.wrapclient(sock, "dns", 53, listener);
-	if not handler then
+	newconn.handler, newconn._socket = server.wrapclient(sock, "dns", 53, listener);
+	if not newconn.handler then
 		log("warn", "handler is nil");
 	end
-	
-	handler.settimeout = function () end
-	handler.setsockname = function (_, ...) return sock:setsockname(...); end
-	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(sock.send); return ret; end
-	handler.connect = function (_, ...) return sock:connect(...) end	
-	handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end	
-	return handler;
+	if not newconn._socket then
+		log("warn", "socket is nil");
+	end
+	newconn.handler.settimeout = function () end
+	newconn.handler.setsockname = function (_, ...) return sock:setsockname(...); end
+	newconn.handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
+	newconn.handler.connect = function (_, ...) return sock:connect(...) end
+	newconn.handler.send = function (_, data) _.write(data); return _.sendbuffer(); end
+	return newconn.handler;
 end
 
 dns:socket_wrapper_set(new_async_socket);
