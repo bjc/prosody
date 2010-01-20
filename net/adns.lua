@@ -67,8 +67,8 @@ function new_async_socket(sock, resolver)
 	newconn.handler.settimeout = function () end
 	newconn.handler.setsockname = function (_, ...) return sock:setsockname(...); end
 	newconn.handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _.setsend(sock.send); return ret; end
-	newconn.handler.connect = function (_, ...) return sock:connect(...) end	
-	newconn.handler.send = function (_, data) _.write(data); return _.sendbuffer(); end	
+	newconn.handler.connect = function (_, ...) return sock:connect(...) end
+	newconn.handler.send = function (_, data) _.write(data); return _.sendbuffer(); end
 	return newconn.handler;
 end
 
