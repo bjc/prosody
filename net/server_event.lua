@@ -420,7 +420,10 @@ do
 	end
 	
 	function interface_mt:setoption(option, value)
-		return self.conn:setoption(option, value);
+		if self.conn.setoption then
+			return self.conn:setoption(option, value);
+		end
+		return false, "setoption not implemented";
 	end
 	
 	-- Stub handlers
