@@ -171,7 +171,10 @@ local function request_reader(request, data, startpos)
 		log("debug", "Reading request line...")
 		local method, path, http, linelen = data:match("^(%S+) (%S+) HTTP/(%S+)\r\n()", startpos);
 		if not method then
-			return call_callback(request, "invalid-status-line");
+			log("warn", "Invalid HTTP status line, telling callback then closing");
+			local ret = call_callback(request, "invalid-status-line");
+			request:destroy();
+			return ret;
 		end
 		
 		request.method, request.path, request.httpversion = method, path, http;
