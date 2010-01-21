@@ -143,7 +143,7 @@ do
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
 					if plainssl then  -- start ssl session
-						self:_start_ssl( self.listener.onconnect )
+						self:starttls()
 					else  -- normal connection
 						self:_start_session( self.listener.onconnect )
 					end
@@ -662,7 +662,7 @@ do
 				local clientinterface = handleclient( client, ip, port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
 				if startssl then
-					clientinterface:_start_ssl( clientinterface.onconnect )
+					clientinterface:starttls()
 				else
 					clientinterface:_start_session( clientinterface.onconnect )
 				end
