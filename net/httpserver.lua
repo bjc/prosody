@@ -142,22 +142,29 @@ local function request_reader(request, data, startpos)
 	elseif request.state == "headers" then
 		log("debug", "Reading headers...")
 		local pos = startpos;
-		local headers = request.headers or {};
+		local headers, headers_complete = request.headers;
+		if not headers then
+			headers = {};
+			request.headers = headers;
+		end
+		
 		for line in data:gmatch("(.-)\r\n") do
 			startpos = (startpos or 1) + #line + 2;
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
 				headers[k:lower()] = v;
---				log("debug", "Header: "..k:lower().." = "..v);
+				--log("debug", "Header: '"..k:lower().."' = '"..v.."'");
 			elseif #line == 0 then
-				request.headers = headers;
+				headers_complete = true;
 				break;
 			else
 				log("debug", "Unhandled header line: "..line);
 			end
 		end
 		
-		if not expectbody(request) then 
+		if not headers_complete then return; end
+		
+		if not expectbody(request) then
 			call_callback(request);
 			return;
 		end
