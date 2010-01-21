@@ -354,7 +354,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
         return shutdown( socket, pattern )
     end
     handler.setoption = function (self, option, value)
-    	return socket:setoption(option, value);
+        if socket.setoption then
+            return socket:setoption(option, value);
+        end
+        return false, "setoption not implemented";
     end
     handler.close = function( self, forced )
         if not handler then return true; end
