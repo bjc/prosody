@@ -23,9 +23,6 @@ local urlencode = function (s) return s and (s:gsub("%W", function (c) return st
 
 local log = require "util.logger".init("httpserver");
 
--- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
-local mime_map = { html = "text/html", txt = "plain/text; charset=utf-8", js = "text/javascript" };
-
 local http_servers = {};
 
 module "httpserver"
@@ -68,9 +65,6 @@ local function send_response(request, response)
 		
 		resp = { "HTTP/1.0 200 OK\r\n" };
 		t_insert(resp, "Connection: close\r\n");
-		t_insert(resp, "Content-Type: ");
-		t_insert(resp, mime_map[request.url.path:match("%.(%w+)")] or "application/octet-stream");
-		t_insert(resp, "\r\n");
 		t_insert(resp, "Content-Length: ");
 		t_insert(resp, #response);
 		t_insert(resp, "\r\n\r\n");
@@ -181,7 +175,10 @@ local function request_reader(request, data, startpos)
 		log("debug", "Reading request line...")
 		local method, path, http, linelen = data:match("^(%S+) (%S+) HTTP/(%S+)\r\n()", startpos);
 		if not method then
-			return call_callback(request, "invalid-status-line");
+			log("warn", "Invalid HTTP status line, telling callback then closing");
+			local ret = call_callback(request, "invalid-status-line");
+			request:destroy();
+			return ret;
 		end
 		
 		request.method, request.path, request.httpversion = method, path, http;
@@ -215,8 +212,8 @@ end
 
 function new_request(handler)
 	return { handler = handler, conn = handler.socket, 
-			write = function (...) return handler:write(...); end, state = "request", 
-			server = http_servers[handler:serverport()],
+			write = handler.write, state = "request", 
+			server = http_servers[handler.serverport()],
 			send = send_response,
 			destroy = destroy_request,
 			id = tostring{}:match("%x+$")
@@ -236,7 +233,7 @@ function destroy_request(request)
 		end
 		request.handler.close()
 		if request.conn then
-			listener.ondisconnect(request.handler, "closed");
+			listener.disconnect(request.handler, "closed");
 		end
 	end
 end
