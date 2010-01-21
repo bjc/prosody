@@ -36,8 +36,8 @@ end
 local function send_response(request, response)
 	-- Write status line
 	local resp;
-	if response.body then
-		local body = tostring(response.body);
+	if response.body or response.headers then
+		local body = response.body and tostring(response.body);
 		log("debug", "Sending response to %s", request.id);
 		resp = { "HTTP/1.0 "..(response.status or "200 OK").."\r\n" };
 		local h = response.headers;
@@ -46,12 +46,12 @@ local function send_response(request, response)
 				t_insert(resp, k..": "..v.."\r\n");
 			end
 		end
-		if not (h and h["Content-Length"]) then
+		if body and not (h and h["Content-Length"]) then
 			t_insert(resp, "Content-Length: "..#body.."\r\n");
 		end
 		t_insert(resp, "\r\n");
 		
-		if request.method ~= "HEAD" then
+		if body and request.method ~= "HEAD" then
 			t_insert(resp, body);
 		end
 		request.write(t_concat(resp));
