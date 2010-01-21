@@ -13,7 +13,6 @@ local log = logger.init("modulemanager");
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
-local register_actions = require "core.actions".register;
 local st = require "util.stanza";
 local pluginloader = require "util.pluginloader";
 
@@ -531,20 +530,5 @@ function api:get_host_items(key)
 	end
 	return result;
 end
-
---------------------------------------------------------------------
-
-local actions = {};
-
-function actions.load(params)
-	--return true, "Module loaded ("..params.module.." on "..params.host..")";
-	return load(params.host, params.module);
-end
-
-function actions.unload(params)
-	return unload(params.host, params.module);
-end
-
-register_actions("/modules", actions);
 
 return _M;
