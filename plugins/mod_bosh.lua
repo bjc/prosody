@@ -63,7 +63,7 @@ function handle_request(method, body, request)
 	if (not body) or request.method ~= "POST" then
 		return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
 	end
-	if not method then 
+	if not method then
 		log("debug", "Request %s suffered error %s", tostring(request.id), body);
 		return;
 	end
@@ -188,12 +188,12 @@ function stream_callbacks.streamopened(request, attr)
 		local features = st.stanza("stream:features");
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
-		local response = st.stanza("body", { xmlns = xmlns_bosh, 
-									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120", 
-									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
+		local response = st.stanza("body", { xmlns = xmlns_bosh,
+									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120",
+									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0",
 									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
-				
+		
 		request.sid = sid;
 		return;
 	end
