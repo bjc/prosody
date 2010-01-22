@@ -31,9 +31,8 @@ local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 
 local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
 local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
-
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
+local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
 local cross_domain = module:get_option("cross_domain_bosh");
 if cross_domain then
