@@ -31,23 +31,23 @@ local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 
 local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
 local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
-local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
-local http_options, http_denied_options = { headers = {} }, { headers = {} };
+local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
+
 local cross_domain = module:get_option("cross_domain_bosh");
-if cross_domain ~= false then
-	http_options.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
-	http_options.headers["Access-Control-Allow-Headers"] = "Content-Type";
-	http_options.headers["Access-Control-Max-Age"] = "86400";
+if cross_domain then
+	default_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+	default_headers["Access-Control-Allow-Headers"] = "Content-Type";
+	default_headers["Access-Control-Max-Age"] = "7200";
 
 	if cross_domain == true then
-		http_options.headers["Access-Control-Allow-Origin"] = "*";
+		default_headers["Access-Control-Allow-Origin"] = "*";
 	elseif type(cross_domain) == "table" then
 		cross_domain = table.concat(cross_domain, ", ");
 	end
 	if type(cross_domain) == "string" then
-		http_options.headers["Access-Control-Allow-Origin"] = cross_domain;
+		default_headers["Access-Control-Allow-Origin"] = cross_domain;
 	end
 end
 
@@ -76,22 +76,10 @@ function on_destroy_request(request)
 	end
 end
 
-local function send_options_headers(request)
-	if cross_domain == nil then
-		local host = request.headers.host and request.headers.host:match("^[^:]+");
-		if hosts[host] then
-			http_options.headers["Access-Control-Allow-Origin"] = "http://"..host;
-		else
-			return http_denied_options; -- We don't want to reveal the hosts we serve
-		end
-	end
-	return http_options;
-end
-
 function handle_request(method, body, request)
 	if (not body) or request.method ~= "POST" then
 		if request.method == "OPTIONS" then
-			return send_options_headers(request);
+			return { headers = default_headers, body = "" };
 		else
 			return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
 		end
