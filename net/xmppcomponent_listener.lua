@@ -117,7 +117,7 @@ local function session_close(session, reason)
 			end
 		end
 		session.send("</stream:stream>");
-		session.conn.close();
+		session.conn:close();
 		component_listener.ondisconnect(session.conn, "stream error");
 	end
 end
