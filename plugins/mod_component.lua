@@ -44,7 +44,7 @@ function handle_component_auth(session, stanza)
 	
 	local secret = config.get(session.user, "core", "component_secret");
 	if not secret then
-		(session.log or log)("warn", "Component attempted to identify as %s, but component_password is not set", session.user);
+		(session.log or log)("warn", "Component attempted to identify as %s, but component_secret is not set", session.user);
 		session:close("not-authorized");
 		return;
 	end
