@@ -295,7 +295,7 @@ function prepare_to_start()
 	else
 		prosody.net_activate_ports("c2s", "xmppclient", {5222});
 		prosody.net_activate_ports("s2s", "xmppserver", {5269});
-		prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
+		prosody.net_activate_ports("component", "xmppcomponent", {5347}, "tcp");
 		prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 	end
 
