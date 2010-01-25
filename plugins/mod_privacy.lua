@@ -184,13 +184,6 @@ function deleteList (privacy_lists, origin, stanza, name)
 	return {"modify", "bad-request", "Not existing list specifed to be deleted."};
 end
 
-local function sortByOrder(a, b)
-	if a.order < b.order then
-		return true;
-	end
-	return false;
-end
-
 function createOrReplaceList (privacy_lists, origin, stanza, name, entries, roster)
 	local idx = findNamedList(privacy_lists, name);
 	local bare_jid = origin.username.."@"..origin.host;
@@ -277,7 +270,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 		list.items[#list.items + 1] = tmp;
 	end
 	
-	table.sort(list, sortByOrder);
+	table.sort(list, function(a, b) return a.order < b.order; end);
 
 	privacy_lists.lists[idx] = list;
 	origin.send(st.reply(stanza));
