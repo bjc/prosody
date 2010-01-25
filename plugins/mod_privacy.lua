@@ -88,8 +88,6 @@ function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implemen
 	elseif type(listnameOrItem) == "table" then
 		module:log("debug", "got an item, check wether to send unavailable presence stanza or not");
 		local item = listnameOrItem;
-		local serialize = require "util.serialization".serialize;
-
 
 		if item["presence-out"] == true then
 			if item.type == "jid" then
