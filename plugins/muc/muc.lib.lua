@@ -89,17 +89,6 @@ local function getTag(stanza, path) return getUsingPath(stanza, path); end
 local function getText(stanza, path) return getUsingPath(stanza, path, true); end
 -----------
 
---[[function get_room_disco_info(room, stanza)
-	return st.iq({type='result', id=stanza.attr.id, from=stanza.attr.to, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#info")
-		:tag("identity", {category='conference', type='text', name=room._data["name"]):up()
-		:tag("feature", {var="http://jabber.org/protocol/muc"}); -- TODO cache disco reply
-end
-function get_room_disco_items(room, stanza)
-	return st.iq({type='result', id=stanza.attr.id, from=stanza.attr.to, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#items");
-end -- TODO allow non-private rooms]]
-
---
-
 local room_mt = {};
 room_mt.__index = room_mt;
 
