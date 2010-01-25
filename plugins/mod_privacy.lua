@@ -10,12 +10,12 @@
 local prosody = prosody;
 local st = require "util.stanza";
 local datamanager = require "util.datamanager";
-local bare_sessions = bare_sessions;
+local bare_sessions, full_sessions = bare_sessions, full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
 local jid_split = util_Jid.split;
 local load_roster = require "core.rostermanager".load_roster;
-local to_number = _G.tonumber;
+local to_number = tonumber;
 
 function findNamedList (privacy_lists, name)
 	local ret = nil
@@ -60,7 +60,7 @@ function isAnotherSessionUsingDefaultList(origin)
 	return ret;
 end
 
-function sendUnavailable(to, from)
+function sendUnavailable(origin, to, from)
 --[[ example unavailable presence stanza
 <presence from="node@host/resource" type="unavailable" to="node@host" >
 	<status>Logged out</status>
@@ -99,14 +99,14 @@ function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implemen
 
 		if item["presence-out"] == true then
 			if item.type == "jid" then
-				sendUnavailable(item.value, origin.full_jid);
+				sendUnavailable(origin, item.value, origin.full_jid);
 			elseif item.type == "group" then
 			elseif item.type == "subscription" then
 			elseif item.type == nil then
 			end
 		elseif item["presence-in"] == true then
 			if item.type == "jid" then
-				sendUnavailable(origin.full_jid, item.value);
+				sendUnavailable(origin, origin.full_jid, item.value);
 			elseif item.type == "group" then
 			elseif item.type == "subscription" then
 			elseif item.type == nil then
@@ -282,7 +282,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 	privacy_lists.lists[idx] = list;
 	origin.send(st.reply(stanza));
 	if bare_sessions[bare_jid] ~= nil then
-		iq = st.iq ( { type = "set", id="push1" } );
+		local iq = st.iq ( { type = "set", id="push1" } );
 		iq:tag ("query", { xmlns = "jabber:iq:privacy" } );
 		iq:tag ("list", { name = list.name } ):up();
 		iq:up();
@@ -311,7 +311,7 @@ function getList(privacy_lists, origin, stanza, name)
 	else
 		local idx = findNamedList(privacy_lists, name);
 		if idx ~= nil then
-			list = privacy_lists.lists[idx];
+			local list = privacy_lists.lists[idx];
 			reply = reply:tag("list", {name=list.name});
 			for _,item in ipairs(list.items) do
 				reply:tag("item", {type=item.type, value=item.value, action=item.action, order=item.order});
