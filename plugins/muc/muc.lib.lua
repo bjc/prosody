@@ -183,12 +183,12 @@ function room_mt:send_history(to)
 	end
 end
 
-local function room_get_disco_info(self, stanza)
+function room_mt:get_disco_info(stanza)
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
 		:tag("identity", {category="conference", type="text"}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"});
 end
-local function room_get_disco_items(self, stanza)
+function room_mt:get_disco_items(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
 	for room_jid in pairs(self._occupants) do
 		reply:tag("item", {jid = room_jid, name = room_jid:match("/(.*)")}):up();
@@ -502,9 +502,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
 	if stanza.name == "iq" then
 		if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" then
-			origin.send(room_get_disco_info(self, stanza));
+			origin.send(self:get_disco_info(stanza));
 		elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" then
-			origin.send(room_get_disco_items(self, stanza));
+			origin.send(self:get_disco_items(stanza));
 		elseif xmlns == "http://jabber.org/protocol/muc#admin" then
 			local actor = stanza.attr.from;
 			local affiliation = self:get_affiliation(actor);
