@@ -112,10 +112,6 @@ function init_xmlhandlers(session, stream_callbacks)
 		end
 	end
 	function xml_handlers:EndElement(tagname)
-		local curr_ns,name = tagname:match(ns_pattern);
-		if name == "" then
-			curr_ns, name = "", curr_ns;
-		end
 		if stanza then
 			if #chardata > 0 then
 				-- We have some character data in the buffer
@@ -139,6 +135,10 @@ function init_xmlhandlers(session, stream_callbacks)
 					cb_streamclosed(session);
 				end
 			else
+				local curr_ns,name = tagname:match(ns_pattern);
+				if name == "" then
+					curr_ns, name = "", curr_ns;
+				end
 				cb_error(session, "parse-error", "unexpected-element-close", name);
 			end
 			stanza, chardata = nil, {};
