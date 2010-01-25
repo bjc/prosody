@@ -12,8 +12,6 @@ require "util.stanza"
 
 local st = stanza;
 local tostring = tostring;
-local pairs = pairs;
-local ipairs = ipairs;
 local t_insert = table.insert;
 local t_concat = table.concat;
 
@@ -33,8 +31,6 @@ local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
 function init_xmlhandlers(session, stream_callbacks)
-	local ns_stack = { "" };
-	local curr_tag;
 	local chardata = {};
 	local xml_handlers = {};
 	local log = session.log or default_log;
@@ -97,7 +93,6 @@ function init_xmlhandlers(session, stream_callbacks)
 			end
 			
 			stanza = st.stanza(name, attr);
-			curr_tag = stanza;
 		else -- we are inside a stanza, so add a tag
 			attr.xmlns = nil;
 			if curr_ns ~= stream_default_ns then
