@@ -17,24 +17,20 @@ local jid_split = util_Jid.split;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
 
-function findNamedList (privacy_lists, name)
-	local ret = nil
-	if privacy_lists.lists == nil then
-		return nil;
-	end
-
-	for i=1, #privacy_lists.lists do
-		if privacy_lists.lists[i].name == name then
-			ret = i;
-			break;
+function findNamedList(privacy_lists, name)
+	if privacy_lists.lists then
+		for i=1,#privacy_lists.lists do
+			if privacy_lists.lists[i].name == name then
+				return i;
+			end
 		end
 	end
-	return ret;
 end
 
-function isListUsed(origin, name, privacy_lists)	
-	if bare_sessions[origin.username.."@"..origin.host].sessions ~= nil then
-		for resource, session in pairs(bare_sessions[origin.username.."@"..origin.host].sessions) do
+function isListUsed(origin, name, privacy_lists)
+	local user = bare_sessions[origin.username.."@"..origin.host];
+	if user then
+		for resource, session in pairs(user.sessions) do
 			if resource ~= origin.resource then
 				if session.activePrivacyList == name then
 					return true;
@@ -44,20 +40,17 @@ function isListUsed(origin, name, privacy_lists)
 			end
 		end
 	end
-	return false;
 end
 
 function isAnotherSessionUsingDefaultList(origin)
-	local ret = false
-	if bare_sessions[origin.username.."@"..origin.host].sessions ~= nil then
-		for resource, session in pairs(bare_sessions[origin.username.."@"..origin.host].sessions) do
+	local user = bare_sessions[origin.username.."@"..origin.host];
+	if user then
+		for resource, session in pairs(user.sessions) do
 			if resource ~= origin.resource and session.activePrivacyList == nil then
-				ret = true;
-				break;
+				return true;
 			end
 		end
 	end
-	return ret;
 end
 
 function sendUnavailable(origin, to, from)
@@ -66,14 +59,15 @@ function sendUnavailable(origin, to, from)
 	<status>Logged out</status>
 </presence>
 ]]--
-	local presence = st.presence({from=from, type="unavailable"})
+	local presence = st.presence({from=from, type="unavailable"});
 	presence:tag("status"):text("Logged out");
 
 	local node, host = jid_bare(to);
 	local bare = node .. "@" .. host;
 	
-	if bare_sessions[bare].sessions ~= nil then
-		for resource, session in pairs(bare_sessions[bare].sessions) do
+	local user = bare_sessions[bare];
+	if user then
+		for resource, session in pairs(user.sessions) do
 			presence.attr.to = session.full_jid;
 			module:log("debug", "send unavailable to: %s; from: %s", tostring(presence.attr.to), tostring(presence.attr.from));
 			origin.send(presence);
@@ -117,7 +111,7 @@ function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implemen
 	end
 end
 
-function declineList (privacy_lists, origin, stanza, which)
+function declineList(privacy_lists, origin, stanza, which)
 	if which == "default" then
 		if isAnotherSessionUsingDefaultList(origin) then
 			return { "cancel", "conflict", "Another session is online and using the default list."};
@@ -133,7 +127,7 @@ function declineList (privacy_lists, origin, stanza, which)
 	return true;
 end
 
-function activateList (privacy_lists, origin, stanza, which, name)
+function activateList(privacy_lists, origin, stanza, which, name)
 	local idx = findNamedList(privacy_lists, name);
 
 	if privacy_lists.default == nil then
@@ -164,7 +158,7 @@ function activateList (privacy_lists, origin, stanza, which, name)
 	return true;
 end
 
-function deleteList (privacy_lists, origin, stanza, name)
+function deleteList(privacy_lists, origin, stanza, name)
 	local idx = findNamedList(privacy_lists, name);
 
 	if idx ~= nil then
@@ -378,8 +372,7 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 		end
 		return true;
 	end
-	return false;
-end, 500);
+end);
 
 function checkIfNeedToBeBlocked(e, session)
 	local origin, stanza = e.origin, e.stanza;
@@ -390,15 +383,15 @@ function checkIfNeedToBeBlocked(e, session)
 	
 	if stanza.attr.to ~= nil and stanza.attr.from ~= nil then
 		if privacy_lists.lists == nil or
-		   (session.activePrivacyList == nil or session.activePrivacyList == "") and
-		   (privacy_lists.default == nil     or privacy_lists.default == "")
+			(session.activePrivacyList == nil or session.activePrivacyList == "") and
+			(privacy_lists.default == nil     or privacy_lists.default == "")
 		then 
 			return; -- Nothing to block, default is Allow all
 		end
-	    if jid_bare(stanza.attr.from) == bare_jid and jid_bare(stanza.attr.to) == bare_jid then
-            module:log("debug", "Never block communications from one of a user's resources to another.");
-            return; -- from one of a user's resource to another => HANDS OFF!
-        end 
+		if jid_bare(stanza.attr.from) == bare_jid and jid_bare(stanza.attr.to) == bare_jid then
+			module:log("debug", "Never block communications from one of a user's resources to another.");
+			return; -- from one of a user's resource to another => HANDS OFF!
+		end 
 
 		local idx;
 		local list;
@@ -483,7 +476,6 @@ function checkIfNeedToBeBlocked(e, session)
 			end
 		end
 	end
-	return;
 end
 
 function preCheckIncoming(e)
@@ -510,10 +502,9 @@ function preCheckIncoming(e)
 		if session ~= nil then
 			return checkIfNeedToBeBlocked(e, session);
 		else
-			module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource))
+			module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource));
 		end
 	end
-	return;
 end
 
 function preCheckOutgoing(e)
@@ -526,7 +517,6 @@ function preCheckOutgoing(e)
 	end
 	return checkIfNeedToBeBlocked(e, session);
 end
-
 
 module:hook("pre-message/full", preCheckOutgoing, 500);
 module:hook("pre-message/bare", preCheckOutgoing, 500);
@@ -547,5 +537,3 @@ module:hook("iq/host", preCheckIncoming, 500);
 module:hook("presence/full", preCheckIncoming, 500);
 module:hook("presence/bare", preCheckIncoming, 500);
 module:hook("presence/host", preCheckIncoming, 500);
-
-module:log("info", "mod_privacy loaded ...");
