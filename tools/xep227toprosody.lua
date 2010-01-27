@@ -141,13 +141,12 @@ end
 -----------------------------------------------------------------------
 
 local curr_host = "";
-
+local user_name = "";
 
 
 local cb = {
 	stream_tag = "user",
 	stream_ns = ns_xep227,
-	user_name = ""
 };
 function cb.streamopened(session, attr)
 	session.notopen = false;
@@ -219,7 +218,7 @@ function lxp_handlers.EndElement(parser, elementname)
 			curr_host = "" -- end of host element
 		else
 			-- forward to xmlhandlers
-			user_handlers:EndElement(elementname, attributes);
+			user_handlers:EndElement(elementname);
 		end
 	elseif (curr_ns ~= ns_xep227) or (name ~= "server-data") then
 		io.stderr:write("Unhandled XML element: ", name, "\n");
