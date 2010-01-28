@@ -32,8 +32,10 @@ if CFG_DATADIR then
 	end
 end
 
--- Required to be able to find packages installed with luarocks
-pcall(require, "luarocks.require");
+-- Check runtime dependencies
+if not require "util.dependencies".check_dependencies() then
+	os.exit(1);
+end
 
 -- Replace require() with one that doesn't pollute _G, required
 -- for neat sandboxing of modules
@@ -112,11 +114,6 @@ end
 function load_libraries()
 	-- Initialize logging
 	require "core.loggingmanager"
-	
-	-- Check runtime dependencies
-	if not require "util.dependencies".check_dependencies() then
-		os.exit(1);
-	end
 	
 	-- Load socket framework
 	server = require "net.server"
