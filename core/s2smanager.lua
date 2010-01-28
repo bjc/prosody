@@ -181,7 +181,6 @@ function new_outgoing(from_host, to_host, connect)
 				buffer[#buffer+1] = data;
 				log("debug", "Buffered item %d: %s", #buffer, tostring(data));
 			end
-			
 		end
 
 		return host_session;
