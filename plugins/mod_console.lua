@@ -148,7 +148,7 @@ commands.quit, commands.exit = commands.bye, commands.bye;
 commands["!"] = function (session, data)
 	if data:match("^!!") then
 		session.print("!> "..session.env._);
-		return console_listener.listener(session.conn, session.env._);
+		return console_listener.onincoming(session.conn, session.env._);
 	end
 	local old, new = data:match("^!(.-[^\\])!(.-)!$");
 	if old and new then
@@ -158,7 +158,7 @@ commands["!"] = function (session, data)
 			return;
 		end
 		session.print("!> "..res);
-		return console_listener.listener(session.conn, res);
+		return console_listener.onincoming(session.conn, res);
 	end
 	session.print("Sorry, not sure what you want");
 end
