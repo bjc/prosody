@@ -29,10 +29,13 @@ if CFG_DATADIR then
 	end
 end
 
+if not require "util.dependencies".check_dependencies() then
+	os.exit(1);
+end
+
 -- Required to be able to find packages installed with luarocks
 pcall(require, "luarocks.require")
 
-require "util.dependencies"
 
 config = require "core.configmanager"
 

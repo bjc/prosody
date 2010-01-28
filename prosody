@@ -114,7 +114,9 @@ function load_libraries()
 	require "core.loggingmanager"
 	
 	-- Check runtime dependencies
-	require "util.dependencies"
+	if not require "util.dependencies".check_dependencies() then
+		os.exit(1);
+	end
 	
 	-- Load socket framework
 	server = require "net.server"
