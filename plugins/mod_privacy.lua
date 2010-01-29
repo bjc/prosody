@@ -86,7 +86,7 @@ function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implemen
 			end
 		end
 	elseif type(listnameOrItem) == "table" then
-		module:log("debug", "got an item, check wether to send unavailable presence stanza or not");
+		module:log("debug", "got an item, check whether to send unavailable presence stanza or not");
 		local item = listnameOrItem;
 
 		if item["presence-out"] == true then
@@ -391,7 +391,7 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- Nothing to block, default is Allow all
 	end
 	if from_user and to_user then
-		module:log("debug", "Never block communications from one of a user's resources to another.");
+		module:log("debug", "Not blocking communications between user's resources");
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
@@ -404,12 +404,12 @@ function checkIfNeedToBeBlocked(e, session)
 	end
 	idx = findNamedList(privacy_lists, listname);
 	if idx == nil then
-		module:log("error", "given privacy listname not found. name: %s", listname);
+		module:log("debug", "given privacy listname not found. name: %s", listname);
 		return;
 	end
 	list = privacy_lists.lists[idx];
 	if list == nil then
-		module:log("info", "privacy list index wrong. index: %d", idx);
+		module:log("debug", "privacy list index wrong. index: %d", idx);
 		return;
 	end
 	for _,item in ipairs(list.items) do
@@ -464,7 +464,7 @@ function checkIfNeedToBeBlocked(e, session)
 		end
 		if apply then
 			if block then
-				module:log("info", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
+				module:log("debug", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 				if stanza.name == "message" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				elseif stanza.name == "iq" and (stanza.attr.type == "get" or stanza.attr.type == "set") then
@@ -472,7 +472,7 @@ function checkIfNeedToBeBlocked(e, session)
 				end
 				return true; -- stanza blocked !
 			else
-				module:log("info", "stanza explicit allowed!")
+				module:log("debug", "stanza explicitly allowed!")
 				return;
 			end
 		end
