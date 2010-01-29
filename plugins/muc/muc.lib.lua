@@ -59,19 +59,12 @@ local kickable_error_conditions = {
 	["service-unavailable"] = true;
 	["malformed error"] = true;
 };
+
 local function get_error_condition(stanza)
-	for _, tag in ipairs(stanza.tags) do
-		if tag.name == "error" and (not(tag.attr.xmlns) or tag.attr.xmlns == "jabber:client") then
-			for _, cond in ipairs(tag.tags) do
-				if cond.attr.xmlns == "urn:ietf:params:xml:ns:xmpp-stanzas" then
-					return cond.name;
-				end
-			end
-			return "malformed error";
-		end
-	end
-	return "malformed error";
+	local _, condition = stanza:get_error();
+	return condition or "malformed error";
 end
+
 local function is_kickable_error(stanza)
 	local cond = get_error_condition(stanza);
 	return kickable_error_conditions[cond] and cond;
