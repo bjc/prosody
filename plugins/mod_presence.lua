@@ -309,13 +309,6 @@ module:hook("presence/bare", function(data)
 	end
 	return true;
 end);
-module:hook("presence/host", function (data)
-	local stanza = data.stanza;
-	local reply = st.reply(stanza);
-	reply.attr.type = "unsubscribed";
-	handle_inbound_presence_subscriptions_and_probes(data.origin, reply, jid_bare(stanza.attr.to), jid_bare(stanza.attr.from), core_route_stanza);
-	return true;
-end);
 module:hook("presence/full", function(data)
 	-- inbound presence to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
@@ -331,6 +324,20 @@ module:hook("presence/full", function(data)
 		-- TODO fire post processing event
 		session.send(stanza);
 	end -- resource not online, discard
+	return true;
+end);
+module:hook("presence/host", function(data)
+	-- inbound presence to the host
+	local origin, stanza = data.origin, data.stanza;
+	
+	local from_bare = jid_bare(stanza.attr.from);
+	local t = stanza.attr.type;
+	if t == "probe" then
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+	elseif t == "subscribe" then
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id, type = "subscribed" }));
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+	end
 	return true;
 end);
 
