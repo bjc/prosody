@@ -102,7 +102,7 @@ function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implemen
 			elseif item.type == "group" then
 			elseif item.type == "subscription" then
 			elseif item.type == nil then
-			end		
+			end
 		end
 	else
 		module:log("debug", "got unknown type: %s", type(listnameOrItem));
@@ -200,7 +200,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 		
 		if item.attr.type ~= nil and item.attr.type ~= "jid" and item.attr.type ~= "subscription" and item.attr.type ~= "group" then
 			return {"modify", "bad-request", "Type attribute not valid."};
-		end 
+		end
 		
 		local tmp = {};
 		orderCheck[item.attr.order] = true;
@@ -252,7 +252,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 			return {"cancel", "bad-request", "Action must be either deny or allow."};
 		end
 		
---[[		
+--[[
 		if (privacy_lists.default == name and origin.activePrivacyList == nil) or origin.activePrivacyList == name then
 			module:log("debug", "calling sendNeededUnavailablePresences!");
 			-- item is valid and list is active, so send needed unavailable stanzas
@@ -324,7 +324,7 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 		local privacy_lists = datamanager.load(origin.username, origin.host, "privacy") or {};
 
 		if stanza.attr.type == "set" then
-			if #query.tags == 1 then --  the <query/> element MUST NOT include more than one child element 
+			if #query.tags == 1 then --  the <query/> element MUST NOT include more than one child element
 				for _,tag in ipairs(query.tags) do
 					if tag.name == "active" or tag.name == "default" then
 						if tag.attr.name == nil then -- Client declines the use of active / default list
@@ -383,13 +383,13 @@ function checkIfNeedToBeBlocked(e, session)
 		if privacy_lists.lists == nil or
 			(session.activePrivacyList == nil or session.activePrivacyList == "") and
 			(privacy_lists.default == nil     or privacy_lists.default == "")
-		then 
+		then
 			return; -- Nothing to block, default is Allow all
 		end
 		if jid_bare(stanza.attr.from) == bare_jid and jid_bare(stanza.attr.to) == bare_jid then
 			module:log("debug", "Never block communications from one of a user's resources to another.");
 			return; -- from one of a user's resource to another => HANDS OFF!
-		end 
+		end
 
 		local idx;
 		local list;
@@ -430,7 +430,7 @@ function checkIfNeedToBeBlocked(e, session)
 					module:log("debug", "evil jid is (to): %s", stanza.attr.to);
 					evilJid.node, evilJid.host, evilJid.resource = jid_split(stanza.attr.to);
 				end
-				if	item.type == "jid" and 
+				if	item.type == "jid" and
 					(evilJid.node and evilJid.host and evilJid.resource and item.value == evilJid.node.."@"..evilJid.host.."/"..evilJid.resource) or
 					(evilJid.node and evilJid.host and item.value == evilJid.node.."@"..evilJid.host) or
 					(evilJid.host and evilJid.resource and item.value == evilJid.host.."/"..evilJid.resource) or
