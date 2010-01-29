@@ -376,101 +376,104 @@ function checkIfNeedToBeBlocked(e, session)
 	local origin, stanza = e.origin, e.stanza;
 	local privacy_lists = datamanager.load(session.username, session.host, "privacy") or {};
 	local bare_jid = session.username.."@"..session.host;
-
-	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(stanza.attr.to), tostring(stanza.attr.from));
+	local to = stanza.attr.to;
+	local from = stanza.attr.from;
 	
-	if stanza.attr.to ~= nil and stanza.attr.from ~= nil then
-		if privacy_lists.lists == nil or
-			(session.activePrivacyList == nil or session.activePrivacyList == "") and
-			(privacy_lists.default == nil     or privacy_lists.default == "")
-		then
-			return; -- Nothing to block, default is Allow all
+	local to_user = bare_jid == jid_bare(to);
+	local from_user = bare_jid == jid_bare(from);
+	
+	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
+	
+	if privacy_lists.lists == nil or
+		(session.activePrivacyList == nil or session.activePrivacyList == "") and
+		(privacy_lists.default == nil     or privacy_lists.default == "")
+	then
+		return; -- Nothing to block, default is Allow all
+	end
+	if from_user and to_user then
+		module:log("debug", "Never block communications from one of a user's resources to another.");
+		return; -- from one of a user's resource to another => HANDS OFF!
+	end
+	
+	local idx;
+	local list;
+	local item;
+	local listname = session.activePrivacyList;
+	if listname == nil or listname == "" then
+		listname = privacy_lists.default; -- no active list selected, use default list
+	end
+	idx = findNamedList(privacy_lists, listname);
+	if idx == nil then
+		module:log("error", "given privacy listname not found. name: %s", listname);
+		return;
+	end
+	list = privacy_lists.lists[idx];
+	if list == nil then
+		module:log("info", "privacy list index wrong. index: %d", idx);
+		return;
+	end
+	for _,item in ipairs(list.items) do
+		local apply = false;
+		local block = false;
+		if (
+			(stanza.name == "message" and item.message) or
+			(stanza.name == "iq" and item.iq) or
+			(stanza.name == "presence" and to_user and item["presence-in"]) or
+			(stanza.name == "presence" and from_user and item["presence-out"]) or
+			(item.message == false and item.iq == false and item["presence-in"] == false and item["presence-out"] == false)
+		) then
+			apply = true;
 		end
-		if jid_bare(stanza.attr.from) == bare_jid and jid_bare(stanza.attr.to) == bare_jid then
-			module:log("debug", "Never block communications from one of a user's resources to another.");
-			return; -- from one of a user's resource to another => HANDS OFF!
-		end
-
-		local idx;
-		local list;
-		local item;
-		local listname = session.activePrivacyList;
-		if listname == nil or listname == "" then
-			listname = privacy_lists.default; -- no active list selected, use default list
-		end
-		idx = findNamedList(privacy_lists, listname);
-		if idx == nil then
-			module:log("error", "given privacy listname not found. name: %s", listname);
-			return;
-		end
-		list = privacy_lists.lists[idx];
-		if list == nil then
-			module:log("info", "privacy list index wrong. index: %d", idx);
-			return;
-		end
-		for _,item in ipairs(list.items) do
-			local apply = false;
-			local block = false;
-			if (
-				(stanza.name == "message" and item.message) or
-				(stanza.name == "iq" and item.iq) or
-				(stanza.name == "presence" and jid_bare(stanza.attr.to) == bare_jid and item["presence-in"]) or
-				(stanza.name == "presence" and jid_bare(stanza.attr.from) == bare_jid and item["presence-out"]) or
-				(item.message == false and item.iq == false and item["presence-in"] == false and item["presence-out"] == false)
-			) then
-				apply = true;
+		if apply then
+			local evilJid = {};
+			apply = false;
+			if to_user then
+				module:log("debug", "evil jid is (from): %s", from);
+				evilJid.node, evilJid.host, evilJid.resource = jid_split(from);
+			else
+				module:log("debug", "evil jid is (to): %s", to);
+				evilJid.node, evilJid.host, evilJid.resource = jid_split(to);
 			end
-			if apply then
-				local evilJid = {};
-				apply = false;
-				if jid_bare(stanza.attr.to) == bare_jid then
-					module:log("debug", "evil jid is (from): %s", stanza.attr.from);
-					evilJid.node, evilJid.host, evilJid.resource = jid_split(stanza.attr.from);
-				else
-					module:log("debug", "evil jid is (to): %s", stanza.attr.to);
-					evilJid.node, evilJid.host, evilJid.resource = jid_split(stanza.attr.to);
-				end
-				if	item.type == "jid" and
-					(evilJid.node and evilJid.host and evilJid.resource and item.value == evilJid.node.."@"..evilJid.host.."/"..evilJid.resource) or
-					(evilJid.node and evilJid.host and item.value == evilJid.node.."@"..evilJid.host) or
-					(evilJid.host and evilJid.resource and item.value == evilJid.host.."/"..evilJid.resource) or
-					(evilJid.host and item.value == evilJid.host) then
-					apply = true;
-					block = (item.action == "deny");
-				elseif item.type == "group" then
-					local roster = load_roster(session.username, session.host);
-					local groups = roster[evilJid.node .. "@" .. evilJid.host].groups;
-					for group in pairs(groups) do
-						if group == item.value then
-							apply = true;
-							block = (item.action == "deny");
-							break;
-						end
-					end
-				elseif item.type == "subscription" and evilJid.node ~= nil and evilJid.host ~= nil then -- we need a valid bare evil jid
-					local roster = load_roster(session.username, session.host);
-					if roster[evilJid.node .. "@" .. evilJid.host].subscription == item.value then
+			if	item.type == "jid" and
+				(evilJid.node and evilJid.host and evilJid.resource and item.value == evilJid.node.."@"..evilJid.host.."/"..evilJid.resource) or
+				(evilJid.node and evilJid.host and item.value == evilJid.node.."@"..evilJid.host) or
+				(evilJid.host and evilJid.resource and item.value == evilJid.host.."/"..evilJid.resource) or
+				(evilJid.host and item.value == evilJid.host) then
+				apply = true;
+				block = (item.action == "deny");
+			elseif item.type == "group" then
+				local roster = load_roster(session.username, session.host);
+				local groups = roster[evilJid.node .. "@" .. evilJid.host].groups;
+				for group in pairs(groups) do
+					if group == item.value then
 						apply = true;
 						block = (item.action == "deny");
+						break;
 					end
-				elseif item.type == nil then
+				end
+			elseif item.type == "subscription" and evilJid.node ~= nil and evilJid.host ~= nil then -- we need a valid bare evil jid
+				local roster = load_roster(session.username, session.host);
+				if roster[evilJid.node .. "@" .. evilJid.host].subscription == item.value then
 					apply = true;
 					block = (item.action == "deny");
 				end
+			elseif item.type == nil then
+				apply = true;
+				block = (item.action == "deny");
 			end
-			if apply then
-				if block then
-					module:log("info", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(stanza.attr.to), tostring(stanza.attr.from));
-					if stanza.name == "message" then
-						origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-					elseif stanza.name == "iq" and (stanza.attr.type == "get" or stanza.attr.type == "set") then
-						origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-					end
-					return true; -- stanza blocked !
-				else
-					module:log("info", "stanza explicit allowed!")
-					return;
+		end
+		if apply then
+			if block then
+				module:log("info", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
+				if stanza.name == "message" then
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+				elseif stanza.name == "iq" and (stanza.attr.type == "get" or stanza.attr.type == "set") then
+					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 				end
+				return true; -- stanza blocked !
+			else
+				module:log("info", "stanza explicit allowed!")
+				return;
 			end
 		end
 	end
