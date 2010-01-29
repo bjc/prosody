@@ -426,6 +426,11 @@ do
 		return false, "setoption not implemented";
 	end
 	
+	function interface_mt:setlistener(listener)
+		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout
+			= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout;
+	end
+	
 	-- Stub handlers
 	function interface_mt:onconnect()
 	end
