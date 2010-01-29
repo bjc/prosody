@@ -28,7 +28,7 @@ local cfg = {
 	READ_TIMEOUT          = 60 * 30,  -- timeout in seconds for read data from socket
 	WRITE_TIMEOUT         = 30,  -- timeout in seconds for write data on socket
 	CONNECT_TIMEOUT       = 10,  -- timeout in seconds for connection attemps
-	CLEAR_DELAY           = 5,  -- seconds to wait for clearing interface list (and calling ondisconnect listeners) 
+	CLEAR_DELAY           = 5,  -- seconds to wait for clearing interface list (and calling ondisconnect listeners)
 	DEBUG                 = true,  -- show debug messages
 }
 
@@ -57,11 +57,11 @@ local bitor = ( function( ) -- thx Rici Lake
 	local hasbit = function( x, p )
 		return x % ( p + p ) >= p
 	end
-	return function( x, y ) 
+	return function( x, y )
 		local p = 1
 		local z = 0
 		local limit = x > y and x or y
-		while p <= limit do 
+		while p <= limit do
 			if hasbit( x, p ) or hasbit( y, p ) then
 				z = z + p
 			end
@@ -103,7 +103,7 @@ local interfacelist = ( function( )  -- holds the interfaces for sockets
 				array[ len ] = nil
 			end
 			len = len - 1
-			return len    
+			return len
 		else
 			return array
 		end
@@ -159,7 +159,7 @@ do
 		if self.type == "client" then
 			local callback = function( )
 				self:_lock( false,  false, false )
-				--vdebug( "start listening on client socket with id:", self.id )      
+				--vdebug( "start listening on client socket with id:", self.id )
 				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT )  -- register callback
 				self:onconnect()
 				self.eventsession = nil
@@ -221,14 +221,14 @@ do
 								self.eventhandshake = nil
 								return -1
 							end
-							debug( "error during ssl handshake:", err ) 
+							debug( "error during ssl handshake:", err )
 							if err == "wantwrite" then
 								event = EV_WRITE
 							elseif err == "wantread" then
 								event = EV_READ
 							else
 								self.fatalerror = err
-							end            
+							end
 						end
 						if self.fatalerror then
 							if "onconnect" == arg then
@@ -244,7 +244,7 @@ do
 				end
 			)
 			debug "starting handshake..."
-			self:_lock( false, true, true )  -- unlock read/write events, but keep interface locked 
+			self:_lock( false, true, true )  -- unlock read/write events, but keep interface locked
 			self.eventhandshake = addevent( base, self.conn, EV_READWRITE, handshakecallback, cfg.HANDSHAKE_TIMEOUT )
 			return true
 	end
@@ -299,7 +299,7 @@ do
 			local err = "send buffer exceeded"
 			debug( "error:", err )  -- to much, check your app
 			return nil, err
-		end 
+		end
 		self.writebuffer = self.writebuffer .. data -- new buffer
 		self.writebufferlen = total
 		if not self.eventwrite then  -- register new write event
@@ -399,7 +399,7 @@ do
 		end
 		if err then
 			debug( "error:", err )
-			return nil, err      
+			return nil, err
 		end
 		self._usingssl = true
 		self.startsslcallback = function( )  -- we have to start the handshake outside of a read/write event
@@ -440,7 +440,7 @@ do
 	end
 	function interface_mt:ontimeout()
 	end
-end			
+end
 
 -- End of client interface methods
 
@@ -498,7 +498,7 @@ do
 			end
 			if EV_TIMEOUT == event then  -- took too long to write some data to socket -> disconnect
 				interface.fatalerror = "timeout during writing"
-				debug( "writing failed:", interface.fatalerror ) 
+				debug( "writing failed:", interface.fatalerror )
 				interface:_close()
 				interface.eventwrite = false
 				return -1
@@ -532,7 +532,7 @@ do
 				elseif byte then  -- want write again
 					--vdebug( "writebuffer is not empty:", err )
 					interface.writebuffer = string_sub( interface.writebuffer, byte + 1, interface.writebufferlen )  -- new buffer
-					interface.writebufferlen = interface.writebufferlen - byte            
+					interface.writebufferlen = interface.writebufferlen - byte
 					if "wantread" == err then  -- happens only with luasec
 						local callback = function( )
 							interface:_close()
@@ -544,10 +544,10 @@ do
 						-- hopefully this works with luasec; its simply not possible to use 2 different write events on a socket in luaevent
 						return -1
 					end
-					return EV_WRITE, cfg.WRITE_TIMEOUT 
+					return EV_WRITE, cfg.WRITE_TIMEOUT
 				else  -- connection was closed during writing or fatal error
 					interface.fatalerror = err or "fatal error"
-					debug( "connection failed in write event:", interface.fatalerror ) 
+					debug( "connection failed in write event:", interface.fatalerror )
 					interface:_close()
 					interface.eventwrite = nil
 					return -1
@@ -564,7 +564,7 @@ do
 			end
 			if EV_TIMEOUT == event then  -- took too long to get some data from client -> disconnect
 				interface.fatalerror = "timeout during receiving"
-				debug( "connection failed:", interface.fatalerror ) 
+				debug( "connection failed:", interface.fatalerror )
 				interface:_close()
 				interface.eventread = nil
 				return -1
@@ -580,7 +580,7 @@ do
 					end
 				end
 				local buffer, err, part = interface.conn:receive( pattern )  -- receive buffer with "pattern"
-				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )        
+				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
 				buffer = buffer or part or ""
 				local len = string_len( buffer )
 				if len > cfg.MAX_READ_LENGTH then  -- check buffer length
@@ -600,12 +600,12 @@ do
 							function( )
 								interface:_close()
 							end, cfg.READ_TIMEOUT
-						)             
+						)
 						debug( "wantwrite during read attemp, reg it in writecallback but dont know what really happens next..." )
 						-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
-					else  -- connection was closed or fatal error            
+					else  -- connection was closed or fatal error
 						interface.fatalerror = err
-						debug( "connection failed in read event:", interface.fatalerror ) 
+						debug( "connection failed in read event:", interface.fatalerror )
 						interface:_close()
 						interface.eventread = nil
 						return -1
@@ -707,7 +707,7 @@ local addserver = ( function( )
 				debug( "error while creating new ssl context for server socket:", err )
 				return nil, err
 			end
-		end      
+		end
 		local interface = handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- new server handler
 		debug( "new server created with id:", tostring(interface))
 		return interface
@@ -726,7 +726,7 @@ do
 	function addclient( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
 		local client, err = socket.tcp()  -- creating new socket
 		if not client then
-			debug( "cannot create socket:", err ) 
+			debug( "cannot create socket:", err )
 			return nil, err
 		end
 		client:settimeout( 0 )  -- set nonblocking
@@ -740,7 +740,7 @@ do
 		local sslctx
 		if sslcfg then  -- handle ssl/new context
 			if not ssl then
-				debug "need luasec, but not available" 
+				debug "need luasec, but not available"
 				return nil, "luasec not found"
 			end
 			sslctx, err = ssl.newcontext( sslcfg )
