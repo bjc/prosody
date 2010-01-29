@@ -76,6 +76,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 	end
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
+		origin.presence = stanza; -- FIXME repeated later
 		local probe = st.presence({from = origin.full_jid, type = "probe"});
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 			if item.subscription == "both" or item.subscription == "to" then
