@@ -98,7 +98,7 @@ function core_process_stanza(origin, stanza)
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
-		core_post_stanza(origin, stanza);
+		core_post_stanza(origin, stanza, origin.full_jid);
 	else
 		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
 		if h then
@@ -119,7 +119,7 @@ function core_process_stanza(origin, stanza)
 	end
 end
 
-function core_post_stanza(origin, stanza)
+function core_post_stanza(origin, stanza, preevents)
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
@@ -143,7 +143,7 @@ function core_post_stanza(origin, stanza)
 	end
 
 	local event_data = {origin=origin, stanza=stanza};
-	if origin.full_jid == stanza.attr.from then -- c2s connection
+	if preevents then -- c2s connection
 		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
