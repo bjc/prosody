@@ -59,19 +59,12 @@ local kickable_error_conditions = {
 	["service-unavailable"] = true;
 	["malformed error"] = true;
 };
+
 local function get_error_condition(stanza)
-	for _, tag in ipairs(stanza.tags) do
-		if tag.name == "error" and (not(tag.attr.xmlns) or tag.attr.xmlns == "jabber:client") then
-			for _, cond in ipairs(tag.tags) do
-				if cond.attr.xmlns == "urn:ietf:params:xml:ns:xmpp-stanzas" then
-					return cond.name;
-				end
-			end
-			return "malformed error";
-		end
-	end
-	return "malformed error";
+	local _, condition = stanza:get_error();
+	return condition or "malformed error";
 end
+
 local function is_kickable_error(stanza)
 	local cond = get_error_condition(stanza);
 	return kickable_error_conditions[cond] and cond;
@@ -195,6 +188,16 @@ function room_mt:set_subject(current_nick, subject)
 	return true;
 end
 
+local function build_unavailable_presence_from_error(stanza)
+	local type, condition, text = stanza:get_error();
+	local error_message = "Kicked: "..condition:gsub("%-", " ");
+	if text then
+		error_message = error_message..": "..text;
+	end
+	return st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
+		:tag('status'):text(error_message);
+end
+
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local room = jid_bare(to);
@@ -208,8 +211,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if type == "error" then -- error, kick em out!
 			if current_nick then
 				log("debug", "kicking %s from %s", current_nick, room);
-				self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
-					:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
+				self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza));
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
@@ -356,8 +358,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	elseif current_nick and stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
-		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-			:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
+		self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
 	else -- private stanza
 		local o_data = self._occupants[to];
 		if o_data then
@@ -616,8 +617,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 	elseif stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
 		local current_nick = self._jid_nick[stanza.attr.from];
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
-		self:handle_to_occupant(origin, st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-			:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
+		self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
 	elseif stanza.name == "presence" then -- hack - some buggy clients send presence updates to the room rather than their nick
 		local to = stanza.attr.to;
 		local current_nick = self._jid_nick[stanza.attr.from];
