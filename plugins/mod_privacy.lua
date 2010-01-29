@@ -415,7 +415,7 @@ function checkIfNeedToBeBlocked(e, session)
 				(stanza.name == "message" and item.message) or
 				(stanza.name == "iq" and item.iq) or
 				(stanza.name == "presence" and jid_bare(stanza.attr.to) == bare_jid and item["presence-in"]) or
-				(stanza.name == "presence" and not stanza.attr.from or jid_bare(stanza.attr.from) == bare_jid and item["presence-out"]) or
+				(stanza.name == "presence" and jid_bare(stanza.attr.from) == bare_jid and item["presence-out"]) or
 				(item.message == false and item.iq == false and item["presence-in"] == false and item["presence-out"] == false)
 			) then
 				apply = true;
