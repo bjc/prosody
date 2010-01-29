@@ -38,6 +38,8 @@ if do_pretty_printing then
 	end
 end
 
+local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
+
 module "stanza"
 
 stanza_mt = { __type = "stanza" };
@@ -187,6 +189,30 @@ function stanza_mt.get_text(t)
 	if #t.tags == 0 then
 		return t_concat(t);
 	end
+end
+
+function stanza_mt.get_error(stanza)
+	local type, condition, text;
+	
+	local error_tag = stanza:get_child("error");
+	if not error_tag then
+		return nil, nil, nil;
+	end
+	type = error_tag.attr.type;
+	
+	for child in error_tag:children() do
+		if child.attr.xmlns == xmlns_stanzas then
+			if not text and child.name == "text" then
+				text = child:get_text();
+			elseif not condition then
+				condition = child.name;
+			end
+			if condition and text then
+				break;
+			end
+		end
+	end
+	return type, condition or "undefined-condition", text or "";
 end
 
 function stanza_mt.__add(s1, s2)
