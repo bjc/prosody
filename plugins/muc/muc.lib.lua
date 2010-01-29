@@ -200,9 +200,14 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		pr.attr.from = current_nick;
 		if type == "error" then -- error, kick em out!
 			if current_nick then
-				log("debug", "kicking %s from %s", current_nick, room);
+				local type, condition, text = stanza:get_error();
+				local error_message = "Kicked: "..condition:gsub("%-", " ");
+				if text then
+					error_message = error_message..": "..text;
+				end
+				log("debug", "kicking %s from %s for %s", current_nick, room, condition);
 				self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
-					:tag('status'):text('Kicked: '..get_error_condition(stanza))); -- send unavailable
+					:tag('status'):text(error_message)); -- send unavailable
 			end
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
