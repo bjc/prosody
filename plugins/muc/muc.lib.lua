@@ -545,9 +545,14 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 							-- TODO allow admins and owners not in room? Provide read-only access to everyone who can see the participants anyway?
 							if _rol == "none" then _rol = nil; end
 							local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-							for nick, occupant in pairs(self._occupants) do
+							for occupant_jid, occupant in pairs(self._occupants) do
 								if occupant.role == _rol then
-									reply:tag("item", {nick = nick, role = _rol or "none", affiliation = occupant.affiliation or "none", jid = occupant.jid}):up();
+									reply:tag("item", {
+										nick = select(3, jid_split(occupant_jid)),
+										role = _rol or "none",
+										affiliation = occupant.affiliation or "none",
+										jid = occupant.jid
+										}):up();
 								end
 							end
 							origin.send(reply);
@@ -735,21 +740,21 @@ function room_mt:get_role(nick)
 	local session = self._occupants[nick];
 	return session and session.role or nil;
 end
-function room_mt:set_role(actor, nick, role, callback, reason)
+function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
 	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
-	local occupant = self._occupants[nick];
+	local occupant = self._occupants[occupant_jid];
 	if not occupant then return nil, "modify", "not-acceptable"; end
 	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
-	local p = st.presence({from = nick})
+	local p = st.presence({from = occupant_jid})
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=occupant.affiliation or "none", nick=nick, role=role or "none"})
+			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
 				:tag("reason"):text(reason or ""):up()
 			:up();
 	if not role then -- kick
 		p.attr.type = "unavailable";
-		self._occupants[nick] = nil;
+		self._occupants[occupant_jid] = nil;
 		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
 			self._jid_nick[jid] = nil;
 		end
@@ -762,7 +767,7 @@ function room_mt:set_role(actor, nick, role, callback, reason)
 		self:_route_stanza(p);
 	end
 	if callback then callback(); end
-	self:broadcast_except_nick(p, nick);
+	self:broadcast_except_nick(p, occupant_jid);
 	return true;
 end
 
