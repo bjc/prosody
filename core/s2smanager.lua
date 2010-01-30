@@ -451,7 +451,7 @@ end
 function make_authenticated(session, host)
 	if not session.secure then
 		local local_host = session.direction == "incoming" and session.to_host or session.from_host;
-		if config.get(local_host, "core", "require_s2s_encryption")) then
+		if config.get(local_host, "core", "s2s_require_encryption")) then
 			session:close({
 				condition = "policy-violation",
 				text = "Encrypted server-to-server communication is required but was not "
