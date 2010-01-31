@@ -20,9 +20,9 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.host and hosts[session.host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.host].ssl_ctx_in);
+					session.conn.set_sslctx(hosts[session.host].ssl_ctx_in);
 				end
-				session.conn:starttls();
+				session.conn.starttls();
 				session.log("info", "TLS negotiation started...");
 				session.secure = false;
 			else
@@ -37,9 +37,9 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.to_host and hosts[session.to_host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.to_host].ssl_ctx_in);
+					session.conn.set_sslctx(hosts[session.to_host].ssl_ctx_in);
 				end
-				session.conn:starttls();
+				session.conn.starttls();
 				session.log("info", "TLS negotiation started for incoming s2s...");
 				session.secure = false;
 			else
@@ -90,8 +90,10 @@ module:hook_stanza(xmlns_starttls, "proceed",
 		function (session, stanza)
 			module:log("debug", "Proceeding with TLS on s2sout...");
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
+			local ssl_ctx = session.from_host and hosts[session.from_host].ssl_ctx or global_ssl_ctx;
+			session.conn.set_sslctx(ssl_ctx);
 			session:reset_stream();
-			session.conn:starttls(true);
+			session.conn.starttls(true);
 			session.secure = false;
 			return true;
 		end);
