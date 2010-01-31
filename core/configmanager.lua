@@ -67,7 +67,7 @@ function load(filename, format)
 
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
-		if f then 
+		if f then
 			local ok, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
 			if ok then
