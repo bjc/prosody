@@ -155,7 +155,7 @@ function xmppserver.onincoming(conn, data)
 	end
 end
 	
-function xmppserver.status(conn, status)
+function xmppserver.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
