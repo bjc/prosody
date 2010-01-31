@@ -90,6 +90,8 @@ module:hook_stanza(xmlns_starttls, "proceed",
 		function (session, stanza)
 			module:log("debug", "Proceeding with TLS on s2sout...");
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
+			local ssl_ctx = session.from_host and hosts[session.from_host].ssl_ctx or global_ssl_ctx;
+			session.conn.set_sslctx(ssl_ctx);
 			session:reset_stream();
 			session.conn.starttls(true);
 			session.secure = false;
