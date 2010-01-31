@@ -53,14 +53,6 @@ function start(name, udata)
 		error("No such connection module: "..name.. (err and (" ("..err..")") or ""), 0);
 	end
 	
-	if udata then
-		if (udata.type == "ssl" or udata.type == "tls") and not udata.ssl then
-			error("No SSL context supplied for a "..tostring(udata.type):upper().." connection!", 0);
-		elseif udata.ssl and udata.type == "tcp" then
-			error("SSL context supplied for a TCP connection!", 0);
-		end
-	end
-	
 	local interface = (udata and udata.interface) or h.default_interface or "*";
 	local port = (udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0);
 	local mode = (udata and udata.mode) or h.default_mode or 1;
@@ -68,7 +60,7 @@ function start(name, udata)
 	local maxclients = 99999999;
 	local autossl = udata and udata.type == "ssl";
 	
-	return server.addserver(interface, port, h, mode, ssl, autossl);
+	return server.addserver(interface, port, h, mode, autossl and ssl or nil);
 end
 
 return _M;
