@@ -249,7 +249,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     local ssl
 
     local dispatch = listeners.onincoming
-    local status = listeners.status
+    local status = listeners.onstatus
     local disconnect = listeners.ondisconnect
 
     local bufferqueue = { }    -- buffer array
@@ -282,6 +282,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
     handler.setlistener = function( self, listeners )
         dispatch = listeners.onincoming
         disconnect = listeners.ondisconnect
+        status = listeners.onstatus
     end
     handler.getstats = function( )
         return readtraffic, sendtraffic
