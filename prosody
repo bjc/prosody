@@ -205,7 +205,7 @@ function init_global_state()
 				if type(port) ~= "number" then
 					log("error", "Non-numeric "..ports_option..": "..tostring(port));
 				else
-					cl.start(listener, { 
+					local ok, err = cl.start(listener, {
 						ssl = conntype == "ssl" and global_ssl_ctx,
 						port = port,
 						interface = (option and config.get("*", "core", option.."_interface"))
@@ -213,6 +213,24 @@ function init_global_state()
 							or config.get("*", "core", "interface"),
 						type = conntype
 					});
+					if not ok then
+						local friendly_message = err;
+						if err:match(" in use") then
+							if port == 5222 or port == 5223 or port == 5269 then
+								friendly_message = "check that Prosody or another XMPP server is "
+									.."not already running and using this port";
+							elseif port == 80 or port == 81 then
+								friendly_message = "check that a HTTP server is not already using "
+									.."this port";
+							elseif port == 5280 then
+								friendly_message = "check that Prosody or a BOSH connection manager "
+									.."is not already running";
+							end
+						elseif err:match("permission") then
+							friendly_message = "Prosody does not have sufficient privileges to use this port";
+						end
+						log("error", "Failed to open server port %d, %s", port, friendly_message);
+					end
 				end
 			end
 		end
