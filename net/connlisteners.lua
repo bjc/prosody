@@ -59,6 +59,10 @@ function start(name, udata)
 	local ssl = (udata and udata.ssl) or nil;
 	local autossl = udata and udata.type == "ssl";
 	
+	if autossl and not ssl then
+		return nil, "no ssl context";
+	end
+	
 	return server.addserver(interface, port, h, mode, autossl and ssl or nil);
 end
 
