@@ -206,7 +206,7 @@ function init_global_state()
 					log("error", "Non-numeric "..ports_option..": "..tostring(port));
 				else
 					cl.start(listener, { 
-						ssl = conntype ~= "tcp" and global_ssl_ctx,
+						ssl = conntype == "ssl" and global_ssl_ctx,
 						port = port,
 						interface = (option and config.get("*", "core", option.."_interface"))
 							or cl.get(listener).default_interface
