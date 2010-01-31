@@ -9,6 +9,7 @@
 local ssl = ssl
 
 local hosts = hosts;
+local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
@@ -20,10 +21,6 @@ if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
-
--- These are the defaults if not overridden in the config
-local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
-local default_ssl_ctx_in = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 
 local log = require "util.logger".init("hostmanager");
 
@@ -61,14 +58,9 @@ function activate(host, host_config)
 		end
 	end
 	
-	if ssl then
-		local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
-		if ssl_config then
-        		hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
-        		hosts[host].ssl_ctx_in = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx_in }));
-        	end
-        end
-
+	hosts[host].ssl_ctx = certmanager.get_context(host, "client", host_config); -- for outgoing connections
+	hosts[host].ssl_ctx_in = certmanager.get_context(host, "server", host_config); -- for incoming connections
+	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
