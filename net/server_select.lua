@@ -681,7 +681,7 @@ addserver = function( addr, port, listeners, pattern, sslctx )    -- this functi
     _readlistlen = addsocket(_readlist, server, _readlistlen)
     _server[ port ] = handler
     _socketlist[ server ] = handler
-    out_put( "server.lua: new server listener on '", addr, ":", port, "'" )
+    out_put( "server.lua: new "..(sslctx and "ssl " or "").."server listener on '", addr, ":", port, "'" )
     return handler
 end
 
