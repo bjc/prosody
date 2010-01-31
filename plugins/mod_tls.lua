@@ -14,15 +14,15 @@ local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local secure_s2s_only = module:get_option("s2s_require_encryption");
 
+local global_ssl_ctx = prosody.global_ssl_ctx;
+
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls then
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
-				if session.host and hosts[session.host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.host].ssl_ctx_in);
-				end
-				session.conn:starttls();
+				local ssl_ctx = session.host and hosts[session.host].ssl_ctx_in or global_ssl_ctx;
+				session.conn:starttls(ssl_ctx);
 				session.log("info", "TLS negotiation started...");
 				session.secure = false;
 			else
@@ -36,10 +36,8 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 			if session.conn.starttls then
 				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
-				if session.to_host and hosts[session.to_host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.to_host].ssl_ctx_in);
-				end
-				session.conn:starttls();
+				local ssl_ctx = session.to_host and hosts[session.to_host].ssl_ctx_in or global_ssl_ctx;
+				session.conn:starttls(ssl_ctx);
 				session.log("info", "TLS negotiation started for incoming s2s...");
 				session.secure = false;
 			else
