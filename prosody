@@ -228,6 +228,9 @@ function init_global_state()
 							end
 						elseif err:match("permission") then
 							friendly_message = "Prosody does not have sufficient privileges to use this port";
+						elseif err == "no ssl context" then
+							friendly_message = "there is no 'ssl' config under Host \"*\" which is "
+								.."require for legacy SSL ports";
 						end
 						log("error", "Failed to open server port %d, %s", port, friendly_message);
 					end
