@@ -321,7 +321,7 @@ function make_connect(host_session, connect_host, connect_port)
 	end
 	
 	local cl = connlisteners_get("xmppserver");
-	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1, hosts[from_host].ssl_ctx, false );
+	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1 );
 	host_session.conn = conn;
 	
 	-- Register this outgoing connection so that xmppserver_listener knows about it
