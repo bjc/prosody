@@ -218,6 +218,7 @@ do
 								end
 								self:_start_session( onsomething )
 								debug( "ssl handshake done" )
+								self:onstatus("ssl-handshake-complete");
 								self.eventhandshake = nil
 								return -1
 							end
@@ -389,12 +390,11 @@ do
 		-- No-op, we always use the underlying connection's send
 	end
 	
-	function interface_mt:starttls()
+	function interface_mt:starttls(sslctx)
 		debug( "try to start ssl at client id:", self.id )
 		local err
-		if not self._sslctx then  -- no ssl available
-			err = "no ssl context available"
-		elseif self._usingssl then  -- startssl was already called
+		self._sslctx = sslctx;
+		if self._usingssl then  -- startssl was already called
 			err = "ssl already active"
 		end
 		if err then
@@ -427,8 +427,8 @@ do
 	end
 	
 	function interface_mt:setlistener(listener)
-		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout
-			= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout;
+		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout, self.onstatus
+			= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout, listener.onstatus;
 	end
 	
 	-- Stub handlers
@@ -439,6 +439,9 @@ do
 	function interface_mt:ondisconnect()
 	end
 	function interface_mt:ontimeout()
+	end
+	function interface_mt:onstatus()
+		debug("server.lua: Dummy onstatus()")
 	end
 end
 
@@ -466,6 +469,7 @@ do
 			ondisconnect = listener.ondisconnect;  -- will be called when client disconnects
 			onincoming = listener.onincoming;  -- will be called when client sends data
 			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
+			onstatus = listener.onstatus; -- called for status changes (e.g. of SSL/TLS)
 			eventread = false, eventwrite = false, eventclose = false,
 			eventhandshake = false, eventstarthandshake = false;  -- event handler
 			eventconnect = false, eventsession = false;  -- more event handler...
@@ -485,9 +489,6 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
-		if not sslctx then
-			interface.starttls = false -- don't allow TLS
-		end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
@@ -624,7 +625,7 @@ end
 
 local handleserver
 do
-	function handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- creates an server interface
+	function handleserver( server, addr, port, pattern, listener, sslctx )  -- creates an server interface
 		debug "creating server interface..."
 		local interface = {
 			_connections = 0;
@@ -669,8 +670,8 @@ do
 				interface._connections = interface._connections + 1  -- increase connection count
 				local clientinterface = handleclient( client, ip, port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
-				if startssl then
-					clientinterface:starttls()
+				if sslctx then
+					clientinterface:starttls(sslctx)
 				else
 					clientinterface:_start_session( clientinterface.onconnect )
 				end
