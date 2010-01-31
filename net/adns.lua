@@ -14,6 +14,8 @@ local log = require "util.logger".init("adns");
 local t_insert, t_remove = table.insert, table.remove;
 local coroutine, tostring, pcall = coroutine, tostring, pcall;
 
+local function dummy_send(sock, data, i, j) return (j-i)+1; end
+
 module "adns"
 
 function lookup(handler, qname, qtype, qclass)
@@ -65,9 +67,10 @@ function new_async_socket(sock, resolver)
 	
 	handler.settimeout = function () end
 	handler.setsockname = function (_, ...) return sock:setsockname(...); end
-	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(sock.send); return ret; end
+	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(dummy_send); return ret; end
 	handler.connect = function (_, ...) return sock:connect(...) end
-	handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
+	--handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
+	handler.send = function (_, data) return sock:send(data); end
 	return handler;
 end
 
