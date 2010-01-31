@@ -315,13 +315,16 @@ function reply(orig)
 	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
 end
 
-function error_reply(orig, type, condition, message)
-	local t = reply(orig);
-	t.attr.type = "error";
-	t:tag("error", {type = type})
-		:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
-	if (message) then t:tag("text"):text(message):up(); end
-	return t; -- stanza ready for adding app-specific errors
+do
+	local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };
+	function error_reply(orig, type, condition, message)
+		local t = reply(orig);
+		t.attr.type = "error";
+		t:tag("error", {type = type}) --COMPAT: Some day xmlns:stanzas goes here
+			:tag(condition, xmpp_stanzas_attr):up();
+		if (message) then t:tag("text", xmpp_stanzas_attr):text(message):up(); end
+		return t; -- stanza ready for adding app-specific errors
+	end
 end
 
 function presence(attr)
