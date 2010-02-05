@@ -73,15 +73,11 @@ function check_dependencies()
 	local ssl = softreq "ssl"
 	
 	if not ssl then
-		if config.get("*", "core", "run_without_ssl") then
-			log("warn", "Running without SSL support because run_without_ssl is defined in the config");
-		else
-			missingdep("LuaSec", {
-					["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
-					["luarocks"] = "luarocks install luasec";
-					["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
-				}, "SSL/TLS support will not be available");
-		end
+		missingdep("LuaSec", {
+				["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
+				["luarocks"] = "luarocks install luasec";
+				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
+			}, "SSL/TLS support will not be available");
 	else
 		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
 		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
