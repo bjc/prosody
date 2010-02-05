@@ -1,6 +1,6 @@
 local configmanager = require "core.configmanager";
 local ssl = ssl;
-local ssl_newcontext = ssl.newcontext;
+local ssl_newcontext = ssl and ssl.newcontext;
 
 local setmetatable = setmetatable;
 
