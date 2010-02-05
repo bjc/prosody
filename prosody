@@ -32,6 +32,9 @@ if CFG_DATADIR then
 	end
 end
 
+-- Initialize logging
+require "core.loggingmanager"
+
 -- Check runtime dependencies
 if not require "util.dependencies".check_dependencies() then
 	os.exit(1);
@@ -112,9 +115,6 @@ function read_config()
 end
 
 function load_libraries()
-	-- Initialize logging
-	require "core.loggingmanager"
-	
 	-- Load socket framework
 	server = require "net.server"
 end	
