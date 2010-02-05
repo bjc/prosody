@@ -214,7 +214,8 @@ local function digest(self, message)
 			KD = HA1..":"..response["nonce"]..":"..response["nc"]..":"..response["cnonce"]..":"..response["qop"]..":"..HA2
 			local rspauth = md5(KD, true);
 			self.authenticated = true;
-			return "success", serialize({rspauth = rspauth});
+			--TODO: considering sending the rspauth in a success node for saving one roundtrip; allowed according to http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09#section-7.3.6
+			return "challenge", serialize({rspauth = rspauth});
 		else
 			return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated."
 		end
