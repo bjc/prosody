@@ -225,6 +225,8 @@ function init_global_state()
 							elseif port == 5280 then
 								friendly_message = "check that Prosody or a BOSH connection manager "
 									.."is not already running";
+							else
+								friendly_message = "this port is in use by another application";
 							end
 						elseif err:match("permission") then
 							friendly_message = "Prosody does not have sufficient privileges to use this port";
