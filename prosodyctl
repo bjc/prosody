@@ -29,6 +29,8 @@ if CFG_DATADIR then
 	end
 end
 
+require "core.loggingmanager"
+
 if not require "util.dependencies".check_dependencies() then
 	os.exit(1);
 end
