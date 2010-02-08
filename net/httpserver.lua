@@ -207,15 +207,15 @@ end
 -- The default handler for requests
 default_handler = function (method, body, request)
 	log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
-	return { status = "404 Not Found", 
+	return { status = "404 Not Found",
 			headers = { ["Content-Type"] = "text/html" },
 			body = "<html><head><title>Page Not Found</title></head><body>Not here :(</body></html>" };
 end
 
 
 function new_request(handler)
-	return { handler = handler, conn = handler.socket, 
-			write = function (...) return handler:write(...); end, state = "request", 
+	return { handler = handler, conn = handler.socket,
+			write = function (...) return handler:write(...); end, state = "request",
 			server = http_servers[handler:serverport()],
 			send = send_response,
 			destroy = destroy_request,
