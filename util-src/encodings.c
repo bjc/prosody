@@ -174,7 +174,7 @@ static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 	size_t len;
 	const char *s = luaL_checklstring(L, 1, &len);
 	char* output = NULL;
-	int ret = idna_to_ascii_8z(s, &output, 0);
+	int ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
 	if (ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
 		idn_free(output);
