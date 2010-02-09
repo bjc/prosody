@@ -927,37 +927,36 @@ function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
 	return r;
 end
 
+local _resolver = dns.resolver();
+dns._resolver = _resolver;
 
 function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
-	return resolve(resolver.lookup, ...);
+	return _resolver:lookup(...);
 end
 
 
 function dns.purge(...)    -- - - - - - - - - - - - - - - - - - - - - -  purge
-	return resolve(resolver.purge, ...);
+	return _resolver:purge(...);
 end
 
 function dns.peek(...)    -- - - - - - - - - - - - - - - - - - - - - - -  peek
-	return resolve(resolver.peek, ...);
+	return _resolver:peek(...);
 end
 
-
 function dns.query(...)    -- - - - - - - - - - - - - - - - - - - - - -  query
-	return resolve(resolver.query, ...);
+	return _resolver:query(...);
 end
 
 function dns.feed(...)    -- - - - - - - - - - - - - - - - - - - - - -  feed
-	return resolve(resolver.feed, ...);
+	return _resolver:feed(...);
 end
 
 function dns.cancel(...)   -- - - - - - - - - - - - - - - - - - - - - -  cancel
-	return resolve(resolver.cancel, ...);
+	return _resolver:cancel(...);
 end
 
 function dns:socket_wrapper_set(...)    -- - - - - - - - -  socket_wrapper_set
-	return resolve(resolver.socket_wrapper_set, ...);
+	return _resolver:socket_wrapper_set(...);
 end
-
-dns._resolver = dns.resolver();
 
 return dns;
