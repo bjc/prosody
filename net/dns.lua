@@ -949,7 +949,7 @@ function dns.cancel(...)  -- - - - - - - - - - - - - - - - - - - - - -  cancel
 	return _resolver:cancel(...);
 end
 
-function dns:socket_wrapper_set(...)    -- - - - - - - - -  socket_wrapper_set
+function dns.socket_wrapper_set(...)    -- - - - - - - - -  socket_wrapper_set
 	return _resolver:socket_wrapper_set(...);
 end
 
