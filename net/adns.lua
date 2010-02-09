@@ -74,6 +74,6 @@ function new_async_socket(sock, resolver)
 	return handler;
 end
 
-dns:socket_wrapper_set(new_async_socket);
+dns.socket_wrapper_set(new_async_socket);
 
 return _M;
