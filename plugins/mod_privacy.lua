@@ -379,8 +379,8 @@ function checkIfNeedToBeBlocked(e, session)
 	local to = stanza.attr.to;
 	local from = stanza.attr.from;
 	
-	local to_user = bare_jid == jid_bare(to);
-	local from_user = bare_jid == jid_bare(from);
+	local is_to_user = bare_jid == jid_bare(to);
+	local is_from_user = bare_jid == jid_bare(from);
 	
 	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 	
@@ -390,7 +390,7 @@ function checkIfNeedToBeBlocked(e, session)
 	then
 		return; -- Nothing to block, default is Allow all
 	end
-	if from_user and to_user then
+	if is_from_user and is_to_user then
 		module:log("debug", "Not blocking communications between user's resources");
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
@@ -418,8 +418,8 @@ function checkIfNeedToBeBlocked(e, session)
 		if (
 			(stanza.name == "message" and item.message) or
 			(stanza.name == "iq" and item.iq) or
-			(stanza.name == "presence" and to_user and item["presence-in"]) or
-			(stanza.name == "presence" and from_user and item["presence-out"]) or
+			(stanza.name == "presence" and is_to_user and item["presence-in"]) or
+			(stanza.name == "presence" and is_from_user and item["presence-out"]) or
 			(item.message == false and item.iq == false and item["presence-in"] == false and item["presence-out"] == false)
 		) then
 			apply = true;
@@ -427,7 +427,7 @@ function checkIfNeedToBeBlocked(e, session)
 		if apply then
 			local evilJid = {};
 			apply = false;
-			if to_user then
+			if is_to_user then
 				module:log("debug", "evil jid is (from): %s", from);
 				evilJid.node, evilJid.host, evilJid.resource = jid_split(from);
 			else
