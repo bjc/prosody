@@ -50,7 +50,7 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 local starttls_attr = { xmlns = xmlns_starttls };
 module:add_event_hook("stream-features", 
 		function (session, features)
-			if session.conn.starttls then
+			if not session.username and session.conn.starttls then
 				features:tag("starttls", starttls_attr);
 				if secure_auth_only then
 					features:tag("required"):up():up();
@@ -63,7 +63,7 @@ module:add_event_hook("stream-features",
 module:hook("s2s-stream-features", 
 		function (data)
 			local session, features = data.session, data.features;
-			if session.to_host and session.conn.starttls then
+			if session.to_host and session.type ~= "s2sin" and session.conn.starttls then
 				features:tag("starttls", starttls_attr):up();
 				if secure_s2s_only then
 					features:tag("required"):up():up();
