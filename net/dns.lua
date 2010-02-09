@@ -912,11 +912,6 @@ end
 -- module api ------------------------------------------------------ module api
 
 
-local function resolve(func, ...)    -- - - - - - - - - - - - - - resolver_get
-	return func(dns._resolver, ...);
-end
-
-
 function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
 	-- this function seems to be redundant with resolver.new ()
 
