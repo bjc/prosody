@@ -929,7 +929,6 @@ function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);
 end
 
-
 function dns.purge(...)    -- - - - - - - - - - - - - - - - - - - - - -  purge
 	return _resolver:purge(...);
 end
@@ -942,11 +941,11 @@ function dns.query(...)    -- - - - - - - - - - - - - - - - - - - - - -  query
 	return _resolver:query(...);
 end
 
-function dns.feed(...)    -- - - - - - - - - - - - - - - - - - - - - -  feed
+function dns.feed(...)    -- - - - - - - - - - - - - - - - - - - - - - -  feed
 	return _resolver:feed(...);
 end
 
-function dns.cancel(...)   -- - - - - - - - - - - - - - - - - - - - - -  cancel
+function dns.cancel(...)  -- - - - - - - - - - - - - - - - - - - - - -  cancel
 	return _resolver:cancel(...);
 end
 
