@@ -75,7 +75,7 @@ function destroy_session(session, err)
 
 		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
-			
+		
 		if not next(hosts[session.host].sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
 			hosts[session.host].sessions[session.username] = nil;
