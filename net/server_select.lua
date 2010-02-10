@@ -532,73 +532,75 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		)
 	end
-	if sslctx then -- ssl?
-		handler:set_sslctx(sslctx);
-		out_put("server.lua: ", "starting ssl handshake")
-		local err
-		socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
-		if err then
-			out_put( "server.lua: ssl error: ", tostring(err) )
-			--mem_free( )
-			return nil, nil, err	-- fatal error
-		end
-		socket:settimeout( 0 )
-		handler.readbuffer = handshake
-		handler.sendbuffer = handshake
-		handshake( socket ) -- do handshake
-		if not socket then
-			return nil, nil, "ssl handshake failed";
-		end
-	else
-		local sslctx;
-		handler.starttls = function( self, _sslctx, now )
-			if _sslctx then
-				sslctx = _sslctx;
-				handler:set_sslctx(sslctx);
-			end
-			if not now then
-				out_put "server.lua: we need to do tls, but delaying until later"
-				needtls = true
-				return
-			end
-			out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
-			local oldsocket, err = socket
+	if luasec then
+		if sslctx then -- ssl?
+			handler:set_sslctx(sslctx);
+			out_put("server.lua: ", "starting ssl handshake")
+			local err
 			socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
-			--out_put( "server.lua: sslwrapped socket is " .. tostring( socket ) )
 			if err then
-				out_put( "server.lua: error while starting tls on client: ", tostring(err) )
-				return nil, err -- fatal error
+				out_put( "server.lua: ssl error: ", tostring(err) )
+				--mem_free( )
+				return nil, nil, err	-- fatal error
 			end
-			
 			socket:settimeout( 0 )
-
-			-- add the new socket to our system
-
-			send = socket.send
-			receive = socket.receive
-			shutdown = id
-
-			_socketlist[ socket ] = handler
-			_readlistlen = addsocket(_readlist, socket, _readlistlen)
-
-			-- remove traces of the old socket
-
-			_readlistlen = removesocket( _readlist, oldsocket, _readlistlen )
-			_sendlistlen = removesocket( _sendlist, oldsocket, _sendlistlen )
-			_socketlist[ oldsocket ] = nil
-
-			handler.starttls = nil
-			needtls = nil
-				
-			-- Secure now
-			ssl = true
-
 			handler.readbuffer = handshake
 			handler.sendbuffer = handshake
 			handshake( socket ) -- do handshake
+			if not socket then
+				return nil, nil, "ssl handshake failed";
+			end
+		else
+			local sslctx;
+			handler.starttls = function( self, _sslctx, now )
+				if _sslctx then
+					sslctx = _sslctx;
+					handler:set_sslctx(sslctx);
+				end
+				if not now then
+					out_put "server.lua: we need to do tls, but delaying until later"
+					needtls = true
+					return
+				end
+				out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
+				local oldsocket, err = socket
+				socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
+				--out_put( "server.lua: sslwrapped socket is " .. tostring( socket ) )
+				if err then
+					out_put( "server.lua: error while starting tls on client: ", tostring(err) )
+					return nil, err -- fatal error
+				end
+
+				socket:settimeout( 0 )
+	
+				-- add the new socket to our system
+	
+				send = socket.send
+				receive = socket.receive
+				shutdown = id
+
+				_socketlist[ socket ] = handler
+				_readlistlen = addsocket(_readlist, socket, _readlistlen)
+
+				-- remove traces of the old socket
+
+				_readlistlen = removesocket( _readlist, oldsocket, _readlistlen )
+				_sendlistlen = removesocket( _sendlist, oldsocket, _sendlistlen )
+				_socketlist[ oldsocket ] = nil
+
+				handler.starttls = nil
+				needtls = nil
+
+				-- Secure now
+				ssl = true
+
+				handler.readbuffer = handshake
+				handler.sendbuffer = handshake
+				handshake( socket ) -- do handshake
+			end
+			handler.readbuffer = _readbuffer
+			handler.sendbuffer = _sendbuffer
 		end
-		handler.readbuffer = _readbuffer
-		handler.sendbuffer = _sendbuffer
 	end
 
 	send = socket.send
