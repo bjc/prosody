@@ -16,40 +16,25 @@ local secure_s2s_only = module:get_option("s2s_require_encryption");
 
 local global_ssl_ctx = prosody.global_ssl_ctx;
 
-function c2s_starttls_handler(session, stanza)
+function starttls_handler(session, stanza)
 	if session.conn.starttls then
-		session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
+		(session.sends2s or session.send)(st.stanza("proceed", { xmlns = xmlns_starttls }));
 		session:reset_stream();
-		local ssl_ctx = session.host and hosts[session.host].ssl_ctx_in or global_ssl_ctx;
+		local host = session.to_host or session.host;
+		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
 		session.conn:starttls(ssl_ctx);
-		session.log("info", "TLS negotiation started...");
+		session.log("info", "TLS negotiation started for %s...", session.type);
 		session.secure = false;
 	else
 		-- FIXME: What reply?
-		session.log("warn", "Attempt to start TLS, but TLS is not available on this connection");
-	end
-end
-
-function s2s_starttls_handler(session, stanza)
-	if session.conn.starttls then
-		session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
-		session:reset_stream();
-		local ssl_ctx = session.to_host and hosts[session.to_host].ssl_ctx_in or global_ssl_ctx;
-		session.conn:starttls(ssl_ctx);
-		session.log("info", "TLS negotiation started for incoming s2s...");
-		session.secure = false;
-	else
-		-- FIXME: What reply?
-		session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
+		session.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", session.type);
 	end
 end
 
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if origin.type == "c2s_unauthed" then
-		c2s_starttls_handler(origin, stanza);
-	elseif origin.type == "s2sin_unauthed" then
-		s2s_starttls_handler(origin, stanza);
+	if origin.type == "c2s_unauthed" or origin.type == "s2sin_unauthed" then
+		starttls_handler(origin, stanza);
 	else
 		-- FIXME: What reply?
 		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
