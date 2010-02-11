@@ -55,10 +55,11 @@ local function select_top_resources(user)
 	end
 	return recipients;
 end
-local function recalc_resource_map(origin)
-	local user = hosts[origin.host].sessions[origin.username];
-	user.top_resources = select_top_resources(user);
-	if #user.top_resources == 0 then user.top_resources = nil; end
+local function recalc_resource_map(user)
+	if user then
+		user.top_resources = select_top_resources(user);
+		if #user.top_resources == 0 then user.top_resources = nil; end
+	end
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
@@ -117,7 +118,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		origin.presence = nil;
 		if origin.priority then
 			origin.priority = nil;
-			recalc_resource_map(origin);
+			recalc_resource_map(user);
 		end
 		if origin.directed then
 			for jid in pairs(origin.directed) do
@@ -139,7 +140,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		else priority = 0; end
 		if origin.priority ~= priority then
 			origin.priority = priority;
-			recalc_resource_map(origin);
+			recalc_resource_map(user);
 		end
 	end
 	stanza.attr.to = nil; -- reset it
