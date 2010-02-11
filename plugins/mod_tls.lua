@@ -20,14 +20,15 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.host and hosts[session.host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.host].ssl_ctx_in);
+					session.conn.set_sslctx(hosts[session.host].ssl_ctx_in);
 				end
-				session.conn:starttls();
+				session.conn.starttls();
 				session.log("info", "TLS negotiation started...");
 				session.secure = false;
 			else
-				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this connection");
+				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+				session:close();
 			end
 		end);
 		
@@ -37,14 +38,15 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.to_host and hosts[session.to_host].ssl_ctx_in then
-					session.conn:set_sslctx(hosts[session.to_host].ssl_ctx_in);
+					session.conn.set_sslctx(hosts[session.to_host].ssl_ctx_in);
 				end
-				session.conn:starttls();
+				session.conn.starttls();
 				session.log("info", "TLS negotiation started for incoming s2s...");
 				session.secure = false;
 			else
-				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
+				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+				session:close();
 			end
 		end);
 
@@ -91,7 +93,7 @@ module:hook_stanza(xmlns_starttls, "proceed",
 			module:log("debug", "Proceeding with TLS on s2sout...");
 			local format, to_host, from_host = string.format, session.to_host, session.from_host;
 			session:reset_stream();
-			session.conn:starttls(true);
+			session.conn.starttls(true);
 			session.secure = false;
 			return true;
 		end);
