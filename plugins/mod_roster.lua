@@ -23,12 +23,12 @@ local core_post_stanza = core_post_stanza;
 module:add_feature("jabber:iq:roster");
 
 local rosterver_stream_feature = st.stanza("ver", {xmlns="urn:xmpp:features:rosterver"}):tag("optional"):up();
-module:add_event_hook("stream-features", 
-		function (session, features)
-			if session.username then
-				features:add_child(rosterver_stream_feature);
-			end
-		end);
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if origin.username then
+		features:add_child(rosterver_stream_feature);
+	end
+end);
 
 module:add_iq_handler("c2s", "jabber:iq:roster", 
 		function (session, stanza)
