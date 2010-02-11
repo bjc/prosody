@@ -55,8 +55,8 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local luasec = select( 2, pcall( require, "ssl" ) )
-local luasocket = require "socket"
+local luasec = use "ssl"
+local luasocket = use "socket" or require "socket"
 
 --// extern lib methods //--
 
@@ -472,7 +472,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist
 			_ = needtls and handler:starttls(nil, true)
 			_writetimes[ handler ] = nil
-		_ = toclose and handler.close( )
+			_ = toclose and handler.close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
 			buffer = string_sub( buffer, byte + 1, bufferlen ) -- new buffer
@@ -601,8 +601,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			handler.readbuffer = _readbuffer
 			handler.sendbuffer = _sendbuffer
 		end
+	else
+		handler.readbuffer = _readbuffer
+		handler.sendbuffer = _sendbuffer
 	end
-
 	send = socket.send
 	receive = socket.receive
 	shutdown = ( ssl and id ) or socket.shutdown

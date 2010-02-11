@@ -43,7 +43,7 @@ local tostring = use "tostring"
 local coroutine = use "coroutine"
 local setmetatable = use "setmetatable"
 
-local ssl = use "ssl" or require "ssl"
+local ssl = use "ssl"
 local socket = use "socket" or require "socket"
 
 local log = require ("util.logger").init("socket")
@@ -142,7 +142,7 @@ do
 					self:_close()
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
-					if plainssl then  -- start ssl session
+					if plainssl and ssl then  -- start ssl session
 						self:starttls()
 					else  -- normal connection
 						self:_start_session( self.listener.onconnect )
@@ -489,6 +489,7 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
+		if not ssl then interface.starttls = false; end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
@@ -670,7 +671,7 @@ do
 				interface._connections = interface._connections + 1  -- increase connection count
 				local clientinterface = handleclient( client, ip, port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
-				if sslctx then
+				if ssl and sslctx then
 					clientinterface:starttls(sslctx)
 				else
 					clientinterface:_start_session( clientinterface.onconnect )
