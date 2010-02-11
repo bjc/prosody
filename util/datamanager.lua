@@ -60,7 +60,9 @@ local callbacks = {};
 
 ------- API -------------
 
+local _set_data_path;
 function set_data_path(path)
+	if _set_data_path then return _set_data_path(path); end
 	log("debug", "Setting data path to: %s", path);
 	data_path = path;
 end
@@ -73,14 +75,18 @@ local function callback(username, host, datastore, data)
 	
 	return username, host, datastore, data;
 end
+local _add_callback;
 function add_callback(func)
+	if _add_callback then return _add_callback(func); end
 	if not callbacks[func] then -- Would you really want to set the same callback more than once?
 		callbacks[func] = true;
 		callbacks[#callbacks+1] = func;
 		return true;
 	end
 end
+local _remove_callback;
 function remove_callback(func)
+	if _remove_callback then return _remove_callback(func); end
 	if callbacks[func] then
 		for i, f in ipairs(callbacks) do
 			if f == func then
@@ -92,7 +98,9 @@ function remove_callback(func)
 	end
 end
 
+local _getpath;
 function getpath(username, host, datastore, ext, create)
+	if _getpath then return _getpath(username, host, datastore, ext, create); end
 	ext = ext or "dat";
 	host = (host and encode(host)) or "_global";
 	username = username and encode(username);
@@ -108,7 +116,9 @@ function getpath(username, host, datastore, ext, create)
 	end
 end
 
+local _load;
 function load(username, host, datastore)
+	if _load then return _load(username, host, datastore); end
 	local data, ret = loadfile(getpath(username, host, datastore));
 	if not data then
 		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
@@ -123,7 +133,9 @@ function load(username, host, datastore)
 	return ret;
 end
 
+local _store;
 function store(username, host, datastore, data)
+	if _store then return _store(username, host, datastore, data); end
 	if not data then
 		data = {};
 	end
@@ -151,7 +163,9 @@ function store(username, host, datastore, data)
 	return true;
 end
 
+local _list_append;
 function list_append(username, host, datastore, data)
+	if _list_append then return _list_append(username, host, datastore, data); end
 	if not data then return; end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
@@ -167,7 +181,9 @@ function list_append(username, host, datastore, data)
 	return true;
 end
 
+local _list_store;
 function list_store(username, host, datastore, data)
+	if _list_store then return _list_store(username, host, datastore, data); end
 	if not data then
 		data = {};
 	end
@@ -193,7 +209,9 @@ function list_store(username, host, datastore, data)
 	return true;
 end
 
+local _list_load;
 function list_load(username, host, datastore)
+	if _list_load then return _list_load(username, host, datastore); end
 	local data, ret = loadfile(getpath(username, host, datastore, "list"));
 	if not data then
 		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
@@ -207,6 +225,31 @@ function list_load(username, host, datastore)
 		return nil;
 	end
 	return items;
+end
+
+function set(t)
+	_set_data_path = t.set_data_path;
+	_add_callback = t.add_callback;
+	_remove_callback = t.remove_callback;
+	_getpath = t.getpath;
+	_load = t.load;
+	_store = t.store;
+	_list_append = t.list_append;
+	_list_store = t.list_store;
+	_list_load = t.list_load;
+end
+function get()
+	return {
+		set_data_path = _set_data_path;
+		add_callback = _add_callback;
+		remove_callback = _remove_callback;
+		getpath = _getpath;
+		load = _load;
+		store = _store;
+		list_append = _list_append;
+		list_store = _list_store;
+		list_load = _list_load;
+	};
 end
 
 return _M;
