@@ -17,16 +17,6 @@ local jid_split = util_Jid.split;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
 
-function findNamedList(privacy_lists, name)
-	if privacy_lists.lists then
-		for i=1,#privacy_lists.lists do
-			if privacy_lists.lists[i].name == name then
-				return i;
-			end
-		end
-	end
-end
-
 function isListUsed(origin, name, privacy_lists)
 	local user = bare_sessions[origin.username.."@"..origin.host];
 	if user then
@@ -126,7 +116,7 @@ function declineList(privacy_lists, origin, stanza, which)
 end
 
 function activateList(privacy_lists, origin, stanza, which, name)
-	local idx = findNamedList(privacy_lists, name);
+	local list = privacy_lists.lists[name];
 
 	if privacy_lists.default == nil then
 		privacy_lists.default = "";
@@ -135,7 +125,7 @@ function activateList(privacy_lists, origin, stanza, which, name)
 		origin.activePrivacyList = "";
 	end
 	
-	if which == "default" and idx ~= nil then
+	if which == "default" and list then
 		if isAnotherSessionUsingDefaultList(origin) then
 			return {"cancel", "conflict", "Another session is online and using the default list."};
 		end
@@ -146,7 +136,7 @@ function activateList(privacy_lists, origin, stanza, which, name)
 			sendNeededUnavailablePersences(origin, name);
 		end
 ]]--
-	elseif which == "active" and idx ~= nil then
+	elseif which == "active" and list then
 		origin.activePrivacyList = name;
 		origin.send(st.reply(stanza));
 		-- sendNeededUnavailablePersences(origin, name);
@@ -157,9 +147,9 @@ function activateList(privacy_lists, origin, stanza, which, name)
 end
 
 function deleteList(privacy_lists, origin, stanza, name)
-	local idx = findNamedList(privacy_lists, name);
+	local list = privacy_lists.lists[name];
 
-	if idx ~= nil then
+	if list then
 		if isListUsed(origin, name, privacy_lists) then
 			return {"cancel", "conflict", "Another session is online and using the list which should be deleted."};
 		end
@@ -169,7 +159,7 @@ function deleteList(privacy_lists, origin, stanza, name)
 		if origin.activePrivacyList == name then
 			origin.activePrivacyList = "";
 		end
-		table.remove(privacy_lists.lists, idx);
+		privacy_lists.lists[name] = nil;
 		origin.send(st.reply(stanza));
 		return true;
 	end
@@ -177,19 +167,16 @@ function deleteList(privacy_lists, origin, stanza, name)
 end
 
 function createOrReplaceList (privacy_lists, origin, stanza, name, entries, roster)
-	local idx = findNamedList(privacy_lists, name);
 	local bare_jid = origin.username.."@"..origin.host;
 	
 	if privacy_lists.lists == nil then
 		privacy_lists.lists = {};
 	end
 
-	if idx == nil then
-		idx = #privacy_lists.lists + 1;
-	end
+	local list = {};
+	privacy_lists.lists[name] = list;
 
 	local orderCheck = {};
-	local list = {};
 	list.name = name;
 	list.items = {};
 
@@ -264,7 +251,6 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 	
 	table.sort(list, function(a, b) return a.order < b.order; end);
 
-	privacy_lists.lists[idx] = list;
 	origin.send(st.reply(stanza));
 	if bare_sessions[bare_jid] ~= nil then
 		local iq = st.iq ( { type = "set", id="push1" } );
@@ -294,9 +280,8 @@ function getList(privacy_lists, origin, stanza, name)
 			end
 		end
 	else
-		local idx = findNamedList(privacy_lists, name);
-		if idx ~= nil then
-			local list = privacy_lists.lists[idx];
+		local list = privacy_lists.lists[name];
+		if list then
 			reply = reply:tag("list", {name=list.name});
 			for _,item in ipairs(list.items) do
 				reply:tag("item", {type=item.type, value=item.value, action=item.action, order=item.order});
@@ -395,21 +380,14 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
-	local idx;
-	local list;
 	local item;
 	local listname = session.activePrivacyList;
 	if listname == nil or listname == "" then
 		listname = privacy_lists.default; -- no active list selected, use default list
 	end
-	idx = findNamedList(privacy_lists, listname);
-	if idx == nil then
-		module:log("debug", "given privacy listname not found. name: %s", listname);
-		return;
-	end
-	list = privacy_lists.lists[idx];
-	if list == nil then
-		module:log("debug", "privacy list index wrong. index: %d", idx);
+	local list = privacy_lists.lists[listname];
+	if not list then
+		module:log("debug", "given privacy list not found. name: %s", listname);
 		return;
 	end
 	for _,item in ipairs(list.items) do
