@@ -118,13 +118,6 @@ end
 function activateList(privacy_lists, origin, stanza, which, name)
 	local list = privacy_lists.lists[name];
 
-	if privacy_lists.default == nil then
-		privacy_lists.default = "";
-	end
-	if origin.activePrivacyList == nil then
-		origin.activePrivacyList = "";
-	end
-	
 	if which == "default" and list then
 		if isAnotherSessionUsingDefaultList(origin) then
 			return {"cancel", "conflict", "Another session is online and using the default list."};
@@ -154,10 +147,10 @@ function deleteList(privacy_lists, origin, stanza, name)
 			return {"cancel", "conflict", "Another session is online and using the list which should be deleted."};
 		end
 		if privacy_lists.default == name then
-			privacy_lists.default = "";
+			privacy_lists.default = nil;
 		end
 		if origin.activePrivacyList == name then
-			origin.activePrivacyList = "";
+			origin.activePrivacyList = nil;
 		end
 		privacy_lists.lists[name] = nil;
 		origin.send(st.reply(stanza));
@@ -272,9 +265,13 @@ function getList(privacy_lists, origin, stanza, name)
 	reply:tag("query", {xmlns="jabber:iq:privacy"});
 
 	if name == nil then
-		reply:tag("active", {name=origin.activePrivacyList or ""}):up();
-		reply:tag("default", {name=privacy_lists.default or ""}):up();
 		if privacy_lists.lists then
+			if origin.ActivePrivacyList then
+				reply:tag("active", {name=origin.activePrivacyList}):up();
+			end
+			if privacy_lists.default then
+				reply:tag("default", {name=privacy_lists.default}):up();
+			end
 			for _,list in ipairs(privacy_lists.lists) do
 				reply:tag("list", {name=list.name}):up();
 			end
@@ -371,8 +368,7 @@ function checkIfNeedToBeBlocked(e, session)
 	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 	
 	if privacy_lists.lists == nil or
-		(session.activePrivacyList == nil or session.activePrivacyList == "") and
-		(privacy_lists.default == nil     or privacy_lists.default == "")
+		not (session.activePrivacyList or privacy_lists.default)
 	then
 		return; -- Nothing to block, default is Allow all
 	end
@@ -383,7 +379,7 @@ function checkIfNeedToBeBlocked(e, session)
 	
 	local item;
 	local listname = session.activePrivacyList;
-	if listname == nil or listname == "" then
+	if listname == nil then
 		listname = privacy_lists.default; -- no active list selected, use default list
 	end
 	local list = privacy_lists.lists[listname];
