@@ -206,6 +206,7 @@ function stream_callbacks.streamopened(request, attr)
 		-- Send creation response
 		
 		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
 		local response = st.stanza("body", { xmlns = xmlns_bosh,
@@ -257,6 +258,7 @@ function stream_callbacks.streamopened(request, attr)
 	
 	if session.notopen then
 		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
 		session.send(features);
 		session.notopen = nil;
