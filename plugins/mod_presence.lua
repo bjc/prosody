@@ -18,6 +18,7 @@ local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local hosts = hosts;
+local NULL = {};
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
@@ -63,7 +64,8 @@ end
 function handle_normal_presence(origin, stanza, core_route_stanza)
 	local roster = origin.roster;
 	local node, host = origin.username, origin.host;
-	for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
+	local user = bare_sessions[node.."@"..host];
+	for _, res in pairs(user and user.sessions or NULL) do -- broadcast to all resources
 		if res ~= origin and res.presence then -- to resource
 			stanza.attr.to = res.full_jid;
 			core_route_stanza(origin, stanza);
@@ -84,7 +86,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 				core_route_stanza(origin, probe);
 			end
 		end
-		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
+		for _, res in pairs(user and user.sessions or NULL) do -- broadcast from all available resources
 			if res ~= origin and res.presence then
 				res.presence.attr.to = origin.full_jid;
 				core_route_stanza(res, res.presence);
