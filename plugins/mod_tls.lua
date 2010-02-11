@@ -44,8 +44,18 @@ function s2s_starttls_handler(session, stanza)
 	end
 end
 
-module:add_handler("c2s_unauthed", "starttls", xmlns_starttls, c2s_starttls_handler);
-module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls, s2s_starttls_handler);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
+	local origin, stanza = event.origin, event.stanza;
+	if origin.type == "c2s_unauthed" then
+		c2s_starttls_handler(origin, stanza);
+	elseif origin.type == "s2sin_unauthed" then
+		s2s_starttls_handler(origin, stanza);
+	else
+		-- FIXME: What reply?
+		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
+	end
+	return true;
+end);
 
 
 local starttls_attr = { xmlns = xmlns_starttls };
