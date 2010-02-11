@@ -32,34 +32,6 @@ if CFG_DATADIR then
 	end
 end
 
--- Initialize logging
-require "core.loggingmanager"
-
--- Check runtime dependencies
-if not require "util.dependencies".check_dependencies() then
-	os.exit(1);
-end
-
--- Replace require() with one that doesn't pollute _G, required
--- for neat sandboxing of modules
-do
-	local _realG = _G;
-	local _real_require = require;
-	function require(...)
-		local curr_env = getfenv(2);
-		local curr_env_mt = getmetatable(getfenv(2));
-		local _realG_mt = getmetatable(_realG);
-		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
-			local old_newindex
-			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
-			local ret = _real_require(...);
-			_realG_mt.__newindex = old_newindex;
-			return ret;
-		end
-		return _real_require(...);
-	end
-end
-
 -- Load the config-parsing module
 config = require "core.configmanager"
 
@@ -118,6 +90,38 @@ function load_libraries()
 	-- Load socket framework
 	server = require "net.server"
 end	
+
+function init_logging()
+	-- Initialize logging
+	require "core.loggingmanager"
+end
+
+function check_dependencies()
+	-- Check runtime dependencies
+	if not require "util.dependencies".check_dependencies() then
+		os.exit(1);
+	end
+end
+
+function sandbox_require()
+	-- Replace require() with one that doesn't pollute _G, required
+	-- for neat sandboxing of modules
+	local _realG = _G;
+	local _real_require = require;
+	function require(...)
+		local curr_env = getfenv(2);
+		local curr_env_mt = getmetatable(getfenv(2));
+		local _realG_mt = getmetatable(_realG);
+		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
+			local old_newindex
+			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
+			local ret = _real_require(...);
+			_realG_mt.__newindex = old_newindex;
+			return ret;
+		end
+		return _real_require(...);
+	end
+end
 
 function init_global_state()
 	bare_sessions = {};
@@ -407,7 +411,12 @@ function cleanup()
 end
 
 -- Are you ready? :)
+-- These actions are in a strict order, as many depend on
+-- previous steps to have already been performed
 read_config();
+init_logging();
+check_dependencies();
+sandbox_require();
 load_libraries();
 init_global_state();
 read_version();
