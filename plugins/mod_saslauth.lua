@@ -144,21 +144,22 @@ module:add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
-module:add_event_hook("stream-features", function(session, features)
-	if not session.username then
-		if secure_auth_only and not session.secure then
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if not origin.username then
+		if secure_auth_only and not origin.secure then
 			return;
 		end
 		if module:get_option("anonymous_login") then
-			session.sasl_handler = new_sasl(session.host, anonymous_authentication_profile);
+			origin.sasl_handler = new_sasl(origin.host, anonymous_authentication_profile);
 		else
-			session.sasl_handler = new_sasl(session.host, default_authentication_profile);
-			if not (module:get_option("allow_unencrypted_plain_auth")) and not session.secure then
-				session.sasl_handler:forbidden({"PLAIN"});
+			origin.sasl_handler = new_sasl(origin.host, default_authentication_profile);
+			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
+				origin.sasl_handler:forbidden({"PLAIN"});
 			end
 		end
 		features:tag("mechanisms", mechanisms_attr);
-		for k, v in pairs(session.sasl_handler:mechanisms()) do
+		for k, v in pairs(origin.sasl_handler:mechanisms()) do
 			features:tag("mechanism"):text(v):up();
 		end
 		features:up();
