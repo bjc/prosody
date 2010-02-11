@@ -127,6 +127,7 @@ function load(host, module_name, config)
 	local api_instance = setmetatable({ name = module_name, host = host, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
+	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
 	if not hosts[host] then
