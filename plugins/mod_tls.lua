@@ -18,7 +18,7 @@ local global_ssl_ctx = prosody.global_ssl_ctx;
 
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
-	if origin.conn.starttls and origin.type == "c2s_unauthed" or origin.type == "s2sin_unauthed" then
+	if origin.conn.starttls then
 		(origin.sends2s or origin.send)(st.stanza("proceed", { xmlns = xmlns_starttls }));
 		origin:reset_stream();
 		local host = origin.to_host or origin.host;
