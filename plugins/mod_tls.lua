@@ -49,8 +49,8 @@ module:hook("stream-features", function(event)
 	end
 end);
 module:hook("s2s-stream-features", function(event)
-	local session, features = event.session, event.features;
-	if session.to_host and session.type ~= "s2sin" and session.conn.starttls then
+	local origin, features = event.origin, event.features;
+	if origin.to_host and origin.type ~= "s2sin" and origin.conn.starttls then
 		features:add_child(s2s_feature);
 	end
 end);
