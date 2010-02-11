@@ -343,13 +343,14 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 		end
 
 		if valid ~= true then
-			if valid[0] == nil then
-				valid[0] = "cancel";
-			end
+			valid = valid or { "cancel", "bad-request", "Couldn't understand request" };
 			if valid[1] == nil then
-				valid[1] = "bad-request";
+				valid[1] = "cancel";
 			end
-			origin.send(st.error_reply(stanza, valid[0], valid[1], valid[2]));
+			if valid[2] == nil then
+				valid[2] = "bad-request";
+			end
+			origin.send(st.error_reply(stanza, valid[1], valid[2], valid[3]));
 		else
 			datamanager.store(origin.username, origin.host, "privacy", privacy_lists);
 		end
