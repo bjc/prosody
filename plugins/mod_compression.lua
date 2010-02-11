@@ -25,24 +25,21 @@ if not compression_level or compression_level < 1 or compression_level > 9 then
 	return;
 end
 
-module:add_event_hook("stream-features",
-		function (session, features)
-			if not session.compressed then
-				-- FIXME only advertise compression support when TLS layer has no compression enabled
-				features:add_child(compression_stream_feature);
-			end
-		end
-);
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if not origin.compressed then
+		-- FIXME only advertise compression support when TLS layer has no compression enabled
+		features:add_child(compression_stream_feature);
+	end
+end);
 
-module:hook("s2s-stream-features",
-		function (data)
-			local session, features = data.session, data.features;
-			-- FIXME only advertise compression support when TLS layer has no compression enabled
-			if not session.compressed then 
-				features:add_child(compression_stream_feature);
-			end
-		end
-);
+module:hook("s2s-stream-features", function(event)
+	local session, features = event.session, event.features;
+	-- FIXME only advertise compression support when TLS layer has no compression enabled
+	if not session.compressed then 
+		features:add_child(compression_stream_feature);
+	end
+end);
 
 -- Hook to activate compression if remote server supports it.
 module:hook_stanza(xmlns_stream, "features",
