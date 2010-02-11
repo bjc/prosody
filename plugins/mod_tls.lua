@@ -16,25 +16,16 @@ local secure_s2s_only = module:get_option("s2s_require_encryption");
 
 local global_ssl_ctx = prosody.global_ssl_ctx;
 
-function starttls_handler(session, stanza)
-	if session.conn.starttls then
-		(session.sends2s or session.send)(st.stanza("proceed", { xmlns = xmlns_starttls }));
-		session:reset_stream();
-		local host = session.to_host or session.host;
-		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
-		session.conn:starttls(ssl_ctx);
-		session.log("info", "TLS negotiation started for %s...", session.type);
-		session.secure = false;
-	else
-		-- FIXME: What reply?
-		session.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", session.type);
-	end
-end
-
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
-	local origin, stanza = event.origin, event.stanza;
-	if origin.type == "c2s_unauthed" or origin.type == "s2sin_unauthed" then
-		starttls_handler(origin, stanza);
+	local origin = event.origin;
+	if origin.conn.starttls and origin.type == "c2s_unauthed" or origin.type == "s2sin_unauthed" then
+		(origin.sends2s or origin.send)(st.stanza("proceed", { xmlns = xmlns_starttls }));
+		origin:reset_stream();
+		local host = origin.to_host or origin.host;
+		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
+		origin.conn:starttls(ssl_ctx);
+		origin.log("info", "TLS negotiation started for %s...", origin.type);
+		origin.secure = false;
 	else
 		-- FIXME: What reply?
 		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
