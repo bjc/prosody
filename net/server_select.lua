@@ -55,8 +55,8 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local luasec = select( 2, pcall( require, "ssl" ) )
-local luasocket = require "socket"
+local luasec = use "ssl"
+local luasocket = use "socket" or require "socket"
 
 --// extern lib methods //--
 
@@ -601,8 +601,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			handler.readbuffer = _readbuffer
 			handler.sendbuffer = _sendbuffer
 		end
+	else
+		handler.readbuffer = _readbuffer
+		handler.sendbuffer = _sendbuffer
 	end
-
 	send = socket.send
 	receive = socket.receive
 	shutdown = ( ssl and id ) or socket.shutdown
