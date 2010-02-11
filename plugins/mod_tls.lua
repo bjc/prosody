@@ -27,8 +27,9 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 		origin.log("info", "TLS negotiation started for %s...", origin.type);
 		origin.secure = false;
 	else
-		-- FIXME: What reply?
 		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
+		(origin.sends2s or origin.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+		origin:close();
 	end
 	return true;
 end);
