@@ -42,8 +42,9 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 end);
 
 -- Advertize stream feature
-module:add_event_hook("stream-features", function(session, features)
-	if not session.username and session.conn.starttls then
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if not origin.username and origin.conn.starttls then
 		features:add_child(c2s_feature);
 	end
 end);
