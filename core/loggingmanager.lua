@@ -94,7 +94,7 @@ function apply_sink_rules(sink_type)
 			end
 		end
 	elseif type(logging_config) == "string" and (not logging_config:match("^%*")) and sink_type == "file" then
-		-- User specified simply a filename, and the "file" sink type 
+		-- User specified simply a filename, and the "file" sink type
 		-- was just added
 		for _, sink_config in pairs(default_file_logging) do
 			sink_config.filename = logging_config;
@@ -128,7 +128,7 @@ function get_levels(criteria, set)
 				return set;
 			elseif in_range then
 				set[level] = true;
-			end	
+			end
 		end
 	end
 	
@@ -161,12 +161,12 @@ function log_sink_types.stdout()
 		if timestamps then
 			io_write(os_date(timestamps), " ");
 		end
-		if ... then 
+		if ... then
 			io_write(name, rep(" ", sourcewidth-namelen), level, "\t", format(message, ...), "\n");
 		else
 			io_write(name, rep(" ", sourcewidth-namelen), level, "\t", message, "\n");
 		end
-	end	
+	end
 end
 
 do
@@ -197,7 +197,7 @@ do
 			if timestamps then
 				io_write(os_date(timestamps), " ");
 			end
-			if ... then 
+			if ... then
 				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
 			else
 				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
@@ -237,7 +237,7 @@ function log_sink_types.file(config)
 		if timestamps then
 			write(logfile, os_date(timestamps), " ");
 		end
-		if ... then 
+		if ... then
 			write(logfile, name, "\t", level, "\t", format(message, ...), "\n");
 		else
 			write(logfile, name, "\t" , level, "\t", message, "\n");
