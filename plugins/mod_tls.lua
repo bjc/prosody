@@ -52,7 +52,7 @@ module:hook("s2s-stream-features",
 		function (data)
 			local session, features = data.session, data.features;
 			if session.to_host and session.type ~= "s2sin" and session.conn.starttls then
-				features:tag("starttls", starttls_attr):up();
+				features:tag("starttls", starttls_attr)
 				if secure_s2s_only then
 					features:tag("required"):up():up();
 				else
