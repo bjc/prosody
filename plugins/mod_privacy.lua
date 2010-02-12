@@ -272,8 +272,8 @@ function getList(privacy_lists, origin, stanza, name)
 			if privacy_lists.default then
 				reply:tag("default", {name=privacy_lists.default}):up();
 			end
-			for _,list in ipairs(privacy_lists.lists) do
-				reply:tag("list", {name=list.name}):up();
+			for name,list in pairs(privacy_lists.lists) do
+				reply:tag("list", {name=name}):up();
 			end
 		end
 	else
