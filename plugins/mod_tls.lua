@@ -24,10 +24,19 @@ local global_ssl_ctx = prosody.global_ssl_ctx;
 
 local host = hosts[module.host];
 
+local function can_do_tls(session)
+	if session.type == "c2s_unauthed" then
+		return session.username and session.conn.starttls and host.ssl_ctx_in;
+	elseif session.type == "s2sin_unauthed" then
+		return origin.to_host and origin.conn.starttls and host.ssl_ctx_in;
+	end
+	return false;
+end
+
 -- Hook <starttls/>
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
-	if origin.conn.starttls then
+	if can_do_tls(origin) then
 		(origin.sends2s or origin.send)(starttls_proceed);
 		origin:reset_stream();
 		local host = origin.to_host or origin.host;
@@ -46,13 +55,13 @@ end);
 -- Advertize stream feature
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if not origin.username and origin.conn.starttls and host.ssl_ctx_in then
+	if can_do_tls(origin) then
 		features:add_child(c2s_feature);
 	end
 end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if origin.to_host and origin.type ~= "s2sin" and origin.conn.starttls and host.ssl_ctx_in then
+	if can_do_tls(origin) then
 		features:add_child(s2s_feature);
 	end
 end);
@@ -66,6 +75,7 @@ module:hook_stanza("http://etherx.jabber.org/streams", "features", function (ses
 		return true;
 	end
 end, 500);
+
 module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 	module:log("debug", "Proceeding with TLS on s2sout...");
 	session:reset_stream();
