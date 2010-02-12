@@ -66,7 +66,7 @@ function new_session(conn)
 	return session;
 end
 
-local function null_data_handler(data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
+local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
 
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
