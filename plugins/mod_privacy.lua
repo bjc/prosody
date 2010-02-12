@@ -303,7 +303,16 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 	if stanza.attr.to == nil then -- only service requests to own bare JID
 		local query = stanza.tags[1]; -- the query element
 		local valid = false;
-		local privacy_lists = datamanager.load(origin.username, origin.host, "privacy") or {};
+		local privacy_lists = datamanager.load(origin.username, origin.host, "privacy") or { lists = {} };
+
+		if privacy_lists.lists[1] then -- Code to migrate from old privacy lists format, remove in 0.8
+			module:log("info", "Upgrading format of stored privacy lists for %s@%s", origin.username, origin.host);
+			local lists = privacy_lists.lists;
+			for idx, list in ipairs(lists) do
+				lists[list.name] = list;
+				lists[idx] = nil;
+			end
+		end
 
 		if stanza.attr.type == "set" then
 			if #query.tags == 1 then --  the <query/> element MUST NOT include more than one child element
