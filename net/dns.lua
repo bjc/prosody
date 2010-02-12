@@ -594,17 +594,18 @@ end
 
 function resolver:remember(rr, type)    -- - - - - - - - - - - - - -  remember
 	--print ('remember', type, rr.class, rr.type, rr.name)
+	local qname, qtype, qclass = standardize(rr.name, rr.type, rr.class);
 
 	if type ~= '*' then
-		type = rr.type;
-		local all = get(self.cache, rr.class, '*', rr.name);
+		type = qtype;
+		local all = get(self.cache, qclass, '*', qname);
 		--print('remember all', all);
 		if all then append(all, rr); end
 	end
 
 	self.cache = self.cache or setmetatable({}, cache_metatable);
-	local rrs = get(self.cache, rr.class, type, rr.name) or
-		set(self.cache, rr.class, type, rr.name, setmetatable({}, rrs_metatable));
+	local rrs = get(self.cache, qclass, type, qname) or
+		set(self.cache, qclass, type, qname, setmetatable({}, rrs_metatable));
 	append(rrs, rr);
 
 	if type == 'MX' then self.unsorted[rrs] = true; end
