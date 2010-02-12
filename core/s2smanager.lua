@@ -508,7 +508,7 @@ function mark_connected(session)
 	end
 end
 
-local function null_data_handler(data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
+local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
 
 function destroy_session(session, reason)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
