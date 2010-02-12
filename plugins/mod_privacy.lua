@@ -65,40 +65,6 @@ function sendUnavailable(origin, to, from)
 	end
 end
 
-function sendNeededUnavailablePersences(origin, listnameOrItem) -- TODO implement it correctly!
-	if type(listnameOrItem) == "string" then
-		local listname = listnameOrItem;
-		for _,list in ipairs(privacy_lists.lists) do
-			if list.name == listname then
-				for _,item in ipairs(list.items) do
-					sendNeededUnavailablePersences(origin, item);
-				end
-			end
-		end
-	elseif type(listnameOrItem) == "table" then
-		module:log("debug", "got an item, check whether to send unavailable presence stanza or not");
-		local item = listnameOrItem;
-
-		if item["presence-out"] == true then
-			if item.type == "jid" then
-				sendUnavailable(origin, item.value, origin.full_jid);
-			elseif item.type == "group" then
-			elseif item.type == "subscription" then
-			elseif item.type == nil then
-			end
-		elseif item["presence-in"] == true then
-			if item.type == "jid" then
-				sendUnavailable(origin, origin.full_jid, item.value);
-			elseif item.type == "group" then
-			elseif item.type == "subscription" then
-			elseif item.type == nil then
-			end
-		end
-	else
-		module:log("debug", "got unknown type: %s", type(listnameOrItem));
-	end
-end
-
 function declineList(privacy_lists, origin, stanza, which)
 	if which == "default" then
 		if isAnotherSessionUsingDefaultList(origin) then
@@ -124,15 +90,9 @@ function activateList(privacy_lists, origin, stanza, which, name)
 		end
 		privacy_lists.default = name;
 		origin.send(st.reply(stanza));
---[[
-		if origin.activePrivacyList == nil then
-			sendNeededUnavailablePersences(origin, name);
-		end
-]]--
 	elseif which == "active" and list then
 		origin.activePrivacyList = name;
 		origin.send(st.reply(stanza));
-		-- sendNeededUnavailablePersences(origin, name);
 	else
 		return {"modify", "bad-request", "Either not active or default given or unknown list name specified."};
 	end
@@ -231,14 +191,6 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 		if tmp.action ~= "deny" and tmp.action ~= "allow" then
 			return {"cancel", "bad-request", "Action must be either deny or allow."};
 		end
-		
---[[
-		if (privacy_lists.default == name and origin.activePrivacyList == nil) or origin.activePrivacyList == name then
-			module:log("debug", "calling sendNeededUnavailablePresences!");
-			-- item is valid and list is active, so send needed unavailable stanzas
-			sendNeededUnavailablePersences(origin, tmp);
-		end
-]]--
 		list.items[#list.items + 1] = tmp;
 	end
 	
