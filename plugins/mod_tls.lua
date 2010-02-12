@@ -22,6 +22,8 @@ if secure_s2s_only then s2s_feature:tag("required"):up(); end
 
 local global_ssl_ctx = prosody.global_ssl_ctx;
 
+local host = hosts[module.host];
+
 -- Hook <starttls/>
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
@@ -44,13 +46,13 @@ end);
 -- Advertize stream feature
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if not origin.username and origin.conn.starttls then
+	if not origin.username and origin.conn.starttls and host.ssl_ctx_in then
 		features:add_child(c2s_feature);
 	end
 end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if origin.to_host and origin.type ~= "s2sin" and origin.conn.starttls then
+	if origin.to_host and origin.type ~= "s2sin" and origin.conn.starttls and host.ssl_ctx_in then
 		features:add_child(s2s_feature);
 	end
 end);
