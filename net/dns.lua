@@ -723,7 +723,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 	for i,sock in pairs(rset) do
 
 		if self.socketset[sock] then
-			local packet = sock.receive();
+			local packet = sock:receive();
 			if packet then
 				response = self:decode(packet);
 				if response and self.active[response.header.id]
