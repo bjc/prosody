@@ -32,12 +32,19 @@ local hosts_loaded_once;
 
 local function load_enabled_hosts(config)
 	local defined_hosts = config or configmanager.getconfig();
+	local activated_any_host;
 	
 	for host, host_config in pairs(defined_hosts) do
 		if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) and not host_config.core.component_module then
+			activated_any_host = true;
 			activate(host, host_config);
 		end
 	end
+	
+	if not activated_any_host then
+		log("error", "No hosts defined in the config file. This may cause unexpected behaviour as no modules will be loaded.");
+	end
+	
 	eventmanager.fire_event("hosts-activated", defined_hosts);
 	hosts_loaded_once = true;
 end
