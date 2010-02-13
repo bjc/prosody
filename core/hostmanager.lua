@@ -65,8 +65,8 @@ function activate(host, host_config)
 		end
 	end
 	
-	hosts[host].ssl_ctx = certmanager.get_context(host, "client", host_config); -- for outgoing connections
-	hosts[host].ssl_ctx_in = certmanager.get_context(host, "server", host_config); -- for incoming connections
+	hosts[host].ssl_ctx = certmanager.create_context(host, "client", host_config); -- for outgoing connections
+	hosts[host].ssl_ctx_in = certmanager.create_context(host, "server", host_config); -- for incoming connections
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
