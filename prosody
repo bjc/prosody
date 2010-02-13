@@ -186,12 +186,9 @@ function init_global_state()
 	end
 
 	-- Load SSL settings from config, and create a ctx table
-	local global_ssl_ctx = rawget(_G, "ssl") and config.get("*", "core", "ssl");
-	if global_ssl_ctx then
-		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2" };
-		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
-		prosody.global_ssl_ctx = global_ssl_ctx;
-	end
+	local certmanager = require "core.certmanager";
+	local global_ssl_ctx = certmanager.create_context("*", "server");
+	prosody.global_ssl_ctx = global_ssl_ctx;
 
 	local cl = require "net.connlisteners";
 	function prosody.net_activate_ports(option, listener, default, conntype)
