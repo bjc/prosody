@@ -1,4 +1,5 @@
 local configmanager = require "core.configmanager";
+local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
@@ -21,7 +22,33 @@ local default_ssl_config = configmanager.get("*", "core", "ssl");
 function create_context(host, mode, config)
 	local ssl_config = config and config.core.ssl or default_ssl_config;
 	if ssl and ssl_config then
-		return ssl_newcontext(setmetatable(ssl_config, mode == "client" and default_ssl_ctx_mt or default_ssl_ctx_in_mt));
+		local ctx, err = ssl_newcontext(setmetatable(ssl_config, mode == "client" and default_ssl_ctx_mt or default_ssl_ctx_in_mt));
+		if not ctx then
+			err = err or "invalid ssl config"
+			local file = err:match("^error loading (.-) %(");
+			if file then
+				if file == "private key" then
+					file = ssl_config.key or "your private key";
+				elseif file == "certificate" then
+					file = ssl_config.certificate or "your certificate file";
+				end
+				local reason = err:match("%((.+)%)$") or "some reason";
+				if reason == "Permission denied" then
+					reason = "Check that the permissions allow Prosody to read this file.";
+				elseif reason == "No such file or directory" then
+					reason = "Check that the path is correct, and the file exists.";
+				elseif reason == "system lib" then
+					reason = "Previous error (see logs), or other system error.";
+				else
+					reason = "Reason: "..tostring(reason or "unknown"):lower();
+				end
+				log("error", "SSL/TLS: Failed to load %s: %s", file, reason);
+			else
+				log("error", "SSL/TLS: Error initialising for host %s: %s", host, err );
+			end
+			ssl = false
+        	end
+        	return ctx, err;
 	end
 	return nil;
 end
