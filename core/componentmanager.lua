@@ -8,6 +8,7 @@
 
 local prosody = _G.prosody;
 local log = require "util.logger".init("componentmanager");
+local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local jid_split = require "util.jid".split;
@@ -84,11 +85,11 @@ function create_component(host, component, events)
 		if hosts[base_host] then
 			ssl_ctx = hosts[base_host].ssl_ctx;
 			ssl_ctx_in = hosts[base_host].ssl_ctx_in;
-		elseif prosody.global_ssl_ctx then
+		else
 			-- We have no cert, and no parent host to borrow a cert from
 			-- Use global/default cert if there is one
-			ssl_ctx = ssl.newcontext(prosody.global_ssl_ctx);
-			ssl_ctx_in = ssl.newcontext(setmetatable({ mode = "server" }, { __index = prosody.global_ssl_ctx }));
+			ssl_ctx = certmanager.create_context(host, "client");
+			ssl_ctx_in = certmanager.create_context(host, "server");
 		end
 	end
 	return { type = "component", host = host, connected = true, s2sout = {}, 
