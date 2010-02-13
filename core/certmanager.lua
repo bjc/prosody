@@ -18,7 +18,7 @@ local default_ssl_ctx_in_mt = { __index = default_ssl_ctx_in };
 -- Global SSL options if not overridden per-host
 local default_ssl_config = configmanager.get("*", "core", "ssl");
 
-function get_context(host, mode, config)
+function create_context(host, mode, config)
 	local ssl_config = config and config.core.ssl or default_ssl_config;
 	if ssl and ssl_config then
 		return ssl_newcontext(setmetatable(ssl_config, mode == "client" and default_ssl_ctx_mt or default_ssl_ctx_in_mt));
