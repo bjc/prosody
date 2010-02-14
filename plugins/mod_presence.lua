@@ -63,6 +63,9 @@ local function recalc_resource_map(user)
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
+	if full_sessions[origin.full_jid] then -- if user is still connected
+		origin.send(stanza); -- reflect their presence back to them
+	end
 	local roster = origin.roster;
 	local node, host = origin.username, origin.host;
 	local user = bare_sessions[node.."@"..host];
