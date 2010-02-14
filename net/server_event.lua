@@ -704,7 +704,7 @@ local addserver = ( function( )
 				debug "fatal error: luasec not found"
 				return nil, "luasec not found"
 			end
-			sslctx, err = ssl.newcontext( sslcfg )
+			sslctx, err = sslcfg
 			if err then
 				debug( "error while creating new ssl context for server socket:", err )
 				return nil, err
