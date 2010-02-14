@@ -28,7 +28,7 @@ local function can_do_tls(session)
 	if session.type == "c2s_unauthed" then
 		return session.username and session.conn.starttls and host.ssl_ctx_in;
 	elseif session.type == "s2sin_unauthed" then
-		return origin.to_host and origin.conn.starttls and host.ssl_ctx_in;
+		return session.to_host and session.conn.starttls and host.ssl_ctx_in;
 	end
 	return false;
 end
