@@ -34,13 +34,20 @@ local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
-local new_sasl
+local new_sasl;
 if sasl_backend == "cyrus" then
-	local cyrus_new = require "util.sasl_cyrus".new;
-	new_sasl = function(realm)
-		return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
+	local cyrus, err = pcall(require, "util.sasl_cyrus");
+	if cyrus then
+		local cyrus_new = cyrus.new;
+		new_sasl = function(realm)
+			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
+		end
+	else
+		sasl_backend = "builtin";
+		module:log("warn", "Failed to load Cyrus SASL, falling back to builtin auth mechanisms");
 	end
-else
+end
+if not new_sasl then
 	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend); end;
 	new_sasl = require "util.sasl".new;
 end
