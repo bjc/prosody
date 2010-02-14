@@ -745,7 +745,7 @@ do
 				debug "need luasec, but not available"
 				return nil, "luasec not found"
 			end
-			sslctx, err = ssl.newcontext( sslcfg )
+			sslctx, err = sslcfg
 			if err then
 				debug( "cannot create new ssl context:", err )
 				return nil, err
