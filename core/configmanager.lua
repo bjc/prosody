@@ -13,8 +13,6 @@ local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, p
 		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, string.format;
 
 
-local trb = debug.traceback
-
 local eventmanager = require "core.eventmanager";
 
 module "configmanager"
