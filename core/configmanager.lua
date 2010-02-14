@@ -9,8 +9,11 @@
 
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type = 
-		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type;
+local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, format =
+		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, string.format;
+
+
+local trb = debug.traceback
 
 local eventmanager = require "core.eventmanager";
 
@@ -115,6 +118,10 @@ do
 		
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.Host(name)
+			if rawget(config, name) and rawget(config[name].core, "component_module") then
+				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
+					name, config[name].core.component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
+			end
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
@@ -122,6 +129,10 @@ do
 		env.host = env.Host;
 		
 		function env.Component(name)
+			if rawget(config, name) and rawget(config[name].core, "defined") and not rawget(config[name].core, "component_module") then
+				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
+					name, name, name), 0);
+			end
 			set(name, "core", "component_module", "component");
 			-- Don't load the global modules by default
 			set(name, "core", "load_global_modules", false);
