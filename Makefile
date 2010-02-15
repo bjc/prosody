@@ -21,7 +21,7 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m750 -d $(DATA)
 	install -d $(MAN)/man1
 	install -d $(CONFIG)/certs
-	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util $(SOURCE)/fallbacks
+	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
 	install -m755 ./prosody.install $(BIN)/prosody
 	install -m755 ./prosodyctl.install $(BIN)/prosodyctl
 	install -m644 core/* $(SOURCE)/core
@@ -30,7 +30,6 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 util/*.so $(SOURCE)/util
 	install -d $(SOURCE)/util/sasl
 	install -m644 util/sasl/* $(SOURCE)/util/sasl
-	install -m644 fallbacks/* $(SOURCE)/fallbacks
 	install -m644 plugins/*.lua $(MODULES)
 	install -d $(MODULES)/muc
 	install -m644 plugins/muc/* $(MODULES)/muc
