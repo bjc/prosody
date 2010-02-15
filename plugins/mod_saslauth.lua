@@ -36,8 +36,8 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl;
 if sasl_backend == "cyrus" then
-	local cyrus, err = pcall(require, "util.sasl_cyrus");
-	if cyrus then
+	local ok, cyrus = pcall(require, "util.sasl_cyrus");
+	if ok then
 		local cyrus_new = cyrus.new;
 		new_sasl = function(realm)
 			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
