@@ -36,7 +36,6 @@ if use_luaevent then
 			if type(signal_id) ~= "number" then
 				return false, "invalid-signal";
 			end
-			--_signal_signal(signal_id, handler);
 			return server.hook_signal(signal_id, handler);
 		end
 	end
@@ -47,4 +46,4 @@ end
 
 -- require "net.server" shall now forever return this,
 -- ie. server_select or server_event as chosen above.
-return server; 
+return server;
