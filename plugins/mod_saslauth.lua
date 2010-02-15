@@ -45,6 +45,7 @@ if sasl_backend == "cyrus" then
 	else
 		sasl_backend = "builtin";
 		module:log("warn", "Failed to load Cyrus SASL, falling back to builtin auth mechanisms");
+		module:log("debug", "Failed to load Cyrus because: %s", cyrus);
 	end
 end
 if not new_sasl then
