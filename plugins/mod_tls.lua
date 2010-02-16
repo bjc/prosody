@@ -29,6 +29,8 @@ local function can_do_tls(session)
 		return session.conn.starttls and host.ssl_ctx_in;
 	elseif session.type == "s2sin_unauthed" then
 		return session.conn.starttls and host.ssl_ctx_in;
+	elseif session.direction == "outgoing" then
+		return session.conn.starttls and host.ssl_ctx;
 	end
 	return false;
 end
@@ -69,7 +71,7 @@ end);
 -- For s2sout connections, start TLS if we can
 module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	module:log("debug", "Received features element");
-	if session.conn.starttls and stanza:child_with_ns(xmlns_starttls) then
+	if can_do_tls(session) and stanza:child_with_ns(xmlns_starttls) then
 		module:log("%s is offering TLS, taking up the offer...", session.to_host);
 		session.sends2s("<starttls xmlns='"..xmlns_starttls.."'/>");
 		return true;
