@@ -49,7 +49,9 @@ function new_async_socket(sock, resolver)
 	local listener = {};
 	local handler = {};
 	function listener.onincoming(conn, data)
-		dns.feed(handler, data);
+		if data then
+			dns.feed(handler, data);
+		end
 	end
 	function listener.ondisconnect(conn, err)
 		log("warn", "DNS socket for %s disconnected: %s", peername, err);
