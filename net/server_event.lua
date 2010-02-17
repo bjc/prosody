@@ -20,14 +20,14 @@ local LAST_MODIFIED         = "2009/11/20"
 
 local cfg = {
 	MAX_CONNECTIONS       = 100000,  -- max per server connections (use "ulimit -n" on *nix)
-	MAX_HANDSHAKE_ATTEMPS = 10,  -- attemps to finish ssl handshake
-	HANDSHAKE_TIMEOUT     = 1,  -- timout in seconds per handshake attemp
+	MAX_HANDSHAKE_ATTEMPS = 1000,  -- attemps to finish ssl handshake
+	HANDSHAKE_TIMEOUT     = 30,  -- timout in seconds per handshake attemp
 	MAX_READ_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes allowed to read from sockets
 	MAX_SEND_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes size of write buffer (for writing on sockets)
 	ACCEPT_DELAY          = 10,  -- seconds to wait until the next attemp of a full server to accept
 	READ_TIMEOUT          = 60 * 30,  -- timeout in seconds for read data from socket
 	WRITE_TIMEOUT         = 30,  -- timeout in seconds for write data on socket
-	CONNECT_TIMEOUT       = 10,  -- timeout in seconds for connection attemps
+	CONNECT_TIMEOUT       = 20,  -- timeout in seconds for connection attemps
 	CLEAR_DELAY           = 5,  -- seconds to wait for clearing interface list (and calling ondisconnect listeners)
 	DEBUG                 = true,  -- show debug messages
 }
@@ -197,7 +197,7 @@ do
 					local _, err
 					local attempt = 0
 					local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPS
-					while attempt < 1000 do  -- no endless loop
+					while attempt < maxattempt do  -- no endless loop
 						attempt = attempt + 1
 						debug( "ssl handshake of client with id:"..tostring(self).."attemp:"..attempt )
 						if attempt > maxattempt then
