@@ -262,7 +262,7 @@ do
 				_ = self.eventsession and self.eventsession:close( )
 				_ = self.eventwritetimeout and self.eventwritetimeout:close( )
 				_ = self.eventreadtimeout and self.eventreadtimeout:close( )
-				_ = self.ondisconnect and self:ondisconnect( self.fatalerror )  -- call ondisconnect listener (wont be the case if handshake failed on connect)
+				_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)  -- call ondisconnect listener (wont be the case if handshake failed on connect)
 				_ = self.conn and self.conn:close( ) -- close connection, must also be called outside of any socket registered events!
 				_ = self._server and self._server:counter(-1);
 				self.eventread, self.eventwrite = nil, nil
