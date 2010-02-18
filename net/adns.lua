@@ -54,13 +54,15 @@ function new_async_socket(sock, resolver)
 		end
 	end
 	function listener.ondisconnect(conn, err)
-		log("warn", "DNS socket for %s disconnected: %s", peername, err);
-		local servers = resolver.server;
-		if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
-			log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
-		end
+		if err then
+			log("warn", "DNS socket for %s disconnected: %s", peername, err);
+			local servers = resolver.server;
+			if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
+				log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
+			end
 		
-		resolver:servfail(conn); -- Let the magic commence
+			resolver:servfail(conn); -- Let the magic commence
+		end
 	end
 	handler = server.wrapclient(sock, "dns", 53, listener);
 	if not handler then
