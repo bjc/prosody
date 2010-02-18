@@ -158,7 +158,7 @@ function load(host, module_name, config)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	if success then
-		hosts[host].events.fire_event("module-loaded", { module = module_name, host = host });
+		(hosts[api_instance.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
 		return true;
 	else -- load failed, unloading
 		unload(api_instance.host, module_name);
@@ -210,7 +210,7 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
-	hosts[host].events.fire_event("module-unloaded", { module = name, host = host });
+	(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
