@@ -514,6 +514,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 						local occupant = self._occupants[self.jid.."/"..item.attr.nick];
 						if occupant then item.attr.jid = occupant.jid; end
+					elseif not item.attr.nick and item.attr.jid then
+						local nick = self._jid_nick[item.attr.jid];
+						if nick then item.attr.nick = select(3, jid_split(nick)); end
 					end
 					local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
 					if item.attr.affiliation and item.attr.jid and not item.attr.role then
