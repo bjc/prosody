@@ -107,7 +107,10 @@ local function request_reader(request, data, startpos)
 		local http, code, text, linelen = data:match("^HTTP/(%S+) (%d+) (.-)\r\n()", startpos);
 		code = tonumber(code);
 		if not code then
-			return request.callback("invalid-status-line", 0, request);
+			log("warn", "Invalid HTTP status line, telling callback then closing");
+			local ret = request.callback("invalid-status-line", 0, request);
+			destroy_request(request);
+			return ret;
 		end
 		
 		request.code, request.responseversion = code, http;
