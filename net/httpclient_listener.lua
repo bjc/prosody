@@ -30,7 +30,7 @@ end
 
 function httpclient.disconnect(conn, err)
 	local request = requests[conn];
-	if request then
+	if request and err ~= "closed" then
 		request:reader(nil);
 	end
 	requests[conn] = nil;
