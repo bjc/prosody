@@ -17,11 +17,10 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format = 
+local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format =
         tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char, string.format;
 
 local log = require "util.logger".init("http");
-local print = function () end
 
 module "http"
 
@@ -51,7 +50,7 @@ local function request_reader(request, data, startpos)
 		return;
 	end
 	if request.state == "body" and request.state ~= "completed" then
-		print("Reading body...")
+		log("debug", "Reading body...")
 		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.responseheaders["content-length"]); end
 		if startpos then
 			data = data:sub(startpos, -1)
@@ -68,11 +67,11 @@ local function request_reader(request, data, startpos)
 				request.body = nil;
 				request.state = "completed";
 			else
-				print("", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
+				log("debug", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
 			end
 		end
 	elseif request.state == "headers" then
-		print("Reading headers...")
+		log("debug", "Reading headers...")
 		local pos = startpos;
 		local headers, headers_complete = request.responseheaders;
 		if not headers then
@@ -84,12 +83,12 @@ local function request_reader(request, data, startpos)
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
 				headers[k:lower()] = v;
-				--print("Header: "..k:lower().." = "..v);
+				--log("debug", "Header: "..k:lower().." = "..v);
 			elseif #line == 0 then
 				headers_complete = true;
 				break;
 			else
-				print("Unhandled header line: "..line);
+				log("warn", "Unhandled header line: "..line);
 			end
 		end
 		if not headers_complete then return; end
@@ -103,7 +102,7 @@ local function request_reader(request, data, startpos)
 			return request_reader(request, data, startpos);
 		end
 	elseif request.state == "status" then
-		print("Reading status...")
+		log("debug", "Reading status...")
 		local http, code, text, linelen = data:match("^HTTP/(%S+) (%d+) (.-)\r\n()", startpos);
 		code = tonumber(code);
 		if not code then
