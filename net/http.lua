@@ -73,22 +73,31 @@ local function request_reader(request, data, startpos)
 	elseif request.state == "headers" then
 		print("Reading headers...")
 		local pos = startpos;
-		local headers = request.responseheaders or {};
+		local headers, headers_complete = request.responseheaders;
+		if not headers then
+			headers = {};
+			request.responseheaders = headers;
+		end
 		for line in data:sub(startpos, -1):gmatch("(.-)\r\n") do
 			startpos = startpos + #line + 2;
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
 				headers[k:lower()] = v;
-				print("Header: "..k:lower().." = "..v);
+				--print("Header: "..k:lower().." = "..v);
 			elseif #line == 0 then
-				request.responseheaders = headers;
+				headers_complete = true;
 				break;
 			else
 				print("Unhandled header line: "..line);
 			end
 		end
+		if not headers_complete then return; end
 		-- Reached the end of the headers
-		request.state = "body";
+		if not expectbody(request, request.code) then
+			request.callback(nil, request.code, request);
+			return;
+		end
+			request.state = "body";
 		if #data > startpos then
 			return request_reader(request, data, startpos);
 		end
@@ -102,7 +111,7 @@ local function request_reader(request, data, startpos)
 		
 		request.code, request.responseversion = code, http;
 		
-		if request.onlystatus or not expectbody(request, code) then
+		if request.onlystatus then
 			if request.callback then
 				request.callback(nil, code, request);
 			end
