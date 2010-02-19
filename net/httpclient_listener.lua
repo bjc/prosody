@@ -15,7 +15,7 @@ local buffers = {}; -- Buffers of partial lines
 
 local httpclient = { default_port = 80, default_mode = "*a" };
 
-function httpclient.onincoming(conn, data)
+function httpclient.listener(conn, data)
 	local request = requests[conn];
 
 	if not request then
@@ -28,9 +28,9 @@ function httpclient.onincoming(conn, data)
 	end
 end
 
-function httpclient.ondisconnect(conn, err)
+function httpclient.disconnect(conn, err)
 	local request = requests[conn];
-	if request then
+	if request and err ~= "closed" then
 		request:reader(nil);
 	end
 	requests[conn] = nil;
