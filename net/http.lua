@@ -43,6 +43,7 @@ local function request_reader(request, data, startpos)
 		elseif request.state ~= "completed" then
 			-- Error.. connection was closed prematurely
 			request.callback("connection-closed", 0, request);
+			return;
 		end
 		destroy_request(request);
 		request.body = nil;
