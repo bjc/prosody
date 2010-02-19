@@ -303,7 +303,7 @@ function try_connect(host_session, connect_host, connect_port)
 end
 
 function make_connect(host_session, connect_host, connect_port)
-	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
+	(host_session.log or log)("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
