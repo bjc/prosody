@@ -49,7 +49,7 @@ function vcard(node, host, stanza)
 end
 function password(node, host, password)
 	local ret, err = dm.store(node, host, "accounts", {password = password});
-	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
+	print("["..(err or "success").."] accounts: "..node.."@"..host);
 end
 function roster(node, host, jid, item)
 	local roster = dm.load(node, host, "roster") or {};
