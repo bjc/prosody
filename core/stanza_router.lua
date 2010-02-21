@@ -140,6 +140,7 @@ function core_post_stanza(origin, stanza, preevents)
 			to_type = '/host';
 		else
 			to_type = '/bare';
+			to_self = true;
 		end
 	end
 
