@@ -433,6 +433,19 @@ function commands.stop(arg)
 	return 1;
 end
 
+function commands.restart(arg)
+	if arg[1] == "--help" then
+		show_usage([[stop]], [[Stop and start a running Prosody server]]);
+		return 1;
+	end
+	
+	local ret = commands.stop(arg);
+	if ret == 0 then
+		ret = commands.start(arg);
+	end
+	return ret;
+end
+
 -- ejabberdctl compatibility
 
 function commands.register(arg)
