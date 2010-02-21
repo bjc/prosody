@@ -254,7 +254,7 @@ end
 for i, row in ipairs(t["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, host, "accounts", {password = password});
-	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
+	print("["..(err or "success").."] accounts: "..node.."@"..host);
 end
 
 function roster(node, host, jid, item)
