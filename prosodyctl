@@ -435,7 +435,7 @@ end
 
 function commands.restart(arg)
 	if arg[1] == "--help" then
-		show_usage([[stop]], [[Stop and start a running Prosody server]]);
+		show_usage([[restart]], [[Restart a running Prosody server]]);
 		return 1;
 	end
 	
