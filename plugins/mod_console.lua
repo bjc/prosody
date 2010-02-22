@@ -33,11 +33,11 @@ end
 console = {};
 
 function console:new_session(conn)
-	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
+	local w = function(s) conn.write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
 			print = function (t) w("| "..tostring(t).."\n"); end;
-			disconnect = function () conn:close(); end;
+			disconnect = function () conn.close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
 	
@@ -53,7 +53,7 @@ end
 
 local sessions = {};
 
-function console_listener.onincoming(conn, data)
+function console_listener.listener(conn, data)
 	local session = sessions[conn];
 	
 	if not session then
@@ -126,7 +126,7 @@ function console_listener.onincoming(conn, data)
 	session.send(string.char(0));
 end
 
-function console_listener.ondisconnect(conn, err)
+function console_listener.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		session.disconnect();
@@ -192,7 +192,7 @@ function commands.help(session, data)
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
-		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
@@ -478,7 +478,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print("    "..host.." -> "..remotehost..(session.secure and " (encrypted)" or ""));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -515,7 +515,7 @@ function def_env.s2s:show(match_jid)
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and " (encrypted)" or ""));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
