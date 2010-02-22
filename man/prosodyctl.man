@@ -80,4 +80,4 @@ determine if a host has been configured.
 More information may be found online at: \fIhttp://prosody.im/\fP
 
 .SH AUTHORS
-Dwayne Bent <dbb.0@liqd.org>
+Dwayne Bent <dbb.1@liqd.org>
