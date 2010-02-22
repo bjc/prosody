@@ -435,7 +435,7 @@ end
 
 function commands.restart(arg)
 	if arg[1] == "--help" then
-		show_usage([[stop]], [[Stop and start a running Prosody server]]);
+		show_usage([[restart]], [[Restart a running Prosody server]]);
 		return 1;
 	end
 	
@@ -504,6 +504,10 @@ local http_errors = {
 	};
 
 function commands.addplugin(arg)
+	if not arg[1] or arg[1] == "--help" then
+		show_usage("addplugin URL", "Download and install a plugin from a URL");
+		return 1;
+	end
 	local url = arg[1];
 	if url:match("^http://") then
 		local http = require "socket.http";
@@ -575,8 +579,8 @@ if not commands[command] then -- Show help for all commands
 	print("");
 	print("Where COMMAND may be one of:\n");
 
-	local hidden_commands = require "util.set".new{ "register", "unregister" };
-	local commands_order = { "adduser", "passwd", "deluser" };
+	local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
+	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart" };
 
 	local done = {};
 
