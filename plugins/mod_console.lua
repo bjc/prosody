@@ -192,7 +192,7 @@ function commands.help(session, data)
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
-		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
