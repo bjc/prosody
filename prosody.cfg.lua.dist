@@ -135,4 +135,4 @@ Host "example.com"
 --Component "conference.example.com" "muc"
 
 -- Set up a SOCKS5 bytestream proxy for server-proxied file transfers:
---Component "proxy.example.com "proxy65"
+--Component "proxy.example.com" "proxy65"
