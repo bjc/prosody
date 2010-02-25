@@ -36,12 +36,13 @@ local log = logger_init("s2smanager");
 
 local sha256_hash = require "util.hashes".sha256;
 
+local dialback_secret = uuid_gen();
+
 local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
-local dialback_secret = config.get("*", "core", "dialback_secret") or uuid_gen();
 
 incoming_s2s = {};
 _G.prosody.incoming_s2s = incoming_s2s;
@@ -49,7 +50,9 @@ local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
 
-local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
+function compare_srv_priorities(a,b)
+	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
+end
 
 local function bounce_sendq(session)
 	local sendq = session.sendq;
@@ -131,7 +134,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
+	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -320,9 +323,9 @@ function make_connect(host_session, connect_host, connect_port)
 	cl.register_outgoing(conn, host_session);
 	
 	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
+	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
 	
-	conn:write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
+	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
 	log("debug", "Connection attempt in progress...");
 	add_task(connect_timeout, function ()
 		if host_session.conn ~= conn or
