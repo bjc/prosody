@@ -30,18 +30,18 @@ function compare_srv_priorities(csp)
 	assert_equal(csp(r3, r2), false);
 	assert_equal(csp(r3, r3), false);
 	assert_equal(csp(r3, r4), false);
-	assert_equal(csp(r3, r5), true);
+	assert_equal(csp(r3, r5), false);
 
 	assert_equal(csp(r4, r1), false);
 	assert_equal(csp(r4, r2), false);
 	assert_equal(csp(r4, r3), false);
 	assert_equal(csp(r4, r4), false);
-	assert_equal(csp(r4, r5), true);
+	assert_equal(csp(r4, r5), false);
 
 	assert_equal(csp(r5, r1), false);
 	assert_equal(csp(r5, r2), false);
-	assert_equal(csp(r5, r3), false);
-	assert_equal(csp(r5, r4), false);
+	assert_equal(csp(r5, r3), true);
+	assert_equal(csp(r5, r4), true);
 	assert_equal(csp(r5, r5), false);
 
 end
