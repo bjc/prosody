@@ -281,6 +281,10 @@ do
 			self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
 			return nointerface, noreading, nowriting
 	end
+	
+	function interface_mt:lock_read(switch)
+		return self:_lock(self.nointerface, switch, self.nowriting);
+	end
 
 	function interface_mt:counter(c)
 		if c then
