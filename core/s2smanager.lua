@@ -48,7 +48,9 @@ local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
 
-local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
+function compare_srv_priorities(a,b)
+	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
+end
 
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
