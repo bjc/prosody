@@ -308,7 +308,7 @@ function init_data_store()
 end
 
 function prepare_to_start()
-	log("debug", "Prosody is using the %s backend for connection handling", server.get_backend());
+	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
 	eventmanager.fire_event("server-starting");
 	prosody.events.fire_event("server-starting");
