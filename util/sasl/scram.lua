@@ -28,6 +28,16 @@ module "scram"
 
 --=========================
 --SASL SCRAM-SHA-1 according to draft-ietf-sasl-scram-10
+
+--[[
+Supported Authentication Backends
+
+scram-{MECH}:
+	function(username, realm)
+		return salted_password, iteration_count, salt, state;
+	end
+]]
+
 local default_i = 4096
 
 local function bp( b )
