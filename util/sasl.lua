@@ -41,27 +41,6 @@ Authentication Backend Prototypes:
 state = false : disabled
 state = true : enabled
 state = nil : non-existant
-
-plain:
-	function(username, realm)
-		return password, state;
-	end
-
-plain-test:
-	function(username, realm, password)
-		return true or false, state;
-	end
-
-digest-md5:
-	function(username, domain, realm, encoding) -- domain and realm are usually the same; for some broken
-												-- implementations it's not
-		return digesthash, state;
-	end
-
-digest-md5-test:
-	function(username, domain, realm, encoding, digesthash)
-		return true or false, state;
-	end
 ]]
 
 local method = {};
