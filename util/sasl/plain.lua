@@ -19,6 +19,21 @@ module "plain"
 
 -- ================================
 -- SASL PLAIN according to RFC 4616
+
+--[[
+Supported Authentication Backends
+
+plain:
+	function(username, realm)
+		return password, state;
+	end
+
+plain-test:
+	function(username, realm, password)
+		return true or false, state;
+	end
+]]
+
 local function plain(self, message)
 	if not message then
 		return "failure", "malformed-request";
