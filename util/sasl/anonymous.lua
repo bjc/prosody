@@ -20,6 +20,16 @@ module "anonymous"
 
 --=========================
 --SASL ANONYMOUS according to RFC 4505
+
+--[[
+Supported Authentication Backends
+
+anonymous:
+	function(username, realm)
+		return true; --for normal usage just return true; if you don't like the supplied username you can return false.
+	end
+]]
+
 local function anonymous(self, message)
 	local username;
 	repeat
