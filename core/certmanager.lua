@@ -54,7 +54,7 @@ function create_context(host, mode, config)
 end
 
 function reload_ssl_config()
-	default_ssl_config = config.get("*", "core", "ssl");
+	default_ssl_config = configmanager.get("*", "core", "ssl");
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
