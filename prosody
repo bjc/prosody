@@ -22,9 +22,6 @@ if CFG_SOURCEDIR then
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
 end
 
-package.path = package.path..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.lua";
-package.cpath = package.cpath..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.so";
-
 -- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
