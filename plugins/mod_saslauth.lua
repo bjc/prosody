@@ -36,7 +36,9 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl;
 if sasl_backend == "cyrus" then
+	prosody.unlock_globals();
 	local ok, cyrus = pcall(require, "util.sasl_cyrus");
+	prosody.lock_globals();
 	if ok then
 		local cyrus_new = cyrus.new;
 		new_sasl = function(realm)
