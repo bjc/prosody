@@ -671,16 +671,16 @@ do
 					debug( "maximal connections reached, refuse client connection; accept delay:", delay )
 					return EV_TIMEOUT, delay  -- delay for next accept attemp
 				end
-				local ip, port = client:getpeername( )
+				local client_ip, client_port = client:getpeername( )
 				interface._connections = interface._connections + 1  -- increase connection count
-				local clientinterface = handleclient( client, ip, port, interface, pattern, listener, nil, sslctx )
+				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
 				if ssl and sslctx then
 					clientinterface:starttls(sslctx)
 				else
 					clientinterface:_start_session( clientinterface.onconnect )
 				end
-				debug( "accepted incoming client connection from:", ip, port )
+				debug( "accepted incoming client connection from:", client_ip or "<unknown IP>", client_port or "<unknown port>", "to", port or "<unknown port>");
 				
 				client, err = server:accept()    -- try to accept again
 			end
