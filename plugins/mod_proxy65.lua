@@ -91,12 +91,12 @@ function connlistener.onincoming(conn, data)
 			conn:lock_read(true)
 		else
 			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
-			conn.close();
+			conn:close();
 		end
 	else
 		if data ~= nil then
 			module:log("warn", "unknown connection with no authentication data -> closing it");
-			conn.close();
+			conn:close();
 		end
 	end
 end
@@ -107,9 +107,9 @@ function connlistener.ondisconnect(conn, err)
 		if session.sha and transfers[session.sha] then
 			local initiator, target = transfers[session.sha].initiator, transfers[session.sha].target;
 			if initiator == conn and target ~= nil then
-				target.close();
+				target:close();
 			elseif target == conn and initiator ~= nil then
-			 	initiator.close();
+			 	initiator:close();
 			end
 			transfers[session.sha] = nil;
 		end
