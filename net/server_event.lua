@@ -543,7 +543,7 @@ do
 						local callback = function( )
 							interface:_close()
 							interface.eventwritetimeout = nil
-							return evreturn, evtimeout
+							return -1;
 						end
 						interface.eventwritetimeout = addevent( base, nil, EV_TIMEOUT, callback, cfg.WRITE_TIMEOUT )  -- reg a new timeout event
 						debug( "wantread during write attemp, reg it in readcallback but dont know what really happens next..." )
@@ -762,7 +762,7 @@ do
 			local server = function( )
 				return nil, "this is a dummy server interface"
 			end
-			local interface = wrapclient( client, ip, serverport, listeners, pattern, sslctx, startssl )
+			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
 			debug( "new connection id:", interface.id )
 			return interface, err
