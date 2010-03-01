@@ -36,7 +36,8 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl;
 if sasl_backend == "cyrus" then
-	prosody.unlock_globals();
+	prosody.unlock_globals(); --FIXME: Figure out why this is needed and
+	                          -- why cyrussasl isn't caught by the sandbox
 	local ok, cyrus = pcall(require, "util.sasl_cyrus");
 	prosody.lock_globals();
 	if ok then
