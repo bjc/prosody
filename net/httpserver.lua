@@ -65,6 +65,7 @@ local function send_response(request, response)
 		
 		resp = { "HTTP/1.0 200 OK\r\n" };
 		t_insert(resp, "Connection: close\r\n");
+		t_insert(resp, "Content-Type: text/html\r\n");
 		t_insert(resp, "Content-Length: ");
 		t_insert(resp, #response);
 		t_insert(resp, "\r\n\r\n");
@@ -286,6 +287,7 @@ function new_from_config(ports, handle_request, default_options)
 		if ssl then
 			ssl.mode = "server";
 			ssl.protocol = "sslv23";
+			ssl.options = "no_sslv2";
 		end
 		
 		new{ port = port, interface = interface, 

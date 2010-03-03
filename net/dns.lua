@@ -183,7 +183,7 @@ end
 
 
 function dns.random(...)    -- - - - - - - - - - - - - - - - - - -  dns.random
-	math.randomseed(10000*socket.gettime());
+	math.randomseed(math.floor(10000*socket.gettime()));
 	dns.random = math.random;
 	return dns.random(...);
 end
@@ -746,7 +746,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					if not next(self.active) then self:closeall(); end
 
 					-- was the query on the wanted list?
-					local q = response.question;
+					local q = response.question[1];
 					local cos = get(self.wanted, q.class, q.type, q.name);
 					if cos then
 						for co in pairs(cos) do
@@ -769,21 +769,18 @@ function resolver:feed(sock, packet)
 	self.time = socket.gettime();
 
 	local response = self:decode(packet);
-	if response then
+	if response and self.active[response.header.id]
+		and self.active[response.header.id][response.question.raw] then
 		--print('received response');
 		--self.print(response);
 
-		for i,section in pairs({ 'answer', 'authority', 'additional' }) do
-			for j,rr in pairs(response[section]) do
-				self:remember(rr, response.question[1].type);
-			end
+		for j,rr in pairs(response.answer) do
+			self:remember(rr, response.question[1].type);
 		end
 
 		-- retire the query
 		local queries = self.active[response.header.id];
-		if queries[response.question.raw] then
-			queries[response.question.raw] = nil;
-		end
+		queries[response.question.raw] = nil;
 		if not next(queries) then self.active[response.header.id] = nil; end
 		if not next(self.active) then self:closeall(); end
 

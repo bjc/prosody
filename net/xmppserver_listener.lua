@@ -152,14 +152,14 @@ function xmppserver.disconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		if err and err ~= "closed" and session.srv_hosts then
-			(session.log or log)("debug", "s2s connection closed unexpectedly");
+			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2s_attempt_connect(session, err) then
-				(session.log or log)("debug", "...so we're going to try again");
+				(session.log or log)("debug", "...so we're going to try another target");
 				return; -- Session lives for now
 			end
 		end
 		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
-		s2s_destroy_session(session);
+		s2s_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
 	end

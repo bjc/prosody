@@ -54,7 +54,7 @@ function compare_srv_priorities(a,b)
 	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
 end
 
-local function bounce_sendq(session)
+local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if sendq then
 		session.log("info", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
@@ -72,6 +72,9 @@ local function bounce_sendq(session)
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
+				if reason then
+					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):text("Connection failed: "..reason):up();
+				end
 				core_process_stanza(dummy, reply);
 			end
 			sendq[i] = nil;
@@ -224,7 +227,7 @@ function attempt_connection(host_session, err)
 			if not ok then
 				if not attempt_connection(host_session, err) then
 					-- No more attempts will be made
-					destroy_session(host_session);
+					destroy_session(host_session, err);
 				end
 			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
@@ -284,7 +287,7 @@ function try_connect(host_session, connect_host, connect_port)
 			log("debug", "DNS lookup failed to get a response for %s", connect_host);
 			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
 				log("debug", "No other records to try for %s - destroying", host_session.to_host);
-				destroy_session(host_session); -- End of the line, we can't
+				destroy_session(host_session, "DNS resolution failed"); -- End of the line, we can't
 			end
 		end
 	end, connect_host, "A", "IN");
@@ -300,7 +303,7 @@ function try_connect(host_session, connect_host, connect_port)
 end
 
 function make_connect(host_session, connect_host, connect_port)
-	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
+	(host_session.log or log)("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
@@ -369,17 +372,17 @@ function streamopened(session, attr)
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
-		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.to_host and not hosts[session.to_host] then
 			-- Attempting to connect to a host we don't serve
 			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
 			return;
 		end
+		send("<?xml version='1.0'?>");
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
-							
+			
 			if session.to_host then
 				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
 			else
@@ -402,7 +405,7 @@ function streamopened(session, attr)
 		if send_buffer and #send_buffer > 0 then
 			log("debug", "Sending s2s send_buffer now...");
 			for i, data in ipairs(send_buffer) do
-				session.sends2s(tostring(data));
+				session.sends2s(data);
 				send_buffer[i] = nil;
 			end
 		end
@@ -446,6 +449,16 @@ function verify_dialback(id, to, from, key)
 end
 
 function make_authenticated(session, host)
+	if not session.secure then
+		local local_host = session.direction == "incoming" and session.to_host or session.from_host;
+		if config.get(local_host, "core", "s2s_require_encryption") then
+			session:close({
+				condition = "policy-violation",
+				text = "Encrypted server-to-server communication is required but was not "
+				       ..((session.direction == "outgoing" and "offered") or "used")
+			});
+		end
+	end
 	if session.type == "s2sout_unauthed" then
 		session.type = "s2sout";
 	elseif session.type == "s2sin_unauthed" then
@@ -493,12 +506,12 @@ end
 
 local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
 
-function destroy_session(session)
+function destroy_session(session, reason)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
-		bounce_sendq(session);
+		bounce_sendq(session, reason);
 	elseif session.direction == "incoming" then
 		incoming_s2s[session] = nil;
 	end

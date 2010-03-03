@@ -31,7 +31,9 @@ if CFG_DATADIR then
 end
 
 -- Required to be able to find packages installed with luarocks
-pcall(require, "luarocks.require")
+if not pcall(require, "luarocks.loader") then -- Try LuaRocks 2.x
+	pcall(require, "luarocks.require") -- Try LuaRocks 1.x
+end
 
 -- Replace require with one that doesn't pollute _G
 do
@@ -177,7 +179,7 @@ function init_global_state()
 	-- Load SSL settings from config, and create a ctx table
 	local global_ssl_ctx = rawget(_G, "ssl") and config.get("*", "core", "ssl");
 	if global_ssl_ctx then
-		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none"; };
+		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
 	end
 
@@ -192,14 +194,15 @@ function init_global_state()
 			log("error", "core."..option.." is not a table");
 		else
 			for _, port in ipairs(ports) do
+				port = tonumber(port);
 				if type(port) ~= "number" then
 					log("error", "Non-numeric "..option.."_ports: "..tostring(port));
 				else
 					local ok, err = cl.start(listener, {
 						ssl = conntype ~= "tcp" and global_ssl_ctx,
 						port = port,
-						interface = config.get("*", "core", option.."_interface") 
-							or cl.get(listener).default_interface 
+						interface = (option and config.get("*", "core", option.."_interface"))
+							or cl.get(listener).default_interface
 							or config.get("*", "core", "interface"),
 						type = conntype
 					});
@@ -332,7 +335,7 @@ end
 function loop()
 	-- Error handler for errors that make it this far
 	local function catch_uncaught_error(err)
-		if type(err) == "string" and err:match("%d*: interrupted!$") then
+		if type(err) == "string" and err:match("interrupted!$") then
 			return "quitting";
 		end
 		

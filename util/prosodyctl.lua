@@ -12,6 +12,7 @@ local encodings = require "util.encodings";
 local stringprep = encodings.stringprep;
 local usermanager = require "core.usermanager";
 local signal = require "util.signal";
+local lfs = require "lfs";
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
@@ -64,9 +65,15 @@ function getpid()
 		return false, "no-pidfile";
 	end
 	
-	local file, err = io.open(pidfile);
+	local file, err = io.open(pidfile, "r+");
 	if not file then
 		return false, "pidfile-read-failed", err;
+	end
+	
+	local locked, err = lfs.lock(file, "w");
+	if locked then
+		file:close();
+		return false, "pidfile-not-locked";
 	end
 	
 	local pid = tonumber(file:read("*a"));
@@ -82,7 +89,7 @@ end
 function isrunning()
 	local ok, pid, err = _M.getpid();
 	if not ok then
-		if pid == "pidfile-read-failed" then
+		if pid == "pidfile-read-failed" or pid == "pidfile-not-locked" then
 			-- Report as not running, since we can't open the pidfile
 			-- (it probably doesn't exist)
 			return true, false;
