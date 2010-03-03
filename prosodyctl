@@ -30,7 +30,10 @@ if CFG_DATADIR then
 end
 
 -- Required to be able to find packages installed with luarocks
-pcall(require, "luarocks.require")
+if not pcall(require, "luarocks.loader") then -- Try LuaRocks 2.x
+	pcall(require, "luarocks.require") -- Try LuaRocks 1.x
+end
+
 
 config = require "core.configmanager"
 
