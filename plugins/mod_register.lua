@@ -141,7 +141,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:register", function (session, s
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
 					local host = module.host;
-					if not username then
+					if not username or username == "" then
 						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
 					elseif usermanager_user_exists(username, host) then
 						session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));

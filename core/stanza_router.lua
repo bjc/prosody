@@ -36,12 +36,14 @@ function core_process_stanza(origin, stanza)
 		end
 	end
 
-	if origin.type == "c2s" then
+	if origin.type == "c2s" and stanza.attr.xmlns == "jabber:client" then
 		if not origin.full_jid
 			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
 			-- authenticated client isn't bound and current stanza is not a bind request
-			origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
+				origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			end
 			return;
 		end
 
@@ -98,7 +100,7 @@ function core_process_stanza(origin, stanza)
 				return; -- FIXME what should we do here? does this work with subdomains?
 			end
 		end
-		core_post_stanza(origin, stanza);
+		core_post_stanza(origin, stanza, origin.full_jid);
 	else
 		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
 		if h then
@@ -119,7 +121,7 @@ function core_process_stanza(origin, stanza)
 	end
 end
 
-function core_post_stanza(origin, stanza)
+function core_post_stanza(origin, stanza, preevents)
 	local to = stanza.attr.to;
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
@@ -143,7 +145,7 @@ function core_post_stanza(origin, stanza)
 	end
 
 	local event_data = {origin=origin, stanza=stanza};
-	if origin.full_jid == stanza.attr.from then -- c2s connection
+	if preevents then -- c2s connection
 		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
 	local h = hosts[to_bare] or hosts[host or origin.host];
@@ -191,6 +193,6 @@ function core_route_stanza(origin, stanza)
 		log("debug", "Routing outgoing stanza for %s to %s", from_host, host);
 		send_s2s(from_host, host, stanza);
 	else
-		log("warn", "received stanza from unhandled connection type: %s", origin.type);
+		log("warn", "received %s stanza from unhandled connection type: %s", tostring(stanza.name), tostring(origin.type));
 	end
 end

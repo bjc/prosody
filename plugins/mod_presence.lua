@@ -18,6 +18,7 @@ local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local hosts = hosts;
+local NULL = {};
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
@@ -54,16 +55,21 @@ local function select_top_resources(user)
 	end
 	return recipients;
 end
-local function recalc_resource_map(origin)
-	local user = hosts[origin.host].sessions[origin.username];
-	user.top_resources = select_top_resources(user);
-	if #user.top_resources == 0 then user.top_resources = nil; end
+local function recalc_resource_map(user)
+	if user then
+		user.top_resources = select_top_resources(user);
+		if #user.top_resources == 0 then user.top_resources = nil; end
+	end
 end
 
 function handle_normal_presence(origin, stanza, core_route_stanza)
+	if full_sessions[origin.full_jid] then -- if user is still connected
+		origin.send(stanza); -- reflect their presence back to them
+	end
 	local roster = origin.roster;
 	local node, host = origin.username, origin.host;
-	for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast to all resources
+	local user = bare_sessions[node.."@"..host];
+	for _, res in pairs(user and user.sessions or NULL) do -- broadcast to all resources
 		if res ~= origin and res.presence then -- to resource
 			stanza.attr.to = res.full_jid;
 			core_route_stanza(origin, stanza);
@@ -76,6 +82,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		end
 	end
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
+		origin.presence = stanza; -- FIXME repeated later
 		local probe = st.presence({from = origin.full_jid, type = "probe"});
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 			if item.subscription == "both" or item.subscription == "to" then
@@ -83,7 +90,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 				core_route_stanza(origin, probe);
 			end
 		end
-		for _, res in pairs(hosts[host].sessions[node].sessions) do -- broadcast from all available resources
+		for _, res in pairs(user and user.sessions or NULL) do -- broadcast from all available resources
 			if res ~= origin and res.presence then
 				res.presence.attr.to = origin.full_jid;
 				core_route_stanza(res, res.presence);
@@ -114,7 +121,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		origin.presence = nil;
 		if origin.priority then
 			origin.priority = nil;
-			recalc_resource_map(origin);
+			recalc_resource_map(user);
 		end
 		if origin.directed then
 			for jid in pairs(origin.directed) do
@@ -136,7 +143,7 @@ function handle_normal_presence(origin, stanza, core_route_stanza)
 		else priority = 0; end
 		if origin.priority ~= priority then
 			origin.priority = priority;
-			recalc_resource_map(origin);
+			recalc_resource_map(user);
 		end
 	end
 	stanza.attr.to = nil; -- reset it
@@ -217,7 +224,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	if stanza.attr.type == "probe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			if 0 == send_presence_of_available_resources(node, host, st_from, origin, core_route_stanza) then
-				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
+				core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- TODO send last activity
 			end
 		else
 			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
@@ -227,7 +234,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
 			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
-				-- TODO send last recieved unavailable presence (or we MAY do nothing, which is fine too)
+				core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- TODO send last activity
 			end
 		else
 			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
@@ -324,6 +331,20 @@ module:hook("presence/full", function(data)
 		-- TODO fire post processing event
 		session.send(stanza);
 	end -- resource not online, discard
+	return true;
+end);
+module:hook("presence/host", function(data)
+	-- inbound presence to the host
+	local origin, stanza = data.origin, data.stanza;
+	
+	local from_bare = jid_bare(stanza.attr.from);
+	local t = stanza.attr.type;
+	if t == "probe" then
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+	elseif t == "subscribe" then
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id, type = "subscribed" }));
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+	end
 	return true;
 end);
 

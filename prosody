@@ -198,7 +198,7 @@ function init_global_state()
 				if type(port) ~= "number" then
 					log("error", "Non-numeric "..option.."_ports: "..tostring(port));
 				else
-					cl.start(listener, { 
+					local ok, err = cl.start(listener, {
 						ssl = conntype ~= "tcp" and global_ssl_ctx,
 						port = port,
 						interface = (option and config.get("*", "core", option.."_interface"))
@@ -206,6 +206,33 @@ function init_global_state()
 							or config.get("*", "core", "interface"),
 						type = conntype
 					});
+					if not ok then
+						local friendly_message = err;
+						if err:match(" in use") then
+							if port == 5222 or port == 5223 or port == 5269 then
+								friendly_message = "check that Prosody or another XMPP server is "
+									.."not already running and using this port";
+							elseif port == 80 or port == 81 then
+								friendly_message = "check that a HTTP server is not already using "
+									.."this port";
+							elseif port == 5280 then
+								friendly_message = "check that Prosody or a BOSH connection manager "
+									.."is not already running";
+							else
+								friendly_message = "this port is in use by another application";
+							end
+						elseif err:match("permission") then
+							friendly_message = "Prosody does not have sufficient privileges to use this port";
+						elseif err == "no ssl context" then
+							if not config.get("*", "core", "ssl") then
+								friendly_message = "there is no 'ssl' config under Host \"*\" which is "
+									.."require for legacy SSL ports";
+							else
+								friendly_message = "initializing SSL support failed, see previous log entries";
+							end
+						end
+						log("error", "Failed to open server port %d, %s", port, friendly_message);
+					end
 				end
 			end
 		end
@@ -280,15 +307,18 @@ function prepare_to_start()
 	-- start listening on sockets
 	prosody.net_activate_ports("c2s", "xmppclient", {5222});
 	prosody.net_activate_ports("s2s", "xmppserver", {5269});
-	prosody.net_activate_ports("component", "xmppcomponent", {}, "tcp");
+	prosody.net_activate_ports("component", "xmppcomponent", {5347}, "tcp");
 	prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
 
 	prosody.start_time = os.time();
 end	
 
 function init_global_protection()
-	-- Catch global accesses --
-	local locked_globals_mt = { __index = function (t, k) error("Attempt to read a non-existent global '"..k.."'", 2); end, __newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end }
+	-- Catch global accesses
+	local locked_globals_mt = {
+		__index = function (t, k) log("warn", "%s", debug.traceback("Attempt to read a non-existent global '"..tostring(k).."'", 2)); end;
+		__newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end;
+	};
 		
 	function prosody.unlock_globals()
 		setmetatable(_G, nil);

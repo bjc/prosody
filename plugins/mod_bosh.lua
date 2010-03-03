@@ -152,7 +152,7 @@ function stream_callbacks.streamopened(request, attr)
 		local r, send_buffer = session.requests, session.send_buffer;
 		local response = { headers = default_headers }
 		function session.send(s)
-			log("debug", "Sending BOSH data: %s", tostring(s));
+			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
 			while oldest_request and oldest_request.destroyed do
 				t_remove(r, 1);
@@ -160,7 +160,7 @@ function stream_callbacks.streamopened(request, attr)
 				oldest_request = r[1];
 			end
 			if oldest_request then
-				log("debug", "We have an open request, so using that to send with");
+				log("debug", "We have an open request, so sending on that");
 				response.body = t_concat{"<body xmlns='http://jabber.org/protocol/httpbind' sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>", tostring(s), "</body>" };
 				oldest_request:send(response);
 				--log("debug", "Sent");

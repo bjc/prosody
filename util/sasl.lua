@@ -38,7 +38,7 @@ local function new_plain(realm, credentials_handler)
 	function object.feed(self, message)
 		if message == "" or message == nil then return "failure", "malformed-request" end
 		local response = message
-		local authorization = s_match(response, "([^%z]+)")
+		local authorization = s_match(response, "([^%z]*)")
 		local authentication = s_match(response, "%z([^%z]+)%z")
 		local password = s_match(response, "%z[^%z]+%z([^%z]+)")
 

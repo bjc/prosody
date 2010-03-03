@@ -10,7 +10,6 @@
 
 local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local collectgarbage = collectgarbage;
 local format = import("string", "format");
 
 local hosts = hosts;
@@ -25,6 +24,7 @@ local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 local fire_event = require "core.eventmanager".fire_event;
 local add_task = require "util.timer".add_task;
@@ -66,6 +66,8 @@ function new_session(conn)
 	return session;
 end
 
+local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
+
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
 	
@@ -88,6 +90,7 @@ function destroy_session(session, err)
 			session[k] = nil;
 		end
 	end
+	session.data = null_data_handler;
 end
 
 function make_authenticated(session, username)
@@ -106,7 +109,8 @@ function bind_resource(session, resource)
 	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
-	resource = resource or uuid_generate();
+	resource = resourceprep(resource);
+	resource = resource ~= "" and resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 	
 	if not hosts[session.host].sessions[session.username] then

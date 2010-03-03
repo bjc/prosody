@@ -36,8 +36,8 @@ end
 local function send_response(request, response)
 	-- Write status line
 	local resp;
-	if response.body then
-		local body = tostring(response.body);
+	if response.body or response.headers then
+		local body = response.body and tostring(response.body);
 		log("debug", "Sending response to %s", request.id);
 		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
 		local h = response.headers;
@@ -49,14 +49,14 @@ local function send_response(request, response)
 				t_insert(resp, "\r\n");
 			end
 		end
-		if not (h and h["Content-Length"]) then
+		if body and not (h and h["Content-Length"]) then
 			t_insert(resp, "Content-Length: ");
 			t_insert(resp, #body);
 			t_insert(resp, "\r\n");
 		end
 		t_insert(resp, "\r\n");
 		
-		if request.method ~= "HEAD" then
+		if body and request.method ~= "HEAD" then
 			t_insert(resp, body);
 		end
 	else
@@ -147,22 +147,29 @@ local function request_reader(request, data, startpos)
 	elseif request.state == "headers" then
 		log("debug", "Reading headers...")
 		local pos = startpos;
-		local headers = request.headers or {};
+		local headers, headers_complete = request.headers;
+		if not headers then
+			headers = {};
+			request.headers = headers;
+		end
+		
 		for line in data:gmatch("(.-)\r\n") do
 			startpos = (startpos or 1) + #line + 2;
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
 				headers[k:lower()] = v;
---				log("debug", "Header: "..k:lower().." = "..v);
+				--log("debug", "Header: '"..k:lower().."' = '"..v.."'");
 			elseif #line == 0 then
-				request.headers = headers;
+				headers_complete = true;
 				break;
 			else
 				log("debug", "Unhandled header line: "..line);
 			end
 		end
 		
-		if not expectbody(request) then 
+		if not headers_complete then return; end
+		
+		if not expectbody(request) then
 			call_callback(request);
 			return;
 		end
@@ -176,7 +183,10 @@ local function request_reader(request, data, startpos)
 		log("debug", "Reading request line...")
 		local method, path, http, linelen = data:match("^(%S+) (%S+) HTTP/(%S+)\r\n()", startpos);
 		if not method then
-			return call_callback(request, "invalid-status-line");
+			log("warn", "Invalid HTTP status line, telling callback then closing");
+			local ret = call_callback(request, "invalid-status-line");
+			request:destroy();
+			return ret;
 		end
 		
 		request.method, request.path, request.httpversion = method, path, http;

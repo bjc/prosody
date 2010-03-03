@@ -14,9 +14,11 @@ local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local secure_s2s_only = module:get_option("s2s_require_encryption");
 
+local host = hosts[module.host];
+
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
-			if session.conn.starttls then
+			if session.conn.starttls and host.ssl_ctx_in then
 				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.host and hosts[session.host].ssl_ctx_in then
@@ -26,14 +28,15 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 				session.log("info", "TLS negotiation started...");
 				session.secure = false;
 			else
-				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this connection");
+				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+				session:close();
 			end
 		end);
 		
 module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
-			if session.conn.starttls then
+			if session.conn.starttls and host.ssl_ctx_in then
 				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
 				session:reset_stream();
 				if session.to_host and hosts[session.to_host].ssl_ctx_in then
@@ -43,8 +46,9 @@ module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
 				session.log("info", "TLS negotiation started for incoming s2s...");
 				session.secure = false;
 			else
-				-- FIXME: What reply?
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
+				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+				session:close();
 			end
 		end);
 
@@ -66,7 +70,7 @@ module:hook("s2s-stream-features",
 		function (data)
 			local session, features = data.session, data.features;
 			if session.to_host and session.conn.starttls then
-				features:tag("starttls", starttls_attr):up();
+				features:tag("starttls", starttls_attr);
 				if secure_s2s_only then
 					features:tag("required"):up():up();
 				else

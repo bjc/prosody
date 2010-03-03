@@ -14,9 +14,9 @@ local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
 
 local compression_level = module:get_option("compression_level");
-
 -- if not defined assume admin wants best compression
 if compression_level == nil then compression_level = 9 end;
+
 
 compression_level = tonumber(compression_level);
 if not compression_level or compression_level < 1 or compression_level > 9 then
@@ -41,7 +41,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			if session.compressed then
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
-				session:log("warn", "Tried to establish another compression layer.");
+				session.log("warn", "Tried to establish another compression layer.");
 			end
 			
 			-- checking if the compression method is supported
@@ -56,7 +56,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 				if status == false then
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 					session.send(error_st);
-					session:log("error", "Failed to create zlib.deflate filter.");
+					session.log("error", "Failed to create zlib.deflate filter.");
 					module:log("error", deflate_stream);
 					return
 				end
@@ -65,7 +65,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 				if status == false then
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 					session.send(error_st);
-					session:log("error", "Failed to create zlib.deflate filter.");
+					session.log("error", "Failed to create zlib.deflate filter.");
 					module:log("error", inflate_stream);
 					return
 				end

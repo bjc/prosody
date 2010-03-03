@@ -6,6 +6,16 @@
 -- COPYING file in the source package for more information.
 --
 
+function join(join)
+	assert_equal(join("a", "b", "c"), "a@b/c", "builds full JID");
+	assert_equal(join("a", "b", nil), "a@b", "builds bare JID");
+	assert_equal(join(nil, "b", "c"), "b/c", "builds full host JID");
+	assert_equal(join(nil, "b", nil), "b", "builds bare host JID");
+	assert_equal(join(nil, nil, nil), nil, "invalid JID is nil");
+	assert_equal(join("a", nil, nil), nil, "invalid JID is nil");
+	assert_equal(join(nil, nil, "c"), nil, "invalid JID is nil");
+	assert_equal(join("a", nil, "c"), nil, "invalid JID is nil");
+end
 
 
 function split(split)
@@ -43,3 +53,4 @@ function bare(bare)
 	assert_equal(bare("user@@host/resource"), nil, "invalid JID is nil");
 	assert_equal(bare("user@host/"), nil, "invalid JID is nil");
 end
+

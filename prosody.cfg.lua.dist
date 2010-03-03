@@ -63,7 +63,7 @@ Host "*"
 
 			-- Other specific functionality
 				--"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
-			  	--"console"; -- telnet to port 5582 (needs console_enabled = true)
+			  	--"console"; -- Opens admin telnet interface on localhost port 5582
 				--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
 				--"httpserver"; -- Serve static files from a directory over HTTP
 			  };
