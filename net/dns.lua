@@ -538,8 +538,13 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 		local resolv_conf = io.open("/etc/resolv.conf");
 		if resolv_conf then
 			for line in resolv_conf:lines() do
-				local address = line:gsub("#.*$", ""):match('^%s*nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$');
-				if address then self:addnameserver(address) end
+				line = line:gsub("#.*$", "")
+					:match('^%s*nameserver%s+(.*)%s*$');
+				if line then
+					line:gsub("%f[%d.](%d+%.%d+%.%d+%.%d+)%f[^%d.]", function (address)
+						self:addnameserver(address)
+					end);
+				end
 			end
 		end
 		if not self.server or #self.server == 0 then
