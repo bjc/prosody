@@ -430,7 +430,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	local _readbuffer = function( ) -- this function reads data
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
-		if not err or (err == "wantread" or err == "timeout") or string_len(part) > 0 then -- received something
+		if not err or (err == "wantread" or err == "timeout") or (part and string_len(part) > 0) then -- received something
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
