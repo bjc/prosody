@@ -532,7 +532,7 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 		if not self.server or #self.server == 0 then
 			-- TODO log warning about no nameservers, adding opendns servers as fallback
 			self:addnameserver("208.67.222.222");
-			self:addnameserver("208.67.220.220") ; 	
+			self:addnameserver("208.67.220.220");
 		end
 	else -- posix
 		local resolv_conf = io.open("/etc/resolv.conf");
@@ -801,7 +801,7 @@ function resolver:feed(sock, packet)
 				set(self.wanted, q.class, q.type, q.name, nil);
 			end
 		end
-	end 
+	end
 
 	return response;
 end
