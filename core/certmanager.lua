@@ -3,7 +3,7 @@ local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
-local setmetatable = setmetatable;
+local setmetatable, tostring = setmetatable, tostring;
 
 local prosody = prosody;
 
