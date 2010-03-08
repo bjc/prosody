@@ -16,8 +16,10 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
@@ -510,7 +512,22 @@ function mark_connected(session)
 	end
 end
 
-local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
+local resting_session = { -- Resting, not dead
+		destroyed = true;
+	}; resting_session.__index = resting_session;
+
+function retire_session(session)
+	local log = session.log or log;
+	for k in pairs(session) do
+		if k ~= "trace" and k ~= "log" and k ~= "id" then
+			session[k] = nil;
+		end
+	end
+
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	return setmetatable(session, resting_session);
+end
 
 function destroy_session(session, reason)
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
@@ -522,12 +539,7 @@ function destroy_session(session, reason)
 		incoming_s2s[session] = nil;
 	end
 	
-	for k in pairs(session) do
-		if k ~= "trace" then
-			session[k] = nil;
-		end
-	end
-	session.data = null_data_handler;
+	retire_session(session); -- Clean session until it is GC'd
 end
 
 return _M;

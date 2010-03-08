@@ -8,7 +8,7 @@
 
 
 
-local tonumber, tostring = tonumber, tostring;
+local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
 local format = import("string", "format");
 
@@ -66,7 +66,22 @@ function new_session(conn)
 	return session;
 end
 
-local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
+local resting_session = { -- Resting, not dead
+		destroyed = true;
+	}; resting_session.__index = resting_session;
+
+function retire_session(session)
+	local log = session.log or log;
+	for k in pairs(session) do
+		if k ~= "trace" and k ~= "log" and k ~= "id" then
+			session[k] = nil;
+		end
+	end
+
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	return setmetatable(session, resting_session);
+end
 
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
@@ -85,12 +100,7 @@ function destroy_session(session, err)
 		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
 	end
 	
-	for k in pairs(session) do
-		if k ~= "trace" then
-			session[k] = nil;
-		end
-	end
-	session.data = null_data_handler;
+	retire_session(session);
 end
 
 function make_authenticated(session, username)
