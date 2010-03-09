@@ -43,6 +43,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
 				session.log("warn", "Tried to establish another compression layer.");
+				return;
 			end
 			
 			-- checking if the compression method is supported
