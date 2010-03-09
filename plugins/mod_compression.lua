@@ -8,6 +8,7 @@
 local st = require "util.stanza";
 local zlib = require "zlib";
 local pcall = pcall;
+local tostring = tostring;
 
 local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
@@ -57,7 +58,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 					session.send(error_st);
 					session.log("error", "Failed to create zlib.deflate filter.");
-					module:log("error", deflate_stream);
+					module:log("error", "%s", tostring(deflate_stream));
 					return
 				end
 				
@@ -65,8 +66,8 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 				if status == false then
 					local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 					session.send(error_st);
-					session.log("error", "Failed to create zlib.deflate filter.");
-					module:log("error", inflate_stream);
+					session.log("error", "Failed to create zlib.inflate filter.");
+					module:log("error", "%s", tostring(inflate_stream));
 					return
 				end
 				
@@ -81,7 +82,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 								text = compressed;
 								extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 							});
-							module:log("warn", compressed);
+							module:log("warn", "%s", tostring(compressed));
 							return;
 						end
 						old_send(compressed);
@@ -98,7 +99,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 									text = decompressed;
 									extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 								});
-								module:log("warn", decompressed);
+								module:log("warn", "%s", tostring(decompressed));
 								return;
 							end
 							old_data(conn, decompressed);
@@ -114,7 +115,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 					end;
 				session.compressed = true;
 			else
-				session.log("info", method.." compression selected. But we don't support it.");
+				session.log("info", "%s compression selected, but we don't support it.", tostring(method));
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
 			end
