@@ -40,7 +40,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 		function(session, stanza)
 			-- fail if we are already compressed
 			if session.compressed then
-				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
+				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 				session.send(error_st);
 				session.log("warn", "Tried to establish another compression layer.");
 				return;
@@ -48,7 +48,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method");
-			method = method and method[1];
+			method = method and (method[1] or "");
 			if method == "zlib" then
 				-- create deflate and inflate streams
 				local status, deflate_stream = pcall(zlib.deflate, compression_level);
@@ -116,10 +116,12 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 						return true;
 					end;
 				session.compressed = true;
-			else
+			elseif method then
 				session.log("info", "%s compression selected, but we don't support it.", tostring(method));
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
+			else
+				session.send(st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed"));
 			end
 		end
 );
