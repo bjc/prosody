@@ -47,7 +47,8 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			end
 			
 			-- checking if the compression method is supported
-			local method = stanza:child_with_name("method")[1];
+			local method = stanza:child_with_name("method");
+			method = method and method[1];
 			if method == "zlib" then
 				-- create deflate and inflate streams
 				local status, deflate_stream = pcall(zlib.deflate, compression_level);
