@@ -48,10 +48,6 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			-- checking if the compression method is supported
 			local method = stanza:child_with_name("method")[1];
 			if method == "zlib" then
-				session.log("info", method.." compression selected.");
-				session.send(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
-				session:reset_stream();
-				
 				-- create deflate and inflate streams
 				local status, deflate_stream = pcall(zlib.deflate, compression_level);
 				if status == false then
@@ -71,6 +67,10 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 					return
 				end
 				
+				session.log("info", method.." compression selected.");
+				session.send(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
+				session:reset_stream();
+
 				-- setup compression for session.w
 				local old_send = session.send;
 				
