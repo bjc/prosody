@@ -211,8 +211,8 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	session.send("</stream:stream>");
-	session.notopen = true;
+	session.log("debug", "Received </stream:stream>");
+	session:close();
 end
 
 function send_to_available_resources(user, host, stanza)
