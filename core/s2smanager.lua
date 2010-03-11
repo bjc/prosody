@@ -434,11 +434,8 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	(session.log or log)("debug", "</stream:stream>");
-	if session.sends2s then
-		session.sends2s("</stream:stream>");
-	end
-	session.notopen = true;
+	(session.log or log)("debug", "Received </stream:stream>");
+	session:close();
 end
 
 function initiate_dialback(session)
