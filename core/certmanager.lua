@@ -3,7 +3,7 @@ local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
-local setmetatable = setmetatable;
+local setmetatable, tostring = setmetatable, tostring;
 
 local prosody = prosody;
 
@@ -39,8 +39,10 @@ function create_context(host, mode, config)
 					reason = "Check that the path is correct, and the file exists.";
 				elseif reason == "system lib" then
 					reason = "Previous error (see logs), or other system error.";
+				elseif reason == "(null)" or not reason then
+					reason = "Check that the file exists and the permissions are correct";
 				else
-					reason = "Reason: "..tostring(reason or "unknown"):lower();
+					reason = "Reason: "..tostring(reason):lower();
 				end
 				log("error", "SSL/TLS: Failed to load %s: %s", file, reason);
 			else
@@ -54,7 +56,7 @@ function create_context(host, mode, config)
 end
 
 function reload_ssl_config()
-	default_ssl_config = config.get("*", "core", "ssl");
+	default_ssl_config = configmanager.get("*", "core", "ssl");
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);

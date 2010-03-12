@@ -543,7 +543,7 @@ do
 						local callback = function( )
 							interface:_close()
 							interface.eventwritetimeout = nil
-							return evreturn, evtimeout
+							return -1;
 						end
 						interface.eventwritetimeout = addevent( base, nil, EV_TIMEOUT, callback, cfg.WRITE_TIMEOUT )  -- reg a new timeout event
 						debug( "wantread during write attemp, reg it in readcallback but dont know what really happens next..." )
@@ -671,16 +671,16 @@ do
 					debug( "maximal connections reached, refuse client connection; accept delay:", delay )
 					return EV_TIMEOUT, delay  -- delay for next accept attemp
 				end
-				local ip, port = client:getpeername( )
+				local client_ip, client_port = client:getpeername( )
 				interface._connections = interface._connections + 1  -- increase connection count
-				local clientinterface = handleclient( client, ip, port, interface, pattern, listener, nil, sslctx )
+				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
 				if ssl and sslctx then
 					clientinterface:starttls(sslctx)
 				else
 					clientinterface:_start_session( clientinterface.onconnect )
 				end
-				debug( "accepted incoming client connection from:", ip, port )
+				debug( "accepted incoming client connection from:", client_ip or "<unknown IP>", client_port or "<unknown port>", "to", port or "<unknown port>");
 				
 				client, err = server:accept()    -- try to accept again
 			end
@@ -762,7 +762,7 @@ do
 			local server = function( )
 				return nil, "this is a dummy server interface"
 			end
-			local interface = wrapclient( client, ip, serverport, listeners, pattern, sslctx, startssl )
+			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
 			debug( "new connection id:", interface.id )
 			return interface, err
