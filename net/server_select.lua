@@ -430,12 +430,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	local _readbuffer = function( ) -- this function reads data
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
-		if not err or (err == "wantread" or err == "timeout") or string_len(part) > 0 then -- received something
+		if not err or (err == "wantread" or err == "timeout") or (part and string_len(part) > 0) then -- received something
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
 				disconnect( handler, "receive buffer exceeded" )
-				handler.close( true )
+				handler:close( true )
 				return false
 			end
 			local count = len * STAT_UNIT
@@ -448,7 +448,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
 			fatalerror = true
 			disconnect( handler, err )
-		_ = handler and handler.close( )
+		_ = handler and handler:close( )
 			return false
 		end
 	end
@@ -472,7 +472,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist
 			_ = needtls and handler:starttls(nil, true)
 			_writetimes[ handler ] = nil
-			_ = toclose and handler.close( )
+			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
 			buffer = string_sub( buffer, byte + 1, bufferlen ) -- new buffer
@@ -485,7 +485,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
 			fatalerror = true
 			disconnect( handler, err )
-			_ = handler and handler.close( )
+			_ = handler and handler:close( )
 			return false
 		end
 	end
