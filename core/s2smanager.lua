@@ -533,6 +533,7 @@ function retire_session(session)
 end
 
 function destroy_session(session, reason)
+	if session.destroyed then return; end
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
