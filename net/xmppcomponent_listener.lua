@@ -164,6 +164,7 @@ function component_listener.onincoming(conn, data)
 		function session.data(conn, data)
 			local ok, err = parser:parse(data);
 			if ok then return; end
+			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 			session:close("xml-not-well-formed");
 		end
 		
