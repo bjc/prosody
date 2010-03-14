@@ -34,16 +34,32 @@ local xmlns_component = 'jabber:component:accept';
 
 local stream_callbacks = { default_ns = xmlns_component };
 
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
+
 function stream_callbacks.error(session, error, data, data2)
 	log("warn", "Error processing component stream: "..tostring(error));
 	if error == "no-stream" then
 		session:close("invalid-namespace");
-	elseif error == "xml-parse-error" and data == "unexpected-element-close" then
-		session.log("warn", "Unexpected close of '%s' tag", data2);
+	elseif error == "parse-error" then
+		session.log("warn", "External component %s XML parse error: %s", tostring(session.host), tostring(data));
 		session:close("xml-not-well-formed");
-	else
-		session.log("warn", "External component %s XML parse error: %s", tostring(session.host), tostring(error));
-		session:close("xml-not-well-formed");
+	elseif error == "stream-error" then
+		local condition, text = "undefined-condition";
+		for child in data:children() do
+			if child.attr.xmlns == xmlns_xmpp_streams then
+				if child.name ~= "text" then
+					condition = child.name;
+				else
+					text = child:get_text();
+				end
+				if condition ~= "undefined-condition" and text then
+					break;
+				end
+			end
+		end
+		text = condition .. (text and (" ("..text..")") or "");
+		session.log("info", "Session closed by remote with error: %s", text);
+		session:close(nil, text);
 	end
 end
 
