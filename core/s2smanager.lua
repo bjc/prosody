@@ -511,6 +511,12 @@ end
 
 local resting_session = { -- Resting, not dead
 		destroyed = true;
+		open_stream = function (session)
+			session.log("debug", "Attempt to open stream on resting session");
+		end;
+		close = function (session)
+			session.log("debug", "Attempt to close already-closed session");
+		end;
 	}; resting_session.__index = resting_session;
 
 function retire_session(session)
