@@ -181,7 +181,12 @@ end
 
 function streamopened(session, attr)
 	local send = session.send;
-	session.host = attr.to or error("Client failed to specify destination hostname");
+	session.host = attr.to;
+	if not session.host then
+		session:close{ condition = "improper-addressing",
+			text = "A 'to' attribute is required on stream headers" };
+		return;
+	end
 	session.host = nameprep(session.host);
 	session.version = tonumber(attr.version) or 0;
 	session.streamid = uuid_generate();
