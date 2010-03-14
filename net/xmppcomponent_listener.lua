@@ -186,7 +186,12 @@ function component_listener.ondisconnect(conn, err)
 			hosts[session.host].connected = nil;
 		end
 		sessions[conn]  = nil;
-		for k in pairs(session) do session[k] = nil; end
+		for k in pairs(session) do
+			if k ~= "log" and k ~= "close" then
+				session[k] = nil;
+			end
+		end
+		session.destroyed = true;
 		session = nil;
 	end
 end
