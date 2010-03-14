@@ -88,6 +88,7 @@ end
 
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
+	if session.destroyed then return; end
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
