@@ -106,6 +106,7 @@ end
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
+	if session.destroyed then return; end
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
