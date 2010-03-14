@@ -37,6 +37,7 @@ local stream_callbacks = { default_ns = xmlns_component };
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.error(session, error, data, data2)
+	if session.destroyed then return; end
 	log("warn", "Error processing component stream: "..tostring(error));
 	if error == "no-stream" then
 		session:close("invalid-namespace");
