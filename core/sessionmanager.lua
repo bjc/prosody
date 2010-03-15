@@ -8,7 +8,7 @@
 
 
 
-local tonumber, tostring = tonumber, tostring;
+local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
 local format = import("string", "format");
 
@@ -66,10 +66,29 @@ function new_session(conn)
 	return session;
 end
 
-local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
+local resting_session = { -- Resting, not dead
+		destroyed = true;
+		close = function (session)
+			session.log("debug", "Attempt to close already-closed session");
+		end;
+	}; resting_session.__index = resting_session;
+
+function retire_session(session)
+	local log = session.log or log;
+	for k in pairs(session) do
+		if k ~= "trace" and k ~= "log" and k ~= "id" then
+			session[k] = nil;
+		end
+	end
+
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	return setmetatable(session, resting_session);
+end
 
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
+	if session.destroyed then return; end
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
@@ -85,12 +104,7 @@ function destroy_session(session, err)
 		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
 	end
 	
-	for k in pairs(session) do
-		if k ~= "trace" then
-			session[k] = nil;
-		end
-	end
-	session.data = null_data_handler;
+	retire_session(session);
 end
 
 function make_authenticated(session, username)
@@ -168,7 +182,12 @@ end
 
 function streamopened(session, attr)
 	local send = session.send;
-	session.host = attr.to or error("Client failed to specify destination hostname");
+	session.host = attr.to;
+	if not session.host then
+		session:close{ condition = "improper-addressing",
+			text = "A 'to' attribute is required on stream headers" };
+		return;
+	end
 	session.host = nameprep(session.host);
 	session.version = tonumber(attr.version) or 0;
 	session.streamid = uuid_generate();
@@ -201,8 +220,8 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	session.send("</stream:stream>");
-	session.notopen = true;
+	session.log("debug", "Received </stream:stream>");
+	session:close();
 end
 
 function send_to_available_resources(user, host, stanza)

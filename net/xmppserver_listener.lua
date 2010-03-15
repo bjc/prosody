@@ -176,7 +176,7 @@ function xmppserver.ondisconnect(conn, err)
 				return; -- Session lives for now
 			end
 		end
-		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
+		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
 		s2s_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
