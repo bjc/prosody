@@ -42,7 +42,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 			if session.compressed then
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
 				session.send(error_st);
-				session.log("warn", "Tried to establish another compression layer.");
+				session.log("debug", "Client tried to establish another compression layer.");
 				return;
 			end
 			
@@ -69,7 +69,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 					return
 				end
 				
-				session.log("info", method.." compression selected.");
+				session.log("debug", "zlib compression enabled.");
 				session.send(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
 				session:reset_stream();
 
@@ -117,7 +117,7 @@ module:add_handler({"c2s_unauthed", "c2s"}, "compress", xmlns_compression_protoc
 					end;
 				session.compressed = true;
 			elseif method then
-				session.log("info", "%s compression selected, but we don't support it.", tostring(method));
+				session.log("debug", "%s compression selected, but we don't support it.", tostring(method));
 				local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("unsupported-method");
 				session.send(error_st);
 			else
