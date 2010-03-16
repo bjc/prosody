@@ -52,7 +52,7 @@ function new(realm, service_name)
 
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
-	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, nil, nil, nil)
+	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, realm, nil, nil)
 	if sasl_i.cyrus == 0 then
 		log("error", "got NULL return value from server_new")
 		return nil;
