@@ -161,10 +161,11 @@ module:hook("stream-features", function(event)
 		if secure_auth_only and not origin.secure then
 			return;
 		end
+		local realm = module:get_option("sasl_realm") or origin.host;
 		if module:get_option("anonymous_login") then
-			origin.sasl_handler = new_sasl(origin.host, anonymous_authentication_profile);
+			origin.sasl_handler = new_sasl(realm, anonymous_authentication_profile);
 		else
-			origin.sasl_handler = new_sasl(origin.host, default_authentication_profile);
+			origin.sasl_handler = new_sasl(realm, default_authentication_profile);
 			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
 				origin.sasl_handler:forbidden({"PLAIN"});
 			end
