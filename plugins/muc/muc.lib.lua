@@ -122,9 +122,13 @@ function room_mt:broadcast_message(stanza, historic)
 		local history = self._data['history'];
 		if not history then history = {}; self._data['history'] = history; end
 		stanza = st.clone(stanza);
-		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = datetime.datetime()}):up(); -- XEP-0203
+		stanza.attr.to = "";
+		local stamp = datetime.datetime();
+		local chars = #tostring(stanza);
+		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		t_insert(history, st.preserialize(stanza));
+		local entry = { stanza = stanza, stamp = stamp };
+		t_insert(history, entry);
 		while #history > history_length do t_remove(history, 1) end
 	end
 end
@@ -151,12 +155,46 @@ function room_mt:send_occupant_list(to)
 		end
 	end
 end
-function room_mt:send_history(to)
+function room_mt:send_history(to, stanza)
 	local history = self._data['history']; -- send discussion history
 	if history then
-		for _, msg in ipairs(history) do
-			msg = st.deserialize(msg);
-			msg.attr.to=to;
+		local x_tag = stanza and stanza:get_child("x", "http://jabber.org/protocol/muc");
+		local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
+		
+		local maxchars = history_tag and tonumber(history_tag.attr.maxchars);
+		if maxchars then maxchars = math.floor(maxchars); end
+		
+		local maxstanzas = math.floor(history_tag and tonumber(history_tag.attr.maxstanzas) or #history);
+		if not history_tag then maxstanzas = 20; end
+
+		local seconds = history_tag and tonumber(history_tag.attr.seconds);
+		if seconds then seconds = datetime.datetime(os.time() - math.floor(seconds)); end
+
+		local since = history_tag and history_tag.attr.since;
+		if since and not since:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%dZ$") then since = nil; end -- FIXME timezone support
+		if seconds and (not since or since < seconds) then since = seconds; end
+
+		local n = 0;
+		local charcount = 0;
+		local stanzacount = 0;
+		
+		for i=#history,1,-1 do
+			local entry = history[i];
+			if maxchars then
+				if not entry.chars then
+					entry.stanza.attr.to = "";
+					entry.chars = #tostring(entry.stanza);
+				end
+				charcount = charcount + entry.chars + #to;
+				if charcount > maxchars then break; end
+			end
+			if since and since > entry.stamp then break; end
+			if n + 1 > maxstanzas then break; end
+			n = n + 1;
+		end
+		for i=#history-n+1,#history do
+			local msg = history[i].stanza;
+			msg.attr.to = to;
 			self:_route_stanza(msg);
 		end
 	end
@@ -319,7 +357,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
 								:tag("status", {code='110'}));
 						end
-						self:send_history(from);
+						self:send_history(from, stanza);
 					else -- banned
 						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
 						reply.tags[1].attr.code = "403";
