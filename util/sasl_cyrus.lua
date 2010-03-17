@@ -53,6 +53,16 @@ function new(realm, service_name)
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
 	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, realm, nil, nil)
+
+	if cyrussasl.set_canon_cb then
+		local c14n_cb = function (user)
+			local node = s_match(user, "^([^@]+)");
+			log("debug", "Canonicalizing username %s to %s", user, node)
+			return node
+		end
+		cyrussasl.set_canon_cb(sasl_i.cyrus, c14n_cb);
+	end
+
 	if sasl_i.cyrus == 0 then
 		log("error", "got NULL return value from server_new")
 		return nil;
