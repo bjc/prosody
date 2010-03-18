@@ -39,7 +39,7 @@ local function init(service_name)
 		if st then
 			initialized = true;
 		else
-			log("error", "Failed to initialize CyrusSASL: %s", errmsg);
+			log("error", "Failed to initialize Cyrus SASL: %s", errmsg);
 		end
 	end
 end
@@ -57,7 +57,7 @@ function new(realm, service_name)
 	if st then
 		sasl_i.cyrus = ret;
 	else
-		log("error", "server_new failed: %s", ret);
+		log("error", "Creating SASL server connection failed: %s", ret);
 		return nil;
 	end
 
@@ -82,7 +82,7 @@ end
 
 -- set the forbidden mechanisms
 function method:forbidden( restrict )
-	log("debug", "Called method:forbidden. NOT IMPLEMENTED.")
+	log("warn", "Called method:forbidden. NOT IMPLEMENTED.")
 	return {}
 end
 
