@@ -39,7 +39,7 @@ local function init(service_name)
 		if st then
 			initialized = true;
 		else
-			log("error", "Failed to initialize CyrusSASL: %s", errmsg);
+			log("error", "Failed to initialize Cyrus SASL: %s", errmsg);
 		end
 	end
 end
@@ -52,7 +52,14 @@ function new(realm, service_name)
 
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
-	sasl_i.cyrus = cyrussasl.server_new(service_name, nil, realm, nil, nil)
+
+	local st, ret = pcall(cyrussasl.server_new, service_name, nil, realm, nil, nil)
+	if st then
+		sasl_i.cyrus = ret;
+	else
+		log("error", "Creating SASL server connection failed: %s", ret);
+		return nil;
+	end
 
 	if cyrussasl.set_canon_cb then
 		local c14n_cb = function (user)
@@ -63,10 +70,6 @@ function new(realm, service_name)
 		cyrussasl.set_canon_cb(sasl_i.cyrus, c14n_cb);
 	end
 
-	if sasl_i.cyrus == 0 then
-		log("error", "got NULL return value from server_new")
-		return nil;
-	end
 	cyrussasl.setssf(sasl_i.cyrus, 0, 0xffffffff)
 	local s = setmetatable(sasl_i, method);
 	return s;
@@ -79,7 +82,7 @@ end
 
 -- set the forbidden mechanisms
 function method:forbidden( restrict )
-	log("debug", "Called method:forbidden. NOT IMPLEMENTED.")
+	log("warn", "Called method:forbidden. NOT IMPLEMENTED.")
 	return {}
 end
 
@@ -120,16 +123,12 @@ function method:process(message)
 	   return "challenge", data
 	elseif (err == -4) then -- SASL_NOMECH
 	   log("debug", "SASL mechanism not available from remote end")
-	   return "failure", 
-	     "undefined-condition",
-	     "SASL mechanism not available"
+	   return "failure", "invalid-mechanism", "SASL mechanism not available"
 	elseif (err == -13) then -- SASL_BADAUTH
 	   return "failure", "not-authorized", cyrussasl.get_message( self.cyrus )
 	else
 	   log("debug", "Got SASL error condition %d", err)
-	   return "failure", 
-	     "undefined-condition",
-	     cyrussasl.get_message( self.cyrus )
+	   return "failure", "undefined-condition", cyrussasl.get_message( self.cyrus )
 	end
 end
 
