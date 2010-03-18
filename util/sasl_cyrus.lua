@@ -123,16 +123,12 @@ function method:process(message)
 	   return "challenge", data
 	elseif (err == -4) then -- SASL_NOMECH
 	   log("debug", "SASL mechanism not available from remote end")
-	   return "failure", 
-	     "undefined-condition",
-	     "SASL mechanism not available"
+	   return "failure", "invalid-mechanism", "SASL mechanism not available"
 	elseif (err == -13) then -- SASL_BADAUTH
 	   return "failure", "not-authorized", cyrussasl.get_message( self.cyrus )
 	else
 	   log("debug", "Got SASL error condition %d", err)
-	   return "failure", 
-	     "undefined-condition",
-	     cyrussasl.get_message( self.cyrus )
+	   return "failure", "undefined-condition", cyrussasl.get_message( self.cyrus )
 	end
 end
 
