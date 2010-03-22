@@ -68,6 +68,7 @@ end
 
 local resting_session = { -- Resting, not dead
 		destroyed = true;
+		type = "c2s_destroyed";
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
