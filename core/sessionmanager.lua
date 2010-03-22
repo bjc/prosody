@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -8,7 +8,7 @@
 
 
 
-local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
+local tonumber, tostring = tonumber, tostring;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
 local format = import("string", "format");
 
@@ -50,8 +50,8 @@ function new_session(conn)
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
 	local w = conn.write;
-	session.send = function (t) w(conn, tostring(t)); end
-	session.ip = conn:ip();
+	session.send = function (t) w(tostring(t)); end
+	session.ip = conn.ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 	
@@ -66,46 +66,31 @@ function new_session(conn)
 	return session;
 end
 
-local resting_session = { -- Resting, not dead
-		destroyed = true;
-		type = "c2s_destroyed";
-		close = function (session)
-			session.log("debug", "Attempt to close already-closed session");
-		end;
-	}; resting_session.__index = resting_session;
-
-function retire_session(session)
-	local log = session.log or log;
-	for k in pairs(session) do
-		if k ~= "trace" and k ~= "log" and k ~= "id" then
-			session[k] = nil;
-		end
-	end
-
-	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
-	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
-	return setmetatable(session, resting_session);
-end
+local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed c2s session: %s", data); end
 
 function destroy_session(session, err)
 	(session.log or log)("info", "Destroying session for %s (%s@%s)", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)");
-	if session.destroyed then return; end
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
+		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
+
 		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
-		
+			
 		if not next(hosts[session.host].sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
 			hosts[session.host].sessions[session.username] = nil;
 			bare_sessions[session.username..'@'..session.host] = nil;
 		end
-
-		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
 	end
 	
-	retire_session(session);
+	for k in pairs(session) do
+		if k ~= "trace" then
+			session[k] = nil;
+		end
+	end
+	session.data = null_data_handler;
 end
 
 function make_authenticated(session, username)
@@ -183,12 +168,7 @@ end
 
 function streamopened(session, attr)
 	local send = session.send;
-	session.host = attr.to;
-	if not session.host then
-		session:close{ condition = "improper-addressing",
-			text = "A 'to' attribute is required on stream headers" };
-		return;
-	end
+	session.host = attr.to or error("Client failed to specify destination hostname");
 	session.host = nameprep(session.host);
 	session.version = tonumber(attr.version) or 0;
 	session.streamid = uuid_generate();
@@ -213,7 +193,6 @@ function streamopened(session, attr)
 	end
 
 	local features = st.stanza("stream:features");
-	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 	fire_event("stream-features", session, features);
 
 	send(features);
@@ -221,8 +200,8 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	session.log("debug", "Received </stream:stream>");
-	session:close();
+	session.send("</stream:stream>");
+	session.notopen = true;
 end
 
 function send_to_available_resources(user, host, stanza)

@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -76,13 +76,6 @@ local function handle_default_request(method, body, request)
 	return serve_file(path);
 end
 
-local function setup()
-	local ports = config.get(module.host, "core", "http_ports") or { 5280 };
-	httpserver.set_default_handler(handle_default_request);
-	httpserver.new_from_config(ports, handle_file_request, { base = "files" });
-end
-if prosody.start_time then -- already started
-	setup();
-else
-	prosody.events.add_handler("server-started", setup);
-end
+local ports = config.get(module.host, "core", "http_ports") or { 5280 };
+httpserver.set_default_handler(handle_default_request);
+httpserver.new_from_config(ports, handle_file_request, { base = "files" });

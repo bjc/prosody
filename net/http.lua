@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -17,10 +17,11 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format =
+local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format = 
         tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char, string.format;
 
 local log = require "util.logger".init("http");
+local print = function () end
 
 module "http"
 
@@ -50,7 +51,7 @@ local function request_reader(request, data, startpos)
 		return;
 	end
 	if request.state == "body" and request.state ~= "completed" then
-		log("debug", "Reading body...")
+		print("Reading body...")
 		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.responseheaders["content-length"]); end
 		if startpos then
 			data = data:sub(startpos, -1)
@@ -67,11 +68,11 @@ local function request_reader(request, data, startpos)
 				request.body = nil;
 				request.state = "completed";
 			else
-				log("debug", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
+				print("", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
 			end
 		end
 	elseif request.state == "headers" then
-		log("debug", "Reading headers...")
+		print("Reading headers...")
 		local pos = startpos;
 		local headers, headers_complete = request.responseheaders;
 		if not headers then
@@ -83,12 +84,12 @@ local function request_reader(request, data, startpos)
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
 				headers[k:lower()] = v;
-				--log("debug", "Header: "..k:lower().." = "..v);
+				--print("Header: "..k:lower().." = "..v);
 			elseif #line == 0 then
 				headers_complete = true;
 				break;
 			else
-				log("warn", "Unhandled header line: "..line);
+				print("Unhandled header line: "..line);
 			end
 		end
 		if not headers_complete then return; end
@@ -102,7 +103,7 @@ local function request_reader(request, data, startpos)
 			return request_reader(request, data, startpos);
 		end
 	elseif request.state == "status" then
-		log("debug", "Reading status...")
+		print("Reading status...")
 		local http, code, text, linelen = data:match("^HTTP/(%S+) (%d+) (.-)\r\n()", startpos);
 		code = tonumber(code);
 		if not code then
@@ -164,7 +165,7 @@ function request(u, ex, callback)
 	end
 	
 	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
-	req.write = function (...) return req.handler:write(...); end
+	req.write = req.handler.write;
 	req.conn:settimeout(0);
 	local ok, err = req.conn:connect(req.host, req.port or 80);
 	if not ok and err ~= "timeout" then
@@ -211,9 +212,8 @@ end
 
 function destroy_request(request)
 	if request.conn then
-		request.conn = nil;
-		request.handler:close()
-		listener.ondisconnect(request.handler, "closed");
+		request.handler.close()
+		listener.disconnect(request.handler, "closed");
 	end
 end
 

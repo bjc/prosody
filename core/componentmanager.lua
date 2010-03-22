@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -8,7 +8,6 @@
 
 local prosody = _G.prosody;
 local log = require "util.logger".init("componentmanager");
-local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local jid_split = require "util.jid".split;
@@ -17,7 +16,6 @@ local events_new = require "util.events".new;
 local st = require "util.stanza";
 local prosody, hosts = prosody, prosody.hosts;
 local ssl = ssl;
-local uuid_gen = require "util.uuid".generate;
 
 local pairs, setmetatable, type, tostring = pairs, setmetatable, type, tostring;
 
@@ -85,16 +83,15 @@ function create_component(host, component, events)
 		if hosts[base_host] then
 			ssl_ctx = hosts[base_host].ssl_ctx;
 			ssl_ctx_in = hosts[base_host].ssl_ctx_in;
-		else
+		elseif prosody.global_ssl_ctx then
 			-- We have no cert, and no parent host to borrow a cert from
 			-- Use global/default cert if there is one
-			ssl_ctx = certmanager.create_context(host, "client");
-			ssl_ctx_in = certmanager.create_context(host, "server");
+			ssl_ctx = ssl.newcontext(prosody.global_ssl_ctx);
+			ssl_ctx_in = ssl.newcontext(setmetatable({ mode = "server" }, { __index = prosody.global_ssl_ctx }));
 		end
 	end
 	return { type = "component", host = host, connected = true, s2sout = {}, 
-			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new(),
-			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen() };
+			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new() };
 end
 
 function register_component(host, component, session)
@@ -103,16 +100,12 @@ function register_component(host, component, session)
 
 		components[host] = component;
 		hosts[host] = session or create_component(host, component, old_events);
-
+		
 		-- Add events object if not already one
 		if not hosts[host].events then
 			hosts[host].events = old_events or events_new();
 		end
-
-		if not hosts[host].dialback_secret then
-			hosts[host].dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
-		end
-
+		
 		-- add to disco_items
 		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
 			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);

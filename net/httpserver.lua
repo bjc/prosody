@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -39,35 +39,40 @@ local function send_response(request, response)
 	if response.body or response.headers then
 		local body = response.body and tostring(response.body);
 		log("debug", "Sending response to %s", request.id);
-		resp = { "HTTP/1.0 "..(response.status or "200 OK").."\r\n" };
+		resp = { "HTTP/1.0 ", response.status or "200 OK", "\r\n"};
 		local h = response.headers;
 		if h then
 			for k, v in pairs(h) do
-				t_insert(resp, k..": "..v.."\r\n");
+				t_insert(resp, k);
+				t_insert(resp, ": ");
+				t_insert(resp, v);
+				t_insert(resp, "\r\n");
 			end
 		end
 		if body and not (h and h["Content-Length"]) then
-			t_insert(resp, "Content-Length: "..#body.."\r\n");
+			t_insert(resp, "Content-Length: ");
+			t_insert(resp, #body);
+			t_insert(resp, "\r\n");
 		end
 		t_insert(resp, "\r\n");
 		
 		if body and request.method ~= "HEAD" then
 			t_insert(resp, body);
 		end
-		request.write(t_concat(resp));
 	else
 		-- Response we have is just a string (the body)
 		log("debug", "Sending 200 response to %s", request.id or "<none>");
 		
-		local resp = "HTTP/1.0 200 OK\r\n"
-			.. "Connection: close\r\n"
-			.. "Content-Type: text/html\r\n"
-			.. "Content-Length: "..#response.."\r\n"
-			.. "\r\n"
-			.. response;
+		resp = { "HTTP/1.0 200 OK\r\n" };
+		t_insert(resp, "Connection: close\r\n");
+		t_insert(resp, "Content-Type: text/html\r\n");
+		t_insert(resp, "Content-Length: ");
+		t_insert(resp, #response);
+		t_insert(resp, "\r\n\r\n");
 		
-		request.write(resp);
+		t_insert(resp, response);
 	end
+	request.write(t_concat(resp));
 	if not request.stayopen then
 		request:destroy();
 	end
@@ -188,7 +193,7 @@ local function request_reader(request, data, startpos)
 		
 		request.url = url_parse(request.path);
 		
-		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
+		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler.serverport());
 		
 		if request.onlystatus then
 			if not call_callback(request) then
@@ -206,17 +211,17 @@ end
 
 -- The default handler for requests
 default_handler = function (method, body, request)
-	log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
-	return { status = "404 Not Found",
+	log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler.serverport());
+	return { status = "404 Not Found", 
 			headers = { ["Content-Type"] = "text/html" },
 			body = "<html><head><title>Page Not Found</title></head><body>Not here :(</body></html>" };
 end
 
 
 function new_request(handler)
-	return { handler = handler, conn = handler,
-			write = function (...) return handler:write(...); end, state = "request",
-			server = http_servers[handler:serverport()],
+	return { handler = handler, conn = handler.socket, 
+			write = handler.write, state = "request", 
+			server = http_servers[handler.serverport()],
 			send = send_response,
 			destroy = destroy_request,
 			id = tostring{}:match("%x+$")
@@ -234,9 +239,9 @@ function destroy_request(request)
 		else
 			log("debug", "Request has no destroy callback");
 		end
-		request.handler:close()
+		request.handler.close()
 		if request.conn then
-			listener.ondisconnect(request.conn, "closed");
+			listener.disconnect(request.handler, "closed");
 		end
 	end
 end

@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -16,7 +16,7 @@ function run_all_tests()
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
 	dotest "util.stanza"
-	
+		
 	dosingletest("test_sasl.lua", "latin1toutf8");
 end
 
@@ -106,9 +106,7 @@ function dosingletest(testname, fname)
 end
 
 function dotest(unitname)
-	local _fakeG = setmetatable({}, {__index = _realG});
-	_fakeG._G = _fakeG;
-	local tests = setmetatable({}, { __index = _fakeG });
+	local tests = setmetatable({}, { __index = _realG });
 	tests.__unit = unitname;
 	local chunk, err = loadfile("test_"..unitname:gsub("%.", "_")..".lua");
 	if not chunk then
@@ -122,20 +120,19 @@ function dotest(unitname)
 		print("WARNING: ", "Failed to initialise tests for "..unitname, err);
 		return;
 	end
+	
 	if tests.env then setmetatable(tests.env, { __index = _realG }); end
-	local unit = setmetatable({}, { __index = setmetatable({ _G = tests.env or _fakeG }, { __index = tests.env or _fakeG }) });
+	local unit = setmetatable({}, { __index = setmetatable({ _G = tests.env or _G }, { __index = tests.env or _G }) });
+	unit._G = unit; _realG._G = unit;
 	local fn = "../"..unitname:gsub("%.", "/")..".lua";
 	local chunk, err = loadfile(fn);
 	if not chunk then
 		print("WARNING: ", "Failed to load module: "..unitname, err);
 		return;
 	end
-	
-	local oldmodule, old_M = _fakeG.module, _fakeG._M;
-	_fakeG.module = function () _M = _G end
+
 	setfenv(chunk, unit);
 	local success, err = pcall(chunk);
-	_fakeG.module, _fakeG._M = oldmodule, old_M;
 	if not success then
 		print("WARNING: ", "Failed to initialise module: "..unitname, err);
 		return;
@@ -152,9 +149,6 @@ function dotest(unitname)
 				print("WARNING: ", unitname.."."..name.." has no test!");
 			end
 		else
-			if verbosity >= 4 then
-				print("INFO: ", "Testing "..unitname.."."..name);
-			end
 			local line_hook, line_info = new_line_coverage_monitor(fn);
 			debug.sethook(line_hook, "l")
 			local success, ret = pcall(test, f, unit);

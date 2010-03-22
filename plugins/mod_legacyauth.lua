@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -19,12 +19,11 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module:add_feature("jabber:iq:auth");
-module:hook("stream-features", function(event)
-	local origin, features = event.origin, event.features;
-	if secure_auth_only and not origin.secure then
+module:add_event_hook("stream-features", function (session, features)
+	if secure_auth_only and not session.secure then
 		-- Sorry, not offering to insecure streams!
 		return;
-	elseif not origin.username then
+	elseif not session.username then
 		features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up();
 	end
 end);

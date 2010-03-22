@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -68,7 +68,7 @@ function load(filename, format)
 
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
-		if f then
+		if f then 
 			local ok, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
 			if ok then
@@ -93,15 +93,6 @@ function addparser(format, parser)
 	if format and parser then
 		parsers[format] = parser;
 	end
-end
-
--- _M needed to avoid name clash with local 'parsers'
-function _M.parsers()
-	local p = {};
-	for format in pairs(parsers) do
-		table.insert(p, format);
-	end
-	return p;
 end
 
 -- Built-in Lua parser

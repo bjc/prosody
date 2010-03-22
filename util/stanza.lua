@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -38,8 +38,6 @@ if do_pretty_printing then
 	end
 end
 
-local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
-
 module "stanza"
 
 stanza_mt = { __type = "stanza" };
@@ -67,7 +65,7 @@ end
 
 function stanza_mt:text(text)
 	(self.last_add[#self.last_add] or self):add_direct_child(text);
-	return self;
+	return self; 
 end
 
 function stanza_mt:up()
@@ -97,7 +95,7 @@ end
 
 function stanza_mt:get_child(name, xmlns)
 	for _, child in ipairs(self.tags) do
-		if (not name or child.name == name)
+		if (not name or child.name == name) 
 			and ((not xmlns and self.attr.xmlns == child.attr.xmlns)
 				or child.attr.xmlns == xmlns) then
 			
@@ -107,13 +105,13 @@ function stanza_mt:get_child(name, xmlns)
 end
 
 function stanza_mt:child_with_name(name)
-	for _, child in ipairs(self.tags) do
+	for _, child in ipairs(self.tags) do	
 		if child.name == name then return child; end
 	end
 end
 
 function stanza_mt:child_with_ns(ns)
-	for _, child in ipairs(self.tags) do
+	for _, child in ipairs(self.tags) do	
 		if child.attr.xmlns == ns then return child; end
 	end
 end
@@ -125,6 +123,7 @@ function stanza_mt:children()
 			local v = a[i]
 			if v then return v; end
 		end, self, i;
+	                                    
 end
 function stanza_mt:childtags()
 	local i = 0;
@@ -133,6 +132,7 @@ function stanza_mt:childtags()
 			local v = self.tags[i]
 			if v then return v; end
 		end, self.tags[1], i;
+	                                    
 end
 
 local xml_escape
@@ -191,30 +191,6 @@ function stanza_mt.get_text(t)
 	end
 end
 
-function stanza_mt.get_error(stanza)
-	local type, condition, text;
-	
-	local error_tag = stanza:get_child("error");
-	if not error_tag then
-		return nil, nil, nil;
-	end
-	type = error_tag.attr.type;
-	
-	for child in error_tag:children() do
-		if child.attr.xmlns == xmlns_stanzas then
-			if not text and child.name == "text" then
-				text = child:get_text();
-			elseif not condition then
-				condition = child.name;
-			end
-			if condition and text then
-				break;
-			end
-		end
-	end
-	return type, condition or "undefined-condition", text or "";
-end
-
 function stanza_mt.__add(s1, s2)
 	return s1:add_direct_child(s2);
 end
@@ -247,14 +223,14 @@ function deserialize(stanza)
 		for i=1,#attr do attr[i] = nil; end
 		local attrx = {};
 		for att in pairs(attr) do
-			if s_find(att, "|", 1, true) and not s_find(att, "\1", 1, true) then
-				local ns,na = s_match(att, "^([^|]+)|(.+)$");
+			if s_find(att, "|", 1, true) and not s_find(k, "\1", 1, true) then
+				local ns,na = s_match(k, "^([^|]+)|(.+)$");
 				attrx[ns.."\1"..na] = attr[att];
 				attr[att] = nil;
 			end
 		end
 		for a,v in pairs(attrx) do
-			attr[a] = v;
+			attr[x] = v;
 		end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
@@ -344,7 +320,7 @@ if do_pretty_printing then
 	function stanza_mt.pretty_print(t)
 		local children_text = "";
 		for n, child in ipairs(t) do
-			if type(child) == "string" then
+			if type(child) == "string" then	
 				children_text = children_text .. xml_escape(child);
 			else
 				children_text = children_text .. child:pretty_print();

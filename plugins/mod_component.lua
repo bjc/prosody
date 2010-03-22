@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -14,13 +14,24 @@ local hosts = _G.hosts;
 
 local t_concat = table.concat;
 
+local lxp = require "lxp";
+local logger = require "util.logger";
 local config = require "core.configmanager";
+local connlisteners = require "net.connlisteners";
 local cm_register_component = require "core.componentmanager".register_component;
 local cm_deregister_component = require "core.componentmanager".deregister_component;
+local uuid_gen = require "util.uuid".generate;
 local sha1 = require "util.hashes".sha1;
 local st = require "util.stanza";
+local init_xmlhandlers = require "core.xmlhandlers";
+
+local sessions = {};
 
 local log = module._log;
+
+local component_listener = { default_port = 5347; default_mode = "*a"; default_interface = config.get("*", "core", "component_interface") or "127.0.0.1" };
+
+local xmlns_component = 'jabber:component:accept';
 
 --- Handle authentication attempts by components
 function handle_component_auth(session, stanza)
@@ -69,4 +80,4 @@ function handle_component_auth(session, stanza)
 	session.send(st.stanza("handshake"));
 end
 
-module:add_handler("component", "handshake", "jabber:component:accept", handle_component_auth);
+module:add_handler("component", "handshake", xmlns_component, handle_component_auth);

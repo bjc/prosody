@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -47,13 +47,13 @@ function new()
 			_rebuild_index(event);
 		end
 	end;
-	local function add_handlers(handlers)
-		for event, handler in pairs(handlers) do
+	local function add_plugin(plugin)
+		for event, handler in pairs(plugin) do
 			add_handler(event, handler);
 		end
 	end;
-	local function remove_handlers(handlers)
-		for event, handler in pairs(handlers) do
+	local function remove_plugin(plugin)
+		for event, handler in pairs(plugin) do
 			remove_handler(event, handler);
 		end
 	end;

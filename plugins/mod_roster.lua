@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -23,12 +23,12 @@ local core_post_stanza = core_post_stanza;
 module:add_feature("jabber:iq:roster");
 
 local rosterver_stream_feature = st.stanza("ver", {xmlns="urn:xmpp:features:rosterver"}):tag("optional"):up();
-module:hook("stream-features", function(event)
-	local origin, features = event.origin, event.features;
-	if origin.username then
-		features:add_child(rosterver_stream_feature);
-	end
-end);
+module:add_event_hook("stream-features", 
+		function (session, features)
+			if session.username then
+				features:add_child(rosterver_stream_feature);
+			end
+		end);
 
 module:add_iq_handler("c2s", "jabber:iq:roster", 
 		function (session, stanza)
@@ -36,10 +36,9 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 				if stanza.attr.type == "get" then
 					local roster = st.reply(stanza);
 					
-					local client_ver = tonumber(stanza.tags[1].attr.ver);
-					local server_ver = tonumber(session.roster[false].version or 1);
+					local ver = stanza.tags[1].attr.ver
 					
-					if not (client_ver and server_ver) or client_ver ~= server_ver then
+					if (not ver) or tonumber(ver) ~= (session.roster[false].version or 1) then
 						roster:query("jabber:iq:roster");
 						-- Client does not support versioning, or has stale roster
 						for jid in pairs(session.roster) do
@@ -56,7 +55,7 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 								roster:up(); -- move out from item
 							end
 						end
-						roster.tags[1].attr.ver = server_ver;
+						roster.tags[1].attr.ver = tostring(session.roster[false].version or "1");
 					end
 					session.send(roster);
 					session.interested = true; -- resource is interested in roster updates

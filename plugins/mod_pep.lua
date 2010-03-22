@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -274,24 +274,6 @@ module:hook("iq/bare/disco", function(event)
 			recipients[user][contact] = notify; -- set recipient's data to calculated data
 			-- send messages to recipient
 			publish_all(user, contact, session);
-		end
-	end
-end);
-
-module:hook("account-disco-info", function(event)
-	local stanza = event.stanza;
-	stanza:tag('identity', {category='pubsub', type='pep'}):up();
-	stanza:tag('feature', {var='http://jabber.org/protocol/pubsub#publish'}):up();
-end);
-
-module:hook("account-disco-items", function(event)
-	local session, stanza = event.session, event.stanza;
-	local bare = session.username..'@'..session.host;
-	local user_data = data[bare];
-
-	if user_data then
-		for node, _ in pairs(user_data) do
-			stanza:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
 		end
 	end
 end);

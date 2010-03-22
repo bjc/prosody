@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -16,7 +16,7 @@ local requests = {}; -- Open requests
 
 local httpserver = { default_port = 80, default_mode = "*a" };
 
-function httpserver.onincoming(conn, data)
+function httpserver.listener(conn, data)
 	local request = requests[conn];
 
 	if not request then
@@ -24,7 +24,7 @@ function httpserver.onincoming(conn, data)
 		requests[conn] = request;
 		
 		-- If using HTTPS, request is secure
-		if conn:ssl() then
+		if conn.ssl() then
 			request.secure = true;
 		end
 	end
@@ -34,7 +34,7 @@ function httpserver.onincoming(conn, data)
 	end
 end
 
-function httpserver.ondisconnect(conn, err)
+function httpserver.disconnect(conn, err)
 	local request = requests[conn];
 	if request and not request.destroyed then
 		request.conn = nil;

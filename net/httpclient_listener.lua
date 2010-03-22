@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -15,7 +15,7 @@ local buffers = {}; -- Buffers of partial lines
 
 local httpclient = { default_port = 80, default_mode = "*a" };
 
-function httpclient.onincoming(conn, data)
+function httpclient.listener(conn, data)
 	local request = requests[conn];
 
 	if not request then
@@ -28,7 +28,7 @@ function httpclient.onincoming(conn, data)
 	end
 end
 
-function httpclient.ondisconnect(conn, err)
+function httpclient.disconnect(conn, err)
 	local request = requests[conn];
 	if request and err ~= "closed" then
 		request:reader(nil);
