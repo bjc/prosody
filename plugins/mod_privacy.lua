@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2009-2010 Matthew Wild
+-- Copyright (C) 2009-2010 Waqas Hussain
 -- Copyright (C) 2009 Thilo Cestonaro
 -- 
 -- This project is MIT/X11 licensed. Please see the
