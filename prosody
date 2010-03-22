@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
