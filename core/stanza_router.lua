@@ -36,7 +36,7 @@ function core_process_stanza(origin, stanza)
 		end
 	end
 
-	if origin.type == "c2s" then
+	if origin.type == "c2s" and stanza.attr.xmlns == "jabber:client" then
 		if not origin.full_jid
 			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
