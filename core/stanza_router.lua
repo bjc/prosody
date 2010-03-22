@@ -126,7 +126,7 @@ function core_post_stanza(origin, stanza, preevents)
 	local node, host, resource = jid_split(to);
 	local to_bare = node and (node.."@"..host) or host; -- bare JID
 
-	local to_type;
+	local to_type, to_self;
 	if node then
 		if resource then
 			to_type = '/full';
@@ -134,6 +134,7 @@ function core_post_stanza(origin, stanza, preevents)
 			to_type = '/bare';
 			if node == origin.username and host == origin.host then
 				stanza.attr.to = nil;
+				to_self = true;
 			end
 		end
 	else
@@ -141,6 +142,7 @@ function core_post_stanza(origin, stanza, preevents)
 			to_type = '/host';
 		else
 			to_type = '/bare';
+			to_self = true;
 		end
 	end
 
@@ -151,6 +153,7 @@ function core_post_stanza(origin, stanza, preevents)
 	local h = hosts[to_bare] or hosts[host or origin.host];
 	if h then
 		if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
+		if to_self and h.events.fire_event(stanza.name..'/self', event_data) then return; end -- do processing
 
 		if h.type == "component" then
 			component_handle_stanza(origin, stanza);
@@ -182,7 +185,7 @@ function core_route_stanza(origin, stanza)
 			local xmlns = stanza.attr.xmlns;
 			--stanza.attr.xmlns = "jabber:server";
 			stanza.attr.xmlns = nil;
-			log("debug", "sending s2s stanza: %s", tostring(stanza));
+			log("debug", "sending s2s stanza: %s", tostring(stanza.top_tag and stanza:top_tag()) or stanza);
 			send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
 			stanza.attr.xmlns = xmlns; -- reset
 		else

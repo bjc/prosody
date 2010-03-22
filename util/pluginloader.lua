@@ -9,10 +9,18 @@
 
 local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
-local io_open = io.open;
-local loadstring = loadstring;
+local io_open, os_time = io.open, os.time;
+local loadstring, pairs = loadstring, pairs;
+
+local datamanager = require "util.datamanager";
 
 module "pluginloader"
+
+local function load_from_datastore(name)
+	local content = datamanager.load(name, nil, "plugins");
+	if not content or not content[1] then return nil, "Resource not found"; end
+	return content[1], name;
+end
 
 local function load_file(name)
 	local file, err = io_open(plugin_dir..name);
@@ -22,14 +30,34 @@ local function load_file(name)
 	return content, name;
 end
 
-function load_resource(plugin, resource)
+function load_resource(plugin, resource, loader)
 	if not resource then
 		resource = "mod_"..plugin..".lua";
 	end
-	local content, err = load_file(plugin.."/"..resource);
-	if not content then content, err = load_file(resource); end
+	loader = loader or load_file;
+
+	local content, err = loader(plugin.."/"..resource);
+	if not content then content, err = loader(resource); end
 	-- TODO add support for packed plugins
+	
+	if not content and loader == load_file then
+		return load_resource(plugin, resource, load_from_datastore);
+	end
+	
 	return content, err;
+end
+
+function store_resource(plugin, resource, content, metadata)
+	if not resource then
+		resource = "mod_"..plugin..".lua";
+	end
+	local store = { content };
+	if metadata then
+		for k,v in pairs(metadata) do
+			store[k] = v;
+		end
+	end
+	datamanager.store(plugin.."/"..resource, nil, "plugins", store);
 end
 
 function load_code(plugin, resource)

@@ -17,16 +17,34 @@ local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_attempt_connect = require "core.s2smanager".attempt_connection;
-local stream_callbacks = { stream_tag = "http://etherx.jabber.org/streams\1stream", 
-		default_ns = "jabber:server",
+local stream_callbacks = { default_ns = "jabber:server",
 		streamopened = s2s_streamopened, streamclosed = s2s_streamclosed, handlestanza =  core_process_stanza };
+
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
 		session:close("invalid-namespace");
-	else
+	elseif error == "parse-error" then
 		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
 		session:close("xml-not-well-formed");
+	elseif error == "stream-error" then
+		local condition, text = "undefined-condition";
+		for child in data:children() do
+			if child.attr.xmlns == xmlns_xmpp_streams then
+				if child.name ~= "text" then
+					condition = child.name;
+				else
+					text = child:get_text();
+				end
+				if condition ~= "undefined-condition" and text then
+					break;
+				end
+			end
+		end
+		text = condition .. (text and (" ("..text..")") or "");
+		session.log("info", "Session closed by remote with error: %s", text);
+		session:close(nil, text);
 	end
 end
 
@@ -70,8 +88,8 @@ local function session_reset_stream(session)
 end
 
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = stream_callbacks.stream_tag:match("[^\1]*"), xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
-local function session_close(session, reason)
+local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+local function session_close(session, reason, remote_reason)
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
@@ -100,18 +118,18 @@ local function session_close(session, reason)
 			end
 		end
 		session.sends2s("</stream:stream>");
-		if session.notopen or not session.conn.close() then
-			session.conn.close(true); -- Force FIXME: timer?
+		if session.notopen or not session.conn:close() then
+			session.conn:close(true); -- Force FIXME: timer?
 		end
-		session.conn.close();
-		xmppserver.disconnect(session.conn, "stream error");
+		session.conn:close();
+		xmppserver.ondisconnect(session.conn, remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed");
 	end
 end
 
 
 -- End of session methods --
 
-function xmppserver.listener(conn, data)
+function xmppserver.onincoming(conn, data)
 	local session = sessions[conn];
 	if not session then
 		session = s2s_new_incoming(conn);
@@ -137,7 +155,7 @@ function xmppserver.listener(conn, data)
 	end
 end
 	
-function xmppserver.status(conn, status)
+function xmppserver.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
@@ -148,7 +166,7 @@ function xmppserver.status(conn, status)
 	end
 end
 
-function xmppserver.disconnect(conn, err)
+function xmppserver.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		if err and err ~= "closed" and session.srv_hosts then
@@ -158,7 +176,7 @@ function xmppserver.disconnect(conn, err)
 				return; -- Session lives for now
 			end
 		end
-		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
+		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
 		s2s_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;

@@ -16,6 +16,7 @@ CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+-- Tell Lua where to find our libraries
 if CFG_SOURCEDIR then
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
@@ -24,42 +25,22 @@ end
 package.path = package.path..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.lua";
 package.cpath = package.cpath..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.so";
 
+-- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
 		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
 	end
 end
 
--- Required to be able to find packages installed with luarocks
-if not pcall(require, "luarocks.loader") then -- Try LuaRocks 2.x
-	pcall(require, "luarocks.require") -- Try LuaRocks 1.x
-end
-
--- Replace require with one that doesn't pollute _G
-do
-	local _realG = _G;
-	local _real_require = require;
-	function require(...)
-		local curr_env = getfenv(2);
-		local curr_env_mt = getmetatable(getfenv(2));
-		local _realG_mt = getmetatable(_realG);
-		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
-			local old_newindex
-			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
-			local ret = _real_require(...);
-			_realG_mt.__newindex = old_newindex;
-			return ret;
-		end
-		return _real_require(...);
-	end
-end
-
-
+-- Load the config-parsing module
 config = require "core.configmanager"
 
+-- -- -- --
+-- Define the functions we call during startup, the 
+-- actual startup happens right at the end, where these
+-- functions get called
+
 function read_config()
-	-- TODO: Check for other formats when we add support for them
-	-- Use lfs? Make a new conf/ dir?
 	local filenames = {};
 	
 	local filename;
@@ -69,7 +50,9 @@ function read_config()
 			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
 		end
 	else
-		table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+		for _, format in ipairs(config.parsers()) do
+			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
+		end
 	end
 	for _,_filename in ipairs(filenames) do
 		filename = _filename;
@@ -104,15 +87,41 @@ function read_config()
 end
 
 function load_libraries()
-	-- Initialize logging
-	require "core.loggingmanager"
-	
-	-- Check runtime dependencies
-	require "util.dependencies"
-	
 	-- Load socket framework
 	server = require "net.server"
 end	
+
+function init_logging()
+	-- Initialize logging
+	require "core.loggingmanager"
+end
+
+function check_dependencies()
+	-- Check runtime dependencies
+	if not require "util.dependencies".check_dependencies() then
+		os.exit(1);
+	end
+end
+
+function sandbox_require()
+	-- Replace require() with one that doesn't pollute _G, required
+	-- for neat sandboxing of modules
+	local _realG = _G;
+	local _real_require = require;
+	function require(...)
+		local curr_env = getfenv(2);
+		local curr_env_mt = getmetatable(getfenv(2));
+		local _realG_mt = getmetatable(_realG);
+		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
+			local old_newindex
+			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
+			local ret = _real_require(...);
+			_realG_mt.__newindex = old_newindex;
+			return ret;
+		end
+		return _real_require(...);
+	end
+end
 
 function init_global_state()
 	bare_sessions = {};
@@ -177,29 +186,28 @@ function init_global_state()
 	end
 
 	-- Load SSL settings from config, and create a ctx table
-	local global_ssl_ctx = rawget(_G, "ssl") and config.get("*", "core", "ssl");
-	if global_ssl_ctx then
-		local default_ssl_ctx = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
-		setmetatable(global_ssl_ctx, { __index = default_ssl_ctx });
-	end
+	local certmanager = require "core.certmanager";
+	local global_ssl_ctx = certmanager.create_context("*", "server");
+	prosody.global_ssl_ctx = global_ssl_ctx;
 
 	local cl = require "net.connlisteners";
 	function prosody.net_activate_ports(option, listener, default, conntype)
 		conntype = conntype or (global_ssl_ctx and "tls") or "tcp";
+		local ports_option = option and option.."_ports" or "ports";
 		if not cl.get(listener) then return; end
-		local ports = config.get("*", "core", option.."_ports") or default;
+		local ports = config.get("*", "core", ports_option) or default;
 		if type(ports) == "number" then ports = {ports} end;
 		
 		if type(ports) ~= "table" then
-			log("error", "core."..option.." is not a table");
+			log("error", "core."..ports_option.." is not a table");
 		else
 			for _, port in ipairs(ports) do
 				port = tonumber(port);
 				if type(port) ~= "number" then
-					log("error", "Non-numeric "..option.."_ports: "..tostring(port));
+					log("error", "Non-numeric "..ports_option..": "..tostring(port));
 				else
 					local ok, err = cl.start(listener, {
-						ssl = conntype ~= "tcp" and global_ssl_ctx,
+						ssl = conntype == "ssl" and global_ssl_ctx,
 						port = port,
 						interface = (option and config.get("*", "core", option.."_interface"))
 							or cl.get(listener).default_interface
@@ -300,15 +308,23 @@ function init_data_store()
 end
 
 function prepare_to_start()
+	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
 	eventmanager.fire_event("server-starting");
 	prosody.events.fire_event("server-starting");
 
 	-- start listening on sockets
-	prosody.net_activate_ports("c2s", "xmppclient", {5222});
-	prosody.net_activate_ports("s2s", "xmppserver", {5269});
-	prosody.net_activate_ports("component", "xmppcomponent", {5347}, "tcp");
-	prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	if config.get("*", "core", "ports") then
+		prosody.net_activate_ports(nil, "multiplex", {5222, 5269});
+		if config.get("*", "core", "ssl_ports") then
+			prosody.net_activate_ports("ssl", "multiplex", {5223}, "ssl");
+		end
+	else
+		prosody.net_activate_ports("c2s", "xmppclient", {5222});
+		prosody.net_activate_ports("s2s", "xmppserver", {5269});
+		prosody.net_activate_ports("component", "xmppcomponent", {5347}, "tcp");
+		prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
+	end
 
 	prosody.start_time = os.time();
 end	
@@ -395,7 +411,13 @@ function cleanup()
 	server.setquitting(true);
 end
 
+-- Are you ready? :)
+-- These actions are in a strict order, as many depend on
+-- previous steps to have already been performed
 read_config();
+init_logging();
+check_dependencies();
+sandbox_require();
 load_libraries();
 init_global_state();
 read_version();

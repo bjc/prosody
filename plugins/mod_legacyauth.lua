@@ -19,11 +19,12 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 
 module:add_feature("jabber:iq:auth");
-module:add_event_hook("stream-features", function (session, features)
-	if secure_auth_only and not session.secure then
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if secure_auth_only and not origin.secure then
 		-- Sorry, not offering to insecure streams!
 		return;
-	elseif not session.username then
+	elseif not origin.username then
 		features:tag("auth", {xmlns='http://jabber.org/features/iq-auth'}):up();
 	end
 end);

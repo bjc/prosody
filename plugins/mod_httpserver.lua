@@ -76,6 +76,13 @@ local function handle_default_request(method, body, request)
 	return serve_file(path);
 end
 
-local ports = config.get(module.host, "core", "http_ports") or { 5280 };
-httpserver.set_default_handler(handle_default_request);
-httpserver.new_from_config(ports, handle_file_request, { base = "files" });
+local function setup()
+	local ports = config.get(module.host, "core", "http_ports") or { 5280 };
+	httpserver.set_default_handler(handle_default_request);
+	httpserver.new_from_config(ports, handle_file_request, { base = "files" });
+end
+if prosody.start_time then -- already started
+	setup();
+else
+	prosody.events.add_handler("server-started", setup);
+end

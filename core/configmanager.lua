@@ -68,7 +68,7 @@ function load(filename, format)
 
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
-		if f then 
+		if f then
 			local ok, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
 			if ok then
@@ -93,6 +93,15 @@ function addparser(format, parser)
 	if format and parser then
 		parsers[format] = parser;
 	end
+end
+
+-- _M needed to avoid name clash with local 'parsers'
+function _M.parsers()
+	local p = {};
+	for format in pairs(parsers) do
+		table.insert(p, format);
+	end
+	return p;
 end
 
 -- Built-in Lua parser

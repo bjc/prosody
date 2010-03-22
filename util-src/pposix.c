@@ -2,7 +2,7 @@
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
 -- Copyright (C) 2009 Tobias Markmann
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -13,9 +13,10 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.1"
+#define MODULE_VERSION "0.3.3"
 
 #include <stdlib.h>
+#include <math.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <sys/resource.h>
@@ -38,14 +39,14 @@ static int lc_daemonize(lua_State *L)
 {
 
 	pid_t pid;
-	
+
 	if ( getppid() == 1 )
 	{
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "already-daemonized");
 		return 2;
 	}
-	
+
 	/* Attempt initial fork */
 	if((pid = fork()) < 0)
 	{
@@ -61,7 +62,7 @@ static int lc_daemonize(lua_State *L)
 		lua_pushnumber(L, pid);
 		return 2;
 	}
-	
+
 	/* and we are the child process */
 	if(setsid() == -1)
 	{
@@ -150,7 +151,7 @@ int facility_constants[] =	{
        exist,  the  results  are  undefined.  Most portable is to use a string
        constant.
    " -- syslog manpage
-*/ 
+*/
 char* syslog_ident = NULL;
 
 int lc_syslog_open(lua_State* L)
@@ -159,12 +160,12 @@ int lc_syslog_open(lua_State* L)
 	facility = facility_constants[facility];
 
 	luaL_checkstring(L, 1);
-	
+
 	if(syslog_ident)
 		free(syslog_ident);
-	
+
 	syslog_ident = strdup(lua_tostring(L, 1));
-	
+
 	openlog(syslog_ident, LOG_PID, facility);
 	return 0;
 }
@@ -264,7 +265,7 @@ int lc_setuid(lua_State* L)
 	{
 		uid = lua_tonumber(L, 1);
 	}
-	
+
 	if(uid>-1)
 	{
 		/* Ok, attempt setuid */
@@ -293,7 +294,7 @@ int lc_setuid(lua_State* L)
 			return 1;
 		}
 	}
-	
+
 	/* Seems we couldn't find a valid UID to switch to */
 	lua_pushboolean(L, 0);
 	lua_pushstring(L, "invalid-uid");
@@ -322,7 +323,7 @@ int lc_setgid(lua_State* L)
 	{
 		gid = lua_tonumber(L, 1);
 	}
-	
+
 	if(gid>-1)
 	{
 		/* Ok, attempt setgid */
@@ -351,20 +352,47 @@ int lc_setgid(lua_State* L)
 			return 1;
 		}
 	}
-	
+
 	/* Seems we couldn't find a valid GID to switch to */
 	lua_pushboolean(L, 0);
 	lua_pushstring(L, "invalid-gid");
 	return 2;
 }
 
+int lc_umask(lua_State* L)
+{
+	char old_mode_string[7];
+	mode_t old_mode = umask(strtoul(luaL_checkstring(L, 1), NULL, 8));
+
+	snprintf(old_mode_string, sizeof(old_mode_string), "%03o", old_mode);
+	old_mode_string[sizeof(old_mode_string)-1] = 0;
+	lua_pushstring(L, old_mode_string);
+
+	return 1;
+}
+
+int lc_mkdir(lua_State* L)
+{
+	int ret = mkdir(luaL_checkstring(L, 1), S_IRUSR | S_IWUSR | S_IXUSR
+		| S_IRGRP | S_IWGRP | S_IXGRP
+		| S_IROTH | S_IXOTH); /* mode 775 */
+
+	lua_pushboolean(L, ret==0);
+	if(ret)
+	{
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	return 1;
+}
+
 /*	Like POSIX's setrlimit()/getrlimit() API functions.
- *	
+ *
  *	Syntax:
  *	pposix.setrlimit( resource, soft limit, hard limit)
- *	
+ *
  *	Any negative limit will be replace with the current limit by an additional call of getrlimit().
- *	
+ *
  *	Example usage:
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
@@ -393,16 +421,16 @@ int lc_setrlimit(lua_State *L) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "incorrect-arguments");
 	}
-	
+
 	resource = luaL_checkstring(L, 1);
 	softlimit = luaL_checkinteger(L, 2);
 	hardlimit = luaL_checkinteger(L, 3);
-	
+
 	rid = string2resource(resource);
 	if (rid != -1) {
 		struct rlimit lim;
 		struct rlimit lim_current;
-		
+
 		if (softlimit < 0 || hardlimit < 0) {
 			if (getrlimit(rid, &lim_current)) {
 				lua_pushboolean(L, 0);
@@ -410,12 +438,12 @@ int lc_setrlimit(lua_State *L) {
 				return 2;
 			}
 		}
-		
+
 		if (softlimit < 0) lim.rlim_cur = lim_current.rlim_cur;
 			else lim.rlim_cur = softlimit;
 		if (hardlimit < 0) lim.rlim_max = lim_current.rlim_max;
 			else lim.rlim_max = hardlimit;
-		
+
 		if (setrlimit(rid, &lim)) {
 			lua_pushboolean(L, 0);
 			lua_pushstring(L, "setrlimit-failed");
@@ -436,13 +464,13 @@ int lc_getrlimit(lua_State *L) {
 	const char *resource = NULL;
 	int rid = -1;
 	struct rlimit lim;
-	
+
 	if (arguments != 1) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "invalid-arguments");
 		return 2;
 	}
-	
+
 	resource = luaL_checkstring(L, 1);
 	rid = string2resource(resource);
 	if (rid != -1) {
@@ -473,50 +501,40 @@ int lc_abort(lua_State* L)
 
 int luaopen_util_pposix(lua_State *L)
 {
-	lua_newtable(L);
+	luaL_Reg exports[] = {
+		{ "abort", lc_abort },
 
-	lua_pushcfunction(L, lc_abort);
-	lua_setfield(L, -2, "abort");
+		{ "daemonize", lc_daemonize },
 
-	lua_pushcfunction(L, lc_daemonize);
-	lua_setfield(L, -2, "daemonize");
+		{ "syslog_open", lc_syslog_open },
+		{ "syslog_close", lc_syslog_close },
+		{ "syslog_log", lc_syslog_log },
+		{ "syslog_setminlevel", lc_syslog_setmask },
 
-	lua_pushcfunction(L, lc_syslog_open);
-	lua_setfield(L, -2, "syslog_open");
+		{ "getpid", lc_getpid },
+		{ "getuid", lc_getuid },
+		{ "getgid", lc_getgid },
 
-	lua_pushcfunction(L, lc_syslog_close);
-	lua_setfield(L, -2, "syslog_close");
+		{ "setuid", lc_setuid },
+		{ "setgid", lc_setgid },
 
-	lua_pushcfunction(L, lc_syslog_log);
-	lua_setfield(L, -2, "syslog_log");
+		{ "umask", lc_umask },
 
-	lua_pushcfunction(L, lc_syslog_setmask);
-	lua_setfield(L, -2, "syslog_setminlevel");
+		{ "mkdir", lc_mkdir },
 
-	lua_pushcfunction(L, lc_getpid);
-	lua_setfield(L, -2, "getpid");
+		{ "setrlimit", lc_setrlimit },
+		{ "getrlimit", lc_getrlimit },
 
-	lua_pushcfunction(L, lc_getuid);
-	lua_setfield(L, -2, "getuid");
-	lua_pushcfunction(L, lc_getgid);
-	lua_setfield(L, -2, "getgid");
+		{ NULL, NULL }
+	};
 
-	lua_pushcfunction(L, lc_setuid);
-	lua_setfield(L, -2, "setuid");
-	lua_pushcfunction(L, lc_setgid);
-	lua_setfield(L, -2, "setgid");
-	
-	lua_pushcfunction(L, lc_setrlimit);
-	lua_setfield(L, -2, "setrlimit");
-	
-	lua_pushcfunction(L, lc_getrlimit);
-	lua_setfield(L, -2, "getrlimit");
+	luaL_register(L, "pposix",  exports);
 
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
 
 	lua_pushliteral(L, MODULE_VERSION);
 	lua_setfield(L, -2, "_VERSION");
-	
+
 	return 1;
 };

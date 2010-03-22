@@ -109,10 +109,8 @@ function start()
 	end
 	if not CFG_SOURCEDIR then
 		os.execute("./prosody");
-	elseif CFG_SOURCEDIR:match("^/usr/local") then
-		os.execute("/usr/local/bin/prosody");
 	else
-		os.execute("prosody");
+		os.execute(CFG_SOURCEDIR.."/../../bin/prosody");
 	end
 	return true;
 end

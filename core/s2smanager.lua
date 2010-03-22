@@ -16,8 +16,10 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
@@ -35,8 +37,6 @@ local logger_init = require "util.logger".init;
 local log = logger_init("s2smanager");
 
 local sha256_hash = require "util.hashes".sha256;
-
-local dialback_secret = uuid_gen();
 
 local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
@@ -137,7 +137,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -145,16 +145,17 @@ function new_incoming(conn)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
 		    session.from_host or "(unknown)", session.to_host or "(unknown)");
 		session:close("connection-timeout");
 	end);
 	return session;
 end
 
-function new_outgoing(from_host, to_host)
-		local host_session = { to_host = to_host, from_host = from_host, host = from_host, 
-		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+function new_outgoing(from_host, to_host, connect)
+		local host_session = { to_host = to_host, from_host = from_host, host = from_host,
+		                       notopen = true, type = "s2sout_unauthed", direction = "outgoing",
+		                       open_stream = session_open_stream };
 		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
@@ -165,10 +166,12 @@ function new_outgoing(from_host, to_host)
 			host_session.log = log;
 		end
 		
-		-- Kick the connection attempting machine
-		attempt_connection(host_session);
+		if connect ~= false then
+			-- Kick the connection attempting machine into life
+			attempt_connection(host_session);
+		end
 		
-		if not host_session.sends2s then		
+		if not host_session.sends2s then
 			-- A sends2s which buffers data (until the stream is opened)
 			-- note that data in this buffer will be sent before the stream is authed
 			-- and will not be ack'd in any way, successful or otherwise
@@ -182,7 +185,6 @@ function new_outgoing(from_host, to_host)
 				buffer[#buffer+1] = data;
 				log("debug", "Buffered item %d: %s", #buffer, tostring(data));
 			end
-			
 		end
 
 		return host_session;
@@ -298,7 +300,7 @@ function try_connect(host_session, connect_host, connect_port)
 			adns.cancel(handle, true);
 		end
 	end);
-		
+	
 	return true;
 end
 
@@ -323,7 +325,7 @@ function make_connect(host_session, connect_host, connect_port)
 	end
 	
 	local cl = connlisteners_get("xmppserver");
-	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1, hosts[from_host].ssl_ctx, false );
+	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1 );
 	host_session.conn = conn;
 	
 	-- Register this outgoing connection so that xmppserver_listener knows about it
@@ -331,9 +333,10 @@ function make_connect(host_session, connect_host, connect_port)
 	cl.register_outgoing(conn, host_session);
 	
 	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t) log("debug", "sending: %s", tostring(t)); w(tostring(t)); end
+	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
-	conn.write(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0' xml:lang='en'>]], from_host, to_host));
+	host_session:open_stream(from_host, to_host);
+	
 	log("debug", "Connection attempt in progress...");
 	add_task(connect_timeout, function ()
 		if host_session.conn ~= conn or
@@ -342,11 +345,18 @@ function make_connect(host_session, connect_host, connect_port)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity", 
+		(host_session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
 		    host_session.from_host or "(unknown)", host_session.to_host or "(unknown)");
 		host_session:close("connection-timeout");
 	end);
 	return true;
+end
+
+function session_open_stream(session, from, to)
+	session.sends2s(st.stanza("stream:stream", {
+		xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
+		["xmlns:stream"]='http://etherx.jabber.org/streams',
+		from=from, to=to, version='1.0', ["xml:lang"]='en'}):top_tag());
 end
 
 function streamopened(session, attr)
@@ -372,13 +382,13 @@ function streamopened(session, attr)
 			return;
 		end
 		send("<?xml version='1.0'?>");
-		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback', 
+		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
 			if session.to_host then
-				hosts[session.to_host].events.fire_event("s2s-stream-features", { session = session, features = features });
+				hosts[session.to_host].events.fire_event("s2s-stream-features", { origin = session, features = features });
 			else
 				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
 			end
@@ -393,13 +403,13 @@ function streamopened(session, attr)
 	
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
-		-- Note that this is *not* the stanza queue (which 
+		-- Note that this is *not* the stanza queue (which
 		-- we can only send if auth succeeds) :)
 		local send_buffer = session.send_buffer;
 		if send_buffer and #send_buffer > 0 then
 			log("debug", "Sending s2s send_buffer now...");
 			for i, data in ipairs(send_buffer) do
-				session.sends2s(data);
+				session.sends2s(tostring(data));
 				send_buffer[i] = nil;
 			end
 		end
@@ -415,16 +425,12 @@ function streamopened(session, attr)
 			end
 		end
 	end
-
 	session.notopen = nil;
 end
 
 function streamclosed(session)
-	(session.log or log)("debug", "</stream:stream>");
-	if session.sends2s then
-		session.sends2s("</stream:stream>");
-	end
-	session.notopen = true;
+	(session.log or log)("debug", "Received </stream:stream>");
+	session:close();
 end
 
 function initiate_dialback(session)
@@ -435,7 +441,7 @@ function initiate_dialback(session)
 end
 
 function generate_dialback(id, to, from)
-	return sha256_hash(id..to..from..dialback_secret, true);
+	return sha256_hash(id..to..from..hosts[from].dialback_secret, true);
 end
 
 function verify_dialback(id, to, from, key)
@@ -498,9 +504,32 @@ function mark_connected(session)
 	end
 end
 
-local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
+local resting_session = { -- Resting, not dead
+		destroyed = true;
+		type = "s2s_destroyed";
+		open_stream = function (session)
+			session.log("debug", "Attempt to open stream on resting session");
+		end;
+		close = function (session)
+			session.log("debug", "Attempt to close already-closed session");
+		end;
+	}; resting_session.__index = resting_session;
+
+function retire_session(session)
+	local log = session.log or log;
+	for k in pairs(session) do
+		if k ~= "trace" and k ~= "log" and k ~= "id" then
+			session[k] = nil;
+		end
+	end
+
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	return setmetatable(session, resting_session);
+end
 
 function destroy_session(session, reason)
+	if session.destroyed then return; end
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
@@ -510,12 +539,7 @@ function destroy_session(session, reason)
 		incoming_s2s[session] = nil;
 	end
 	
-	for k in pairs(session) do
-		if k ~= "trace" then
-			session[k] = nil;
-		end
-	end
-	session.data = null_data_handler;
+	retire_session(session); -- Clean session until it is GC'd
 end
 
 return _M;

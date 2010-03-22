@@ -9,19 +9,18 @@
 local ssl = ssl
 
 local hosts = hosts;
+local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
 
+local uuid_gen = require "util.uuid".generate;
+
 if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
-
--- These are the defaults if not overridden in the config
-local default_ssl_ctx = { mode = "client", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
-local default_ssl_ctx_in = { mode = "server", protocol = "sslv23", capath = "/etc/ssl/certs", verify = "none", options = "no_sslv2"; };
 
 local log = require "util.logger".init("hostmanager");
 
@@ -36,7 +35,7 @@ local function load_enabled_hosts(config)
 	local activated_any_host;
 	
 	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and (host_config.core.enabled == nil or host_config.core.enabled) and not host_config.core.component_module then
+		if host ~= "*" and host_config.core.enabled ~= false and not host_config.core.component_module then
 			activated_any_host = true;
 			activate(host, host_config);
 		end
@@ -53,11 +52,12 @@ end
 eventmanager.add_event_hook("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", connected = true, sessions = {}, 
-	               host = host, s2sout = {}, events = events_new(), 
-	               disallow_s2s = configmanager.get(host, "core", "disallow_s2s") 
-	                 or (configmanager.get(host, "core", "anonymous_login") 
-	                     and (configmanager.get(host, "core", "disallow_s2s") ~= false))
+	hosts[host] = {type = "local", connected = true, sessions = {},
+			host = host, s2sout = {}, events = events_new(),
+			disallow_s2s = configmanager.get(host, "core", "disallow_s2s")
+				or (configmanager.get(host, "core", "anonymous_login")
+				and (configmanager.get(host, "core", "disallow_s2s") ~= false));
+			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
 	              };
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") then
@@ -65,14 +65,9 @@ function activate(host, host_config)
 		end
 	end
 	
-	if ssl then
-		local ssl_config = host_config.core.ssl or configmanager.get("*", "core", "ssl");
-		if ssl_config then
-        		hosts[host].ssl_ctx = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx }));
-        		hosts[host].ssl_ctx_in = ssl.newcontext(setmetatable(ssl_config, { __index = default_ssl_ctx_in }));
-        	end
-        end
-
+	hosts[host].ssl_ctx = certmanager.create_context(host, "client", host_config); -- for outgoing connections
+	hosts[host].ssl_ctx_in = certmanager.create_context(host, "server", host_config); -- for incoming connections
+	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	eventmanager.fire_event("host-activated", host, host_config);
 end
