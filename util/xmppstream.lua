@@ -7,10 +7,9 @@
 --
 
 
+local lxp = require "lxp";
+local st = require "util.stanza";
 
-require "util.stanza"
-
-local st = stanza;
 local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
@@ -21,6 +20,8 @@ local error = error;
 
 module "xmppstream"
 
+local new_parser = lxp.new;
+
 local ns_prefixes = {
 	["http://www.w3.org/XML/1998/namespace"] = "xml";
 };
@@ -30,7 +31,7 @@ local xmlns_streams = "http://etherx.jabber.org/streams";
 local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
-function new(session, stream_callbacks)
+function new_sax_handlers(session, stream_callbacks)
 	local chardata = {};
 	local xml_handlers = {};
 	local log = session.log or default_log;
@@ -140,6 +141,10 @@ function new(session, stream_callbacks)
 		end
 	end
 	return xml_handlers;
+end
+
+function new(session, stream_callbacks)
+	return new_parser(new_sax_handlers(session, stream_callbacks), ns_separator);
 end
 
 return _M;
