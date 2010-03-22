@@ -36,12 +36,14 @@ function core_process_stanza(origin, stanza)
 		end
 	end
 
-	if origin.type == "c2s" then
+	if origin.type == "c2s" and stanza.attr.xmlns == "jabber:client" then
 		if not origin.full_jid
 			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
 			-- authenticated client isn't bound and current stanza is not a bind request
-			origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
+				origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			end
 			return;
 		end
 
