@@ -36,9 +36,10 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 				if stanza.attr.type == "get" then
 					local roster = st.reply(stanza);
 					
-					local ver = stanza.tags[1].attr.ver
+					local client_ver = tonumber(stanza.tags[1].attr.ver);
+					local server_ver = tonumber(session.roster[false].version or 1);
 					
-					if (not ver) or tonumber(ver) ~= (session.roster[false].version or 1) then
+					if not (client_ver and server_ver) or client_ver ~= server_ver then
 						roster:query("jabber:iq:roster");
 						-- Client does not support versioning, or has stale roster
 						for jid in pairs(session.roster) do
@@ -55,7 +56,7 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 								roster:up(); -- move out from item
 							end
 						end
-						roster.tags[1].attr.ver = tostring(session.roster[false].version or "1");
+						roster.tags[1].attr.ver = server_ver;
 					end
 					session.send(roster);
 					session.interested = true; -- resource is interested in roster updates
