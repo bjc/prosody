@@ -114,8 +114,14 @@ function save_roster(username, host, roster)
 		--end
 	end
 	if roster then
-		if not roster[false] then roster[false] = {}; end
-		roster[false].version = (roster[false].version or 0) + 1;
+		local metadata = roster[false];
+		if not metadata then
+			metadata = {};
+			roster[false] = metadata;
+		end
+		if metadata.version ~= true then
+			metadata.version = (metadata.version or 0) + 1;
+		end
 		return datamanager.store(username, host, "roster", roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
