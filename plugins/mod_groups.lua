@@ -98,7 +98,7 @@ function module.load()
 			groups[curr_group] = groups[curr_group] or {};
 		else
 			-- Add JID
-			local jid = jid_prep(line);
+			local jid = jid_prep(line:match("%S+"));
 			if jid then
 				module:log("debug", "New member of %s: %s", tostring(curr_group), tostring(jid));
 				groups[curr_group][jid] = true;
