@@ -77,7 +77,7 @@ function module.load()
 	datamanager.add_callback(remove_virtual_contacts);
 	
 	groups = { default = {} };
-	members = { [false] = {} };
+	members = { };
 	local curr_group = "default";
 	for line in io.lines(groups_file) do
 		if line:match("^%s*%[.-%]%s*$") then
