@@ -1,6 +1,6 @@
-/* Prosody IM v0.4
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+/* Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- Copyright (C) 2009 Tobias Markmann
 --
 -- This project is MIT/X11 licensed. Please see the
