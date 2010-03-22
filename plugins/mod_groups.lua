@@ -7,8 +7,8 @@
 --
 
 
-local groups = { default = {} };
-local members = { [false] = {} };
+local groups;
+local members;
 
 local groups_file;
 
@@ -20,7 +20,7 @@ local module_host = module:get_host();
 function inject_roster_contacts(username, host, roster)
 	module:log("warn", "Injecting group members to roster");
 	local bare_jid = username.."@"..host;
-	if not members[bare_jid] then return; end -- Not a member of any groups
+	if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
 	
 	local function import_jids_to_roster(group_name)
 		for jid in pairs(groups[group_name]) do
@@ -39,13 +39,19 @@ function inject_roster_contacts(username, host, roster)
 	end
 
 	-- Find groups this JID is a member of
-	for _, group_name in ipairs(members[bare_jid]) do
-		import_jids_to_roster(group_name);
+	if members[bare_jid] then
+		for _, group_name in ipairs(members[bare_jid]) do
+			module:log("debug", "Importing group %s", group_name);
+			import_jids_to_roster(group_name);
+		end
 	end
 	
 	-- Import public groups
-	for _, group_name in ipairs(members[false]) do
-		import_jids_to_roster(group_name);
+	if members[false] then
+		for _, group_name in ipairs(members[false]) do
+			module:log("debug", "Importing group %s", group_name);
+			import_jids_to_roster(group_name);
+		end
 	end
 end
 
@@ -78,6 +84,9 @@ function module.load()
 			curr_group = line:match("^%s*%[(.-)%]%s*$");
 			if curr_group:match("^%+") then
 				curr_group = curr_group:gsub("^%+", "");
+				if not members[false] then
+					members[false] = {};
+				end
 				members[false][#members[false]+1] = curr_group; -- Is a public group
 			end
 			module:log("debug", "New group: %s", tostring(curr_group));
