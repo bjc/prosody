@@ -53,6 +53,10 @@ function inject_roster_contacts(username, host, roster)
 			import_jids_to_roster(group_name);
 		end
 	end
+	
+	if roster[false] then
+		roster[false].version = true;
+	end
 end
 
 function remove_virtual_contacts(username, host, datastore, data)
@@ -63,6 +67,7 @@ function remove_virtual_contacts(username, host, datastore, data)
 				new_roster[jid] = contact;
 			end
 		end
+		new_roster[false].version = nil; -- Version is void
 		return username, host, datastore, new_roster;
 	end
 
