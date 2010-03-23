@@ -59,8 +59,8 @@ Host "*"
         -- Not essential, but recommended
         "private";       -- Private XML storage (for room bookmarks, etc.)
         "vcard";         -- Allow users to set vCards
-        "privacy";       -- Support privacy lists
         "tls";           -- Support for secure TLS on c2s/s2s connections
+        --"privacy";     -- Support privacy lists
         --"compression"; -- Stream compression for client-to-server streams
 
         -- Nice to have
