@@ -46,13 +46,15 @@ if sasl_backend == "cyrus" then
 			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
 		end
 	else
-		sasl_backend = "builtin";
-		module:log("warn", "Failed to load Cyrus SASL, falling back to builtin auth mechanisms");
-		module:log("debug", "Failed to load Cyrus because: %s", cyrus);
+		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
+		error("Failed to load Cyrus SASL");
 	end
 end
 if not new_sasl then
-	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend); end;
+	if sasl_backend ~= "builtin" then
+		module:log("error", "Unknown SASL backend: %s", sasl_backend);
+		error("Unknown SASL backend");
+	end
 	new_sasl = require "util.sasl".new;
 end
 
