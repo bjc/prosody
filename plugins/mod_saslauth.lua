@@ -35,7 +35,9 @@ local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl;
-if sasl_backend == "cyrus" then
+if sasl_backend == "builtin" then
+	new_sasl = require "util.sasl".new;
+elseif sasl_backend == "cyrus" then
 	prosody.unlock_globals(); --FIXME: Figure out why this is needed and
 	                          -- why cyrussasl isn't caught by the sandbox
 	local ok, cyrus = pcall(require, "util.sasl_cyrus");
@@ -49,13 +51,9 @@ if sasl_backend == "cyrus" then
 		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
 		error("Failed to load Cyrus SASL");
 	end
-end
-if not new_sasl then
-	if sasl_backend ~= "builtin" then
-		module:log("error", "Unknown SASL backend: %s", sasl_backend);
-		error("Unknown SASL backend");
-	end
-	new_sasl = require "util.sasl".new;
+else
+	module:log("error", "Unknown SASL backend: %s", sasl_backend);
+	error("Unknown SASL backend");
 end
 
 local default_authentication_profile = {
