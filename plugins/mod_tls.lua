@@ -16,10 +16,13 @@ local secure_s2s_only = module:get_option("s2s_require_encryption");
 
 local host = hosts[module.host];
 
+local starttls_attr = { xmlns = xmlns_starttls };
+
+--- Client-to-server TLS handling
 module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 		function (session, stanza)
 			if session.conn.starttls and host.ssl_ctx_in then
-				session.send(st.stanza("proceed", { xmlns = xmlns_starttls }));
+				session.send(st.stanza("proceed", starttls_attr));
 				session:reset_stream();
 				if session.host and hosts[session.host].ssl_ctx_in then
 					session.conn.set_sslctx(hosts[session.host].ssl_ctx_in);
@@ -29,31 +32,11 @@ module:add_handler("c2s_unauthed", "starttls", xmlns_starttls,
 				session.secure = false;
 			else
 				session.log("warn", "Attempt to start TLS, but TLS is not available on this connection");
-				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
-				session:close();
-			end
-		end);
-		
-module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
-		function (session, stanza)
-			if session.conn.starttls and host.ssl_ctx_in then
-				session.sends2s(st.stanza("proceed", { xmlns = xmlns_starttls }));
-				session:reset_stream();
-				if session.to_host and hosts[session.to_host].ssl_ctx_in then
-					session.conn.set_sslctx(hosts[session.to_host].ssl_ctx_in);
-				end
-				session.conn.starttls();
-				session.log("info", "TLS negotiation started for incoming s2s...");
-				session.secure = false;
-			else
-				session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
-				(session.sends2s or session.send)(st.stanza("failure", { xmlns = xmlns_starttls }));
+				(session.sends2s or session.send)(st.stanza("failure", starttls_attr));
 				session:close();
 			end
 		end);
 
-
-local starttls_attr = { xmlns = xmlns_starttls };
 module:add_event_hook("stream-features", 
 		function (session, features)
 			if session.conn.starttls then
@@ -65,6 +48,32 @@ module:add_event_hook("stream-features",
 				end
 			end
 		end);
+---
+
+-- Stop here if the user doesn't want to allow s2s encryption
+if module:get_option("s2s_allow_encryption") == false then
+	return;
+end
+
+--- Server-to-server TLS handling
+module:add_handler("s2sin_unauthed", "starttls", xmlns_starttls,
+		function (session, stanza)
+			if session.conn.starttls and host.ssl_ctx_in then
+				session.sends2s(st.stanza("proceed", starttls_attr));
+				session:reset_stream();
+				if session.to_host and hosts[session.to_host].ssl_ctx_in then
+					session.conn.set_sslctx(hosts[session.to_host].ssl_ctx_in);
+				end
+				session.conn.starttls();
+				session.log("info", "TLS negotiation started for incoming s2s...");
+				session.secure = false;
+			else
+				session.log("warn", "Attempt to start TLS, but TLS is not available on this s2s connection");
+				(session.sends2s or session.send)(st.stanza("failure", starttls_attr));
+				session:close();
+			end
+		end);
+
 
 module:hook("s2s-stream-features", 
 		function (data)
