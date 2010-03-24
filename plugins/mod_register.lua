@@ -12,6 +12,7 @@ local st = require "util.stanza";
 local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
+local usermanager_set_password = require "core.usermanager".set_password;
 local datamanager_store = require "util.datamanager".store;
 local os_time = os.time;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
@@ -34,7 +35,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				local username, host = session.username, session.host;
 				--session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 				--return;
-				usermanager_create_user(username, nil, host); -- Disable account
+				usermanager_set_password(username, host, nil); -- Disable account
 				-- FIXME the disabling currently allows a different user to recreate the account
 				-- we should add an in-memory account block mode when we have threading
 				session.send(st.reply(stanza));
@@ -69,7 +70,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
 					if username == session.username then
-						if usermanager_create_user(username, password, session.host) then -- password change -- TODO is this the right way?
+						if usermanager_set_password(username, session.host, password) then
 							session.send(st.reply(stanza));
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
