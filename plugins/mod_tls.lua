@@ -10,6 +10,7 @@ local st = require "util.stanza";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local secure_s2s_only = module:get_option("s2s_require_encryption");
+local allow_s2s_tls = module:get_option("s2s_allow_encryption") ~= false;
 
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local starttls_attr = { xmlns = xmlns_starttls };
@@ -27,9 +28,9 @@ local host = hosts[module.host];
 local function can_do_tls(session)
 	if session.type == "c2s_unauthed" then
 		return session.conn.starttls and host.ssl_ctx_in;
-	elseif session.type == "s2sin_unauthed" then
+	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
 		return session.conn.starttls and host.ssl_ctx_in;
-	elseif session.direction == "outgoing" then
+	elseif session.direction == "outgoing" and allow_s2s_tls then
 		return session.conn.starttls and host.ssl_ctx;
 	end
 	return false;
