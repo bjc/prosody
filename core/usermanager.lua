@@ -14,11 +14,15 @@ local ipairs = ipairs;
 local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
+local hosts = hosts;
 
 module "usermanager"
 
+local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
+
 function validate_credentials(host, username, password, method)
 	log("debug", "User '%s' is being validated", username);
+	if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 	local credentials = datamanager.load(username, host, "accounts") or {};
 
 	if method == nil then method = "PLAIN"; end
@@ -48,14 +52,26 @@ function validate_credentials(host, username, password, method)
 end
 
 function get_password(username, host)
-  return (datamanager.load(username, host, "accounts") or {}).password
+	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
+	return (datamanager.load(username, host, "accounts") or {}).password
+end
+function set_password(username, host, password)
+	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
+	local account = datamanager.load(username, host, "accounts");
+	if account then
+		account.password = password;
+		return datamanager.store(username, host, "accounts", account);
+	end
+	return nil, "Account not available.";
 end
 
 function user_exists(username, host)
+	if is_cyrus(host) then return true; end
 	return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
 end
 
 function create_user(username, password, host)
+	if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 	return datamanager.store(username, host, "accounts", {password = password});
 end
 
