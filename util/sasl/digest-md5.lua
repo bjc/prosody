@@ -35,8 +35,6 @@ local function digest(self, message)
 	local function serialize(message)
 		local data = ""
 
-		if type(message) ~= "table" then error("serialize needs an argument of type table.") end
-
 		-- testing all possible values
 		if message["realm"] then data = data..[[realm="]]..message.realm..[[",]] end
 		if message["nonce"] then data = data..[[nonce="]]..message.nonce..[[",]] end

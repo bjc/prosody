@@ -55,6 +55,15 @@ function get_password(username, host)
 	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 	return (datamanager.load(username, host, "accounts") or {}).password
 end
+function set_password(username, host, password)
+	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
+	local account = datamanager.load(username, host, "accounts");
+	if account then
+		account.password = password;
+		return datamanager.store(username, host, "accounts", account);
+	end
+	return nil, "Account not available.";
+end
 
 function user_exists(username, host)
 	if is_cyrus(host) then return true; end
