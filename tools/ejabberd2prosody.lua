@@ -17,6 +17,8 @@ end
 
 require "erlparse";
 
+prosody = {};
+
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 package.loaded["util.logger"] = {init = function() return function() end; end}
