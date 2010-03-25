@@ -535,7 +535,7 @@ do
 					end
 					interface.eventwrite = nil
 					return -1
-				elseif byte then  -- want write again
+				elseif byte and (err == "timeout" or err == "wantwrite") then  -- want write again
 					--vdebug( "writebuffer is not empty:", err )
 					interface.writebuffer = string_sub( interface.writebuffer, byte + 1, interface.writebufferlen )  -- new buffer
 					interface.writebufferlen = interface.writebufferlen - byte
