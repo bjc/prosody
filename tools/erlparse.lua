@@ -6,7 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-
+local string_byte, string_char = string.byte, string.char;
+local t_concat, t_insert = table.concat, table.insert;
+local type, tonumber, tostring = type, tonumber, tostring;
 
 local file = nil;
 local last = nil;
@@ -27,21 +29,21 @@ local function peek()
 	return last;
 end
 
-local _A, _a, _Z, _z, _0, _9, __, _at, _space = string.byte("AaZz09@_ ", 1, 9);
+local _A, _a, _Z, _z, _0, _9, __, _at, _space, _minus = string_byte("AaZz09@_ -", 1, 10);
 local function isLowerAlpha(ch)
-	ch = string.byte(ch) or 0;
+	ch = string_byte(ch) or 0;
 	return (ch >= _a and ch <= _z);
 end
 local function isNumeric(ch)
-	ch = string.byte(ch) or 0;
-	return (ch >= _0 and ch <= _9);
+	ch = string_byte(ch) or 0;
+	return (ch >= _0 and ch <= _9) or ch == _minus;
 end
 local function isAtom(ch)
-	ch = string.byte(ch) or 0;
+	ch = string_byte(ch) or 0;
 	return (ch >= _A and ch <= _Z) or (ch >= _a and ch <= _z) or (ch >= _0 and ch <= _9) or ch == __ or ch == _at;
 end
 local function isSpace(ch)
-	ch = string.byte(ch) or "x";
+	ch = string_byte(ch) or "x";
 	return ch <= _space;
 end
 
@@ -49,66 +51,66 @@ local escapes = {["\\b"]="\b", ["\\d"]="\d", ["\\e"]="\e", ["\\f"]="\f", ["\\n"]
 local function readString()
 	read("\""); -- skip quote
 	local slash = nil;
-	local str = "";
+	local str = {};
 	while true do
 		local ch = read();
 		if slash then
 			slash = slash..ch;
 			if not escapes[slash] then error("Unknown escape sequence: "..slash); end
-			str = str..escapes[slash];
+			str[#str+1] = escapes[slash];
 			slash = nil;
 		elseif ch == "\"" then
 			break;
 		elseif ch == "\\" then
 			slash = ch;
 		else
-			str = str..ch;
+			str[#str+1] = ch;
 		end
 	end
-	return str;
+	return t_concat(str);
 end
 local function readAtom1()
-	local var = read();
+	local var = { read() };
 	while isAtom(peek()) do
-		var = var..read();
+		var[#var+1] = read();
 	end
-	return var;
+	return t_concat(var);
 end
 local function readAtom2()
-	local str = read("'");
+	local str = { read("'") };
 	local slash = nil;
 	while true do
 		local ch = read();
-		str = str..ch;
+		str[#str+1] = ch;
 		if ch == "'" and not slash then break; end
 	end
-	return str;
+	return t_concat(str);
 end
 local function readNumber()
-	local num = read();
+	local num = { read() };
 	while isNumeric(peek()) do
-		num = num..read();
+		num[#num+1] = read();
 	end
-	return tonumber(num);
+	return tonumber(t_concat(num));
 end
 local readItem = nil;
 local function readTuple()
 	local t = {};
-	local s = ""; -- string representation
+	local s = {}; -- string representation
 	read(); -- read {, or [, or <
 	while true do
 		local item = readItem();
 		if not item then break; end
-		if type(item) ~= type(0) or item > 255 then
+		if type(item) ~= "number" or item > 255 then
 			s = nil;
 		elseif s then
-			s = s..string.char(item);
+			s[#s+1] = string_char(item);
 		end
-		table.insert(t, item);
+		t_insert(t, item);
 	end
 	read(); -- read }, or ], or >
-	if s and s ~= "" then
-		return s
+	if s and #s > 0  then
+		return t_concat(s)
 	else
 		return t
 	end;
@@ -118,10 +120,10 @@ local function readBinary()
 	local t = readTuple();
 	read(">") -- read >
 	local ch = peek();
-	if type(t) == type("") then
+	if type(t) == "string" then
 		-- binary is a list of integers
 		return t;
-	elseif type(t) == type({}) then
+	elseif type(t) == "table" then
 		if t[1] then
 			-- binary contains string
 			return t[1];
