@@ -121,6 +121,12 @@ local function readTuple()
 end
 local function readBinary()
 	read("<"); -- read <
+	-- Discard PIDs
+	if isNumeric(peek()) then
+		while peek() ~= ">" do read(); end
+		read(">");
+		return {};
+	end
 	local t = readTuple();
 	read(">") -- read >
 	local ch = peek();
