@@ -32,6 +32,9 @@ end
 
 local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), debug.traceback()); end
 function stream_callbacks.handlestanza(a, b)
+	if b.attr.xmlns == "jabber:client" then --COMPAT: Prosody pre-0.6.2 may send jabber:client
+		b.attr.xmlns = nil;
+	end
 	xpcall(function () core_process_stanza(a, b) end, handleerr);
 end
 
