@@ -68,7 +68,7 @@ local function bounce_sendq(session, reason)
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
 			local xmlns = reply.attr.xmlns;
-			if not xmlns or xmlns == "jabber:client" or xmlns == "jabber:server" then
+			if not xmlns then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
@@ -91,7 +91,7 @@ function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and (data.name ~= "db:verify" or not host.dialback_key) and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
+		if host.type == "s2sout_unauthed" and (data.name ~= "db:verify" or not host.dialback_key) then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			
 			-- Queue stanza until we are able to send it

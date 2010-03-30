@@ -23,9 +23,6 @@ local bare_sessions = _G.prosody.bare_sessions;
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
-	-- Currently we guarantee every stanza to have an xmlns, should we keep this rule?
-	if not stanza.attr.xmlns then stanza.attr.xmlns = "jabber:client"; end
-	
 	-- TODO verify validity of stanza (as well as JID validity)
 	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
@@ -36,7 +33,7 @@ function core_process_stanza(origin, stanza)
 		end
 	end
 
-	if origin.type == "c2s" and stanza.attr.xmlns == "jabber:client" then
+	if origin.type == "c2s" and not stanza.attr.xmlns then
 		if not origin.full_jid
 			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
@@ -92,7 +89,7 @@ function core_process_stanza(origin, stanza)
 		return; -- FIXME what should we do here?
 	end]] -- FIXME
 
-	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == "jabber:client" then
+	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
@@ -105,14 +102,14 @@ function core_process_stanza(origin, stanza)
 		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
 		if h then
 			local event;
-			if stanza.attr.xmlns == "jabber:client" then
+			if xmlns == nil then
 				if stanza.name == "iq" and (stanza.attr.type == "set" or stanza.attr.type == "get") then
 					event = "stanza/iq/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name;
 				else
 					event = "stanza/"..stanza.name;
 				end
 			else
-				event = "stanza/"..stanza.attr.xmlns..":"..stanza.name;
+				event = "stanza/"..xmlns..":"..stanza.name;
 			end
 			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
