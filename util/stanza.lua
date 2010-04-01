@@ -38,6 +38,8 @@ if do_pretty_printing then
 	end
 end
 
+local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
+
 module "stanza"
 
 stanza_mt = { __type = "stanza" };
