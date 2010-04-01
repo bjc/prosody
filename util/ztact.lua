@@ -114,7 +114,7 @@ function tohex (s)    -- - - - - - - - - - - - - - - - - - - - - - - - -  tohex
 
 function tostring_r (d, indent, tab0)    -- - - - - - - - - - - - -  tostring_r
 
-  tab1 = tab0 or {}
+  local tab1 = tab0 or {}
   local rep = string.rep ('  ', indent or 0)
   if type (d) == 'table' then
     for k,v in pairs (d) do
@@ -210,7 +210,7 @@ function enqueue (queue, element)    -- - - - - - - - - - - - - - - - - enqueue
 
 
 local function test_queue ()
-  t = {}
+  local t = {}
   enqueue (t, 1)
   enqueue (t, 2)
   enqueue (t, 3)
