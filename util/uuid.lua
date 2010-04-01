@@ -32,7 +32,7 @@ local function _seed(x)
 	buffer = new_random(buffer..x);
 end
 local function get_nibbles(n)
-	if #buffer < n then seed(uniq_time()); end
+	if #buffer < n then _seed(uniq_time()); end
 	local r = buffer:sub(0, n);
 	buffer = buffer:sub(n+1);
 	return r;
