@@ -38,6 +38,8 @@ if do_pretty_printing then
 	end
 end
 
+local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
+
 module "stanza"
 
 stanza_mt = { __type = "stanza" };
@@ -223,14 +225,14 @@ function deserialize(stanza)
 		for i=1,#attr do attr[i] = nil; end
 		local attrx = {};
 		for att in pairs(attr) do
-			if s_find(att, "|", 1, true) and not s_find(k, "\1", 1, true) then
-				local ns,na = s_match(k, "^([^|]+)|(.+)$");
+			if s_find(att, "|", 1, true) and not s_find(att, "\1", 1, true) then
+				local ns,na = s_match(att, "^([^|]+)|(.+)$");
 				attrx[ns.."\1"..na] = attr[att];
 				attr[att] = nil;
 			end
 		end
 		for a,v in pairs(attrx) do
-			attr[x] = v;
+			attr[a] = v;
 		end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do
