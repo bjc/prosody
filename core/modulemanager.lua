@@ -13,7 +13,6 @@ local log = logger.init("modulemanager");
 local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
-local register_actions = require "core.actions".register;
 local st = require "util.stanza";
 local pluginloader = require "util.pluginloader";
 
@@ -28,7 +27,9 @@ local type = type;
 local next = next;
 local rawget = rawget;
 local error = error;
-local tostring = tostring;
+local tostring, tonumber = tostring, tonumber;
+
+local array, set = require "util.array", require "util.set";
 
 local autoload_modules = {"presence", "message", "iq"};
 
@@ -126,6 +127,7 @@ function load(host, module_name, config)
 	local api_instance = setmetatable({ name = module_name, host = host, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
+	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
 	if not hosts[host] then
@@ -156,6 +158,7 @@ function load(host, module_name, config)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	if success then
+		(hosts[api_instance.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
 		return true;
 	else -- load failed, unloading
 		unload(api_instance.host, module_name);
@@ -172,7 +175,7 @@ function is_loaded(host, name)
 end
 
 function unload(host, name, ...)
-	local mod = get_module(host, name); 
+	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 	
 	if module_has_method(mod, "unload") then
@@ -207,6 +210,7 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
+	(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
@@ -287,7 +291,7 @@ function module_has_method(module, method)
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then	
+	if module_has_method(module, method) then
 		local f = module.module[method];
 		return pcall(f, ...);
 	else
@@ -296,7 +300,7 @@ function call_module_method(module, method, ...)
 end
 
 ----- API functions exposed to modules -----------
--- Must all be in api.* 
+-- Must all be in api.*
 
 -- Returns the name of the current module
 function api:get_name()
@@ -394,7 +398,7 @@ function api:require(lib)
 		f, n = pluginloader.load_code(lib, lib..".lib.lua");
 	end
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
-	setfenv(f, setmetatable({ module = self }, { __index = _G }));
+	setfenv(f, self.environment);
 	return f();
 end
 
@@ -407,6 +411,85 @@ function api:get_option(name, default_value)
 		end
 	end
 	return value;
+end
+
+function api:get_option_string(name, default_value)
+	local value = self:get_option(name, default_value);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	if value == nil then
+		return nil;
+	end
+	return tostring(value);
+end
+
+function api:get_option_number(name, ...)
+	local value = self:get_option(name, ...);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	local ret = tonumber(value);
+	if value ~= nil and ret == nil then
+		self:log("error", "Config option '%s' not understood, expecting a number", name);
+	end
+	return ret;
+end
+
+function api:get_option_boolean(name, ...)
+	local value = self:get_option(name, ...);
+	if type(value) == "table" then
+		if #value > 1 then
+			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
+		end
+		value = value[1];
+	end
+	if value == nil then
+		return nil;
+	end
+	local ret = value == true or value == "true" or value == 1 or nil;
+	if ret == nil then
+		ret = (value == false or value == "false" or value == 0);
+		if ret then
+			ret = false;
+		else
+			ret = nil;
+		end
+	end
+	if ret == nil then
+		self:log("error", "Config option '%s' not understood, expecting true/false", name);
+	end
+	return ret;
+end
+
+function api:get_option_array(name, ...)
+	local value = self:get_option(name, ...);
+
+	if value == nil then
+		return nil;
+	end
+	
+	if type(value) ~= "table" then
+		return array{ value }; -- Assume any non-list is a single-item list
+	end
+	
+	return array():append(value); -- Clone
+end
+
+function api:get_option_set(name, ...)
+	local value = self:get_option_array(name, ...);
+	
+	if value == nil then
+		return nil;
+	end
+	
+	return set.new(value);
 end
 
 local t_remove = _G.table.remove;
@@ -448,20 +531,5 @@ function api:get_host_items(key)
 	end
 	return result;
 end
-
---------------------------------------------------------------------
-
-local actions = {};
-
-function actions.load(params)
-	--return true, "Module loaded ("..params.module.." on "..params.host..")";
-	return load(params.host, params.module);
-end
-
-function actions.unload(params)
-	return unload(params.host, params.module);
-end
-
-register_actions("/modules", actions);
 
 return _M;
