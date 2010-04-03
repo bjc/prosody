@@ -23,7 +23,7 @@ local logger = require "util.logger";
 local log = logger.init("mod_bosh");
 
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
-local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind\1body", default_ns = xmlns_bosh };
+local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind\1body", default_ns = "jabber:client" };
 
 local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
 local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
@@ -252,7 +252,7 @@ function stream_callbacks.handlestanza(request, stanza)
 	local session = sessions[request.sid];
 	if session then
 		if stanza.attr.xmlns == xmlns_bosh then
-			stanza.attr.xmlns = "jabber:client";
+			stanza.attr.xmlns = nil;
 		end
 		session.ip = request.handler.ip();
 		core_process_stanza(session, stanza);
