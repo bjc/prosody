@@ -661,7 +661,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
 	end
-	if not type( port ) == "number" or not ( port >= 0 and port <= 65535 ) then
+	if type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
 		err = "invalid port"
 	elseif _server[ port ] then
 		err = "listeners on port '" .. port .. "' already exist"
