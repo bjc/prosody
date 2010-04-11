@@ -611,7 +611,16 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
-
+	if listeners.onconnect then
+		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
+		handler.sendbuffer = function ()
+			listeners.onconnect(handler);
+			handler.sendbuffer = _sendbuffer;
+			if bufferqueuelen > 0 then
+				return _senddbuffer();
+			end
+		end
+	end
 	return handler, socket
 end
 
