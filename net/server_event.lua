@@ -160,8 +160,8 @@ do
 			local callback = function( )
 				self:_lock( false,  false, false )
 				--vdebug( "start listening on client socket with id:", self.id )
-				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT )  -- register callback
-				self:onincoming()
+				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
+				(self.onconnect or self.onincoming)(self)
 				self.eventsession = nil
 				return -1
 			end
