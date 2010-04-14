@@ -673,7 +673,7 @@ end
 function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
-	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
+	if self:get_role(self._jid_nick[actor]) ~= "moderator" then return nil, "cancel", "not-allowed"; end
 	local occupant = self._occupants[occupant_jid];
 	if not occupant then return nil, "modify", "not-acceptable"; end
 	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
