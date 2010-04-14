@@ -68,7 +68,7 @@ function load(filename, format)
 
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
-		if f then
+		if f then 
 			local ok, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
 			if ok then
@@ -95,15 +95,6 @@ function addparser(format, parser)
 	end
 end
 
--- _M needed to avoid name clash with local 'parsers'
-function _M.parsers()
-	local p = {};
-	for format in pairs(parsers) do
-		table.insert(p, format);
-	end
-	return p;
-end
-
 -- Built-in Lua parser
 do
 	local loadstring, pcall, setmetatable = _G.loadstring, _G.pcall, _G.setmetatable;
@@ -112,7 +103,7 @@ do
 	function parsers.lua.load(data, filename)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({ Host = true; host = true; Component = true, component = true,
+		env = setmetatable({ Host = true, host = true, VirtualHost = true, Component = true, component = true,
 							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
 												return rawget(_G, k) or
 														function (settings_table)
@@ -124,7 +115,7 @@ do
 										end});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
-		function env.Host(name)
+		function env.VirtualHost(name)
 			if rawget(config, name) and rawget(config[name].core, "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config[name].core.component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -133,7 +124,7 @@ do
 			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
 		end
-		env.host = env.Host;
+		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 		
 		function env.Component(name)
 			if rawget(config, name) and rawget(config[name].core, "defined") and not rawget(config[name].core, "component_module") then
