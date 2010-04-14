@@ -30,11 +30,10 @@ local host_mt = { __index = global_config };
 -- When key not found in section, check key in global's section
 function section_mt(section_name)
 	return { __index = 	function (t, k)
-					local section = rawget(global_config, section_name);
-					if not section then return nil; end
-					return section[k];
-				end
-	};
+									local section = rawget(global_config, section_name);
+									if not section then return nil; end
+									return section[k];
+							end };
 end
 
 function getconfig()
@@ -113,22 +112,19 @@ do
 	function parsers.lua.load(data, filename)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({
-			Host = true; host = true; Component = true, component = true,
-			Include = true, include = true, RunScript = dofile }, {
-				__index = function (t, k)
-					return rawget(_G, k) or
-						function (settings_table)
-							config[__currenthost or "*"][k] = settings_table;
-						end;
-				end,
-				__newindex = function (t, k, v)
-					set(env.__currenthost or "*", "core", k, v);
-				end
-		});
+		env = setmetatable({ Host = true, host = true, VirtualHost = true, Component = true, component = true,
+							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
+												return rawget(_G, k) or
+														function (settings_table)
+															config[__currenthost or "*"][k] = settings_table;
+														end;
+										end,
+								__newindex = function (t, k, v)
+											set(env.__currenthost or "*", "core", k, v);
+										end});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
-		function env.Host(name)
+		function env.VirtualHost(name)
 			if rawget(config, name) and rawget(config[name].core, "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config[name].core.component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -137,7 +133,7 @@ do
 			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
 		end
-		env.host = env.Host;
+		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 		
 		function env.Component(name)
 			if rawget(config, name) and rawget(config[name].core, "defined") and not rawget(config[name].core, "component_module") then
