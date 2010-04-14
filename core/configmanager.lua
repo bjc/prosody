@@ -103,7 +103,7 @@ do
 	function parsers.lua.load(data, filename)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({ Host = true; host = true; Component = true, component = true,
+		env = setmetatable({ Host = true, host = true, VirtualHost = true, Component = true, component = true,
 							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
 												return rawget(_G, k) or
 														function (settings_table)
@@ -115,7 +115,7 @@ do
 										end});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
-		function env.Host(name)
+		function env.VirtualHost(name)
 			if rawget(config, name) and rawget(config[name].core, "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config[name].core.component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -124,7 +124,7 @@ do
 			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
 		end
-		env.host = env.Host;
+		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 		
 		function env.Component(name)
 			if rawget(config, name) and rawget(config[name].core, "defined") and not rawget(config[name].core, "component_module") then
