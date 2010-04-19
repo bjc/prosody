@@ -319,6 +319,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
 								:tag("status", {code='110'}));
 						end
+						if self._data.whois == 'anyone' then -- non-anonymous?
+							self:_route_stanza(st.stanza("message", {from=to, to=from, type='groupchat'})
+								:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+								:tag("status", {code='100'}));
+						end
 						self:send_history(from);
 					else -- banned
 						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
@@ -798,9 +803,6 @@ function room_mt:_route_stanza(stanza)
 					item.attr.jid = from_occupant.jid;
 				end
 			end
-		end
-		if self._data.whois == 'anyone' then
-		    muc_child:tag('status', { code = '100' });
 		end
 	end
 	self:route_stanza(stanza);
