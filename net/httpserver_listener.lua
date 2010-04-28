@@ -16,7 +16,7 @@ local requests = {}; -- Open requests
 
 local httpserver = { default_port = 80, default_mode = "*a" };
 
-function httpserver.onincoming(conn, data)
+function httpserver.listener(conn, data)
 	local request = requests[conn];
 
 	if not request then
@@ -24,17 +24,17 @@ function httpserver.onincoming(conn, data)
 		requests[conn] = request;
 		
 		-- If using HTTPS, request is secure
-		if conn:ssl() then
+		if conn.ssl() then
 			request.secure = true;
 		end
 	end
 
-	if data then
+	if data and data ~= "" then
 		request_reader(request, data);
 	end
 end
 
-function httpserver.ondisconnect(conn, err)
+function httpserver.disconnect(conn, err)
 	local request = requests[conn];
 	if request and not request.destroyed then
 		request.conn = nil;
