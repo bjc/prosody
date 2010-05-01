@@ -42,7 +42,7 @@ local function load_enabled_hosts(config)
 	end
 	
 	if not activated_any_host then
-		log("error", "No hosts defined in the config file. This may cause unexpected behaviour as no modules will be loaded.");
+		log("error", "No active VirtualHost entries in the config file. This may cause unexpected behaviour as no modules will be loaded.");
 	end
 	
 	eventmanager.fire_event("hosts-activated", defined_hosts);
@@ -60,8 +60,8 @@ function activate(host, host_config)
 			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
 	              };
 	for option_name in pairs(host_config.core) do
-		if option_name:match("_ports$") then
-			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in global Host \"*\" instead", host, option_name);
+		if option_name:match("_ports$") or option_name:match("_interface$") then
+			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
 		end
 	end
 	
