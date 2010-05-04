@@ -120,6 +120,29 @@ function sandbox_require()
 	end
 end
 
+function set_function_metatable()
+	local mt = {};
+	function mt.__index(f, upvalue)
+		local i, name, value = 0;
+		repeat
+			i = i + 1;
+			name, value = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		return value;
+	end
+	function mt.__newindex(f, upvalue, value)
+		local i, name = 0;
+		repeat
+			i = i + 1;
+			name = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		if name then
+			debug.setupvalue(f, i, value);
+		end
+	end
+	debug.setmetatable(function() end, mt);
+end
+
 function init_global_state()
 	bare_sessions = {};
 	full_sessions = {};
@@ -415,6 +438,7 @@ read_config();
 init_logging();
 check_dependencies();
 sandbox_require();
+set_function_metatable();
 load_libraries();
 init_global_state();
 read_version();
