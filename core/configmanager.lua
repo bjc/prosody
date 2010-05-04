@@ -30,10 +30,11 @@ local host_mt = { __index = global_config };
 -- When key not found in section, check key in global's section
 function section_mt(section_name)
 	return { __index = 	function (t, k)
-									local section = rawget(global_config, section_name);
-									if not section then return nil; end
-									return section[k];
-							end };
+					local section = rawget(global_config, section_name);
+					if not section then return nil; end
+					return section[k];
+				end
+	};
 end
 
 function getconfig()
