@@ -29,6 +29,10 @@ if CFG_DATADIR then
 	end
 end
 
+-- Global 'prosody' object
+prosody = { events = require "util.events".new(); };
+local prosody = prosody;
+
 -- Load the config-parsing module
 config = require "core.configmanager"
 
@@ -148,10 +152,6 @@ function init_global_state()
 	full_sessions = {};
 	hosts = {};
 
-	-- Global 'prosody' object
-	prosody = {};
-	local prosody = prosody;
-	
 	prosody.bare_sessions = bare_sessions;
 	prosody.full_sessions = full_sessions;
 	prosody.hosts = hosts;
@@ -161,8 +161,6 @@ function init_global_state()
 	
 	prosody.arg = _G.arg;
 
-	prosody.events = require "util.events".new();
-	
 	prosody.platform = "unknown";
 	if os.getenv("WINDIR") then
 		prosody.platform = "windows";
@@ -193,7 +191,6 @@ function init_global_state()
 	-- Function to reopen logfiles
 	function prosody.reopen_logfiles()
 		log("info", "Re-opening log files");
-		eventmanager.fire_event("reopen-log-files"); -- Handled by appropriate log sinks
 		prosody.events.fire_event("reopen-log-files");
 	end
 
@@ -286,7 +283,6 @@ function load_secondary_libraries()
 	require "util.import"
 	require "core.xmlhandlers"
 	require "core.rostermanager"
-	require "core.eventmanager"
 	require "core.hostmanager"
 	require "core.modulemanager"
 	require "core.usermanager"
@@ -330,7 +326,6 @@ end
 function prepare_to_start()
 	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
-	eventmanager.fire_event("server-starting");
 	prosody.events.fire_event("server-starting");
 
 	-- start listening on sockets
@@ -448,14 +443,12 @@ init_data_store();
 init_global_protection();
 prepare_to_start();
 
-eventmanager.fire_event("server-started");
 prosody.events.fire_event("server-started");
 
 loop();
 
 log("info", "Shutting down...");
 cleanup();
-eventmanager.fire_event("server-stopped");
 prosody.events.fire_event("server-stopped");
 log("info", "Shutdown complete");
 
