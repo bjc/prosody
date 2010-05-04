@@ -113,16 +113,19 @@ do
 	function parsers.lua.load(data, filename)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({ Host = true; host = true; Component = true, component = true,
-							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
-												return rawget(_G, k) or
-														function (settings_table)
-															config[__currenthost or "*"][k] = settings_table;
-														end;
-										end,
-								__newindex = function (t, k, v)
-											set(env.__currenthost or "*", "core", k, v);
-										end});
+		env = setmetatable({
+			Host = true; host = true; Component = true, component = true,
+			Include = true, include = true, RunScript = dofile }, {
+				__index = function (t, k)
+					return rawget(_G, k) or
+						function (settings_table)
+							config[__currenthost or "*"][k] = settings_table;
+						end;
+				end,
+				__newindex = function (t, k, v)
+					set(env.__currenthost or "*", "core", k, v);
+				end
+		});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.Host(name)
