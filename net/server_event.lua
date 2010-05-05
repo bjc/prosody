@@ -845,11 +845,32 @@ function hook_signal(signal_num, handler)
 	return signal_events[signal_num];
 end
 
+local function link(sender, receiver, buffersize)
+	sender:set_mode(buffersize);
+	local sender_locked;
+	
+	function receiver:ondrain()
+		if sender_locked then
+			sender:resume();
+			sender_locked = nil;
+		end
+	end
+	
+	function sender:onincoming(data)
+		receiver:write(data);
+		if receiver.writebufferlen >= buffersize then
+			sender_locked = true;
+			sender:pause();
+		end
+	end
+end
+
 return {
 
 	cfg = cfg,
 	base = base,
 	loop = loop,
+	link = link,
 	event = event,
 	event_base = base,
 	addevent = newevent,
