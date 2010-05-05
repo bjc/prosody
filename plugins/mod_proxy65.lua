@@ -241,6 +241,7 @@ function handle_to_domain(origin, stanza)
 				return true;
 			end
 		elseif stanza.name == "iq" and type == "set" then
+			module:log("debug", "Received activation request from %s", stanza.attr.from);
 			local reply, from, to, sid = set_activation(stanza);
 			if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
 				local sha = sha1(sid .. from .. to, true);
@@ -251,6 +252,15 @@ function handle_to_domain(origin, stanza)
 					transfers[sha].activated = true;
 					transfers[sha].target:lock_read(false);
 					transfers[sha].initiator:lock_read(false);
+				else
+					module:log("debug", "Both parties were not yet connected");
+					local message = "Neither party is connected to the proxy";
+					if transfers[sha].initiator then
+						message = "The recipient is not connected to the proxy";
+					elseif transfers[sha].target then
+						message = "The sender (you) is not connected to the proxy";
+					end
+					origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 				end
 			else
 				module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
