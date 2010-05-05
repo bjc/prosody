@@ -40,7 +40,7 @@ end);
 local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
 function new_default_provider(host)
-	local provider = {};
+	local provider = { name = "default" };
 	
 	function provider.test_password(username, password)
 		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
