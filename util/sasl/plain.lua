@@ -1,5 +1,5 @@
 -- sasl.lua v0.4
--- Copyright (C) 2008-2009 Tobias Markmann
+-- Copyright (C) 2008-2010 Tobias Markmann
 --
 --    All rights reserved.
 --
@@ -19,6 +19,26 @@ module "plain"
 
 -- ================================
 -- SASL PLAIN according to RFC 4616
+
+--[[
+Supported Authentication Backends
+
+plain:
+	function(username, realm)
+		return password, state;
+	end
+
+plain-test:
+	function(username, realm, password)
+		return true or false, state;
+	end
+	
+plain-hashed:
+	function(username, realm)
+		return hashed_password, hash_function, state;
+	end
+]]
+
 local function plain(self, message)
 	if not message then
 		return "failure", "malformed-request";
@@ -46,6 +66,10 @@ local function plain(self, message)
 		if correct_password == password then correct = true; else correct = false; end
 	elseif self.profile.plain_test then
 		correct, state = self.profile.plain_test(authentication, self.realm, password);
+	elseif self.profile.plain_hashed then
+		local hashed_password, hash_f;
+		hashed_password, hash_f, state = self.profile.plain_hashed(authentication, self.realm);
+		if hashed_password == hash_f(password) then correct = true; else correct = false; end
 	end
 
 	self.username = authentication
@@ -61,7 +85,7 @@ local function plain(self, message)
 end
 
 function init(registerMechanism)
-	registerMechanism("PLAIN", {"plain", "plain_test"}, plain);
+	registerMechanism("PLAIN", {"plain", "plain_test", "plain_hashed"}, plain);
 end
 
 return _M;
