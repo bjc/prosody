@@ -120,12 +120,10 @@ local error_messages = setmetatable({
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-local events = require "util.events".new();
-
 hosts = prosody.hosts;
 
 for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = { events = events };
+	hosts[hostname] = { events = require "util.events".new() };
 end
 	
 require "core.modulemanager"
