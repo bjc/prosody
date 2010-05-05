@@ -392,6 +392,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		maxreadlen = readlen or maxreadlen
 		return bufferlen, maxreadlen, maxsendlen
 	end
+	--TODO: Deprecate
 	handler.lock_read = function (self, switch)
 		if switch == true then
 			local tmp = _readlistlen
@@ -408,6 +409,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		end
 		return noread
+	end
+	handler.pause = function (self)
+		return self:lock_read(true);
+	end
+	handler.resume = function (self)
+		return self:lock_read(false);
 	end
 	handler.lock = function( self, switch )
 		handler.lock_read (switch)
@@ -508,9 +515,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						out_put( "server.lua: ssl handshake done" )
 						handler.readbuffer = _readbuffer	-- when handshake is done, replace the handshake function with regular functions
 						handler.sendbuffer = _sendbuffer
-						out_put ("server.lua: compression used: "..tostring(client:compression()))
-						out_put ("server.lua: finished: "..tostring(client:getfinished()):sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"))
-						out_put ("server.lua: peer finished: "..tostring(client:getpeerfinished()):sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"))
 						_ = status and status( handler, "ssl-handshake-complete" )
 						_readlistlen = addsocket(_readlist, client, _readlistlen)
 						return true

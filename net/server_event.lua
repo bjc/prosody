@@ -282,8 +282,21 @@ do
 			return nointerface, noreading, nowriting
 	end
 	
+	--TODO: Deprecate
 	function interface_mt:lock_read(switch)
-		return self:_lock(self.nointerface, switch, self.nowriting);
+		if switch then
+			return self:pause();
+		else
+			return self:resume();
+		end
+	end
+
+	function interface_mt:pause()
+		return self:_lock(self.nointerface, true, self.nowriting);
+	end
+
+	function interface_mt:resume()
+		return self:_lock(self.nointerface, false, self.nowriting);
 	end
 
 	function interface_mt:counter(c)
