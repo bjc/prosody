@@ -632,7 +632,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			listeners.onconnect(handler);
 			handler.sendbuffer = _sendbuffer;
 			if bufferqueuelen > 0 then
-				return _senddbuffer();
+				return _sendbuffer();
 			end
 		end
 	end
