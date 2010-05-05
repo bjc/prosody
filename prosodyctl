@@ -123,7 +123,7 @@ local error_messages = setmetatable({
 hosts = prosody.hosts;
 
 for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = { events = require "util.events".new() };
+	hosts[hostname] = { events = prosody.events };
 end
 	
 require "core.modulemanager"
