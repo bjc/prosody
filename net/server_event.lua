@@ -402,6 +402,13 @@ do
 			self.starttls = false; -- prevent starttls()
 		end
 	end
+
+	function interface_mt:set_mode(pattern)
+		if pattern then
+			self._pattern = pattern;
+		end
+		return self._pattern;
+	end
 	
 	function interface_mt:set_send(new_send)
 		-- No-op, we always use the underlying connection's send
@@ -599,7 +606,7 @@ do
 						interface.eventreadtimeout = nil
 					end
 				end
-				local buffer, err, part = interface.conn:receive( pattern )  -- receive buffer with "pattern"
+				local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
 				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
 				buffer = buffer or part or ""
 				local len = string_len( buffer )

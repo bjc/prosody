@@ -379,7 +379,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.socket = function( self )
 		return socket
 	end
-	handler.pattern = function( self, new )
+	handler.set_mode = function( self, new )
 		pattern = new or pattern
 		return pattern
 	end
