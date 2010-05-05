@@ -392,6 +392,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		maxreadlen = readlen or maxreadlen
 		return bufferlen, maxreadlen, maxsendlen
 	end
+	--TODO: Deprecate
 	handler.lock_read = function (self, switch)
 		if switch == true then
 			local tmp = _readlistlen
@@ -408,6 +409,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		end
 		return noread
+	end
+	handler.pause = function (self)
+		return self:lock_read(true);
+	end
+	handler.resume = function (self)
+		return self:lock_read(false);
 	end
 	handler.lock = function( self, switch )
 		handler.lock_read (switch)
