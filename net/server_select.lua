@@ -675,6 +675,28 @@ closesocket = function( socket )
 	--mem_free( )
 end
 
+local function link(sender, receiver, buffersize)
+	sender:set_mode(buffersize);
+	local sender_locked;
+	local _sendbuffer = receiver.sendbuffer;
+	function receiver.sendbuffer()
+		_sendbuffer();
+		if sender_locked and receiver.bufferlen() < buffersize then
+			sender:lock_read(false); -- Unlock now
+			sender_locked = nil;
+		end
+	end
+	
+	local _readbuffer = sender.readbuffer;
+	function sender.readbuffer()
+		_readbuffer();
+		if not sender_locked and receiver.bufferlen() >= buffersize then
+			sender_locked = true;
+			sender:lock_read(true);
+		end
+	end
+end
+
 ----------------------------------// PUBLIC //--
 
 addserver = function( addr, port, listeners, pattern, sslctx ) -- this function provides a way for other scripts to reg a server
@@ -898,6 +920,7 @@ return {
 	wrapclient = wrapclient,
 	
 	loop = loop,
+	link = link,
 	stats = stats,
 	closeall = closeall,
 	addtimer = addtimer,
