@@ -1,5 +1,5 @@
 -- sasl.lua v0.4
--- Copyright (C) 2008-2009 Tobias Markmann
+-- Copyright (C) 2008-2010 Tobias Markmann
 --
 --    All rights reserved.
 --
@@ -28,6 +28,21 @@ module "digest-md5"
 
 --=========================
 --SASL DIGEST-MD5 according to RFC 2831
+
+--[[
+Supported Authentication Backends
+
+digest-md5:
+	function(username, domain, realm, encoding) -- domain and realm are usually the same; for some broken
+												-- implementations it's not
+		return digesthash, state;
+	end
+
+digest-md5-test:
+	function(username, domain, realm, encoding, digesthash)
+		return true or false, state;
+	end
+]]
 
 local function digest(self, message)
 	--TODO complete support for authzid
