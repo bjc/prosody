@@ -252,6 +252,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local dispatch = listeners.onincoming
 	local status = listeners.onstatus
 	local disconnect = listeners.ondisconnect
+	local drain = listeners.ondrain
 
 	local bufferqueue = { } -- buffer array
 	local bufferqueuelen = 0	-- end of buffer array
@@ -284,6 +285,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		dispatch = listeners.onincoming
 		disconnect = listeners.ondisconnect
 		status = listeners.onstatus
+		drain = listeners.ondrain
 	end
 	handler.getstats = function( )
 		return readtraffic, sendtraffic
@@ -437,7 +439,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	local _readbuffer = function( ) -- this function reads data
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
-		if not err or (err == "wantread" or err == "timeout") or (part and string_len(part) > 0) then -- received something
+		if not err or (err == "wantread" or err == "timeout") then -- received something
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
@@ -479,6 +481,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist
 			_ = needtls and handler:starttls(nil, true)
 			_writetimes[ handler ] = nil
+			if drain then
+				drain(handler)
+			end
 			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
