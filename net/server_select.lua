@@ -252,6 +252,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local dispatch = listeners.onincoming
 	local status = listeners.onstatus
 	local disconnect = listeners.ondisconnect
+	local drain = listeners.ondrain
 
 	local bufferqueue = { } -- buffer array
 	local bufferqueuelen = 0	-- end of buffer array
@@ -284,6 +285,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		dispatch = listeners.onincoming
 		disconnect = listeners.ondisconnect
 		status = listeners.onstatus
+		drain = listeners.ondrain
 	end
 	handler.getstats = function( )
 		return readtraffic, sendtraffic
@@ -379,7 +381,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.socket = function( self )
 		return socket
 	end
-	handler.pattern = function( self, new )
+	handler.set_mode = function( self, new )
 		pattern = new or pattern
 		return pattern
 	end
@@ -392,6 +394,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		maxreadlen = readlen or maxreadlen
 		return bufferlen, maxreadlen, maxsendlen
 	end
+	--TODO: Deprecate
 	handler.lock_read = function (self, switch)
 		if switch == true then
 			local tmp = _readlistlen
@@ -408,6 +411,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		end
 		return noread
+	end
+	handler.pause = function (self)
+		return self:lock_read(true);
+	end
+	handler.resume = function (self)
+		return self:lock_read(false);
 	end
 	handler.lock = function( self, switch )
 		handler.lock_read (switch)
@@ -430,7 +439,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	local _readbuffer = function( ) -- this function reads data
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
-		if not err or (err == "wantread" or err == "timeout") or (part and string_len(part) > 0) then -- received something
+		if not err or (err == "wantread" or err == "timeout") then -- received something
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
@@ -472,6 +481,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist
 			_ = needtls and handler:starttls(nil, true)
 			_writetimes[ handler ] = nil
+			if drain then
+				drain(handler)
+			end
 			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
@@ -664,6 +676,28 @@ closesocket = function( socket )
 	_socketlist[ socket ] = nil
 	socket:close( )
 	--mem_free( )
+end
+
+local function link(sender, receiver, buffersize)
+	sender:set_mode(buffersize);
+	local sender_locked;
+	local _sendbuffer = receiver.sendbuffer;
+	function receiver.sendbuffer()
+		_sendbuffer();
+		if sender_locked and receiver.bufferlen() < buffersize then
+			sender:lock_read(false); -- Unlock now
+			sender_locked = nil;
+		end
+	end
+	
+	local _readbuffer = sender.readbuffer;
+	function sender.readbuffer()
+		_readbuffer();
+		if not sender_locked and receiver.bufferlen() >= buffersize then
+			sender_locked = true;
+			sender:lock_read(true);
+		end
+	end
 end
 
 ----------------------------------// PUBLIC //--
@@ -889,6 +923,7 @@ return {
 	wrapclient = wrapclient,
 	
 	loop = loop,
+	link = link,
 	stats = stats,
 	closeall = closeall,
 	addtimer = addtimer,
