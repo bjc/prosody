@@ -465,6 +465,8 @@ do
 	end
 	function interface_mt:ontimeout()
 	end
+	function interface_mt:ondrain()
+	end
 	function interface_mt:onstatus()
 		debug("server.lua: Dummy onstatus()")
 	end
@@ -545,6 +547,7 @@ do
 				if succ then  -- writing succesful
 					interface.writebuffer = ""
 					interface.writebufferlen = 0
+					interface:ondrain();
 					if interface.fatalerror then
 						debug "closing client after writing"
 						interface:_close()  -- close interface if needed
