@@ -29,6 +29,14 @@ if CFG_DATADIR then
 	end
 end
 
+-- Global 'prosody' object
+prosody = {
+	hosts = {},
+	events = require "util.events".new(),
+	platform = "posix"
+};
+local prosody = prosody;
+
 config = require "core.configmanager"
 
 do
@@ -62,8 +70,6 @@ require "core.loggingmanager"
 if not require "util.dependencies".check_dependencies() then
 	os.exit(1);
 end
-
-prosody = { hosts = {}, events = events, platform = "posix" };
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
