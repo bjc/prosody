@@ -236,6 +236,9 @@ function handle_to_domain(origin, stanza)
 			elseif xmlns == "http://jabber.org/protocol/bytestreams" then
 				origin.send(get_stream_host(origin, stanza));
 				return true;
+			else
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+				return true;
 			end
 		elseif stanza.name == "iq" and type == "set" then
 			local reply, from, to, sid = set_activation(stanza);
