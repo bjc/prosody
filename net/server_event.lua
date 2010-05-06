@@ -160,8 +160,8 @@ do
 			local callback = function( )
 				self:_lock( false,  false, false )
 				--vdebug( "start listening on client socket with id:", self.id )
-				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT )  -- register callback
-				self:onincoming()
+				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
+				self:onconnect()
 				self.eventsession = nil
 				return -1
 			end
@@ -282,8 +282,21 @@ do
 			return nointerface, noreading, nowriting
 	end
 	
+	--TODO: Deprecate
 	function interface_mt:lock_read(switch)
-		return self:_lock(self.nointerface, switch, self.nowriting);
+		if switch then
+			return self:pause();
+		else
+			return self:resume();
+		end
+	end
+
+	function interface_mt:pause()
+		return self:_lock(self.nointerface, true, self.nowriting);
+	end
+
+	function interface_mt:resume()
+		return self:_lock(self.nointerface, false, self.nowriting);
 	end
 
 	function interface_mt:counter(c)
@@ -389,6 +402,13 @@ do
 			self.starttls = false; -- prevent starttls()
 		end
 	end
+
+	function interface_mt:set_mode(pattern)
+		if pattern then
+			self._pattern = pattern;
+		end
+		return self._pattern;
+	end
 	
 	function interface_mt:set_send(new_send)
 		-- No-op, we always use the underlying connection's send
@@ -437,12 +457,15 @@ do
 	
 	-- Stub handlers
 	function interface_mt:onconnect()
+		return self:onincoming(nil);
 	end
 	function interface_mt:onincoming()
 	end
 	function interface_mt:ondisconnect()
 	end
 	function interface_mt:ontimeout()
+	end
+	function interface_mt:ondrain()
 	end
 	function interface_mt:onstatus()
 		debug("server.lua: Dummy onstatus()")
@@ -524,6 +547,7 @@ do
 				if succ then  -- writing succesful
 					interface.writebuffer = ""
 					interface.writebufferlen = 0
+					interface:ondrain();
 					if interface.fatalerror then
 						debug "closing client after writing"
 						interface:_close()  -- close interface if needed
@@ -585,7 +609,7 @@ do
 						interface.eventreadtimeout = nil
 					end
 				end
-				local buffer, err, part = interface.conn:receive( pattern )  -- receive buffer with "pattern"
+				local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
 				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
 				buffer = buffer or part or ""
 				local len = string_len( buffer )
@@ -821,11 +845,32 @@ function hook_signal(signal_num, handler)
 	return signal_events[signal_num];
 end
 
+local function link(sender, receiver, buffersize)
+	sender:set_mode(buffersize);
+	local sender_locked;
+	
+	function receiver:ondrain()
+		if sender_locked then
+			sender:resume();
+			sender_locked = nil;
+		end
+	end
+	
+	function sender:onincoming(data)
+		receiver:write(data);
+		if receiver.writebufferlen >= buffersize then
+			sender_locked = true;
+			sender:pause();
+		end
+	end
+end
+
 return {
 
 	cfg = cfg,
 	base = base,
 	loop = loop,
+	link = link,
 	event = event,
 	event_base = base,
 	addevent = newevent,

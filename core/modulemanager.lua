@@ -19,7 +19,7 @@ local pluginloader = require "util.pluginloader";
 local hosts = hosts;
 local prosody = prosody;
 
-local loadfile, pcall = loadfile, pcall;
+local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
@@ -28,6 +28,14 @@ local next = next;
 local rawget = rawget;
 local error = error;
 local tostring, tonumber = tostring, tonumber;
+
+local debug_traceback = debug.traceback;
+local unpack, select = unpack, select;
+pcall = function(f, ...)
+	local n = select("#", ...);
+	local params = {...};
+	return xpcall(function() f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
+end
 
 local array, set = require "util.array", require "util.set";
 

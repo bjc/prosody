@@ -20,6 +20,7 @@ local componentmanager = require "core.componentmanager";
 local config_get = require "core.configmanager".get;
 local connlisteners = require "net.connlisteners";
 local sha1 = require "util.hashes".sha1;
+local server = require "net.server";
 
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
 local sessions, transfers, component, replies_cache = {}, {}, nil, {};
@@ -28,6 +29,7 @@ local proxy_port = config_get(host, "core", "proxy65_port") or 5000;
 local proxy_interface = config_get(host, "core", "proxy65_interface") or "*";
 local proxy_address = config_get(host, "core", "proxy65_address") or (proxy_interface ~= "*" and proxy_interface) or host;
 local proxy_acl = config_get(host, "core", "proxy65_acl");
+local max_buffer_size = 4096;
 
 local connlistener = { default_port = proxy_port, default_interface = proxy_interface, default_mode = "*a" };
 
@@ -84,8 +86,8 @@ function connlistener.onincoming(conn, data)
 				transfers[sha].initiator = conn;
 				session.sha = sha;
 				module:log("debug", "initiator connected ... ");
-				throttle_sending(conn, transfers[sha].target);
-				throttle_sending(transfers[sha].target, conn);
+				server.link(conn, transfers[sha].target, max_buffer_size);
+				server.link(transfers[sha].target, conn, max_buffer_size);
 			end
 			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:lock_read(true)
@@ -234,8 +236,12 @@ function handle_to_domain(origin, stanza)
 			elseif xmlns == "http://jabber.org/protocol/bytestreams" then
 				origin.send(get_stream_host(origin, stanza));
 				return true;
+			else
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+				return true;
 			end
 		elseif stanza.name == "iq" and type == "set" then
+			module:log("debug", "Received activation request from %s", stanza.attr.from);
 			local reply, from, to, sid = set_activation(stanza);
 			if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
 				local sha = sha1(sid .. from .. to, true);
@@ -246,6 +252,15 @@ function handle_to_domain(origin, stanza)
 					transfers[sha].activated = true;
 					transfers[sha].target:lock_read(false);
 					transfers[sha].initiator:lock_read(false);
+				else
+					module:log("debug", "Both parties were not yet connected");
+					local message = "Neither party is connected to the proxy";
+					if transfers[sha].initiator then
+						message = "The recipient is not connected to the proxy";
+					elseif transfers[sha].target then
+						message = "The sender (you) is not connected to the proxy";
+					end
+					origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 				end
 			else
 				module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
@@ -262,25 +277,3 @@ end
 
 connlisteners.start(module.host .. ':proxy65');
 component = componentmanager.register_component(host, handle_to_domain);
-local sender_lock_threshold = 4096;
-function throttle_sending(sender, receiver)
-	sender:pattern(sender_lock_threshold);
-	local sender_locked;
-	local _sendbuffer = receiver.sendbuffer;
-	function receiver.sendbuffer()
-		_sendbuffer();
-		if sender_locked and receiver.bufferlen() < sender_lock_threshold then
-			sender:lock_read(false); -- Unlock now
-			sender_locked = nil;
-		end
-	end
-	
-	local _readbuffer = sender.readbuffer;
-	function sender.readbuffer()
-		_readbuffer();
-		if not sender_locked and receiver.bufferlen() >= sender_lock_threshold then
-			sender_locked = true;
-			sender:lock_read(true);
-		end
-	end
-end

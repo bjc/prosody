@@ -22,6 +22,9 @@ if CFG_SOURCEDIR then
 	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
 end
 
+package.path = package.path..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.lua";
+package.cpath = package.cpath..";"..(CFG_SOURCEDIR or ".").."/fallbacks/?.so";
+
 -- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
@@ -118,6 +121,29 @@ function sandbox_require()
 		end
 		return _real_require(...);
 	end
+end
+
+function set_function_metatable()
+	local mt = {};
+	function mt.__index(f, upvalue)
+		local i, name, value = 0;
+		repeat
+			i = i + 1;
+			name, value = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		return value;
+	end
+	function mt.__newindex(f, upvalue, value)
+		local i, name = 0;
+		repeat
+			i = i + 1;
+			name = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		if name then
+			debug.setupvalue(f, i, value);
+		end
+	end
+	debug.setmetatable(function() end, mt);
 end
 
 function init_global_state()
@@ -415,6 +441,7 @@ read_config();
 init_logging();
 check_dependencies();
 sandbox_require();
+set_function_metatable();
 load_libraries();
 init_global_state();
 read_version();
