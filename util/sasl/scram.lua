@@ -117,7 +117,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			
 			-- retreive credentials
 			if self.profile.plain then
-				password, state = self.profile.plain(self.state.name, self.realm)
+				local password, state = self.profile.plain(self.state.name, self.realm)
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
@@ -129,8 +129,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				self.state.salt = generate_uuid();
 				self.state.iteration_count = default_i;
 				self.state.salted_password = Hi(HMAC_f, password, self.state.salt, default_i);
-			elseif self.profile["scram-"..hash_name] then
-				salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
+			elseif self.profile["scram_"..hash_name] then
+				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
@@ -177,7 +177,7 @@ end
 
 function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
-		registerMechanism("SCRAM-"..hash_name, {"plain", "scram-"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
+		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
 	end
 	
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
