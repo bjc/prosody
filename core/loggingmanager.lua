@@ -33,7 +33,7 @@ _G.log = logger.init("general");
 module "loggingmanager"
 
 -- The log config used if none specified in the config file
-local default_logging = { { to = "console" , levels = { min = (debug_mode and "debug" ) } } };
+local default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
 local default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } };
 local default_timestamp = "%b %d %H:%M:%S";
 -- The actual config loggingmanager is using
