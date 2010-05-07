@@ -54,16 +54,16 @@ module:add_event_hook("server-started", function ()
 	end);
 
 -- Don't even think about it!
-module:add_event_hook("server-starting", function ()
-		local suid = module:get_option("setuid");
-		if not suid or suid == 0 or suid == "root" then
-			if pposix.getuid() == 0 and not module:get_option("run_as_root") then
-				module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
-				module:log("error", "For more information on running Prosody as root, see http://prosody.im/doc/root");
-				prosody.shutdown("Refusing to run as root");
-			end
+if not prosody.start_time then -- server-starting
+	local suid = module:get_option("setuid");
+	if not suid or suid == 0 or suid == "root" then
+		if pposix.getuid() == 0 and not module:get_option("run_as_root") then
+			module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
+			module:log("error", "For more information on running Prosody as root, see http://prosody.im/doc/root");
+			prosody.shutdown("Refusing to run as root");
 		end
-	end);
+	end
+end
 
 local pidfile;
 local pidfile_handle;
@@ -140,7 +140,9 @@ if daemonize then
 			write_pidfile();
 		end
 	end
-	module:add_event_hook("server-starting", daemonize_server);
+	if not prosody.start_time then -- server-starting
+		daemonize_server();
+	end
 else
 	-- Not going to daemonize, so write the pid of this process
 	write_pidfile();
