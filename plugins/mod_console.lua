@@ -58,6 +58,7 @@ function console_listener.onconnect(conn)
 	local session = console:new_session(conn);
 	sessions[conn] = session;
 	printbanner(session);
+	session.send(string.char(0));
 end
 
 function console_listener.onincoming(conn, data)
