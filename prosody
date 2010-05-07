@@ -143,6 +143,10 @@ function set_function_metatable()
 			debug.setupvalue(f, i, value);
 		end
 	end
+	function mt.__tostring(f)
+		local info = debug.getinfo(f);
+		return ("function(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.linedefined);
+	end
 	debug.setmetatable(function() end, mt);
 end
 
