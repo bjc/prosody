@@ -90,7 +90,7 @@ function new_default_provider(host)
 				if admin == jid then return true; end
 			end
 		elseif admins then
-			log("warn", "Option 'admins' for host '%s' is not a table", host);
+			log("error", "Option 'admins' for host '%s' is not a table", host);
 		end
 		return is_admin(jid); -- Test whether it's a global admin instead
 	end
@@ -132,7 +132,7 @@ function is_admin(jid, host)
 				if admin == jid then return true; end
 			end
 		elseif admins then
-			log("warn", "Option 'admins' for host '%s' is not a table", host);
+			log("error", "Option 'admins' for host '%s' is not a table", host);
 		end
 		return nil;
 	end
