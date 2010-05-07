@@ -83,12 +83,8 @@ function new_default_provider(host)
 	end
 
 	function provider.is_admin(jid)
-		host = host or "*";
 		local admins = config.get(host, "core", "admins");
-		if host ~= "*" and admins == config.get("*", "core", "admins") then
-			return nil;
-		end
-		if type(admins) == "table" then
+		if admins ~= config.get("*", "core", "admins") and type(admins) == "table" then
 			jid = jid_bare(jid);
 			for _,admin in ipairs(admins) do
 				if admin == jid then return true; end
@@ -96,7 +92,7 @@ function new_default_provider(host)
 		elseif admins then
 			log("warn", "Option 'admins' for host '%s' is not a table", host);
 		end
-		return nil;
+		return is_admin(jid); -- Test whether it's a global admin instead
 	end
 	return provider;
 end
@@ -126,7 +122,20 @@ function get_supported_methods(host)
 end
 
 function is_admin(jid, host)
-	return hosts[host].users.is_admin(jid);
+	if host and host ~= "*" then
+		return hosts[host].users.is_admin(jid);
+	else -- Test only whether this JID is a global admin
+		local admins = config.get("*", "core", "admins");
+		if type(admins) == "table" then
+			jid = jid_bare(jid);
+			for _,admin in ipairs(admins) do
+				if admin == jid then return true; end
+			end
+		elseif admins then
+			log("warn", "Option 'admins' for host '%s' is not a table", host);
+		end
+		return nil;
+	end
 end
 
 return _M;
