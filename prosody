@@ -144,6 +144,10 @@ function set_function_metatable()
 			debug.setupvalue(f, i, value);
 		end
 	end
+	function mt.__tostring(f)
+		local info = debug.getinfo(f);
+		return ("function(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.linedefined);
+	end
 	debug.setmetatable(function() end, mt);
 end
 
@@ -324,7 +328,7 @@ function init_data_store()
 end
 
 function prepare_to_start()
-	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
+	log("debug", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
 	prosody.events.fire_event("server-starting");
 
