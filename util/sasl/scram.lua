@@ -1,5 +1,5 @@
 -- sasl.lua v0.4
--- Copyright (C) 2008-2009 Tobias Markmann
+-- Copyright (C) 2008-2010 Tobias Markmann
 --
 --    All rights reserved.
 --
@@ -28,6 +28,16 @@ module "scram"
 
 --=========================
 --SASL SCRAM-SHA-1 according to draft-ietf-sasl-scram-10
+
+--[[
+Supported Authentication Backends
+
+scram-{MECH}:
+	function(username, realm)
+		return salted_password, iteration_count, salt, state;
+	end
+]]
+
 local default_i = 4096
 
 local function bp( b )
@@ -82,77 +92,95 @@ local function validate_username(username)
 	return username;
 end
 
-local function scram_sha_1(self, message)
-	if not self.state then self["state"] = {} end
+local function scram_gen(hash_name, H_f, HMAC_f)
+	local function scram_hash(self, message)
+		if not self.state then self["state"] = {} end
 	
-	if not self.state.name then
-		-- we are processing client_first_message
-		local client_first_message = message;
-		self.state["client_first_message"] = client_first_message;
-		self.state["name"] = client_first_message:match("n=(.+),r=")
-		self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
-		
-		if not self.state.name or not self.state.clientnonce then
-			return "failure", "malformed-request";
-		end
-		
-		self.state.name = validate_username(self.state.name);
 		if not self.state.name then
-			log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
-			return "failure", "malformed-request", "Invalid username.";
-		end
+			-- we are processing client_first_message
+			local client_first_message = message;
+			self.state["client_first_message"] = client_first_message;
+			self.state["name"] = client_first_message:match("n=(.+),r=")
+			self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
 		
-		self.state["servernonce"] = generate_uuid();
-		self.state["salt"] = generate_uuid();
+			if not self.state.name or not self.state.clientnonce then
+				return "failure", "malformed-request";
+			end
 		
-		local server_first_message = "r="..self.state.clientnonce..self.state.servernonce..",s="..base64.encode(self.state.salt)..",i="..default_i;
-		self.state["server_first_message"] = server_first_message;
-		return "challenge", server_first_message
-	else
-		if type(message) ~= "string" then return "failure", "malformed-request" end
-		-- we are processing client_final_message
-		local client_final_message = message;
+			self.state.name = validate_username(self.state.name);
+			if not self.state.name then
+				log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
+				return "failure", "malformed-request", "Invalid username.";
+			end
 		
-		self.state["proof"] = client_final_message:match("p=(.+)");
-		self.state["nonce"] = client_final_message:match("r=(.+),p=");
-		self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
-		if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
-			return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
-		end
+			self.state["servernonce"] = generate_uuid();
+			
+			-- retreive credentials
+			if self.profile.plain then
+				local password, state = self.profile.plain(self.state.name, self.realm)
+				if state == nil then return "failure", "not-authorized"
+				elseif state == false then return "failure", "account-disabled" end
+				
+				password = saslprep(password);
+				if not password then
+					log("debug", "Password violates SASLprep.");
+					return "failure", "not-authorized", "Invalid password."
+				end
+				self.state.salt = generate_uuid();
+				self.state.iteration_count = default_i;
+				self.state.salted_password = Hi(HMAC_f, password, self.state.salt, default_i);
+			elseif self.profile["scram_"..hash_name] then
+				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
+				if state == nil then return "failure", "not-authorized"
+				elseif state == false then return "failure", "account-disabled" end
+				
+				self.state.salted_password = salted_password;
+				self.state.iteration_count = iteration_count;
+				self.state.salt = salt
+			end
 		
-		local password, state;
-		if self.profile.plain then
-			password, state = self.profile.plain(self.state.name, self.realm)
-			if state == nil then return "failure", "not-authorized"
-			elseif state == false then return "failure", "account-disabled" end
-			password = saslprep(password);
-			if not password then
-				log("debug", "Password violates SASLprep.");
-				return "failure", "not-authorized", "Invalid password."
+			local server_first_message = "r="..self.state.clientnonce..self.state.servernonce..",s="..base64.encode(self.state.salt)..",i="..self.state.iteration_count;
+			self.state["server_first_message"] = server_first_message;
+			return "challenge", server_first_message
+		else
+			if type(message) ~= "string" then return "failure", "malformed-request" end
+			-- we are processing client_final_message
+			local client_final_message = message;
+		
+			self.state["proof"] = client_final_message:match("p=(.+)");
+			self.state["nonce"] = client_final_message:match("r=(.+),p=");
+			self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
+			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
+				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
+			end
+		
+			local SaltedPassword = self.state.salted_password;
+			local ClientKey = HMAC_f(SaltedPassword, "Client Key")
+			local ServerKey = HMAC_f(SaltedPassword, "Server Key")
+			local StoredKey = H_f(ClientKey)
+			local AuthMessage = "n=" .. s_match(self.state.client_first_message,"n=(.+)") .. "," .. self.state.server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
+			local ClientSignature = HMAC_f(StoredKey, AuthMessage)
+			local ClientProof     = binaryXOR(ClientKey, ClientSignature)
+			local ServerSignature = HMAC_f(ServerKey, AuthMessage)
+		
+			if base64.encode(ClientProof) == self.state.proof then
+				local server_final_message = "v="..base64.encode(ServerSignature);
+				self["username"] = self.state.name;
+				return "success", server_final_message;
+			else
+				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated.";
 			end
 		end
-		
-		local SaltedPassword = Hi(hmac_sha1, password, self.state.salt, default_i)
-		local ClientKey = hmac_sha1(SaltedPassword, "Client Key")
-		local ServerKey = hmac_sha1(SaltedPassword, "Server Key")
-		local StoredKey = sha1(ClientKey)
-		local AuthMessage = "n=" .. s_match(self.state.client_first_message,"n=(.+)") .. "," .. self.state.server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
-		local ClientSignature = hmac_sha1(StoredKey, AuthMessage)
-		local ClientProof     = binaryXOR(ClientKey, ClientSignature)
-		local ServerSignature = hmac_sha1(ServerKey, AuthMessage)
-		
-		if base64.encode(ClientProof) == self.state.proof then
-			local server_final_message = "v="..base64.encode(ServerSignature);
-			self["username"] = self.state.name;
-			return "success", server_final_message;
-		else
-			return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated.";
-		end
 	end
+	return scram_hash;
 end
 
 function init(registerMechanism)
-	registerMechanism("SCRAM-SHA-1", {"plain"}, scram_sha_1);
+	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
+		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
+	end
+	
+	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
 end
 
 return _M;

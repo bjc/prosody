@@ -29,6 +29,14 @@ if CFG_DATADIR then
 	end
 end
 
+-- Global 'prosody' object
+prosody = {
+	hosts = {},
+	events = require "util.events".new(),
+	platform = "posix"
+};
+local prosody = prosody;
+
 config = require "core.configmanager"
 
 do
@@ -62,8 +70,6 @@ require "core.loggingmanager"
 if not require "util.dependencies".check_dependencies() then
 	os.exit(1);
 end
-
-prosody = { hosts = {}, events = events, platform = "posix" };
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
@@ -114,12 +120,10 @@ local error_messages = setmetatable({
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-local events = require "util.events".new();
-
 hosts = prosody.hosts;
 
 for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = { events = events };
+	hosts[hostname] = { events = prosody.events };
 end
 	
 require "core.modulemanager"
