@@ -85,9 +85,10 @@ function console_listener.onincoming(conn, data)
 
 		session.env._ = data;
 		
-		local chunk, err = loadstring("return "..data);
+		local chunkname = "=console";
+		local chunk, err = loadstring("return "..data, chunkname);
 		if not chunk then
-			chunk, err = loadstring(data);
+			chunk, err = loadstring(data, chunkname);
 			if not chunk then
 				err = err:gsub("^%[string .-%]:%d+: ", "");
 				err = err:gsub("^:%d+: ", "");

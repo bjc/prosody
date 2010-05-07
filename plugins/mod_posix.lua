@@ -82,6 +82,7 @@ local function write_pidfile()
 	end
 	pidfile = module:get_option("pidfile");
 	if pidfile then
+		local err;
 		local mode = stat(pidfile) and "r+" or "w+";
 		pidfile_handle, err = io.open(pidfile, mode);
 		if not pidfile_handle then
