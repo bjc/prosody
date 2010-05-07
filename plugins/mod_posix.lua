@@ -7,7 +7,7 @@
 --
 
 
-local want_pposix_version = "0.3.3";
+local want_pposix_version = "0.3.1";
 
 local pposix = assert(require "util.pposix");
 if pposix._VERSION ~= want_pposix_version then module:log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
@@ -25,9 +25,6 @@ local stat = lfs.attributes;
 local prosody = _G.prosody;
 
 module.host = "*"; -- we're a global module
-
-local umask = module:get_option("umask") or "027";
-pposix.umask(umask);
 
 -- Allow switching away from root, some people like strange ports.
 module:add_event_hook("server-started", function ()
@@ -82,6 +79,7 @@ local function write_pidfile()
 	end
 	pidfile = module:get_option("pidfile");
 	if pidfile then
+		local err;
 		local mode = stat(pidfile) and "r+" or "w+";
 		pidfile_handle, err = io.open(pidfile, mode);
 		if not pidfile_handle then
@@ -161,12 +159,5 @@ if signal.signal then
 		module:log("info", "Received SIGHUP");
 		prosody.reload_config();
 		prosody.reopen_logfiles();
-	end);
-	
-	signal.signal("SIGINT", function ()
-		module:log("info", "Received SIGINT");
-		prosody.unlock_globals();
-		prosody.shutdown("Received SIGINT");
-		prosody.lock_globals();
 	end);
 end
