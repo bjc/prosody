@@ -32,8 +32,8 @@ local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
 function new_sax_handlers(session, stream_callbacks)
-	local chardata = {};
 	local xml_handlers = {};
+	
 	local log = session.log or default_log;
 	
 	local cb_streamopened = stream_callbacks.streamopened;
@@ -47,7 +47,7 @@ function new_sax_handlers(session, stream_callbacks)
 	
 	local stream_default_ns = stream_callbacks.default_ns;
 	
-	local stanza;
+	local chardata, stanza = {};
 	function xml_handlers:StartElement(tagname, attr)
 		if stanza and #chardata > 0 then
 			-- We have some character data in the buffer
@@ -140,11 +140,29 @@ function new_sax_handlers(session, stream_callbacks)
 			stanza, chardata = nil, {};
 		end
 	end
-	return xml_handlers;
+	
+	local function reset()
+		stanza, chardata = nil, {};
+	end
+	
+	return xml_handlers, { reset = reset };
 end
 
 function new(session, stream_callbacks)
-	return new_parser(new_sax_handlers(session, stream_callbacks), ns_separator);
+	local handlers, meta = new_sax_handlers(session, stream_callbacks);
+	local parser = new_parser(handlers, ns_separator);
+	local parse = parser.parse;
+
+	return {
+		reset = function ()
+			parser = new_parser(handlers, ns_separator);
+			parse = parser.parse;
+			meta.reset();
+		end,
+		feed = function (self, data)
+			return parse(parser, data);
+		end
+	};
 end
 
 return _M;
