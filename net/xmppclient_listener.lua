@@ -11,7 +11,7 @@
 local logger = require "logger";
 local log = logger.init("xmppclient_listener");
 local lxp = require "lxp"
-local init_xmlhandlers = require "core.xmlhandlers"
+local new_xmpp_stream = require "util.xmppstream".new;
 local sm_new_session = require "core.sessionmanager".new_session;
 
 local connlisteners_register = require "net.connlisteners".register;
@@ -72,23 +72,6 @@ local xmppclient = { default_port = 5222, default_mode = "*a" };
 
 -- These are session methods --
 
-local function session_reset_stream(session)
-	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "\1");
-		session.parser = parser;
-		
-		session.notopen = true;
-		
-		function session.data(conn, data)
-			local ok, err = parser:parse(data);
-			if ok then return; end
-			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
-			session:close("xml-not-well-formed");
-		end
-		
-		return true;
-end
-
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
@@ -145,15 +128,29 @@ function xmppclient.onincoming(conn, data)
 			conn:setoption("keepalive", opt_keepalives);
 		end
 		
-		session.reset_stream = session_reset_stream;
 		session.close = session_close;
 		
-		session_reset_stream(session); -- Initialise, ready for use
+		local stream = new_xmpp_stream(session, stream_callbacks);
+		session.stream = stream;
+		
+		session.notopen = true;
+		
+		function session.reset_stream()
+			session.notopen = true;
+			session.stream:reset();
+		end
+		
+		function session.data(data)
+			local ok, err = stream:feed(data);
+			if ok then return; end
+			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+			session:close("xml-not-well-formed");
+		end
 		
 		session.dispatch_stanza = stream_callbacks.handlestanza;
 	end
 	if data then
-		session.data(conn, data);
+		session.data(data);
 	end
 end
 	
