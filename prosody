@@ -285,6 +285,7 @@ end
 function load_secondary_libraries()
 	--- Load and initialise core modules
 	require "util.import"
+	require "util.xmppstream"
 	require "core.xmlhandlers"
 	require "core.rostermanager"
 	require "core.hostmanager"
