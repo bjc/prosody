@@ -22,7 +22,7 @@ module "usermanager"
 
 local new_default_provider;
 
-prosody.events.add_handler("host-activated", function (host)
+local function host_handler(host)
 	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/auth-provider", function (provider)
 		if config.get(host, "core", "authentication") == provider.name then
@@ -35,7 +35,9 @@ prosody.events.add_handler("host-activated", function (host)
 		end
 	end);
 	host_session.users = new_default_provider(host); -- Start with the default usermanager provider
-end);
+end
+prosody.events.add_handler("host-activated", host_handler);
+prosody.events.add_handler("component-activated", host_handler);
 
 local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
