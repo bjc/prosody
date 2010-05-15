@@ -142,4 +142,6 @@ function is_admin(jid, host)
 	end
 end
 
+_M.new_default_provider = new_default_provider;
+
 return _M;
