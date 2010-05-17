@@ -63,8 +63,11 @@ function on_destroy_request(request)
 	local session = sessions[request.sid];
 	if session then
 		local requests = session.requests;
-		for i,r in pairs(requests) do
-			if r == request then requests[i] = nil; break; end
+		for i,r in ipairs(requests) do
+			if r == request then
+				t_remove(requests, i);
+				break;
+			end
 		end
 		
 		-- If this session now has no requests open, mark it as inactive
@@ -90,6 +93,8 @@ function handle_request(method, body, request)
 	--log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
 	request.notopen = true;
 	request.log = log;
+	request.on_destroy = on_destroy_request;
+	
 	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
 	
 	parser:parse(body);
@@ -118,14 +123,21 @@ function handle_request(method, body, request)
 			session.send(resp);
 		end
 		
-		if not request.destroyed and session.bosh_wait then
-			request.reply_before = os_time() + session.bosh_wait;
-			request.on_destroy = on_destroy_request;
-			waiting_requests[request] = true;
+		if not request.destroyed then
+			-- We're keeping this request open, to respond later
+			log("debug", "Have nothing to say, so leaving request unanswered for now");
+			if session.bosh_wait then
+				request.reply_before = os_time() + session.bosh_wait;
+				waiting_requests[request] = true;
+			end
+			if inactive_sessions[session] then
+				-- Session was marked as inactive, since we have
+				-- a request open now, unmark it
+				inactive_sessions[session] = nil;
+			end
 		end
 		
-		log("debug", "Have nothing to say, so leaving request unanswered for now");
-		return true;
+		return true; -- Inform httpserver we shall reply later
 	end
 end
 
@@ -162,7 +174,7 @@ function stream_callbacks.streamopened(request, attr)
 		
 		-- New session
 		sid = new_uuid();
-		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid), host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
+		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
 						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
 						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid), secure = request.secure };
@@ -174,11 +186,6 @@ function stream_callbacks.streamopened(request, attr)
 		function session.send(s)
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
-			while oldest_request and oldest_request.destroyed do
-				t_remove(r, 1);
-				waiting_requests[oldest_request] = nil;
-				oldest_request = r[1];
-			end
 			if oldest_request then
 				log("debug", "We have an open request, so sending on that");
 				response.body = t_concat{"<body xmlns='http://jabber.org/protocol/httpbind' sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>", tostring(s), "</body>" };
@@ -193,7 +200,6 @@ function stream_callbacks.streamopened(request, attr)
 				else
 					log("debug", "Destroying the request now...");
 					oldest_request:destroy();
-					t_remove(r, 1);
 				end
 			elseif s ~= "" then
 				log("debug", "Saved to send buffer because there are %d open requests", #r);
@@ -235,8 +241,9 @@ function stream_callbacks.streamopened(request, attr)
 			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
 		elseif diff <= 0 then
 			-- Repeated, ignore
-			session.log("debug", "rid repeated (on request %s), ignoring: %d", request.id, session.rid);
+			session.log("debug", "rid repeated (on request %s), ignoring: %s (diff %d)", request.id, session.rid, diff);
 			request.notopen = nil;
+			request.sid = sid;
 			t_insert(session.requests, request);
 			return;
 		end
@@ -248,12 +255,6 @@ function stream_callbacks.streamopened(request, attr)
 		session:close();
 		request.notopen = nil;
 		return;
-	end
-	
-	-- If session was inactive, make sure it is now marked as not
-	if #session.requests == 0 then
-		(session.log or log)("debug", "BOSH client now active again at %d", os_time());
-		inactive_sessions[session] = nil;
 	end
 	
 	if session.notopen then
