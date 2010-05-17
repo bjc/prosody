@@ -23,7 +23,7 @@ local logger = require "util.logger";
 local log = logger.init("mod_bosh");
 
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
-local stream_callbacks = { stream_tag = "http://jabber.org/protocol/httpbind\1body", default_ns = "jabber:client" };
+local stream_callbacks = { stream_ns = "http://jabber.org/protocol/httpbind", stream_tag = "body", default_ns = "jabber:client" };
 
 local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
 local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
@@ -33,6 +33,22 @@ local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 3
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
+
+local cross_domain = module:get_option("cross_domain_bosh");
+if cross_domain then
+	default_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+	default_headers["Access-Control-Allow-Headers"] = "Content-Type";
+	default_headers["Access-Control-Max-Age"] = "7200";
+
+	if cross_domain == true then
+		default_headers["Access-Control-Allow-Origin"] = "*";
+	elseif type(cross_domain) == "table" then
+		cross_domain = table.concat(cross_domain, ", ");
+	end
+	if type(cross_domain) == "string" then
+		default_headers["Access-Control-Allow-Origin"] = cross_domain;
+	end
+end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
@@ -64,9 +80,13 @@ end
 
 function handle_request(method, body, request)
 	if (not body) or request.method ~= "POST" then
-		return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
+		if request.method == "OPTIONS" then
+			return { headers = default_headers, body = "" };
+		else
+			return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
+		end
 	end
-	if not method then 
+	if not method then
 		log("debug", "Request %s suffered error %s", tostring(request.id), body);
 		return;
 	end
@@ -192,14 +212,15 @@ function stream_callbacks.streamopened(request, attr)
 		-- Send creation response
 		
 		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
-		local response = st.stanza("body", { xmlns = xmlns_bosh, 
-									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120", 
-									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0", 
+		local response = st.stanza("body", { xmlns = xmlns_bosh,
+									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120",
+									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0",
 									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
-				
+		
 		request.sid = sid;
 		return;
 	end
@@ -238,6 +259,7 @@ function stream_callbacks.streamopened(request, attr)
 	
 	if session.notopen then
 		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
 		session.send(features);
 		session.notopen = nil;
@@ -255,7 +277,7 @@ function stream_callbacks.handlestanza(request, stanza)
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
 		end
-		session.ip = request.handler.ip();
+		session.ip = request.handler:ip();
 		core_process_stanza(session, stanza);
 	end
 end
@@ -299,7 +321,14 @@ function on_timer()
 	end
 end
 
-local ports = module:get_option("bosh_ports") or { 5280 };
-httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
 
-server.addtimer(on_timer);
+local function setup()
+	local ports = module:get_option("bosh_ports") or { 5280 };
+	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
+	server.addtimer(on_timer);
+end
+if prosody.start_time then -- already started
+	setup();
+else
+	prosody.events.add_handler("server-started", setup);
+end
