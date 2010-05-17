@@ -29,7 +29,7 @@ function httpserver.onincoming(conn, data)
 		end
 	end
 
-	if data then
+	if data and data ~= "" then
 		request_reader(request, data);
 	end
 end
