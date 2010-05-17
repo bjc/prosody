@@ -47,8 +47,11 @@ function on_destroy_request(request)
 	local session = sessions[request.sid];
 	if session then
 		local requests = session.requests;
-		for i,r in pairs(requests) do
-			if r == request then requests[i] = nil; break; end
+		for i,r in ipairs(requests) do
+			if r == request then
+				t_remove(requests, i);
+				break;
+			end
 		end
 		
 		-- If this session now has no requests open, mark it as inactive
