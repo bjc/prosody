@@ -30,10 +30,11 @@ local host_mt = { __index = global_config };
 -- When key not found in section, check key in global's section
 function section_mt(section_name)
 	return { __index = 	function (t, k)
-									local section = rawget(global_config, section_name);
-									if not section then return nil; end
-									return section[k];
-							end };
+					local section = rawget(global_config, section_name);
+					if not section then return nil; end
+					return section[k];
+				end
+	};
 end
 
 function getconfig()
@@ -112,16 +113,20 @@ do
 	function parsers.lua.load(data, filename)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
-		env = setmetatable({ Host = true, host = true, VirtualHost = true, Component = true, component = true,
-							Include = true, include = true, RunScript = dofile }, { __index = function (t, k)
-												return rawget(_G, k) or
-														function (settings_table)
-															config[__currenthost or "*"][k] = settings_table;
-														end;
-										end,
-								__newindex = function (t, k, v)
-											set(env.__currenthost or "*", "core", k, v);
-										end});
+		env = setmetatable({
+			Host = true, host = true, VirtualHost = true,
+			Component = true, component = true,
+			Include = true, include = true, RunScript = dofile }, {
+				__index = function (t, k)
+					return rawget(_G, k) or
+						function (settings_table)
+							config[__currenthost or "*"][k] = settings_table;
+						end;
+				end,
+				__newindex = function (t, k, v)
+					set(env.__currenthost or "*", "core", k, v);
+				end
+		});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
