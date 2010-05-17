@@ -73,6 +73,8 @@ function handle_request(method, body, request)
 	--log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
 	request.notopen = true;
 	request.log = log;
+	request.on_destroy = on_destroy_request;
+	
 	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
 	
 	parser:parse(body);
@@ -101,14 +103,21 @@ function handle_request(method, body, request)
 			session.send(resp);
 		end
 		
-		if not request.destroyed and session.bosh_wait then
-			request.reply_before = os_time() + session.bosh_wait;
-			request.on_destroy = on_destroy_request;
-			waiting_requests[request] = true;
+		if not request.destroyed then
+			-- We're keeping this request open, to respond later
+			log("debug", "Have nothing to say, so leaving request unanswered for now");
+			if session.bosh_wait then
+				request.reply_before = os_time() + session.bosh_wait;
+				waiting_requests[request] = true;
+			end
+			if inactive_sessions[session] then
+				-- Session was marked as inactive, since we have
+				-- a request open now, unmark it
+				inactive_sessions[session] = nil;
+			end
 		end
 		
-		log("debug", "Have nothing to say, so leaving request unanswered for now");
-		return true;
+		return true; -- Inform httpserver we shall reply later
 	end
 end
 
@@ -171,7 +180,6 @@ function stream_callbacks.streamopened(request, attr)
 				else
 					log("debug", "Destroying the request now...");
 					oldest_request:destroy();
-					t_remove(r, 1);
 				end
 			elseif s ~= "" then
 				log("debug", "Saved to send buffer because there are %d open requests", #r);
@@ -226,12 +234,6 @@ function stream_callbacks.streamopened(request, attr)
 		session:close();
 		request.notopen = nil;
 		return;
-	end
-	
-	-- If session was inactive, make sure it is now marked as not
-	if #session.requests == 0 then
-		(session.log or log)("debug", "BOSH client now active again at %d", os_time());
-		inactive_sessions[session] = nil;
 	end
 	
 	if session.notopen then
