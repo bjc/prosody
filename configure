@@ -61,7 +61,7 @@ EOF
 
 while [ "$1" ]
 do
-   value="`echo $1 | sed 's/.*=\(.*\)/\1/'`"
+   value="`echo $1 | sed 's/[^=]*=\(.*\)/\1/'`"
    if echo "$value" | grep -q "~"
    then
       echo
