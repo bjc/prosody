@@ -16,7 +16,7 @@ CC=gcc
 LD=gcc
 
 CFLAGS="-fPIC -Wall"
-LDFLAGS="-shared"
+LFLAGS="-shared"
 
 # Help
 
@@ -26,7 +26,7 @@ Configure Prosody prior to building.
 
 --help                      This help.
 --ostype=OS                 Use one of the OS presets.
-                            May be one of: debian, macosx, linux
+                            May be one of: debian, macosx
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
@@ -47,8 +47,8 @@ Configure Prosody prior to building.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
                             Default is $CFLAGS
---ldflags=FLAGS             Flags to pass to the linker
-                            Default is $LDFLAGS
+--lflags=FLAGS              Flags to pass to the linker
+                            Default is $LFLAGS
 --c-compiler=CC             The C compiler to use when building modules.
                             Default is $CC
 --linker=CC                 The linker to use when building modules.
@@ -61,7 +61,7 @@ EOF
 
 while [ "$1" ]
 do
-   value="`echo $1 | sed 's/.*=\(.*\)/\1/'`"
+   value="`echo $1 | sed 's/[^=]*=\(.*\)/\1/'`"
    if echo "$value" | grep -q "~"
    then
       echo
@@ -107,25 +107,25 @@ do
       ;;
    --with-lua-lib=*)
       LUA_LIBDIR="$value" LUA_LIBDIR_SET=yes
-      ;;
+      ;;      
    --with-idn=*)
       IDN_LIB="$value"
-      ;;
+      ;;      
    --with-ssl=*)
       OPENSSL_LIB="$value"
-      ;;
+      ;;      
    --cflags=*)
       CFLAGS="$value"
-      ;;
-   --ldflags=*)
-      LDFLAGS="$value"
-      ;;
+      ;;      
+   --lflags=*)
+      LFLAGS="$value"
+      ;;      
    --c-compiler=*)
       CC="$value"
-      ;;
+      ;;      
    --linker=*)
       LD="$value"
-      ;;
+      ;;      
    *)
       echo "Error: Unknown flag: $1"
       exit 1
@@ -144,20 +144,12 @@ then
 	fi
 	if [ "$OSTYPE" = "macosx" ]
 	then LUA_INCDIR=/usr/local/include;
-	LUA_INCDIR_SET=yes
+	LUA_INCDIR_SET=yes	
 	LUA_LIBDIR=/usr/local/lib
 	LUA_LIBDIR_SET=yes
 	CFLAGS="-Wall"
-	LDFLAGS="-bundle -undefined dynamic_lookup"
-	fi
-        if [ "$OSTYPE" = "linux" ]
-        then LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yes
-        LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yes
-        CFLAGS="-Wall -fPIC"
-        LDFLAGS="-shared"
-        fi
+	LFLAGS="-bundle -undefined dynamic_lookup"
+	fi	
 fi
 
 if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
@@ -307,7 +299,7 @@ REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 OPENSSL_LIB=$OPENSSL_LIB
 CFLAGS=$CFLAGS
-LDFLAGS=$LDFLAGS
+LFLAGS=$LFLAGS
 CC=$CC
 LD=$LD
 
