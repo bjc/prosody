@@ -30,23 +30,37 @@ function new_null_provider()
 end
 
 local function host_handler(host)
+        log("debug", "host_handler called with host '%s'", host);
 	local host_session = hosts[host];
-	host_session.events.add_handler("item-added/auth-provider", function (provider)
-	        log("debug", "authentication provider = '%s'", config.get(host, "core", "authentication"));
-		if config.get(host, "core", "authentication") == provider.name then
+	host_session.events.add_handler("item-added/auth-provider", function (event)
+		local provider = event.item;
+		if provider == nil then
+			log("debug", "auth provider is nil");
+		else
+			log("debug", "auth provider is not nil");
+		end
+		if config.get(host, "core", "authentication") == nil and provider.name == "default" then
+			host_session.users = provider;
+		elseif config.get(host, "core", "authentication") == provider.name then
 			host_session.users = provider;
 		end
+		if provider.name == nil then
+			log("debug", "authentication provider name is nil");
+		else
+	        	log("debug", "authentication provider name = '%s'", provider.name);
+		end
 	end);
-	host_session.events.add_handler("item-removed/auth-provider", function (provider)
+	host_session.events.add_handler("item-removed/auth-provider", function (event)
+		local provider = event.item;
 		if host_session.users == provider then
 			host_session.users = new_null_provider();
 		end
 	end);
 end
-prosody.events.add_handler("host-activated", host_handler);
-prosody.events.add_handler("component-activated", host_handler);
+prosody.events.add_handler("host-activated", host_handler, 100);
+prosody.events.add_handler("component-activated", host_handler, 100);
 
-local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
+function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
 function validate_credentials(host, username, password, method)
 	return hosts[host].users.test_password(username, password);
@@ -88,7 +102,5 @@ function is_admin(jid, host)
 		return nil;
 	end
 end
-
-_M.new_default_provider = new_default_provider;
 
 return _M;
