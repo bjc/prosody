@@ -855,7 +855,7 @@ function resolver:lookup(qname, qtype, qclass)    -- - - - - - - - - -  lookup
            local recvt = {}
            local i, s
            for i, s in ipairs(self.socket) do
-              recvt[i] = s.socket()
+              recvt[i] = s
            end
            socket.select(recvt, nil, 4)
         end
