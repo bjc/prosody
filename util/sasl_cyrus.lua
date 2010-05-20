@@ -45,10 +45,10 @@ local function init(service_name)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-function new(realm, service_name)
+function new(realm, service_name, app_name)
 	local sasl_i = {};
 
-	init(service_name);
+	init(app_name or service_name);
 
 	sasl_i.realm = realm;
 	sasl_i.service_name = service_name;
