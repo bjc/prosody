@@ -45,7 +45,7 @@ elseif sasl_backend == "cyrus" then
 	if ok then
 		local cyrus_new = cyrus.new;
 		new_sasl = function(realm)
-			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
+			return cyrus_new(module:get_option("cyrus_service_realm") or realm, module:get_option("cyrus_service_name") or "xmpp");
 		end
 	else
 		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
