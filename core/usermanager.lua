@@ -16,6 +16,8 @@ local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
 local hosts = hosts;
 
+local require_provisioning = config.get("*", "core", "cyrus_require_provisioning") or false;
+
 module "usermanager"
 
 local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
@@ -66,12 +68,12 @@ function set_password(username, host, password)
 end
 
 function user_exists(username, host)
-	if is_cyrus(host) then return true; end
+	if not(require_provisioning) and is_cyrus(host) then return true; end
 	return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
 end
 
 function create_user(username, password, host)
-	if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
+	if not(require_provisioning) and is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 	return datamanager.store(username, host, "accounts", {password = password});
 end
 

@@ -27,6 +27,7 @@ local config = require "core.configmanager";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
+local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
 
 local log = module._log;
 
@@ -105,9 +106,16 @@ local function handle_status(session, status, ret, err_msg)
 			session:reset_stream();
 			return status, ret, err_msg;
 		end
-		sm_make_authenticated(session, session.sasl_handler.username);
-		session.sasl_handler = nil;
-		session:reset_stream();
+
+		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
+			sm_make_authenticated(session, session.sasl_handler.username);
+			session.sasl_handler = nil;
+			session:reset_stream();
+		else
+			module:log("warn", "SASL succeeded but we don't have an account provisioned for %s", username);
+			session.sasl_handler = session.sasl_handler:clean_clone();
+			return "failure", "not-authorized", "User authenticated successfully, but not provisioned for XMPP";
+		end
 	end
 	return status, ret, err_msg;
 end
