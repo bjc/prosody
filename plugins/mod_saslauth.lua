@@ -94,7 +94,7 @@ local function build_reply(status, ret, err_msg)
 	return reply;
 end
 
-local function handle_status(session, status)
+local function handle_status(session, status, ret, err_msg)
 	if status == "failure" then
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
@@ -103,12 +103,13 @@ local function handle_status(session, status)
 			module:log("warn", "SASL succeeded but we didn't get a username!");
 			session.sasl_handler = nil;
 			session:reset_stream();
-			return;
+			return status, ret, err_msg;
 		end
 		sm_make_authenticated(session, session.sasl_handler.username);
 		session.sasl_handler = nil;
 		session:reset_stream();
 	end
+	return status, ret, err_msg;
 end
 
 local function sasl_handler(session, stanza)
@@ -142,7 +143,7 @@ local function sasl_handler(session, stanza)
 		end
 	end
 	local status, ret, err_msg = session.sasl_handler:process(text);
-	handle_status(session, status);
+	status, ret, err_msg = handle_status(session, status, ret, err_msg);
 	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
