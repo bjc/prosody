@@ -22,87 +22,30 @@ local prosody = _G.prosody;
 
 module "usermanager"
 
-local new_default_provider;
-
 local function host_handler(host)
 	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/auth-provider", function (provider)
+	        log("debug", "authentication provider = '%s'", config.get(host, "core", "authentication"));
 		if config.get(host, "core", "authentication") == provider.name then
 			host_session.users = provider;
 		end
 	end);
 	host_session.events.add_handler("item-removed/auth-provider", function (provider)
 		if host_session.users == provider then
-			host_session.users = new_default_provider(host);
+			userplugins.new_default_provider(host);
 		end
 	end);
-	host_session.users = new_default_provider(host); -- Start with the default usermanager provider
+	if host_session.users ~= nil then
+		log("debug", "using non-default authentication provider");
+	else
+		log("debug", "using default authentication provider");
+		host_session.users = new_default_provider(host); -- Start with the default usermanager provider
+	end
 end
 prosody.events.add_handler("host-activated", host_handler);
 prosody.events.add_handler("component-activated", host_handler);
 
 local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
-
-function new_default_provider(host)
-	local provider = { name = "default" };
-	
-	function provider.test_password(username, password)
-		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
-		local credentials = datamanager.load(username, host, "accounts") or {};
-	
-		if password == credentials.password then
-			return true;
-		else
-			return nil, "Auth failed. Invalid username or password.";
-		end
-	end
-
-	function provider.get_password(username)
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-		return (datamanager.load(username, host, "accounts") or {}).password;
-	end
-	
-	function provider.set_password(username, password)
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-		local account = datamanager.load(username, host, "accounts");
-		if account then
-			account.password = password;
-			return datamanager.store(username, host, "accounts", account);
-		end
-		return nil, "Account not available.";
-	end
-
-	function provider.user_exists(username)
-		if not(require_provisioning) and is_cyrus(host) then return true; end
-		local account, err = datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
-		return (account or err) ~= nil; -- FIXME also check for empty credentials
-	end
-
-	function provider.create_user(username, password)
-		if not(require_provisioning) and is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
-		return datamanager.store(username, host, "accounts", {password = password});
-	end
-
-	function provider.get_supported_methods()
-		return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
-	end
-
-	function provider.is_admin(jid)
-		local admins = config.get(host, "core", "admins");
-		if admins ~= config.get("*", "core", "admins") then
-			if type(admins) == "table" then
-				jid = jid_bare(jid);
-				for _,admin in ipairs(admins) do
-					if admin == jid then return true; end
-				end
-			elseif admins then
-				log("error", "Option 'admins' for host '%s' is not a table", host);
-			end
-		end
-		return is_admin(jid); -- Test whether it's a global admin instead
-	end
-	return provider;
-end
 
 function validate_credentials(host, username, password, method)
 	return hosts[host].users.test_password(username, password);
