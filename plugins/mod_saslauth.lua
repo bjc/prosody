@@ -27,7 +27,12 @@ local config = require "core.configmanager";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
+
+-- Cyrus config options
 local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
+local cyrus_service_realm = module:get_option("cyrus_service_realm");
+local cyrus_service_name = module:get_option("cyrus_service_name");
+local cyrus_application_name = module:get_option("cyrus_application_name");
 
 local log = module._log;
 
@@ -46,7 +51,11 @@ elseif sasl_backend == "cyrus" then
 	if ok then
 		local cyrus_new = cyrus.new;
 		new_sasl = function(realm)
-			return cyrus_new(module:get_option("cyrus_service_realm") or realm, module:get_option("cyrus_service_name") or "xmpp");
+			return cyrus_new(
+				cyrus_service_realm or realm,
+				cyrus_service_name or "xmpp",
+				cyrus_application_name or "prosody"
+			);
 		end
 	else
 		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
