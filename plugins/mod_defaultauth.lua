@@ -15,15 +15,19 @@ local ipairs = ipairs;
 local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
+local usermanager = require "core.usermanager";
 local hosts = hosts;
 
 local prosody = _G.prosody;
 
+local is_cyrus = usermanager.is_cyrus;
+
 function new_default_provider(host)
 	local provider = { name = "default" };
-	
+	log("debug", "initializing default authentication provider for host '%s'", host);
+
 	function provider.test_password(username, password)
-		log("debug", "test password for user %s at host %s", username, host);
+		log("debug", "test password '%s' for user %s at host %s", password, username, module.host);
 		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 		local credentials = datamanager.load(username, host, "accounts") or {};
 	
@@ -35,7 +39,7 @@ function new_default_provider(host)
 	end
 
 	function provider.get_password(username)
-		log("debug", "get password for user %s at host %s", username, host);
+		log("debug", "get_password for username '%s' at host '%s'", username, module.host);
 		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		return (datamanager.load(username, host, "accounts") or {}).password;
 	end
@@ -54,11 +58,11 @@ function new_default_provider(host)
 		if is_cyrus(host) then return true; end
 		local account = datamanager.load(username, host, "accounts");
 		if not account then
-			log("debug", "account not found for username '%s' at host '%s'", username, host);
+			log("debug", "account not found for username '%s' at host '%s'", username, module.host);
 			return nil, "Auth failed. Invalid username";
 		end
 		if account.password == nil or string.len(account.password) == 0 then
-			log("debug", "account password not set or zero-length for username '%s' at host '%s'", username, host);
+			log("debug", "account password not set or zero-length for username '%s' at host '%s'", username, module.host);
 			return nil, "Auth failed. Password invalid.";
 		end
 		return true;
