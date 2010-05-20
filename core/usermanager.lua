@@ -16,6 +16,8 @@ local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
 local hosts = hosts;
 
+local require_provisioning = config.get("*", "core", "cyrus_require_provisioning") or false;
+
 local prosody = _G.prosody;
 
 module "usermanager"
@@ -71,12 +73,12 @@ function new_default_provider(host)
 	end
 
 	function provider:user_exists(username)
-		if is_cyrus(host) then return true; end
+		if not(require_provisioning) and is_cyrus(host) then return true; end
 		return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
 	end
 
 	function provider:create_user(username, password)
-		if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
+		if not(require_provisioning) and is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 		return datamanager.store(username, host, "accounts", {password = password});
 	end
 
