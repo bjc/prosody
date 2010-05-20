@@ -20,7 +20,14 @@ local require_provisioning = config.get("*", "core", "cyrus_require_provisioning
 
 local prosody = _G.prosody;
 
+local setmetatable = setmetatable;
+
 module "usermanager"
+
+function new_null_provider()
+	local function dummy() end;
+	return setmetatable({}, { __index = function() return dummy; end });
+end
 
 local function host_handler(host)
 	local host_session = hosts[host];
@@ -32,15 +39,9 @@ local function host_handler(host)
 	end);
 	host_session.events.add_handler("item-removed/auth-provider", function (provider)
 		if host_session.users == provider then
-			userplugins.new_default_provider(host);
+			host_session.users = new_null_provider();
 		end
 	end);
-	if host_session.users ~= nil then
-		log("debug", "using non-default authentication provider");
-	else
-		log("debug", "using default authentication provider");
-		host_session.users = new_default_provider(host); -- Start with the default usermanager provider
-	end
 end
 prosody.events.add_handler("host-activated", host_handler);
 prosody.events.add_handler("component-activated", host_handler);
