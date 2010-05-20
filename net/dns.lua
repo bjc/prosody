@@ -853,7 +853,6 @@ function resolver:lookup(qname, qtype, qclass)    -- - - - - - - - - -  lookup
 	self:query (qname, qtype, qclass)
 	while self:pulse() do
            local recvt = {}
-           local i, s
            for i, s in ipairs(self.socket) do
               recvt[i] = s
            end
