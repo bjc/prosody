@@ -176,10 +176,14 @@ function stream_callbacks.streamopened(request, attr)
 		
 		-- New session
 		sid = new_uuid();
-		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
-						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
-						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
-						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid), secure = consider_bosh_secure or request.secure };
+		local session = {
+			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
+			bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid,
+			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
+			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
+			close = bosh_close_stream, dispatch_stanza = core_process_stanza,
+			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure
+		};
 		sessions[sid] = session;
 		
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
