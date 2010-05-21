@@ -1,3 +1,10 @@
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
 
 local use_luaevent = require "core.configmanager".get("*", "core", "use_libevent");
 
@@ -36,7 +43,6 @@ if use_luaevent then
 			if type(signal_id) ~= "number" then
 				return false, "invalid-signal";
 			end
-			--_signal_signal(signal_id, handler);
 			return server.hook_signal(signal_id, handler);
 		end
 	end
@@ -47,4 +53,4 @@ end
 
 -- require "net.server" shall now forever return this,
 -- ie. server_select or server_event as chosen above.
-return server; 
+return server;

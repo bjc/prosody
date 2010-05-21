@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -247,14 +247,14 @@ function deserialize(stanza)
 		for i=1,#attr do attr[i] = nil; end
 		local attrx = {};
 		for att in pairs(attr) do
-			if s_find(att, "|", 1, true) and not s_find(k, "\1", 1, true) then
-				local ns,na = s_match(k, "^([^|]+)|(.+)$");
+			if s_find(att, "|", 1, true) and not s_find(att, "\1", 1, true) then
+				local ns,na = s_match(att, "^([^|]+)|(.+)$");
 				attrx[ns.."\1"..na] = attr[att];
 				attr[att] = nil;
 			end
 		end
 		for a,v in pairs(attrx) do
-			attr[x] = v;
+			attr[a] = v;
 		end
 		setmetatable(stanza, stanza_mt);
 		for _, child in ipairs(stanza) do

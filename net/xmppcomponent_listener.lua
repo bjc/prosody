@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -34,16 +34,33 @@ local xmlns_component = 'jabber:component:accept';
 
 local stream_callbacks = { default_ns = xmlns_component };
 
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
+
 function stream_callbacks.error(session, error, data, data2)
+	if session.destroyed then return; end
 	log("warn", "Error processing component stream: "..tostring(error));
 	if error == "no-stream" then
 		session:close("invalid-namespace");
-	elseif error == "xml-parse-error" and data == "unexpected-element-close" then
-		session.log("warn", "Unexpected close of '%s' tag", data2);
+	elseif error == "parse-error" then
+		session.log("warn", "External component %s XML parse error: %s", tostring(session.host), tostring(data));
 		session:close("xml-not-well-formed");
-	else
-		session.log("warn", "External component %s XML parse error: %s", tostring(session.host), tostring(error));
-		session:close("xml-not-well-formed");
+	elseif error == "stream-error" then
+		local condition, text = "undefined-condition";
+		for child in data:children() do
+			if child.attr.xmlns == xmlns_xmpp_streams then
+				if child.name ~= "text" then
+					condition = child.name;
+				else
+					text = child:get_text();
+				end
+				if condition ~= "undefined-condition" and text then
+					break;
+				end
+			end
+		end
+		text = condition .. (text and (" ("..text..")") or "");
+		session.log("info", "Session closed by remote with error: %s", text);
+		session:close(nil, text);
 	end
 end
 
@@ -71,8 +88,8 @@ function stream_callbacks.streamopened(session, attr)
 end
 
 function stream_callbacks.streamclosed(session)
-	session.send("</stream:stream>");
-	session.notopen = true;
+	session.log("Received </stream:stream>");
+	session:close();
 end
 
 local core_process_stanza = core_process_stanza;
@@ -89,6 +106,7 @@ end
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason)
+	if session.destroyed then return; end
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
@@ -146,6 +164,7 @@ function component_listener.onincoming(conn, data)
 		function session.data(conn, data)
 			local ok, err = parser:parse(data);
 			if ok then return; end
+			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 			session:close("xml-not-well-formed");
 		end
 		
@@ -167,7 +186,12 @@ function component_listener.ondisconnect(conn, err)
 			hosts[session.host].connected = nil;
 		end
 		sessions[conn]  = nil;
-		for k in pairs(session) do session[k] = nil; end
+		for k in pairs(session) do
+			if k ~= "log" and k ~= "close" then
+				session[k] = nil;
+			end
+		end
+		session.destroyed = true;
 		session = nil;
 	end
 end

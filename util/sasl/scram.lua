@@ -15,7 +15,6 @@ local s_match = string.match;
 local type = type
 local string = string
 local base64 = require "util.encodings".base64;
-local xor = require "bit".bxor
 local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
 local generate_uuid = require "util.uuid".generate;

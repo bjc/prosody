@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -33,13 +33,32 @@ local opt_keepalives = config.get("*", "core", "tcp_keepalives");
 local stream_callbacks = { default_ns = "jabber:client",
 		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
 
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
+
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
 		session.log("debug", "Invalid opening stream header");
 		session:close("invalid-namespace");
-	elseif session.close then
-		(session.log or log)("debug", "Client XML parse error: %s", tostring(error));
+	elseif error == "parse-error" then
+		(session.log or log)("debug", "Client XML parse error: %s", tostring(data));
 		session:close("xml-not-well-formed");
+	elseif error == "stream-error" then
+		local condition, text = "undefined-condition";
+		for child in data:children() do
+			if child.attr.xmlns == xmlns_xmpp_streams then
+				if child.name ~= "text" then
+					condition = child.name;
+				else
+					text = child:get_text();
+				end
+				if condition ~= "undefined-condition" and text then
+					break;
+				end
+			end
+		end
+		text = condition .. (text and (" ("..text..")") or "");
+		session.log("info", "Session closed by remote with error: %s", text);
+		session:close(nil, text);
 	end
 end
 

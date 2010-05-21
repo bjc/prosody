@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -49,16 +49,20 @@ function new_async_socket(sock, resolver)
 	local listener = {};
 	local handler = {};
 	function listener.onincoming(conn, data)
-		dns.feed(handler, data);
+		if data then
+			dns.feed(handler, data);
+		end
 	end
 	function listener.ondisconnect(conn, err)
-		log("warn", "DNS socket for %s disconnected: %s", peername, err);
-		local servers = resolver.server;
-		if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
-			log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
-		end
+		if err then
+			log("warn", "DNS socket for %s disconnected: %s", peername, err);
+			local servers = resolver.server;
+			if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
+				log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
+			end
 		
-		resolver:servfail(conn); -- Let the magic commence
+			resolver:servfail(conn); -- Let the magic commence
+		end
 	end
 	handler = server.wrapclient(sock, "dns", 53, listener);
 	if not handler then

@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -319,6 +319,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
 								:tag("status", {code='110'}));
 						end
+						if self._data.whois == 'anyone' then -- non-anonymous?
+							self:_route_stanza(st.stanza("message", {from=to, to=from, type='groupchat'})
+								:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+								:tag("status", {code='100'}));
+						end
 						self:send_history(from);
 					else -- banned
 						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
@@ -514,6 +519,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 						local occupant = self._occupants[self.jid.."/"..item.attr.nick];
 						if occupant then item.attr.jid = occupant.jid; end
+					elseif not item.attr.nick and item.attr.jid then
+						local nick = self._jid_nick[item.attr.jid];
+						if nick then item.attr.nick = select(3, jid_split(nick)); end
 					end
 					local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
 					if item.attr.affiliation and item.attr.jid and not item.attr.role then
@@ -743,7 +751,7 @@ end
 function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
-	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
+	if self:get_role(self._jid_nick[actor]) ~= "moderator" then return nil, "cancel", "not-allowed"; end
 	local occupant = self._occupants[occupant_jid];
 	if not occupant then return nil, "modify", "not-acceptable"; end
 	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
@@ -795,9 +803,6 @@ function room_mt:_route_stanza(stanza)
 					item.attr.jid = from_occupant.jid;
 				end
 			end
-		end
-		if self._data.whois == 'anyone' then
-		    muc_child:tag('status', { code = '100' });
 		end
 	end
 	self:route_stanza(stanza);

@@ -6,6 +6,7 @@ www_files
 html/*
 prosody.lua
 prosody.cfg.lua
+prosody.version
 config.unix
 *.patch
 *.orig

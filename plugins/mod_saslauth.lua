@@ -1,7 +1,7 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
---
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -28,6 +28,12 @@ local config = require "core.configmanager";
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
 
+-- Cyrus config options
+local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
+local cyrus_service_realm = module:get_option("cyrus_service_realm");
+local cyrus_service_name = module:get_option("cyrus_service_name");
+local cyrus_application_name = module:get_option("cyrus_application_name");
+
 local log = module._log;
 
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
@@ -35,21 +41,29 @@ local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl;
-if sasl_backend == "cyrus" then
-	local cyrus, err = pcall(require, "util.sasl_cyrus");
-	if cyrus then
+if sasl_backend == "builtin" then
+	new_sasl = require "util.sasl".new;
+elseif sasl_backend == "cyrus" then
+	prosody.unlock_globals(); --FIXME: Figure out why this is needed and
+	                          -- why cyrussasl isn't caught by the sandbox
+	local ok, cyrus = pcall(require, "util.sasl_cyrus");
+	prosody.lock_globals();
+	if ok then
 		local cyrus_new = cyrus.new;
 		new_sasl = function(realm)
-			return cyrus_new(realm, module:get_option("cyrus_service_name") or "xmpp");
+			return cyrus_new(
+				cyrus_service_realm or realm,
+				cyrus_service_name or "xmpp",
+				cyrus_application_name or "prosody"
+			);
 		end
 	else
-		sasl_backend = "builtin";
-		module:log("warn", "Failed to load Cyrus SASL, falling back to builtin auth mechanisms");
+		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
+		error("Failed to load Cyrus SASL");
 	end
-end
-if not new_sasl then
-	if sasl_backend ~= "builtin" then module:log("warn", "Unknown SASL backend %s", sasl_backend); end;
-	new_sasl = require "util.sasl".new;
+else
+	module:log("error", "Unknown SASL backend: %s", sasl_backend);
+	error("Unknown SASL backend");
 end
 
 local default_authentication_profile = {
@@ -90,7 +104,7 @@ local function build_reply(status, ret, err_msg)
 	return reply;
 end
 
-local function handle_status(session, status)
+local function handle_status(session, status, ret, err_msg)
 	if status == "failure" then
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
@@ -99,12 +113,20 @@ local function handle_status(session, status)
 			module:log("warn", "SASL succeeded but we didn't get a username!");
 			session.sasl_handler = nil;
 			session:reset_stream();
-			return;
+			return status, ret, err_msg;
 		end
-		sm_make_authenticated(session, session.sasl_handler.username);
-		session.sasl_handler = nil;
-		session:reset_stream();
+
+		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
+			sm_make_authenticated(session, session.sasl_handler.username);
+			session.sasl_handler = nil;
+			session:reset_stream();
+		else
+			module:log("warn", "SASL succeeded but we don't have an account provisioned for %s", username);
+			session.sasl_handler = session.sasl_handler:clean_clone();
+			return "failure", "not-authorized", "User authenticated successfully, but not provisioned for XMPP";
+		end
 	end
+	return status, ret, err_msg;
 end
 
 local function sasl_handler(session, stanza)
@@ -138,7 +160,7 @@ local function sasl_handler(session, stanza)
 		end
 	end
 	local status, ret, err_msg = session.sasl_handler:process(text);
-	handle_status(session, status);
+	status, ret, err_msg = handle_status(session, status, ret, err_msg);
 	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
@@ -157,10 +179,11 @@ module:hook("stream-features", function(event)
 		if secure_auth_only and not origin.secure then
 			return;
 		end
+		local realm = module:get_option("sasl_realm") or origin.host;
 		if module:get_option("anonymous_login") then
-			origin.sasl_handler = new_sasl(origin.host, anonymous_authentication_profile);
+			origin.sasl_handler = new_sasl(realm, anonymous_authentication_profile);
 		else
-			origin.sasl_handler = new_sasl(origin.host, default_authentication_profile);
+			origin.sasl_handler = new_sasl(realm, default_authentication_profile);
 			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
 				origin.sasl_handler:forbidden({"PLAIN"});
 			end

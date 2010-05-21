@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2009-2010 Matthew Wild
+-- Copyright (C) 2009-2010 Waqas Hussain
 -- Copyright (C) 2009 Thilo Cestonaro
 -- 
 -- This project is MIT/X11 licensed. Please see the
@@ -13,7 +13,7 @@ local datamanager = require "util.datamanager";
 local bare_sessions, full_sessions = bare_sessions, full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
-local jid_split = util_Jid.split;
+local jid_split, jid_join = util_Jid.split, util_Jid.join;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
 
@@ -160,26 +160,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 			end
 		end
 		
-		if tmp.type == "group" then
-			local found = false;
-			local roster = load_roster(origin.username, origin.host);
-			for jid,item in pairs(roster) do
-				if item.groups ~= nil then
-					for group in pairs(item.groups) do
-						if group == tmp.value then
-							found = true;
-							break;
-						end
-					end
-					if found == true then
-						break;
-					end
-				end
-			end
-			if found == false then
-				return {"cancel", "item-not-found", "Specifed roster group not existing."};
-			end
-		elseif tmp.type == "subscription" then
+		if tmp.type == "subscription" then
 			if	tmp.value ~= "both" and
 				tmp.value ~= "to" and
 				tmp.value ~= "from" and
@@ -379,17 +360,22 @@ function checkIfNeedToBeBlocked(e, session)
 				block = (item.action == "deny");
 			elseif item.type == "group" then
 				local roster = load_roster(session.username, session.host);
-				local groups = roster[evilJid.node .. "@" .. evilJid.host].groups;
-				for group in pairs(groups) do
-					if group == item.value then
-						apply = true;
-						block = (item.action == "deny");
-						break;
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if roster_entry then
+					local groups = roster_entry.groups;
+					for group in pairs(groups) do
+						if group == item.value then
+							apply = true;
+							block = (item.action == "deny");
+							break;
+						end
 					end
 				end
-			elseif item.type == "subscription" and evilJid.node ~= nil and evilJid.host ~= nil then -- we need a valid bare evil jid
+			elseif item.type == "subscription" then -- we need a valid bare evil jid
 				local roster = load_roster(session.username, session.host);
-				if roster[evilJid.node .. "@" .. evilJid.host].subscription == item.value then
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if (not(roster_entry) and item.value == "none")
+				   or (roster_entry and roster_entry.subscription == item.value) then
 					apply = true;
 					block = (item.action == "deny");
 				end

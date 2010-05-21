@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -49,6 +49,18 @@ module:hook("iq/bare", function(data)
 		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		module:fire_event("iq/bare/"..stanza.attr.id, data);
+		return true;
+	end
+end);
+
+module:hook("iq/self", function(data)
+	-- IQ to bare JID recieved
+	local origin, stanza = data.origin, data.stanza;
+
+	if stanza.attr.type == "get" or stanza.attr.type == "set" then
+		return module:fire_event("iq/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+	else
+		module:fire_event("iq/self/"..stanza.attr.id, data);
 		return true;
 	end
 end);

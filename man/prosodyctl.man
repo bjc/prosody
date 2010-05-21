@@ -49,6 +49,10 @@ will block for up to five seconds to wait for the server to execute.
 Stops the \fBprosody\fP server daemon. This operation will block for up to five
 seconds to wait for the server to stop executing.
 
+.IP \fBrestart\fP
+Restarts the \fBprosody\fP server daemon. Equivalent to running \fBprosodyctl
+stop\fP followed by \fBprosodyctl start\fP.
+
 .IP \fBstatus\fP
 Prints the current execution status of the \fBprosody\fP server daemon.
 
@@ -76,4 +80,4 @@ determine if a host has been configured.
 More information may be found online at: \fIhttp://prosody.im/\fP
 
 .SH AUTHORS
-Dwayne Bent <dbb.0@liqd.org>
+Dwayne Bent <dbb.1@liqd.org>

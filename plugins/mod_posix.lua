@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -82,6 +82,7 @@ local function write_pidfile()
 	end
 	pidfile = module:get_option("pidfile");
 	if pidfile then
+		local err;
 		local mode = stat(pidfile) and "r+" or "w+";
 		pidfile_handle, err = io.open(pidfile, mode);
 		if not pidfile_handle then

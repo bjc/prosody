@@ -1,5 +1,5 @@
 -- sasl.lua v0.4
--- Copyright (C) 2008-2009 Tobias Markmann
+-- Copyright (C) 2008-2010 Tobias Markmann
 --
 --    All rights reserved.
 --
@@ -143,7 +143,7 @@ function method:process(message)
 end
 
 -- load the mechanisms
-load_mechs = {"plain", "digest-md5", "anonymous", "scram"}
+local load_mechs = {"plain", "digest-md5", "anonymous", "scram"}
 for _, mech in ipairs(load_mechs) do
 	local name = "util.sasl."..mech;
 	local m = require(name);

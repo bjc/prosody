@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -16,8 +16,10 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
+      setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
@@ -48,7 +50,9 @@ local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
 
-local function compare_srv_priorities(a,b) return a.priority < b.priority or a.weight < b.weight; end
+function compare_srv_priorities(a,b)
+	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
+end
 
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
@@ -64,7 +68,7 @@ local function bounce_sendq(session, reason)
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
 			local xmlns = reply.attr.xmlns;
-			if not xmlns or xmlns == "jabber:client" or xmlns == "jabber:server" then
+			if not xmlns then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
@@ -87,7 +91,7 @@ function send_to_host(from_host, to_host, data)
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and (data.name ~= "db:verify" or not host.dialback_key) and ((not data.xmlns) or data.xmlns == "jabber:client" or data.xmlns == "jabber:server") then
+		if host.type == "s2sout_unauthed" and (data.name ~= "db:verify" or not host.dialback_key) then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			
 			-- Queue stanza until we are able to send it
@@ -301,7 +305,7 @@ function try_connect(host_session, connect_host, connect_port)
 end
 
 function make_connect(host_session, connect_host, connect_port)
-	host_session.log("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
+	(host_session.log or log)("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
 	-- Ok, we're going to try to connect
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
@@ -365,11 +369,6 @@ function streamopened(session, attr)
 		session.secure = true;
 	end
 	
-	if session.version >= 1.0 and not (attr.to and attr.from) then
-		(session.log or log)("warn", "Remote of stream "..(session.from_host or "(unknown)").."->"..(session.to_host or "(unknown)")
-			.." failed to specify to (%s) and/or from (%s) hostname as per RFC", tostring(attr.to), tostring(attr.from));
-	end
-	
 	if session.direction == "incoming" then
 		-- Send a reply stream header
 		session.to_host = attr.to and nameprep(attr.to);
@@ -430,11 +429,8 @@ function streamopened(session, attr)
 end
 
 function streamclosed(session)
-	(session.log or log)("debug", "</stream:stream>");
-	if session.sends2s then
-		session.sends2s("</stream:stream>");
-	end
-	session.notopen = true;
+	(session.log or log)("debug", "Received </stream:stream>");
+	session:close();
 end
 
 function initiate_dialback(session)
@@ -508,9 +504,32 @@ function mark_connected(session)
 	end
 end
 
-local function null_data_handler(conn, data) log("debug", "Discarding data from destroyed s2s session: %s", data); end
+local resting_session = { -- Resting, not dead
+		destroyed = true;
+		type = "s2s_destroyed";
+		open_stream = function (session)
+			session.log("debug", "Attempt to open stream on resting session");
+		end;
+		close = function (session)
+			session.log("debug", "Attempt to close already-closed session");
+		end;
+	}; resting_session.__index = resting_session;
+
+function retire_session(session)
+	local log = session.log or log;
+	for k in pairs(session) do
+		if k ~= "trace" and k ~= "log" and k ~= "id" then
+			session[k] = nil;
+		end
+	end
+
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	return setmetatable(session, resting_session);
+end
 
 function destroy_session(session, reason)
+	if session.destroyed then return; end
 	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
@@ -520,12 +539,7 @@ function destroy_session(session, reason)
 		incoming_s2s[session] = nil;
 	end
 	
-	for k in pairs(session) do
-		if k ~= "trace" then
-			session[k] = nil;
-		end
-	end
-	session.data = null_data_handler;
+	retire_session(session); -- Clean session until it is GC'd
 end
 
 return _M;

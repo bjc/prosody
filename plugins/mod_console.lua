@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -53,76 +53,78 @@ end
 
 local sessions = {};
 
+function console_listener.onconnect(conn)
+	-- Handle new connection
+	local session = console:new_session(conn);
+	sessions[conn] = session;
+	printbanner(session);
+	session.send(string.char(0));
+end
+
 function console_listener.onincoming(conn, data)
 	local session = sessions[conn];
-	
-	if not session then
-		-- Handle new connection
-		session = console:new_session(conn);
-		sessions[conn] = session;
-		printbanner(session);
-	end
-	if data then
-		-- Handle data
-		(function(session, data)
-			local useglobalenv;
-			
-			if data:match("^>") then
-				data = data:gsub("^>", "");
-				useglobalenv = true;
-			elseif data == "\004" then
-				commands["bye"](session, data);
-				return;
-			else
-				local command = data:lower();
-				command = data:match("^%w+") or data:match("%p");
-				if commands[command] then
-					commands[command](session, data);
-					return;
-				end
-			end
 
-			session.env._ = data;
-			
-			local chunk, err = loadstring("return "..data);
+	-- Handle data
+	(function(session, data)
+		local useglobalenv;
+		
+		if data:match("^>") then
+			data = data:gsub("^>", "");
+			useglobalenv = true;
+		elseif data == "\004" then
+			commands["bye"](session, data);
+			return;
+		else
+			local command = data:lower();
+			command = data:match("^%w+") or data:match("%p");
+			if commands[command] then
+				commands[command](session, data);
+				return;
+			end
+		end
+
+		session.env._ = data;
+		
+		local chunkname = "=console";
+		local chunk, err = loadstring("return "..data, chunkname);
+		if not chunk then
+			chunk, err = loadstring(data, chunkname);
 			if not chunk then
-				chunk, err = loadstring(data);
-				if not chunk then
-					err = err:gsub("^%[string .-%]:%d+: ", "");
-					err = err:gsub("^:%d+: ", "");
-					err = err:gsub("'<eof>'", "the end of the line");
-					session.print("Sorry, I couldn't understand that... "..err);
-					return;
-				end
-			end
-			
-			setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
-			
-			local ranok, taskok, message = pcall(chunk);
-			
-			if not (ranok or message or useglobalenv) and commands[data:lower()] then
-				commands[data:lower()](session, data);
+				err = err:gsub("^%[string .-%]:%d+: ", "");
+				err = err:gsub("^:%d+: ", "");
+				err = err:gsub("'<eof>'", "the end of the line");
+				session.print("Sorry, I couldn't understand that... "..err);
 				return;
 			end
-			
-			if not ranok then
-				session.print("Fatal error while running command, it did not complete");
-				session.print("Error: "..taskok);
-				return;
-			end
-			
-			if not message then
-				session.print("Result: "..tostring(taskok));
-				return;
-			elseif (not taskok) and message then
-				session.print("Command completed with a problem");
-				session.print("Message: "..tostring(message));
-				return;
-			end
-			
-			session.print("OK: "..tostring(message));
-		end)(session, data);
-	end
+		end
+		
+		setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
+		
+		local ranok, taskok, message = pcall(chunk);
+		
+		if not (ranok or message or useglobalenv) and commands[data:lower()] then
+			commands[data:lower()](session, data);
+			return;
+		end
+		
+		if not ranok then
+			session.print("Fatal error while running command, it did not complete");
+			session.print("Error: "..taskok);
+			return;
+		end
+		
+		if not message then
+			session.print("Result: "..tostring(taskok));
+			return;
+		elseif (not taskok) and message then
+			session.print("Command completed with a problem");
+			session.print("Message: "..tostring(message));
+			return;
+		end
+		
+		session.print("OK: "..tostring(message));
+	end)(session, data);
+	
 	session.send(string.char(0));
 end
 
@@ -192,7 +194,7 @@ function commands.help(session, data)
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
-		--print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then

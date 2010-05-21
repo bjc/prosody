@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -19,7 +19,7 @@ local pluginloader = require "util.pluginloader";
 local hosts = hosts;
 local prosody = prosody;
 
-local loadfile, pcall = loadfile, pcall;
+local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
 local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
@@ -28,6 +28,14 @@ local next = next;
 local rawget = rawget;
 local error = error;
 local tostring, tonumber = tostring, tonumber;
+
+local debug_traceback = debug.traceback;
+local unpack, select = unpack, select;
+pcall = function(f, ...)
+	local n = select("#", ...);
+	local params = {...};
+	return xpcall(function() f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
+end
 
 local array, set = require "util.array", require "util.set";
 
@@ -158,7 +166,7 @@ function load(host, module_name, config)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	if success then
-		hosts[host].events.fire_event("module-loaded", { module = module_name, host = host });
+		(hosts[api_instance.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
 		return true;
 	else -- load failed, unloading
 		unload(api_instance.host, module_name);
@@ -210,7 +218,7 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
-	hosts[host].events.fire_event("module-unloaded", { module = name, host = host });
+	(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
@@ -274,7 +282,7 @@ function handle_stanza(host, origin, stanza)
 		(handlers[1])(origin, stanza);
 		return true;
 	else
-		if stanza.attr.xmlns == "jabber:client" then
+		if stanza.attr.xmlns == nil then
 			log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));

@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -254,7 +254,7 @@ end
 for i, row in ipairs(t["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, host, "accounts", {password = password});
-	print("["..(err or "success").."] accounts: "..node.."@"..host.." = "..password);
+	print("["..(err or "success").."] accounts: "..node.."@"..host);
 end
 
 function roster(node, host, jid, item)

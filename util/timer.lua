@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -55,11 +55,12 @@ if not event then
 else
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
 	function _add_task(delay, func)
-		event_base:addevent(nil, 0, function ()
+		local event_handle;
+		event_handle = event_base:addevent(nil, 0, function ()
 			local ret = func();
 			if ret then
 				return 0, ret;
-			else
+			elseif event_handle then
 				return EVENT_LEAVE;
 			end
 		end

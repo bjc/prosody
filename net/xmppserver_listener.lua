@@ -1,6 +1,6 @@
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -50,6 +50,9 @@ end
 
 local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), debug.traceback()); end
 function stream_callbacks.handlestanza(a, b)
+	if b.attr.xmlns == "jabber:client" then --COMPAT: Prosody pre-0.6.2 may send jabber:client
+		b.attr.xmlns = nil;
+	end
 	xpcall(function () core_process_stanza(a, b) end, handleerr);
 end
 
@@ -176,7 +179,7 @@ function xmppserver.ondisconnect(conn, err)
 				return; -- Session lives for now
 			end
 		end
-		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err));
+		(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
 		s2s_destroy_session(session, err);
 		sessions[conn]  = nil;
 		session = nil;
