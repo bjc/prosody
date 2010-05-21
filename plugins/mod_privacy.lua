@@ -13,7 +13,7 @@ local datamanager = require "util.datamanager";
 local bare_sessions, full_sessions = bare_sessions, full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
-local jid_split = util_Jid.split;
+local jid_split, jid_join = util_Jid.split, util_Jid.join;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
 
@@ -360,17 +360,22 @@ function checkIfNeedToBeBlocked(e, session)
 				block = (item.action == "deny");
 			elseif item.type == "group" then
 				local roster = load_roster(session.username, session.host);
-				local groups = roster[evilJid.node .. "@" .. evilJid.host].groups;
-				for group in pairs(groups) do
-					if group == item.value then
-						apply = true;
-						block = (item.action == "deny");
-						break;
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if roster_entry then
+					local groups = roster_entry.groups;
+					for group in pairs(groups) do
+						if group == item.value then
+							apply = true;
+							block = (item.action == "deny");
+							break;
+						end
 					end
 				end
-			elseif item.type == "subscription" and evilJid.node ~= nil and evilJid.host ~= nil then -- we need a valid bare evil jid
+			elseif item.type == "subscription" then -- we need a valid bare evil jid
 				local roster = load_roster(session.username, session.host);
-				if roster[evilJid.node .. "@" .. evilJid.host].subscription == item.value then
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if (not(roster_entry) and item.value == "none")
+				   or (roster_entry and roster_entry.subscription == item.value) then
 					apply = true;
 					block = (item.action == "deny");
 				end
