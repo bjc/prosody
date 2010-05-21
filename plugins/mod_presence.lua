@@ -38,42 +38,23 @@ function core_route_stanza(origin, stanza)
 	_core_route_stanza(origin, stanza);
 end
 
-local select_top_resources;
-local bare_message_delivery_policy = module:get_option("bare_message_delivery_policy") or "priority";
-if bare_message_delivery_policy == "broadcast" then
-	function select_top_resources(user)
-		local recipients = {};
-		for _, session in pairs(user.sessions) do -- find resources with non-negative priority
+local function select_top_resources(user)
+	local priority = 0;
+	local recipients = {};
+	for _, session in pairs(user.sessions) do -- find resource with greatest priority
+		if session.presence then
+			-- TODO check active privacy list for session
 			local p = session.priority;
-			if p and p >= 0 then
+			if p > priority then
+				priority = p;
+				recipients = {session};
+			elseif p == priority then
 				t_insert(recipients, session);
 			end
 		end
-		return recipients;
 	end
-else
-	if bare_message_delivery_policy ~= "priority" then
-		module:log("warn", "Invalid value for config option bare_message_delivery_policy");
-	end
-	function select_top_resources(user)
-		local priority = 0;
-		local recipients = {};
-		for _, session in pairs(user.sessions) do -- find resource with greatest priority
-			if session.presence then
-				-- TODO check active privacy list for session
-				local p = session.priority;
-				if p > priority then
-					priority = p;
-					recipients = {session};
-				elseif p == priority then
-					t_insert(recipients, session);
-				end
-			end
-		end
-		return recipients;
-	end
+	return recipients;
 end
-
 local function recalc_resource_map(user)
 	if user then
 		user.top_resources = select_top_resources(user);
