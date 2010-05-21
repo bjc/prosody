@@ -307,7 +307,7 @@ function checkIfNeedToBeBlocked(e, session)
 	local is_to_user = bare_jid == jid_bare(to);
 	local is_from_user = bare_jid == jid_bare(from);
 	
-	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
+	--module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 	
 	if privacy_lists.lists == nil or
 		not (session.activePrivacyList or privacy_lists.default)
@@ -315,7 +315,7 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- Nothing to block, default is Allow all
 	end
 	if is_from_user and is_to_user then
-		module:log("debug", "Not blocking communications between user's resources");
+		--module:log("debug", "Not blocking communications between user's resources");
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
@@ -325,8 +325,8 @@ function checkIfNeedToBeBlocked(e, session)
 		listname = privacy_lists.default; -- no active list selected, use default list
 	end
 	local list = privacy_lists.lists[listname];
-	if not list then
-		module:log("debug", "given privacy list not found. name: %s", listname);
+	if not list then -- should never happen
+		module:log("warn", "given privacy list not found. name: %s for user %s", listname, bare_jid);
 		return;
 	end
 	for _,item in ipairs(list.items) do
@@ -345,10 +345,10 @@ function checkIfNeedToBeBlocked(e, session)
 			local evilJid = {};
 			apply = false;
 			if is_to_user then
-				module:log("debug", "evil jid is (from): %s", from);
+				--module:log("debug", "evil jid is (from): %s", from);
 				evilJid.node, evilJid.host, evilJid.resource = jid_split(from);
 			else
-				module:log("debug", "evil jid is (to): %s", to);
+				--module:log("debug", "evil jid is (to): %s", to);
 				evilJid.node, evilJid.host, evilJid.resource = jid_split(to);
 			end
 			if	item.type == "jid" and
@@ -394,7 +394,7 @@ function checkIfNeedToBeBlocked(e, session)
 				end
 				return true; -- stanza blocked !
 			else
-				module:log("debug", "stanza explicitly allowed!")
+				--module:log("debug", "stanza explicitly allowed!")
 				return;
 			end
 		end
@@ -425,7 +425,7 @@ function preCheckIncoming(e)
 		if session ~= nil then
 			return checkIfNeedToBeBlocked(e, session);
 		else
-			module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource));
+			--module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource));
 		end
 	end
 end
