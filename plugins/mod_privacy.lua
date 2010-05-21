@@ -160,26 +160,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 			end
 		end
 		
-		if tmp.type == "group" then
-			local found = false;
-			local roster = load_roster(origin.username, origin.host);
-			for jid,item in pairs(roster) do
-				if item.groups ~= nil then
-					for group in pairs(item.groups) do
-						if group == tmp.value then
-							found = true;
-							break;
-						end
-					end
-					if found == true then
-						break;
-					end
-				end
-			end
-			if found == false then
-				return {"cancel", "item-not-found", "Specifed roster group not existing."};
-			end
-		elseif tmp.type == "subscription" then
+		if tmp.type == "subscription" then
 			if	tmp.value ~= "both" and
 				tmp.value ~= "to" and
 				tmp.value ~= "from" and
