@@ -62,7 +62,17 @@ local function recalc_resource_map(user)
 	end
 end
 
+local ignore_presence_priority = module:get_option("ignore_presence_priority");
+
 function handle_normal_presence(origin, stanza, core_route_stanza)
+	if ignore_presence_priority then
+		local priority = stanza:child_with_name("priority");
+		if priority and priority[1] ~= "0" then
+			for i=#priority.tags,1,-1 do priority.tags[i] = nil; end
+			for i=#priority,1,-1 do priority[i] = nil; end
+			priority[1] = "0";
+		end
+	end
 	if full_sessions[origin.full_jid] then -- if user is still connected
 		origin.send(stanza); -- reflect their presence back to them
 	end
