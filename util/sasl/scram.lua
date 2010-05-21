@@ -1,15 +1,15 @@
 -- sasl.lua v0.4
 -- Copyright (C) 2008-2010 Tobias Markmann
 --
---    All rights reserved.
+--	  All rights reserved.
 --
---    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+--	  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 --
---        * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
---        * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
---        * Neither the name of Tobias Markmann nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+--		  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+--		  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+--		  * Neither the name of Tobias Markmann nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 --
---    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--	  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local s_match = string.match;
 local type = type
@@ -99,12 +99,20 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 		if not self.state.name then
 			-- we are processing client_first_message
 			local client_first_message = message;
+			
+			-- TODO: more strict parsing of client_first_message
+			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
 			self.state["name"] = client_first_message:match("n=(.+),r=")
 			self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
-		
-			if not self.state.name or not self.state.clientnonce then
+			self.state["gs2_cbind_flag"] = client_first_message:sub(1, 1)
+			-- we don't do any channel binding yet
+			if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
 				return "failure", "malformed-request";
+			end
+
+			if not self.state.name or not self.state.clientnonce then
+				return "failure", "malformed-request", "Channel binding isn't support at this time.";
 			end
 		
 			self.state.name = validate_username(self.state.name);
@@ -146,14 +154,20 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			if type(message) ~= "string" then return "failure", "malformed-request" end
 			-- we are processing client_final_message
 			local client_final_message = message;
-		
+			
+			-- TODO: more strict parsing of client_final_message
 			self.state["proof"] = client_final_message:match("p=(.+)");
 			self.state["nonce"] = client_final_message:match("r=(.+),p=");
 			self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
+	
 			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 			end
-		
+
+			if self.state.nonce ~= self.state.servernonce then
+				return "failure", "malformed-request", "Wrong nonce in client-second-message.";
+			end
+			
 			local SaltedPassword = self.state.salted_password;
 			local ClientKey = HMAC_f(SaltedPassword, "Client Key")
 			local ServerKey = HMAC_f(SaltedPassword, "Server Key")
@@ -162,7 +176,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local ClientSignature = HMAC_f(StoredKey, AuthMessage)
 			local ClientProof     = binaryXOR(ClientKey, ClientSignature)
 			local ServerSignature = HMAC_f(ServerKey, AuthMessage)
-		
+
 			if base64.encode(ClientProof) == self.state.proof then
 				local server_final_message = "v="..base64.encode(ServerSignature);
 				self["username"] = self.state.name;
@@ -179,7 +193,7 @@ function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
 		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
 	end
-	
+
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
 end
 
