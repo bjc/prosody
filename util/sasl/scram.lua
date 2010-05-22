@@ -153,10 +153,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- we are processing client_final_message
 			local client_final_message = message;
 			
-			-- TODO: more strict parsing of client_final_message
-			self.state["proof"] = client_final_message:match("p=(.+)");
-			self.state["nonce"] = client_final_message:match("r=(.+),p=");
-			self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
+			self.state["channelbinding"], self.state["nonce"], self.state["proof"] = client_final_message:match("^c=(.*),r=(.*),.*p=(.*)");
 	
 			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
