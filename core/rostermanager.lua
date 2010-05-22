@@ -101,7 +101,9 @@ function load_roster(username, host)
 		roster[jid] = nil;
 		log("warn", "roster for "..jid.." has a self-contact");
 	end
-	hosts[host].events.fire_event("roster-load", username, host, roster);
+	if not err then
+		hosts[host].events.fire_event("roster-load", username, host, roster);
+	end
 	return roster, err;
 end
 
