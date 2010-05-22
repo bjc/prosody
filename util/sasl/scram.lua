@@ -108,6 +108,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 	local function scram_hash(self, message)
 		if not self.state then self["state"] = {} end
 	
+		if type(message) ~= "string" or #message == 0 then return "failure", "malformed-request" end
 		if not self.state.name then
 			-- we are processing client_first_message
 			local client_first_message = message;
@@ -169,7 +170,6 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			self.state["server_first_message"] = server_first_message;
 			return "challenge", server_first_message
 		else
-			if type(message) ~= "string" then return "failure", "malformed-request" end
 			-- we are processing client_final_message
 			local client_final_message = message;
 			
