@@ -92,6 +92,18 @@ local function validate_username(username)
 	return username;
 end
 
+function saltedPasswordSHA1(password, salt, iteration_count)
+	local salted_password
+	if type(password) ~= "string" and type(salt) ~= "string" and type(iteration_count) ~= "number" then
+		return false, "inappropriate argument types"
+	end
+	if iteration_count < 4096 then
+		log("warning", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
+	end
+
+	return true, Hi(hmac_sha1, password, salt, iteration_count);
+end
+
 local function scram_gen(hash_name, H_f, HMAC_f)
 	local function scram_hash(self, message)
 		if not self.state then self["state"] = {} end
@@ -133,9 +145,16 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					log("debug", "Password violates SASLprep.");
 					return "failure", "not-authorized", "Invalid password."
 				end
+
 				self.state.salt = generate_uuid();
 				self.state.iteration_count = default_i;
-				self.state.salted_password = Hi(HMAC_f, password, self.state.salt, default_i);
+
+				local succ = false;
+				succ, self.state.salted_password = saltedPasswordSHA1(password, self.state.salt, default_i, self.state.iteration_count);
+				if not succ then
+					log("error", "Generating salted password failed. Reason: %s", self.state.salted_password);
+					return "failure", "temporary-auth-failure";
+				end
 			elseif self.profile["scram_"..hash_name] then
 				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
