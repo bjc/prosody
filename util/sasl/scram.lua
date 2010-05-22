@@ -102,7 +102,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			
 			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
-			self.state["gs2_cbind_flag"], self.state["authzid"], self.state["name"], self.state["clientnonce"] = client_first_message:match("^(%a),(.*),n=(.*),r=([^,]*).*");
+			self.state["gs2_cbind_flag"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
+				= client_first_message:match("^(%a),(.*),n=(.*),r=([^,]*).*");
 
 			-- we don't do any channel binding yet
 			if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
