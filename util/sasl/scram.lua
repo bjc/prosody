@@ -162,8 +162,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 			end
 
-			if self.state.nonce ~= self.state.servernonce then
-				return "failure", "malformed-request", "Wrong nonce in client-second-message.";
+			if self.state.nonce ~= self.state.clientnonce..self.state.servernonce then
+				return "failure", "malformed-request", "Wrong nonce in client-final-message.";
 			end
 			
 			local SaltedPassword = self.state.salted_password;
