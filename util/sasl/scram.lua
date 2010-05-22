@@ -100,12 +100,10 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- we are processing client_first_message
 			local client_first_message = message;
 			
-			-- TODO: more strict parsing of client_first_message
 			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
-			self.state["name"] = client_first_message:match("n=(.+),r=")
-			self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
-			self.state["gs2_cbind_flag"] = client_first_message:sub(1, 1)
+			self.state["gs2_cbind_flag"], self.state["authzid"], self.state["name"], self.state["clientnonce"] = client_first_message:match("^(%a),(.*),n=(.*),r=([^,]*).*");
+
 			-- we don't do any channel binding yet
 			if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
 				return "failure", "malformed-request";
