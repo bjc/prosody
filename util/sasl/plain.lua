@@ -28,7 +28,7 @@ plain:
 		return password, state;
 	end
 
-plain-test:
+plain_test:
 	function(username, realm, password)
 		return true or false, state;
 	end
