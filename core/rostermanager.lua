@@ -93,7 +93,8 @@ function load_roster(username, host)
 	else -- Attempt to load roster for non-loaded user
 		log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	end
-	roster = datamanager.load(username, host, "roster") or {};
+	local data, err = datamanager.load(username, host, "roster");
+	roster = data or {};
 	if user then user.roster = roster; end
 	if not roster[false] then roster[false] = { }; end
 	if roster[jid] then
@@ -101,7 +102,7 @@ function load_roster(username, host)
 		log("warn", "roster for "..jid.." has a self-contact");
 	end
 	hosts[host].events.fire_event("roster-load", username, host, roster);
-	return roster;
+	return roster, err;
 end
 
 function save_roster(username, host, roster)
