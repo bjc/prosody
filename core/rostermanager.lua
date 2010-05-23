@@ -191,9 +191,9 @@ function process_inbound_unsubscribe(username, host, jid)
 end
 
 function is_contact_subscribed(username, host, jid)
-	local roster = load_roster(username, host);
+	local roster, err = load_roster(username, host);
 	local item = roster[jid];
-	return item and (item.subscription == "from" or item.subscription == "both");
+	return item and (item.subscription == "from" or item.subscription == "both"), err;
 end
 
 function is_contact_pending_in(username, host, jid)
