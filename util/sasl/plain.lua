@@ -1,5 +1,5 @@
 -- sasl.lua v0.4
--- Copyright (C) 2008-2009 Tobias Markmann
+-- Copyright (C) 2008-2010 Tobias Markmann
 --
 --    All rights reserved.
 --
@@ -19,6 +19,21 @@ module "plain"
 
 -- ================================
 -- SASL PLAIN according to RFC 4616
+
+--[[
+Supported Authentication Backends
+
+plain:
+	function(username, realm)
+		return password, state;
+	end
+
+plain_test:
+	function(username, realm, password)
+		return true or false, state;
+	end
+]]
+
 local function plain(self, message)
 	if not message then
 		return "failure", "malformed-request";
