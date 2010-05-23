@@ -145,7 +145,7 @@ function store(username, host, datastore, data)
 	local f, msg = io_open(getpath(username, host, datastore, nil, true), "w+");
 	if not f then
 		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return;
+		return nil, "Error saving to storage";
 	end
 	f:write("return ");
 	append(f, data);
