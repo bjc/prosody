@@ -227,10 +227,6 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "inbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
 	
-	if not node then
-		log("debug", "dropping presence sent to host or invalid address '%s'", tostring(to_bare));
-	end
-	
 	if stanza.attr.type == "probe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
 			if 0 == send_presence_of_available_resources(node, host, st_from, origin, core_route_stanza) then
