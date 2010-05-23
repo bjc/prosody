@@ -96,7 +96,7 @@ function load_roster(username, host)
 	local data, err = datamanager.load(username, host, "roster");
 	roster = data or {};
 	if user then user.roster = roster; end
-	if not roster[false] then roster[false] = { }; end
+	if not roster[false] then roster[false] = { broken = err or nil }; end
 	if roster[jid] then
 		roster[jid] = nil;
 		log("warn", "roster for "..jid.." has a self-contact");
@@ -125,6 +125,7 @@ function save_roster(username, host, roster)
 		if metadata.version ~= true then
 			metadata.version = (metadata.version or 0) + 1;
 		end
+		if roster[false].broken then return nil, "Not saving broken roster" end
 		return datamanager.store(username, host, "roster", roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
