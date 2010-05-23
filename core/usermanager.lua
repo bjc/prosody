@@ -69,7 +69,8 @@ end
 
 function user_exists(username, host)
 	if not(require_provisioning) and is_cyrus(host) then return true; end
-	return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
+	local account, err = datamanager.load(username, host, "accounts");
+	return (account or err) ~= nil; -- FIXME also check for empty credentials
 end
 
 function create_user(username, password, host)
