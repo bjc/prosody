@@ -26,7 +26,11 @@ module:add_iq_handler("c2s", "jabber:iq:private",
 				if #query.tags == 1 then
 					local tag = query.tags[1];
 					local key = tag.name..":"..tag.attr.xmlns;
-					local data = datamanager.load(node, host, "private");
+					local data, err = datamanager.load(node, host, "private");
+					if err then
+						session.send(st.error_reply(stanza, "wait", "internal-server-error"));
+						return true;
+					end
 					if stanza.attr.type == "get" then
 						if data and data[key] then
 							session.send(st.reply(stanza):tag("query", {xmlns = "jabber:iq:private"}):add_child(st.deserialize(data[key])));
