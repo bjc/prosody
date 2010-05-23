@@ -74,7 +74,8 @@ function new_default_provider(host)
 
 	function provider:user_exists(username)
 		if not(require_provisioning) and is_cyrus(host) then return true; end
-		return datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
+		local account, err = datamanager.load(username, host, "accounts") ~= nil; -- FIXME also check for empty credentials
+		return (account or err) ~= nil; -- FIXME also check for empty credentials
 	end
 
 	function provider:create_user(username, password)
