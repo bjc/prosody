@@ -181,7 +181,7 @@ function bind_resource(session, resource)
 		hosts[session.host].sessions[session.username].sessions[resource] = nil;
 		session.full_jid = nil;
 		session.resource = nil;
-		if next(bare_sessions[session.username..'@'..session.host]) == nil then
+		if next(bare_sessions[session.username..'@'..session.host].sessions) == nil then
 			bare_sessions[session.username..'@'..session.host] = nil;
 			hosts[session.host].sessions[session.username] = nil;
 		end
