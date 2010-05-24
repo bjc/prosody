@@ -32,13 +32,13 @@ module "digest-md5"
 --[[
 Supported Authentication Backends
 
-digest-md5:
+digest_md5:
 	function(username, domain, realm, encoding) -- domain and realm are usually the same; for some broken
 												-- implementations it's not
 		return digesthash, state;
 	end
 
-digest-md5-test:
+digest_md5_test:
 	function(username, domain, realm, encoding, digesthash)
 		return true or false, state;
 	end
