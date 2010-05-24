@@ -32,7 +32,8 @@ module "scram"
 --[[
 Supported Authentication Backends
 
-scram-{MECH}:
+scram_{MECH}:
+	-- MECH being a standard hash name (like those at IANA's hash registry) with '-' replaced with '_'
 	function(username, realm)
 		return salted_password, iteration_count, salt, state;
 	end
@@ -90,6 +91,12 @@ local function validate_username(username)
 	-- apply SASLprep
 	username = saslprep(username);
 	return username;
+end
+
+local function hashprep( hashname ) 
+	local hash = hashname:lower()
+	hash = hash:gsub("-", "_")
+	return hash
 end
 
 function saltedPasswordSHA1(password, salt, iteration_count)
@@ -156,7 +163,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					log("error", "Generating salted password failed. Reason: %s", self.state.salted_password);
 					return "failure", "temporary-auth-failure";
 				end
-			elseif self.profile["scram_"..hash_name] then
+			elseif self.profile["scram_"..hashprep(hash_name)] then
 				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
@@ -206,7 +213,7 @@ end
 
 function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
-		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
+		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
 	end
 
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
