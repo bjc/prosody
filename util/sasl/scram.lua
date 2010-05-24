@@ -94,7 +94,7 @@ end
 
 function saltedPasswordSHA1(password, salt, iteration_count)
 	local salted_password
-	if type(password) ~= "string" and type(salt) ~= "string" and type(iteration_count) ~= "number" then
+	if type(password) ~= "string" or type(salt) ~= "string" or type(iteration_count) ~= "number" then
 		return false, "inappropriate argument types"
 	end
 	if iteration_count < 4096 then
