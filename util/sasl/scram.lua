@@ -164,7 +164,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					return "failure", "temporary-auth-failure";
 				end
 			elseif self.profile["scram_"..hashprep(hash_name)] then
-				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
+				local salted_password, iteration_count, salt, state = self.profile["scram_"..hashprep(hash_name)](self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
