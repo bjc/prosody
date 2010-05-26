@@ -26,7 +26,7 @@ module "usermanager"
 
 function new_null_provider()
 	local function dummy() end;
-	return setmetatable({}, { __index = function() return dummy; end });
+	return setmetatable({name = "dummyauth"}, { __index = function() return dummy; end });
 end
 
 local function host_handler(host)
@@ -39,15 +39,18 @@ local function host_handler(host)
 		else
 			log("debug", "auth provider is not nil");
 		end
+		if provider.name == nil then
+			log("debug", "authentication provider name is nil");
+		else
+	        	log("debug", "authentication provider name = '%s'", provider.name);
+		end
 		if config.get(host, "core", "authentication") == nil and provider.name == "default" then
 			host_session.users = provider;
 		elseif config.get(host, "core", "authentication") == provider.name then
 			host_session.users = provider;
 		end
-		if provider.name == nil then
-			log("debug", "authentication provider name is nil");
-		else
-	        	log("debug", "authentication provider name = '%s'", provider.name);
+		if host_session.users ~= nil and host_session.users.name ~= nil then
+			log("debug", "host_session.users.name for host '%s' now '%s'", host, host_session.users.name);
 		end
 	end);
 	host_session.events.add_handler("item-removed/auth-provider", function (event)
@@ -62,7 +65,7 @@ prosody.events.add_handler("component-activated", host_handler, 100);
 
 function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
-function validate_credentials(host, username, password, method)
+function test_password(username, password, host)
 	return hosts[host].users.test_password(username, password);
 end
 
@@ -70,7 +73,7 @@ function get_password(username, host)
 	return hosts[host].users.get_password(username);
 end
 
-function set_password(username, host, password)
+function set_password(username, password, host)
 	return hosts[host].users.set_password(username, password);
 end
 
