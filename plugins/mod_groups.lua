@@ -67,7 +67,9 @@ function remove_virtual_contacts(username, host, datastore, data)
 				new_roster[jid] = contact;
 			end
 		end
-		new_roster[false].version = nil; -- Version is void
+		if new_roster[false] then
+			new_roster[false].version = nil; -- Version is void
+		end
 		return username, host, datastore, new_roster;
 	end
 
