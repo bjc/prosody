@@ -39,7 +39,7 @@ end
 
 local array, set = require "util.array", require "util.set";
 
-local autoload_modules = {"presence", "message", "iq"};
+local autoload_modules = {"presence", "message", "iq", "defaultauth"};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;

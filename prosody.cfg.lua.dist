@@ -71,6 +71,7 @@ modules_disabled = {
 	-- "presence";
 	-- "message";
 	-- "iq";
+	-- "defaultauth";
 };
 
 -- Disable account creation by default, for security
