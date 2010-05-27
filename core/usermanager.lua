@@ -30,27 +30,16 @@ function new_null_provider()
 end
 
 local function host_handler(host)
-        log("debug", "host_handler called with host '%s'", host);
 	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
-		if provider == nil then
-			log("debug", "auth provider is nil");
-		else
-			log("debug", "auth provider is not nil");
-		end
-		if provider.name == nil then
-			log("debug", "authentication provider name is nil");
-		else
-	        	log("debug", "authentication provider name = '%s'", provider.name);
-		end
 		if config.get(host, "core", "authentication") == nil and provider.name == "default" then
 			host_session.users = provider;
 		elseif config.get(host, "core", "authentication") == provider.name then
 			host_session.users = provider;
 		end
 		if host_session.users ~= nil and host_session.users.name ~= nil then
-			log("debug", "host_session.users.name for host '%s' now '%s'", host, host_session.users.name);
+			log("debug", "host '%s' now set to use user provider '%s'", host, host_session.users.name);
 		end
 	end);
 	host_session.events.add_handler("item-removed/auth-provider", function (event)

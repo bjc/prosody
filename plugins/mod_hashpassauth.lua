@@ -32,22 +32,28 @@ function new_hashpass_provider(host)
 	log("debug", "initializing hashpass authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
-		log("debug", "test password for user %s at host %s", username, module.host);
 		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 		local credentials = datamanager.load(username, host, "accounts") or {};
 	
-		if credentials.hashpass == nil or credentials.iteration_count == nil or credentials.salt == nil then
-			return nil, "Auth failed. Stored credential information is not complete.";
+		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
+			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
+		end
+
+		if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
+			if credentials.password ~= password then
+				return nil, "Auth failed. Provided password is incorrect.";
+			end
+
+			if provider.set_password(username, credentials.password) == nil then
+				return nil, "Auth failed. Could not set hashed password from plaintext.";
+			else
+				return true;
+			end
 		end
 
 		local valid, binpass = saltedPasswordSHA1(password, credentials.salt, credentials.iteration_count);
 		local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-		if valid then
-			log("debug", "salted password returned valid");
-		else
-			log("debug", "salted password returned not valid");
-		end
-		log("debug", "hexpass is '%s', stored pass is '%s'", hexpass, credentials.hashpass);
+
 		if valid and hexpass == credentials.hashpass then
 			return true;
 		else
@@ -56,9 +62,16 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.get_password(username)
-		log("debug", "get_password for username '%s' at host '%s'", username, module.host);
 		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-		return (datamanager.load(username, host, "accounts") or {}).hashpass;
+		local credentials = datamanager.load(username, host, "accounts") or {};
+		if(credentials.password ~= nil or (credentials.password ~= nil and string.len(credentials.password) ~= 0)) then
+			if provider.set_password(username, credentials.password) == nil then
+				return nil, "Problem setting plaintext password to hashed password.";
+			end
+			credentials = datamanager.load(username, host, "accounts");
+			return credentials.hashpass;
+		end
+		return credentials.hashpass;
 	end
 	
 	function provider.set_password(username, password)
@@ -77,6 +90,7 @@ function new_hashpass_provider(host)
 			local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 			account.hashpass = hexpass;
 
+			account.password = nil;
 			return datamanager.store(username, host, "accounts", account);
 		end
 		return nil, "Account not available.";
@@ -89,7 +103,7 @@ function new_hashpass_provider(host)
 			log("debug", "account not found for username '%s' at host '%s'", username, module.host);
 			return nil, "Auth failed. Invalid username";
 		end
-		if account.hashpass == nil or string.len(account.hashpass) == 0 then
+		if (account.hashpass == nil or string.len(account.hashpass) == 0) and (account.password == nil or string.len(account.password) == 0) then
 			log("debug", "account password not set or zero-length for username '%s' at host '%s'", username, module.host);
 			return nil, "Auth failed. Password invalid.";
 		end
