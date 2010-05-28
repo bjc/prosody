@@ -35,10 +35,6 @@ function new_hashpass_provider(host)
 		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 		local credentials = datamanager.load(username, host, "accounts") or {};
 	
-		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
-			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
-		end
-
 		if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
 			if credentials.password ~= password then
 				return nil, "Auth failed. Provided password is incorrect.";
@@ -51,6 +47,10 @@ function new_hashpass_provider(host)
 			end
 		end
 
+		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
+			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
+		end
+
 		local valid, binpass = saltedPasswordSHA1(password, credentials.salt, credentials.iteration_count);
 		local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 
@@ -61,19 +61,6 @@ function new_hashpass_provider(host)
 		end
 	end
 
-	function provider.get_password(username)
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-		local credentials = datamanager.load(username, host, "accounts") or {};
-		if(credentials.password ~= nil or (credentials.password ~= nil and string.len(credentials.password) ~= 0)) then
-			if provider.set_password(username, credentials.password) == nil then
-				return nil, "Problem setting plaintext password to hashed password.";
-			end
-			credentials = datamanager.load(username, host, "accounts");
-			return credentials.hashpass;
-		end
-		return credentials.hashpass;
-	end
-	
 	function provider.set_password(username, password)
 		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		local account = datamanager.load(username, host, "accounts");

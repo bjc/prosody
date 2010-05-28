@@ -78,6 +78,10 @@ function get_supported_methods(host)
 	return hosts[host].users.get_supported_methods();
 end
 
+function get_provider(host)
+	return hosts[host].users;
+end
+
 function is_admin(jid, host)
 	if host and host ~= "*" then
 		return hosts[host].users.is_admin(jid);
