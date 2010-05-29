@@ -119,7 +119,7 @@ end
 -- setup decompression for a stream
 local function setup_decompression(session, inflate_stream)
 	local old_data = session.data
-	session.data = function(conn, data)
+	session.data = function(data)
 			local status, decompressed, eof = pcall(inflate_stream, data);
 			if status == false then
 				session:close({
@@ -130,7 +130,7 @@ local function setup_decompression(session, inflate_stream)
 				module:log("warn", "%s", tostring(decompressed));
 				return;
 			end
-			old_data(conn, decompressed);
+			old_data(decompressed);
 		end;
 end
 
