@@ -9,6 +9,7 @@
 
 local host = module:get_host();
 local motd_text = module:get_option("motd_text") or "MOTD: (blank)";
+local motd_jid = module:get_option("motd_jid") or host;
 
 local st = require "util.stanza";
 
@@ -16,7 +17,7 @@ module:hook("resource-bind",
 	function (event)
 		local session = event.session;
 		local motd_stanza =
-			st.message({ to = session.username..'@'..session.host, from = host })
+			st.message({ to = session.username..'@'..session.host, from = motd_jid })
 				:tag("body"):text(motd_text);
 		core_route_stanza(hosts[host], motd_stanza);
 		module:log("debug", "MOTD send to user %s@%s", session.username, session.host);
