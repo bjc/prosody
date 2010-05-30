@@ -9,7 +9,6 @@
 
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
-local user_exists = require "core.usermanager".user_exists;
 
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
@@ -34,16 +33,6 @@ module:hook("iq/bare", function(data)
 	-- IQ to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
-	local to = stanza.attr.to;
-	if to and not bare_sessions[to] then -- quick check for account existance
-		local node, host = jid_split(to);
-		if not user_exists(node, host) then -- full check for account existance
-			if stanza.attr.type == "get" or stanza.attr.type == "set" then
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-			end
-			return true;
-		end
-	end
 	-- TODO fire post processing events
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
