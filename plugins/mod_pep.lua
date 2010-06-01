@@ -16,7 +16,6 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local type = type;
-local load_roster = require "core.rostermanager".load_roster;
 local sha1 = require "util.hashes".sha1;
 local base64 = require "util.encodings".base64.encode;
 
@@ -40,8 +39,8 @@ module:add_feature("http://jabber.org/protocol/pubsub#publish");
 local function subscription_presence(user_bare, recipient)
 	local recipient_bare = jid_bare(recipient);
 	if (recipient_bare == user_bare) then return true end
-	local item = load_roster(jid_split(user_bare))[recipient_bare];
-	return item and (item.subscription == 'from' or item.subscription == 'both');
+	local username, host = jid_split(user_bare);
+	return is_contact_subscribed(username, host, recipient_bare);
 end
 
 local function publish(session, node, id, item)
