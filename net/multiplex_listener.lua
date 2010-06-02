@@ -31,6 +31,7 @@ function server.onincoming(conn, data)
 			listener = xmppclient_listener;
 		end
 		conn:setlistener(listener);
+		listener.onconnect(conn);
 		listener.onincoming(conn, buf);
 	elseif #buf > 1024 then
 		conn:close();
