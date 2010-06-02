@@ -19,6 +19,8 @@ function server.onincoming(conn, data)
 	if buf:match("^[a-zA-Z]") then
 		local listener = httpserver_listener;
 		conn:setlistener(listener);
+		local onconnect = listener.onconnect;
+		if onconnect then onconnect(conn) end
 		listener.onincoming(conn, buf);
 	elseif buf:match(">") then
 		local listener;
@@ -31,7 +33,8 @@ function server.onincoming(conn, data)
 			listener = xmppclient_listener;
 		end
 		conn:setlistener(listener);
-		listener.onconnect(conn);
+		local onconnect = listener.onconnect;
+		if onconnect then onconnect(conn) end
 		listener.onincoming(conn, buf);
 	elseif #buf > 1024 then
 		conn:close();
