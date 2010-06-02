@@ -11,7 +11,7 @@
 local logger = require "logger";
 local log = logger.init("xmppserver_listener");
 local lxp = require "lxp"
-local init_xmlhandlers = require "core.xmlhandlers"
+local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
 local s2s_streamclosed = require "core.s2smanager".streamclosed;
@@ -72,24 +72,6 @@ local xmppserver = { default_port = 5269, default_mode = "*a" };
 
 -- These are session methods --
 
-local function session_reset_stream(session)
-	-- Reset stream
-		local parser = lxp.new(init_xmlhandlers(session, stream_callbacks), "\1");
-		session.parser = parser;
-		
-		session.notopen = true;
-		
-		function session.data(conn, data)
-			local ok, err = parser:parse(data);
-			if ok then return; end
-			(session.log or log)("warn", "Received invalid XML: %s", data);
-			(session.log or log)("warn", "Problem was: %s", err);
-			session:close("xml-not-well-formed");
-		end
-		
-		return true;
-end
-
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 local function session_close(session, reason, remote_reason)
@@ -132,29 +114,48 @@ end
 
 -- End of session methods --
 
-function xmppserver.onincoming(conn, data)
-	local session = sessions[conn];
-	if not session then
-		session = s2s_new_incoming(conn);
-		sessions[conn] = session;
-
-		-- Logging functions --
-
+local function initialize_session(session)
+	local stream = new_xmpp_stream(session, stream_callbacks);
+	session.stream = stream;
+	
+	session.notopen = true;
 		
+	function session.reset_stream()
+		session.notopen = true;
+		session.stream:reset();
+	end
+	
+	function session.data(data)
+		local ok, err = stream:feed(data);
+		if ok then return; end
+		(session.log or log)("warn", "Received invalid XML: %s", data);
+		(session.log or log)("warn", "Problem was: %s", err);
+		session:close("xml-not-well-formed");
+	end
+
+	session.close = session_close;
+	session.dispatch_stanza = stream_callbacks.handlestanza;
+end
+
+function xmppserver.onconnect(conn)
+	if not sessions[conn] then -- May be an existing outgoing session
+		local session = s2s_new_incoming(conn);
+		sessions[conn] = session;
+	
+		-- Logging functions --
 		local conn_name = "s2sin"..tostring(conn):match("[a-f0-9]+$");
 		session.log = logger.init(conn_name);
 		
 		session.log("info", "Incoming s2s connection");
 		
-		session.reset_stream = session_reset_stream;
-		session.close = session_close;
-		
-		session_reset_stream(session); -- Initialise, ready for use
-		
-		session.dispatch_stanza = stream_callbacks.handlestanza;
+		initialize_session(session);
 	end
-	if data then
-		session.data(conn, data);
+end
+
+function xmppserver.onincoming(conn, data)
+	local session = sessions[conn];
+	if session then
+		session.data(data);
 	end
 end
 	
@@ -190,12 +191,7 @@ function xmppserver.register_outgoing(conn, session)
 	session.direction = "outgoing";
 	sessions[conn] = session;
 	
-	session.reset_stream = session_reset_stream;
-	session.close = session_close;
-	session_reset_stream(session); -- Initialise, ready for use
-	
-	--local function handleerr(err) print("Traceback:", err, debug.traceback()); end
-	--session.stanza_dispatch = function (stanza) return select(2, xpcall(function () return core_process_stanza(session, stanza); end, handleerr));  end
+	initialize_session(session);
 end
 
 connlisteners_register("xmppserver", xmppserver);
