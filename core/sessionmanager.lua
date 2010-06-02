@@ -26,6 +26,7 @@ local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 
+local filters_initialize = require "util.filters".initialize;
 local fire_event = require "core.eventmanager".fire_event;
 local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
@@ -49,8 +50,20 @@ function new_session(conn)
 	end
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
+	
+	local filter = filters_initialize(session);
 	local w = conn.write;
-	session.send = function (t) w(conn, tostring(t)); end
+	session.send = function (t)
+		if t.name then
+			t = filter("stanzas/out", t);
+		end
+		if t then
+			t = filter("bytes/out", tostring(t));
+			if t then
+				return w(conn, t);
+			end
+		end
+	end
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
