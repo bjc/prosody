@@ -26,7 +26,7 @@ local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 
-local filters_initialize = require "util.filters".initialize;
+local initialize_filters = require "util.filters".initialize;
 local fire_event = require "core.eventmanager".fire_event;
 local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
@@ -51,7 +51,7 @@ function new_session(conn)
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
 	
-	local filter = filters_initialize(session);
+	local filter = initialize_filters(session);
 	local w = conn.write;
 	session.send = function (t)
 		if t.name then
