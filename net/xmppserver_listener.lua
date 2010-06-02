@@ -125,16 +125,26 @@ local function initialize_session(session)
 		session.stream:reset();
 	end
 	
+	local filter = session.filter;
 	function session.data(data)
-		local ok, err = stream:feed(data);
-		if ok then return; end
-		(session.log or log)("warn", "Received invalid XML: %s", data);
-		(session.log or log)("warn", "Problem was: %s", err);
-		session:close("xml-not-well-formed");
+		data = filter("bytes/in", data);
+		if data then
+			local ok, err = stream:feed(data);
+			if ok then return; end
+			(session.log or log)("warn", "Received invalid XML: %s", data);
+			(session.log or log)("warn", "Problem was: %s", err);
+			session:close("xml-not-well-formed");
+		end
 	end
 
 	session.close = session_close;
-	session.dispatch_stanza = stream_callbacks.handlestanza;
+	local handlestanza = stream_callbacks.handlestanza;
+	function session.dispatch_stanza(session, stanza)
+		stanza = filters("stanzas/in", stanza);
+		if stanza then
+			return handlestanza(session, stanza);
+		end
+	end
 end
 
 function xmppserver.onconnect(conn)
