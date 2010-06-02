@@ -138,14 +138,24 @@ function xmppclient.onconnect(conn)
 		session.stream:reset();
 	end
 	
+	local filter = session.filter;
 	function session.data(data)
-		local ok, err = stream:feed(data);
-		if ok then return; end
-		log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
-		session:close("xml-not-well-formed");
+		data = filter("bytes/in", data);
+		if data then
+			local ok, err = stream:feed(data);
+			if ok then return; end
+			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+			session:close("xml-not-well-formed");
+		end
 	end
 	
-	session.dispatch_stanza = stream_callbacks.handlestanza;
+	local handlestanza = stream_callbacks.handlestanza;
+	function session.dispatch_stanza(session, stanza)
+		stanza = filter("stanzas/in", stanza);
+		if stanza then
+			return handlestanza(session, stanza);
+		end
+	end
 end
 
 function xmppclient.onincoming(conn, data)
