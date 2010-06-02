@@ -1,0 +1,61 @@
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
+local t_insert, t_remove = table.insert, table.remove;
+
+module "filters"
+
+local function initialize_session(session)
+	local filters = {};
+	session.filters = filters;
+	
+	function session.filter(type, data)
+		local filter_list = filters[type];
+		for i = 1, #filter_list do
+			data = filter_list[i](data);
+		end
+		return data;
+	end
+end
+
+function add_filter(session, type, callback, priority)
+	if not session.filters then
+		initialize_session(session);
+	end
+	
+	local filter_list = session.filters[type];
+	if not filter_list then
+		filter_list = {};
+		session.filters[type] = filter_list;
+	end
+	
+	priority = priority or 0;
+	
+	local i = 0;
+	repeat
+		i = i + 1;
+	until not filter_list[i] or filter_list[filter_list[i]] >= priority;
+	
+	t_insert(filter_list, i, callback);
+	filter_list[callback] = priority;
+end
+
+function remove_filter(session, type, callback)
+	local filter_list = session.filters[type];
+	if filter_list and filter_list[callback] then
+		for i=1, #filter_list do
+			if filter_list[i] == callback then
+				t_remove(filter_list, i);
+				filter_list[callback] = nil;
+				return true;
+			end
+		end
+	end
+end
+
+return _M;
