@@ -14,6 +14,7 @@ local xmlns_compression_feature = "http://jabber.org/features/compress"
 local xmlns_compression_protocol = "http://jabber.org/protocol/compress"
 local xmlns_stream = "http://etherx.jabber.org/streams";
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
+local add_filter = require "util.filters".add_filter;
 
 local compression_level = module:get_option("compression_level");
 -- if not defined assume admin wants best compression
@@ -94,44 +95,37 @@ end
 
 -- setup compression for a stream
 local function setup_compression(session, deflate_stream)
-	local old_send = (session.sends2s or session.send);
-	
-	local new_send = function(t)
-			--TODO: Better code injection in the sending process
-			session.log(t)
-			local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
-			if status == false then
-				session:close({
-					condition = "undefined-condition";
-					text = compressed;
-					extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
-				});
-				module:log("warn", "%s", tostring(compressed));
-				return;
-			end
-			session.conn:write(compressed);
-		end;
-	
-	if session.sends2s then session.sends2s = new_send
-	elseif session.send then session.send = new_send end
+	add_filter(session, "bytes/out", function(t)
+		session.log(t)
+		local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
+		if status == false then
+			session:close({
+				condition = "undefined-condition";
+				text = compressed;
+				extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+			});
+			module:log("warn", "%s", tostring(compressed));
+			return;
+		end
+		return compressed;
+	end);	
 end
 
 -- setup decompression for a stream
 local function setup_decompression(session, inflate_stream)
-	local old_data = session.data
-	session.data = function(data)
-			local status, decompressed, eof = pcall(inflate_stream, data);
-			if status == false then
-				session:close({
-					condition = "undefined-condition";
-					text = decompressed;
-					extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
-				});
-				module:log("warn", "%s", tostring(decompressed));
-				return;
-			end
-			old_data(decompressed);
-		end;
+	add_filter(session, "bytes/in", function(data)
+		local status, decompressed, eof = pcall(inflate_stream, data);
+		if status == false then
+			session:close({
+				condition = "undefined-condition";
+				text = decompressed;
+				extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
+			});
+			module:log("warn", "%s", tostring(decompressed));
+			return;
+		end
+		return decompressed;
+	end);
 end
 
 module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compression_protocol, 
