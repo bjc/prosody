@@ -111,45 +111,46 @@ end
 
 -- End of session methods --
 
+function xmppclient.onconnect(conn)
+	local session = sm_new_session(conn);
+	sessions[conn] = session;
+	
+	session.log("info", "Client connected");
+	
+	-- Client is using legacy SSL (otherwise mod_tls sets this flag)
+	if conn:ssl() then
+		session.secure = true;
+	end
+	
+	if opt_keepalives ~= nil then
+		conn:setoption("keepalive", opt_keepalives);
+	end
+	
+	session.close = session_close;
+	
+	local stream = new_xmpp_stream(session, stream_callbacks);
+	session.stream = stream;
+	
+	session.notopen = true;
+	
+	function session.reset_stream()
+		session.notopen = true;
+		session.stream:reset();
+	end
+	
+	function session.data(data)
+		local ok, err = stream:feed(data);
+		if ok then return; end
+		log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+		session:close("xml-not-well-formed");
+	end
+	
+	session.dispatch_stanza = stream_callbacks.handlestanza;
+end
+
 function xmppclient.onincoming(conn, data)
 	local session = sessions[conn];
-	if not session then
-		session = sm_new_session(conn);
-		sessions[conn] = session;
-
-		session.log("info", "Client connected");
-		
-		-- Client is using legacy SSL (otherwise mod_tls sets this flag)
-		if conn:ssl() then
-			session.secure = true;
-		end
-		
-		if opt_keepalives ~= nil then
-			conn:setoption("keepalive", opt_keepalives);
-		end
-		
-		session.close = session_close;
-		
-		local stream = new_xmpp_stream(session, stream_callbacks);
-		session.stream = stream;
-		
-		session.notopen = true;
-		
-		function session.reset_stream()
-			session.notopen = true;
-			session.stream:reset();
-		end
-		
-		function session.data(data)
-			local ok, err = stream:feed(data);
-			if ok then return; end
-			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
-			session:close("xml-not-well-formed");
-		end
-		
-		session.dispatch_stanza = stream_callbacks.handlestanza;
-	end
-	if data then
+	if session then
 		session.data(data);
 	end
 end
