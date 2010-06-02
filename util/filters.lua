@@ -46,6 +46,7 @@ function add_filter(session, type, callback, priority)
 end
 
 function remove_filter(session, type, callback)
+	if not session.filters then return; end
 	local filter_list = session.filters[type];
 	if filter_list and filter_list[callback] then
 		for i=1, #filter_list do
