@@ -19,6 +19,7 @@ function initialize(session)
 		if filter_list then
 			for i = 1, #filter_list do
 				data = filter_list[i](data);
+				if data == nil then break; end
 			end
 		end
 		return data;
