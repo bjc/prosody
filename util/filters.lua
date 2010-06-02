@@ -16,8 +16,10 @@ function initialize(session)
 	
 	function session.filter(type, data)
 		local filter_list = filters[type];
-		for i = 1, #filter_list do
-			data = filter_list[i](data);
+		if filter_list then
+			for i = 1, #filter_list do
+				data = filter_list[i](data);
+			end
 		end
 		return data;
 	end
