@@ -10,7 +10,7 @@ local t_insert, t_remove = table.insert, table.remove;
 
 module "filters"
 
-local function initialize_session(session)
+function initialize(session)
 	local filters = {};
 	session.filters = filters;
 	
@@ -25,7 +25,7 @@ end
 
 function add_filter(session, type, callback, priority)
 	if not session.filters then
-		initialize_session(session);
+		initialize(session);
 	end
 	
 	local filter_list = session.filters[type];
