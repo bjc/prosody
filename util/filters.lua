@@ -11,19 +11,22 @@ local t_insert, t_remove = table.insert, table.remove;
 module "filters"
 
 function initialize(session)
-	local filters = {};
-	session.filters = filters;
-	
-	function session.filter(type, data)
-		local filter_list = filters[type];
-		if filter_list then
-			for i = 1, #filter_list do
-				data = filter_list[i](data);
-				if data == nil then break; end
+	if not session.filters then
+		local filters = {};
+		session.filters = filters;
+		
+		function session.filter(type, data)
+			local filter_list = filters[type];
+			if filter_list then
+				for i = 1, #filter_list do
+					data = filter_list[i](data);
+					if data == nil then break; end
+				end
 			end
+			return data;
 		end
-		return data;
 	end
+	return session.filter;
 end
 
 function add_filter(session, type, callback, priority)
