@@ -127,7 +127,7 @@ function method:process(message)
 	elseif (err == -13) then -- SASL_BADAUTH
 	   return "failure", "not-authorized", cyrussasl.get_message( self.cyrus )
 	else
-	   log("debug", "Got SASL error condition %d", err)
+	   log("debug", "Got SASL error condition %d: %s", err, cyrussasl.get_message( self.cyrus ))
 	   return "failure", "undefined-condition", cyrussasl.get_message( self.cyrus )
 	end
 end
