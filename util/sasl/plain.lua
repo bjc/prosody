@@ -58,7 +58,7 @@ local function plain(self, message)
 	if self.profile.plain then
 		local correct_password;
 		correct_password, state = self.profile.plain(authentication, self.realm);
-		if correct_password == password then correct = true; else correct = false; end
+		correct = (correct_password == password);
 	elseif self.profile.plain_test then
 		correct, state = self.profile.plain_test(authentication, password, self.realm);
 	end
