@@ -105,7 +105,7 @@ function saltedPasswordSHA1(password, salt, iteration_count)
 		return false, "inappropriate argument types"
 	end
 	if iteration_count < 4096 then
-		log("warning", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
+		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 	end
 
 	return true, Hi(hmac_sha1, password, salt, iteration_count);
