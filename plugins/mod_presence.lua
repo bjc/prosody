@@ -231,7 +231,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		local result, err = rostermanager.is_contact_subscribed(node, host, from_bare);
 		if result then
 			if 0 == send_presence_of_available_resources(node, host, st_from, origin, core_route_stanza) then
-				core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- TODO send last activity
+				core_route_stanza(hosts[host], st.presence({from=to_bare, to=st_from, type="unavailable"})); -- TODO send last activity
 			end
 		elseif not err then
 			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
