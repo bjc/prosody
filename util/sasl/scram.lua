@@ -93,8 +93,10 @@ local function validate_username(username)
 	return username;
 end
 
-local function hashprep(hashname)
-	return hashname:lower():gsub("-", "_");
+local function hashprep( hashname ) 
+	local hash = hashname:lower()
+	hash = hash:gsub("-", "_")
+	return hash
 end
 
 function saltedPasswordSHA1(password, salt, iteration_count)
