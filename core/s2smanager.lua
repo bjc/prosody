@@ -256,7 +256,6 @@ function attempt_connection(host_session, err)
 			end
 		end);
 		
-		log("debug", "DNS lookup for %s sent, waiting for response before we can connect", to_host);
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
