@@ -23,7 +23,6 @@ local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
-local initialize_filters = require "util.filters".initialize;
 local wrapclient = require "net.server".wrapclient;
 local modulemanager = require "core.modulemanager";
 local st = require "stanza";
@@ -138,19 +137,7 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	local filter = initialize_filters(session);
-	session.sends2s = function (t)
-		if t.name then
-			t = filter("stanzas/out", t);
-		end
-		if t then
-			t = filter("bytes/out", tostring(t));
-			if t then
-				log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)"));
-				return w(conn, t);
-			end
-		end
-	end
+	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -178,8 +165,6 @@ function new_outgoing(from_host, to_host, connect)
 			log = logger_init(conn_name);
 			host_session.log = log;
 		end
-		
-		initialize_filters(host_session);
 		
 		if connect ~= false then
 			-- Kick the connection attempting machine into life
@@ -256,7 +241,6 @@ function attempt_connection(host_session, err)
 			end
 		end);
 		
-		log("debug", "DNS lookup for %s sent, waiting for response before we can connect", to_host);
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
@@ -347,20 +331,8 @@ function make_connect(host_session, connect_host, connect_port)
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
 	
-	local filter = initialize_filters(host_session);
 	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t)
-		if t.name then
-			t = filter("stanzas/out", t);
-		end
-		if t then
-			t = filter("bytes/out", tostring(t));
-			if t then
-				log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?"));
-				return w(conn, tostring(t));
-			end
-		end
-	end
+	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
 	host_session:open_stream(from_host, to_host);
 	
