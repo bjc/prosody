@@ -35,7 +35,7 @@ local function anonymous(self, message)
 	repeat
 		username = generate_uuid();
 	until self.profile.anonymous(username, self.realm);
-	self["username"] = username;
+	self.username = username;
 	return "success"
 end
 

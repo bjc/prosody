@@ -108,11 +108,8 @@ function method:select(mechanism)
 		return false;
 	end
 	
-	self.mech_i = mechanisms[mechanism]
-	if self.mech_i == nil then 
-		return false;
-	end
-	return true;
+	self.mech_i = mechanisms[mechanism];
+	return (self.mech_i ~= nil);
 end
 
 -- feed new messages to process into the library
