@@ -97,7 +97,7 @@ function handle_normal_presence(origin, stanza)
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 			if item.subscription == "both" or item.subscription == "to" then
 				probe.attr.to = jid;
-				core_route_stanza(origin, probe);
+				core_post_stanza(origin, probe, true);
 			end
 		end
 		for _, res in pairs(user and user.sessions or NULL) do -- broadcast from all available resources
@@ -187,7 +187,10 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "outbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
-	if stanza.attr.type == "subscribe" then
+	if stanza.attr.type == "probe" then
+		stanza.attr.from, stanza.attr.to = st_from, st_to;
+		return;
+	elseif stanza.attr.type == "subscribe" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none, ask = subscribe)
 		if rostermanager.set_contact_pending_out(node, host, to_bare) then
@@ -219,6 +222,7 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		core_route_stanza(origin, stanza);
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
+	return true;
 end
 
 function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
@@ -268,6 +272,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		end
 	end -- discard any other type
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
+	return true;
 end
 
 local outbound_presence_handler = function(data)
@@ -278,8 +283,7 @@ local outbound_presence_handler = function(data)
 	if to then
 		local t = stanza.attr.type;
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-			return true;
+			return handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 		end
 
 		local to_bare = jid_bare(to);
@@ -306,8 +310,7 @@ module:hook("presence/bare", function(data)
 	local t = stanza.attr.type;
 	if to then
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
-			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-			return true;
+			return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 		end
 	
 		local user = bare_sessions[to];
@@ -329,8 +332,7 @@ module:hook("presence/full", function(data)
 
 	local t = stanza.attr.type;
 	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
-		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-		return true;
+		return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 	end
 
 	local session = full_sessions[stanza.attr.to];
