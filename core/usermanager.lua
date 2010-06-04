@@ -26,7 +26,7 @@ module "usermanager"
 
 function new_null_provider()
 	local function dummy() end;
-	return setmetatable({name = "dummyauth"}, { __index = function() return dummy; end });
+	return setmetatable({name = "null"}, { __index = function() return dummy; end });
 end
 
 local function host_handler(host)
