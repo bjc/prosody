@@ -187,7 +187,10 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "outbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
-	if stanza.attr.type == "subscribe" then
+	if stanza.attr.type == "probe" then
+		stanza.attr.from, stanza.attr.to = st_from, st_to;
+		return;
+	elseif stanza.attr.type == "subscribe" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none, ask = subscribe)
 		if rostermanager.set_contact_pending_out(node, host, to_bare) then
