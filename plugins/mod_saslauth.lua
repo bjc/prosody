@@ -200,7 +200,7 @@ module:hook("stream-features", function(event)
 			elseif usermanager_get_provider(realm).test_password then
 				origin.sasl_handler = new_sasl(realm, testpass_authentication_profile);
 			else
-				log("warning", "AUTH: Could not load an authentication profile for the given provider.");
+				log("warn", "AUTH: Could not load an authentication profile for the given provider.");
 			end
 			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
 				origin.sasl_handler:forbidden({"PLAIN"});
