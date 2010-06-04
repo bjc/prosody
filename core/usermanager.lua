@@ -7,6 +7,7 @@
 --
 
 local datamanager = require "util.datamanager";
+local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local error = error;
@@ -22,6 +23,8 @@ local prosody = _G.prosody;
 
 local setmetatable = setmetatable;
 
+local default_provider = "internal";
+
 module "usermanager"
 
 function new_null_provider()
@@ -33,9 +36,8 @@ local function host_handler(host)
 	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
-		if config.get(host, "core", "authentication") == nil and provider.name == "default" then
-			host_session.users = provider;
-		elseif config.get(host, "core", "authentication") == provider.name then
+		local auth_provider = config.get(host, "core", "authentication") or default_provider;
+		if provider.name == auth_provider then
 			host_session.users = provider;
 		end
 		if host_session.users ~= nil and host_session.users.name ~= nil then
@@ -49,6 +51,10 @@ local function host_handler(host)
 		end
 	end);
    	host_session.users = new_null_provider(); -- Start with the default usermanager provider
+   	local auth_provider = config.get(host, "core", "authentication") or default_provider;
+   	if auth_provider ~= "null" then
+   		modulemanager.load(host, "auth_"..auth_provider);
+   	end
 end;
 prosody.events.add_handler("host-activated", host_handler, 100);
 prosody.events.add_handler("component-activated", host_handler, 100);

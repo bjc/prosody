@@ -23,7 +23,7 @@ local prosody = _G.prosody;
 local is_cyrus = usermanager.is_cyrus;
 
 function new_default_provider(host)
-	local provider = { name = "default" };
+	local provider = { name = "internal" };
 	log("debug", "initializing default authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
