@@ -28,7 +28,7 @@ local is_cyrus = usermanager.is_cyrus;
 local iteration_count = 4096;
 
 function new_hashpass_provider(host)
-	local provider = { name = "hashpass" };
+	local provider = { name = "internal_hashed" };
 	log("debug", "initializing hashpass authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
