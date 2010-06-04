@@ -48,7 +48,8 @@ local function host_handler(host)
 			host_session.users = new_null_provider();
 		end
 	end);
-end
+   	host_session.users = new_null_provider(); -- Start with the default usermanager provider
+end;
 prosody.events.add_handler("host-activated", host_handler, 100);
 prosody.events.add_handler("component-activated", host_handler, 100);
 
