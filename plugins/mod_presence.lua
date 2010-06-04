@@ -219,6 +219,7 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		core_route_stanza(origin, stanza);
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
+	return true;
 end
 
 function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
@@ -268,6 +269,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		end
 	end -- discard any other type
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
+	return true;
 end
 
 local outbound_presence_handler = function(data)
@@ -278,8 +280,7 @@ local outbound_presence_handler = function(data)
 	if to then
 		local t = stanza.attr.type;
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
-			handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-			return true;
+			return handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 		end
 
 		local to_bare = jid_bare(to);
@@ -306,8 +307,7 @@ module:hook("presence/bare", function(data)
 	local t = stanza.attr.type;
 	if to then
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
-			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-			return true;
+			return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 		end
 	
 		local user = bare_sessions[to];
@@ -329,8 +329,7 @@ module:hook("presence/full", function(data)
 
 	local t = stanza.attr.type;
 	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
-		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
-		return true;
+		return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 	end
 
 	local session = full_sessions[stanza.attr.to];
