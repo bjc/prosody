@@ -97,7 +97,7 @@ function handle_normal_presence(origin, stanza)
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 			if item.subscription == "both" or item.subscription == "to" then
 				probe.attr.to = jid;
-				core_route_stanza(origin, probe);
+				core_post_stanza(origin, probe, true);
 			end
 		end
 		for _, res in pairs(user and user.sessions or NULL) do -- broadcast from all available resources
