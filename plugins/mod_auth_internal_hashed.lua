@@ -108,7 +108,7 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.get_sasl_handler()
-		local realm = module:get_option("sasl_realm") or origin.host;
+		local realm = module:get_option("sasl_realm") or module.host;
 		local testpass_authentication_profile = {
 			plain_test = function(username, password, realm)
 				local prepped_username = nodeprep(username);
