@@ -35,7 +35,7 @@ function new_default_provider(host)
 	end
 
 	function provider.create_user(username, password)
-		return nil, "Account creation/modification not supported."; end
+		return nil, "Account creation/modification not supported.";
 	end
 
 	function provider.get_sasl_handler()
