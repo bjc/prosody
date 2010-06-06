@@ -18,6 +18,8 @@ local saltedPasswordSHA1 = require "util.sasl.scram".saltedPasswordSHA1;
 local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
+local new_sasl = require "util.sasl".new;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local hosts = hosts;
 
 local prosody = _G.prosody;
@@ -105,8 +107,19 @@ function new_hashpass_provider(host)
 		return datamanager.store(username, host, "accounts", {hashpass = hexpass, salt = salt, iteration_count = iteration_count});
 	end
 
-	function provider.get_supported_methods()
-		return {["PLAIN"] = true}; -- TODO this should be taken from the config
+	function provider.get_sasl_handler()
+		local realm = module:get_option("sasl_realm") or origin.host;
+		local testpass_authentication_profile = {
+			plain_test = function(username, password, realm)
+				local prepped_username = nodeprep(username);
+				if not prepped_username then
+					log("debug", "NODEprep failed on username: %s", username);
+					return "", nil;
+				end
+				return usermanager.test_password(prepped_username, password, realm), true;
+			end
+		};
+		return new_sasl(realm, testpass_authentication_profile);
 	end
 
 	function provider.is_admin(jid)
