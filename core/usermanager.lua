@@ -81,8 +81,8 @@ function create_user(username, password, host)
 	return hosts[host].users.create_user(username, password);
 end
 
-function get_sasl_handler(host)
-	return hosts[host].users.get_sasl_handler();
+function get_supported_methods(host)
+	return hosts[host].users.get_supported_methods();
 end
 
 function get_provider(host)
