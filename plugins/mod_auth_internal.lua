@@ -16,6 +16,8 @@ local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
+local new_sasl = require "util.sasl".new;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local hosts = hosts;
 
 local prosody = _G.prosody;
@@ -73,8 +75,23 @@ function new_default_provider(host)
 		return datamanager.store(username, host, "accounts", {password = password});
 	end
 
-	function provider.get_supported_methods()
-		return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
+	function provider.get_sasl_handler()
+		local realm = module:get_option("sasl_realm") or module.host;
+		local getpass_authentication_profile = {
+			plain = function(username, realm)
+				local prepped_username = nodeprep(username);
+				if not prepped_username then
+					log("debug", "NODEprep failed on username: %s", username);
+					return "", nil;
+				end
+				local password = usermanager.get_password(prepped_username, realm);
+				if not password then
+					return "", nil;
+				end
+				return password, true;
+			end
+		};
+		return new_sasl(realm, getpass_authentication_profile);
 	end
 
 	function provider.is_admin(jid)
