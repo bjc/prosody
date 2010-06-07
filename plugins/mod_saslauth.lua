@@ -16,7 +16,7 @@ local base64 = require "util.encodings".base64;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
 local usermanager_get_provider = require "core.usermanager".get_provider;
-local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
+local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_get_password = require "core.usermanager".get_password;
 local usermanager_test_password = require "core.usermanager".test_password;
@@ -66,32 +66,6 @@ else
 	module:log("error", "Unknown SASL backend: %s", sasl_backend);
 	error("Unknown SASL backend");
 end
-
-local getpass_authentication_profile = {
-	plain = function(username, realm)
-		local prepped_username = nodeprep(username);
-		if not prepped_username then
-			log("debug", "NODEprep failed on username: %s", username);
-			return "", nil;
-		end
-		local password = usermanager_get_password(prepped_username, realm);
-		if not password then
-			return "", nil;
-		end
-		return password, true;
-	end
-};
-
-local testpass_authentication_profile = {
-	plain_test = 	function(username, password, realm)
-			local prepped_username = nodeprep(username);
-			if not prepped_username then
-				log("debug", "NODEprep failed on username: %s", username);
-				return "", nil;
-			end
-			return usermanager_test_password(prepped_username, password, realm), true;
-			end
-};
 
 local anonymous_authentication_profile = {
 	anonymous = function(username, realm)
@@ -195,13 +169,7 @@ module:hook("stream-features", function(event)
 		if module:get_option("anonymous_login") then
 			origin.sasl_handler = new_sasl(realm, anonymous_authentication_profile);
 		else
-			if usermanager_get_provider(realm).get_password then
-				origin.sasl_handler = new_sasl(realm, getpass_authentication_profile);
-			elseif usermanager_get_provider(realm).test_password then
-				origin.sasl_handler = new_sasl(realm, testpass_authentication_profile);
-			else
-				log("warn", "AUTH: Could not load an authentication profile for the given provider.");
-			end
+			origin.sasl_handler = usermanager_get_sasl_handler(module.host);
 			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
 				origin.sasl_handler:forbidden({"PLAIN"});
 			end
