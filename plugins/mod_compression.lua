@@ -98,7 +98,6 @@ local function setup_compression(session, deflate_stream)
 	
 	local new_send = function(t)
 			--TODO: Better code injection in the sending process
-			session.log(t)
 			local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 			if status == false then
 				session:close({
