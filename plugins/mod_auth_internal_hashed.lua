@@ -14,7 +14,7 @@ local error = error;
 local ipairs = ipairs;
 local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
-local saltedPasswordSHA1 = require "util.sasl.scram".saltedPasswordSHA1;
+local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
 local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
@@ -52,11 +52,12 @@ function new_hashpass_provider(host)
 		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 		end
-
-		local valid, binpass = saltedPasswordSHA1(password, credentials.salt, credentials.iteration_count);
-		local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-
-		if valid and hexpass == credentials.hashpass then
+		
+		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		
+		if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key_hex then
 			return true;
 		else
 			return nil, "Auth failed. Invalid username, password, or password hash information.";
@@ -102,9 +103,10 @@ function new_hashpass_provider(host)
 	function provider.create_user(username, password)
 		if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 		local salt = generate_uuid();
-		local valid, binpass = saltedPasswordSHA1(password, salt, iteration_count);
-		local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-		return datamanager.store(username, host, "accounts", {hashpass = hexpass, salt = salt, iteration_count = iteration_count});
+		local valid, stored_key, server_key = saltedPasswordSHA1(password, salt, iteration_count);
+		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
 	end
 
 	function provider.get_sasl_handler()
@@ -124,9 +126,10 @@ function new_hashpass_provider(host)
 					usermanager.set_password(username, credentials.password);
 					credentials = datamanager.load(username, host, "accounts") or {};
 				end
-				local salted_password, iteration_count, salt = credentials.hashpass, credentials.iteration_count, credentials.salt;
-				salted_password = salted_password and salted_password:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
-				return salted_password, iteration_count, salt, true;
+				local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
+				stored_key = stored_key and stored_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+				server_key = server_key and server_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+				return stored_key, server_key, iteration_count, salt, true;
 			end
 		};
 		return new_sasl(realm, testpass_authentication_profile);

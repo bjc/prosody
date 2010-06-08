@@ -35,7 +35,7 @@ Supported Authentication Backends
 scram_{MECH}:
 	-- MECH being a standard hash name (like those at IANA's hash registry) with '-' replaced with '_'
 	function(username, realm)
-		return salted_password, iteration_count, salt, state;
+		return stored_key, server_key, iteration_count, salt, state;
 	end
 ]]
 
@@ -97,16 +97,17 @@ local function hashprep(hashname)
 	return hashname:lower():gsub("-", "_");
 end
 
-function saltedPasswordSHA1(password, salt, iteration_count)
-	local salted_password
+function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	if type(password) ~= "string" or type(salt) ~= "string" or type(iteration_count) ~= "number" then
 		return false, "inappropriate argument types"
 	end
 	if iteration_count < 4096 then
 		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 	end
-
-	return true, Hi(hmac_sha1, password, salt, iteration_count);
+	local salted_password = Hi(hmac_sha1, password, salt, iteration_count);
+	local stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
+	local server_key = hmac_sha1(salted_password, "Server Key");
+	return true, stored_key, server_key
 end
 
 local function scram_gen(hash_name, H_f, HMAC_f)
