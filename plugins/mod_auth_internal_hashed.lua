@@ -22,6 +22,10 @@ local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local hosts = hosts;
 
+-- TODO: remove these two lines in near future
+local hmac_sha1 = require "util.hmac".sha1;
+local sha1 = require "util.hashes".sha1;
+
 local prosody = _G.prosody;
 
 local is_cyrus = usermanager.is_cyrus;
@@ -53,9 +57,20 @@ function new_hashpass_provider(host)
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 		end
 		
-		if credentials.saltedPasswordSHA1
+		local valid, stored_key, server_key
 		
-		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+		if credentials.hexpass then
+			-- convert hexpass to stored_key and server_key
+			-- TODO: remove this in near future
+			valid = true;
+			local salted_password = credentials.hexpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+			
+			stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
+			server_key = hmac_sha1(salted_password, "Server Key");
+		else
+			valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+		end
+		
 		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		
