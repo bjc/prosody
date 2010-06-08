@@ -53,6 +53,8 @@ function new_hashpass_provider(host)
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 		end
 		
+		if credentials.saltedPasswordSHA1
+		
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
 		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
@@ -75,10 +77,13 @@ function new_hashpass_provider(host)
 			if account.salt == nil then
 				account.salt = generate_uuid();
 			end
-
-			local valid, binpass = saltedPasswordSHA1(password, account.salt, account.iteration_count);
-			local hexpass = binpass:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-			account.hashpass = hexpass;
+			
+			local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+			local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+			local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+			
+			account.stored_key = stored_key_hex
+			account.server_key = server_key_hex
 
 			account.password = nil;
 			return datamanager.store(username, host, "accounts", account);
