@@ -90,20 +90,25 @@ function get_provider(host)
 end
 
 function is_admin(jid, host)
+	local is_admin;
 	if host and host ~= "*" then
-		return hosts[host].users.is_admin(jid);
-	else -- Test only whether this JID is a global admin
+		is_admin = hosts[host].users.is_admin(jid);
+	end
+	if not is_admin then -- Test only whether this JID is a global admin
 		local admins = config.get("*", "core", "admins");
 		if type(admins) == "table" then
 			jid = jid_bare(jid);
 			for _,admin in ipairs(admins) do
-				if admin == jid then return true; end
+				if admin == jid then
+					is_admin = true;
+					break;
+				end
 			end
 		elseif admins then
 			log("error", "Option 'admins' for host '%s' is not a table", host);
 		end
-		return nil;
 	end
+	return is_admin;
 end
 
 return _M;
