@@ -57,12 +57,9 @@ function new_hashpass_provider(host)
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 		end
 		
-		local valid, stored_key, server_key
-		
 		-- convert hexpass to stored_key and server_key
 		-- TODO: remove this in near future
 		if credentials.hashpass then
-			valid = true;
 			local salted_password = credentials.hashpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
 			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key")):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 			credentials.server_key = hmac_sha1(salted_password, "Server Key"):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
