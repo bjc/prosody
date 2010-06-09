@@ -59,22 +59,22 @@ function new_hashpass_provider(host)
 		
 		local valid, stored_key, server_key
 		
-		if credentials.hexpass then
-			-- convert hexpass to stored_key and server_key
-			-- TODO: remove this in near future
+		-- convert hexpass to stored_key and server_key
+		-- TODO: remove this in near future
+		if credentials.hashpass then
 			valid = true;
-			local salted_password = credentials.hexpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
-			
-			stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
-			server_key = hmac_sha1(salted_password, "Server Key");
-		else
-			valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+			local salted_password = credentials.hashpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+			log("debug", "salted_password in bin: %s", tostring(salted_password));
+			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key")):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+			credentials.server_key = hmac_sha1(salted_password, "Server Key"):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		end
+		
+		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
 		
 		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		
-		if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key_hex then
+		if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key then
 			return true;
 		else
 			return nil, "Auth failed. Invalid username, password, or password hash information.";
@@ -85,15 +85,9 @@ function new_hashpass_provider(host)
 		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		local account = datamanager.load(username, host, "accounts");
 		if account then
-			if account.iteration_count == nil then
-				account.iteration_count = iteration_count;
-			end
-
-			if account.salt == nil then
-				account.salt = generate_uuid();
-			end
-			
-			local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+			account.salt = account.salt or generate_uuid();
+			account.iteration_count = account.iteration_count or iteration_count;
+			local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
 			local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 			local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 			
