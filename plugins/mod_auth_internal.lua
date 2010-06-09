@@ -95,16 +95,13 @@ function new_default_provider(host)
 	end
 
 	function provider.is_admin(jid)
-		local admins = config.get(host, "core", "admins");
+		local admins = module:get_option_array("admins");
 		if admins ~= config.get("*", "core", "admins") and type(admins) == "table" then
 			jid = jid_bare(jid);
 			for _,admin in ipairs(admins) do
 				if admin == jid then return true; end
 			end
-		elseif admins then
-			log("error", "Option 'admins' for host '%s' is not a table", host);
 		end
-		return is_admin(jid); -- Test whether it's a global admin instead
 	end
 	return provider;
 end
