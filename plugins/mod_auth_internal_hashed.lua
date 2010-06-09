@@ -140,6 +140,15 @@ function new_hashpass_provider(host)
 					usermanager.set_password(username, credentials.password);
 					credentials = datamanager.load(username, host, "accounts") or {};
 				end
+				
+				-- convert hexpass to stored_key and server_key
+				-- TODO: remove this in near future
+				if credentials.hashpass then
+					local salted_password = credentials.hashpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+					credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key")):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+					credentials.server_key = hmac_sha1(salted_password, "Server Key"):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+				end
+				
 				local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
 				stored_key = stored_key and stored_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
 				server_key = server_key and server_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
