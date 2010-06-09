@@ -96,7 +96,6 @@ end
 -- setup compression for a stream
 local function setup_compression(session, deflate_stream)
 	add_filter(session, "bytes/out", function(t)
-		session.log(t)
 		local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 		if status == false then
 			session:close({

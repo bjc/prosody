@@ -138,7 +138,7 @@ function new_hashpass_provider(host)
 			scram_sha_1 = function(username, realm)
 				local credentials = datamanager.load(username, host, "accounts") or {};
 				if credentials.password then
-					usermanager.set_password(username, credentials.password);
+					usermanager.set_password(username, credentials.password, host);
 					credentials = datamanager.load(username, host, "accounts") or {};
 				end
 				
