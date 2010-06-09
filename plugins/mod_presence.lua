@@ -273,7 +273,8 @@ local outbound_presence_handler = function(data)
 		end
 
 		local to_bare = jid_bare(to);
-		if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
+		local roster = origin.roster;
+		if roster and not(roster[to_bare] and (roster[to_bare].subscription == "both" or roster[to_bare].subscription == "from")) then -- directed presence
 			origin.directed = origin.directed or {};
 			if t then -- removing from directed presence list on sending an error or unavailable
 				origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
