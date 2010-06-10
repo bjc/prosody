@@ -98,12 +98,12 @@ local function setup_compression(session, deflate_stream)
 	add_filter(session, "bytes/out", function(t)
 		local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 		if status == false then
+			module:log("warn", "%s", tostring(compressed));
 			session:close({
 				condition = "undefined-condition";
 				text = compressed;
 				extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 			});
-			module:log("warn", "%s", tostring(compressed));
 			return;
 		end
 		return compressed;
@@ -115,12 +115,12 @@ local function setup_decompression(session, inflate_stream)
 	add_filter(session, "bytes/in", function(data)
 		local status, decompressed, eof = pcall(inflate_stream, data);
 		if status == false then
+			module:log("warn", "%s", tostring(decompressed));
 			session:close({
 				condition = "undefined-condition";
 				text = decompressed;
 				extra = st.stanza("failure", {xmlns="http://jabber.org/protocol/compress"}):tag("processing-failed");
 			});
-			module:log("warn", "%s", tostring(decompressed));
 			return;
 		end
 		return decompressed;
