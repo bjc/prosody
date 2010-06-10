@@ -140,13 +140,13 @@ function new_incoming(conn)
 	session.log = log;
 	local filter = initialize_filters(session);
 	session.sends2s = function (t)
+		log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)"));
 		if t.name then
 			t = filter("stanzas/out", t);
 		end
 		if t then
 			t = filter("bytes/out", tostring(t));
 			if t then
-				log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)"));
 				return w(conn, t);
 			end
 		end
