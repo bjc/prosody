@@ -142,12 +142,6 @@ module:add_handler({"s2sout_unauthed", "s2sout"}, "compressed", xmlns_compressio
 				
 			-- setup decompression for session.data
 			setup_decompression(session, inflate_stream);
-			local session_reset_stream = session.reset_stream;
-			session.reset_stream = function(session)
-					session_reset_stream(session);
-					setup_decompression(session, inflate_stream);
-					return true;
-				end;
 			session:reset_stream();
 			local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
 										["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
@@ -189,12 +183,6 @@ module:add_handler({"c2s_unauthed", "c2s", "s2sin_unauthed", "s2sin"}, "compress
 				-- setup decompression for session.data
 				setup_decompression(session, inflate_stream);
 				
-				local session_reset_stream = session.reset_stream;
-				session.reset_stream = function(session)
-						session_reset_stream(session);
-						setup_decompression(session, inflate_stream);
-						return true;
-					end;
 				session.compressed = true;
 			elseif method then
 				session.log("debug", "%s compression selected, but we don't support it.", tostring(method));
