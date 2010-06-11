@@ -499,37 +499,6 @@ function commands.unregister(arg)
 	return 1;
 end
 
-local http_errors = {
-	[404] = "Plugin not found, did you type the address correctly?"
-	};
-
-function commands.addplugin(arg)
-	if not arg[1] or arg[1] == "--help" then
-		show_usage("addplugin URL", "Download and install a plugin from a URL");
-		return 1;
-	end
-	local url = arg[1];
-	if url:match("^http://") then
-		local http = require "socket.http";
-		show_message("Fetching...");
-		local code, err = http.request(url);
-		if not code or not tostring(err):match("^[23]") then
-			show_message("Failed: "..(http_errors[err] or ("HTTP error "..err)));
-			return 1;
-		end
-		if url:match("%.lua$") then
-			local ok, err = datamanager.store(url:match("/mod_([^/]+)$"), "*", "plugins", {code});
-			if not ok then
-				show_message("Failed to save to data store: "..err);
-				return 1;
-			end
-		end
-		show_message("Saved. Don't forget to load the module using the config file or admin console!");
-	else
-		show_message("Sorry, I don't understand how to fetch plugins from there.");
-	end
-end
-
 ---------------------
 
 if command and command:match("^mod_") then -- Is a command in a module
