@@ -169,7 +169,7 @@ end
 
 function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
 	local node, host = jid_split(from_bare);
-	if to_bare == origin.username.."@"..origin.host then return; end -- No self contacts
+	if to_bare == from_bare then return; end -- No self contacts
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "outbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
