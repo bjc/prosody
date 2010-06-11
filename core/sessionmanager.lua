@@ -111,7 +111,7 @@ end
 
 function make_authenticated(session, username)
 	username = nodeprep(username);
-	if not username and #username > 0 then return nil, "Invalid username"; end
+	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s";
