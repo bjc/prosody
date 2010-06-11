@@ -15,11 +15,10 @@ local base64 = require "util.encodings".base64;
 
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local datamanager_load = require "util.datamanager".load;
-local usermanager_get_provider = require "core.usermanager".get_provider;
-local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
+local usermanager_validate_credentials = require "core.usermanager".validate_credentials;
+local usermanager_get_supported_methods = require "core.usermanager".get_supported_methods;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_get_password = require "core.usermanager".get_password;
-local usermanager_test_password = require "core.usermanager".test_password;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 local jid_split = require "util.jid".split;
@@ -67,6 +66,21 @@ else
 	error("Unknown SASL backend");
 end
 
+local default_authentication_profile = {
+	plain = function(username, realm)
+		local prepped_username = nodeprep(username);
+		if not prepped_username then
+			log("debug", "NODEprep failed on username: %s", username);
+			return "", nil;
+		end
+		local password = usermanager_get_password(prepped_username, realm);
+		if not password then
+			return "", nil;
+		end
+		return password, true;
+	end
+};
+
 local anonymous_authentication_profile = {
 	anonymous = function(username, realm)
 		return true; -- for normal usage you should always return true here
@@ -95,17 +109,17 @@ local function handle_status(session, status, ret, err_msg)
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
 		local username = nodeprep(session.sasl_handler.username);
-		if not username then -- TODO move this to sessionmanager
-			module:log("warn", "SASL succeeded but we didn't get a username!");
-			session.sasl_handler = nil;
-			session:reset_stream();
-			return status, ret, err_msg;
-		end
 
 		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
-			sm_make_authenticated(session, session.sasl_handler.username);
-			session.sasl_handler = nil;
-			session:reset_stream();
+			local aret, err = sm_make_authenticated(session, session.sasl_handler.username);
+			if aret then
+				session.sasl_handler = nil;
+				session:reset_stream();
+			else
+				module:log("warn", "SASL succeeded but username was invalid");
+				session.sasl_handler = session.sasl_handler:clean_clone();
+				return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
+			end
 		else
 			module:log("warn", "SASL succeeded but we don't have an account provisioned for %s", username);
 			session.sasl_handler = session.sasl_handler:clean_clone();
@@ -169,7 +183,7 @@ module:hook("stream-features", function(event)
 		if module:get_option("anonymous_login") then
 			origin.sasl_handler = new_sasl(realm, anonymous_authentication_profile);
 		else
-			origin.sasl_handler = usermanager_get_sasl_handler(module.host);
+			origin.sasl_handler = new_sasl(realm, default_authentication_profile);
 			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
 				origin.sasl_handler:forbidden({"PLAIN"});
 			end
