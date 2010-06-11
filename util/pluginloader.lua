@@ -16,12 +16,6 @@ local datamanager = require "util.datamanager";
 
 module "pluginloader"
 
-local function load_from_datastore(name)
-	local content = datamanager.load(name, nil, "plugins");
-	if not content or not content[1] then return nil, "Resource not found"; end
-	return content[1], name;
-end
-
 local function load_file(name)
 	local file, err = io_open(plugin_dir..name);
 	if not file then return file, err; end
@@ -40,24 +34,7 @@ function load_resource(plugin, resource, loader)
 	if not content then content, err = loader(resource); end
 	-- TODO add support for packed plugins
 	
-	if not content and loader == load_file then
-		return load_resource(plugin, resource, load_from_datastore);
-	end
-	
 	return content, err;
-end
-
-function store_resource(plugin, resource, content, metadata)
-	if not resource then
-		resource = "mod_"..plugin..".lua";
-	end
-	local store = { content };
-	if metadata then
-		for k,v in pairs(metadata) do
-			store[k] = v;
-		end
-	end
-	datamanager.store(plugin.."/"..resource, nil, "plugins", store);
 end
 
 function load_code(plugin, resource)
