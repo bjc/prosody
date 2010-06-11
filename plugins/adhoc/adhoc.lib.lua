@@ -1,3 +1,9 @@
+-- Copyright (C) 2009-2010 Florian Zeitz
+--
+-- This file is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
 local st, uuid = require "util.stanza", require "util.uuid";
 
 local xmlns_cmd = "http://jabber.org/protocol/commands";
