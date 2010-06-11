@@ -58,10 +58,19 @@ module:hook("iq/host", function (event)
 	end
 end, 500);
 
+local function handle_item_added(item)
+	commands[item.node] = item;
+end
+
 module:hook("item-added/adhoc", function (event)
-	commands[event.item.node] = event.item;
+	return handle_item_added(event.item);
 end, 500);
 
 module:hook("item-removed/adhoc", function (event)
 	commands[event.item.node] = nil;
 end, 500);
+
+-- Pick up any items that are already added
+for _, item in ipairs(module:get_host_items("adhoc")) do
+	handle_item_added(item);
+end
