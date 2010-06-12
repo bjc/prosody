@@ -115,7 +115,7 @@ function new_hashpass_provider(host)
 	function provider.create_user(username, password)
 		if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 		local salt = generate_uuid();
-		local valid, stored_key, server_key = saltedPasswordSHA1(password, salt, iteration_count);
+		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
 		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
 		return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
