@@ -95,17 +95,17 @@ local function handle_status(session, status, ret, err_msg)
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
 		local username = nodeprep(session.sasl_handler.username);
-		if not username then -- TODO move this to sessionmanager
-			module:log("warn", "SASL succeeded but we didn't get a username!");
-			session.sasl_handler = nil;
-			session:reset_stream();
-			return status, ret, err_msg;
-		end
 
 		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
-			sm_make_authenticated(session, session.sasl_handler.username);
-			session.sasl_handler = nil;
-			session:reset_stream();
+			local aret, err = sm_make_authenticated(session, session.sasl_handler.username);
+			if aret then
+				session.sasl_handler = nil;
+				session:reset_stream();
+			else
+				module:log("warn", "SASL succeeded but username was invalid");
+				session.sasl_handler = session.sasl_handler:clean_clone();
+				return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
+			end
 		else
 			module:log("warn", "SASL succeeded but we don't have an account provisioned for %s", username);
 			session.sasl_handler = session.sasl_handler:clean_clone();
