@@ -25,6 +25,7 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local initialize_filters = require "util.filters".initialize;
 local fire_event = require "core.eventmanager".fire_event;
@@ -122,6 +123,8 @@ function destroy_session(session, err)
 end
 
 function make_authenticated(session, username)
+	username = nodeprep(username);
+	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s";

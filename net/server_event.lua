@@ -20,8 +20,8 @@ local LAST_MODIFIED         = "2009/11/20"
 
 local cfg = {
 	MAX_CONNECTIONS       = 100000,  -- max per server connections (use "ulimit -n" on *nix)
-	MAX_HANDSHAKE_ATTEMPS = 1000,  -- attempts to finish ssl handshake
-	HANDSHAKE_TIMEOUT     = 60,  -- timout in seconds per handshake attempt
+	MAX_HANDSHAKE_ATTEMPTS= 1000,  -- attempts to finish ssl handshake
+	HANDSHAKE_TIMEOUT     = 60,  -- timeout in seconds per handshake attempt
 	MAX_READ_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes allowed to read from sockets
 	MAX_SEND_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes size of write buffer (for writing on sockets)
 	ACCEPT_DELAY          = 10,  -- seconds to wait until the next attempt of a full server to accept
@@ -136,7 +136,7 @@ do
 	
 	function interface_mt:_start_connection(plainssl) -- should be called from addclient
 			local callback = function( event )
-				if EV_TIMEOUT == event then  -- timout during connection
+				if EV_TIMEOUT == event then  -- timeout during connection
 					self.fatalerror = "connection timeout"
 					self:ontimeout()  -- call timeout listener
 					self:_close()
@@ -196,12 +196,12 @@ do
 				function( event )
 					local _, err
 					local attempt = 0
-					local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPS
+					local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPTS
 					while attempt < maxattempt do  -- no endless loop
 						attempt = attempt + 1
-						debug( "ssl handshake of client with id:"..tostring(self).."attemp:"..attempt )
+						debug( "ssl handshake of client with id:"..tostring(self)..", attempt:"..attempt )
 						if attempt > maxattempt then
-							self.fatalerror = "max handshake attemps exceeded"
+							self.fatalerror = "max handshake attempts exceeded"
 						elseif EV_TIMEOUT == event then
 							self.fatalerror = "timeout during handshake"
 						else
@@ -570,7 +570,7 @@ do
 							return -1;
 						end
 						interface.eventwritetimeout = addevent( base, nil, EV_TIMEOUT, callback, cfg.WRITE_TIMEOUT )  -- reg a new timeout event
-						debug( "wantread during write attemp, reg it in readcallback but dont know what really happens next..." )
+						debug( "wantread during write attempt, reg it in readcallback but dont know what really happens next..." )
 						-- hopefully this works with luasec; its simply not possible to use 2 different write events on a socket in luaevent
 						return -1
 					end
@@ -631,7 +631,7 @@ do
 								interface:_close()
 							end, cfg.READ_TIMEOUT
 						)
-						debug( "wantwrite during read attemp, reg it in writecallback but dont know what really happens next..." )
+						debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
 						-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
 					else  -- connection was closed or fatal error
 						interface.fatalerror = err
@@ -693,7 +693,7 @@ do
 				if interface._connections >= cfg.MAX_CONNECTIONS then
 					client:close( )  -- refuse connection
 					debug( "maximal connections reached, refuse client connection; accept delay:", delay )
-					return EV_TIMEOUT, delay  -- delay for next accept attemp
+					return EV_TIMEOUT, delay  -- delay for next accept attempt
 				end
 				local client_ip, client_port = client:getpeername( )
 				interface._connections = interface._connections + 1  -- increase connection count
