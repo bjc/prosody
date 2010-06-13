@@ -248,6 +248,16 @@ end
 function room_mt:get_password()
 	return self._data.password;
 end
+function room_mt:set_moderated(moderated)
+	moderated = moderated and true or nil;
+	if self._data.moderated ~= moderated then
+		self._data.moderated = 
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:is_moderated()
+	return self._data.moderated;
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
