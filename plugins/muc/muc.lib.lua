@@ -706,8 +706,11 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 						:tag('invite', {from=_from})
 							:tag('reason'):text(_reason or ""):up()
-						:up()
-					:up()
+						:up();
+						if self:get_password() then
+							invite:tag("password"):text(self:get_password()):up();
+						end
+					invite:up()
 					:tag('x', {xmlns="jabber:x:conference", jid=_to}) -- COMPAT: Some older clients expect this
 						:text(_reason or "")
 					:up()
