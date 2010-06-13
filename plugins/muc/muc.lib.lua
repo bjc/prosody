@@ -458,6 +458,9 @@ function room_mt:send_form(origin, stanza)
 				:tag("value"):text('anyone'):up()
 				:up()
 			:up()
+			:tag("field", {type='text-private', label='Password', var='muc#roomconfig_roomsecret'})
+				:tag("value"):text(self:get_password() or ""):up()
+			:up()
 	);
 end
 
@@ -504,6 +507,11 @@ function room_mt:process_form(origin, stanza)
 	local whois_changed = self._data.whois ~= whois
 	self._data.whois = whois
 	module:log('debug', 'whois=%s', tostring(whois))
+
+	local password = fields['muc#roomconfig_roomsecret'];
+	if password then
+		self:set_password(password);
+	end
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
