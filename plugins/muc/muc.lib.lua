@@ -215,6 +215,7 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self:is_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
 		:tag("feature", {var=self:is_members_only() and "muc_membersonly" or "muc_open"}):up()
 		:tag("feature", {var=self:is_persistent() and "muc_persistent" or "muc_temporary"}):up()
+		:tag("feature", {var=self:is_hidden() and "muc_hidden" or "muc_public"}):up()
 	;
 end
 function room_mt:get_disco_items(stanza)
