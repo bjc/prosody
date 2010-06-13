@@ -213,6 +213,7 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
 		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
 		:tag("feature", {var=self:is_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
+		:tag("feature", {var=self:is_members_only() and "muc_membersonly" or "muc_open"}):up()
 	;
 end
 function room_mt:get_disco_items(stanza)
