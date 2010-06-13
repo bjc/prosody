@@ -491,6 +491,9 @@ function room_mt:send_form(origin, stanza)
 			:tag("field", {type='boolean', label='Make Room Moderated?', var='muc#roomconfig_moderatedroom'})
 				:tag("value"):text(self:is_moderated() and "1" or "0"):up()
 			:up()
+			:tag("field", {type='boolean', label='Make Room Members-Only?', var='muc#roomconfig_membersonly'})
+				:tag("value"):text(self:is_members_only() and "1" or "0"):up()
+			:up()
 	);
 end
 
@@ -529,6 +532,12 @@ function room_mt:process_form(origin, stanza)
 	dirty = dirty or (self:is_moderated() ~= moderated)
 	module:log("debug", "moderated=%s", tostring(moderated));
 
+	local membersonly = fields['muc#roomconfig_membersonly'];
+	if membersonly == "0" or membersonly == "false" then membersonly = nil; elseif membersonly == "1" or membersonly == "true" then membersonly = true;
+	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
+	dirty = dirty or (self:is_members_only() ~= membersonly)
+	module:log("debug", "membersonly=%s", tostring(membersonly));
+
 	local public = fields['muc#roomconfig_publicroom'];
 	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
@@ -549,6 +558,7 @@ function room_mt:process_form(origin, stanza)
 		self:set_password(password);
 	end
 	self:set_moderated(moderated);
+	self:set_members_only(membersonly);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
