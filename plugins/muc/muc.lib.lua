@@ -261,6 +261,16 @@ end
 function room_mt:is_moderated()
 	return self._data.moderated;
 end
+function room_mt:set_members_only(members_only)
+	members_only = members_only and true or nil;
+	if self._data.members_only ~= members_only then
+		self._data.members_only = members_only;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:is_members_only()
+	return self._data.members_only;
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
