@@ -274,6 +274,16 @@ end
 function room_mt:is_members_only()
 	return self._data.members_only;
 end
+function room_mt:set_persistent(persistent)
+	persistent = persistent and true or nil;
+	if self._data.persistent ~= persistent then
+		self._data.persistent = persistent;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:is_persistent()
+	return self._data.persistent;
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
