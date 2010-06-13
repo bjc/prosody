@@ -236,6 +236,15 @@ local function build_unavailable_presence_from_error(stanza)
 		:tag('status'):text(error_message);
 end
 
+function room_mt:set_password(password)
+	if password == "" or type(password) ~= "string" then password = nil; end
+	self._data.password = password;
+	return password;
+end
+function room_mt:get_password()
+	return self._data.password;
+end
+
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local room = jid_bare(to);
