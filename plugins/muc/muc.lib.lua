@@ -253,7 +253,7 @@ end
 function room_mt:set_moderated(moderated)
 	moderated = moderated and true or nil;
 	if self._data.moderated ~= moderated then
-		self._data.moderated = 
+		self._data.moderated = moderated;
 		if self.save then self:save(true); end
 	end
 end
@@ -475,6 +475,9 @@ function room_mt:send_form(origin, stanza)
 			:tag("field", {type='text-private', label='Password', var='muc#roomconfig_roomsecret'})
 				:tag("value"):text(self:get_password() or ""):up()
 			:up()
+			:tag("field", {type='boolean', label='Make Room Moderated?', var='muc#roomconfig_moderatedroom'})
+				:tag("value"):text(self:is_moderated() and "1" or "0"):up()
+			:up()
 	);
 end
 
@@ -507,6 +510,12 @@ function room_mt:process_form(origin, stanza)
 	self._data.persistent = persistent;
 	module:log("debug", "persistent=%s", tostring(persistent));
 
+	local moderated = fields['muc#roomconfig_moderatedroom'];
+	if moderated == "0" or moderated == "false" then moderated = nil; elseif moderated == "1" or moderated == "true" then moderated = true;
+	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
+	dirty = dirty or (self:is_moderated() ~= moderated)
+	module:log("debug", "moderated=%s", tostring(moderated));
+
 	local public = fields['muc#roomconfig_publicroom'];
 	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
@@ -526,6 +535,7 @@ function room_mt:process_form(origin, stanza)
 	if password then
 		self:set_password(password);
 	end
+	self:set_moderated(moderated);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
