@@ -496,7 +496,7 @@ function room_mt:send_form(origin, stanza)
 				:tag("value"):text(self:is_persistent() and "1" or "0"):up()
 			:up()
 			:tag("field", {type='boolean', label='Make Room Publicly Searchable?', var='muc#roomconfig_publicroom'})
-				:tag("value"):text(self._data.hidden and "0" or "1"):up()
+				:tag("value"):text(self:is_hidden() and "0" or "1"):up()
 			:up()
 			:tag("field", {type='list-single', label='Who May Discover Real JIDs?', var='muc#roomconfig_whois'})
 			    :tag("value"):text(self._data.whois or 'moderators'):up()
@@ -562,8 +562,7 @@ function room_mt:process_form(origin, stanza)
 	local public = fields['muc#roomconfig_publicroom'];
 	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
-	dirty = dirty or (self._data.hidden ~= (not public and true or nil))
-	self._data.hidden = not public and true or nil;
+	dirty = dirty or (self:is_hidden() ~= (not public and true or nil))
 
 	local whois = fields['muc#roomconfig_whois'];
 	if not valid_whois[whois] then
@@ -581,6 +580,7 @@ function room_mt:process_form(origin, stanza)
 	self:set_moderated(moderated);
 	self:set_members_only(membersonly);
 	self:set_persistent(persistent);
+	self:set_hidden(not public);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
