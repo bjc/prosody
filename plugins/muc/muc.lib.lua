@@ -482,7 +482,7 @@ function room_mt:send_form(origin, stanza)
 			:tag("instructions"):text(title):up()
 			:tag("field", {type='hidden', var='FORM_TYPE'}):tag("value"):text("http://jabber.org/protocol/muc#roomconfig"):up():up()
 			:tag("field", {type='boolean', label='Make Room Persistent?', var='muc#roomconfig_persistentroom'})
-				:tag("value"):text(self._data.persistent and "1" or "0"):up()
+				:tag("value"):text(self:is_persistent() and "1" or "0"):up()
 			:up()
 			:tag("field", {type='boolean', label='Make Room Publicly Searchable?', var='muc#roomconfig_publicroom'})
 				:tag("value"):text(self._data.hidden and "0" or "1"):up()
@@ -533,8 +533,7 @@ function room_mt:process_form(origin, stanza)
 	local persistent = fields['muc#roomconfig_persistentroom'];
 	if persistent == "0" or persistent == "false" then persistent = nil; elseif persistent == "1" or persistent == "true" then persistent = true;
 	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
-	dirty = dirty or (self._data.persistent ~= persistent)
-	self._data.persistent = persistent;
+	dirty = dirty or (self:is_persistent() ~= persistent)
 	module:log("debug", "persistent=%s", tostring(persistent));
 
 	local moderated = fields['muc#roomconfig_moderatedroom'];
@@ -570,6 +569,7 @@ function room_mt:process_form(origin, stanza)
 	end
 	self:set_moderated(moderated);
 	self:set_members_only(membersonly);
+	self:set_persistent(persistent);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
@@ -606,8 +606,7 @@ function room_mt:destroy(newjid, reason, password)
 		end
 		self._occupants[nick] = nil;
 	end
-	self._data.persistent = nil;
-	if self.save then self:save(true); end
+	self:set_persistent(false);
 end
 
 function room_mt:handle_to_room(origin, stanza) -- presence changes and groupchat messages, along with disco/etc
