@@ -285,6 +285,16 @@ end
 function room_mt:is_persistent()
 	return self._data.persistent;
 end
+function room_mt:set_hidden(hidden)
+	hidden = hidden and true or nil;
+	if self._data.hidden ~= hidden then
+		self._data.hidden = hidden;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:is_hidden()
+	return self._data.hidden;
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
