@@ -78,7 +78,7 @@ end
 local function get_disco_items(stanza)
 	local reply = st.iq({type='result', id=stanza.attr.id, from=muc_host, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#items");
 	for jid, room in pairs(rooms) do
-		if not room._data.hidden then
+		if not room:is_hidden() then
 			reply:tag("item", {jid=jid, name=jid}):up();
 		end
 	end
