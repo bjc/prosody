@@ -240,8 +240,10 @@ end
 
 function room_mt:set_password(password)
 	if password == "" or type(password) ~= "string" then password = nil; end
-	self._data.password = password;
-	return password;
+	if self._data.password ~= password then
+		self._data.password = password;
+		if self.save then self:save(true); end
+	end
 end
 function room_mt:get_password()
 	return self._data.password;
