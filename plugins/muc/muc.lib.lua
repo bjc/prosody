@@ -88,8 +88,10 @@ room_mt.__index = room_mt;
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
 		return "moderator";
-	elseif affiliation == "member" or not affiliation then
+	elseif affiliation == "member" then
 		return "participant";
+	elseif not affiliation then
+		return self:is_moderated() and "visitor" or "participant";
 	end
 end
 
