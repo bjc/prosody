@@ -91,7 +91,9 @@ function room_mt:get_default_role(affiliation)
 	elseif affiliation == "member" then
 		return "participant";
 	elseif not affiliation then
-		return self:is_moderated() and "visitor" or "participant";
+		if not self:is_members_only() then
+			return self:is_moderated() and "visitor" or "participant";
+		end
 	end
 end
 
