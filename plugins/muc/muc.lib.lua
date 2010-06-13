@@ -337,7 +337,15 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 					is_merge = true;
 				end
-				if not new_nick then
+				local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
+				password = password and password:get_child("password", "http://jabber.org/protocol/muc");
+				password = password and password[1] ~= "" and password[1];
+				if self:get_password() and self:get_password() ~= password then
+					log("debug", "%s couldn't join due to invalid password: %s", from, to);
+					local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
+					reply.tags[1].attr.code = "401";
+					origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+				elseif not new_nick then
 					log("debug", "%s couldn't join due to nick conflict: %s", from, to);
 					local reply = st.error_reply(stanza, "cancel", "conflict"):up();
 					reply.tags[1].attr.code = "409";
