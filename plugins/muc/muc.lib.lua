@@ -206,7 +206,9 @@ end
 function room_mt:get_disco_info(stanza)
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
 		:tag("identity", {category="conference", type="text"}):up()
-		:tag("feature", {var="http://jabber.org/protocol/muc"});
+		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
+		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
+	;
 end
 function room_mt:get_disco_items(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
