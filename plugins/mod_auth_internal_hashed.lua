@@ -28,8 +28,6 @@ local sha1 = require "util.hashes".sha1;
 
 local prosody = _G.prosody;
 
-local is_cyrus = usermanager.is_cyrus;
-
 -- Default; can be set per-user
 local iteration_count = 4096;
 
@@ -38,7 +36,6 @@ function new_hashpass_provider(host)
 	log("debug", "initializing hashpass authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
-		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 		local credentials = datamanager.load(username, host, "accounts") or {};
 	
 		if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
@@ -80,7 +77,6 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.set_password(username, password)
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		local account = datamanager.load(username, host, "accounts");
 		if account then
 			account.salt = account.salt or generate_uuid();
@@ -99,7 +95,6 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.user_exists(username)
-		if is_cyrus(host) then return true; end
 		local account = datamanager.load(username, host, "accounts");
 		if not account then
 			log("debug", "account not found for username '%s' at host '%s'", username, module.host);
@@ -113,7 +108,6 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.create_user(username, password)
-		if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 		local salt = generate_uuid();
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
 		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
