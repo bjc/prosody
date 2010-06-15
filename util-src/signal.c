@@ -29,6 +29,10 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#ifdef __unix__
+#include <sys/param.h>
+#endif
+
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -326,7 +330,7 @@ static int l_raise(lua_State *L)
   return 1;
 }
 
-#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
+#ifdef __unix__
 
 /* define some posix only functions */
 
@@ -373,7 +377,7 @@ static int l_kill(lua_State *L)
 static const struct luaL_Reg lsignal_lib[] = {
   {"signal", l_signal},
   {"raise", l_raise},
-#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
+#ifdef __unix__
   {"kill", l_kill},
 #endif
   {NULL, NULL}
