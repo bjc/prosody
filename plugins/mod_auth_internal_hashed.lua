@@ -8,7 +8,7 @@
 --
 
 local datamanager = require "util.datamanager";
-local log = require "util.logger".init("usermanager");
+local log = require "util.logger".init("auth_internal_hashed");
 local type = type;
 local error = error;
 local ipairs = ipairs;
