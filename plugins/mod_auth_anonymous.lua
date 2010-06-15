@@ -7,7 +7,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local log = require "util.logger".init("usermanager");
+local log = require "util.logger".init("auth_anonymous");
 local type = type;
 local ipairs = ipairs;
 local jid_bare = require "util.jid".bare;
