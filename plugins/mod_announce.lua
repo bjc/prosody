@@ -6,10 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local st, jid, set = require "util.stanza", require "util.jid", require "util.set";
+local st, jid = require "util.stanza", require "util.jid";
 
 local is_admin = require "core.usermanager".is_admin;
-local admins = set.new(config.get(module:get_host(), "core", "admins"));
 
 function send_to_online(message, server)
 	local sessions;
