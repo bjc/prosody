@@ -10,10 +10,10 @@ local st, jid = require "util.stanza", require "util.jid";
 
 local is_admin = require "core.usermanager".is_admin;
 
-function send_to_online(message, server)
+function send_to_online(message, host)
 	local sessions;
-	if server then
-		sessions = { [server] = hosts[server] };
+	if host then
+		sessions = { [host] = hosts[host] };
 	else
 		sessions = hosts;
 	end
@@ -35,9 +35,9 @@ end
 
 
 -- Old <message>-based jabberd-style announcement sending
-function handle_announcement(data)
-	local origin, stanza = data.origin, data.stanza;
-	local host, resource = select(2, jid.split(stanza.attr.to));
+function handle_announcement(event)
+	local origin, stanza = event.origin, event.stanza;
+	local node, host, resource = jid.split(stanza.attr.to);
 	
 	if resource ~= "announce/online" then
 		return; -- Not an announcement
@@ -45,12 +45,11 @@ function handle_announcement(data)
 	
 	if not is_admin(stanza.attr.from) then
 		-- Not an admin? Not allowed!
-		module:log("warn", "Non-admin %s tried to send server announcement", tostring(jid.bare(stanza.attr.from)));
+		module:log("warn", "Non-admin '%s' tried to send server announcement", stanza.attr.from);
 		return;
 	end
 	
 	module:log("info", "Sending server announcement to all online users");
-	local host_session = hosts[host];
 	local message = st.clone(stanza);
 	message.attr.type = "headline";
 	message.attr.from = host;
