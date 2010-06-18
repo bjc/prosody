@@ -5,7 +5,7 @@ local cache = { data = {} };
 function cache:get(key) return self.data[key]; end
 function cache:set(key, val) self.data[key] = val; return val; end
 
-local DBI = require "DBI";
+local _,DBI = pcall(require, "DBI");
 function get_database(driver, db, ...)
 	local uri = "dbi:"..driver..":"..db;
 	return cache:get(uri) or cache:set(uri, (function(...)
