@@ -12,6 +12,7 @@ local is_admin = require "core.usermanager".is_admin;
 local admins = set.new(config.get(module:get_host(), "core", "admins"));
 
 function send_to_online(message, server)
+	local sessions;
 	if server then
 		sessions = { [server] = hosts[server] };
 	else
