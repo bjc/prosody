@@ -901,10 +901,9 @@ end
 function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
-	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
+	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
+	if not allowed then return allowed, err_type, err_condition; end
 	local occupant = self._occupants[occupant_jid];
-	if not occupant then return nil, "modify", "not-acceptable"; end
-	if occupant.affiliation == "owner" or occupant.affiliation == "admin" then return nil, "cancel", "not-allowed"; end
 	local p = st.presence({from = occupant_jid})
 		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
