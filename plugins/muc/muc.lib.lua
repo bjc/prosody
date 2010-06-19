@@ -6,6 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
+local select = select;
+local pairs, ipairs = pairs, ipairs;
+
 local datamanager = require "util.datamanager";
 local datetime = require "util.datetime";
 
@@ -573,7 +576,7 @@ function room_mt:process_form(origin, stanza)
 	end
 	local whois_changed = self._data.whois ~= whois
 	self._data.whois = whois
-	module:log('debug', 'whois=%s', tostring(whois))
+	module:log('debug', 'whois=%s', whois)
 
 	local password = fields['muc#roomconfig_roomsecret'];
 	if password then
