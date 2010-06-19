@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 #include <sys/param.h>
 #endif
 
@@ -330,7 +330,7 @@ static int l_raise(lua_State *L)
   return 1;
 }
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 
 /* define some posix only functions */
 
@@ -377,7 +377,7 @@ static int l_kill(lua_State *L)
 static const struct luaL_Reg lsignal_lib[] = {
   {"signal", l_signal},
   {"raise", l_raise},
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
   {"kill", l_kill},
 #endif
   {NULL, NULL}
