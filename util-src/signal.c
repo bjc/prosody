@@ -29,10 +29,6 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#if defined(__unix__) || defined(__APPLE__)
-#include <sys/param.h>
-#endif
-
 #include "lua.h"
 #include "lauxlib.h"
 
