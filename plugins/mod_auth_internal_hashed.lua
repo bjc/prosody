@@ -22,7 +22,7 @@ local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local hosts = hosts;
 
--- TODO: remove these two lines in near future
+-- COMPAT w/old trunk: remove these two lines before 0.8 release
 local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
 
@@ -76,7 +76,7 @@ function new_hashpass_provider(host)
 		end
 		
 		-- convert hexpass to stored_key and server_key
-		-- TODO: remove this in near future
+		-- COMPAT w/old trunk: remove before 0.8 release
 		if credentials.hashpass then
 			local salted_password = from_hex(credentials.hashpass);
 			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
@@ -155,7 +155,7 @@ function new_hashpass_provider(host)
 				end
 				
 				-- convert hexpass to stored_key and server_key
-				-- TODO: remove this in near future
+				-- COMPAT w/old trunk: remove before 0.8 release
 				if credentials.hashpass then
 					local salted_password = from_hex(credentials.hashpass);
 					credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
