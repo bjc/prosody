@@ -15,9 +15,7 @@ module:add_feature(xmlns_cmd);
 
 module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 	local origin, stanza = event.origin, event.stanza;
-	-- TODO: Is this correct, or should is_admin be changed?
-	local privileged = is_admin(stanza.attr.from)
-	    or is_admin(stanza.attr.from, stanza.attr.to); 
+	local privileged = is_admin(stanza.attr.from, stanza.attr.to);
 	if stanza.attr.type == "get" and stanza.tags[1].attr.node
 	    and stanza.tags[1].attr.node == xmlns_cmd then
 		reply = st.reply(stanza);
