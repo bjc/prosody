@@ -26,6 +26,27 @@ local hosts = hosts;
 local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
 
+local to_hex;
+do
+	local function replace_byte_with_hex(byte)
+		return ("%02x"):format(byte:byte());
+	end
+	function to_hex(binary_string)
+		return binary_string:gsub(".", replace_byte_with_hex);
+	end
+end
+
+local from_hex;
+do
+	local function replace_hex_with_byte(hex)
+		return string.char(tonumber(hex, 16));
+	end
+	function from_hex(hex_string)
+		return hex_string:gsub("..", replace_hex_with_byte);
+	end
+end
+
+
 local prosody = _G.prosody;
 
 -- Default; can be set per-user
@@ -57,17 +78,17 @@ function new_hashpass_provider(host)
 		-- convert hexpass to stored_key and server_key
 		-- TODO: remove this in near future
 		if credentials.hashpass then
-			local salted_password = credentials.hashpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
-			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key")):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-			credentials.server_key = hmac_sha1(salted_password, "Server Key"):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+			local salted_password = from_hex(credentials.hashpass);
+			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
+			credentials.server_key = to_hex(hmac_sha1(salted_password, "Server Key"));
 			credentials.hashpass = nil
 			datamanager.store(username, host, "accounts", credentials);
 		end
 		
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
 		
-		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		local stored_key_hex = to_hex(stored_key);
+		local server_key_hex = to_hex(server_key);
 		
 		if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key then
 			return true;
@@ -82,8 +103,8 @@ function new_hashpass_provider(host)
 			account.salt = account.salt or generate_uuid();
 			account.iteration_count = account.iteration_count or iteration_count;
 			local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
-			local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-			local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+			local stored_key_hex = to_hex(stored_key);
+			local server_key_hex = to_hex(server_key);
 			
 			account.stored_key = stored_key_hex
 			account.server_key = server_key_hex
@@ -110,8 +131,8 @@ function new_hashpass_provider(host)
 	function provider.create_user(username, password)
 		local salt = generate_uuid();
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
-		local stored_key_hex = stored_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-		local server_key_hex = server_key:gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+		local stored_key_hex = to_hex(stored_key);
+		local server_key_hex = to_hex(server_key);
 		return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
 	end
 
@@ -136,16 +157,16 @@ function new_hashpass_provider(host)
 				-- convert hexpass to stored_key and server_key
 				-- TODO: remove this in near future
 				if credentials.hashpass then
-					local salted_password = credentials.hashpass:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
-					credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key")):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
-					credentials.server_key = hmac_sha1(salted_password, "Server Key"):gsub(".", function (c) return ("%02x"):format(c:byte()); end);
+					local salted_password = from_hex(credentials.hashpass);
+					credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
+					credentials.server_key = to_hex(hmac_sha1(salted_password, "Server Key"));
 					credentials.hashpass = nil
 					datamanager.store(username, host, "accounts", credentials);
 				end
 				
 				local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
-				stored_key = stored_key and stored_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
-				server_key = server_key and server_key:gsub("..", function(x) return string.char(tonumber(x, 16)); end);
+				stored_key = stored_key and from_hex(stored_key);
+				server_key = server_key and from_hex(server_key);
 				return stored_key, server_key, iteration_count, salt, true;
 			end
 		};
