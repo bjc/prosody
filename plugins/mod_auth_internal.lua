@@ -93,16 +93,7 @@ function new_default_provider(host)
 		};
 		return new_sasl(realm, getpass_authentication_profile);
 	end
-
-	function provider.is_admin(jid)
-		local admins = module:get_option_array("admins");
-		if admins ~= config.get("*", "core", "admins") and type(admins) == "table" then
-			jid = jid_bare(jid);
-			for _,admin in ipairs(admins) do
-				if admin == jid then return true; end
-			end
-		end
-	end
+	
 	return provider;
 end
 
