@@ -46,7 +46,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				-- TODO datamanager should be able to delete all user data itself
 				datamanager.store(username, host, "vcard", nil);
 				datamanager.store(username, host, "private", nil);
-				datamanager.store(username, host, "offline", nil);
+				datamanager.list_store(username, host, "offline", nil);
 				local bare = username.."@"..host;
 				for jid, item in pairs(roster) do
 					if jid and jid ~= "pending" then
@@ -59,6 +59,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 					end
 				end
 				datamanager.store(username, host, "roster", nil);
+				datamanager.store(username, host, "privacy", nil);
 				datamanager.store(username, host, "accounts", nil); -- delete accounts datastore at the end
 				module:log("info", "User removed their account: %s@%s", username, host);
 				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
