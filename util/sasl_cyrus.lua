@@ -166,10 +166,10 @@ function method:process(message)
 	   log("debug", "SASL mechanism not available from remote end")
 	   return "failure", "invalid-mechanism", "SASL mechanism not available"
 	elseif (err == -13) then -- SASL_BADAUTH
-	   return "failure", "not-authorized", cyrussasl.get_message( self.cyrus )
+	   return "failure", "not-authorized", sasl_errstring[err];
 	else
-	   log("debug", "Got SASL error condition %d: %s", err, cyrussasl.get_message( self.cyrus ))
-	   return "failure", "undefined-condition", cyrussasl.get_message( self.cyrus )
+	   log("debug", "Got SASL error condition %d: %s", err, sasl_errstring[err]);
+	   return "failure", "undefined-condition", sasl_errstring[err];
 	end
 end
 
