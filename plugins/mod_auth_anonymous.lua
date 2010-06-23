@@ -8,10 +8,6 @@
 --
 
 local log = require "util.logger".init("auth_anonymous");
-local type = type;
-local ipairs = ipairs;
-local jid_bare = require "util.jid".bare;
-local config = require "core.configmanager";
 local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
 

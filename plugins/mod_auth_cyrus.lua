@@ -8,10 +8,6 @@
 --
 
 local log = require "util.logger".init("auth_cyrus");
-local type = type;
-local ipairs = ipairs;
-local jid_bare = require "util.jid".bare;
-local config = require "core.configmanager";
 
 local cyrus_service_realm = module:get_option("cyrus_service_realm");
 local cyrus_service_name = module:get_option("cyrus_service_name");
