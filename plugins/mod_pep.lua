@@ -289,8 +289,8 @@ module:hook("account-disco-info", function(event)
 end);
 
 module:hook("account-disco-items", function(event)
-	local session, stanza = event.session, event.stanza;
-	local bare = session.username..'@'..session.host;
+	local stanza = event.stanza;
+	local bare = stanza.attr.to;
 	local user_data = data[bare];
 
 	if user_data then
