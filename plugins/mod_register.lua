@@ -35,7 +35,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				local username, host = session.username, session.host;
 				--session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 				--return;
-				usermanager_set_password(username, host, nil); -- Disable account
+				--usermanager_set_password(username, host, nil); -- Disable account
 				-- FIXME the disabling currently allows a different user to recreate the account
 				-- we should add an in-memory account block mode when we have threading
 				session.send(st.reply(stanza));
