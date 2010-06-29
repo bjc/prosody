@@ -27,6 +27,47 @@ local print = print
 local pcall = pcall
 local s_match, s_gmatch = string.match, string.gmatch
 
+local sasl_errstring = {
+	-- SASL result codes --
+	[1]   = "another step is needed in authentication";
+	[0]   = "successful result";
+	[-1]  = "generic failure";
+	[-2]  = "memory shortage failure";
+	[-3]  = "overflowed buffer";
+	[-4]  = "mechanism not supported";
+	[-5]  = "bad protocol / cancel";
+	[-6]  = "can't request info until later in exchange";
+	[-7]  = "invalid parameter supplied";
+	[-8]  = "transient failure (e.g., weak key)";
+	[-9]  = "integrity check failed";
+	[-12] = "SASL library not initialized";
+
+	-- client only codes --
+	[2]   = "needs user interaction";
+	[-10] = "server failed mutual authentication step";
+	[-11] = "mechanism doesn't support requested feature";
+
+	-- server only codes --
+	[-13] = "authentication failure";
+	[-14] = "authorization failure";
+	[-15] = "mechanism too weak for this user";
+	[-16] = "encryption needed to use mechanism";
+	[-17] = "One time use of a plaintext password will enable requested mechanism for user";
+	[-18] = "passphrase expired, has to be reset";
+	[-19] = "account disabled";
+	[-20] = "user not found";
+	[-23] = "version mismatch with plug-in";
+	[-24] = "remote authentication server unavailable";
+	[-26] = "user exists, but no verifier for user";
+
+	-- codes for password setting --
+	[-21] = "passphrase locked";
+	[-22] = "requested change was not needed";
+	[-27] = "passphrase is too weak for security policy";
+	[-28] = "user supplied passwords not permitted";
+};
+setmetatable(sasl_errstring, { __index = function() return "undefined error!" end });
+
 module "sasl_cyrus"
 
 local method = {};
@@ -125,10 +166,10 @@ function method:process(message)
 	   log("debug", "SASL mechanism not available from remote end")
 	   return "failure", "invalid-mechanism", "SASL mechanism not available"
 	elseif (err == -13) then -- SASL_BADAUTH
-	   return "failure", "not-authorized", cyrussasl.get_message( self.cyrus )
+	   return "failure", "not-authorized", sasl_errstring[err];
 	else
-	   log("debug", "Got SASL error condition %d: %s", err, cyrussasl.get_message( self.cyrus ))
-	   return "failure", "undefined-condition", cyrussasl.get_message( self.cyrus )
+	   log("debug", "Got SASL error condition %d: %s", err, sasl_errstring[err]);
+	   return "failure", "undefined-condition", sasl_errstring[err];
 	end
 end
 

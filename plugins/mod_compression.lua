@@ -56,7 +56,7 @@ module:hook_stanza(xmlns_stream, "features",
 						local algorithm = a[1]
 						if algorithm == "zlib" then
 							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):tag("method"):text("zlib"))
-							session.log("info", "Enabled compression using zlib.")
+							session.log("debug", "Enabled compression using zlib.")
 							return true;
 						end
 					end
