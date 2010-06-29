@@ -190,7 +190,19 @@ function process_inbound_unsubscribe(username, host, jid)
 	end
 end
 
+local function _get_online_roster_subscription(jidA, jidB)
+	local user = bare_sessions[jidA];
+	local item = user and (user.roster[jidB] or { subscription = "none" });
+	return item and item.subscription;
+end
 function is_contact_subscribed(username, host, jid)
+	do
+		local selfjid = username.."@"..host;
+		local subscription = _get_online_roster_subscription(selfjid, jid);
+		if subscription then return (subscription == "both" or subscription == "from"); end
+		local subscription = _get_online_roster_subscription(jid, selfjid);
+		if subscription then return (subscription == "both" or subscription == "to"); end
+	end
 	local roster, err = load_roster(username, host);
 	local item = roster[jid];
 	return item and (item.subscription == "from" or item.subscription == "both"), err;

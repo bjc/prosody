@@ -7,6 +7,7 @@
 --
 
 local datamanager = require "util.datamanager";
+local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local error = error;
@@ -18,83 +19,115 @@ local hosts = hosts;
 
 local require_provisioning = config.get("*", "core", "cyrus_require_provisioning") or false;
 
+local prosody = _G.prosody;
+
+local setmetatable = setmetatable;
+
+local default_provider = "internal";
+
 module "usermanager"
 
-local function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
+function new_null_provider()
+	local function dummy() end;
+	return setmetatable({name = "null"}, { __index = function() return dummy; end });
+end
 
-function validate_credentials(host, username, password, method)
-	log("debug", "User '%s' is being validated", username);
-	if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
-	local credentials = datamanager.load(username, host, "accounts") or {};
-
-	if method == nil then method = "PLAIN"; end
-	if method == "PLAIN" and credentials.password then -- PLAIN, do directly
-		if password == credentials.password then
-			return true;
-		else
-			return nil, "Auth failed. Invalid username or password.";
+function initialize_host(host)
+	local host_session = hosts[host];
+	host_session.events.add_handler("item-added/auth-provider", function (event)
+		local provider = event.item;
+		local auth_provider = config.get(host, "core", "authentication") or default_provider;
+		if provider.name == auth_provider then
+			host_session.users = provider;
 		end
-  end
-	-- must do md5
-	-- make credentials md5
-	local pwd = credentials.password;
-	if not pwd then pwd = credentials.md5; else pwd = hashes.md5(pwd, true); end
-	-- make password md5
-	if method == "PLAIN" then
-		password = hashes.md5(password or "", true);
-	elseif method ~= "DIGEST-MD5" then
-		return nil, "Unsupported auth method";
-	end
-	-- compare
-	if password == pwd then
-		return true;
-	else
-		return nil, "Auth failed. Invalid username or password.";
-	end
+		if host_session.users ~= nil and host_session.users.name ~= nil then
+			log("debug", "host '%s' now set to use user provider '%s'", host, host_session.users.name);
+		end
+	end);
+	host_session.events.add_handler("item-removed/auth-provider", function (event)
+		local provider = event.item;
+		if host_session.users == provider then
+			host_session.users = new_null_provider();
+		end
+	end);
+   	host_session.users = new_null_provider(); -- Start with the default usermanager provider
+   	local auth_provider = config.get(host, "core", "authentication") or default_provider;
+   	if auth_provider ~= "null" then
+   		modulemanager.load(host, "auth_"..auth_provider);
+   	end
+end;
+prosody.events.add_handler("host-activated", initialize_host, 100);
+prosody.events.add_handler("component-activated", initialize_host, 100);
+
+function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
+
+function test_password(username, password, host)
+	return hosts[host].users.test_password(username, password);
 end
 
 function get_password(username, host)
-	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-	return (datamanager.load(username, host, "accounts") or {}).password
+	return hosts[host].users.get_password(username);
 end
-function set_password(username, host, password)
-	if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
-	local account = datamanager.load(username, host, "accounts");
-	if account then
-		account.password = password;
-		return datamanager.store(username, host, "accounts", account);
-	end
-	return nil, "Account not available.";
+
+function set_password(username, password, host)
+	return hosts[host].users.set_password(username, password);
 end
 
 function user_exists(username, host)
-	if not(require_provisioning) and is_cyrus(host) then return true; end
-	local account, err = datamanager.load(username, host, "accounts");
-	return (account or err) ~= nil; -- FIXME also check for empty credentials
+	return hosts[host].users.user_exists(username);
 end
 
 function create_user(username, password, host)
-	if not(require_provisioning) and is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
-	return datamanager.store(username, host, "accounts", {password = password});
+	return hosts[host].users.create_user(username, password);
 end
 
-function get_supported_methods(host)
-	return {["PLAIN"] = true, ["DIGEST-MD5"] = true}; -- TODO this should be taken from the config
+function get_sasl_handler(host)
+	return hosts[host].users.get_sasl_handler();
+end
+
+function get_provider(host)
+	return hosts[host].users;
 end
 
 function is_admin(jid, host)
+	local is_admin;
+	jid = jid_bare(jid);
 	host = host or "*";
-	local admins = config.get(host, "core", "admins");
-	if host ~= "*" and admins == config.get("*", "core", "admins") then
-		return nil;
-	end
-	if type(admins) == "table" then
-		jid = jid_bare(jid);
-		for _,admin in ipairs(admins) do
-			if admin == jid then return true; end
+	
+	local host_admins = config.get(host, "core", "admins");
+	local global_admins = config.get("*", "core", "admins");
+	
+	if host_admins and host_admins ~= global_admins then
+		if type(host_admins) == "table" then
+			for _,admin in ipairs(host_admins) do
+				if admin == jid then
+					is_admin = true;
+					break;
+				end
+			end
+		elseif admins then
+			log("error", "Option 'admins' for host '%s' is not a list", host);
 		end
-	elseif admins then log("warn", "Option 'admins' for host '%s' is not a table", host); end
-	return nil;
+	end
+	
+	if not is_admin and global_admins then
+		if type(global_admins) == "table" then
+			for _,admin in ipairs(global_admins) do
+				if admin == jid then
+					is_admin = true;
+					break;
+				end
+			end
+		elseif admins then
+			log("error", "Global option 'admins' is not a list");
+		end
+	end
+	
+	-- Still not an admin, check with auth provider
+	if not is_admin and host ~= "*" and hosts[host].users.is_admin then
+		is_admin = hosts[host].users.is_admin(jid);
+	end
+	return is_admin or false;
 end
 
 return _M;

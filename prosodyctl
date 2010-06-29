@@ -29,6 +29,14 @@ if CFG_DATADIR then
 	end
 end
 
+-- Global 'prosody' object
+prosody = {
+	hosts = {},
+	events = require "util.events".new(),
+	platform = "posix"
+};
+local prosody = prosody;
+
 config = require "core.configmanager"
 
 do
@@ -62,8 +70,6 @@ require "core.loggingmanager"
 if not require "util.dependencies".check_dependencies() then
 	os.exit(1);
 end
-
-prosody = { hosts = {}, events = events, platform = "posix" };
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
@@ -114,12 +120,14 @@ local error_messages = setmetatable({
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-local events = require "util.events".new();
-
 hosts = prosody.hosts;
 
+local function make_host(hostname)
+	return { events = prosody.events, users = require "core.usermanager".new_null_provider(hostname) };
+end
+
 for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = { events = events };
+	hosts[hostname] = make_host(hostname);
 end
 	
 require "core.modulemanager"
@@ -231,14 +239,21 @@ function commands.adduser(arg)
 		return 1;
 	end
 	
-	if prosodyctl.user_exists{ user = user, host = host } then
-		show_message [[That user already exists]];
-		return 1;
-	end
-	
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
+	elseif config.get(host, "core", "authentication")
+		and config.get(host, "core", "authentication") ~= "default" then
+		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
+			config.get(host, "core", "authentication"));
+		show_warning("prosodyctl currently only supports the default provider, sorry :(");
+		return 1;
+	end
+	
+	if prosodyctl.user_exists{ user = user, host = host } then
+		show_message [[That user already exists]];
+		return 1;
 	end
 	
 	local password = read_password();
@@ -266,6 +281,18 @@ function commands.passwd(arg)
 	
 	if not host then
 		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
+		return 1;
+	end
+	
+	if not hosts[host] then
+		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
+		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
+	elseif config.get(host, "core", "authentication")
+		and config.get(host, "core", "authentication") ~= "default" then
+		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
+			config.get(host, "core", "authentication"));
+		show_warning("prosodyctl currently only supports the default provider, sorry :(");
 		return 1;
 	end
 	
@@ -302,6 +329,18 @@ function commands.deluser(arg)
 		return 1;
 	end
 	
+	if not hosts[host] then
+		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
+		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
+	elseif config.get(host, "core", "authentication")
+		and config.get(host, "core", "authentication") ~= "default" then
+		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
+			config.get(host, "core", "authentication"));
+		show_warning("prosodyctl currently only supports the default provider, sorry :(");
+		return 1;
+	end
+
 	if not prosodyctl.user_exists { user = user, host = host } then
 		show_message [[That user does not exist on this server]]
 		return 1;
