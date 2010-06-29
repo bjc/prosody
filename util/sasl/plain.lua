@@ -29,7 +29,7 @@ plain:
 	end
 
 plain_test:
-	function(username, password, realm)
+	function(username, realm, password)
 		return true or false, state;
 	end
 ]]
@@ -58,9 +58,9 @@ local function plain(self, message)
 	if self.profile.plain then
 		local correct_password;
 		correct_password, state = self.profile.plain(authentication, self.realm);
-		correct = (correct_password == password);
+		if correct_password == password then correct = true; else correct = false; end
 	elseif self.profile.plain_test then
-		correct, state = self.profile.plain_test(authentication, password, self.realm);
+		correct, state = self.profile.plain_test(authentication, self.realm, password);
 	end
 
 	self.username = authentication
