@@ -35,7 +35,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				local username, host = session.username, session.host;
 				--session.send(st.error_reply(stanza, "cancel", "not-allowed"));
 				--return;
-				--usermanager_set_password(username, host, nil); -- Disable account
+				usermanager_set_password(username, nil, host); -- Disable account
 				-- FIXME the disabling currently allows a different user to recreate the account
 				-- we should add an in-memory account block mode when we have threading
 				session.send(st.reply(stanza));
@@ -46,7 +46,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 				-- TODO datamanager should be able to delete all user data itself
 				datamanager.store(username, host, "vcard", nil);
 				datamanager.store(username, host, "private", nil);
-				datamanager.list_store(username, host, "offline", nil);
+				datamanager.store(username, host, "offline", nil);
 				local bare = username.."@"..host;
 				for jid, item in pairs(roster) do
 					if jid and jid ~= "pending" then
@@ -71,7 +71,7 @@ module:add_iq_handler("c2s", "jabber:iq:register", function (session, stanza)
 					username = nodeprep(table.concat(username));
 					password = table.concat(password);
 					if username == session.username then
-						if usermanager_set_password(username, session.host, password) then
+						if usermanager_set_password(username, password, session.host) then
 							session.send(st.reply(stanza));
 						else
 							-- TODO unable to write file, file may be locked, etc, what's the correct error?
