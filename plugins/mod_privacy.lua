@@ -301,7 +301,7 @@ function checkIfNeedToBeBlocked(e, session)
 	local origin, stanza = e.origin, e.stanza;
 	local privacy_lists = datamanager.load(session.username, session.host, "privacy") or {};
 	local bare_jid = session.username.."@"..session.host;
-	local to = stanza.attr.to;
+	local to = stanza.attr.to or bare_jid;
 	local from = stanza.attr.from;
 	
 	local is_to_user = bare_jid == jid_bare(to);
@@ -438,9 +438,7 @@ function preCheckOutgoing(e)
 		 	e.stanza.attr.from = e.stanza.attr.from .. "/" .. session.resource;
 		end
 	end
-	if session.username then -- FIXME do properly
-		return checkIfNeedToBeBlocked(e, session);
-	end
+	return checkIfNeedToBeBlocked(e, session);
 end
 
 module:hook("pre-message/full", preCheckOutgoing, 500);
