@@ -32,7 +32,7 @@ function new_null_provider()
 	return setmetatable({name = "null"}, { __index = function() return dummy; end });
 end
 
-local function host_handler(host)
+function initialize_host(host)
 	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
@@ -56,8 +56,8 @@ local function host_handler(host)
    		modulemanager.load(host, "auth_"..auth_provider);
    	end
 end;
-prosody.events.add_handler("host-activated", host_handler, 100);
-prosody.events.add_handler("component-activated", host_handler, 100);
+prosody.events.add_handler("host-activated", initialize_host, 100);
+prosody.events.add_handler("component-activated", initialize_host, 100);
 
 function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
