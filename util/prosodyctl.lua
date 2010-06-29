@@ -21,6 +21,8 @@ local tostring, tonumber = tostring, tonumber;
 
 local CFG_SOURCEDIR = _G.CFG_SOURCEDIR;
 
+local prosody = prosody;
+
 module "prosodyctl"
 
 function adduser(params)
@@ -29,6 +31,11 @@ function adduser(params)
 		return false, "invalid-username";
 	elseif not host then
 		return false, "invalid-hostname";
+	end
+
+	local provider = prosody.hosts[host].users;
+	if not(provider) or provider.name == "null" then
+		usermanager.initialize_host(host);
 	end
 	
 	local ok = usermanager.create_user(user, password, host);
@@ -39,6 +46,11 @@ function adduser(params)
 end
 
 function user_exists(params)
+	local provider = prosody.hosts[host].users;
+	if not(provider) or provider.name == "null" then
+		usermanager.initialize_host(host);
+	end
+	
 	return usermanager.user_exists(params.user, params.host);
 end
 
