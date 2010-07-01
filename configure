@@ -26,7 +26,7 @@ Configure Prosody prior to building.
 
 --help                      This help.
 --ostype=OS                 Use one of the OS presets.
-                            May be one of: debian, macosx, linux
+                            May be one of: debian, macosx, linux, freebsd
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
@@ -157,6 +157,16 @@ then
         LUA_LIBDIR_SET=yes
         CFLAGS="-Wall -fPIC"
         LDFLAGS="-shared"
+        fi
+        if [ "$OSTYPE" = "freebsd" ]
+        then LUA_INCDIR="/usr/local/include/lua51"
+        LUA_INCDIR_SET=yes
+        CFLAGS="-Wall -fPIC -I/usr/local/include"
+        LDFLAGS="-I/usr/local/include -shared"
+        LUA_SUFFIX="-5.1"
+        LUA_SUFFIX_SET=yes
+        LUA_DIR=/usr/local
+        LUA_DIR_SET=yes
         fi
 fi
 
