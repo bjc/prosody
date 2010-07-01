@@ -46,9 +46,9 @@ function adduser(params)
 end
 
 function user_exists(params)
-	local provider = prosody.hosts[host].users;
+	local provider = prosody.hosts[params.host].users;
 	if not(provider) or provider.name == "null" then
-		usermanager.initialize_host(host);
+		usermanager.initialize_host(params.host);
 	end
 	
 	return usermanager.user_exists(params.user, params.host);
