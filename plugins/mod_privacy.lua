@@ -440,7 +440,9 @@ function preCheckOutgoing(e)
 		 	e.stanza.attr.from = e.stanza.attr.from .. "/" .. session.resource;
 		end
 	end
-	return checkIfNeedToBeBlocked(e, session);
+	if session.username then -- FIXME do properly
+		return checkIfNeedToBeBlocked(e, session);
+	end
 end
 
 module:hook("pre-message/full", preCheckOutgoing, 500);
