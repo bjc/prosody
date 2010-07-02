@@ -343,9 +343,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_closelist[ handler ] = nil
 			handler = nil
 		end
-	if server then
-		server.remove( )
-	end
+		if server then
+			server.remove( )
+		end
 		out_put "server.lua: closed client handler and removed socket from list"
 		return true
 	end
