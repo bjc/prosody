@@ -342,10 +342,6 @@ function make_connect(host_session, connect_host, connect_port)
 	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1 );
 	host_session.conn = conn;
 	
-	-- Register this outgoing connection so that xmppserver_listener knows about it
-	-- otherwise it will assume it is a new incoming connection
-	cl.register_outgoing(conn, host_session);
-	
 	local filter = initialize_filters(host_session);
 	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t)
@@ -360,6 +356,10 @@ function make_connect(host_session, connect_host, connect_port)
 			end
 		end
 	end
+	
+	-- Register this outgoing connection so that xmppserver_listener knows about it
+	-- otherwise it will assume it is a new incoming connection
+	cl.register_outgoing(conn, host_session);
 	
 	host_session:open_stream(from_host, to_host);
 	
