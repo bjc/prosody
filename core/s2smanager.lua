@@ -208,7 +208,7 @@ end
 
 function attempt_connection(host_session, err)
 	local from_host, to_host = host_session.from_host, host_session.to_host;
-	local connect_host, connect_port = idna_to_ascii(to_host), 5269;
+	local connect_host, connect_port = to_host and idna_to_ascii(to_host), 5269;
 	
 	if not connect_host then
 		return false;
