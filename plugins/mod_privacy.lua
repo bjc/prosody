@@ -93,8 +93,10 @@ function activateList(privacy_lists, origin, stanza, which, name)
 	elseif which == "active" and list then
 		origin.activePrivacyList = name;
 		origin.send(st.reply(stanza));
+	elseif not list then
+		return {"cancel", "item-not-found", "No such list: "..name};
 	else
-		return {"modify", "bad-request", "Either not active or default given or unknown list name specified."};
+		return {"modify", "bad-request", "No list chosen to be active or default."};
 	end
 	return true;
 end
