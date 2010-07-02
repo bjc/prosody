@@ -343,9 +343,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_closelist[ handler ] = nil
 			handler = nil
 		end
-	if server then
-		server.remove( )
-	end
+		if server then
+			server.remove( )
+		end
 		out_put "server.lua: closed client handler and removed socket from list"
 		return true
 	end
@@ -479,11 +479,11 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			bufferqueuelen = 0
 			bufferlen = 0
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist
-			_ = needtls and handler:starttls(nil, true)
 			_writetimes[ handler ] = nil
 			if drain then
 				drain(handler)
 			end
+			_ = needtls and handler:starttls(nil, true)
 			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
