@@ -7,6 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
+module:add_feature("jabber:iq:privacy");
+
 local prosody = prosody;
 local st = require "util.stanza";
 local datamanager = require "util.datamanager";
