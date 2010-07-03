@@ -99,6 +99,27 @@ function stream_callbacks.handlestanza(session, stanza)
 	if not stanza.attr.xmlns and stanza.name == "handshake" then
 		stanza.attr.xmlns = xmlns_component;
 	end
+	local from = stanza.attr.from;
+	if from then
+		if session.component_validate_from then
+			local _, domain = jid_split(stanza.attr.from);
+			if domain ~= session.host then
+				-- Return error
+				session:close{
+					condition = "invalid-from";
+					text = "Component tried to send from address <"..tostring(from)
+					       .."> which is not in domain <"..tostring(session.host)..">";
+				};
+				return;
+			end
+		end
+	else
+			stanza.attr.from = session.host;
+	end
+	if not stanza.attr.to then
+		session.send(st.error_reply(stanza, "modify", "bad-request", "Components MUST specify a 'to' address on stanzas"));
+		return;
+	end
 	return core_process_stanza(session, stanza);
 end
 
