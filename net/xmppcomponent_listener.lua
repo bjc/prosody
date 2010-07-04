@@ -18,6 +18,7 @@ local connlisteners = require "net.connlisteners";
 local cm_register_component = require "core.componentmanager".register_component;
 local cm_deregister_component = require "core.componentmanager".deregister_component;
 local uuid_gen = require "util.uuid".generate;
+local jid_split = require "util.jid".split;
 local sha1 = require "util.hashes".sha1;
 local st = require "util.stanza";
 local init_xmlhandlers = require "core.xmlhandlers";
