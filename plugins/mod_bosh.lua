@@ -190,6 +190,11 @@ function stream_callbacks.streamopened(request, attr)
 		local r, send_buffer = session.requests, session.send_buffer;
 		local response = { headers = default_headers }
 		function session.send(s)
+			-- We need to ensure that outgoing stanzas have the jabber:client xmlns
+			if s.attr and not s.attr.xmlns then
+				s = st.clone(s);
+				s.attr.xmlns = "jabber:client";
+			end
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
 			if oldest_request then
