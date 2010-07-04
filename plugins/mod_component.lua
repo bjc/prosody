@@ -50,6 +50,8 @@ function handle_component_auth(session, stanza)
 	-- Authenticated now
 	log("info", "Component authenticated: %s", session.host);
 	
+	session.component_validate_from = module:get_option_boolean("validate_from_addresses") ~= false;
+	
 	-- If component not already created for this host, create one now
 	if not hosts[session.host].connected then
 		local send = session.send;
