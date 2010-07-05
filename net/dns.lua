@@ -698,7 +698,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					return dns_timeout;
 				else
 					-- Tried everything, failed
-					resolver:cancel({qclass, qtype, qname, co}, true);
+					resolver:cancel(qclass, qtype, qname, co, true);
 				end
 			end
 		end)
@@ -830,13 +830,13 @@ function resolver:feed(sock, packet)
 	return response;
 end
 
-function resolver:cancel(data, call_handler)
-	local cos = get(self.wanted, unpack(data, 1, 3));
+function resolver:cancel(qclass, qtype, qname, co, call_handler)
+	local cos = get(self.wanted, qclass, qtype, qname);
 	if cos then
 		if call_handler then
-			coroutine.resume(data[4]);
+			coroutine.resume(co);
 		end
-		cos[data[4]] = nil;
+		cos[co] = nil;
 	end
 end
 
