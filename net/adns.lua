@@ -38,7 +38,7 @@ end
 
 function cancel(handle, call_handler, reason)
 	log("warn", "Cancelling DNS lookup for %s", tostring(handle[3]));
-	dns.cancel(handle, call_handler);
+	dns.cancel(handle[1], handle[2], handle[3], handle[4], call_handler);
 end
 
 function new_async_socket(sock, resolver)
