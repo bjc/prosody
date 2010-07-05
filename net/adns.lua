@@ -36,12 +36,9 @@ function lookup(handler, qname, qtype, qclass)
 			end)(dns.peek(qname, qtype, qclass));
 end
 
-function cancel(handle, call_handler)
+function cancel(handle, call_handler, reason)
 	log("warn", "Cancelling DNS lookup for %s", tostring(handle[3]));
-	dns.cancel(handle);
-	if call_handler then
-		coroutine.resume(handle[4]);
-	end
+	dns.cancel(handle, call_handler);
 end
 
 function new_async_socket(sock, resolver)
