@@ -42,15 +42,15 @@ module:add_iq_handler("c2s", "jabber:iq:roster",
 					if not (client_ver and server_ver) or client_ver ~= server_ver then
 						roster:query("jabber:iq:roster");
 						-- Client does not support versioning, or has stale roster
-						for jid in pairs(session.roster) do
+						for jid, item in pairs(session.roster) do
 							if jid ~= "pending" and jid then
 								roster:tag("item", {
 									jid = jid,
-									subscription = session.roster[jid].subscription,
-									ask = session.roster[jid].ask,
-									name = session.roster[jid].name,
+									subscription = item.subscription,
+									ask = item.ask,
+									name = item.name,
 								});
-								for group in pairs(session.roster[jid].groups) do
+								for group in pairs(item.groups) do
 									roster:tag("group"):text(group):up();
 								end
 								roster:up(); -- move out from item
