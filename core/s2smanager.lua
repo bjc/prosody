@@ -42,8 +42,10 @@ local sha256_hash = require "util.hashes".sha256;
 local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
-local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
+local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
+
+dns.settimeout(dns_timeout);
 
 incoming_s2s = {};
 _G.prosody.incoming_s2s = incoming_s2s;
@@ -249,13 +251,6 @@ function attempt_connection(host_session, err)
 			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
 		
-		-- Set handler for DNS timeout
-		add_task(dns_timeout, function ()
-			if handle then
-				adns.cancel(handle, true);
-			end
-		end);
-		
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
@@ -308,13 +303,6 @@ function try_connect(host_session, connect_host, connect_port)
 		end
 	end, connect_host, "A", "IN");
 
-	-- Set handler for DNS timeout
-	add_task(dns_timeout, function ()
-		if handle then
-			adns.cancel(handle, true);
-		end
-	end);
-	
 	return true;
 end
 
