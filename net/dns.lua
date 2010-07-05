@@ -830,9 +830,12 @@ function resolver:feed(sock, packet)
 	return response;
 end
 
-function resolver:cancel(data)
+function resolver:cancel(data, call_handler)
 	local cos = get(self.wanted, unpack(data, 1, 3));
 	if cos then
+		if call_handler then
+			coroutine.resume(data[4]);
+		end
 		cos[data[4]] = nil;
 	end
 end
