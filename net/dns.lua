@@ -29,7 +29,7 @@ local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack 
 
 local get, set = ztact.get, ztact.set;
 
-local dns_timeout = 15;
+local default_timeout = 15;
 
 -------------------------------------------------- module dns
 module('dns')
@@ -118,6 +118,7 @@ end
 local resolver = {};
 resolver.__index = resolver;
 
+resolver.timeout = default_timeout;
 
 local SRV_tostring;
 
@@ -684,10 +685,10 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	local conn = self:getsocket(o.server)
 	conn:send (o.packet)
 	
-	if timer then
+	if timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
-		timer.add_task(dns_timeout, function ()
+		timer.add_task(self.timeout, function ()
 			if get(self.wanted, qclass, qtype, qname, co) then
 				if i < num_servers then
 					i = i + 1;
@@ -695,7 +696,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					o.server = self.best_server;
 					conn = self:getsocket(o.server);
 					conn:send(o.packet);
-					return dns_timeout;
+					return self.timeout;
 				else
 					-- Tried everything, failed
 					resolver:cancel(qclass, qtype, qname, co, true);
@@ -742,6 +743,10 @@ function resolver:servfail(sock)
 			self.best_server = 1;
 		end
 	end
+end
+
+function resolver:settimeout(seconds)
+	self.timeout = seconds;
 end
 
 function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
