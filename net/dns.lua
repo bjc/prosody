@@ -16,6 +16,8 @@
 
 local socket = require "socket";
 local ztact = require "util.ztact";
+local timer = require "util.timer";
+
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
 
@@ -27,6 +29,7 @@ local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack 
 
 local get, set = ztact.get, ztact.set;
 
+local dns_timeout = 15;
 
 -------------------------------------------------- module dns
 module('dns')
@@ -678,7 +681,28 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		--set(self.yielded, co, qclass, qtype, qname, true);
 	end
 
-	self:getsocket (o.server):send (o.packet)
+	local conn = self:getsocket(o.server)
+	conn:send (o.packet)
+	
+	if timer then
+		local num_servers = #self.server;
+		local i = 1;
+		timer.add_task(dns_timeout, function ()
+			if get(self.wanted, qclass, qtype, qname, co) then
+				if i < num_servers then
+					i = i + 1;
+					self:servfail(conn);
+					o.server = self.best_server;
+					conn = self:getsocket(o.server);
+					conn:send(o.packet);
+					return dns_timeout;
+				else
+					-- Tried everything, failed
+					resolver:cancel({qclass, qtype, qname, co}, true);
+				end
+			end
+		end)
+	end
 end
 
 function resolver:servfail(sock)
