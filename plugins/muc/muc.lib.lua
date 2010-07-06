@@ -24,7 +24,7 @@ local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
 local muc_domain = nil; --module:get_host();
-local history_length = 20;
+local default_history_length = 20;
 
 ------------
 local function filter_xmlns_from_array(array, filters)
@@ -136,7 +136,7 @@ function room_mt:broadcast_message(stanza, historic)
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 		local entry = { stanza = stanza, stamp = stamp };
 		t_insert(history, entry);
-		while #history > history_length do t_remove(history, 1) end
+		while #history > self._data.history_length do t_remove(history, 1) end
 	end
 end
 function room_mt:broadcast_except_nick(stanza, nick)
@@ -972,13 +972,14 @@ end
 
 local _M = {}; -- module "muc"
 
-function _M.new_room(jid)
+function _M.new_room(jid, config)
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
 		_occupants = {};
 		_data = {
-		    whois = 'moderators',
+		    whois = 'moderators';
+		    history_length = (config and config.history_length) or default_history_length;
 		};
 		_affiliations = {};
 	}, room_mt);

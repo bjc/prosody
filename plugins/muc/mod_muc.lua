@@ -31,6 +31,9 @@ local rooms = {};
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
 local component;
 
+-- Configurable options
+local max_history_messages = module:get_option_number("max_history_messages");
+
 local function is_admin(jid)
 	return um_is_admin(jid) or um_is_admin(jid, module.host);
 end
@@ -58,15 +61,20 @@ end
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
 	local data = datamanager.load(node, muc_host, "config") or {};
-	local room = muc_new_room(jid);
+	local room = muc_new_room(jid, {
+		history_length = max_history_messages;
+	});
 	room._data = data._data;
+	room._data.history_length = max_history_messages; --TODO: Need to allow per-room with a global limit
 	room._affiliations = data._affiliations;
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
 end
 
-local host_room = muc_new_room(muc_host);
+local host_room = muc_new_room(muc_host, {
+	history_length = max_history_messages;
+});
 host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
 
@@ -113,7 +121,9 @@ component = register_component(muc_host, function(origin, stanza)
 			local room = rooms[bare];
 			if not room then
 				if not(restrict_room_creation) or is_admin(stanza.attr.from) then
-					room = muc_new_room(bare);
+					room = muc_new_room(bare, {
+						history_length = max_history_messages;
+					});
 					room.route_stanza = room_route_stanza;
 					room.save = room_save;
 					rooms[bare] = room;
