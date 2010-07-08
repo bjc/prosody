@@ -8,7 +8,7 @@
 --
 
 local datamanager = require "util.datamanager";
-local log = require "util.logger".init("auth_internal");
+local log = require "util.logger".init("auth_internal_plain");
 local type = type;
 local error = error;
 local ipairs = ipairs;
@@ -25,7 +25,7 @@ local prosody = _G.prosody;
 local is_cyrus = usermanager.is_cyrus;
 
 function new_default_provider(host)
-	local provider = { name = "internal" };
+	local provider = { name = "internal_plain" };
 	log("debug", "initializing default authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)

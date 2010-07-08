@@ -23,7 +23,7 @@ local prosody = _G.prosody;
 
 local setmetatable = setmetatable;
 
-local default_provider = "internal";
+local default_provider = "internal_plain";
 
 module "usermanager"
 
