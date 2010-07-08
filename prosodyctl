@@ -243,12 +243,6 @@ function commands.adduser(arg)
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
-	elseif config.get(host, "core", "authentication")
-		and config.get(host, "core", "authentication") ~= "default" then
-		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
-			config.get(host, "core", "authentication"));
-		show_warning("prosodyctl currently only supports the default provider, sorry :(");
-		return 1;
 	end
 	
 	if prosodyctl.user_exists{ user = user, host = host } then
@@ -288,12 +282,6 @@ function commands.passwd(arg)
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
-	elseif config.get(host, "core", "authentication")
-		and config.get(host, "core", "authentication") ~= "default" then
-		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
-			config.get(host, "core", "authentication"));
-		show_warning("prosodyctl currently only supports the default provider, sorry :(");
-		return 1;
 	end
 	
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -333,12 +321,6 @@ function commands.deluser(arg)
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
-	elseif config.get(host, "core", "authentication")
-		and config.get(host, "core", "authentication") ~= "default" then
-		show_warning("The host '%s' is configured to use the '%s' authentication provider", host,
-			config.get(host, "core", "authentication"));
-		show_warning("prosodyctl currently only supports the default provider, sorry :(");
-		return 1;
 	end
 
 	if not prosodyctl.user_exists { user = user, host = host } then
