@@ -65,6 +65,8 @@ do
 	end
 end
 
+config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
+
 require "core.loggingmanager"
 
 if not require "util.dependencies".check_dependencies() then
