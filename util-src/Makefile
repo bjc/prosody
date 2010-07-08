@@ -16,7 +16,7 @@ LD?=gcc
 
 .o.so:
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
-	$(LD) $(LDFLAGS) -o $@ $< -L$(LUA_LIBDIR) -llua$(LUA_SUFFIX) -lidn -lcrypto
+	$(LD) $(LDFLAGS) -o $@ $< -lidn -lcrypto
 
 all: encodings.so hashes.so pposix.so signal.so
 
