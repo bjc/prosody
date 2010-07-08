@@ -63,8 +63,11 @@ function stream_callbacks.error(session, error, data)
 end
 
 local function handleerr(err) log("error", "Traceback[c2s]: %s: %s", tostring(err), debug.traceback()); end
-function stream_callbacks.handlestanza(a, b)
-	xpcall(function () core_process_stanza(a, b) end, handleerr);
+function stream_callbacks.handlestanza(session, stanza)
+	stanza = session.filter("stanzas/in", stanza);
+	if stanza then
+		xpcall(function () core_process_stanza(session, stanza) end, handleerr);
+	end
 end
 
 local sessions = {};
@@ -151,10 +154,7 @@ function xmppclient.onconnect(conn)
 	
 	local handlestanza = stream_callbacks.handlestanza;
 	function session.dispatch_stanza(session, stanza)
-		stanza = filter("stanzas/in", stanza);
-		if stanza then
-			return handlestanza(session, stanza);
-		end
+		return handlestanza(session, stanza);
 	end
 end
 
