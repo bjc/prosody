@@ -121,10 +121,6 @@ function new_hashpass_provider(host)
 			log("debug", "account not found for username '%s' at host '%s'", username, module.host);
 			return nil, "Auth failed. Invalid username";
 		end
-		--[[if (account.hashpass == nil or string.len(account.hashpass) == 0) and (account.password == nil or string.len(account.password) == 0) then
-			log("debug", "account password not set or zero-length for username '%s' at host '%s'", username, module.host);
-			return nil, "Auth failed. Password invalid.";
-		end]]
 		return true;
 	end
 
