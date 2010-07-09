@@ -11,6 +11,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza"
+local calculate_hash = require "util.caps".calculate_hash;
 
 local disco_items = module:get_option("disco_items") or {};
 do -- validate disco_items
@@ -35,27 +36,31 @@ module:add_identity("server", "im", "Prosody"); -- FIXME should be in the non-ex
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
 
-module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
-	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type ~= "get" then return; end
-	local node = stanza.tags[1].attr.node;
-	if node and node ~= "" then return; end -- TODO fire event?
+-- Handle disco requests to the server
 
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
+local function build_server_disco_info(stanza)
 	local done = {};
 	for _,identity in ipairs(module:get_host_items("identity")) do
 		local identity_s = identity.category.."\0"..identity.type;
 		if not done[identity_s] then
-			reply:tag("identity", identity):up();
+			stanza:tag("identity", identity):up();
 			done[identity_s] = true;
 		end
 	end
 	for _,feature in ipairs(module:get_host_items("feature")) do
 		if not done[feature] then
-			reply:tag("feature", {var=feature}):up();
+			stanza:tag("feature", {var=feature}):up();
 			done[feature] = true;
 		end
 	end
+end
+module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
+	local origin, stanza = event.origin, event.stanza;
+	if stanza.attr.type ~= "get" then return; end
+	local node = stanza.tags[1].attr.node;
+	if node and node ~= "" then return; end -- TODO fire event?
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
+	build_server_disco_info(reply);
 	origin.send(reply);
 	return true;
 end);
@@ -75,6 +80,31 @@ module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(eve
 	origin.send(reply);
 	return true;
 end);
+
+-- Server caps hash calculation
+local caps_hash_feature;
+
+local function recalculate_server_caps()
+	local caps_hash = calculate_hash(st.stanza());
+	caps_hash_feature = st.stanza("c", {
+		xmlns = "http://jabber.org/protocol/caps";
+		hash = "sha-1";
+		node = "http://prosody.im";
+		ver = caps_hash;
+	});
+end
+recalculate_server_caps();
+
+module:hook("item-added/identity", recalculate_server_caps);
+module:hook("item-added/feature", recalculate_server_caps);
+
+module:hook("stream-features", function (event)
+	if caps_hash_feature then
+		event.features:add_child(caps_hash_feature);
+	end
+end);
+
+-- Handle disco requests to user accounts
 module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
