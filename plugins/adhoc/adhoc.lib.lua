@@ -69,9 +69,9 @@ function _M.handle_cmd(command, origin, stanza)
 			end
 			cmdtag:add_child(actions);
 		elseif name == "form" then
-			cmdtag:add_child(content:form());
+			cmdtag:add_child((content.layout or content):form(content.data));
 		elseif name == "result" then
-			cmdtag:add_child(content.layout:form(content.data, "result"));
+			cmdtag:add_child((content.layout or content):form(content.data, "result"));
 		elseif name == "other" then
 			cmdtag:add_child(content);
 		end
