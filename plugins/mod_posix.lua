@@ -95,6 +95,11 @@ local function write_pidfile()
 				pidfile_handle = nil;
 				prosody.shutdown("Prosody already running");
 			else
+				pidfile_handle, err = io.open(pidfile, "w+");
+				if not pidfile_handle then
+					module:log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
+					prosody.shutdown("Couldn't write pidfile");
+				end
 				pidfile_handle:write(tostring(pposix.getpid()));
 				pidfile_handle:flush();
 			end
