@@ -16,8 +16,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local type = type;
-local sha1 = require "util.hashes".sha1;
-local base64 = require "util.encodings".base64.encode;
+local calculate_hash = require "util.caps".calculate_hash;
 
 local NULL = {};
 local data = {};
@@ -208,50 +207,6 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 		end
 	end
 end);
-
-local function calculate_hash(disco_info)
-	local identities, features, extensions = {}, {}, {};
-	for _, tag in pairs(disco_info) do
-		if tag.name == "identity" then
-			table.insert(identities, (tag.attr.category or "").."\0"..(tag.attr.type or "").."\0"..(tag.attr["xml:lang"] or "").."\0"..(tag.attr.name or ""));
-		elseif tag.name == "feature" then
-			table.insert(features, tag.attr.var or "");
-		elseif tag.name == "x" and tag.attr.xmlns == "jabber:x:data" then
-			local form = {};
-			local FORM_TYPE;
-			for _, field in pairs(tag.tags) do
-				if field.name == "field" and field.attr.var then
-					local values = {};
-					for _, val in pairs(field.tags) do
-						val = #val.tags == 0 and table.concat(val); -- FIXME use get_text?
-						if val then table.insert(values, val); end
-					end
-					table.sort(values);
-					if field.attr.var == "FORM_TYPE" then
-						FORM_TYPE = values[1];
-					elseif #values > 0 then
-						table.insert(form, field.attr.var.."\0"..table.concat(values, "<"));
-					else
-						table.insert(form, field.attr.var);
-					end
-				end
-			end
-			table.sort(form);
-			form = table.concat(form, "<");
-			if FORM_TYPE then form = FORM_TYPE.."\0"..form; end
-			table.insert(extensions, form);
-		end
-	end
-	table.sort(identities);
-	table.sort(features);
-	table.sort(extensions);
-	if #identities > 0 then identities = table.concat(identities, "<"):gsub("%z", "/").."<"; else identities = ""; end
-	if #features > 0 then features = table.concat(features, "<").."<"; else features = ""; end
-	if #extensions > 0 then extensions = table.concat(extensions, "<"):gsub("%z", "<").."<"; else extensions = ""; end
-	local S = identities..features..extensions;
-	local ver = base64(sha1(S));
-	return ver, S;
-end
 
 module:hook("iq/bare/disco", function(event)
 	local session, stanza = event.origin, event.stanza;
