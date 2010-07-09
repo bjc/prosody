@@ -64,7 +64,7 @@ do
 		os.exit(1);
 	end
 end
-
+local original_logging_config = config.get("*", "core", "log");
 config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
 
 require "core.loggingmanager"
@@ -110,6 +110,45 @@ else
 	print("For more help send the below error to us through http://prosody.im/discuss");
 	print(tostring(pposix))
 end
+
+local function test_writeable(filename)
+	local f, err = io.open(filename, "a");
+	if not f then
+		return false, err;
+	end
+	f:close();
+	return true;
+end
+
+local unwriteable_files = {};
+if type(original_logging_config) == "string" and original_logging_config:sub(1,1) ~= "*" then
+	local ok, err = test_writeable(original_logging_config);
+	if not ok then
+		table.insert(unwriteable_files, err);
+	end
+elseif type(original_logging_config) == "table" then
+	for _, rule in ipairs(original_logging_config) do
+		if rule.filename then
+			local ok, err = test_writeable(rule.filename);
+			if not ok then
+				table.insert(unwriteable_files, err);
+			end
+		end
+	end
+end
+
+if #unwriteable_files > 0 then
+	print("One of more of the Prosody log files are not");
+	print("writeable, please correct the errors and try");
+	print("starting prosodyctl again.");
+	print("");
+	for _, err in ipairs(unwriteable_files) do
+		print(err);
+	end
+	print("");
+	os.exit(1);
+end
+
 
 local error_messages = setmetatable({ 
 		["invalid-username"] = "The given username is invalid in a Jabber ID";
