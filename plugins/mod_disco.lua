@@ -36,31 +36,59 @@ module:add_identity("server", "im", "Prosody"); -- FIXME should be in the non-ex
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
 
--- Handle disco requests to the server
-
-local function build_server_disco_info(stanza)
+-- Generate and cache disco result and caps hash
+local _cached_server_disco_info, _cached_server_caps_feature, _cached_server_caps_hash;
+local function build_server_disco_info()
+	local query = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" });
 	local done = {};
 	for _,identity in ipairs(module:get_host_items("identity")) do
 		local identity_s = identity.category.."\0"..identity.type;
 		if not done[identity_s] then
-			stanza:tag("identity", identity):up();
+			query:tag("identity", identity):up();
 			done[identity_s] = true;
 		end
 	end
 	for _,feature in ipairs(module:get_host_items("feature")) do
 		if not done[feature] then
-			stanza:tag("feature", {var=feature}):up();
+			query:tag("feature", {var=feature}):up();
 			done[feature] = true;
 		end
 	end
+	_cached_server_disco_info = query;
+	_cached_server_caps_hash = calculate_hash(query);
+	_cached_server_caps_feature = st.stanza("c", {
+		xmlns = "http://jabber.org/protocol/caps";
+		hash = "sha-1";
+		node = "http://prosody.im";
+		ver = _cached_server_caps_hash;
+	});
 end
+local function clear_disco_cache()
+	_cached_server_disco_info, _cached_server_caps_feature, _cached_server_caps_hash = nil, nil, nil;
+end
+local function get_server_disco_info()
+	if not _cached_server_disco_info then build_server_disco_info(); end
+	return _cached_server_disco_info;
+end
+local function get_server_caps_feature()
+	if not _cached_server_caps_feature then build_server_disco_info(); end
+	return _cached_server_caps_feature;
+end
+local function get_server_caps_hash()
+	if not _cached_server_caps_hash then build_server_disco_info(); end
+	return _cached_server_caps_hash;
+end
+
+module:hook("item-added/identity", clear_disco_cache);
+module:hook("item-added/feature", clear_disco_cache);
+
+-- Handle disco requests to the server
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
-	if node and node ~= "" then return; end -- TODO fire event?
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
-	build_server_disco_info(reply);
+	if node and node ~= "" and node ~= get_server_caps_hash() then return; end -- TODO fire event?
+	local reply = st.reply(stanza):add_child(get_server_disco_info());
 	origin.send(reply);
 	return true;
 end);
@@ -81,27 +109,9 @@ module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(eve
 	return true;
 end);
 
--- Server caps hash calculation
-local caps_hash_feature;
-
-local function recalculate_server_caps()
-	local caps_hash = calculate_hash(st.stanza());
-	caps_hash_feature = st.stanza("c", {
-		xmlns = "http://jabber.org/protocol/caps";
-		hash = "sha-1";
-		node = "http://prosody.im";
-		ver = caps_hash;
-	});
-end
-recalculate_server_caps();
-
-module:hook("item-added/identity", recalculate_server_caps);
-module:hook("item-added/feature", recalculate_server_caps);
-
+-- Handle caps stream feature
 module:hook("stream-features", function (event)
-	if caps_hash_feature then
-		event.features:add_child(caps_hash_feature);
-	end
+	event.features:add_child(get_server_caps_feature());
 end);
 
 -- Handle disco requests to user accounts
