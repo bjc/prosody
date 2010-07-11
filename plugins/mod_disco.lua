@@ -88,7 +88,9 @@ module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(even
 	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
 	if node and node ~= "" and node ~= "http://prosody.im#"..get_server_caps_hash() then return; end -- TODO fire event?
-	local reply = st.reply(stanza):add_child(get_server_disco_info());
+	local reply_query = get_server_disco_info();
+	reply_query.node = node;
+	local reply = st.reply(stanza):add_child(reply_query);
 	origin.send(reply);
 	return true;
 end);
