@@ -97,8 +97,8 @@ local function handle_status(session, status, ret, err_msg)
 		local username = nodeprep(session.sasl_handler.username);
 
 		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
-			local aret, err = sm_make_authenticated(session, session.sasl_handler.username);
-			if aret then
+			local ok, err = sm_make_authenticated(session, session.sasl_handler.username);
+			if ok then
 				session.sasl_handler = nil;
 				session:reset_stream();
 			else
