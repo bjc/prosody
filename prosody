@@ -163,6 +163,23 @@ function init_global_state()
 	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
 	                  plugins = CFG_PLUGINDIR, data = CFG_DATADIR };
 	
+	local path_sep = package.config:sub(1,1);
+	local rel_path_start = ".."..path_sep;
+	function prosody.resolve_relative_path(path)
+		if path then
+			local is_relative;
+			if path_sep == "/" and path:sub(1,1) ~= "/" then
+				is_relative = true;
+			elseif path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\") then
+				is_relative = true;
+			end
+			if is_relative then
+				return CFG_CONFIGDIR..path_sep..path;
+			end
+		end
+		return path;
+	end
+	
 	prosody.arg = _G.arg;
 
 	prosody.platform = "unknown";
