@@ -162,7 +162,7 @@ then
         then LUA_INCDIR="/usr/local/include/lua51"
         LUA_INCDIR_SET=yes
         CFLAGS="-Wall -fPIC -I/usr/local/include"
-        LDFLAGS="-I/usr/local/include -shared"
+        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
         LUA_SUFFIX="-5.1"
         LUA_SUFFIX_SET=yes
         LUA_DIR=/usr/local
