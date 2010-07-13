@@ -85,6 +85,38 @@ do
    --ostype=*)
       OSTYPE="$value"
       OSTYPE_SET=yes
+      if [ "$OSTYPE" = "debian" ]
+      then LUA_SUFFIX="5.1";
+	LUA_SUFFIX_SET=yes
+	LUA_INCDIR=/usr/include/lua5.1;
+	LUA_INCDIR_SET=yes
+	fi
+	if [ "$OSTYPE" = "macosx" ]
+	then LUA_INCDIR=/usr/local/include;
+	LUA_INCDIR_SET=yes
+	LUA_LIBDIR=/usr/local/lib
+	LUA_LIBDIR_SET=yes
+	CFLAGS="-Wall"
+	LDFLAGS="-bundle -undefined dynamic_lookup"
+	fi
+        if [ "$OSTYPE" = "linux" ]
+        then LUA_INCDIR=/usr/local/include;
+        LUA_INCDIR_SET=yes
+        LUA_LIBDIR=/usr/local/lib
+        LUA_LIBDIR_SET=yes
+        CFLAGS="-Wall -fPIC"
+        LDFLAGS="-shared"
+        fi
+        if [ "$OSTYPE" = "freebsd" ]
+        then LUA_INCDIR="/usr/local/include/lua51"
+        LUA_INCDIR_SET=yes
+        CFLAGS="-Wall -fPIC -I/usr/local/include"
+        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+        LUA_SUFFIX="-5.1"
+        LUA_SUFFIX_SET=yes
+        LUA_DIR=/usr/local
+        LUA_DIR_SET=yes
+        fi
       ;;
    --datadir=*)
    	DATADIR="$value"
@@ -133,42 +165,6 @@ do
    esac
    shift
 done
-
-if [ "$OSTYPE_SET" = "yes" ]
-then
-	if [ "$OSTYPE" = "debian" ]
-	then LUA_SUFFIX="5.1";
-	LUA_SUFFIX_SET=yes
-	LUA_INCDIR=/usr/include/lua5.1;
-	LUA_INCDIR_SET=yes
-	fi
-	if [ "$OSTYPE" = "macosx" ]
-	then LUA_INCDIR=/usr/local/include;
-	LUA_INCDIR_SET=yes
-	LUA_LIBDIR=/usr/local/lib
-	LUA_LIBDIR_SET=yes
-	CFLAGS="-Wall"
-	LDFLAGS="-bundle -undefined dynamic_lookup"
-	fi
-        if [ "$OSTYPE" = "linux" ]
-        then LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yes
-        LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yes
-        CFLAGS="-Wall -fPIC"
-        LDFLAGS="-shared"
-        fi
-        if [ "$OSTYPE" = "freebsd" ]
-        then LUA_INCDIR="/usr/local/include/lua51"
-        LUA_INCDIR_SET=yes
-        CFLAGS="-Wall -fPIC -I/usr/local/include"
-        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-        LUA_SUFFIX="-5.1"
-        LUA_SUFFIX_SET=yes
-        LUA_DIR=/usr/local
-        LUA_DIR_SET=yes
-        fi
-fi
 
 if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
 then
