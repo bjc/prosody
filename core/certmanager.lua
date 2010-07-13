@@ -32,8 +32,6 @@ function create_context(host, mode, config)
 		depth = user_ssl_config.depth;
 	};
 
-	log("warn", "keyfile: %q", ssl_config.key);
-
 	local ctx, err = ssl_newcontext(ssl_config);
 	if not ctx then
 		err = err or "invalid ssl config"
