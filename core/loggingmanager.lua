@@ -26,18 +26,20 @@ end
 local config = require "core.configmanager";
 local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
+local prosody = prosody;
+
 local debug_mode = config.get("*", "core", "debug");
 
 _G.log = logger.init("general");
 
 module "loggingmanager"
 
--- The log config used if none specified in the config file
-local default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
-local default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } };
+-- The log config used if none specified in the config file (see reload_logging for initialization)
+local default_logging;
+local default_file_logging;
 local default_timestamp = "%b %d %H:%M:%S";
 -- The actual config loggingmanager is using
-local logging_config = config.get("*", "core", "log") or default_logging;
+local logging_config;
 
 local apply_sink_rules;
 local log_sink_types = setmetatable({}, { __newindex = function (t, k, v) rawset(t, k, v); apply_sink_rules(k); end; });
@@ -138,6 +140,34 @@ function get_levels(criteria, set)
 	return set;
 end
 
+-- Initialize config, etc. --
+function reload_logging()
+	local old_sink_types = {};
+	
+	for name, sink_maker in pairs(log_sink_types) do
+		old_sink_types[name] = sink_maker;
+		log_sink_types[name] = nil;
+	end
+	
+	logger.reset();
+
+	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
+	default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } };
+	default_timestamp = "%b %d %H:%M:%S";
+
+	logging_config = config.get("*", "core", "log") or default_logging;
+	
+	
+	for name, sink_maker in pairs(old_sink_types) do
+		log_sink_types[name] = sink_maker;
+	end
+	
+	prosody.events.fire_event("logging-reloaded");
+end
+
+reload_logging();
+prosody.events.add_handler("config-reloaded", reload_logging);
+
 --- Definition of built-in logging sinks ---
 
 -- Null sink, must enter log_sink_types *first*
@@ -215,15 +245,9 @@ function log_sink_types.file(config)
 	end
 	local write, flush = logfile.write, logfile.flush;
 
-	eventmanager.add_event_hook("reopen-log-files", function ()
+	prosody.events.add_handler("logging-reloading", function ()
 			if logfile then
 				logfile:close();
-			end
-			logfile = io_open(log, "a+");
-			if not logfile then
-				write, flush = empty_function, empty_function;
-			else
-				write, flush = logfile.write, logfile.flush;
 			end
 		end);
 
