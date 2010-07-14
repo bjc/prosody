@@ -129,12 +129,15 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	local mechanisms = {}
-	local cyrus_mechs = cyrussasl.listmech(self.cyrus, nil, "", " ", "")
-	for w in s_gmatch(cyrus_mechs, "[^ ]+") do
-		mechanisms[w] = true;
+	local mechanisms = self.mechs;
+	if not mechanisms then
+		mechanisms = {}
+		local cyrus_mechs = cyrussasl.listmech(self.cyrus, nil, "", " ", "")
+		for w in s_gmatch(cyrus_mechs, "[^ ]+") do
+			mechanisms[w] = true;
+		end
+		self.mechs = mechanisms
 	end
-	self.mechs = mechanisms
 	return mechanisms;
 end
 
