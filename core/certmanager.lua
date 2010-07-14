@@ -23,9 +23,9 @@ local default_ssl_config = configmanager.get("*", "core", "ssl") or {};
 local default_capath = "/etc/ssl/certs";
 
 function create_context(host, mode, config)
-	if not ssl then return nil; end
-	
 	local user_ssl_config = config and config.core.ssl or default_ssl_config;
+
+	if not(ssl and user_ssl_config) then return nil; end
 	
 	local ssl_config = {
 		mode = mode;
