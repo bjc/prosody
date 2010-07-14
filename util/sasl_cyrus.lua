@@ -144,8 +144,7 @@ end
 -- select a mechanism to use
 function method:select(mechanism)
 	self.mechanism = mechanism;
-	if not self.mechs then self:mechanisms(); end
-	return self.mechs[mechanism];
+	return self.mechanisms()[mechanism];
 end
 
 -- feed new messages to process into the library
