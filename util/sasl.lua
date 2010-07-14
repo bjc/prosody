@@ -98,7 +98,7 @@ function method:mechanisms()
 			end
 		end
 	end
-	self["possible_mechanisms"] = mechanisms;
+	self.mechs = mechanisms;
 	return mechanisms;
 end
 
@@ -108,7 +108,7 @@ function method:select(mechanism)
 		return false;
 	end
 	
-	self.mech_i = mechanisms[mechanism];
+	self.mech_i = self.mechs[mechanism];
 	return (self.mech_i ~= nil);
 end
 
