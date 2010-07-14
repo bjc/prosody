@@ -175,8 +175,8 @@ module:hook("stream-features", function(event)
 			end
 		end
 		features:tag("mechanisms", mechanisms_attr);
-		for k, v in pairs(origin.sasl_handler:mechanisms()) do
-			features:tag("mechanism"):text(v):up();
+		for k in pairs(origin.sasl_handler:mechanisms()) do
+			features:tag("mechanism"):text(k):up();
 		end
 		features:up();
 	else

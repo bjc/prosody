@@ -99,7 +99,7 @@ function method:mechanisms()
 		end
 	end
 	self["possible_mechanisms"] = mechanisms;
-	return array.collect(keys(mechanisms));
+	return mechanisms;
 end
 
 -- select a mechanism to use

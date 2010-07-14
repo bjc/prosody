@@ -135,7 +135,7 @@ function method:mechanisms()
 		mechanisms[w] = true;
 	end
 	self.mechs = mechanisms
-	return array.collect(keys(mechanisms));
+	return mechanisms;
 end
 
 -- select a mechanism to use
