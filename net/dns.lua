@@ -699,7 +699,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					return self.timeout;
 				else
 					-- Tried everything, failed
-					resolver:cancel(qclass, qtype, qname, co, true);
+					self:cancel(qclass, qtype, qname, co, true);
 				end
 			end
 		end)
