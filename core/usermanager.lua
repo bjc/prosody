@@ -16,6 +16,7 @@ local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
 local hosts = hosts;
+local sasl_new = require "util.sasl".new;
 
 local require_provisioning = config.get("*", "core", "cyrus_require_provisioning") or false;
 
@@ -29,7 +30,8 @@ module "usermanager"
 
 function new_null_provider()
 	local function dummy() end;
-	return setmetatable({name = "null"}, { __index = function() return dummy; end });
+	local function dummy_get_sasl_handler() return sasl_new(nil, {}); end
+	return setmetatable({name = "null", get_sasl_handler = dummy_get_sasl_handler}, { __index = function() return dummy; end });
 end
 
 function initialize_host(host)
