@@ -103,6 +103,21 @@ function setwriter(f)
 	return ok, ret;
 end
 
+function reset()
+	for k in pairs(name_sinks) do name_sinks[k] = nil; end
+	for level, handler_list in pairs(level_sinks) do
+		-- Clear all handlers for this level
+		for i = 1, #handler_list do
+			handler_list[i] = nil;
+		end
+	end
+	for k in pairs(name_patterns) do name_patterns[k] = nil; end
+
+	for _, modify_hook in pairs(modify_hooks) do
+		modify_hook();
+	end
+end
+
 function add_level_sink(level, sink_function)
 	if not level_sinks[level] then
 		level_sinks[level] = { sink_function };
