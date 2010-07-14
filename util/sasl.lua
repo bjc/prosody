@@ -88,17 +88,20 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	local mechanisms = {}
-	for backend, f in pairs(self.profile) do
-		if backend_mechanism[backend] then
-			for _, mechanism in ipairs(backend_mechanism[backend]) do
-				if not self.restrict:contains(mechanism) then
-					mechanisms[mechanism] = true;
+	local mechanisms = self.mechs;
+	if not mechanisms then
+		mechanisms = {}
+		for backend, f in pairs(self.profile) do
+			if backend_mechanism[backend] then
+				for _, mechanism in ipairs(backend_mechanism[backend]) do
+					if not self.restrict:contains(mechanism) then
+						mechanisms[mechanism] = true;
+					end
 				end
 			end
 		end
+		self.mechs = mechanisms;
 	end
-	self.mechs = mechanisms;
 	return mechanisms;
 end
 
