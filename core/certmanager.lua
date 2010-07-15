@@ -1,3 +1,11 @@
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl = ssl;
