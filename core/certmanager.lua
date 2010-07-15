@@ -12,6 +12,7 @@ module "certmanager"
 
 -- Global SSL options if not overridden per-host
 local default_ssl_config = configmanager.get("*", "core", "ssl") or {};
+local default_capath = "/etc/ssl/certs";
 
 function create_context(host, mode, config)
 	if not ssl then return nil; end
