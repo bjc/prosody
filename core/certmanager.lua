@@ -19,7 +19,7 @@ local resolve_path = prosody.resolve_relative_path;
 module "certmanager"
 
 -- Global SSL options if not overridden per-host
-local default_ssl_config = configmanager.get("*", "core", "ssl") or {};
+local default_ssl_config = configmanager.get("*", "core", "ssl");
 local default_capath = "/etc/ssl/certs";
 
 function create_context(host, mode, config)
