@@ -111,7 +111,7 @@ function method:select(mechanism)
 		return false;
 	end
 	
-	self.mech_i = mechanisms[self.mechanisms()[mechanism] and mechanism];
+	self.mech_i = mechanisms[self:mechanisms()[mechanism] and mechanism];
 	return (self.mech_i ~= nil);
 end
 
