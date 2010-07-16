@@ -167,7 +167,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 
 	local connections = 0
 
-	local dispatch, disconnect = listeners.onincoming, listeners.ondisconnect
+	local dispatch, disconnect = listeners.onconnect or listeners.onincoming, listeners.ondisconnect
 
 	local accept = socket.accept
 
@@ -623,16 +623,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
-	if listeners.onconnect then
-		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
-		handler.sendbuffer = function ()
-			listeners.onconnect(handler);
-			handler.sendbuffer = _sendbuffer;
-			if bufferqueuelen > 0 then
-				return _sendbuffer();
-			end
-		end
-	end
 	return handler, socket
 end
 
@@ -854,6 +844,18 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
 	_socketlist[ socket ] = handler
 	_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
+	if listeners.onconnect then
+		-- When socket is writeable, call onconnect
+		local _sendbuffer = handler.sendbuffer;
+		handler.sendbuffer = function ()
+			listeners.onconnect(handler);
+			handler.sendbuffer = _sendbuffer;
+			-- If there was data with the incoming packet, handle it now.
+			if #handler:bufferqueue() > 0 then
+				return _sendbuffer();
+			end
+		end
+	end
 	return handler, socket
 end
 
