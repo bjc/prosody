@@ -390,10 +390,22 @@ function streamopened(session, attr)
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
-		if session.to_host and not hosts[session.to_host] then
-			-- Attempting to connect to a host we don't serve
-			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
-			return;
+		if session.to_host then
+			if not hosts[session.to_host] then
+				-- Attempting to connect to a host we don't serve
+				session:close({
+					condition = "host-unknown";
+					text = "This host does not serve "..session.to_host
+				});
+				return;
+			elseif hosts[session.to_host].disallow_s2s then
+				-- Attempting to connect to a host that disallows s2s
+				session:close({
+					condition = "policy-violation";
+					text = "Server-to-server communication is not allowed to this host";
+				});
+				return;
+			end
 		end
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
