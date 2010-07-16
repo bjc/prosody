@@ -54,3 +54,14 @@ function bare(bare)
 	assert_equal(bare("user@host/"), nil, "invalid JID is nil");
 end
 
+function compare(compare)
+	assert_equal(compare("host", "host"), true, "host should match");
+	assert_equal(compare("host", "other-host"), false, "host should not match");
+	assert_equal(compare("other-user@host/resource", "host"), true, "host should match");
+	assert_equal(compare("other-user@host", "user@host"), false, "user should not match");
+	assert_equal(compare("user@host", "host"), true, "host should match");
+	assert_equal(compare("user@host/resource", "host"), true, "host should match");
+	assert_equal(compare("user@host/resource", "user@host"), true, "user and host should match");
+	assert_equal(compare("user@other-host", "host"), false, "host should not match");
+	assert_equal(compare("user@other-host", "user@host"), false, "host should not match");
+end
