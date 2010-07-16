@@ -14,7 +14,7 @@ if module:get_host_type() ~= "component" then
 	error("proxy65 should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
-local jid_split, jid_join = require "util.jid".split, require "util.jid".join;
+local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
 local componentmanager = require "core.componentmanager";
 local config_get = require "core.configmanager".get;
@@ -151,24 +151,11 @@ local function get_stream_host(origin, stanza)
 	local err_reply = replies_cache.stream_host_err;
 	local sid = stanza.tags[1].attr.sid;
 	local allow = false;
-	local jid_node, jid_host, jid_resource = jid_split(stanza.attr.from);
-	
-	if stanza.attr.from == nil then
-		jid_node = origin.username;
-		jid_host = origin.host;
-		jid_resource = origin.resource;
-	end
+	local jid = stanza.attr.from;
 	
 	if proxy_acl and #proxy_acl > 0 then
-		if host ~= nil then -- at least a domain is needed.
-			for _, acl in ipairs(proxy_acl) do
-				local acl_node, acl_host, acl_resource = jid_split(acl);
-				if ((acl_node ~= nil and acl_node == jid_node) or acl_node == nil) and
-				   ((acl_host ~= nil and acl_host == jid_host) or acl_host == nil) and
-				   ((acl_resource ~= nil and acl_resource == jid_resource) or acl_resource == nil) then
-					allow = true;
-				end
-			end
+		for _, acl in ipairs(proxy_acl) do
+			if jid_compare(jid, acl) then allow = true; end
 		end
 	else
 		allow = true;
@@ -181,7 +168,7 @@ local function get_stream_host(origin, stanza)
 			replies_cache.stream_host = reply;
 		end
 	else
-		module:log("warn", "Denying use of proxy for %s", tostring(jid_join(jid_node, jid_host, jid_resource)));
+		module:log("warn", "Denying use of proxy for %s", tostring(jid));
 		if err_reply == nil then
 			err_reply = st.iq({type="error", from=host})
 				:query("http://jabber.org/protocol/bytestreams")
