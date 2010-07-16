@@ -78,4 +78,17 @@ function join(node, host, resource)
 	return nil; -- Invalid JID
 end
 
+function compare(jid, acl)
+	-- compare jid to single acl rule
+	-- TODO compare to table of rules?
+	local jid_node, jid_host, jid_resource = _split(jid);
+	local acl_node, acl_host, acl_resource = _split(acl);
+	if ((acl_node ~= nil and acl_node == jid_node) or acl_node == nil) and
+		((acl_host ~= nil and acl_host == jid_host) or acl_host == nil) and
+		((acl_resource ~= nil and acl_resource == jid_resource) or acl_resource == nil) then
+		return true
+	end
+	return false
+end
+
 return _M;
