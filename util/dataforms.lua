@@ -67,9 +67,25 @@ function form_t.form(layout, data, formtype)
 					form:tag("value"):text(line):up();
 				end
 			elseif field_type == "list-single" then
+				local has_default = false;
 				for _, val in ipairs(value) do
 					if type(val) == "table" then
 						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+						if val.default and (not has_default) then
+							form:tag("value"):text(val.value):up();
+							has_default = true;
+						end
+					else
+						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					end
+				end
+			elseif field_type == "list-multi" then
+				for _, val in ipairs(value) do
+					if type(val) == "table" then
+						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+						if val.default then
+							form:tag("value"):text(val.value):up();
+						end
 					else
 						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
 					end
@@ -148,6 +164,17 @@ field_readers["text-multi"] =
 
 field_readers["list-single"] =
 	field_readers["text-single"];
+
+field_readers["list-multi"] =
+	function (field_tag)
+		local result = {};
+		for value_tag in field_tag:childtags() do
+			if value_tag.name == "value" then
+				result[#result+1] = value_tag[1];
+			end
+		end
+		return result;
+	end
 
 field_readers["boolean"] = 
 	function (field_tag)
