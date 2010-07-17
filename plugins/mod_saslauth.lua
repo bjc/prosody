@@ -14,17 +14,10 @@ local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local datamanager_load = require "util.datamanager".load;
-local usermanager_get_provider = require "core.usermanager".get_provider;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local usermanager_user_exists = require "core.usermanager".user_exists;
-local usermanager_get_password = require "core.usermanager".get_password;
-local usermanager_test_password = require "core.usermanager".test_password;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
-local jid_split = require "util.jid".split;
-local md5 = require "util.hashes".md5;
-local config = require "core.configmanager";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
