@@ -13,7 +13,7 @@ local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, p
 		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, string.format;
 
 
-local eventmanager = require "core.eventmanager";
+local fire_event = prosody and prosody.events.fire_event or function () end;
 
 module "configmanager"
 
@@ -73,7 +73,7 @@ function load(filename, format)
 			local ok, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
 			if ok then
-				eventmanager.fire_event("config-reloaded", { filename = filename, format = format });
+				fire_event("config-reloaded", { filename = filename, format = format });
 			end
 			return ok, "parser", err;
 		end
