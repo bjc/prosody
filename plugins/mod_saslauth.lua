@@ -28,6 +28,7 @@ local config = require "core.configmanager";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
+local anonymous_login = module:get_option("anonymous_login");
 
 -- Cyrus config options
 local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
@@ -118,7 +119,7 @@ end
 local function sasl_handler(session, stanza)
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
-		if config.get(session.host or "*", "core", "anonymous_login") then
+		if anonymous_login then
 			if stanza.attr.mechanism ~= "ANONYMOUS" then
 				return session.send(build_reply("failure", "invalid-mechanism"));
 			end
@@ -166,7 +167,7 @@ module:hook("stream-features", function(event)
 			return;
 		end
 		local realm = module:get_option("sasl_realm") or origin.host;
-		if module:get_option("anonymous_login") then
+		if anonymous_login then
 			origin.sasl_handler = new_sasl(realm, anonymous_authentication_profile);
 		else
 			origin.sasl_handler = usermanager_get_sasl_handler(module.host);
