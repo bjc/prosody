@@ -144,10 +144,12 @@ function new_hashpass_provider(host)
 				return usermanager.test_password(prepped_username, password, realm), true;
 			end,
 			scram_sha_1 = function(username, realm)
-				local credentials = datamanager.load(username, host, "accounts") or {};
+				local credentials = datamanager.load(username, host, "accounts");
+				if not credentials then return; end
 				if credentials.password then
 					usermanager.set_password(username, credentials.password, host);
-					credentials = datamanager.load(username, host, "accounts") or {};
+					credentials = datamanager.load(username, host, "accounts");
+					if not credentials then return; end
 				end
 				
 				-- convert hexpass to stored_key and server_key
@@ -159,7 +161,7 @@ function new_hashpass_provider(host)
 					credentials.hashpass = nil
 					datamanager.store(username, host, "accounts", credentials);
 				end
-				
+			
 				local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
 				stored_key = stored_key and from_hex(stored_key);
 				server_key = server_key and from_hex(server_key);
