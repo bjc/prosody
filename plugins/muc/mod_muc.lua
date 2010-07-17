@@ -35,7 +35,7 @@ local component;
 local max_history_messages = module:get_option_number("max_history_messages");
 
 local function is_admin(jid)
-	return um_is_admin(jid) or um_is_admin(jid, module.host);
+	return um_is_admin(jid, module.host);
 end
 
 local function room_route_stanza(room, stanza) core_post_stanza(component, stanza); end

@@ -468,7 +468,6 @@ do
 	function interface_mt:ondrain()
 	end
 	function interface_mt:onstatus()
-		debug("server.lua: Dummy onstatus()")
 	end
 end
 
