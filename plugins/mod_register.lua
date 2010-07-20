@@ -13,7 +13,6 @@ local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_set_password = require "core.usermanager".set_password;
-local datamanager_store = require "util.datamanager".store;
 local os_time = os.time;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 
