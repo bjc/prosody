@@ -90,6 +90,15 @@ function head(n, f, s, var)
 	end, s;
 end
 
+-- Skip the first n items an iterator returns
+function skip(n, f, s, var)
+	for i=1,n do
+		var = f(s, var);
+	end
+	return f, s, var;
+end
+
+-- Return the last n items an iterator returns
 function tail(n, f, s, var)
 	local results, count = {}, 0;
 	while true do
