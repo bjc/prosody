@@ -206,7 +206,7 @@ function room_mt:send_history(to, stanza)
 		end
 	end
 	if self._data['subject'] then
-		self:_route_stanza(st.message({type='groupchat', from=self.jid, to=to}):tag("subject"):text(self._data['subject']));
+		self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
 	end
 end
 
@@ -233,6 +233,7 @@ function room_mt:set_subject(current_nick, subject)
 	-- TODO check nick's authority
 	if subject == "" then subject = nil; end
 	self._data['subject'] = subject;
+	self._data['subject_from'] = current_nick;
 	if self.save then self:save(); end
 	local msg = st.message({type='groupchat', from=current_nick})
 		:tag('subject'):text(subject):up();
