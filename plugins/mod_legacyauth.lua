@@ -50,7 +50,7 @@ module:add_iq_handler("c2s_unauthed", "jabber:iq:auth",
 				username = nodeprep(username);
 				resource = resourceprep(resource)
 				local reply = st.reply(stanza);
-				if usermanager.test_password(username, password, session.host) then
+				if usermanager.test_password(username, session.host, password) then
 					-- Authentication successful!
 					local success, err = sessionmanager.make_authenticated(session, username);
 					if success then

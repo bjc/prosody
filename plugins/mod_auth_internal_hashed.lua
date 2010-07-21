@@ -141,7 +141,7 @@ function new_hashpass_provider(host)
 					log("debug", "NODEprep failed on username: %s", username);
 					return "", nil;
 				end
-				return usermanager.test_password(prepped_username, password, realm), true;
+				return usermanager.test_password(prepped_username, realm, password), true;
 			end,
 			scram_sha_1 = function(username, realm)
 				local credentials = datamanager.load(username, host, "accounts");
