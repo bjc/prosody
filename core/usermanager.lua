@@ -63,7 +63,7 @@ prosody.events.add_handler("component-activated", initialize_host, 100);
 
 function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
-function test_password(username, password, host)
+function test_password(username, host, password)
 	return hosts[host].users.test_password(username, password);
 end
 
