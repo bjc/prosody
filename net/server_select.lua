@@ -483,7 +483,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if drain then
 				drain(handler)
 			end
-			_ = needtls and handler:starttls(nil, true)
+			_ = needtls and handler:starttls(nil)
 			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
@@ -564,13 +564,13 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		else
 			local sslctx;
-			handler.starttls = function( self, _sslctx, now )
+			handler.starttls = function( self, _sslctx)
 				if _sslctx then
 					sslctx = _sslctx;
 					handler:set_sslctx(sslctx);
 				end
-				if not now then
-					out_put "server.lua: we need to do tls, but delaying until later"
+				if bufferqueuelen > 0 then
+					out_put "server.lua: we need to do tls, but delaying until send buffer empty"
 					needtls = true
 					return
 				end
