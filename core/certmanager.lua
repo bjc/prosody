@@ -15,6 +15,7 @@ local setmetatable, tostring = setmetatable, tostring;
 
 local prosody = prosody;
 local resolve_path = prosody.resolve_relative_path;
+local config_path = prosody.paths.config;
 
 module "certmanager"
 
@@ -31,11 +32,11 @@ function create_context(host, mode, config)
 	local ssl_config = {
 		mode = mode;
 		protocol = user_ssl_config.protocol or "sslv23";
-		key = resolve_path(user_ssl_config.key);
+		key = resolve_path(config_path, user_ssl_config.key);
 		password = user_ssl_config.password;
-		certificate = resolve_path(user_ssl_config.certificate);
-		capath = resolve_path(user_ssl_config.capath or default_capath);
-		cafile = resolve_path(user_ssl_config.cafile);
+		certificate = resolve_path(config_path, user_ssl_config.certificate);
+		capath = resolve_path(config_path, user_ssl_config.capath or default_capath);
+		cafile = resolve_path(config_path, user_ssl_config.cafile);
 		verify = user_ssl_config.verify or "none";
 		options = user_ssl_config.options or "no_sslv2";
 		ciphers = user_ssl_config.ciphers;
