@@ -25,7 +25,8 @@ local default_capath = "/etc/ssl/certs";
 function create_context(host, mode, config)
 	local user_ssl_config = config and config.core.ssl or default_ssl_config;
 
-	if not(ssl and user_ssl_config) then return nil; end
+	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
+	if not user_ssl_config then return nil, "No SSL/TLS configuration present for "..host; end
 	
 	local ssl_config = {
 		mode = mode;
@@ -67,7 +68,6 @@ function create_context(host, mode, config)
 		else
 			log("error", "SSL/TLS: Error initialising for host %s: %s", host, err );
 		end
-		ssl = false
         end
         return ctx, err;
 end
