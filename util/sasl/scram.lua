@@ -65,7 +65,7 @@ local function binaryXOR( a, b )
 end
 
 -- hash algorithm independent Hi(PBKDF2) implementation
-local function Hi(hmac, str, salt, i)
+function Hi(hmac, str, salt, i)
 	local Ust = hmac(str, salt.."\0\0\0\1");
 	local res = Ust;	
 	for n=1,i-1 do
