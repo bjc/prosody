@@ -20,7 +20,7 @@ module("storagemanager")
 local default_driver_mt = {};
 default_driver_mt.__index = default_driver_mt;
 function default_driver_mt:open(store)
-	return setmetatable({ host = self.host, store = self.store }, default_driver_mt);
+	return setmetatable({ host = self.host, store = store }, default_driver_mt);
 end
 function default_driver_mt:get(user) return olddm.load(user, self.host, self.store); end
 function default_driver_mt:set(user, data) return olddm.store(user, self.host, self.store, data); end
