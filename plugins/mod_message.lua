@@ -26,7 +26,7 @@ local function process_to_bare(bare, origin, stanza)
 	elseif t == "groupchat" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	elseif t == "headline" then
-		if user then
+		if user and stanza.attr.to == bare then
 			for _, session in pairs(user.sessions) do
 				if session.presence and session.priority >= 0 then
 					session.send(stanza);
