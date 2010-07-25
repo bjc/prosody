@@ -36,7 +36,13 @@ function console:new_session(conn)
 	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
-			print = function (t) w("| "..tostring(t).."\n"); end;
+			print = function (...)
+				local t = {};
+				for i=1,select("#", ...) do
+					t[i] = tostring(select(i, ...));
+				end
+				w("| "..table.concat(t, "\t").."\n");
+			end;
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
