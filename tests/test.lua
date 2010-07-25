@@ -16,6 +16,7 @@ function run_all_tests()
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
 	dotest "util.stanza"
+	dotest "util.sasl.scram"
 	
 	dosingletest("test_sasl.lua", "latin1toutf8");
 end
