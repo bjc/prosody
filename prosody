@@ -343,6 +343,7 @@ function init_data_store()
 		end
 		return username, host, datastore, data;
 	end);
+	require "core.storagemanager";
 end
 
 function prepare_to_start()
