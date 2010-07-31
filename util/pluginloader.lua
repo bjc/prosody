@@ -25,16 +25,30 @@ local function load_file(name)
 end
 
 function load_resource(plugin, resource, loader)
-	if not resource then
-		resource = "mod_"..plugin..".lua";
-	end
-	loader = loader or load_file;
+	local path, name = plugin:match("([^/]*)/?(.*)");
+	if name == "" then
+		if not resource then
+			resource = "mod_"..plugin..".lua";
+		end
+		loader = loader or load_file;
 
-	local content, err = loader(plugin.."/"..resource);
-	if not content then content, err = loader(resource); end
-	-- TODO add support for packed plugins
-	
-	return content, err;
+		local content, err = loader(plugin.."/"..resource);
+		if not content then content, err = loader(resource); end
+		-- TODO add support for packed plugins
+		
+		return content, err;
+	else
+		if not resource then
+			resource = "mod_"..name..".lua";
+		end
+		loader = loader or load_file;
+
+		local content, err = loader(plugin.."/"..resource);
+		if not content then content, err = loader(path.."/"..resource); end
+		-- TODO add support for packed plugins
+		
+		return content, err;
+	end
 end
 
 function load_code(plugin, resource)
