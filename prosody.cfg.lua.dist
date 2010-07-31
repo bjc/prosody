@@ -1,8 +1,8 @@
 -- Prosody Example Configuration File
--- 
+--
 -- Information on configuring Prosody can be found on our
 -- website at http://prosody.im/doc/configure
--- 
+--
 -- Tip: You can check that the syntax of this file is correct
 -- when you have finished by running: luac -p prosody.cfg.lua
 -- If there are any errors, it will let you know what and where
@@ -76,7 +76,7 @@ modules_disabled = {
 -- Disable account creation by default, for security
 -- For more information see http://prosody.im/doc/creating_accounts
 allow_registration = false;
-	
+
 -- These are the SSL/TLS-related settings. If you don't want
 -- to use SSL/TLS, you may comment or remove this
 ssl = {
@@ -106,7 +106,7 @@ VirtualHost "example.com"
 	-- set in the global section (if any).
 	-- Note that old-style SSL on port 5223 only supports one certificate, and will always
 	-- use the global one.
-	ssl = { 
+	ssl = {
 		key = "certs/example.com.key";
 		certificate = "certs/example.com.crt";
 	}
