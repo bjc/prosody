@@ -119,12 +119,12 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
+		if secure_auth_only and not session.secure then
+			return session.send(build_reply("failure", "encryption-required"));
+		end
 		local valid_mechanism = session.sasl_handler:select(stanza.attr.mechanism);
 		if not valid_mechanism then
 			return session.send(build_reply("failure", "invalid-mechanism"));
-		end
-		if secure_auth_only and not session.secure then
-			return session.send(build_reply("failure", "encryption-required"));
 		end
 	elseif not session.sasl_handler then
 		return; -- FIXME ignoring out of order stanzas because ejabberd does
