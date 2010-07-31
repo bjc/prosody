@@ -12,8 +12,6 @@ local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 local io_open, os_time = io.open, os.time;
 local loadstring, pairs = loadstring, pairs;
 
-local datamanager = require "util.datamanager";
-
 module "pluginloader"
 
 local function load_file(name)
