@@ -107,7 +107,7 @@ function is_admin(jid, host)
 					break;
 				end
 			end
-		elseif admins then
+		elseif host_admins then
 			log("error", "Option 'admins' for host '%s' is not a list", host);
 		end
 	end
@@ -120,7 +120,7 @@ function is_admin(jid, host)
 					break;
 				end
 			end
-		elseif admins then
+		elseif global_admins then
 			log("error", "Global option 'admins' is not a list");
 		end
 	end
