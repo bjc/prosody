@@ -22,6 +22,7 @@ local tostring = tostring;
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local sasl_backend = module:get_option("sasl_backend") or "builtin";
 local anonymous_login = module:get_option("anonymous_login");
+local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
 
 -- Cyrus config options
 local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
@@ -119,7 +120,7 @@ local function sasl_handler(session, stanza)
 		elseif stanza.attr.mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
-		if secure_auth_only and not session.secure then
+		if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
 			return session.send(build_reply("failure", "encryption-required"));
 		end
 		local valid_mechanism = session.sasl_handler:select(stanza.attr.mechanism);
@@ -163,13 +164,12 @@ module:hook("stream-features", function(event)
 			origin.sasl_handler = new_sasl(module.host, anonymous_authentication_profile);
 		else
 			origin.sasl_handler = usermanager_get_sasl_handler(module.host);
-			if not (module:get_option("allow_unencrypted_plain_auth")) and not origin.secure then
-				origin.sasl_handler:forbidden({"PLAIN"});
-			end
 		end
 		features:tag("mechanisms", mechanisms_attr);
-		for k in pairs(origin.sasl_handler:mechanisms()) do
-			features:tag("mechanism"):text(k):up();
+		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
+			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
+				features:tag("mechanism"):text(mechanism):up();
+			end
 		end
 		features:up();
 	else
