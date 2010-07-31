@@ -113,17 +113,18 @@ end
 local function sasl_handler(session, stanza)
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
+		local mechanism = stanza.attr.mechanism;
 		if anonymous_login then
-			if stanza.attr.mechanism ~= "ANONYMOUS" then
+			if mechanism ~= "ANONYMOUS" then
 				return session.send(build_reply("failure", "invalid-mechanism"));
 			end
-		elseif stanza.attr.mechanism == "ANONYMOUS" then
+		elseif mechanism == "ANONYMOUS" then
 			return session.send(build_reply("failure", "mechanism-too-weak"));
 		end
 		if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
 			return session.send(build_reply("failure", "encryption-required"));
 		end
-		local valid_mechanism = session.sasl_handler:select(stanza.attr.mechanism);
+		local valid_mechanism = session.sasl_handler:select(mechanism);
 		if not valid_mechanism then
 			return session.send(build_reply("failure", "invalid-mechanism"));
 		end
