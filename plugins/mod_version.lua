@@ -12,6 +12,10 @@ module:add_feature("jabber:iq:version");
 
 local version = "the best operating system ever!";
 
+local query = st.stanza("query", {xmlns = "jabber:iq:version"})
+	:tag("name"):text("Prosody"):up()
+	:tag("version"):text(prosody.version):up();
+
 if not module:get_option("hide_os_type") then
 	if os.getenv("WINDIR") then
 		version = "Windows";
@@ -23,14 +27,9 @@ if not module:get_option("hide_os_type") then
 			version = "an OS";
 		end
 	end
+	version = version:match("^%s*(.-)%s*$") or version;
+	query:tag("os"):text(version):up();
 end
-
-version = version:match("^%s*(.-)%s*$") or version;
-
-local query = st.stanza("query", {xmlns = "jabber:iq:version"})
-	:tag("name"):text("Prosody"):up()
-	:tag("version"):text(prosody.version):up()
-	:tag("os"):text(version);
 
 module:hook("iq/host/jabber:iq:version:query", function(event)
 	local stanza = event.stanza;
