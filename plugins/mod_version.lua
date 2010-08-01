@@ -16,7 +16,7 @@ if not module:get_option("hide_os_type") then
 	if os.getenv("WINDIR") then
 		version = "Windows";
 	else
-		local uname = io.popen("uname");
+		local uname = io.popen(module:get_option("os_version_command") or "uname");
 		if uname then
 			version = uname:read("*a");
 		else
