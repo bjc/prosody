@@ -87,20 +87,16 @@ end
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, service_name, app_name)
-	local sasl_i = {};
 
 	init(app_name or service_name);
 
-	sasl_i.realm = realm;
-	sasl_i.service_name = service_name;
-
 	local st, ret = pcall(cyrussasl.server_new, service_name, nil, realm, nil, nil)
-	if st then
-		sasl_i.cyrus = ret;
-	else
+	if not st then
 		log("error", "Creating SASL server connection failed: %s", ret);
 		return nil;
 	end
+
+	local sasl_i = { realm = realm, service_name = service_name, cyrus = ret };
 
 	if cyrussasl.set_canon_cb then
 		local c14n_cb = function (user)
@@ -112,8 +108,7 @@ function new(realm, service_name, app_name)
 	end
 
 	cyrussasl.setssf(sasl_i.cyrus, 0, 0xffffffff)
-	local s = setmetatable(sasl_i, method);
-	return s;
+	return setmetatable(sasl_i, method);
 end
 
 -- get a fresh clone with the same realm and service name
