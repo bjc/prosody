@@ -162,10 +162,7 @@ do
 				--vdebug( "start listening on client socket with id:", self.id )
 				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
 				if call_onconnect then
-					debug("CALLING ONCONNECT")
 					self:onconnect()
-				else
-					debug("NOT CALLING ONCONNECT");
 				end
 				self.eventsession = nil
 				return -1
