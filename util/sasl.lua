@@ -61,29 +61,15 @@ local function registerMechanism(name, backends, f)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-function new(realm, profile, forbidden)
+function new(realm, profile)
 	local sasl_i = {profile = profile};
 	sasl_i.realm = realm;
-	local s = setmetatable(sasl_i, method);
-	if forbidden == nil then forbidden = {} end
-	s:forbidden(forbidden)
-	return s;
+	return setmetatable(sasl_i, method);
 end
 
--- get a fresh clone with the same realm, profiles and forbidden mechanisms
+-- get a fresh clone with the same realm and profile
 function method:clean_clone()
-	return new(self.realm, self.profile, self:forbidden())
-end
-
--- set the forbidden mechanisms
-function method:forbidden( restrict )
-	if restrict then
-		-- set forbidden
-		self.restrict = set.new(restrict);
-	else
-		-- get forbidden
-		return array.collect(self.restrict:items());
-	end
+	return new(self.realm, self.profile)
 end
 
 -- get a list of possible SASL mechanims to use
@@ -94,9 +80,7 @@ function method:mechanisms()
 		for backend, f in pairs(self.profile) do
 			if backend_mechanism[backend] then
 				for _, mechanism in ipairs(backend_mechanism[backend]) do
-					if not self.restrict:contains(mechanism) then
-						mechanisms[mechanism] = true;
-					end
+					mechanisms[mechanism] = true;
 				end
 			end
 		end
