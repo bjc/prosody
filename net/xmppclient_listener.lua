@@ -175,4 +175,8 @@ function xmppclient.ondisconnect(conn, err)
 	end
 end
 
+function xmppclient.associate_session(conn, session)
+	sessions[conn] = session;
+end
+
 connlisteners_register("xmppclient", xmppclient);
