@@ -8,9 +8,10 @@ local pairs, next = pairs, next;
 local prosody = prosody;
 local assert = assert;
 local require = require;
+local st = require "util.stanza";
+local DBI = require "DBI";
 
 -- connect to db
-local DBI = require "DBI";
 local option_datastore_params = module:get_option("datastore_params") or error("Missing option: datastore_params");
 local database;
 do
@@ -28,9 +29,20 @@ end
 local ejabberd_init = module:require("ejabberd_init");
 ejabberd_init.init(database);
 
-local st = require "util.stanza";
+local sqlcache = {};
+local function prepare(sql)
+	module:log("debug", "query: %s", sql);
+	local err;
+	local r = sqlcache[sql];
+	if not r then
+		r, err = database:prepare(sql);
+		if not r then error("Unable to prepare SQL statement: "..err); end
+		sqlcache[sql] = r;
+	end
+	return r;
+end
+
 local _parse_xml = module:require("xmlparse");
-local parse_xml_real = _parse_xml;
 local function parse_xml(str)
 	local s = _parse_xml(str);
 	if s and not s.gsub then
@@ -182,20 +194,8 @@ handlers.roster = {
 local driver = {};
 driver.__index = driver;
 
-function driver:prepare(sql)
-	module:log("debug", "query: %s", sql);
-	local err;
-	if not self.sqlcache then self.sqlcache = {}; end
-	local r = self.sqlcache[sql];
-	if r then return r; end
-	r, err = database:prepare(sql);
-	if not r then error("Unable to prepare SQL statement: "..err); end
-	self.sqlcache[sql] = r;
-	return r;
-end
-
 function driver:query(sql, ...)
-	local stmt,err = self:prepare(sql);
+	local stmt,err = prepare(sql);
 	if not stmt then
 		module:log("error", "Failed to prepare SQL [[%s]], error: %s", sql, err);
 		return nil, err;
@@ -214,9 +214,7 @@ function driver:modify(sql, ...)
 end
 
 function driver:open(datastore, typ)
-	local instance = setmetatable({}, self);
-	instance.host = module.host;
-	instance.datastore = datastore;
+	local instance = setmetatable({ host = module.host, datastore = datastore }, self);
 	local handler = handlers[datastore];
 	if not handler then return nil; end
 	for key,val in pairs(handler) do
