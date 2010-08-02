@@ -145,7 +145,12 @@ function new_sax_handlers(session, stream_callbacks)
 		stanza, chardata = nil, {};
 	end
 	
-	return xml_handlers, { reset = reset };
+	local function set_session(stream, new_session)
+		session = new_session;
+		log = new_session.log or default_log;
+	end
+	
+	return xml_handlers, { reset = reset, set_session = set_session };
 end
 
 function new(session, stream_callbacks)
@@ -161,7 +166,8 @@ function new(session, stream_callbacks)
 		end,
 		feed = function (self, data)
 			return parse(parser, data);
-		end
+		end,
+		set_session = meta.set_session;
 	};
 end
 
