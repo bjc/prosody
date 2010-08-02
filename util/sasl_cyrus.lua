@@ -116,15 +116,9 @@ function new(realm, service_name, app_name)
 	return s;
 end
 
--- get a fresh clone with the same realm, profiles and forbidden mechanisms
+-- get a fresh clone with the same realm and service name
 function method:clean_clone()
 	return new(self.realm, self.service_name)
-end
-
--- set the forbidden mechanisms
-function method:forbidden( restrict )
-	log("warn", "Called method:forbidden. NOT IMPLEMENTED.")
-	return {}
 end
 
 -- get a list of possible SASL mechanims to use
