@@ -48,9 +48,7 @@ end
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, profile)
-	local sasl_i = {profile = profile};
-	sasl_i.realm = realm;
-	return setmetatable(sasl_i, method);
+	return setmetatable({ profile = profile, realm = realm }, method);
 end
 
 -- get a fresh clone with the same realm and profile
@@ -92,11 +90,9 @@ function method:process(message)
 end
 
 -- load the mechanisms
-local load_mechs = {"plain", "digest-md5", "anonymous", "scram"}
-for _, mech in ipairs(load_mechs) do
-	local name = "util.sasl."..mech;
-	local m = require(name);
-	m.init(registerMechanism)
-end
+require "util.sasl.plain"     .init(registerMechanism);
+require "util.sasl.digest-md5".init(registerMechanism);
+require "util.sasl.anonymous" .init(registerMechanism);
+require "util.sasl.scram"     .init(registerMechanism);
 
 return _M;
