@@ -133,8 +133,9 @@ function method:process(message)
 	local err;
 	local data;
 
-	if self.mechanism then
+	if not self.first_step_done then
 		err, data = cyrussasl.server_start(self.cyrus, self.mechanism, message or "")
+		self.first_step_done = true;
 	else
 		err, data = cyrussasl.server_step(self.cyrus, message or "")
 	end
