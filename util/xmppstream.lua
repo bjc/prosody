@@ -95,10 +95,6 @@ function new_sax_handlers(session, stream_callbacks)
 			
 			stanza = st.stanza(name, attr);
 		else -- we are inside a stanza, so add a tag
-			attr.xmlns = nil;
-			if curr_ns ~= stream_default_ns then
-				attr.xmlns = curr_ns;
-			end
 			stanza:tag(name, attr);
 		end
 	end
