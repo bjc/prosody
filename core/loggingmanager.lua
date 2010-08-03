@@ -24,7 +24,6 @@ if os.getenv("__FLUSH_LOG") then
 end
 
 local config = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
 local prosody = prosody;
 
