@@ -13,17 +13,9 @@
 
 local cyrussasl = require "cyrussasl";
 local log = require "util.logger".init("sasl_cyrus");
-local array = require "util.array";
 
-local tostring = tostring;
-local pairs, ipairs = pairs, ipairs;
-local t_insert, t_concat = table.insert, table.concat;
-local s_match = string.match;
 local setmetatable = setmetatable
 
-local keys = keys;
-
-local print = print
 local pcall = pcall
 local s_match, s_gmatch = string.match, string.gmatch
 
