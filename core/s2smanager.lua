@@ -30,7 +30,7 @@ local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
-local fire_event = require "core.eventmanager".fire_event;
+local fire_event = prosody.events.fire_event;
 local uuid_gen = require "util.uuid".generate;
 
 local logger_init = require "util.logger".init;
