@@ -57,6 +57,7 @@ function compare_srv_priorities(a,b)
 	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
 end
 
+local bouncy_stanzas = { message = true, presence = true, iq = true };
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if sendq then
@@ -71,7 +72,7 @@ local function bounce_sendq(session, reason)
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
 			local xmlns = reply.attr.xmlns;
-			if not xmlns then
+			if not xmlns and bouncy_stanzas[reply.name] then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
