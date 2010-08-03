@@ -28,7 +28,7 @@ local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local initialize_filters = require "util.filters".initialize;
-local fire_event = require "core.eventmanager".fire_event;
+local fire_event = prosody.events.fire_event;
 local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
 
