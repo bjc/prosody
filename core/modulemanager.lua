@@ -10,7 +10,6 @@ local plugin_dir = CFG_PLUGINDIR or "./plugins/";
 
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
-local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local st = require "util.stanza";
@@ -18,6 +17,7 @@ local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
 local prosody = prosody;
+local prosody_events = prosody.events;
 
 local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -104,8 +104,8 @@ function load_modules_for_host(host)
 		end
 	end
 end
-eventmanager.add_event_hook("host-activated", load_modules_for_host);
-eventmanager.add_event_hook("component-activated", load_modules_for_host);
+prosody_events.add_handler("host-activated", load_modules_for_host);
+prosody_events.add_handler("component-activated", load_modules_for_host);
 --
 
 function load(host, module_name, config)
@@ -374,7 +374,7 @@ local event_hook = function(host, mod_name, event_name, ...)
 end;
 function api:add_event_hook(name, handler)
 	if not hooked:get(self.host, self.name, name) then
-		eventmanager.add_event_hook(name, function(...) event_hook(self.host, self.name, name, ...); end);
+		prosody_events.add_handler(name, function(...) event_hook(self.host, self.name, name, ...); end);
 		hooked:set(self.host, self.name, name, true);
 	end
 	event_hooks:set(self.host, self.name, name, handler, true);
