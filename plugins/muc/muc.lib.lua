@@ -862,10 +862,10 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	local modified_nicks = {};
 	for nick, occupant in pairs(self._occupants) do
 		if jid_bare(occupant.jid) == jid then
+			t_insert(modified_nicks, nick);
 			if not role then -- getting kicked
 				self._occupants[nick] = nil;
 			else
-				t_insert(modified_nicks, nick);
 				occupant.affiliation, occupant.role = affiliation, role;
 			end
 			p.attr.from = nick;
