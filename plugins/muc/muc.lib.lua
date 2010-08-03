@@ -432,6 +432,10 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 								:tag("status", {code='110'}));
 						end
 						self:send_history(from, stanza);
+					elseif not affiliation then -- registration required for entering members-only room
+						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
+						reply.tags[1].attr.code = "407";
+						origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 					else -- banned
 						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
 						reply.tags[1].attr.code = "403";
