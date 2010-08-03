@@ -72,7 +72,7 @@ local function bounce_sendq(session, reason)
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
 			local xmlns = reply.attr.xmlns;
-			if not xmlns and bouncy_stanzas[reply.name] then
+			if not(xmlns) and bouncy_stanzas[reply.name] then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
