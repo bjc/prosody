@@ -8,21 +8,21 @@
 
 local ssl = ssl
 
-local hosts = hosts;
 local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
 
 local uuid_gen = require "util.uuid".generate;
 
+local log = require "util.logger".init("hostmanager");
+
+local hosts = hosts;
+local prosody_events = prosody.events;
 if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
-
-local log = require "util.logger".init("hostmanager");
 
 local pairs, setmetatable = pairs, setmetatable;
 
@@ -45,11 +45,11 @@ local function load_enabled_hosts(config)
 		log("error", "No active VirtualHost entries in the config file. This may cause unexpected behaviour as no modules will be loaded.");
 	end
 	
-	eventmanager.fire_event("hosts-activated", defined_hosts);
+	prosody_events.fire_event("hosts-activated", defined_hosts);
 	hosts_loaded_once = true;
 end
 
-eventmanager.add_event_hook("server-starting", load_enabled_hosts);
+prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
 	hosts[host] = {type = "local", connected = true, sessions = {},
@@ -69,13 +69,13 @@ function activate(host, host_config)
 	hosts[host].ssl_ctx_in = certmanager.create_context(host, "server", host_config); -- for incoming connections
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
-	eventmanager.fire_event("host-activated", host, host_config);
+	prosody_events.fire_event("host-activated", host, host_config);
 end
 
 function deactivate(host, reason)
 	local host_session = hosts[host];
 	log("info", "Deactivating host: %s", host);
-	eventmanager.fire_event("host-deactivating", host, host_session);
+	prosody_events.fire_event("host-deactivating", host, host_session);
 	
 	reason = reason or { condition = "host-gone", text = "This server has stopped serving "..host };
 	
@@ -111,7 +111,7 @@ function deactivate(host, reason)
 	end
 
 	hosts[host] = nil;
-	eventmanager.fire_event("host-deactivated", host);
+	prosody_events.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
 end
 
