@@ -22,6 +22,8 @@ local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
 
+local xmlns_streams = "http://etherx.jabber.org/streams";
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
 local stream_callbacks = { stream_ns = "http://jabber.org/protocol/httpbind", stream_tag = "body", default_ns = "jabber:client" };
 
@@ -34,7 +36,6 @@ local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 3
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
 local cross_domain = module:get_option("cross_domain_bosh");
 if cross_domain then
@@ -146,11 +147,42 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
+local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
+
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
-	session_close_reply.attr.condition = reason;
+	
+	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+		["xmlns:streams"] = xmlns_streams });
+	
+
+	if reason then
+		close_reply.attr.condition = "remote-stream-error";
+		if type(reason) == "string" then -- assume stream error
+			close_reply:tag("stream:error")
+				:tag(reason, {xmlns = xmlns_xmpp_streams});
+		elseif type(reason) == "table" then
+			if reason.condition then
+				close_reply:tag("stream:error")
+					:tag(reason.condition, stream_xmlns_attr):up();
+				if reason.text then
+					close_reply:tag("text", stream_xmlns_attr):text(reason.text):up();
+				end
+				if reason.extra then
+					close_reply:add_child(reason.extra);
+				end
+			elseif reason.name then -- a stanza
+				close_reply = reason;
+			end
+		end
+		log("info", "Disconnecting client, <stream:error> is: %s", tostring(close_reply));
+	end
+
+	local session_close_response = { headers = default_headers, body = tostring(close_reply) };
+
+	--FIXME: Quite sure we shouldn't reply to all requests with the error
 	for _, held_request in ipairs(session.requests) do
-		held_request:send(session_close_reply);
+		held_request:send(session_close_response);
 		held_request:destroy();
 	end
 	sessions[session.sid]  = nil;
