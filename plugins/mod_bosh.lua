@@ -293,6 +293,21 @@ function stream_callbacks.handlestanza(request, stanza)
 	end
 end
 
+function stream_callbacks.error(request, error)
+	log("debug", "Error parsing BOSH request payload; %s", error);
+	if not request.sid then
+		request:send({ headers = default_headers, status = "400 Bad Request" });
+		return;
+	end
+	
+	local session = sessions[request.sid];
+	if error == "stream-error" then -- Remote stream error, we close normally
+		session:close();
+	else
+		session:close({ condition = "bad-format", text = "Error processing stream" });
+	end
+end
+
 local dead_sessions = {};
 function on_timer()
 	-- log("debug", "Checking for requests soon to timeout...");
