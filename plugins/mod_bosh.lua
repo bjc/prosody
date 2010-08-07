@@ -288,6 +288,7 @@ function stream_callbacks.streamopened(request, attr)
 			-- Repeated, ignore
 			session.log("debug", "rid repeated (on request %s), ignoring: %s (diff %d)", request.id, session.rid, diff);
 			request.notopen = nil;
+			request.ignore = true;
 			request.sid = sid;
 			t_insert(session.requests, request);
 			return;
@@ -316,6 +317,7 @@ function stream_callbacks.streamopened(request, attr)
 end
 
 function stream_callbacks.handlestanza(request, stanza)
+	if request.ignore then return; end
 	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
 	local session = sessions[request.sid];
 	if session then
