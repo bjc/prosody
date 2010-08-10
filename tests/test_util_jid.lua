@@ -25,15 +25,18 @@ function split(split)
 		assert_equal(expected_server, rserver, "split("..tostring(input_jid)..") failed");
 		assert_equal(expected_resource, rresource, "split("..tostring(input_jid)..") failed");
 	end
+
+	-- Valid JIDs
 	test("node@server", 		"node", "server", nil		);
 	test("node@server/resource", 	"node", "server", "resource"	);
 	test("server", 			nil, 	"server", nil		);
 	test("server/resource", 	nil, 	"server", "resource"	);
-	test(nil,			nil,	nil	, nil		);
 
-	test("node@/server", nil, nil, nil , nil );
-	test("@server",      nil, nil, nil , nil );
-	test("@server/resource",nil,nil,nil, nil );
+	-- Always invalid JIDs
+	test(nil,                nil, nil, nil);
+	test("node@/server",     nil, nil, nil);
+	test("@server",          nil, nil, nil);
+	test("@server/resource", nil, nil, nil);
 end
 
 function bare(bare)
