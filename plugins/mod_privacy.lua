@@ -203,7 +203,7 @@ function getList(privacy_lists, origin, stanza, name)
 
 	if name == nil then
 		if privacy_lists.lists then
-			if origin.ActivePrivacyList then
+			if origin.activePrivacyList then
 				reply:tag("active", {name=origin.activePrivacyList}):up();
 			end
 			if privacy_lists.default then
