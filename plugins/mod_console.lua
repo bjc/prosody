@@ -177,6 +177,7 @@ commands["!"] = function (session, data)
 	session.print("Sorry, not sure what you want");
 end
 
+
 function commands.help(session, data)
 	local print = session.print;
 	local section = data:match("^help (%w+)");
@@ -187,6 +188,7 @@ function commands.help(session, data)
 		print [[c2s - Commands to manage local client-to-server sessions]]
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
+		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
@@ -203,6 +205,10 @@ function commands.help(session, data)
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
 		print [[module:list(host) - List the modules loaded on the specified host]]
+	elseif section == "host" then
+		print [[host:activate(hostname) - Activates the specified host]]
+		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
+		print [[host:list() - List the currently-activated hosts]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
