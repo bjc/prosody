@@ -125,6 +125,9 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.create_user(username, password)
+		if password == nil then
+			return datamanager.store(username, host, "accounts", {});
+		end
 		local salt = generate_uuid();
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
 		local stored_key_hex = to_hex(stored_key);
