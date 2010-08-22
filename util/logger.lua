@@ -8,9 +8,6 @@
 
 local pcall = pcall;
 
-local config = require "core.configmanager";
-local log_sources = config.get("*", "core", "log_sources");
-
 local find = string.find;
 local ipairs, pairs, setmetatable = ipairs, pairs, setmetatable;
 
@@ -26,18 +23,6 @@ local make_logger;
 local outfunction = nil;
 
 function init(name)
-	if log_sources then
-		local log_this = false;
-		for _, source in ipairs(log_sources) do
-			if find(name, source) then 
-				log_this = true;
-				break;
-			end
-		end
-		
-		if not log_this then return function () end end
-	end
-	
 	local log_debug = make_logger(name, "debug");
 	local log_info = make_logger(name, "info");
 	local log_warn = make_logger(name, "warn");
