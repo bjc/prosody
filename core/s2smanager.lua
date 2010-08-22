@@ -540,6 +540,7 @@ local resting_session = { -- Resting, not dead
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
+		filter = function (type, data) return data; end;
 	}; resting_session.__index = resting_session;
 
 function retire_session(session)
