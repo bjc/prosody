@@ -666,7 +666,6 @@ closesocket = function( socket )
 end
 
 local function link(sender, receiver, buffersize)
-	sender:set_mode(buffersize);
 	local sender_locked;
 	local _sendbuffer = receiver.sendbuffer;
 	function receiver.sendbuffer()

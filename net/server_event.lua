@@ -844,7 +844,6 @@ function hook_signal(signal_num, handler)
 end
 
 local function link(sender, receiver, buffersize)
-	sender:set_mode(buffersize);
 	local sender_locked;
 	
 	function receiver:ondrain()
