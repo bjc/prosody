@@ -14,6 +14,31 @@ local commands = {};
 
 module:add_feature(xmlns_cmd);
 
+module:hook("iq/host/"..xmlns_disco.."#info:query", function (event)
+	local origin, stanza = event.origin, event.stanza;
+	local node = stanza.tags[1].attr.node;
+	if stanza.attr.type == "get" and node
+	    and commands[node] then
+		-- Required for Prosody <= 0.7
+		local privileged = is_admin(stanza.attr.from)
+		    or is_admin(stanza.attr.from, stanza.attr.to);
+		if (commands[node].permission == "admin" and privileged)
+		    or (commands[node].permission == "user") then
+			reply = st.reply(stanza);
+			reply:tag("query", { xmlns = xmlns_disco.."#info",
+			    node = node });
+			reply:tag("identity", { name = commands[node].name,
+			    category = "automation", type = "command-node" }):up();
+			reply:tag("feature", { var = xmlns_cmd }):up();
+			reply:tag("feature", { var = "jabber:x:data" }):up();
+		else
+			reply = st.error_reply(stanza, "auth", "forbidden", "This item is not available to you");
+		end
+		origin.send(reply);
+		return true;
+	end
+end);
+
 module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "get" and stanza.tags[1].attr.node
