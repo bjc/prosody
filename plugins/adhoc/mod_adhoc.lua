@@ -1,5 +1,6 @@
 -- Copyright (C) 2009 Thilo Cestonaro
--- 
+-- Copyright (C) 2009-2010 Florian Zeitz
+--
 -- This file is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -15,9 +16,9 @@ module:add_feature(xmlns_cmd);
 
 module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 	local origin, stanza = event.origin, event.stanza;
-	local privileged = is_admin(stanza.attr.from, stanza.attr.to);
 	if stanza.attr.type == "get" and stanza.tags[1].attr.node
 	    and stanza.tags[1].attr.node == xmlns_cmd then
+		local privileged = is_admin(stanza.attr.from, stanza.attr.to);
 		reply = st.reply(stanza);
 		reply:tag("query", { xmlns = xmlns_disco.."#items",
 		    node = xmlns_cmd });
@@ -34,15 +35,12 @@ module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 	end
 end, 500);
 
-module:hook("iq/host", function (event)
+module:hook("iq/host/"..xmlns_cmd..":command", function (event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type == "set" and stanza.tags[1]
-	    and stanza.tags[1].name == "command" then 
+	if stanza.attr.type == "set" then
 		local node = stanza.tags[1].attr.node
-		-- TODO: Is this correct, or should is_admin be changed?
-		local privileged = is_admin(event.stanza.attr.from)
-		    or is_admin(stanza.attr.from, stanza.attr.to);
 		if commands[node] then
+			local privileged = is_admin(stanza.attr.from, stanza.attr.to);
 			if commands[node].permission == "admin"
 			    and not privileged then
 				origin.send(st.error_reply(stanza, "auth", "forbidden", "You don't have permission to execute this command"):up()
