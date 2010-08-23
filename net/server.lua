@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local use_luaevent = require "core.configmanager".get("*", "core", "use_libevent");
+local use_luaevent = prosody and require "core.configmanager".get("*", "core", "use_libevent");
 
 if use_luaevent then
 	use_luaevent = pcall(require, "luaevent.core");
