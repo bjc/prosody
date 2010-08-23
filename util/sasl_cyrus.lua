@@ -143,6 +143,9 @@ function method:process(message)
 	self.username = cyrussasl.get_username(self.cyrus)
 
 	if (err == 0) then -- SASL_OK
+		if self.require_provisioning and not self.require_provisioning(self.username) then
+			return "failure", "not-authorized", "User authenticated successfully, but not provisioned for XMPP";
+		end
 		return "success", data
 	elseif (err == 1) then -- SASL_CONTINUE
 		return "challenge", data

@@ -15,16 +15,12 @@ local base64 = require "util.encodings".base64;
 
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
-local usermanager_user_exists = require "core.usermanager".user_exists;
 local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local anonymous_login = module:get_option("anonymous_login");
 local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
-
--- Cyrus config options
-local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
 
 local log = module._log;
 
@@ -63,20 +59,14 @@ local function handle_status(session, status, ret, err_msg)
 	elseif status == "success" then
 		local username = nodeprep(session.sasl_handler.username);
 
-		if not(require_provisioning) or usermanager_user_exists(username, session.host) then
-			local ok, err = sm_make_authenticated(session, session.sasl_handler.username);
-			if ok then
-				session.sasl_handler = nil;
-				session:reset_stream();
-			else
-				module:log("warn", "SASL succeeded but username was invalid");
-				session.sasl_handler = session.sasl_handler:clean_clone();
-				return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
-			end
+		local ok, err = sm_make_authenticated(session, session.sasl_handler.username);
+		if ok then
+			session.sasl_handler = nil;
+			session:reset_stream();
 		else
-			module:log("warn", "SASL succeeded but we don't have an account provisioned for %s", username);
+			module:log("warn", "SASL succeeded but username was invalid");
 			session.sasl_handler = session.sasl_handler:clean_clone();
-			return "failure", "not-authorized", "User authenticated successfully, but not provisioned for XMPP";
+			return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
 		end
 	end
 	return status, ret, err_msg;
