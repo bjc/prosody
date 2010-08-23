@@ -21,15 +21,12 @@ local hosts = hosts;
 
 local prosody = _G.prosody;
 
-local is_cyrus = usermanager.is_cyrus;
-
 function new_default_provider(host)
 	local provider = { name = "internal_plain" };
 	log("debug", "initializing default authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
 		log("debug", "test password '%s' for user %s at host %s", password, username, module.host);
-		if is_cyrus(host) then return nil, "Legacy auth not supported with Cyrus SASL."; end
 		local credentials = datamanager.load(username, host, "accounts") or {};
 	
 		if password == credentials.password then
@@ -41,12 +38,10 @@ function new_default_provider(host)
 
 	function provider.get_password(username)
 		log("debug", "get_password for username '%s' at host '%s'", username, module.host);
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		return (datamanager.load(username, host, "accounts") or {}).password;
 	end
 	
 	function provider.set_password(username, password)
-		if is_cyrus(host) then return nil, "Passwords unavailable for Cyrus SASL."; end
 		local account = datamanager.load(username, host, "accounts");
 		if account then
 			account.password = password;
@@ -56,7 +51,6 @@ function new_default_provider(host)
 	end
 
 	function provider.user_exists(username)
-		if is_cyrus(host) then return true; end
 		local account = datamanager.load(username, host, "accounts");
 		if not account then
 			log("debug", "account not found for username '%s' at host '%s'", username, module.host);
@@ -66,7 +60,6 @@ function new_default_provider(host)
 	end
 
 	function provider.create_user(username, password)
-		if is_cyrus(host) then return nil, "Account creation/modification not available with Cyrus SASL."; end
 		return datamanager.store(username, host, "accounts", {password = password});
 	end
 
