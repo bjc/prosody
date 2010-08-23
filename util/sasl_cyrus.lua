@@ -143,17 +143,17 @@ function method:process(message)
 	self.username = cyrussasl.get_username(self.cyrus)
 
 	if (err == 0) then -- SASL_OK
-	   return "success", data
+		return "success", data
 	elseif (err == 1) then -- SASL_CONTINUE
-	   return "challenge", data
+		return "challenge", data
 	elseif (err == -4) then -- SASL_NOMECH
-	   log("debug", "SASL mechanism not available from remote end")
-	   return "failure", "invalid-mechanism", "SASL mechanism not available"
+		log("debug", "SASL mechanism not available from remote end")
+		return "failure", "invalid-mechanism", "SASL mechanism not available"
 	elseif (err == -13) then -- SASL_BADAUTH
-	   return "failure", "not-authorized", sasl_errstring[err];
+		return "failure", "not-authorized", sasl_errstring[err];
 	else
-	   log("debug", "Got SASL error condition %d: %s", err, sasl_errstring[err]);
-	   return "failure", "undefined-condition", sasl_errstring[err];
+		log("debug", "Got SASL error condition %d: %s", err, sasl_errstring[err]);
+		return "failure", "undefined-condition", sasl_errstring[err];
 	end
 end
 
