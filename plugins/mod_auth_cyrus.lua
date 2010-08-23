@@ -8,9 +8,12 @@
 
 local log = require "util.logger".init("auth_cyrus");
 
+local usermanager_user_exists = require "core.usermanager".user_exists;
+
 local cyrus_service_realm = module:get_option("cyrus_service_realm");
 local cyrus_service_name = module:get_option("cyrus_service_name");
 local cyrus_application_name = module:get_option("cyrus_application_name");
+local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
 
 prosody.unlock_globals(); --FIXME: Figure out why this is needed and
 						  -- why cyrussasl isn't caught by the sandbox
@@ -41,6 +44,9 @@ function new_default_provider(host)
 	end
 
 	function provider.user_exists(username)
+		if require_provisioning then
+			return usermanager_user_exists(username, module.host);
+		end
 		return true;
 	end
 
@@ -50,7 +56,13 @@ function new_default_provider(host)
 
 	function provider.get_sasl_handler()
 		local realm = module:get_option("sasl_realm") or module.host;
-		return new_sasl(realm);
+		local handler = new_sasl(realm);
+		if require_provisioning then
+			function handler.require_provisioning(username)
+				return usermanager_user_exists(username, module.host);
+			end
+		end
+		return handler;
 	end
 
 	return provider;
