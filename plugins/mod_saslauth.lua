@@ -20,7 +20,6 @@ local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
-local sasl_backend = module:get_option("sasl_backend") or "builtin";
 local anonymous_login = module:get_option("anonymous_login");
 local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
 
@@ -34,10 +33,6 @@ local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local new_sasl = require "util.sasl".new;
-if sasl_backend ~= "builtin" then
-	module:log("error", "Unknown SASL backend: %s", sasl_backend);
-	error("Unknown SASL backend");
-end
 
 local anonymous_authentication_profile = {
 	anonymous = function(username, realm)
