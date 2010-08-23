@@ -26,9 +26,6 @@ local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_
 
 -- Cyrus config options
 local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
-local cyrus_service_realm = module:get_option("cyrus_service_realm");
-local cyrus_service_name = module:get_option("cyrus_service_name");
-local cyrus_application_name = module:get_option("cyrus_application_name");
 
 local log = module._log;
 
@@ -36,28 +33,8 @@ local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
-local new_sasl;
-if sasl_backend == "builtin" then
-	new_sasl = require "util.sasl".new;
-elseif sasl_backend == "cyrus" then
-	prosody.unlock_globals(); --FIXME: Figure out why this is needed and
-	                          -- why cyrussasl isn't caught by the sandbox
-	local ok, cyrus = pcall(require, "util.sasl_cyrus");
-	prosody.lock_globals();
-	if ok then
-		local cyrus_new = cyrus.new;
-		new_sasl = function(realm)
-			return cyrus_new(
-				cyrus_service_realm or realm,
-				cyrus_service_name or "xmpp",
-				cyrus_application_name or "prosody"
-			);
-		end
-	else
-		module:log("error", "Failed to load Cyrus SASL because: %s", cyrus);
-		error("Failed to load Cyrus SASL");
-	end
-else
+local new_sasl = require "util.sasl".new;
+if sasl_backend ~= "builtin" then
 	module:log("error", "Unknown SASL backend: %s", sasl_backend);
 	error("Unknown SASL backend");
 end
