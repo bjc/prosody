@@ -18,8 +18,6 @@ local config = require "core.configmanager";
 local hosts = hosts;
 local sasl_new = require "util.sasl".new;
 
-local require_provisioning = config.get("*", "core", "cyrus_require_provisioning") or false;
-
 local prosody = _G.prosody;
 
 local setmetatable = setmetatable;
@@ -60,8 +58,6 @@ function initialize_host(host)
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
 prosody.events.add_handler("component-activated", initialize_host, 100);
-
-function is_cyrus(host) return config.get(host, "core", "sasl_backend") == "cyrus"; end
 
 function test_password(username, host, password)
 	return hosts[host].users.test_password(username, password);
