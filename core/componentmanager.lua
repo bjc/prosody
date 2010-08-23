@@ -42,6 +42,7 @@ function load_enabled_components(config)
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
 			hosts[host] = create_component(host);
 			hosts[host].connected = false;
+			disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
 			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
