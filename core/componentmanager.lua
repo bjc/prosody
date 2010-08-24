@@ -42,7 +42,6 @@ function load_enabled_components(config)
 		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
 			hosts[host] = create_component(host);
 			hosts[host].connected = false;
-			disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
 			components[host] = default_component_handler;
 			local ok, err = modulemanager.load(host, host_config.core.component_module);
 			if not ok then
@@ -95,7 +94,8 @@ function create_component(host, component, events)
 	end
 	return { type = "component", host = host, connected = true, s2sout = {}, 
 			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new(),
-			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen() };
+			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen(),
+			disallow_s2s = configmanager.get(host, "core", "disallow_s2s"); };
 end
 
 function register_component(host, component, session)
