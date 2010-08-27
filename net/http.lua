@@ -17,8 +17,9 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener = connlisteners_get("httpclient") or error("No httpclient listener!");
 
 local t_insert, t_concat = table.insert, table.concat;
-local tonumber, tostring, pairs, xpcall, select, debug_traceback, char, format =
-        tonumber, tostring, pairs, xpcall, select, debug.traceback, string.char, string.format;
+local pairs, ipairs = pairs, ipairs;
+local tonumber, tostring, xpcall, select, debug_traceback, char, format =
+        tonumber, tostring, xpcall, select, debug.traceback, string.char, string.format;
 
 local log = require "util.logger".init("http");
 
@@ -26,6 +27,23 @@ module "http"
 
 function urlencode(s) return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end)); end
 function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end)); end
+
+local function _formencodepart(s)
+	return s and (s:gsub("%W", function (c)
+		if c ~= " " then
+			return format("%%%02x", c:byte());
+		else
+			return "+";
+		end
+	end));
+end
+function formencode(form)
+	local result = {};
+	for _, field in ipairs(form) do
+		t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
+	end
+	return t_concat(result, "&");
+end
 
 local function expectbody(reqt, code)
     if reqt.method == "HEAD" then return nil end
