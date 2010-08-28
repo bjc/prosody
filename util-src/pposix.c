@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.3"
+#define MODULE_VERSION "0.3.4"
 
 #include <stdlib.h>
 #include <math.h>
@@ -359,6 +359,62 @@ int lc_setgid(lua_State* L)
 	return 2;
 }
 
+int lc_initgroups(lua_State* L)
+{
+	int ret;
+	gid_t gid;
+	struct passwd *p;
+
+	if(!lua_isstring(L, 1))
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, "invalid-username");
+		return 2;
+	}
+	p = getpwnam(lua_tostring(L, 1));
+	if(!p)
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, "no-such-user");
+		return 2;
+	}
+	if(lua_gettop(L) < 2)
+		lua_pushnil(L);
+	switch(lua_type(L, 2))
+	{
+	case LUA_TNIL:
+		gid = p->pw_gid;
+		break;
+	case LUA_TNUMBER:
+		gid = lua_tointeger(L, 2);
+		break;
+	default:
+		lua_pushnil(L);
+		lua_pushstring(L, "invalid-gid");
+		return 2;
+	}
+	ret = initgroups(lua_tostring(L, 1), gid);
+	switch(errno)
+	{
+	case 0:
+		lua_pushboolean(L, 1);
+		lua_pushnil(L);
+		break;
+	case ENOMEM:
+		lua_pushnil(L);
+		lua_pushstring(L, "no-memory");
+		break;
+	case EPERM:
+		lua_pushnil(L);
+		lua_pushstring(L, "permission-denied");
+		break;
+	default:
+		lua_pushnil(L);
+		lua_pushstring(L, "unknown-error");
+	}
+	return 2;
+}
+
 int lc_umask(lua_State* L)
 {
 	char old_mode_string[7];
@@ -517,6 +573,7 @@ int luaopen_util_pposix(lua_State *L)
 
 		{ "setuid", lc_setuid },
 		{ "setgid", lc_setgid },
+		{ "initgroups", lc_initgroups },
 
 		{ "umask", lc_umask },
 

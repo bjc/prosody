@@ -79,7 +79,7 @@ require "util.datamanager".set_data_path(data_path);
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 
-local want_pposix_version = "0.3.3";
+local want_pposix_version = "0.3.4";
 local ok, pposix = pcall(require, "util.pposix");
 
 if ok and pposix then
@@ -90,6 +90,9 @@ if ok and pposix then
 		local desired_user = config.get("*", "core", "prosody_user") or "prosody";
 		local desired_group = config.get("*", "core", "prosody_group") or desired_user;
 		local ok, err = pposix.setgid(desired_group);
+		if ok then
+			ok, err = pposix.initgroups(desired_user);
+		end
 		if ok then
 			ok, err = pposix.setuid(desired_user);
 			if ok then
