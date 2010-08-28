@@ -152,7 +152,12 @@ local function request_reader(request, data, startpos)
 			startpos = (startpos or 1) + #line + 2;
 			local k, v = line:match("(%S+): (.+)");
 			if k and v then
-				headers[k:lower()] = v;
+				k = k:lower();
+				if headers[k] then
+					headers[k] = headers[k]..", "..v;
+				else
+					headers[k] = v;
+				end
 				--log("debug", "Header: '"..k:lower().."' = '"..v.."'");
 			elseif #line == 0 then
 				headers_complete = true;
