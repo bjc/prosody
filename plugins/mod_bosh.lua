@@ -55,6 +55,22 @@ if cross_domain then
 	end
 end
 
+local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
+
+local function get_ip_from_request(request)
+	local ip = request.handler:ip();
+	local forwarded_for = request.headers["x-forwarded-for"];
+	if forwarded_for then
+		forwarded_for = forwarded_for..", "..ip;
+		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
+			if not trusted_proxies[forwarded_ip] then
+				ip = forwarded_ip;
+			end
+		end
+	end
+	return ip;
+end
+
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
 
@@ -216,10 +232,12 @@ function stream_callbacks.streamopened(request, attr)
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza,
-			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure
+			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
+			ip = get_ip_from_request(request);
 		};
 		sessions[sid] = session;
 		
+		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 		local r, send_buffer = session.requests, session.send_buffer;
 		local response = { headers = default_headers }
@@ -324,7 +342,6 @@ function stream_callbacks.handlestanza(request, stanza)
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
 		end
-		session.ip = request.handler:ip();
 		core_process_stanza(session, stanza);
 	end
 end
