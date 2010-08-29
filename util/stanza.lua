@@ -126,6 +126,23 @@ function stanza_mt:children()
 			if v then return v; end
 		end, self, i;
 end
+
+function stanza_mt:matched_children(name, xmlns)
+	xmlns = xmlns or self.attr.xmlns;
+	local tags = self.tags;
+	local start_i, max_i = 1, #tags;
+	return function ()
+			for i=start_i,max_i do
+				v = tags[i];
+				if (not name or v.name == name)
+				and (not xmlns or xmlns == v.attr.xmlns) then
+					start_i = i+1;
+					return v;
+				end
+			end
+		end, tags, i;
+end
+
 function stanza_mt:childtags()
 	local i = 0;
 	return function (a)
