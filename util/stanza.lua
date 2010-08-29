@@ -122,8 +122,7 @@ function stanza_mt:children()
 	local i = 0;
 	return function (a)
 			i = i + 1
-			local v = a[i]
-			if v then return v; end
+			return a[i];
 		end, self, i;
 end
 
