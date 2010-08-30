@@ -17,7 +17,7 @@ module "jid"
 
 local function _split(jid)
 	if not jid then return; end
-	local node, nodepos = match(jid, "^([^@]+)@()");
+	local node, nodepos = match(jid, "^([^@/]+)@()");
 	local host, hostpos = match(jid, "^([^@/]+)()", nodepos)
 	if node and not host then return nil, nil, nil; end
 	local resource = match(jid, "^/(.+)$", hostpos);
