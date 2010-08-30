@@ -47,8 +47,9 @@ local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 
 dns.settimeout(dns_timeout);
 
+local prosody = _G.prosody;
 incoming_s2s = {};
-_G.prosody.incoming_s2s = incoming_s2s;
+prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
@@ -516,6 +517,14 @@ function mark_connected(session)
 	local send_to_host = send_to_host;
 	function session.send(data) send_to_host(to, from, data); end
 	
+	local event_data = { session = session };
+	if session.type == "s2sout" then
+		prosody.events.fire_event("s2sout-established", event_data);
+		hosts[session.from_host].events.fire_event("s2sout-established", event_data);
+	else
+		prosody.events.fire_event("s2sin-established", event_data);
+		hosts[session.to_host].events.fire_event("s2sin-established", event_data);
+	end
 	
 	if session.direction == "outgoing" then
 		if sendq then
