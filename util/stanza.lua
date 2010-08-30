@@ -151,6 +151,30 @@ function stanza_mt:childtags()
 		end, self.tags[1], i;
 end
 
+function stanza_mt:maptags(callback)
+	local tags, curr_tag = self.tags, 1;
+	local n_children, n_tags = #self, #tags;
+	
+	local i = 1;
+	while curr_tag <= n_tags do
+		if self[i] == tags[curr_tag] then
+			local ret = callback(self[i]);
+			if ret == nil then
+				t_remove(self, i);
+				t_remove(tags, curr_tag);
+				n_children = n_children - 1;
+				n_tags = n_tags - 1;
+			else
+				self[i] = ret;
+				tags[i] = ret;
+			end
+			i = i + 1;
+			curr_tag = curr_tag + 1;
+		end
+	end
+	return self;
+end
+
 local xml_escape
 do
 	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
