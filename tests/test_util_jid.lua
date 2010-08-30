@@ -28,15 +28,18 @@ function split(split)
 
 	-- Valid JIDs
 	test("node@server", 		"node", "server", nil		);
-	test("node@server/resource", 	"node", "server", "resource"	);
-	test("server", 			nil, 	"server", nil		);
-	test("server/resource", 	nil, 	"server", "resource"	);
+	test("node@server/resource", 	"node", "server", "resource"        );
+	test("server", 			nil, 	"server", nil               );
+	test("server/resource", 	nil, 	"server", "resource"        );
+	test("server/resource@foo", 	nil, 	"server", "resource@foo"    );
+	test("server/resource@foo/bar",	nil, 	"server", "resource@foo/bar");
 
 	-- Always invalid JIDs
 	test(nil,                nil, nil, nil);
 	test("node@/server",     nil, nil, nil);
 	test("@server",          nil, nil, nil);
 	test("@server/resource", nil, nil, nil);
+	test("@/resource", nil, nil, nil);
 end
 
 function bare(bare)
