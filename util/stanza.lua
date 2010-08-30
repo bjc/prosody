@@ -126,7 +126,7 @@ function stanza_mt:children()
 		end, self, i;
 end
 
-function stanza_mt:matched_children(name, xmlns)
+function stanza_mt:matching_tags(name, xmlns)
 	xmlns = xmlns or self.attr.xmlns;
 	local tags = self.tags;
 	local start_i, max_i = 1, #tags;
