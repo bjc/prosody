@@ -10,7 +10,7 @@ local st = require "util.stanza";
 
 module:add_feature("jabber:iq:version");
 
-local version = "the best operating system ever!";
+local version;
 
 local query = st.stanza("query", {xmlns = "jabber:iq:version"})
 	:tag("name"):text("Prosody"):up()
@@ -20,15 +20,23 @@ if not module:get_option("hide_os_type") then
 	if os.getenv("WINDIR") then
 		version = "Windows";
 	else
-		local uname = io.popen(module:get_option("os_version_command") or "uname");
-		if uname then
-			version = uname:read("*a");
-		else
-			version = "an OS";
+		local os_version_command = module:get_option("os_version_command");
+		local ok pposix = pcall(require, "pposix");
+		if not os_version_command and (ok and pposix and pposix.uname) then
+			version = pposix.uname().sysname;
+		end
+		if not version then
+			local uname = io.popen(os_version_command or "uname");
+			if uname then
+				version = uname:read("*a");
+			end
+			uname:close();
 		end
 	end
-	version = version:match("^%s*(.-)%s*$") or version;
-	query:tag("os"):text(version):up();
+	if version then
+		version = version:match("^%s*(.-)%s*$") or version;
+		query:tag("os"):text(version):up();
+	end
 end
 
 module:hook("iq/host/jabber:iq:version:query", function(event)
