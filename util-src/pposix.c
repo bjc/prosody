@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.4"
+#define MODULE_VERSION "0.3.5"
 
 #include <stdlib.h>
 #include <math.h>
@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <fcntl.h>
 
 #include <syslog.h>
@@ -553,6 +554,28 @@ int lc_abort(lua_State* L)
 	return 0;
 }
 
+int lc_uname(lua_State* L)
+{
+	struct utsname uname_info;
+	if(uname(&uname_info) != 0)
+	{
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	lua_newtable(L);
+	lua_pushstring(L, uname_info.sysname);
+	lua_setfield(L, -2, "sysname");
+	lua_pushstring(L, uname_info.nodename);
+	lua_setfield(L, -2, "nodename");
+	lua_pushstring(L, uname_info.release);
+	lua_setfield(L, -2, "release");
+	lua_pushstring(L, uname_info.version);
+	lua_setfield(L, -2, "version");
+	lua_pushstring(L, uname_info.machine);
+	lua_setfield(L, -2, "machine");
+	return 1;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -581,6 +604,8 @@ int luaopen_util_pposix(lua_State *L)
 
 		{ "setrlimit", lc_setrlimit },
 		{ "getrlimit", lc_getrlimit },
+
+		{ "uname", lc_uname },
 
 		{ NULL, NULL }
 	};
