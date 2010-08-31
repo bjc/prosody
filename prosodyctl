@@ -79,7 +79,7 @@ require "util.datamanager".set_data_path(data_path);
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 
-local want_pposix_version = "0.3.4";
+local want_pposix_version = "0.3.5";
 local ok, pposix = pcall(require, "util.pposix");
 
 if ok and pposix then
