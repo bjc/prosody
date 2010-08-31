@@ -559,6 +559,7 @@ int lc_uname(lua_State* L)
 	struct utsname uname_info;
 	if(uname(&uname_info) != 0)
 	{
+		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
