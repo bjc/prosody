@@ -19,9 +19,7 @@ module:hook("iq/host/"..xmlns_disco.."#info:query", function (event)
 	local node = stanza.tags[1].attr.node;
 	if stanza.attr.type == "get" and node
 	    and commands[node] then
-		-- Required for Prosody <= 0.7
-		local privileged = is_admin(stanza.attr.from)
-		    or is_admin(stanza.attr.from, stanza.attr.to);
+		local privileged = is_admin(stanza.attr.from, stanza.attr.to);
 		if (commands[node].permission == "admin" and privileged)
 		    or (commands[node].permission == "user") then
 			reply = st.reply(stanza);
