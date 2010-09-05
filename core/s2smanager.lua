@@ -582,7 +582,7 @@ function destroy_session(session, reason)
 		if hosts[session.from_host] then
 			hosts[session.from_host].events.fire_event("s2sout-destroyed", event_data);
 		end
-	else
+	elseif session.type == "s2sin" then
 		prosody.events.fire_event("s2sin-destroyed", event_data);
 		if hosts[session.to_host] then
 			hosts[session.to_host].events.fire_event("s2sin-destroyed", event_data);
