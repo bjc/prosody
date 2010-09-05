@@ -576,6 +576,19 @@ function destroy_session(session, reason)
 		incoming_s2s[session] = nil;
 	end
 	
+	local event_data = { session = session, reason = reason };
+	if session.type == "s2sout" then
+		prosody.events.fire_event("s2sout-destroyed", event_data);
+		if hosts[session.from_host] then
+			hosts[session.from_host].events.fire_event("s2sout-destroyed", event_data);
+		end
+	else
+		prosody.events.fire_event("s2sin-destroyed", event_data);
+		if hosts[session.to_host] then
+			hosts[session.to_host].events.fire_event("s2sin-destroyed", event_data);
+		end
+	end
+	
 	retire_session(session); -- Clean session until it is GC'd
 end
 
