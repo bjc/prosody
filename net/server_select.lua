@@ -787,15 +787,16 @@ stats = function( )
 	return _readtraffic, _sendtraffic, _readlistlen, _sendlistlen, _timerlistlen
 end
 
-local dontstop = true; -- thinking about tomorrow, ...
+local quitting;
 
 setquitting = function (quit)
-	dontstop = not quit;
-	return;
+	quitting = not not quit;
 end
 
-loop = function( ) -- this is the main loop of the program
-	while dontstop do
+loop = function(once) -- this is the main loop of the program
+	if quitting then return "quitting"; end
+	if once then quitting = "once"; end
+	repeat
 		local read, write, err = socket_select( _readlist, _sendlist, _selecttimeout )
 		for i, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
@@ -829,8 +830,13 @@ loop = function( ) -- this is the main loop of the program
 		end
 		socket_sleep( _sleeptime ) -- wait some time
 		--collectgarbage( )
-	end
+	until quitting;
+	if once and quitting == "once" then quitting = nil; return; end
 	return "quitting"
+end
+
+step = function ()
+	return loop(true);
 end
 
 local function get_backend()
