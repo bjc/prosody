@@ -218,9 +218,9 @@ function stream_callbacks.streamopened(request, attr)
 		if not hosts[attr.to] then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
-			session_close_reply.body.attr.condition = "host-unknown";
-			request:send(session_close_reply);
-			request.notopen = nil
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:streams"] = xmlns_streams, condition = "host-unknown" });
+			request:send(tostring(close_reply));
 			return;
 		end
 		
