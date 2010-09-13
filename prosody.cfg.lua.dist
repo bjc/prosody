@@ -67,7 +67,7 @@ modules_enabled = {
 };
 
 -- These modules are auto-loaded, should you
--- for (for some mad reason) want to disable
+-- (for some mad reason) want to disable
 -- them then uncomment them below
 modules_disabled = {
 	-- "presence";
