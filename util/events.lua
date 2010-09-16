@@ -18,14 +18,12 @@ function new()
 	local event_map = {};
 	local function _rebuild_index(event) -- TODO optimize index rebuilding
 		local _handlers = event_map[event];
-		local index = handlers[event];
-		if index then
-			for i=#index,1,-1 do index[i] = nil; end
-		else index = {}; handlers[event] = index; end
+		local index = {};
 		for handler in pairs(_handlers) do
 			t_insert(index, handler);
 		end
 		t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
+		handlers[event] = index;
 	end;
 	local function add_handler(event, handler, priority)
 		local map = event_map[event];
