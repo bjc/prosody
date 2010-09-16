@@ -1,11 +1,6 @@
 
-local setmetatable = setmetatable;
 local coroutine = coroutine;
 local tonumber = tonumber;
-
-local print = print;
-local error = error;
-local ser = require "util.serialization".serialize;
 
 local deadroutine = coroutine.create(function() end);
 coroutine.resume(deadroutine);
