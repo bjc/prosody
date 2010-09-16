@@ -9,23 +9,18 @@ module("httpstream")
 
 local function parser(data, success_cb)
 	local function readline()
-		if not data then coroutine.yield("Unexpected EOF"); end
-		local pos, line = (data:find("\r\n", nil, true));
-		if not pos then
-			local newdata = coroutine.yield();
-			if not newdata then data = nil; coroutine.yield("Unexpected EOF"); end
-			data = data..newdata;
-			return readline();
+		local pos = data:find("\r\n", nil, true);
+		while not pos do
+			data = data..coroutine.yield();
+			pos = data:find("\r\n", nil, true);
 		end
-		line, data = data:sub(1, pos-1), data:sub(pos+2);
-		return line;
+		local r = data:sub(1, pos-1);
+		data = data:sub(pos+2);
+		return r;
 	end
 	local function readlength(n)
-		if not data then coroutine.yield("Unexpected EOF"); end
 		while #data < n do
-			local newdata = coroutine.yield();
-			if not newdata then data = nil; coroutine.yield("Unexpected EOF"); end
-			data = data..newdata;
+			data = data..coroutine.yield();
 		end
 		local r = data:sub(1, n);
 		data = data:sub(n + 1);
@@ -68,14 +63,14 @@ function new(success_cb, error_cb)
 	local co = coroutine.create(parser);
 	return {
 		feed = function(self, data)
+			if not data then
+				co = deadroutine;
+				return error_cb();
+			end
 			local success, result = coroutine.resume(co, data, success_cb);
 			if result then
-				if result.method then
-					success_cb(result);
-				else -- error
-					error_cb(result);
-					co = deadroutine;
-				end
+				co = deadroutine;
+				return error_cb(result);
 			end
 		end;
 	};
