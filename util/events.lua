@@ -66,8 +66,8 @@ function new()
 	return {
 		add_handler = add_handler;
 		remove_handler = remove_handler;
-		add_plugin = add_plugin;
-		remove_plugin = remove_plugin;
+		add_handlers = add_handlers;
+		remove_handlers = remove_handlers;
 		fire_event = fire_event;
 		_handlers = handlers;
 		_event_map = event_map;
