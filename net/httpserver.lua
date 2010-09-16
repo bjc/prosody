@@ -10,6 +10,7 @@
 local socket = require "socket"
 local server = require "net.server"
 local url_parse = require "socket.url".parse;
+local httpstream_new = require "util.httpstream".new;
 
 local connlisteners_start = require "net.connlisteners".start;
 local connlisteners_get = require "net.connlisteners".get;
@@ -114,99 +115,20 @@ local function call_callback(request, err)
 end
 
 local function request_reader(request, data, startpos)
-	if not data then
-		if request.body then
+	if not request.parser then
+		local function success_cb(r)
+			for k,v in pairs(r) do request[k] = v; end
+			request.url = url_parse(request.path);
+			request.body = { request.body };
 			call_callback(request);
-		else
-			-- Error.. connection was closed prematurely
-			call_callback(request, "connection-closed");
 		end
-		-- Here we force a destroy... the connection is gone, so we can't reply later
-		destroy_request(request);
-		return;
+		local function error_cb(r)
+			call_callback(request, r or "connection-closed");
+			destroy_request(request);
+		end
+		request.parser = httpstream_new(success_cb, error_cb);
 	end
-	if request.state == "body" then
-		log("debug", "Reading body...")
-		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.headers["content-length"]); end
-		if startpos then
-			data = data:sub(startpos, -1)
-		end
-		t_insert(request.body, data);
-		if request.bodylength then
-			request.havebodylength = request.havebodylength + #data;
-			if request.havebodylength >= request.bodylength then
-				-- We have the body
-				call_callback(request);
-			end
-		end
-	elseif request.state == "headers" then
-		log("debug", "Reading headers...")
-		local pos = startpos;
-		local headers, headers_complete = request.headers;
-		if not headers then
-			headers = {};
-			request.headers = headers;
-		end
-		
-		for line in data:gmatch("(.-)\r\n") do
-			startpos = (startpos or 1) + #line + 2;
-			local k, v = line:match("(%S+): (.+)");
-			if k and v then
-				k = k:lower();
-				if headers[k] then
-					headers[k] = headers[k]..", "..v;
-				else
-					headers[k] = v;
-				end
-				--log("debug", "Header: '"..k:lower().."' = '"..v.."'");
-			elseif #line == 0 then
-				headers_complete = true;
-				break;
-			else
-				log("debug", "Unhandled header line: "..line);
-			end
-		end
-		
-		if not headers_complete then return; end
-		
-		if not expectbody(request) then
-			call_callback(request);
-			return;
-		end
-		
-		-- Reached the end of the headers
-		request.state = "body";
-		if #data > startpos then
-			return request_reader(request, data:sub(startpos, -1));
-		end
-	elseif request.state == "request" then
-		log("debug", "Reading request line...")
-		local method, path, http, linelen = data:match("^(%S+) (%S+) HTTP/(%S+)\r\n()", startpos);
-		if not method then
-			log("warn", "Invalid HTTP status line, telling callback then closing");
-			local ret = call_callback(request, "invalid-status-line");
-			request:destroy();
-			return ret;
-		end
-		
-		request.method, request.path, request.httpversion = method, path, http;
-		
-		request.url = url_parse(request.path);
-		
-		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
-		
-		if request.onlystatus then
-			if not call_callback(request) then
-				return;
-			end
-		end
-		
-		request.state = "headers";
-		
-		if #data > linelen then
-			return request_reader(request, data:sub(linelen, -1));
-		end
-	end
+	request.parser:feed(data);
 end
 
 -- The default handler for requests
