@@ -10,21 +10,26 @@
 local pairs = pairs;
 local t_insert = table.insert;
 local t_sort = table.sort;
+local setmetatable = setmetatable;
+local next = next;
 
 module "events"
 
 function new()
 	local handlers = {};
 	local event_map = {};
-	local function _rebuild_index(event) -- TODO optimize index rebuilding
+	local function _rebuild_index(handlers, event)
 		local _handlers = event_map[event];
+		if not _handlers or next(_handlers) == nil then return; end
 		local index = {};
 		for handler in pairs(_handlers) do
 			t_insert(index, handler);
 		end
 		t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
 		handlers[event] = index;
+		return index;
 	end;
+	setmetatable(handlers, { __index = _rebuild_index });
 	local function add_handler(event, handler, priority)
 		local map = event_map[event];
 		if map then
@@ -33,13 +38,13 @@ function new()
 			map = {[handler] = priority or 0};
 			event_map[event] = map;
 		end
-		_rebuild_index(event);
+		handlers[event] = nil;
 	end;
 	local function remove_handler(event, handler)
 		local map = event_map[event];
 		if map then
 			map[handler] = nil;
-			_rebuild_index(event);
+			handlers[event] = nil;
 		end
 	end;
 	local function add_handlers(handlers)
