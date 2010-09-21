@@ -86,7 +86,7 @@ function stream_callbacks.streamopened(session, attr)
 end
 
 function stream_callbacks.streamclosed(session)
-	session.log("Received </stream:stream>");
+	session.log("debug", "Received </stream:stream>");
 	session:close();
 end
 
