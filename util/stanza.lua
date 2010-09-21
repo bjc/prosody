@@ -343,7 +343,7 @@ function message(attr, body)
 	if not body then
 		return stanza("message", attr);
 	else
-		return stanza("message", attr):tag("body"):text(body);
+		return stanza("message", attr):tag("body"):text(body):up();
 	end
 end
 function iq(attr)
