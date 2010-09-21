@@ -73,13 +73,10 @@ function stream_callbacks.streamopened(session, attr)
 		return;
 	end
 	
-	-- Store the original host (this is used for config, etc.)
-	session.user = attr.to;
-	-- Set the host for future reference
-	session.host = config.get(attr.to, "core", "component_address") or attr.to;
 	-- Note that we don't create the internal component 
 	-- until after the external component auths successfully
 
+	session.host = attr.to;
 	session.streamid = uuid_gen();
 	session.notopen = nil;
 	
