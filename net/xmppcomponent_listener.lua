@@ -203,7 +203,7 @@ function component_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));
-		if session.host then
+		if hosts[session.host] then
 			log("debug", "Deregistering component");
 			cm_deregister_component(session.host);
 			hosts[session.host].connected = nil;
