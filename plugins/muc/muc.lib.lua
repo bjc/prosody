@@ -251,7 +251,7 @@ end
 
 local function build_unavailable_presence_from_error(stanza)
 	local type, condition, text = stanza:get_error();
-	local error_message = "Kicked: "..condition:gsub("%-", " ");
+	local error_message = "Kicked: "..(condition and condition:gsub("%-", " ") or "presence error");
 	if text then
 		error_message = error_message..": "..text;
 	end
