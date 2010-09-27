@@ -212,7 +212,7 @@ end
 
 function room_mt:get_disco_info(stanza)
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
-		:tag("identity", {category="conference", type="text"}):up()
+		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
 		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
 		:tag("feature", {var=self:is_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
@@ -220,6 +220,14 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self:is_persistent() and "muc_persistent" or "muc_temporary"}):up()
 		:tag("feature", {var=self:is_hidden() and "muc_hidden" or "muc_public"}):up()
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
+		:tag("x", {xmlns="jabber:x:data", type="result"})
+			:tag("field", {var="FORM_TYPE", type="hidden"})
+				:tag("value"):text("http://jabber.org/protocol/muc#roominfo"):up()
+			:up()
+			:tag("field", {var="muc#roominfo_description", label="Description"})
+				:tag("value"):text(self:get_description()):up()
+			:up()
+		:up()	
 	;
 end
 function room_mt:get_disco_items(stanza)
@@ -251,6 +259,26 @@ local function build_unavailable_presence_from_error(stanza)
 		:tag('status'):text(error_message);
 end
 
+function room_mt:set_name(name)
+	if name == "" or type(name) ~= "string" then name = nil; end
+	if self._data.name ~= name then
+		self._data.name = name;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:get_name()
+	return self._data.name;
+end
+function room_mt:set_description(description)
+	if description == "" or type(description) ~= "string" then description = nil; end
+	if self._data.description ~= description then
+		self._data.description = description;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:get_description()
+	return self._data.description;
+end
 function room_mt:set_password(password)
 	if password == "" or type(password) ~= "string" then password = nil; end
 	if self._data.password ~= password then
@@ -502,6 +530,12 @@ function room_mt:send_form(origin, stanza)
 			:tag("title"):text(title):up()
 			:tag("instructions"):text(title):up()
 			:tag("field", {type='hidden', var='FORM_TYPE'}):tag("value"):text("http://jabber.org/protocol/muc#roomconfig"):up():up()
+			:tag("field", {type='text-single', label='Name', var='muc#roomconfig_roomname'})
+				:tag("value"):text(self:get_name() or ""):up()
+			:up()
+			:tag("field", {type='text-single', label='Description', var='muc#roomconfig_roomdesc'})
+				:tag("value"):text(self:get_description() or ""):up()
+			:up()
 			:tag("field", {type='boolean', label='Make Room Persistent?', var='muc#roomconfig_persistentroom'})
 				:tag("value"):text(self:is_persistent() and "1" or "0"):up()
 			:up()
@@ -550,6 +584,16 @@ function room_mt:process_form(origin, stanza)
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 
 	local dirty = false
+
+	local name = fields['muc#roomconfig_roomname'];
+	if name then
+		self:set_name(name);
+	end
+
+	local description = fields['muc#roomconfig_roomdesc'];
+	if description then
+		self:set_description(description);
+	end
 
 	local persistent = fields['muc#roomconfig_persistentroom'];
 	if persistent == "0" or persistent == "false" then persistent = nil; elseif persistent == "1" or persistent == "true" then persistent = true;
