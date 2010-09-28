@@ -260,14 +260,14 @@ local function build_unavailable_presence_from_error(stanza)
 end
 
 function room_mt:set_name(name)
-	if name == "" or type(name) ~= "string" then name = nil; end
+	if name == "" or type(name) ~= "string" or name == (jid_split(self.jid)) then name = nil; end
 	if self._data.name ~= name then
 		self._data.name = name;
 		if self.save then self:save(true); end
 	end
 end
 function room_mt:get_name()
-	return self._data.name;
+	return self._data.name or jid_split(self.jid);
 end
 function room_mt:set_description(description)
 	if description == "" or type(description) ~= "string" then description = nil; end
