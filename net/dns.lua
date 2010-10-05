@@ -438,6 +438,9 @@ function resolver:SRV(rr)    -- - - - - - - - - - - - - - - - - - - - - -  SRV
 	  rr.srv.target   = self:name();
 end
 
+function resolver:PTR(rr)
+	rr.ptr = self:name();
+end
 
 function SRV_tostring(rr)    -- - - - - - - - - - - - - - - - - - SRV_tostring
 	local s = rr.srv;
