@@ -798,11 +798,11 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 end
 
 
-function resolver:feed(sock, packet)
+function resolver:feed(sock, packet, force)
 	--print('receive'); print(self.socket);
 	self.time = socket.gettime();
 
-	local response = self:decode(packet);
+	local response = self:decode(packet, force);
 	if response and self.active[response.header.id]
 		and self.active[response.header.id][response.question.raw] then
 		--print('received response');
