@@ -137,6 +137,12 @@ do
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
 			set(name or "*", "core", "defined", true);
+			return function (config_options)
+				rawset(env, "__currenthost", "*"); -- Return to global scope
+				for option_name, option_value in pairs(config_options) do
+					set(name or "*", "core", option_name, option_value);
+				end
+			end;
 		end
 		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 		
@@ -149,11 +155,19 @@ do
 			-- Don't load the global modules by default
 			set(name, "core", "load_global_modules", false);
 			rawset(env, "__currenthost", name);
+			local function handle_config_options(config_options)
+				rawset(env, "__currenthost", "*"); -- Return to global scope
+				for option_name, option_value in pairs(config_options) do
+					set(name or "*", "core", option_name, option_value);
+				end
+			end
 	
 			return function (module)
 					if type(module) == "string" then
 						set(name, "core", "component_module", module);
+						return handle_config_options;
 					end
+					return handle_config_options(module);
 				end
 		end
 		env.component = env.Component;
