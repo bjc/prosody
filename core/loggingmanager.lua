@@ -89,9 +89,25 @@ end
 -- the log_sink_types table.
 function apply_sink_rules(sink_type)
 	if type(logging_config) == "table" then
+		
+		if sink_type == "file" then
+			for _, level in ipairs(logging_levels) do
+				if type(logging_config[level]) == "string" then
+					add_rule({
+						to = "file",
+						filename = logging_config[level],
+						timestamps = true,
+						levels = { min = level },
+					});
+				end
+			end
+		end
+		
 		for _, sink_config in pairs(logging_config) do
-			if sink_config.to == sink_type then
+			if (type(sink_config) == "table" and sink_config.to == sink_type) then
 				add_rule(sink_config);
+			elseif (type(sink_config) == "string" and sink_config:match("^%*(.+)") == sink_type) then
+				add_rule({ levels = { min = "debug" }, to = sink_type });
 			end
 		end
 	elseif type(logging_config) == "string" and (not logging_config:match("^%*")) and sink_type == "file" then
@@ -151,7 +167,9 @@ function reload_logging()
 	logger.reset();
 
 	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
-	default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } };
+	default_file_logging = {
+		{ to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } 
+	};
 	default_timestamp = "%b %d %H:%M:%S";
 
 	logging_config = config.get("*", "core", "log") or default_logging;
