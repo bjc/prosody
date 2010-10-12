@@ -12,6 +12,8 @@ local pairs, ipairs = pairs, ipairs;
 local datamanager = require "util.datamanager";
 local datetime = require "util.datetime";
 
+local dataform = require "util.dataforms";
+
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
@@ -220,14 +222,10 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self:is_persistent() and "muc_persistent" or "muc_temporary"}):up()
 		:tag("feature", {var=self:is_hidden() and "muc_hidden" or "muc_public"}):up()
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
-		:tag("x", {xmlns="jabber:x:data", type="result"})
-			:tag("field", {var="FORM_TYPE", type="hidden"})
-				:tag("value"):text("http://jabber.org/protocol/muc#roominfo"):up()
-			:up()
-			:tag("field", {var="muc#roominfo_description", label="Description"})
-				:tag("value"):text(self:get_description()):up()
-			:up()
-		:up()	
+		:add_child(dataform.new({
+			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
+			{ name = "muc#roominfo_description", label = "Description"}
+		}):form({["muc#roominfo_description"] = self:get_description()}, 'result'))
 	;
 end
 function room_mt:get_disco_items(stanza)
@@ -526,40 +524,66 @@ end
 function room_mt:send_form(origin, stanza)
 	local title = "Configuration for "..self.jid;
 	origin.send(st.reply(stanza):query("http://jabber.org/protocol/muc#owner")
-		:tag("x", {xmlns='jabber:x:data', type='form'})
-			:tag("title"):text(title):up()
-			:tag("instructions"):text(title):up()
-			:tag("field", {type='hidden', var='FORM_TYPE'}):tag("value"):text("http://jabber.org/protocol/muc#roomconfig"):up():up()
-			:tag("field", {type='text-single', label='Name', var='muc#roomconfig_roomname'})
-				:tag("value"):text(self:get_name() or ""):up()
-			:up()
-			:tag("field", {type='text-single', label='Description', var='muc#roomconfig_roomdesc'})
-				:tag("value"):text(self:get_description() or ""):up()
-			:up()
-			:tag("field", {type='boolean', label='Make Room Persistent?', var='muc#roomconfig_persistentroom'})
-				:tag("value"):text(self:is_persistent() and "1" or "0"):up()
-			:up()
-			:tag("field", {type='boolean', label='Make Room Publicly Searchable?', var='muc#roomconfig_publicroom'})
-				:tag("value"):text(self:is_hidden() and "0" or "1"):up()
-			:up()
-			:tag("field", {type='list-single', label='Who May Discover Real JIDs?', var='muc#roomconfig_whois'})
-			    :tag("value"):text(self._data.whois or 'moderators'):up()
-			    :tag("option", {label = 'Moderators Only'})
-				:tag("value"):text('moderators'):up()
-				:up()
-			    :tag("option", {label = 'Anyone'})
-				:tag("value"):text('anyone'):up()
-				:up()
-			:up()
-			:tag("field", {type='text-private', label='Password', var='muc#roomconfig_roomsecret'})
-				:tag("value"):text(self:get_password() or ""):up()
-			:up()
-			:tag("field", {type='boolean', label='Make Room Moderated?', var='muc#roomconfig_moderatedroom'})
-				:tag("value"):text(self:is_moderated() and "1" or "0"):up()
-			:up()
-			:tag("field", {type='boolean', label='Make Room Members-Only?', var='muc#roomconfig_membersonly'})
-				:tag("value"):text(self:is_members_only() and "1" or "0"):up()
-			:up()
+	:add_child(dataform.new({
+		title = title,
+		instructions = title,
+		{
+			name = 'FORM_TYPE',
+			type = 'hidden',
+			value = 'http://jabber.org/protocol/muc#roomconfig'
+		},
+		{
+			name = 'muc#roomconfig_roomname',
+			type = 'text-single',
+			label = 'Name',
+			value = self:get_name() or "",
+		},
+		{
+			name = 'muc#roomconfig_roomdesc',
+			type = 'text-single',
+			label = 'Description',
+			value = self:get_description() or "",
+		},
+		{
+			name = 'muc#roomconfig_persistentroom',
+			type = 'boolean',
+			label = 'Make Room Persistent?',
+			value = self:is_persistent()
+		},
+		{
+			name = 'muc#roomconfig_publicroom',
+			type = 'boolean',
+			label = 'Make Room Publicly Searchable?',
+			value = not self:is_hidden()
+		},
+		{
+			name = 'muc#roomconfig_whois',
+			type = 'list-single',
+			label = 'Who May Discover Real JIDs?',
+			value = {
+				{ value = 'moderators', label = 'Moderators Only', default = self._data.whois == 'moderators' },
+				{ value = 'anyone',     label = 'Anyone',          default = self._data.whois == 'anyone' }
+			}
+		},
+		{
+			name = 'muc#roomconfig_roomsecret',
+			type = 'text-private',
+			label = 'Password',
+			value = self:get_password() or "",
+		},
+		{
+			name = 'muc#roomconfig_moderatedroom',
+			type = 'boolean',
+			label = 'Make Room Moderated?',
+			value = self:is_moderated()
+		},
+		{
+			name = 'muc#roomconfig_membersonly',
+			type = 'boolean',
+			label = 'Make Room Members-Only?',
+			value = self:is_members_only()
+		}
+	}):form())
 	);
 end
 
