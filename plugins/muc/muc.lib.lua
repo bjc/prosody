@@ -178,7 +178,7 @@ function room_mt:send_history(to, stanza)
 		if seconds then seconds = datetime.datetime(os.time() - math.floor(seconds)); end
 
 		local since = history_tag and history_tag.attr.since;
-		if since and not since:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%dZ$") then since = nil; end -- FIXME timezone support
+		if since then since = datetime.parse(since); since = since and datetime.datetime(since); end
 		if seconds and (not since or since < seconds) then since = seconds; end
 
 		local n = 0;
