@@ -34,18 +34,21 @@ end);
 
 module:hook("message/offline/broadcast", function(event)
 	local origin = event.origin;
-	local node, host = origin.username, origin.host;
-	
-	local data = datamanager.list_load(node, host, "offline");
-	if not data then return true; end
-	for _, stanza in ipairs(data) do
-		stanza = st.deserialize(stanza);
-		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = host, stamp = stanza.attr.stamp}):up(); -- XEP-0203
-		stanza:tag("x", {xmlns = "jabber:x:delay", from = host, stamp = stanza.attr.stamp_legacy}):up(); -- XEP-0091 (deprecated)
-		stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
-		origin.send(stanza);
-	end
-	return true;
+
+        if origin.priority >= 0 then
+          local node, host = origin.username, origin.host;
+          
+          local data = datamanager.list_load(node, host, "offline");
+          if not data then return true; end
+          for _, stanza in ipairs(data) do
+                  stanza = st.deserialize(stanza);
+                  stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = host, stamp = stanza.attr.stamp}):up(); -- XEP-0203
+                  stanza:tag("x", {xmlns = "jabber:x:delay", from = host, stamp = stanza.attr.stamp_legacy}):up(); -- XEP-0091 (deprecated)
+                  stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
+                  origin.send(stanza);
+          end
+          return true;
+        end
 end);
 
 module:hook("message/offline/delete", function(event)
