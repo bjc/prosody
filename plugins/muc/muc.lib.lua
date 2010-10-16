@@ -588,8 +588,8 @@ function room_mt:send_form(origin, stanza)
 end
 
 local valid_whois = {
-    moderators = true,
-    anyone = true,
+	moderators = true,
+	anyone = true,
 }
 
 function room_mt:process_form(origin, stanza)

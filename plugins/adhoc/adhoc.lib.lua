@@ -46,7 +46,7 @@ function _M.handle_cmd(command, origin, stanza)
 		stanza = st.error_reply(stanza, data.error.type, data.error.condition, data.error.message);
 		origin.send(stanza);
 		return true;
-	else 
+	else
 		cmdtag = command:cmdtag("executing", sessionid);
 	end
 

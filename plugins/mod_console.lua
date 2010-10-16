@@ -257,8 +257,8 @@ function def_env.server:uptime()
 	local hours = t%24;
 	t = (t - hours)/24;
 	local days = t;
-	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
-		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
+	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)",
+		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "",
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
@@ -526,11 +526,11 @@ function def_env.s2s:show(match_jid)
 				end
 			end
 		end	
-		local subhost_filter = function (h) 
+		local subhost_filter = function (h)
 				return (match_jid and h:match(match_jid));
 			end
 		for session in pairs(incoming_s2s) do
-			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
+			if session.to_host == host and ((not match_jid) or host:match(match_jid)
 				or (session.from_host and session.from_host:match(match_jid))
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
@@ -573,7 +573,7 @@ function def_env.s2s:close(from, to)
 	if hosts[from] and not hosts[to] then
 		-- Is an outgoing connection
 		local session = hosts[from].s2sout[to];
-		if not session then 
+		if not session then
 			print("No outgoing connection from "..from.." to "..to)
 		else
 			(session.close or s2smanager.destroy_session)(session);

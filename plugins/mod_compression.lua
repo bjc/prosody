@@ -39,7 +39,7 @@ end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	-- FIXME only advertise compression support when TLS layer has no compression enabled
-	if not origin.compressed then 
+	if not origin.compressed then
 		features:add_child(compression_stream_feature);
 	end
 end);

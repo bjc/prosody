@@ -69,8 +69,8 @@ function create_context(host, mode, config)
 		else
 			log("error", "SSL/TLS: Error initialising for host %s: %s", host, err );
 		end
-        end
-        return ctx, err;
+	end
+	return ctx, err;
 end
 
 function reload_ssl_config()

@@ -31,7 +31,7 @@ module "httpserver"
 local default_handler;
 
 local function expectbody(reqt)
-    return reqt.method == "POST";
+	return reqt.method == "POST";
 end
 
 local function send_response(request, response)
@@ -212,8 +212,8 @@ function new_from_config(ports, handle_request, default_options)
 			ssl.options = "no_sslv2";
 		end
 		
-		new{ port = port, interface = interface, 
-			base = base, handler = handle_request, 
+		new{ port = port, interface = interface,
+			base = base, handler = handle_request,
 			ssl = ssl, type = (ssl and "ssl") or "tcp" };
 	end
 end

@@ -67,13 +67,13 @@ end
 
 function stream_callbacks.streamopened(session, attr)
 	if config.get(attr.to, "core", "component_module") ~= "component" then
-		-- Trying to act as a component domain which 
+		-- Trying to act as a component domain which
 		-- hasn't been configured
 		session:close{ condition = "host-unknown", text = tostring(attr.to).." does not match any configured external components" };
 		return;
 	end
 	
-	-- Note that we don't create the internal component 
+	-- Note that we don't create the internal component
 	-- until after the external component auths successfully
 
 	session.host = attr.to;

@@ -40,7 +40,7 @@ hash
 blocksize
 	the blocksize for the hash function in bytes
 hex
-  return raw hash or hexadecimal string
+	return raw hash or hexadecimal string
 --]]
 function hmac(key, message, hash, blocksize, hex)
 	if #key > blocksize then

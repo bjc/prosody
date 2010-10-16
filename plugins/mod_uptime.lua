@@ -34,8 +34,8 @@ function uptime_text()
 	local hours = t%24;
 	t = (t - hours)/24;
 	local days = t;
-	return string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
-		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
+	return string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)",
+		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "",
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 

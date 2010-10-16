@@ -33,7 +33,7 @@ function init(name)
 					local inf = debug.getinfo(3, 'Snl');
 					level = level .. ","..tostring(inf.short_src):match("[^/]*$")..":"..inf.currentline;
 				end
-				if ... then 
+				if ... then
 					print(name, getstring(logstyles[level], level), format(message, ...));
 				else
 					print(name, getstring(logstyles[level], level), message);

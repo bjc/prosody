@@ -63,7 +63,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 	else -- stanza.attr.type == "set"
 		local query = stanza.tags[1];
 		if #query.tags == 1 and query.tags[1].name == "item"
-				and query.tags[1].attr.xmlns == "jabber:iq:roster" and query.tags[1].attr.jid 
+				and query.tags[1].attr.xmlns == "jabber:iq:roster" and query.tags[1].attr.jid
 				-- Protection against overwriting roster.pending, until we move it
 				and query.tags[1].attr.jid ~= "pending" then
 			local item = query.tags[1];
@@ -103,7 +103,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 						else
 							r_item.subscription = "none";
 						end
-						for _, child in ipairs(item) do	
+						for _, child in ipairs(item) do
 							if child.name == "group" then
 								local text = t_concat(child);
 								if text and text ~= "" then

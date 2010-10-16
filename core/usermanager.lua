@@ -50,11 +50,11 @@ function initialize_host(host)
 			host_session.users = new_null_provider();
 		end
 	end);
-   	host_session.users = new_null_provider(); -- Start with the default usermanager provider
-   	local auth_provider = config.get(host, "core", "authentication") or default_provider;
-   	if auth_provider ~= "null" then
-   		modulemanager.load(host, "auth_"..auth_provider);
-   	end
+	host_session.users = new_null_provider(); -- Start with the default usermanager provider
+	local auth_provider = config.get(host, "core", "authentication") or default_provider;
+	if auth_provider ~= "null" then
+		modulemanager.load(host, "auth_"..auth_provider);
+	end
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
 prosody.events.add_handler("component-activated", initialize_host, 100);

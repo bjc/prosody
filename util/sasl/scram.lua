@@ -67,7 +67,7 @@ end
 -- hash algorithm independent Hi(PBKDF2) implementation
 function Hi(hmac, str, salt, i)
 	local Ust = hmac(str, salt.."\0\0\0\1");
-	local res = Ust;	
+	local res = Ust;
 	for n=1,i-1 do
 		local Und = hmac(str, Ust)
 		res = binaryXOR(res, Und)
@@ -80,8 +80,8 @@ local function validate_username(username)
 	-- check for forbidden char sequences
 	for eq in username:gmatch("=(.?.?)") do
 		if eq ~= "2D" and eq ~= "3D" then
-			return false 
-		end 
+			return false
+		end
 	end
 	
 	-- replace =2D with , and =3D with =

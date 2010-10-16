@@ -674,11 +674,11 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		retry  = socket.gettime() + self.delays[1]
 	};
 
-  -- remember the query
+	-- remember the query
 	self.active[id] = self.active[id] or {};
 	self.active[id][question] = o;
 
-  -- remember which coroutine wants the answer
+	-- remember which coroutine wants the answer
 	local co = coroutine.running();
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
@@ -738,7 +738,7 @@ function resolver:servfail(sock)
 			end
 		end
 	end
-   
+
 	if num == self.best_server then
 		self.best_server = self.best_server + 1;
 		if self.best_server > #self.server then
@@ -887,12 +887,12 @@ end
 function resolver:lookup(qname, qtype, qclass)    -- - - - - - - - - -  lookup
 	self:query (qname, qtype, qclass)
 	while self:pulse() do
-           local recvt = {}
-           for i, s in ipairs(self.socket) do
-              recvt[i] = s
-           end
-           socket.select(recvt, nil, 4)
-        end
+		local recvt = {}
+		for i, s in ipairs(self.socket) do
+			recvt[i] = s
+		end
+		socket.select(recvt, nil, 4)
+	end
 	--print(self.cache);
 	return self:peek(qname, qtype, qclass);
 end

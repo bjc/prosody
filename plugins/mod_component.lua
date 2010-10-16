@@ -59,7 +59,7 @@ function handle_component_auth(event)
 	-- If component not already created for this host, create one now
 	if not hosts[session.host].connected then
 		local send = session.send;
-		session.component_session = cm_register_component(session.host, function (_, data) 
+		session.component_session = cm_register_component(session.host, function (_, data)
 				if data.attr and data.attr.xmlns == "jabber:client" then
 					data.attr.xmlns = nil;
 				end

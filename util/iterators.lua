@@ -73,7 +73,7 @@ function count(f, s, var)
 		var = ret[1];
 	        if var == nil then break; end
 		x = x + 1;
-	end	
+	end
 	
 	return x;
 end
@@ -131,7 +131,7 @@ function it2array(f, s, var)
 	return t;
 end
 
--- Treat the return of an iterator as key,value pairs, 
+-- Treat the return of an iterator as key,value pairs,
 -- and build a table
 function it2table(f, s, var)
 	local t, var = {};

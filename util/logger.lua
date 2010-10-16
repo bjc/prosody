@@ -72,7 +72,7 @@ function make_logger(source_name, level)
 	end
 
 	-- To make sure our cached lengths stay in sync with reality
-	modify_hooks[logger] = function () num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers; end; 
+	modify_hooks[logger] = function () num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers; end;
 	
 	return logger;
 end

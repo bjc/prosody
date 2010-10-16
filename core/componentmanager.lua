@@ -92,7 +92,7 @@ function create_component(host, component, events)
 			ssl_ctx_in = certmanager.create_context(host, "server");
 		end
 	end
-	return { type = "component", host = host, connected = true, s2sout = {}, 
+	return { type = "component", host = host, connected = true, s2sout = {},
 			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new(),
 			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen(),
 			disallow_s2s = configmanager.get(host, "core", "disallow_s2s"); };

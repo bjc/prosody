@@ -114,7 +114,7 @@ function store_offline_messages(username, host, offline_messages)
 		--print("message :"..ch:pretty_print());
 		local ret, err = dm.list_append(username, host, "offline", st.preserialize(ch));
 		print("["..(err or "success").."] stored offline message: " ..username.."@"..host.." - "..ch.attr.from);
- 	end
+	end
 end
 
 

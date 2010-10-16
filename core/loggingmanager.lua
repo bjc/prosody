@@ -10,7 +10,7 @@
 local format, rep = string.format, string.rep;
 local pcall = pcall;
 local debug = debug;
-local tostring, setmetatable, rawset, pairs, ipairs, type = 
+local tostring, setmetatable, rawset, pairs, ipairs, type =
 	tostring, setmetatable, rawset, pairs, ipairs, type;
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
@@ -168,7 +168,7 @@ function reload_logging()
 
 	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
 	default_file_logging = {
-		{ to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } 
+		{ to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true }
 	};
 	default_timestamp = "%b %d %H:%M:%S";
 

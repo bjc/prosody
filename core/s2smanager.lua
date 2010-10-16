@@ -16,10 +16,8 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
-      setmetatable
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
-      setmetatable;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;

@@ -19,7 +19,7 @@ local listener = connlisteners_get("httpclient") or error("No httpclient listene
 local t_insert, t_concat = table.insert, table.concat;
 local pairs, ipairs = pairs, ipairs;
 local tonumber, tostring, xpcall, select, debug_traceback, char, format =
-        tonumber, tostring, xpcall, select, debug.traceback, string.char, string.format;
+      tonumber, tostring, xpcall, select, debug.traceback, string.char, string.format;
 
 local log = require "util.logger".init("http");
 
@@ -46,10 +46,10 @@ function formencode(form)
 end
 
 local function expectbody(reqt, code)
-    if reqt.method == "HEAD" then return nil end
-    if code == 204 or code == 304 or code == 301 then return nil end
-    if code >= 100 and code < 200 then return nil end
-    return 1
+	if reqt.method == "HEAD" then return nil end
+	if code == 204 or code == 304 or code == 301 then return nil end
+	if code >= 100 and code < 200 then return nil end
+	return 1
 end
 
 local function request_reader(request, data, startpos)
