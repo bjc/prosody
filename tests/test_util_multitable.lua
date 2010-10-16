@@ -32,7 +32,7 @@ function get(get, multitable)
 			should_have[item] = nil;
 		end
 		if next(should_have) then
-			return false, "not-enough";	
+			return false, "not-enough";
 		end
 		return true, "has-all";
 	end

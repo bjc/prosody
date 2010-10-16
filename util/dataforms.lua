@@ -126,7 +126,7 @@ function form_t.data(layout, stanza)
 	return data;
 end
 
-field_readers["text-single"] = 
+field_readers["text-single"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then
@@ -134,13 +134,13 @@ field_readers["text-single"] =
 		end
 	end
 
-field_readers["text-private"] = 
+field_readers["text-private"] =
 	field_readers["text-single"];
 
 field_readers["jid-single"] =
 	field_readers["text-single"];
 
-field_readers["jid-multi"] = 
+field_readers["jid-multi"] =
 	function (field_tag)
 		local result = {};
 		for value_tag in field_tag:childtags() do
@@ -151,7 +151,7 @@ field_readers["jid-multi"] =
 		return result;
 	end
 
-field_readers["text-multi"] = 
+field_readers["text-multi"] =
 	function (field_tag)
 		local result = {};
 		for value_tag in field_tag:childtags() do
@@ -176,7 +176,7 @@ field_readers["list-multi"] =
 		return result;
 	end
 
-field_readers["boolean"] = 
+field_readers["boolean"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then
@@ -185,10 +185,10 @@ field_readers["boolean"] =
 			else
 				return false;
 			end
-		end		
+		end
 	end
 
-field_readers["hidden"] = 
+field_readers["hidden"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then

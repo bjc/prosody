@@ -347,7 +347,7 @@ function lson_encode (mixed, f, indent, indents)    --------------- lson_encode
       f ('[')  f (lson_encode (k))  f ('] = ')
       lson_encode (v, f, indent+1, indents)
       f (',')
-      end 
+      end
     f (' }')
     end  end  end
 

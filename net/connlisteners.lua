@@ -13,8 +13,8 @@ local server = require "net.server";
 local log = require "util.logger".init("connlisteners");
 local tostring = tostring;
 
-local dofile, pcall, error = 
-	dofile, pcall, error
+local dofile, pcall, error =
+      dofile, pcall, error
 
 module "connlisteners"
 

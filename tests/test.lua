@@ -217,7 +217,7 @@ function new_line_coverage_monitor(file)
 			for line, active in pairs(lines_hit) do
 				if active ~= nil then total_active_lines = total_active_lines + 1; end
 				if coverage_file then
-					if active == false then coverage_file:write(fn, "|", line, "|", name or "", "|miss\n"); 
+					if active == false then coverage_file:write(fn, "|", line, "|", name or "", "|miss\n");
 					else coverage_file:write(fn, "|", line, "|", name or "", "|", tostring(success), "\n"); end
 				end
 			end

@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local ipairs, pairs, setmetatable, next, tostring = 
+local ipairs, pairs, setmetatable, next, tostring =
       ipairs, pairs, setmetatable, next, tostring;
 local t_concat = table.concat;
 

@@ -111,7 +111,7 @@ local function write_pidfile()
 	end
 end
 
-local syslog_opened 
+local syslog_opened;
 function syslog_sink_maker(config)
 	if not syslog_opened then
 		pposix.syslog_open("prosody");
@@ -119,12 +119,12 @@ function syslog_sink_maker(config)
 	end
 	local syslog, format = pposix.syslog_log, string.format;
 	return function (name, level, message, ...)
-			if ... then
-				syslog(level, format(message, ...));
-			else
-				syslog(level, message);
-			end
-		end;
+		if ... then
+			syslog(level, format(message, ...));
+		else
+			syslog(level, message);
+		end
+	end;
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 

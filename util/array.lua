@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local t_insert, t_sort, t_remove, t_concat 
-	= table.insert, table.sort, table.remove, table.concat;
+local t_insert, t_sort, t_remove, t_concat
+    = table.insert, table.sort, table.remove, table.concat;
 
 local array = {};
 local array_base = {};

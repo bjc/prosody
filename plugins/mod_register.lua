@@ -151,7 +151,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						if usermanager_create_user(username, password, host) then
 							session.send(st.reply(stanza)); -- user created!
 							module:log("info", "User account created: %s@%s", username, host);
-							module:fire_event("user-registered", { 
+							module:fire_event("user-registered", {
 								username = username, host = host, source = "mod_register",
 								session = session });
 						else

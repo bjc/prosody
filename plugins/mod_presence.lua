@@ -59,15 +59,15 @@ function handle_normal_presence(origin, stanza)
 			priority[1] = "0";
 		end
 	end
-        local priority = stanza:child_with_name("priority");
-        if priority and #priority > 0 then
-                priority = t_concat(priority);
-                if s_find(priority, "^[+-]?[0-9]+$") then
-                        priority = tonumber(priority);
-                        if priority < -128 then priority = -128 end
-                        if priority > 127 then priority = 127 end
-                else priority = 0; end
-        else priority = 0; end
+	local priority = stanza:child_with_name("priority");
+	if priority and #priority > 0 then
+		priority = t_concat(priority);
+		if s_find(priority, "^[+-]?[0-9]+$") then
+			priority = tonumber(priority);
+			if priority < -128 then priority = -128 end
+			if priority > 127 then priority = 127 end
+		else priority = 0; end
+	else priority = 0; end
 	if full_sessions[origin.full_jid] then -- if user is still connected
 		origin.send(stanza); -- reflect their presence back to them
 	end
@@ -115,15 +115,15 @@ function handle_normal_presence(origin, stanza)
 			end
 		end
 
-                if priority >= 0 then
-                        local offline = offlinemanager.load(node, host);
-                        if offline then
-                                for _, msg in ipairs(offline) do
-                                        origin.send(msg); -- FIXME do we need to modify to/from in any way?
-                                end
-                                offlinemanager.deleteAll(node, host);
-                        end
-                end
+		if priority >= 0 then
+			local offline = offlinemanager.load(node, host);
+			if offline then
+				for _, msg in ipairs(offline) do
+					origin.send(msg); -- FIXME do we need to modify to/from in any way?
+				end
+				offlinemanager.deleteAll(node, host);
+			end
+		end
 	end
 	if stanza.attr.type == "unavailable" then
 		origin.presence = nil;
