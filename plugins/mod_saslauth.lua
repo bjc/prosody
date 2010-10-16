@@ -141,29 +141,28 @@ module:hook("stream-features", function(event)
 	end
 end);
 
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-bind", function(session, stanza)
+module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 	log("debug", "Client requesting a resource bind");
+	local origin, stanza = event.origin, event.stanza;
 	local resource;
 	if stanza.attr.type == "set" then
 		local bind = stanza.tags[1];
-		if bind and bind.attr.xmlns == xmlns_bind then
-			resource = bind:child_with_name("resource");
-			if resource then
-				resource = resource[1];
-			end
-		end
+		resource = bind:child_with_name("resource");
+		resource = resource and #resource.tags == 0 and resource[1] or nil;
 	end
-	local success, err_type, err, err_msg = sm_bind_resource(session, resource);
-	if not success then
-		session.send(st.error_reply(stanza, err_type, err, err_msg));
+	local success, err_type, err, err_msg = sm_bind_resource(origin, resource);
+	if success then
+		origin.send(st.reply(stanza)
+			:tag("bind", { xmlns = xmlns_bind })
+			:tag("jid"):text(origin.full_jid));
 	else
-		session.send(st.reply(stanza)
-			:tag("bind", { xmlns = xmlns_bind})
-			:tag("jid"):text(session.full_jid));
+		origin.send(st.error_reply(stanza, err_type, err, err_msg));
 	end
+	return true;
 end);
 
-module:add_iq_handler("c2s", "urn:ietf:params:xml:ns:xmpp-session", function(session, stanza)
+module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-session:session", function(event)
 	log("debug", "Client requesting a session");
-	session.send(st.reply(stanza));
+	event.origin.send(st.reply(event.stanza));
+	return true;
 end);
