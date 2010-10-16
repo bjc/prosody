@@ -12,7 +12,8 @@ local st = require "util.stanza"
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local t_concat = table.concat;
-local tostring = tostring;
+local tonumber = tonumber;
+local pairs, ipairs = pairs, ipairs;
 
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
