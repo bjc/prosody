@@ -32,6 +32,11 @@ end);
 module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 	local session, stanza = event.origin, event.stanza;
 
+	if session.type ~= "c2s_unauthed" then
+		session.send(st.error_reply(stanza, "cancel", "service-unavailable", "Legacy authentication is only allowed for unauthenticated client connections."));
+		return true;
+	end
+
 	if secure_auth_only and not session.secure then
 		session.send(st.error_reply(stanza, "modify", "not-acceptable", "Encryption (SSL or TLS) is required to connect to this server"));
 		return true;
