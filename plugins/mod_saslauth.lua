@@ -142,7 +142,6 @@ module:hook("stream-features", function(event)
 end);
 
 module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
-	log("debug", "Client requesting a resource bind");
 	local origin, stanza = event.origin, event.stanza;
 	local resource;
 	if stanza.attr.type == "set" then
@@ -155,14 +154,15 @@ module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 		origin.send(st.reply(stanza)
 			:tag("bind", { xmlns = xmlns_bind })
 			:tag("jid"):text(origin.full_jid));
+		origin.log("debug", "Resource bound: %s", origin.full_jid);
 	else
 		origin.send(st.error_reply(stanza, err_type, err, err_msg));
+		origin.log("debug", "Resource bind failed: %s", err_msg or err);
 	end
 	return true;
 end);
 
 module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-session:session", function(event)
-	log("debug", "Client requesting a session");
 	event.origin.send(st.reply(event.stanza));
 	return true;
 end);
