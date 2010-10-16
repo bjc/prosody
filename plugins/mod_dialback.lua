@@ -133,11 +133,11 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 end);
 
 module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
-		s2s_initiate_dialback(origin);
-		return true;
-	end, 100);
+	s2s_initiate_dialback(origin);
+	return true;
+end, 100);
 
 -- Offer dialback to incoming hosts
 module:hook("s2s-stream-features", function (data)
-		data.features:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up();
-	end);
+	data.features:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up();
+end);
