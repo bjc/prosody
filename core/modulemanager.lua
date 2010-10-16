@@ -53,9 +53,7 @@ local modulemap = { ["*"] = {} };
 
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local hooked = multitable_new();
 local hooks = multitable_new();
-local event_hooks = multitable_new();
 
 local NULL = {};
 
@@ -188,7 +186,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	event_hooks:remove(host, name);
 	-- unhook event handlers hooked by module:hook
 	for event, handlers in pairs(hooks:get(host, name) or NULL) do
 		for handler in pairs(handlers or NULL) do
@@ -317,20 +314,6 @@ function api:add_feature(xmlns)
 end
 function api:add_identity(category, type, name)
 	self:add_item("identity", {category = category, type = type, name = name});
-end
-
-local event_hook = function(host, mod_name, event_name, ...)
-	if type((...)) == "table" and (...).host and (...).host ~= host then return; end
-	for handler in pairs(event_hooks:get(host, mod_name, event_name) or NULL) do
-		handler(...);
-	end
-end;
-function api:add_event_hook(name, handler)
-	if not hooked:get(self.host, self.name, name) then
-		prosody_events.add_handler(name, function(...) event_hook(self.host, self.name, name, ...); end);
-		hooked:set(self.host, self.name, name, true);
-	end
-	event_hooks:set(self.host, self.name, name, handler, true);
 end
 
 function api:fire_event(...)
