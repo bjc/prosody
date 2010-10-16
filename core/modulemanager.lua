@@ -51,12 +51,8 @@ local api = api; -- Module API container
 
 local modulemap = { ["*"] = {} };
 
-local stanza_handlers = multitable_new();
-local handler_info = {};
-
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local handler_table = multitable_new();
 local hooked = multitable_new();
 local hooks = multitable_new();
 local event_hooks = multitable_new();
@@ -192,14 +188,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
-	for _, param in pairs(params or NULL) do
-		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
-		if handlers then
-			handler_info[handlers[1]] = nil;
-			stanza_handlers:remove(param[1], param[2], param[3], param[4]);
-		end
-	end
 	event_hooks:remove(host, name);
 	-- unhook event handlers hooked by module:hook
 	for event, handlers in pairs(hooks:get(host, name) or NULL) do
@@ -275,22 +263,14 @@ function handle_stanza(host, origin, stanza)
 			return true;
 		end
 	end
-	local handlers = stanza_handlers:get(host, origin_type, name, xmlns);
-	if not handlers then handlers = stanza_handlers:get("*", origin_type, name, xmlns); end
-	if handlers then
-		log("debug", "Passing stanza to mod_%s", handler_info[handlers[1]].name);
-		(handlers[1])(origin, stanza);
-		return true;
-	else
-		if stanza.attr.xmlns == nil then
-			log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-			end
-		elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
-			log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
-			origin:close("unsupported-stanza-type");
+	if stanza.attr.xmlns == nil then
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
+	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+		log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
+		origin:close("unsupported-stanza-type");
 	end
 end
 
@@ -330,30 +310,6 @@ function api:set_global()
 	local _log = logger.init("mod_"..self.name);
 	self.log = function (self, ...) return _log(...); end;
 	self._log = _log;
-end
-
-local function _add_handler(module, origin_type, tag, xmlns, handler)
-	local handlers = stanza_handlers:get(module.host, origin_type, tag, xmlns);
-	local msg = (tag == "iq") and "namespace" or "payload namespace";
-	if not handlers then
-		stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
-		handler_info[handler] = module;
-		handler_table:add(module.host, module.name, {module.host, origin_type, tag, xmlns});
-		--module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
-	else
-		module:log("warn", "I wanted to handle tag '%s' [%s] with %s '%s' but mod_%s already handles that", tag, origin_type, msg, xmlns, handler_info[handlers[1]].module.name);
-	end
-end
-
-function api:add_handler(origin_type, tag, xmlns, handler)
-	if not (origin_type and tag and xmlns and handler) then return false; end
-	if type(origin_type) == "table" then
-		for _, origin_type in ipairs(origin_type) do
-			_add_handler(self, origin_type, tag, xmlns, handler);
-		end
-	else
-		_add_handler(self, origin_type, tag, xmlns, handler);
-	end
 end
 
 function api:add_feature(xmlns)
