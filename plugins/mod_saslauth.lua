@@ -72,26 +72,33 @@ local function handle_status(session, status, ret, err_msg)
 	return status, ret, err_msg;
 end
 
-local function sasl_handler(session, stanza)
+local function sasl_handler(event)
+	local session, stanza = event.origin, event.stanza;
+	if session.type ~= "c2s_unauthed" then return; end
+
 	if stanza.name == "auth" then
 		-- FIXME ignoring duplicates because ejabberd does
 		local mechanism = stanza.attr.mechanism;
 		if anonymous_login then
 			if mechanism ~= "ANONYMOUS" then
-				return session.send(build_reply("failure", "invalid-mechanism"));
+				session.send(build_reply("failure", "invalid-mechanism"));
+				return true;
 			end
 		elseif mechanism == "ANONYMOUS" then
-			return session.send(build_reply("failure", "mechanism-too-weak"));
+			session.send(build_reply("failure", "mechanism-too-weak"));
+			return true;
 		end
 		if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
-			return session.send(build_reply("failure", "encryption-required"));
+			session.send(build_reply("failure", "encryption-required"));
+			return true;
 		end
 		local valid_mechanism = session.sasl_handler:select(mechanism);
 		if not valid_mechanism then
-			return session.send(build_reply("failure", "invalid-mechanism"));
+			session.send(build_reply("failure", "invalid-mechanism"));
+			return true;
 		end
 	elseif not session.sasl_handler then
-		return; -- FIXME ignoring out of order stanzas because ejabberd does
+		return true; -- FIXME ignoring out of order stanzas because ejabberd does
 	end
 	local text = stanza[1];
 	if text then
@@ -100,7 +107,7 @@ local function sasl_handler(session, stanza)
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
-			return;
+			return true;
 		end
 	end
 	local status, ret, err_msg = session.sasl_handler:process(text);
@@ -108,11 +115,12 @@ local function sasl_handler(session, stanza)
 	local s = build_reply(status, ret, err_msg);
 	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
+	return true;
 end
 
-module:add_handler("c2s_unauthed", "auth", xmlns_sasl, sasl_handler);
-module:add_handler("c2s_unauthed", "abort", xmlns_sasl, sasl_handler);
-module:add_handler("c2s_unauthed", "response", xmlns_sasl, sasl_handler);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", sasl_handler);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", sasl_handler);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:response", sasl_handler);
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
