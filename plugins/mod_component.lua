@@ -23,19 +23,23 @@ local st = require "util.stanza";
 local log = module._log;
 
 --- Handle authentication attempts by components
-function handle_component_auth(session, stanza)
+function handle_component_auth(event)
+	local session, stanza = event.origin, event.stanza;
+	
+	if session.type ~= "component" then return; end
+
 	log("info", "Handling component auth");
 	if (not session.host) or #stanza.tags > 0 then
 		(session.log or log)("warn", "Component handshake invalid");
 		session:close("not-authorized");
-		return;
+		return true;
 	end
 	
 	local secret = config.get(session.host, "core", "component_secret");
 	if not secret then
 		(session.log or log)("warn", "Component attempted to identify as %s, but component_secret is not set", session.host);
 		session:close("not-authorized");
-		return;
+		return true;
 	end
 	
 	local supplied_token = t_concat(stanza);
@@ -43,7 +47,7 @@ function handle_component_auth(session, stanza)
 	if supplied_token:lower() ~= calculated_token:lower() then
 		log("info", "Component for %s authentication failed", session.host);
 		session:close{ condition = "not-authorized", text = "Given token does not match calculated token" };
-		return;
+		return true;
 	end
 	
 	
@@ -69,6 +73,7 @@ function handle_component_auth(session, stanza)
 	
 	-- Signal successful authentication
 	session.send(st.stanza("handshake"));
+	return true;
 end
 
-module:add_handler("component", "handshake", "jabber:component:accept", handle_component_auth);
+module:hook("stanza/jabber:component:accept:handshake", handle_component_auth);
