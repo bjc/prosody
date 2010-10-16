@@ -249,28 +249,6 @@ function reload(host, name, ...)
 	return ok, err;
 end
 
-function handle_stanza(host, origin, stanza)
-	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
-	if name == "iq" and xmlns == "jabber:client" then
-		if stanza.attr.type == "get" or stanza.attr.type == "set" then
-			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
-			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
-		else
-			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
-			return true;
-		end
-	end
-	if stanza.attr.xmlns == nil then
-		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
-		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		end
-	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
-		log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
-		origin:close("unsupported-stanza-type");
-	end
-end
-
 function module_has_method(module, method)
 	return type(module.module[method]) == "function";
 end
