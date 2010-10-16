@@ -355,9 +355,6 @@ function api:add_handler(origin_type, tag, xmlns, handler)
 		_add_handler(self, origin_type, tag, xmlns, handler);
 	end
 end
-function api:add_iq_handler(origin_type, xmlns, handler)
-	self:add_handler(origin_type, "iq", xmlns, handler);
-end
 
 function api:add_feature(xmlns)
 	self:add_item("feature", xmlns);
