@@ -30,7 +30,7 @@ local umask = module:get_option("umask") or "027";
 pposix.umask(umask);
 
 -- Allow switching away from root, some people like strange ports.
-module:add_event_hook("server-started", function ()
+module:hook("server-started", function ()
 		local uid = module:get_option("setuid");
 		local gid = module:get_option("setgid");
 		if gid then
@@ -158,7 +158,7 @@ else
 	write_pidfile();
 end
 
-module:add_event_hook("server-stopped", remove_pidfile);
+module:hook("server-stopped", remove_pidfile);
 
 -- Set signal handlers
 if signal.signal then
