@@ -7,6 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
+prosody = {};
+
 package.path = package.path ..";../?.lua";
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
