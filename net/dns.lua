@@ -531,7 +531,7 @@ end
 
 function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 	if is_windows then
-		if windows then
+		if windows and windows.get_nameservers then
 			for _, server in ipairs(windows.get_nameservers()) do
 				self:addnameserver(server);
 			end
