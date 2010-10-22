@@ -853,8 +853,8 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 		-- When socket is writeable, call onconnect
 		local _sendbuffer = handler.sendbuffer;
 		handler.sendbuffer = function ()
-			listeners.onconnect(handler);
 			handler.sendbuffer = _sendbuffer;
+			listeners.onconnect(handler);
 			-- If there was data with the incoming packet, handle it now.
 			if #handler:bufferqueue() > 0 then
 				return _sendbuffer();
