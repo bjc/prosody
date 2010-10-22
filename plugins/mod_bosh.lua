@@ -102,7 +102,10 @@ end
 function handle_request(method, body, request)
 	if (not body) or request.method ~= "POST" then
 		if request.method == "OPTIONS" then
-			return { headers = default_headers, body = "" };
+			local headers = {};
+			for k,v in pairs(default_headers) do headers[k] = v; end
+			headers["Content-Type"] = nil;
+			return { headers = headers, body = "" };
 		else
 			return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
 		end
