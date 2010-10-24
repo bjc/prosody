@@ -24,6 +24,8 @@ local function process_stanza(stanza, ops)
 		local child = stanza[i];
 		if child.name then
 			process_stanza(child, ops);
+		elseif child:match("^{[^}]*}$") then -- text
+			t_insert(ops, {stanza, i, child:match("^{([^}]*)}$"), true});
 		elseif child:match("{[^}]*}") then -- text
 			t_insert(ops, {stanza, i, child});
 		end
@@ -81,22 +83,47 @@ local parse_xml = (function()
 	end;
 end)();
 
+local stanza_mt = st.stanza_mt;
+local function fast_st_clone(stanza, lookup)
+	local stanza_attr = stanza.attr;
+	local stanza_tags = stanza.tags;
+	local tags, attr = {}, {};
+	local clone = { name = stanza.name, attr = attr, tags = tags, last_add = {} };
+	for k,v in pairs(stanza_attr) do attr[k] = v; end
+	lookup[stanza_attr] = attr;
+	for i=1,#stanza_tags do
+		local child = stanza_tags[i];
+		local new = fast_st_clone(child, lookup);
+		tags[i] = new;
+		lookup[child] = new;
+	end
+	for i=1,#stanza do
+		local child = stanza[i];
+		clone[i] = lookup[child] or child;
+	end
+	return setmetatable(clone, stanza_mt);
+end
+
 local function create_template(text)
 	local stanza, err = parse_xml(text);
 	if not stanza then error(err); end
 	local ops = {};
 	process_stanza(stanza, ops);
-	ops.stanza = stanza;
 	
 	local template = {};
+	local lookup = {};
 	function template.apply(data)
-		local newops = st.clone(ops);
-		for i=1,#newops do
-			local op = newops[i];
-			local t, k, v = op[1], op[2], op[3];
-			t[k] = s_gsub(v, "{([^}]*)}", data);
+		local newstanza = fast_st_clone(stanza, lookup);
+		for i=1,#ops do
+			local op = ops[i];
+			local t, k, v, g = op[1], op[2], op[3], op[4];
+			if g then
+				lookup[t][k] = data[v];
+			else
+				lookup[t][k] = s_gsub(v, "{([^}]*)}", data);
+			end
 		end
-		return newops.stanza;
+		return newstanza;
 	end
 	return template;
 end
