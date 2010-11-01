@@ -98,12 +98,12 @@ function create_component(host, component, events)
 			disallow_s2s = configmanager.get(host, "core", "disallow_s2s"); };
 end
 
-function register_component(host, component, session)
+function register_component(host, component)
 	if not hosts[host] or (hosts[host].type == 'component' and not hosts[host].connected) then
 		local old_events = hosts[host] and hosts[host].events;
 
 		components[host] = component;
-		hosts[host] = session or create_component(host, component, old_events);
+		hosts[host] = create_component(host, component, old_events);
 
 		-- Add events object if not already one
 		if not hosts[host].events then
@@ -121,7 +121,7 @@ function register_component(host, component, session)
 		modulemanager.load(host, "dialback");
 		modulemanager.load(host, "tls");
 		log("debug", "component added: "..host);
-		return session or hosts[host];
+		return hosts[host];
 	else
 		log("error", "Attempt to set component for existing host: "..host);
 	end
