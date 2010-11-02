@@ -72,6 +72,25 @@ local function handle_status(session, status, ret, err_msg)
 	return status, ret, err_msg;
 end
 
+local function sasl_process_cdata(session, stanza)
+	local text = stanza[1];
+	if text then
+		text = base64.decode(text);
+		--log("debug", "AUTH: %s", text:gsub("[%z\001-\008\011\012\014-\031]", " "));
+		if not text then
+			session.sasl_handler = nil;
+			session.send(build_reply("failure", "incorrect-encoding"));
+			return true;
+		end
+	end
+	local status, ret, err_msg = session.sasl_handler:process(text);
+	status, ret, err_msg = handle_status(session, status, ret, err_msg);
+	local s = build_reply(status, ret, err_msg);
+	log("debug", "sasl reply: %s", tostring(s));
+	session.send(s);
+	return true;
+end
+
 local function sasl_handler(event)
 	local session, stanza = event.origin, event.stanza;
 	if session.type ~= "c2s_unauthed" then return; end
@@ -100,22 +119,7 @@ local function sasl_handler(event)
 	elseif not session.sasl_handler then
 		return true; -- FIXME ignoring out of order stanzas because ejabberd does
 	end
-	local text = stanza[1];
-	if text then
-		text = base64.decode(text);
-		--log("debug", "AUTH: %s", text:gsub("[%z\001-\008\011\012\014-\031]", " "));
-		if not text then
-			session.sasl_handler = nil;
-			session.send(build_reply("failure", "incorrect-encoding"));
-			return true;
-		end
-	end
-	local status, ret, err_msg = session.sasl_handler:process(text);
-	status, ret, err_msg = handle_status(session, status, ret, err_msg);
-	local s = build_reply(status, ret, err_msg);
-	log("debug", "sasl reply: %s", tostring(s));
-	session.send(s);
-	return true;
+	return sasl_process_cdata(session, stanza);
 end
 
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", sasl_handler);
