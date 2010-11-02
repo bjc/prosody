@@ -71,18 +71,16 @@ end
 
 -- select a mechanism to use
 function method:select(mechanism)
-	if self.mech_i then
-		return false;
+	if not self.selected and self.mechs[mechanism] then
+		self.selected = mechanism;
+		return true;
 	end
-	
-	self.mech_i = mechanisms[self:mechanisms()[mechanism] and mechanism];
-	return (self.mech_i ~= nil);
 end
 
 -- feed new messages to process into the library
 function method:process(message)
 	--if message == "" or message == nil then return "failure", "malformed-request" end
-	return self.mech_i(self, message);
+	return mechanisms[self.selected](self, message);
 end
 
 -- load the mechanisms

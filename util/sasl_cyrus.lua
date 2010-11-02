@@ -121,8 +121,10 @@ end
 
 -- select a mechanism to use
 function method:select(mechanism)
-	self.mechanism = mechanism;
-	return self:mechanisms()[mechanism];
+	if not self.selected and self.mechs[mechanism] then
+		self.selected = mechanism;
+		return true;
+	end
 end
 
 -- feed new messages to process into the library
@@ -131,7 +133,7 @@ function method:process(message)
 	local data;
 
 	if not self.first_step_done then
-		err, data = cyrussasl.server_start(self.cyrus, self.mechanism, message or "")
+		err, data = cyrussasl.server_start(self.cyrus, self.selected, message or "")
 		self.first_step_done = true;
 	else
 		err, data = cyrussasl.server_step(self.cyrus, message or "")
