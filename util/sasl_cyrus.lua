@@ -100,6 +100,12 @@ function new(realm, service_name, app_name)
 	end
 
 	cyrussasl.setssf(sasl_i.cyrus, 0, 0xffffffff)
+	local mechanisms = {};
+	local cyrus_mechs = cyrussasl.listmech(sasl_i.cyrus, nil, "", " ", "");
+	for w in s_gmatch(cyrus_mechs, "[^ ]+") do
+		mechanisms[w] = true;
+	end
+	sasl_i.mechs = mechanisms;
 	return setmetatable(sasl_i, method);
 end
 
@@ -110,16 +116,7 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	local mechanisms = self.mechs;
-	if not mechanisms then
-		mechanisms = {}
-		local cyrus_mechs = cyrussasl.listmech(self.cyrus, nil, "", " ", "")
-		for w in s_gmatch(cyrus_mechs, "[^ ]+") do
-			mechanisms[w] = true;
-		end
-		self.mechs = mechanisms
-	end
-	return mechanisms;
+	return self.mechs;
 end
 
 -- select a mechanism to use
