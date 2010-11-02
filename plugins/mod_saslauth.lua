@@ -91,39 +91,40 @@ local function sasl_process_cdata(session, stanza)
 	return true;
 end
 
-local function sasl_handler(event)
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 	local session, stanza = event.origin, event.stanza;
 	if session.type ~= "c2s_unauthed" then return; end
 
-	if stanza.name == "auth" then
-		-- FIXME ignoring duplicates because ejabberd does
-		local mechanism = stanza.attr.mechanism;
-		if anonymous_login then
-			if mechanism ~= "ANONYMOUS" then
-				session.send(build_reply("failure", "invalid-mechanism"));
-				return true;
-			end
-		elseif mechanism == "ANONYMOUS" then
-			session.send(build_reply("failure", "mechanism-too-weak"));
-			return true;
-		end
-		if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
-			session.send(build_reply("failure", "encryption-required"));
-			return true;
-		end
-		local valid_mechanism = session.sasl_handler:select(mechanism);
-		if not valid_mechanism then
+	-- FIXME ignoring duplicates because ejabberd does
+	local mechanism = stanza.attr.mechanism;
+	if anonymous_login then
+		if mechanism ~= "ANONYMOUS" then
 			session.send(build_reply("failure", "invalid-mechanism"));
 			return true;
 		end
-	elseif not session.sasl_handler then
-		return true; -- FIXME ignoring out of order stanzas because ejabberd does
+	elseif mechanism == "ANONYMOUS" then
+		session.send(build_reply("failure", "mechanism-too-weak"));
+		return true;
+	end
+	if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
+		session.send(build_reply("failure", "encryption-required"));
+		return true;
+	end
+	local valid_mechanism = session.sasl_handler:select(mechanism);
+	if not valid_mechanism then
+		session.send(build_reply("failure", "invalid-mechanism"));
+		return true;
 	end
 	return sasl_process_cdata(session, stanza);
-end
-
-module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", sasl_handler);
-module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:response", sasl_handler);
+end);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:response", function(event)
+	local session = event.origin;
+	if not(session.sasl_handler and session.sasl_handler.selected) then
+		session.send(build_reply("failure", "not-authorized", "Out of order SASL element"));
+		return true;
+	end
+	return sasl_process_cdata(session, event.stanza);
+end);
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
 	local session = event.origin;
 	session.sasl_handler = nil;
