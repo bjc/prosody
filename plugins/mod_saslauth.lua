@@ -119,8 +119,13 @@ local function sasl_handler(event)
 end
 
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", sasl_handler);
-module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", sasl_handler);
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:response", sasl_handler);
+module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
+	local session = event.origin;
+	session.sasl_handler = nil;
+	session.send(build_reply("failure", "aborted"));
+	return true;
+end);
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
