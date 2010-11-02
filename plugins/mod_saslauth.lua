@@ -95,7 +95,16 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 	local session, stanza = event.origin, event.stanza;
 	if session.type ~= "c2s_unauthed" then return; end
 
-	-- FIXME ignoring duplicates because ejabberd does
+	if session.sasl_handler and session.sasl_handler.selected then
+		session.sasl_handler = nil; -- allow starting a new SASL negotiation before completing an old one
+	end
+	if not session.sasl_handler then
+		if anonymous_login then
+			session.sasl_handler = new_sasl(module.host, anonymous_authentication_profile);
+		else
+			session.sasl_handler = usermanager_get_sasl_handler(module.host);
+		end
+	end
 	local mechanism = stanza.attr.mechanism;
 	if anonymous_login then
 		if mechanism ~= "ANONYMOUS" then
