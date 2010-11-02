@@ -48,7 +48,15 @@ end
 
 -- create a new SASL object which can be used to authenticate clients
 function new(realm, profile)
-	return setmetatable({ profile = profile, realm = realm }, method);
+	local mechanisms = {};
+	for backend, f in pairs(profile) do
+		if backend_mechanism[backend] then
+			for _, mechanism in ipairs(backend_mechanism[backend]) do
+				mechanisms[mechanism] = true;
+			end
+		end
+	end
+	return setmetatable({ profile = profile, realm = realm, mechs = mechanisms }, method);
 end
 
 -- get a fresh clone with the same realm and profile
@@ -58,19 +66,7 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	local mechanisms = self.mechs;
-	if not mechanisms then
-		mechanisms = {}
-		for backend, f in pairs(self.profile) do
-			if backend_mechanism[backend] then
-				for _, mechanism in ipairs(backend_mechanism[backend]) do
-					mechanisms[mechanism] = true;
-				end
-			end
-		end
-		self.mechs = mechanisms;
-	end
-	return mechanisms;
+	return self.mechs;
 end
 
 -- select a mechanism to use
