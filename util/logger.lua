@@ -17,7 +17,6 @@ local name_sinks, level_sinks = {}, {};
 local name_patterns = {};
 
 local make_logger;
-local outfunction = nil;
 
 function init(name)
 	local log_debug = make_logger(name, "debug");
@@ -28,8 +27,6 @@ function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	local namelen = #name;
 	return function (level, message, ...)
-			if outfunction then return outfunction(name, level, message, ...); end
-			
 			if level == "debug" then
 				return log_debug(message, ...);
 			elseif level == "info" then
@@ -66,17 +63,6 @@ function make_logger(source_name, level)
 	end
 
 	return logger;
-end
-
-function setwriter(f)
-	local old_func = outfunction;
-	if not f then outfunction = nil; return true, old_func; end
-	local ok, ret = pcall(f, "logger", "info", "Switched logging output successfully");
-	if ok then
-		outfunction = f;
-		ret = old_func;
-	end
-	return ok, ret;
 end
 
 function reset()
