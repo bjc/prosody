@@ -152,10 +152,6 @@ function deregister_component(host)
 	end
 end
 
-function set_component_handler(host, handler)
-	components[host] = handler;
-end
-
 function get_children(host)
 	return disco_items:get(host) or NULL;
 end
