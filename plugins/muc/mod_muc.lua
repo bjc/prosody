@@ -113,7 +113,8 @@ local function handle_to_domain(origin, stanza)
 	end
 end
 
-component = register_component(muc_host, function(origin, stanza)
+function stanza_handler(event)
+	local origin, stanza = event.origin, event.stanza;
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if to_node then
 		local bare = to_node.."@"..to_host;
@@ -142,7 +143,18 @@ component = register_component(muc_host, function(origin, stanza)
 	end
 	-- to the main muc domain
 	handle_to_domain(origin, stanza);
-end);
+end
+module:hook("iq/bare", stanza_handler);
+module:hook("message/bare", stanza_handler);
+module:hook("presence/bare", stanza_handler);
+module:hook("iq/full", stanza_handler);
+module:hook("message/full", stanza_handler);
+module:hook("presence/full", stanza_handler);
+module:hook("iq/host", stanza_handler);
+module:hook("message/host", stanza_handler);
+module:hook("presence/host", stanza_handler);
+
+component = register_component(muc_host, function() end);
 function component.send(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
 		core_post_stanza(component, stanza);
