@@ -26,14 +26,7 @@ local function parser(data, success_cb)
 		data = data:sub(n + 1);
 		return r;
 	end
-	
-	while true do
-		-- read status line
-		local status_line = readline();
-		local method, path, httpversion = status_line:match("^(%S+)%s+(%S+)%s+HTTP/(%S+)$");
-		if not method then coroutine.yield("invalid-status-line"); end
-		-- TODO parse url
-		
+	local function readheaders()
 		local headers = {}; -- read headers
 		while true do
 			local line = readline();
@@ -43,6 +36,15 @@ local function parser(data, success_cb)
 			key = key:lower();
 			headers[key] = headers[key] and headers[key]..","..val or val;
 		end
+	end
+	
+	while true do
+		-- read status line
+		local status_line = readline();
+		local method, path, httpversion = status_line:match("^(%S+)%s+(%S+)%s+HTTP/(%S+)$");
+		if not method then coroutine.yield("invalid-status-line"); end
+		-- TODO parse url
+		local headers = readheaders();
 		
 		-- read body
 		local len = tonumber(headers["content-length"]);
