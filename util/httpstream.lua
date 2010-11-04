@@ -7,7 +7,7 @@ coroutine.resume(deadroutine);
 
 module("httpstream")
 
-local function parser(data, success_cb)
+local function parser(data, success_cb, parser_type)
 	local function readline()
 		local pos = data:find("\r\n", nil, true);
 		while not pos do
@@ -39,38 +39,69 @@ local function parser(data, success_cb)
 		return headers;
 	end
 	
-	while true do
-		-- read status line
-		local status_line = readline();
-		local method, path, httpversion = status_line:match("^(%S+)%s+(%S+)%s+HTTP/(%S+)$");
-		if not method then coroutine.yield("invalid-status-line"); end
-		-- TODO parse url
-		local headers = readheaders();
-		
-		-- read body
-		local len = tonumber(headers["content-length"]);
-		len = len or 0; -- TODO check for invalid len
-		local body = readlength(len);
-		
-		success_cb({
-			method = method;
-			path = path;
-			httpversion = httpversion;
-			headers = headers;
-			body = body;
-		});
-	end
+	if not parser_type or parser_type == "server" then
+		while true do
+			-- read status line
+			local status_line = readline();
+			local method, path, httpversion = status_line:match("^(%S+)%s+(%S+)%s+HTTP/(%S+)$");
+			if not method then coroutine.yield("invalid-status-line"); end
+			-- TODO parse url
+			local headers = readheaders();
+			
+			-- read body
+			local len = tonumber(headers["content-length"]);
+			len = len or 0; -- TODO check for invalid len
+			local body = readlength(len);
+			
+			success_cb({
+				method = method;
+				path = path;
+				httpversion = httpversion;
+				headers = headers;
+				body = body;
+			});
+		end
+	elseif parser_type == "client" then
+		while true do
+			-- read status line
+			local status_line = readline();
+			local httpversion, status_code, reason_phrase = status_line:match("^HTTP/(%S+)%s+(%d%d%d)%s+(.*)$");
+			if not httpversion then coroutine.yield("invalid-status-line"); end
+			local headers = readheaders();
+			
+			-- read body
+			local body;
+			local len = tonumber(headers["content-length"]);
+			if len then -- TODO check for invalid len
+				body = readlength(len);
+			else -- read to end
+				repeat
+					local newdata = coroutine.yield();
+					data = data..newdata;
+				until newdata == "";
+				body, data = data, "";
+			end
+			
+			success_cb({
+				code = status_code;
+				responseversion = httpversion;
+				responseheaders = headers;
+				body = body;
+			});
+		end
+	else coroutine.yield("unknown-parser-type"); end
 end
 
-function new(success_cb, error_cb)
+function new(success_cb, error_cb, parser_type)
 	local co = coroutine.create(parser);
 	return {
 		feed = function(self, data)
 			if not data then
+				if parser_type == "client" then coroutine.resume(co, "", success_cb, parser_type); end
 				co = deadroutine;
 				return error_cb();
 			end
-			local success, result = coroutine.resume(co, data, success_cb);
+			local success, result = coroutine.resume(co, data, success_cb, parser_type);
 			if result then
 				co = deadroutine;
 				return error_cb(result);
