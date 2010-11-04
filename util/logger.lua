@@ -16,9 +16,6 @@ module "logger"
 local name_sinks, level_sinks = {}, {};
 local name_patterns = {};
 
--- Weak-keyed so that loggers are collected
-local modify_hooks = setmetatable({}, { __mode = "k" });
-
 local make_logger;
 local outfunction = nil;
 
@@ -54,26 +51,20 @@ function make_logger(source_name, level)
 
 	local source_handlers = name_sinks[source_name];
 	
-	-- All your premature optimisation is belong to me!
-	local num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers;
-	
 	local logger = function (message, ...)
 		if source_handlers then
-			for i = 1,num_source_handlers do
+			for i = 1,#source_handlers do
 				if source_handlers[i](source_name, level, message, ...) == false then
 					return;
 				end
 			end
 		end
 		
-		for i = 1,num_level_handlers do
+		for i = 1,#level_handlers do
 			level_handlers[i](source_name, level, message, ...);
 		end
 	end
 
-	-- To make sure our cached lengths stay in sync with reality
-	modify_hooks[logger] = function () num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers; end;
-	
 	return logger;
 end
 
@@ -97,10 +88,6 @@ function reset()
 		end
 	end
 	for k in pairs(name_patterns) do name_patterns[k] = nil; end
-
-	for _, modify_hook in pairs(modify_hooks) do
-		modify_hook();
-	end
 end
 
 function add_level_sink(level, sink_function)
@@ -109,10 +96,6 @@ function add_level_sink(level, sink_function)
 	else
 		level_sinks[level][#level_sinks[level] + 1 ] = sink_function;
 	end
-	
-	for _, modify_hook in pairs(modify_hooks) do
-		modify_hook();
-	end
 end
 
 function add_name_sink(name, sink_function, exclusive)
@@ -120,10 +103,6 @@ function add_name_sink(name, sink_function, exclusive)
 		name_sinks[name] = { sink_function };
 	else
 		name_sinks[name][#name_sinks[name] + 1] = sink_function;
-	end
-	
-	for _, modify_hook in pairs(modify_hooks) do
-		modify_hook();
 	end
 end
 
