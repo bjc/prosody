@@ -207,7 +207,8 @@ local function set_activation(stanza)
 	return reply, from, to, sid;
 end
 
-function handle_to_domain(origin, stanza)
+function handle_to_domain(event)
+	local origin, stanza = event.origin, event.stanza;
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if to_node == nil then
 		local type = stanza.attr.type;
@@ -256,6 +257,7 @@ function handle_to_domain(origin, stanza)
 	end
 	return;
 end
+module:hook("iq/host", handle_to_domain);
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 	module:log("error", "mod_proxy65: Could not establish a connection listener. Check your configuration please.");
@@ -263,4 +265,4 @@ if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 end
 
 connlisteners.start(module.host .. ':proxy65');
-component = componentmanager.register_component(host, handle_to_domain);
+component = componentmanager.register_component(host, function() end);
