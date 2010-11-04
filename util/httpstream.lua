@@ -36,6 +36,7 @@ local function parser(data, success_cb)
 			key = key:lower();
 			headers[key] = headers[key] and headers[key]..","..val or val;
 		end
+		return headers;
 	end
 	
 	while true do
