@@ -17,8 +17,6 @@ if type(signal) == "string" then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
-local logger_set = require "util.logger".setwriter;
-
 local lfs = require "lfs";
 local stat = lfs.attributes;
 
