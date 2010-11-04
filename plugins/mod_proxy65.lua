@@ -209,53 +209,48 @@ end
 
 function handle_to_domain(event)
 	local origin, stanza = event.origin, event.stanza;
-	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	if to_node == nil then
-		local type = stanza.attr.type;
-		if type == "error" or type == "result" then return; end
-		if stanza.name == "iq" and type == "get" then
-			local xmlns = stanza.tags[1].attr.xmlns
-			if xmlns == "http://jabber.org/protocol/disco#info" then
-				origin.send(get_disco_info(stanza));
-				return true;
-			elseif xmlns == "http://jabber.org/protocol/disco#items" then
-				origin.send(get_disco_items(stanza));
-				return true;
-			elseif xmlns == "http://jabber.org/protocol/bytestreams" then
-				origin.send(get_stream_host(origin, stanza));
-				return true;
+	if stanza.attr.type == "get" then
+		local xmlns = stanza.tags[1].attr.xmlns
+		if xmlns == "http://jabber.org/protocol/disco#info" then
+			origin.send(get_disco_info(stanza));
+			return true;
+		elseif xmlns == "http://jabber.org/protocol/disco#items" then
+			origin.send(get_disco_items(stanza));
+			return true;
+		elseif xmlns == "http://jabber.org/protocol/bytestreams" then
+			origin.send(get_stream_host(origin, stanza));
+			return true;
+		else
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			return true;
+		end
+	else -- stanza.attr.type == "set"
+		module:log("debug", "Received activation request from %s", stanza.attr.from);
+		local reply, from, to, sid = set_activation(stanza);
+		if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
+			local sha = sha1(sid .. from .. to, true);
+			if transfers[sha] == nil then
+				module:log("error", "transfers[sha]: nil");
+			elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
+				origin.send(reply);
+				transfers[sha].activated = true;
+				transfers[sha].target:lock_read(false);
+				transfers[sha].initiator:lock_read(false);
 			else
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-				return true;
-			end
-		elseif stanza.name == "iq" and type == "set" then
-			module:log("debug", "Received activation request from %s", stanza.attr.from);
-			local reply, from, to, sid = set_activation(stanza);
-			if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
-				local sha = sha1(sid .. from .. to, true);
-				if transfers[sha] == nil then
-					module:log("error", "transfers[sha]: nil");
-				elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
-					origin.send(reply);
-					transfers[sha].activated = true;
-					transfers[sha].target:lock_read(false);
-					transfers[sha].initiator:lock_read(false);
-				else
-					module:log("debug", "Both parties were not yet connected");
-					local message = "Neither party is connected to the proxy";
-					if transfers[sha].initiator then
-						message = "The recipient is not connected to the proxy";
-					elseif transfers[sha].target then
-						message = "The sender (you) is not connected to the proxy";
-					end
-					origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
+				module:log("debug", "Both parties were not yet connected");
+				local message = "Neither party is connected to the proxy";
+				if transfers[sha].initiator then
+					message = "The recipient is not connected to the proxy";
+				elseif transfers[sha].target then
+					message = "The sender (you) is not connected to the proxy";
 				end
-			else
-				module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 			end
+			return true;
+		else
+			module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
 		end
 	end
-	return;
 end
 module:hook("iq/host", handle_to_domain);
 
