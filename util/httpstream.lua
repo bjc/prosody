@@ -71,16 +71,23 @@ local function parser(success_cb, parser_type, options_cb)
 			local headers = readheaders();
 			
 			-- read body
+			local have_body = not
+				 ( (options_cb and options_cb().method == "HEAD")
+				or (status_code == 204 or status_code == 304 or status_code == 301)
+				or (status_code >= 100 and status_code < 200) );
+			
 			local body;
-			local len = tonumber(headers["content-length"]);
-			if len then -- TODO check for invalid len
-				body = readlength(len);
-			else -- read to end
-				repeat
-					local newdata = coroutine.yield();
-					data = data..newdata;
-				until newdata == "";
-				body, data = data, "";
+			if have_body then
+				local len = tonumber(headers["content-length"]);
+				if len then -- TODO check for invalid len
+					body = readlength(len);
+				else -- read to end
+					repeat
+						local newdata = coroutine.yield();
+						data = data..newdata;
+					until newdata == "";
+					body, data = data, "";
+				end
 			end
 			
 			success_cb({
