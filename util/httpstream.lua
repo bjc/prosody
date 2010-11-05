@@ -67,7 +67,8 @@ local function parser(success_cb, parser_type, options_cb)
 			-- read status line
 			local status_line = readline();
 			local httpversion, status_code, reason_phrase = status_line:match("^HTTP/(%S+)%s+(%d%d%d)%s+(.*)$");
-			if not httpversion then coroutine.yield("invalid-status-line"); end
+			status_code = tonumber(status_code);
+			if not status_code then coroutine.yield("invalid-status-line"); end
 			local headers = readheaders();
 			
 			-- read body
