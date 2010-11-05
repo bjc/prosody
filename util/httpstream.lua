@@ -7,7 +7,7 @@ coroutine.resume(deadroutine);
 
 module("httpstream")
 
-local function parser(success_cb, parser_type)
+local function parser(success_cb, parser_type, options_cb)
 	local data = coroutine.yield();
 	local function readline()
 		local pos = data:find("\r\n", nil, true);
@@ -93,9 +93,9 @@ local function parser(success_cb, parser_type)
 	else coroutine.yield("unknown-parser-type"); end
 end
 
-function new(success_cb, error_cb, parser_type)
+function new(success_cb, error_cb, parser_type, options_cb)
 	local co = coroutine.create(parser);
-	coroutine.resume(co, success_cb, parser_type)
+	coroutine.resume(co, success_cb, parser_type, options_cb)
 	return {
 		feed = function(self, data)
 			if not data then
