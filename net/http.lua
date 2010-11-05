@@ -10,6 +10,7 @@
 local socket = require "socket"
 local mime = require "mime"
 local url = require "socket.url"
+local httpstream_new = require "util.httpstream".new;
 
 local server = require "net.server"
 
@@ -45,107 +46,29 @@ function formencode(form)
 	return t_concat(result, "&");
 end
 
-local function expectbody(reqt, code)
-	if reqt.method == "HEAD" then return nil end
-	if code == 204 or code == 304 or code == 301 then return nil end
-	if code >= 100 and code < 200 then return nil end
-	return 1
-end
-
 local function request_reader(request, data, startpos)
-	if not data then
-		if request.body then
-			log("debug", "Connection closed, but we have data, calling callback...");
-			request.callback(t_concat(request.body), request.code, request);
-		elseif request.state ~= "completed" then
-			-- Error.. connection was closed prematurely
-			request.callback("connection-closed", 0, request);
-			return;
-		end
-		destroy_request(request);
-		request.body = nil;
-		request.state = "completed";
-		return;
-	end
-	if request.state == "body" and request.state ~= "completed" then
-		log("debug", "Reading body...")
-		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.responseheaders["content-length"]); end
-		if startpos then
-			data = data:sub(startpos, -1)
-		end
-		t_insert(request.body, data);
-		if request.bodylength then
-			request.havebodylength = request.havebodylength + #data;
-			if request.havebodylength >= request.bodylength then
-				-- We have the body
-				log("debug", "Have full body, calling callback");
-				if request.callback then
-					request.callback(t_concat(request.body), request.code, request);
-				end
-				request.body = nil;
-				request.state = "completed";
-			else
-				log("debug", "Have "..request.havebodylength.." bytes out of "..request.bodylength);
-			end
-		end
-	elseif request.state == "headers" then
-		log("debug", "Reading headers...")
-		local pos = startpos;
-		local headers, headers_complete = request.responseheaders;
-		if not headers then
-			headers = {};
-			request.responseheaders = headers;
-		end
-		for line in data:sub(startpos, -1):gmatch("(.-)\r\n") do
-			startpos = startpos + #line + 2;
-			local k, v = line:match("(%S+): (.+)");
-			if k and v then
-				headers[k:lower()] = v;
-				--log("debug", "Header: "..k:lower().." = "..v);
-			elseif #line == 0 then
-				headers_complete = true;
-				break;
-			else
-				log("warn", "Unhandled header line: "..line);
-			end
-		end
-		if not headers_complete then return; end
-		-- Reached the end of the headers
-		if not expectbody(request, request.code) then
-			request.callback(nil, request.code, request);
-			return;
-		end
-			request.state = "body";
-		if #data > startpos then
-			return request_reader(request, data, startpos);
-		end
-	elseif request.state == "status" then
-		log("debug", "Reading status...")
-		local http, code, text, linelen = data:match("^HTTP/(%S+) (%d+) (.-)\r\n()", startpos);
-		code = tonumber(code);
-		if not code then
-			log("warn", "Invalid HTTP status line, telling callback then closing");
-			local ret = request.callback("invalid-status-line", 0, request);
-			destroy_request(request);
-			return ret;
-		end
-		
-		request.code, request.responseversion = code, http;
-		
-		if request.onlystatus then
+	if not request.parser then
+		local function success_cb(r)
 			if request.callback then
-				request.callback(nil, code, request);
+				for k,v in pairs(r) do request[k] = v; end
+				request.callback(r.body, r.code, request);
+				request.callback = nil;
 			end
 			destroy_request(request);
-			return;
 		end
-		
-		request.state = "headers";
-		
-		if #data > linelen then
-			return request_reader(request, data, linelen);
+		local function error_cb(r)
+			if request.callback then
+				request.callback(r or "connection-closed", 0, request);
+				request.callback = nil;
+			end
+			destroy_request(request);
 		end
+		local function options_cb()
+			return request;
+		end
+		request.parser = httpstream_new(success_cb, error_cb, "client", options_cb);
 	end
+	request.parser:feed(data);
 end
 
 local function handleerr(err) log("error", "Traceback[http]: %s: %s", tostring(err), debug_traceback()); end
