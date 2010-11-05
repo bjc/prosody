@@ -80,7 +80,18 @@ local function parser(success_cb, parser_type, options_cb)
 			local body;
 			if have_body then
 				local len = tonumber(headers["content-length"]);
-				if len then -- TODO check for invalid len
+				if headers["transfer-encoding"] == "chunked" then
+					body = "";
+					while true do
+						local chunk_size = readline():match("^%x+");
+						if not chunk_size then coroutine.yield("invalid-chunk-size"); end
+						chunk_size = tonumber(chunk_size, 16)
+						if chunk_size == 0 then break; end
+						body = body..readlength(chunk_size);
+						if readline() ~= "" then coroutine.yield("invalid-chunk-ending"); end
+					end
+					local trailers = readheaders();
+				elseif len then -- TODO check for invalid len
 					body = readlength(len);
 				else -- read to end
 					repeat
