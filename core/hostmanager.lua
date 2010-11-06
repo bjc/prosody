@@ -6,9 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local ssl = ssl
-
-local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
@@ -64,9 +61,6 @@ function activate(host, host_config)
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
 		end
 	end
-	
-	hosts[host].ssl_ctx = certmanager.create_context(host, "client", host_config); -- for outgoing connections
-	hosts[host].ssl_ctx_in = certmanager.create_context(host, "server", host_config); -- for incoming connections
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	prosody_events.fire_event("host-activated", host, host_config);
