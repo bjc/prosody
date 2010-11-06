@@ -6,6 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
+local create_context = require "core.certmanager".create_context;
 local st = require "util.stanza";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
@@ -87,3 +88,14 @@ module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 	session.secure = false;
 	return true;
 end);
+
+function module.load()
+	local ssl_config = module:get_option("ssl");
+	host.ssl_ctx = create_context(host, "client", ssl_config); -- for outgoing connections
+	host.ssl_ctx_in = create_context(host, "server", ssl_config); -- for incoming connections
+end
+
+function module.unload()
+	host.ssl_ctx = nil;
+	host.ssl_ctx_in = nil;
+end

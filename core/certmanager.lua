@@ -23,8 +23,8 @@ module "certmanager"
 local default_ssl_config = configmanager.get("*", "core", "ssl");
 local default_capath = "/etc/ssl/certs";
 
-function create_context(host, mode, config)
-	local user_ssl_config = config and config.core.ssl or default_ssl_config;
+function create_context(host, mode, user_ssl_config)
+	user_ssl_config = user_ssl_config or default_ssl_config;
 
 	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
 	if not user_ssl_config then return nil, "No SSL/TLS configuration present for "..host; end
