@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local _G = _G;
 local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, format =
 		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, string.format;
@@ -19,18 +17,16 @@ module "configmanager"
 
 local parsers = {};
 
-local config = { ["*"] = { core = {} } };
-
-local global_config = config["*"];
+local config_mt = { __index = function (t, k) return rawget(t, "*"); end};
+local config = setmetatable({ ["*"] = { core = {} } }, config_mt);
 
 -- When host not found, use global
-setmetatable(config, { __index = function () return global_config; end});
-local host_mt = { __index = global_config };
+local host_mt = { };
 
 -- When key not found in section, check key in global's section
 function section_mt(section_name)
 	return { __index = 	function (t, k)
-					local section = rawget(global_config, section_name);
+					local section = rawget(config["*"], section_name);
 					if not section then return nil; end
 					return section[k];
 				end
@@ -49,7 +45,7 @@ function get(host, section, key)
 	return nil;
 end
 
-function set(host, section, key, value)
+local function set(config, host, section, key, value)
 	if host and section and key then
 		local hostconfig = rawget(config, host);
 		if not hostconfig then
@@ -64,18 +60,28 @@ function set(host, section, key, value)
 	return false;
 end
 
+function _M.set(host, section, key, value)
+	return set(config, host, section, key, value);
+end
+
 function load(filename, format)
 	format = format or filename:match("%w+$");
 
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
 		if f then
-			local ok, err = parsers[format].load(f:read("*a"), filename);
+			local new_config, err = parsers[format].load(f:read("*a"), filename);
 			f:close();
-			if ok then
-				fire_event("config-reloaded", { filename = filename, format = format });
+			if new_config then
+				setmetatable(new_config, config_mt);
+				config = new_config;
+				fire_event("config-reloaded", {
+					filename = filename,
+					format = format,
+					config = config
+				});
 			end
-			return ok, "parser", err;
+			return not not new_config, "parser", err;
 		end
 		return f, "file", err;
 	end
@@ -111,6 +117,8 @@ do
 	local setfenv, rawget, tostring = _G.setfenv, _G.rawget, _G.tostring;
 	parsers.lua = {};
 	function parsers.lua.load(data, filename)
+		local config = { ["*"] = { core = {} } };
+	
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -124,7 +132,7 @@ do
 						end;
 				end,
 				__newindex = function (t, k, v)
-					set(env.__currenthost or "*", "core", k, v);
+					set(config, env.__currenthost or "*", "core", k, v);
 				end
 		});
 		
@@ -136,11 +144,11 @@ do
 			end
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
-			set(name or "*", "core", "defined", true);
+			set(config, name or "*", "core", "defined", true);
 			return function (config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(name or "*", "core", option_name, option_value);
+					set(config, name or "*", "core", option_name, option_value);
 				end
 			end;
 		end
@@ -151,20 +159,20 @@ do
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
 			end
-			set(name, "core", "component_module", "component");
+			set(config, name, "core", "component_module", "component");
 			-- Don't load the global modules by default
-			set(name, "core", "load_global_modules", false);
+			set(config, name, "core", "load_global_modules", false);
 			rawset(env, "__currenthost", name);
 			local function handle_config_options(config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(name or "*", "core", option_name, option_value);
+					set(config, name or "*", "core", option_name, option_value);
 				end
 			end
 	
 			return function (module)
 					if type(module) == "string" then
-						set(name, "core", "component_module", module);
+						set(config, name, "core", "component_module", module);
 						return handle_config_options;
 					end
 					return handle_config_options(module);
@@ -198,7 +206,7 @@ do
 			return nil, err;
 		end
 		
-		return true;
+		return config;
 	end
 	
 end
