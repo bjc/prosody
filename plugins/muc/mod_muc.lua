@@ -178,7 +178,6 @@ module.save = function()
 	return {rooms = rooms};
 end
 module.restore = function(data)
-	rooms = {};
 	for jid, oldroom in pairs(data.rooms or {}) do
 		local room = muc_new_room(jid);
 		room._jid_nick = oldroom._jid_nick;
