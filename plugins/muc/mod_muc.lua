@@ -32,7 +32,8 @@ local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
 
-local rooms = {};
+rooms = {};
+local rooms = rooms;
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
 local component;
 
