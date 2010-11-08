@@ -15,8 +15,13 @@ local muc_host = module:get_host();
 local muc_name = module:get_option("name");
 if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local restrict_room_creation = module:get_option("restrict_room_creation");
-if restrict_room_creation and restrict_room_creation ~= true then restrict_room_creation = nil; end
-
+if restrict_room_creation then
+	if restrict_room_creation == true then 
+		restrict_room_creation = "admin";
+	elseif restrict_room_creation ~= "admin" and restrict_room_creation ~= "local" then
+		restrict_room_creation = nil;
+	end
+end
 local muc_new_room = module:require "muc".new_room;
 local register_component = require "core.componentmanager".register_component;
 local deregister_component = require "core.componentmanager".deregister_component;
@@ -121,7 +126,9 @@ function stanza_handler(event)
 		if to_host == muc_host or bare == muc_host then
 			local room = rooms[bare];
 			if not room then
-				if not(restrict_room_creation) or is_admin(stanza.attr.from) then
+				if not(restrict_room_creation) or
+				  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
+				  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
 					room = muc_new_room(bare, {
 						history_length = max_history_messages;
 					});
