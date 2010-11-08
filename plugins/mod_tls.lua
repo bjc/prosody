@@ -91,8 +91,8 @@ end);
 
 function module.load()
 	local ssl_config = module:get_option("ssl");
-	host.ssl_ctx = create_context(host, "client", ssl_config); -- for outgoing connections
-	host.ssl_ctx_in = create_context(host, "server", ssl_config); -- for incoming connections
+	host.ssl_ctx = create_context(host.host, "client", ssl_config); -- for outgoing connections
+	host.ssl_ctx_in = create_context(host.host, "server", ssl_config); -- for incoming connections
 end
 
 function module.unload()
