@@ -601,8 +601,12 @@ function room_mt:process_form(origin, stanza)
 	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	local fields = {};
 	for _, field in pairs(form.tags) do
-		if field.name == "field" and field.attr.var and field.tags[1].name == "value" and #field.tags[1].tags == 0 then
-			fields[field.attr.var] = field.tags[1][1] or "";
+		if field.name == "field" and field.attr.var then
+			if field.tags[1] and field.tags[1].name == "value" and #field.tags[1].tags == 0 then
+				fields[field.attr.var] = field.tags[1][1] or "";
+			elseif field.attr.type == "boolean" then
+				fields[field.attr.var] = "false";
+			end
 		end
 	end
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
