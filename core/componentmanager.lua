@@ -57,22 +57,6 @@ if prosody and prosody.events then
 	prosody.events.add_handler("server-starting", load_enabled_components);
 end
 
-function handle_stanza(origin, stanza)
-	local node, host = jid_split(stanza.attr.to);
-	local component = nil;
-	if host then
-		if node then component = components[node.."@"..host]; end -- hack to allow hooking node@server
-		if not component then component = components[host]; end
-	end
-	if component then
-		log("debug", "%s stanza being handled by component: %s", stanza.name, host);
-		component(origin, stanza, hosts[host]);
-	else
-		log("error", "Component manager recieved a stanza for a non-existing component: "..tostring(stanza));
-		default_component_handler(origin, stanza);
-	end
-end
-
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
 	return { type = "component", host = host, connected = true, s2sout = {},
