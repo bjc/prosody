@@ -69,6 +69,8 @@ function handle_component_auth(event)
 		log("info", "Component successfully registered");
 	else
 		log("error", "Multiple components bound to the same address, first one wins (TODO: Implement stanza distribution)");
+		session:close{ condition = "conflict", text = "Component already connected" };
+		return true;
 	end
 	
 	-- Signal successful authentication
