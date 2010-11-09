@@ -12,7 +12,6 @@ local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
-local component_handle_stanza = require "core.componentmanager".handle_stanza;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 
@@ -172,11 +171,6 @@ function core_post_stanza(origin, stanza, preevents)
 	if h then
 		if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		if to_self and h.events.fire_event(stanza.name..'/self', event_data) then return; end -- do processing
-
-		if h.type == "component" then
-			component_handle_stanza(origin, stanza);
-			return;
-		end
 		handle_unhandled_stanza(h.host, origin, stanza);
 	else
 		core_route_stanza(origin, stanza);
