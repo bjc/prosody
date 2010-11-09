@@ -6,6 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
+local config = require "core.configmanager";
 local create_context = require "core.certmanager".create_context;
 local st = require "util.stanza";
 
@@ -90,7 +91,12 @@ module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 end);
 
 function module.load()
-	local ssl_config = module:get_option("ssl");
+	local global_ssl_config = config.get("*", "core", "ssl");
+	local ssl_config = config.get(module.host, "core", "ssl");
+	local base_host = module.host:match("%.(.*)");
+	if ssl_config == global_ssl_config and hosts[base_host] then
+		ssl_config = config.get(base_host, "core", "ssl");
+	end
 	host.ssl_ctx = create_context(host.host, "client", ssl_config); -- for outgoing connections
 	host.ssl_ctx_in = create_context(host.host, "server", ssl_config); -- for incoming connections
 end
