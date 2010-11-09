@@ -29,7 +29,6 @@ local function on_destroy(session, err)
 		main_session = nil;
 		send = nil;
 		session.on_destroy = nil;
-		hosts[session.host].connected = nil;
 	end
 end
 
@@ -98,7 +97,6 @@ function handle_component_auth(event)
 		send = session.send;
 		main_session = session;
 		session.on_destroy = on_destroy;
-		hosts[session.host].connected = true;
 		log("info", "Component successfully registered");
 	else
 		log("error", "Multiple components bound to the same address, first one wins (TODO: Implement stanza distribution)");

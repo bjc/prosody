@@ -135,7 +135,6 @@ function load(host, module_name, config)
 	if not hosts[host] then
 		local create_component = _G.require "core.componentmanager".create_component;
 		hosts[host] = create_component(host);
-		hosts[host].connected = false;
 		log("debug", "Created new component: %s", host);
 	end
 	hosts[host].modules = modulemap[host];
