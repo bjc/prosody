@@ -22,11 +22,48 @@ local st = require "util.stanza";
 
 local log = module._log;
 
+local main_session, send;
+
+local function on_destroy(session, err)
+	if main_session == session then
+		main_session = nil;
+		send = nil;
+		session.on_destroy = nil;
+		hosts[session.host].connected = nil;
+	end
+end
+
+local function handle_stanza(event)
+	local stanza = event.stanza;
+	if send then
+		stanza.attr.xmlns = nil;
+		send(stanza);
+	else
+		log("warn", "Stanza being handled by default component; bouncing error for: %s", stanza:top_tag());
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+		end
+	end
+end
+
+module:hook("iq/bare", handle_stanza);
+module:hook("message/bare", handle_stanza);
+module:hook("presence/bare", handle_stanza);
+module:hook("iq/full", handle_stanza);
+module:hook("message/full", handle_stanza);
+module:hook("presence/full", handle_stanza);
+module:hook("iq/host", handle_stanza);
+module:hook("message/host", handle_stanza);
+module:hook("presence/host", handle_stanza);
+
+cm_register_component(module.host, function() end);
+
 --- Handle authentication attempts by components
 function handle_component_auth(event)
 	local session, stanza = event.origin, event.stanza;
 	
 	if session.type ~= "component" then return; end
+	if main_session == session then return; end
 
 	log("info", "Handling component auth");
 	if (not session.host) or #stanza.tags > 0 then
@@ -57,14 +94,10 @@ function handle_component_auth(event)
 	session.component_validate_from = module:get_option_boolean("validate_from_addresses") ~= false;
 	
 	-- If component not already created for this host, create one now
-	if not hosts[session.host].connected then
-		local send = session.send;
-		session.component_session = cm_register_component(session.host, function (_, data)
-				if data.attr and data.attr.xmlns == "jabber:client" then
-					data.attr.xmlns = nil;
-				end
-				return send(data);
-			end);
+	if not main_session then
+		send = session.send;
+		main_session = session;
+		session.on_destroy = on_destroy;
 		hosts[session.host].connected = true;
 		log("info", "Component successfully registered");
 	else
