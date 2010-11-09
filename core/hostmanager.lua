@@ -49,7 +49,7 @@ end
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", connected = true, sessions = {},
+	hosts[host] = {type = "local", sessions = {},
 			host = host, s2sout = {}, events = events_new(),
 			disallow_s2s = configmanager.get(host, "core", "disallow_s2s")
 				or (configmanager.get(host, "core", "anonymous_login")
