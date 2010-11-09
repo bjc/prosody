@@ -16,7 +16,6 @@ local fire_event = prosody.events.fire_event;
 local events_new = require "util.events".new;
 local st = require "util.stanza";
 local prosody, hosts = prosody, prosody.hosts;
-local ssl = ssl;
 local uuid_gen = require "util.uuid".generate;
 
 local pairs, setmetatable, type, tostring = pairs, setmetatable, type, tostring;
@@ -76,24 +75,8 @@ end
 
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
-	local ssl_ctx, ssl_ctx_in;
-	if host and ssl then
-		-- We need to find SSL context to use...
-		-- Discussion in prosody@ concluded that
-		-- 1 level back is usually enough by default
-		local base_host = host:gsub("^[^%.]+%.", "");
-		if hosts[base_host] then
-			ssl_ctx = hosts[base_host].ssl_ctx;
-			ssl_ctx_in = hosts[base_host].ssl_ctx_in;
-		else
-			-- We have no cert, and no parent host to borrow a cert from
-			-- Use global/default cert if there is one
-			ssl_ctx = certmanager.create_context(host, "client");
-			ssl_ctx_in = certmanager.create_context(host, "server");
-		end
-	end
 	return { type = "component", host = host, connected = true, s2sout = {},
-			ssl_ctx = ssl_ctx, ssl_ctx_in = ssl_ctx_in, events = events or events_new(),
+			events = events or events_new(),
 			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen(),
 			disallow_s2s = configmanager.get(host, "core", "disallow_s2s"); };
 end
