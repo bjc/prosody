@@ -204,12 +204,7 @@ function component_listener.ondisconnect(conn, err)
 	if session then
 		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));
 		if session.on_destroy then session:on_destroy(err); end
-		if hosts[session.host] then
-			log("debug", "Deregistering component");
-			cm_deregister_component(session.host);
-			hosts[session.host].connected = nil;
-		end
-		sessions[conn]  = nil;
+		sessions[conn] = nil;
 		for k in pairs(session) do
 			if k ~= "log" and k ~= "close" then
 				session[k] = nil;
