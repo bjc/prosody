@@ -522,9 +522,14 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 end
 
 function room_mt:send_form(origin, stanza)
-	local title = "Configuration for "..self.jid;
 	origin.send(st.reply(stanza):query("http://jabber.org/protocol/muc#owner")
-	:add_child(dataform.new({
+		:add_child(self:get_form_layout():form())
+	);
+end
+
+function room_mt:get_form_layout()
+	local title = "Configuration for "..self.jid;
+	return dataform.new({
 		title = title,
 		instructions = title,
 		{
@@ -583,8 +588,7 @@ function room_mt:send_form(origin, stanza)
 			label = 'Make Room Members-Only?',
 			value = self:is_members_only()
 		}
-	}):form())
-	);
+	});
 end
 
 local valid_whois = {
@@ -598,18 +602,10 @@ function room_mt:process_form(origin, stanza)
 	for _, tag in ipairs(query.tags) do if tag.name == "x" and tag.attr.xmlns == "jabber:x:data" then form = tag; break; end end
 	if not form then origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); return; end
 	if form.attr.type == "cancel" then origin.send(st.reply(stanza)); return; end
-	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
-	local fields = {};
-	for _, field in pairs(form.tags) do
-		if field.name == "field" and field.attr.var then
-			if field.tags[1] and field.tags[1].name == "value" and #field.tags[1].tags == 0 then
-				fields[field.attr.var] = field.tags[1][1] or "";
-			elseif field.attr.type == "boolean" then
-				fields[field.attr.var] = "false";
-			end
-		end
-	end
-	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
+	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form")); return; end
+
+	local fields = self:get_form_layout():data(form);
+	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
 
 	local dirty = false
 
@@ -624,31 +620,23 @@ function room_mt:process_form(origin, stanza)
 	end
 
 	local persistent = fields['muc#roomconfig_persistentroom'];
-	if persistent == "0" or persistent == "false" then persistent = nil; elseif persistent == "1" or persistent == "true" then persistent = true;
-	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	dirty = dirty or (self:is_persistent() ~= persistent)
 	module:log("debug", "persistent=%s", tostring(persistent));
 
 	local moderated = fields['muc#roomconfig_moderatedroom'];
-	if moderated == "0" or moderated == "false" then moderated = nil; elseif moderated == "1" or moderated == "true" then moderated = true;
-	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	dirty = dirty or (self:is_moderated() ~= moderated)
 	module:log("debug", "moderated=%s", tostring(moderated));
 
 	local membersonly = fields['muc#roomconfig_membersonly'];
-	if membersonly == "0" or membersonly == "false" then membersonly = nil; elseif membersonly == "1" or membersonly == "true" then membersonly = true;
-	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	dirty = dirty or (self:is_members_only() ~= membersonly)
 	module:log("debug", "membersonly=%s", tostring(membersonly));
 
 	local public = fields['muc#roomconfig_publicroom'];
-	if public == "0" or public == "false" then public = nil; elseif public == "1" or public == "true" then public = true;
-	else origin.send(st.error_reply(stanza, "cancel", "bad-request")); return; end
 	dirty = dirty or (self:is_hidden() ~= (not public and true or nil))
 
 	local whois = fields['muc#roomconfig_whois'];
 	if not valid_whois[whois] then
-	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request'));
+	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request', "Invalid value for 'whois'"));
 	    return;
 	end
 	local whois_changed = self._data.whois ~= whois
@@ -656,7 +644,7 @@ function room_mt:process_form(origin, stanza)
 	module:log('debug', 'whois=%s', whois)
 
 	local password = fields['muc#roomconfig_roomsecret'];
-	if password then
+	if self:get_password() ~= password then
 		self:set_password(password);
 	end
 	self:set_moderated(moderated);
