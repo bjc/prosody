@@ -14,7 +14,7 @@ local ssl_newcontext = ssl and ssl.newcontext;
 local setmetatable, tostring = setmetatable, tostring;
 
 local prosody = prosody;
-local resolve_path = prosody.resolve_relative_path;
+local resolve_path = configmanager.resolve_relative_path;
 local config_path = prosody.paths.config;
 
 module "certmanager"

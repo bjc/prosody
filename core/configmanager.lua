@@ -13,6 +13,8 @@ local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, p
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
 
+local path_sep = package.config:sub(1,1);
+
 module "configmanager"
 
 local parsers = {};
@@ -62,6 +64,25 @@ end
 
 function _M.set(host, section, key, value)
 	return set(config, host, section, key, value);
+end
+
+-- Helper function to resolve relative paths (needed by config)
+do
+	local rel_path_start = ".."..path_sep;
+	function resolve_relative_path(parent_path, path)
+		if path then
+			local is_relative;
+			if path_sep == "/" and path:sub(1,1) ~= "/" then
+				is_relative = true;
+			elseif path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\") then
+				is_relative = true;
+			end
+			if is_relative then
+				return parent_path..path_sep..path;
+			end
+		end
+		return path;
+	end	
 end
 
 function load(filename, format)
