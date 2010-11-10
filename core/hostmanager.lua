@@ -49,13 +49,23 @@ end
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", sessions = {},
-			host = host, s2sout = {}, events = events_new(),
-			disallow_s2s = configmanager.get(host, "core", "disallow_s2s")
-				or (configmanager.get(host, "core", "anonymous_login")
-				and (configmanager.get(host, "core", "disallow_s2s") ~= false));
-			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
-	              };
+	local host_session = {
+		host = host;
+		s2sout = {};
+		events = events_new();
+		dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
+		disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
+	};
+	if not host_config.core.component_module then -- host
+		host_session.type = "local";
+		host_session.sessions = {};
+		if configmanager.get(host, "core", "anonymous_login") then
+			host_session.disallow_s2s = (configmanager.get(host, "core", "disallow_s2s") ~= false);
+		end
+	else -- component
+		host_session.type = "component";
+	end
+	hosts[host] = host_session;
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
