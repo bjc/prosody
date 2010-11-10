@@ -113,7 +113,7 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	self:broadcast_except_nick(stanza, stanza.attr.from);
 	local me = self._occupants[stanza.attr.from];
 	if me then
-		stanza:tag("status", {code='110'});
+		stanza:tag("status", {code='110'}):up();
 		stanza.attr.to = sid;
 		self:_route_stanza(stanza);
 	end
