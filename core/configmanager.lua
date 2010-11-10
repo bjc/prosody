@@ -145,7 +145,7 @@ do
 		env = setmetatable({
 			Host = true, host = true, VirtualHost = true,
 			Component = true, component = true,
-			Include = true, include = true, RunScript = dofile }, {
+			Include = true, include = true, RunScript = true }, {
 				__index = function (t, k)
 					return rawget(_G, k) or
 						function (settings_table)
@@ -205,6 +205,7 @@ do
 			local f, err = io.open(file);
 			if f then
 				local data = f:read("*a");
+				local file = resolve_relative_path(filename:gsub("[^"..path_sep.."]+$", ""), file);
 				local ok, err = parsers.lua.load(data, file);
 				if not ok then error(err:gsub("%[string.-%]", file), 0); end
 			end
@@ -212,6 +213,10 @@ do
 			return f, err;
 		end
 		env.include = env.Include;
+		
+		function env.RunScript(file)
+			return dofile(resolve_relative_path(filename:gsub("[^"..path_sep.."]+$", ""), file));
+		end
 		
 		local chunk, err = loadstring(data, "@"..filename);
 		
