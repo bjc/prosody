@@ -73,7 +73,7 @@ function load_modules_for_host(host)
 	local host_modules = set.new(host_modules_enabled) - set.new(host_modules_disabled);
 	local global_modules = set.new(autoload_modules) + set.new(global_modules_enabled) - set.new(global_modules_disabled);
 	if component then
-		global_modules = set.new(component_inheritable_modules) - global_modules;
+		global_modules = set.intersection(set.new(component_inheritable_modules), global_modules);
 	end
 	local modules = global_modules + host_modules;
 	
