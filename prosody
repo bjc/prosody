@@ -310,6 +310,10 @@ function load_secondary_libraries()
 	require "core.usermanager"
 	require "core.sessionmanager"
 	require "core.stanza_router"
+	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
+		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[\s\t]*([^\n]*)"));
+		return function() end
+	end});
 
 	require "net.http"
 	
