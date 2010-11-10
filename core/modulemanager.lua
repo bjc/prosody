@@ -40,6 +40,7 @@ end
 local array, set = require "util.array", require "util.set";
 
 local autoload_modules = {"presence", "message", "iq"};
+local component_inheritable_modules = {"tls", "dialback"};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
@@ -59,43 +60,28 @@ local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
-	local disabled_set = {};
-	local modules_disabled = config.get(host, "core", "modules_disabled");
-	if modules_disabled then
-		for _, module in ipairs(modules_disabled) do
-			disabled_set[module] = true;
-		end
-	end
-
-	-- Load auto-loaded modules for this host
-	if hosts[host].type == "local" then
-		for _, module in ipairs(autoload_modules) do
-			if not disabled_set[module] then
-				load(host, module);
-			end
-		end
-	end
-
-	-- Load modules from global section
-	if config.get(host, "core", "load_global_modules") ~= false then
-		local modules_enabled = config.get("*", "core", "modules_enabled");
-		if modules_enabled then
-			for _, module in ipairs(modules_enabled) do
-				if not disabled_set[module] and not is_loaded(host, module) then
-					load(host, module);
-				end
-			end
-		end
-	end
+	local component = config.get(host, "core", "component_module");
 	
-	-- Load modules from just this host
-	local modules_enabled = config.get(host, "core", "modules_enabled");
-	if modules_enabled and modules_enabled ~= config.get("*", "core", "modules_enabled") then
-		for _, module in pairs(modules_enabled) do
-			if not is_loaded(host, module) then
-				load(host, module);
-			end
-		end
+	local global_modules_enabled = config.get("*", "core", "modules_enabled");
+	local global_modules_disabled = config.get("*", "core", "modules_disabled");
+	local host_modules_enabled = config.get(host, "core", "modules_enabled");
+	local host_modules_disabled = config.get(host, "core", "modules_disabled");
+	
+	if host_modules_enabled == global_modules_enabled then host_modules_enabled = nil; end
+	if host_modules_disabled == global_modules_disabled then host_modules_disabled = nil; end
+	
+	local host_modules = set.new(host_modules_enabled) - set.new(host_modules_disabled);
+	local global_modules = set.new(autoload_modules) + set.new(global_modules_enabled) - set.new(global_modules_disabled);
+	if component then
+		global_modules = set.new(component_inheritable_modules) - global_modules;
+	end
+	local modules = global_modules + host_modules;
+	
+	if component then
+		load(host, component);
+	end
+	for module in modules do
+		load(host, module);
 	end
 end
 prosody_events.add_handler("host-activated", load_modules_for_host);
