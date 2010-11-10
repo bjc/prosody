@@ -15,8 +15,6 @@ local hosts = _G.hosts;
 local t_concat = table.concat;
 
 local config = require "core.configmanager";
-local cm_register_component = require "core.componentmanager".register_component;
-local cm_deregister_component = require "core.componentmanager".deregister_component;
 local sha1 = require "util.hashes".sha1;
 local st = require "util.stanza";
 
@@ -54,8 +52,6 @@ module:hook("presence/full", handle_stanza);
 module:hook("iq/host", handle_stanza);
 module:hook("message/host", handle_stanza);
 module:hook("presence/host", handle_stanza);
-
-cm_register_component(module.host, function() end);
 
 --- Handle authentication attempts by components
 function handle_component_auth(event)
