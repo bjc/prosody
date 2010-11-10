@@ -34,28 +34,6 @@ local function default_component_handler(origin, stanza)
 	end
 end
 
-function load_enabled_components(config)
-	local defined_hosts = config or configmanager.getconfig();
-		
-	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and ((host_config.core.enabled == nil or host_config.core.enabled) and type(host_config.core.component_module) == "string") then
-			hosts[host] = create_component(host);
-			components[host] = default_component_handler;
-			local ok, err = modulemanager.load(host, host_config.core.component_module);
-			if not ok then
-				log("error", "Error loading %s component %s: %s", tostring(host_config.core.component_module), tostring(host), tostring(err));
-			else
-				fire_event("component-activated", host, host_config);
-				log("debug", "Activated %s component: %s", host_config.core.component_module, host);
-			end
-		end
-	end
-end
-
-if prosody and prosody.events then
-	prosody.events.add_handler("server-starting", load_enabled_components);
-end
-
 function create_component(host, component, events)
 	-- TODO check for host well-formedness
 	return { type = "component", host = host, s2sout = {},

@@ -32,8 +32,10 @@ local function load_enabled_hosts(config)
 	local activated_any_host;
 	
 	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and host_config.core.enabled ~= false and not host_config.core.component_module then
-			activated_any_host = true;
+		if host ~= "*" and host_config.core.enabled ~= false then
+			if not host_config.core.component_module then
+				activated_any_host = true;
+			end
 			activate(host, host_config);
 		end
 	end
@@ -49,6 +51,7 @@ end
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
+	if hosts[host] then return nil, "host-already-exists"; end
 	local host_session = {
 		host = host;
 		s2sout = {};
@@ -74,6 +77,7 @@ function activate(host, host_config)
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
 	prosody_events.fire_event("host-activated", host, host_config);
+	return true;
 end
 
 function deactivate(host, reason)
