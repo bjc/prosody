@@ -656,18 +656,18 @@ function room_mt:process_form(origin, stanza)
 	origin.send(st.reply(stanza));
 
 	if dirty or whois_changed then
-	    local msg = st.message({type='groupchat', from=self.jid})
-		    :tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
+		local msg = st.message({type='groupchat', from=self.jid})
+			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
 
-	    if dirty then
-		msg.tags[1]:tag('status', {code = '104'})
-	    end
-	    if whois_changed then
-		local code = (whois == 'moderators') and 173 or 172
-		msg.tags[1]:tag('status', {code = code})
-	    end
+		if dirty then
+			msg.tags[1]:tag('status', {code = '104'}):up();
+		end
+		if whois_changed then
+			local code = (whois == 'moderators') and "173" or "172";
+			msg.tags[1]:tag('status', {code = code}):up();
+		end
 
-	    self:broadcast_message(msg, false)
+		self:broadcast_message(msg, false)
 	end
 end
 
@@ -1022,7 +1022,7 @@ function room_mt:_route_stanza(stanza)
 			end
 		end
 		if self._data.whois == 'anyone' then
-		    muc_child:tag('status', { code = '100' });
+			muc_child:tag('status', { code = '100' }):up();
 		end
 	end
 	self:route_stanza(stanza);
