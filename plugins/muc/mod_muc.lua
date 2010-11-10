@@ -23,8 +23,6 @@ if restrict_room_creation then
 	end
 end
 local muc_new_room = module:require "muc".new_room;
-local register_component = require "core.componentmanager".register_component;
-local deregister_component = require "core.componentmanager".deregister_component;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -163,8 +161,7 @@ module:hook("iq/host", stanza_handler);
 module:hook("message/host", stanza_handler);
 module:hook("presence/host", stanza_handler);
 
-component = register_component(muc_host, function() end);
-function component.send(stanza) -- FIXME do a generic fix
+hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
 		core_post_stanza(component, stanza);
 	else error("component.send only supports result and error stanzas at the moment"); end
@@ -172,9 +169,6 @@ end
 
 prosody.hosts[module:get_host()].muc = { rooms = rooms };
 
-module.unload = function()
-	deregister_component(muc_host);
-end
 module.save = function()
 	return {rooms = rooms};
 end

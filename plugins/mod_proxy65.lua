@@ -16,7 +16,6 @@ end
 
 local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
-local componentmanager = require "core.componentmanager";
 local config_get = require "core.configmanager".get;
 local connlisteners = require "net.connlisteners";
 local sha1 = require "util.hashes".sha1;
@@ -185,7 +184,6 @@ local function get_stream_host(origin, stanza)
 end
 
 module.unload = function()
-	componentmanager.deregister_component(host);
 	connlisteners.deregister(module.host .. ':proxy65');
 end
 
@@ -260,4 +258,3 @@ if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 end
 
 connlisteners.start(module.host .. ':proxy65');
-component = componentmanager.register_component(host, function() end);
