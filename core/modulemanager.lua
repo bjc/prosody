@@ -91,6 +91,8 @@ prosody_events.add_handler("component-activated", load_modules_for_host);
 function load(host, module_name, config)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
+	elseif not hosts[host] then
+		return nil, "unknown-host";
 	end
 	
 	if not modulemap[host] then
@@ -118,11 +120,6 @@ function load(host, module_name, config)
 	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
-	if not hosts[host] then
-		local create_component = _G.require "core.componentmanager".create_component;
-		hosts[host] = create_component(host);
-		log("debug", "Created new component: %s", host);
-	end
 	hosts[host].modules = modulemap[host];
 	modulemap[host][module_name] = pluginenv;
 	
