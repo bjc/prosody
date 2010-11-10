@@ -147,10 +147,11 @@ function stanza_handler(event)
 				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 			end
 		else --[[not for us?]] end
-		return;
+		return true;
 	end
 	-- to the main muc domain
 	handle_to_domain(origin, stanza);
+	return true;
 end
 module:hook("iq/bare", stanza_handler);
 module:hook("message/bare", stanza_handler);
