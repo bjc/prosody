@@ -34,7 +34,7 @@ local unpack, select = unpack, select;
 pcall = function(f, ...)
 	local n = select("#", ...);
 	local params = {...};
-	return xpcall(function() f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
+	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
 
 local array, set = require "util.array", require "util.set";
