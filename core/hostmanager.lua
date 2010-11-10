@@ -71,7 +71,9 @@ function activate(host, host_config)
 		host_session.type = "component";
 	end
 	hosts[host] = host_session;
-	disco_items:set(host:match("%.(.*)") or "*", host, true);
+	if not host:match("[@/]") then
+		disco_items:set(host:match("%.(.*)") or "*", host, true);
+	end
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
@@ -122,7 +124,9 @@ function deactivate(host, reason)
 	end
 
 	hosts[host] = nil;
-	disco_items:remove(host:match("%.(.*)") or "*", host);
+	if not host:match("[@/]") then
+		disco_items:remove(host:match("%.(.*)") or "*", host);
+	end
 	prosody_events.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
 end
