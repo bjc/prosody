@@ -866,6 +866,10 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					:tag('body') -- Add a plain message for clients which don't support invites
 						:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 					:up();
+				if self:is_members_only() and not self:get_affiliation(_invitee) then
+					log("debug", "%s invited %s into members only room %s, granting membership", _from, _invitee, _to);
+					self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. self._jid_nick[_from])
+				end
 				self:_route_stanza(invite);
 			else
 				origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
