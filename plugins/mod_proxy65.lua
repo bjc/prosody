@@ -16,7 +16,6 @@ end
 
 local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
-local config_get = require "core.configmanager".get;
 local connlisteners = require "net.connlisteners";
 local sha1 = require "util.hashes".sha1;
 local server = require "net.server";
@@ -24,10 +23,10 @@ local server = require "net.server";
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
 local sessions, transfers, component, replies_cache = {}, {}, nil, {};
 
-local proxy_port = config_get(host, "core", "proxy65_port") or 5000;
-local proxy_interface = config_get(host, "core", "proxy65_interface") or "*";
-local proxy_address = config_get(host, "core", "proxy65_address") or (proxy_interface ~= "*" and proxy_interface) or host;
-local proxy_acl = config_get(host, "core", "proxy65_acl");
+local proxy_port = module:get_option("proxy65_port") or 5000;
+local proxy_interface = module:get_option("proxy65_interface") or "*";
+local proxy_address = module:get_option("proxy65_address") or (proxy_interface ~= "*" and proxy_interface) or host;
+local proxy_acl = module:get_option("proxy65_acl");
 local max_buffer_size = 4096;
 
 local connlistener = { default_port = proxy_port, default_interface = proxy_interface, default_mode = "*a" };
