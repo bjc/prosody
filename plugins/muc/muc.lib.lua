@@ -449,14 +449,17 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						self._jid_nick[from] = to;
 						self:send_occupant_list(from);
 						pr.attr.from = to;
+						pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+							:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
 						if not is_merge then
-							self:broadcast_presence(pr, from);
-						else
-							pr.attr.to = from;
-							self:_route_stanza(pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-								:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up()
-								:tag("status", {code='110'}));
+							self:broadcast_except_nick(pr, to);
 						end
+						pr:tag("status", {code='110'});
+						if self._data.whois == 'anyone' then
+							pr:tag("status", {code='100'}):up();
+						end
+						pr.attr.to = from;
+						self:_route_stanza(pr);
 						self:send_history(from, stanza);
 					elseif not affiliation then -- registration required for entering members-only room
 						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
@@ -1020,9 +1023,6 @@ function room_mt:_route_stanza(stanza)
 					item.attr.jid = from_occupant.jid;
 				end
 			end
-		end
-		if self._data.whois == 'anyone' then
-			muc_child:tag('status', { code = '100' }):up();
 		end
 	end
 	self:route_stanza(stanza);
