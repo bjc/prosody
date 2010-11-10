@@ -22,9 +22,6 @@ local pairs, setmetatable, type, tostring = pairs, setmetatable, type, tostring;
 
 local components = {};
 
-local disco_items = require "util.multitable".new();
-local NULL = {};
-
 module "componentmanager"
 
 local function default_component_handler(origin, stanza)
@@ -58,10 +55,6 @@ function register_component(host, component)
 			hosts[host].dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
 		end
 
-		-- add to disco_items
-		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
-			disco_items:set(host:sub(host:find(".", 1, true)+1), host, true);
-		end
 		modulemanager.load(host, "dialback");
 		modulemanager.load(host, "tls");
 		log("debug", "component added: "..host);
@@ -84,19 +77,11 @@ function deregister_component(host)
 			hosts[host] = nil; -- FIXME do proper unload of all modules and other cleanup before removing
 			components[host] = nil;
 		end
-		-- remove from disco_items
-		if not(host:find("@", 1, true) or host:find("/", 1, true)) and host:find(".", 1, true) then
-			disco_items:remove(host:sub(host:find(".", 1, true)+1), host);
-		end
 		log("debug", "component removed: "..host);
 		return true;
 	else
 		log("error", "Attempt to remove component for non-existing host: "..host);
 	end
-end
-
-function get_children(host)
-	return disco_items:get(host) or NULL;
 end
 
 return _M;
