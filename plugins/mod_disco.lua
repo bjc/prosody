@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local componentmanager_get_children = require "core.componentmanager".get_children;
+local get_children = require "core.hostmanager".get_children;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
@@ -101,7 +101,7 @@ module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(eve
 	if node and node ~= "" then return; end -- TODO fire event?
 
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
-	for jid in pairs(componentmanager_get_children(module.host)) do
+	for jid in pairs(get_children(module.host)) do
 		reply:tag("item", {jid = jid}):up();
 	end
 	for _, item in ipairs(disco_items) do
