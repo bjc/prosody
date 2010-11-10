@@ -57,7 +57,6 @@ function initialize_host(host)
 	end
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
-prosody.events.add_handler("component-activated", initialize_host, 100);
 
 function test_password(username, host, password)
 	return hosts[host].users.test_password(username, password);

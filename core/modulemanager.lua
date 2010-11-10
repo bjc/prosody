@@ -85,7 +85,6 @@ function load_modules_for_host(host)
 	end
 end
 prosody_events.add_handler("host-activated", load_modules_for_host);
-prosody_events.add_handler("component-activated", load_modules_for_host);
 --
 
 function load(host, module_name, config)
