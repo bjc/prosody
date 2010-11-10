@@ -9,6 +9,8 @@
 local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
+local disco_items = require "util.multitable".new();
+local NULL = {};
 
 local uuid_gen = require "util.uuid".generate;
 
@@ -69,6 +71,7 @@ function activate(host, host_config)
 		host_session.type = "component";
 	end
 	hosts[host] = host_session;
+	disco_items:set(host:match("%.(.*)") or "*", host, true);
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
@@ -119,11 +122,13 @@ function deactivate(host, reason)
 	end
 
 	hosts[host] = nil;
+	disco_items:remove(host:match("%.(.*)") or "*", host);
 	prosody_events.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
 end
 
-function getconfig(name)
+function get_children(host)
+	return disco_items:get(host) or NULL;
 end
 
 return _M;
