@@ -91,10 +91,10 @@ function load(filename, format)
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
 		if f then
-			local new_config, err = parsers[format].load(f:read("*a"), filename);
+			local new_config = setmetatable({ ["*"] = { core = {} } }, config_mt);
+			local ok, err = parsers[format].load(f:read("*a"), filename, new_config);
 			f:close();
-			if new_config then
-				setmetatable(new_config, config_mt);
+			if ok then
 				config = new_config;
 				fire_event("config-reloaded", {
 					filename = filename,
@@ -137,9 +137,7 @@ do
 	local loadstring, pcall, setmetatable = _G.loadstring, _G.pcall, _G.setmetatable;
 	local setfenv, rawget, tostring = _G.setfenv, _G.rawget, _G.tostring;
 	parsers.lua = {};
-	function parsers.lua.load(data, filename)
-		local config = { ["*"] = { core = {} } };
-	
+	function parsers.lua.load(data, filename, config)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -206,8 +204,8 @@ do
 			if f then
 				local data = f:read("*a");
 				local file = resolve_relative_path(filename:gsub("[^"..path_sep.."]+$", ""), file);
-				local ok, err = parsers.lua.load(data, file);
-				if not ok then error(err:gsub("%[string.-%]", file), 0); end
+				local ret, err = parsers.lua.load(data, file, config);
+				if not ret then error(err:gsub("%[string.-%]", file), 0); end
 			end
 			if not f then error("Error loading included "..file..": "..err, 0); end
 			return f, err;
@@ -232,7 +230,7 @@ do
 			return nil, err;
 		end
 		
-		return config;
+		return true;
 	end
 	
 end
