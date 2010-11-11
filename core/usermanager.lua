@@ -34,6 +34,8 @@ end
 
 function initialize_host(host)
 	local host_session = hosts[host];
+	if host_session.type ~= "local" then return; end
+	
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "core", "authentication") or default_provider;
