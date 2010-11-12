@@ -41,6 +41,7 @@ local function handle_stanza(event)
 			event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 		end
 	end
+	return true;
 end
 
 module:hook("iq/bare", handle_stanza);
