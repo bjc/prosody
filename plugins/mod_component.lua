@@ -60,9 +60,8 @@ function handle_component_auth(event)
 	if session.type ~= "component" then return; end
 	if main_session == session then return; end
 
-	log("info", "Handling component auth");
 	if (not session.host) or #stanza.tags > 0 then
-		(session.log or log)("warn", "Component handshake invalid");
+		(session.log or log)("warn", "Invalid component handshake for host: %s", session.host);
 		session:close("not-authorized");
 		return true;
 	end
@@ -77,25 +76,21 @@ function handle_component_auth(event)
 	local supplied_token = t_concat(stanza);
 	local calculated_token = sha1(session.streamid..secret, true);
 	if supplied_token:lower() ~= calculated_token:lower() then
-		log("info", "Component for %s authentication failed", session.host);
+		log("info", "Component authentication failed for %s", session.host);
 		session:close{ condition = "not-authorized", text = "Given token does not match calculated token" };
 		return true;
 	end
-	
-	-- Authenticated now
-	log("info", "Component authenticated: %s", session.host);
-	
-	session.component_validate_from = module:get_option_boolean("validate_from_addresses") ~= false;
 	
 	-- If component not already created for this host, create one now
 	if not main_session then
 		send = session.send;
 		main_session = session;
 		session.on_destroy = on_destroy;
-		log("info", "Component successfully registered");
+		session.component_validate_from = module:get_option_boolean("validate_from_addresses") ~= false;
+		log("info", "Component successfully authenticated: %s", session.host);
 		session.send(st.stanza("handshake"));
-	else
-		log("error", "Multiple components bound to the same address, first one wins (TODO: Implement stanza distribution)");
+	else -- TODO: Implement stanza distribution
+		log("error", "Multiple components bound to the same address, first one wins: %s", session.host);
 		session:close{ condition = "conflict", text = "Component already connected" };
 	end
 	
