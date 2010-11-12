@@ -160,7 +160,7 @@ end
 commands.quit, commands.exit = commands.bye, commands.bye;
 
 commands["!"] = function (session, data)
-	if data:match("^!!") then
+	if data:match("^!!") and session.env._ then
 		session.print("!> "..session.env._);
 		return console_listener.onincoming(session.conn, session.env._);
 	end
