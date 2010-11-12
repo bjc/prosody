@@ -14,7 +14,6 @@ local hosts = _G.hosts;
 
 local t_concat = table.concat;
 
-local config = require "core.configmanager";
 local sha1 = require "util.hashes".sha1;
 local st = require "util.stanza";
 
@@ -68,7 +67,7 @@ function handle_component_auth(event)
 		return true;
 	end
 	
-	local secret = config.get(session.host, "core", "component_secret");
+	local secret = module:get_option("component_secret");
 	if not secret then
 		(session.log or log)("warn", "Component attempted to identify as %s, but component_secret is not set", session.host);
 		session:close("not-authorized");
