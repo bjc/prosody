@@ -83,7 +83,6 @@ function handle_component_auth(event)
 		return true;
 	end
 	
-	
 	-- Authenticated now
 	log("info", "Component authenticated: %s", session.host);
 	
@@ -95,14 +94,12 @@ function handle_component_auth(event)
 		main_session = session;
 		session.on_destroy = on_destroy;
 		log("info", "Component successfully registered");
+		session.send(st.stanza("handshake"));
 	else
 		log("error", "Multiple components bound to the same address, first one wins (TODO: Implement stanza distribution)");
 		session:close{ condition = "conflict", text = "Component already connected" };
-		return true;
 	end
 	
-	-- Signal successful authentication
-	session.send(st.stanza("handshake"));
 	return true;
 end
 
