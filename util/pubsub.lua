@@ -21,6 +21,13 @@ function service:remove_subscription(node, actor, jid)
 	return true;
 end
 
+function service:get_subscription(node, actor, jid)
+	local node_obj = self.nodes[node];
+	if node_obj then
+		return node_obj.subscribers[jid];
+	end
+end
+
 function service:publish(node, actor, id, item)
 	local node_obj = self.nodes[node];
 	if not node_obj then
