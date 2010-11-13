@@ -92,5 +92,5 @@ module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq
 service = pubsub.new({
 	broadcaster = simple_broadcast
 });
-_M.service = service;
+module.environment.service = service;
 
