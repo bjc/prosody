@@ -117,7 +117,6 @@ function load(host, module_name, config)
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
-	pluginenv._M = pluginenv;
 	
 	setfenv(mod, pluginenv);
 	hosts[host].modules = modulemap[host];
