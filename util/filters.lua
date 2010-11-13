@@ -10,6 +10,8 @@ local t_insert, t_remove = table.insert, table.remove;
 
 module "filters"
 
+local new_filter_hooks = {};
+
 function initialize(session)
 	if not session.filters then
 		local filters = {};
@@ -19,13 +21,18 @@ function initialize(session)
 			local filter_list = filters[type];
 			if filter_list then
 				for i = 1, #filter_list do
-					data = filter_list[i](data);
+					data = filter_list[i](data, session);
 					if data == nil then break; end
 				end
 			end
 			return data;
 		end
 	end
+	
+	for i=1,#new_filter_hooks do
+		new_filter_hooks[i](session);
+	end
+	
 	return session.filter;
 end
 
@@ -63,6 +70,10 @@ function remove_filter(session, type, callback)
 			end
 		end
 	end
+end
+
+function add_filter_hook(callback)
+	t_insert(new_filter_hooks, callback);
 end
 
 return _M;
