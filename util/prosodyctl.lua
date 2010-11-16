@@ -12,6 +12,7 @@ local encodings = require "util.encodings";
 local stringprep = encodings.stringprep;
 local usermanager = require "core.usermanager";
 local signal = require "util.signal";
+local set = require "util.set";
 local lfs = require "lfs";
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
@@ -75,6 +76,11 @@ function getpid()
 	local pidfile = config.get("*", "core", "pidfile");
 	if not pidfile then
 		return false, "no-pidfile";
+	end
+	
+	local modules_enabled = set.new(config.get("*", "core", "modules_enabled"));
+	if not modules_enabled:contains("posix") then
+		return false, "no-posix";
 	end
 	
 	local file, err = io.open(pidfile, "r+");
