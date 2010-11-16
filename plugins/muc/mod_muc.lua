@@ -33,7 +33,7 @@ local um_is_admin = require "core.usermanager".is_admin;
 rooms = {};
 local rooms = rooms;
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
-local component;
+local component = hosts[module.host];
 
 -- Configurable options
 local max_history_messages = module:get_option_number("max_history_messages");
