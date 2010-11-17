@@ -613,12 +613,12 @@ function room_mt:process_form(origin, stanza)
 	local dirty = false
 
 	local name = fields['muc#roomconfig_roomname'];
-	if name then
+	if name ~= self:get_name() then
 		self:set_name(name);
 	end
 
 	local description = fields['muc#roomconfig_roomdesc'];
-	if description then
+	if description ~= self:get_description() then
 		self:set_description(description);
 	end
 
