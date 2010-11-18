@@ -982,27 +982,37 @@ function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
 	if not allowed then return allowed, err_type, err_condition; end
 	local occupant = self._occupants[occupant_jid];
-	local p = st.presence({from = occupant_jid})
-		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
 				:tag("reason"):text(reason or ""):up()
 			:up();
+	local presence_type = nil;
 	if not role then -- kick
-		p.attr.type = "unavailable";
+		presence_type = "unavailable";
 		self._occupants[occupant_jid] = nil;
 		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
 			self._jid_nick[jid] = nil;
 		end
-		p:tag("status", {code = "307"}):up();
+		x:tag("status", {code = "307"}):up();
 	else
 		occupant.role = role;
 	end
-	for jid in pairs(occupant.sessions) do -- send to all sessions of the nick
+	local bp;
+	for jid,pres in pairs(occupant.sessions) do -- send to all sessions of the nick
+		local p = st.clone(pres);
+		p.attr.from = occupant_jid;
+		p.attr.type = presence_type;
 		p.attr.to = jid;
+		p:add_child(x);
 		self:_route_stanza(p);
+		if occupant.jid == jid then
+			bp = p;
+		end
 	end
 	if callback then callback(); end
-	self:broadcast_except_nick(p, occupant_jid);
+	if bp then
+		self:broadcast_except_nick(bp, occupant_jid);
+	end
 	return true;
 end
 
