@@ -911,15 +911,13 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	if jid_bare(actor) == jid then return nil, "cancel", "not-allowed"; end
 	self._affiliations[jid] = affiliation;
 	local role = self:get_default_role(affiliation);
-	local p = st.presence()
-		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=affiliation or "none", role=role or "none"})
 				:tag("reason"):text(reason or ""):up()
 			:up();
-	local x = p.tags[1];
-	local item = x.tags[1];
+	local presence_type = nil;
 	if not role then -- getting kicked
-		p.attr.type = "unavailable";
+		presence_type = "unavailable";
 		if affiliation == "outcast" then
 			x:tag("status", {code="301"}):up(); -- banned
 		else
@@ -929,23 +927,28 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	local modified_nicks = {};
 	for nick, occupant in pairs(self._occupants) do
 		if jid_bare(occupant.jid) == jid then
-			t_insert(modified_nicks, nick);
 			if not role then -- getting kicked
 				self._occupants[nick] = nil;
 			else
 				occupant.affiliation, occupant.role = affiliation, role;
 			end
-			p.attr.from = nick;
-			for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
+			for jid,pres in pairs(occupant.sessions) do -- remove for all sessions of the nick
 				if not role then self._jid_nick[jid] = nil; end
+				local p = st.clone(pres);
+				p.attr.from = nick;
+				p.attr.type = presence_type;
 				p.attr.to = jid;
+				p:add_child(x);
 				self:_route_stanza(p);
+				if occupant.jid == jid then
+					modified_nicks[nick] = p;
+				end
 			end
 		end
 	end
 	if self.save then self:save(); end
 	if callback then callback(); end
-	for _, nick in ipairs(modified_nicks) do
+	for nick,p in pairs(modified_nicks) do
 		p.attr.from = nick;
 		self:broadcast_except_nick(p, nick);
 	end
