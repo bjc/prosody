@@ -168,7 +168,11 @@ local error_messages = setmetatable({
 hosts = prosody.hosts;
 
 local function make_host(hostname)
-	return { events = prosody.events, users = require "core.usermanager".new_null_provider(hostname) };
+	return {
+		type = "local",
+		events = prosody.events,
+		users = require "core.usermanager".new_null_provider(hostname)
+	};
 end
 
 for hostname, config in pairs(config.getconfig()) do
