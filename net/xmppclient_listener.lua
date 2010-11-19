@@ -41,7 +41,7 @@ function stream_callbacks.error(session, error, data)
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
 		(session.log or log)("debug", "Client XML parse error: %s", tostring(data));
-		session:close("xml-not-well-formed");
+		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
 		for child in data:children() do
@@ -148,7 +148,7 @@ function xmppclient.onconnect(conn)
 			local ok, err = stream:feed(data);
 			if ok then return; end
 			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
-			session:close("xml-not-well-formed");
+			session:close("not-well-formed");
 		end
 	end
 	

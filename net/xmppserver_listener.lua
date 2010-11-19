@@ -27,7 +27,7 @@ function stream_callbacks.error(session, error, data)
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
 		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
-		session:close("xml-not-well-formed");
+		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
 		for child in data:children() do
@@ -136,7 +136,7 @@ local function initialize_session(session)
 			if ok then return; end
 			(session.log or log)("warn", "Received invalid XML: %s", data);
 			(session.log or log)("warn", "Problem was: %s", err);
-			session:close("xml-not-well-formed");
+			session:close("not-well-formed");
 		end
 	end
 
