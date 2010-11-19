@@ -48,6 +48,7 @@ function new_sax_handlers(session, stream_callbacks)
 	local stream_default_ns = stream_callbacks.default_ns;
 	
 	local chardata, stanza = {};
+	local non_streamns_depth = 0;
 	function xml_handlers:StartElement(tagname, attr)
 		if stanza and #chardata > 0 then
 			-- We have some character data in the buffer
@@ -59,8 +60,9 @@ function new_sax_handlers(session, stream_callbacks)
 			curr_ns, name = "", curr_ns;
 		end
 
-		if curr_ns ~= stream_default_ns then
+		if curr_ns ~= stream_default_ns or non_streamns_depth > 0 then
 			attr.xmlns = curr_ns;
+			non_streamns_depth = non_streamns_depth + 1;
 		end
 		
 		-- FIXME !!!!!
@@ -80,6 +82,7 @@ function new_sax_handlers(session, stream_callbacks)
 		if not stanza then --if we are not currently inside a stanza
 			if session.notopen then
 				if tagname == stream_tag then
+					non_streamns_depth = 0;
 					if cb_streamopened then
 						cb_streamopened(session, attr);
 					end
@@ -104,6 +107,9 @@ function new_sax_handlers(session, stream_callbacks)
 		end
 	end
 	function xml_handlers:EndElement(tagname)
+		if non_streamns_depth > 0 then
+			non_streamns_depth = non_streamns_depth - 1;
+		end
 		if stanza then
 			if #chardata > 0 then
 				-- We have some character data in the buffer
