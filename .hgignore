@@ -21,3 +21,7 @@ config.unix
 *.log
 *.err
 *.debug
+*.dll
+*.exp
+*.lib
+*.obj
