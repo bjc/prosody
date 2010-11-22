@@ -490,9 +490,11 @@ function make_authenticated(session, host)
 	elseif session.type == "s2sin_unauthed" then
 		session.type = "s2sin";
 		if host then
+			if not session.hosts[host] then session.hosts[host] = {}; end
 			session.hosts[host].authed = true;
 		end
 	elseif session.type == "s2sin" and host then
+		if not session.hosts[host] then session.hosts[host] = {}; end
 		session.hosts[host].authed = true;
 	else
 		return false;
