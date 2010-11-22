@@ -361,6 +361,10 @@ do
 		end
 	end
 	
+	function interface_mt:socket()
+		return self.conn
+	end
+	
 	function interface_mt:server()
 		return self._server or self;
 	end
