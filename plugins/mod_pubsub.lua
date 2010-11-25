@@ -37,6 +37,24 @@ function pubsub_error_reply(stanza, error)
 	return reply;
 end
 
+function handlers.get_items(origin, stanza, items)
+	local node = items.attr.node;
+	local item = items:get_child("item");
+	local id = item and item.attr.id;
+	local data = st.stanza("items", { node = node });
+	for _, entry in pairs(service:get(node, stanza.attr.from, id)) do
+		data:add_child(entry);
+	end
+	if data then
+		reply = st.reply(stanza)
+			:tag("pubsub", { xmlns = xmlns_pubsub })
+				:add_child(data);
+	else
+		reply = st.error_reply(stanza, "cancel", "item-not-found", "Item could not be found in this node");
+	end
+	return origin.send(reply);
+end
+
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
 	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
