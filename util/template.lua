@@ -1,37 +1,14 @@
 
-local t_insert = table.insert;
 local st = require "util.stanza";
 local lxp = require "lxp";
 local setmetatable = setmetatable;
 local pairs = pairs;
+local ipairs = ipairs;
 local error = error;
-local s_gsub = string.gsub;
-
-local print = print;
+local loadstring = loadstring;
+local debug = debug;
 
 module("template")
-
-local function process_stanza(stanza, ops)
-	-- process attrs
-	for key, val in pairs(stanza.attr) do
-		if val:match("{[^}]*}") then
-			t_insert(ops, {stanza.attr, key, val});
-		end
-	end
-	-- process children
-	local i = 1;
-	while i <= #stanza do
-		local child = stanza[i];
-		if child.name then
-			process_stanza(child, ops);
-		elseif child:match("^{[^}]*}$") then -- text
-			t_insert(ops, {stanza, i, child:match("^{([^}]*)}$"), true});
-		elseif child:match("{[^}]*}") then -- text
-			t_insert(ops, {stanza, i, child});
-		end
-		i = i + 1;
-	end
-end
 
 local parse_xml = (function()
 	local ns_prefixes = {
@@ -83,57 +60,74 @@ local parse_xml = (function()
 	end;
 end)();
 
-local stanza_mt = st.stanza_mt;
-local function fast_st_clone(stanza, lookup)
-	local stanza_attr = stanza.attr;
-	local stanza_tags = stanza.tags;
-	local tags, attr = {}, {};
-	local clone = { name = stanza.name, attr = attr, tags = tags, last_add = {} };
-	for k,v in pairs(stanza_attr) do attr[k] = v; end
-	lookup[stanza_attr] = attr;
-	for i=1,#stanza_tags do
-		local child = stanza_tags[i];
-		local new = fast_st_clone(child, lookup);
-		tags[i] = new;
-		lookup[child] = new;
-	end
-	for i=1,#stanza do
-		local child = stanza[i];
-		clone[i] = lookup[child] or child;
-	end
-	return setmetatable(clone, stanza_mt);
+local function create_string_string(str)
+	str = ("%q"):format(str);
+	str = str:gsub("{([^}]*)}", function(s)
+		return '"..(data["'..s..'"]or"").."';
+	end);
+	return str;
 end
-
-local function create_template(text)
-	local stanza, err = parse_xml(text);
-	if not stanza then error(err); end
-	local ops = {};
-	process_stanza(stanza, ops);
-	
-	local template = {};
-	local lookup = {};
-	function template.apply(data)
-		local newstanza = fast_st_clone(stanza, lookup);
-		for i=1,#ops do
-			local op = ops[i];
-			local t, k, v, g = op[1], op[2], op[3], op[4];
-			if g then
-				lookup[t][k] = data[v];
+local function create_attr_string(attr, xmlns)
+	local str = '{';
+	for name,value in pairs(attr) do
+		if name ~= "xmlns" or value ~= xmlns then
+			str = str..("[%q]=%s;"):format(name, create_string_string(value));
+		end
+	end
+	return str..'}';
+end
+local function create_clone_string(stanza, lookup, xmlns)
+	if not lookup[stanza] then
+		local s = ('setmetatable({name=%q,attr=%s,last_add={},tags={'):format(stanza.name, create_attr_string(stanza.attr, xmlns));
+		-- add tags
+		for i,tag in ipairs(stanza.tags) do
+			s = s..create_clone_string(tag, lookup, stanza.attr.xmlns)..";";
+		end
+		s = s..'};';
+		-- add children
+		for i,child in ipairs(stanza) do
+			if child.name then
+				s = s..create_clone_string(child, lookup, stanza.attr.xmlns)..";";
 			else
-				lookup[t][k] = s_gsub(v, "{([^}]*)}", data);
+				s = s..create_string_string(child)..";"
 			end
 		end
-		return newstanza;
+		s = s..'}, stanza_mt)';
+		s = s:gsub('%.%.""', ""):gsub('([=;])""%.%.', "%1"):gsub(';"";', ";"); -- strip empty strings
+		local n = #lookup + 1;
+		lookup[n] = s;
+		lookup[stanza] = "_"..n;
 	end
+	return lookup[stanza];
+end
+local stanza_mt = st.stanza_mt;
+local function create_cloner(stanza, chunkname)
+	local lookup = {};
+	local name = create_clone_string(stanza, lookup, "");
+	local f = "local setmetatable,stanza_mt=...;return function(data)";
+	for i=1,#lookup do
+		f = f.."local _"..i.."="..lookup[i]..";";
+	end
+	f = f.."return "..name..";end";
+	local f,err = loadstring(f, chunkname);
+	if not f then error(err); end
+	return f(setmetatable, stanza_mt);
+end
+
+local template_mt = { __tostring = function(t) return t.name end };
+local function create_template(templates, text)
+	local stanza, err = parse_xml(text);
+	if not stanza then error(err); end
+
+	local info = debug.getinfo(3, "Sl");
+	info = info and ("template(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.currentline) or "template(unknown)";
+
+	local template = setmetatable({ apply = create_cloner(stanza, info), name = info, text = text }, template_mt);
+	templates[text] = template;
 	return template;
 end
 
-local templates = setmetatable({}, { __mode = 'k' });
+local templates = setmetatable({}, { __mode = 'k', __index = create_template });
 return function(text)
-	local template = templates[text];
-	if not template then
-		template = create_template(text);
-		templates[text] = template;
-	end
-	return template;
+	return templates[text];
 end;
