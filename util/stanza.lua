@@ -46,7 +46,7 @@ stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
 
 function stanza(name, attr)
-	local stanza = { name = name, attr = attr or {}, tags = {}, last_add = {}};
+	local stanza = { name = name, attr = attr or {}, tags = {} };
 	return setmetatable(stanza, stanza_mt);
 end
 
@@ -60,26 +60,27 @@ end
 
 function stanza_mt:tag(name, attrs)
 	local s = stanza(name, attrs);
-	(self.last_add[#self.last_add] or self):add_direct_child(s);
-	t_insert(self.last_add, s);
+	local last_add = self.last_add;
+	if not last_add then last_add = {}; self.last_add = last_add; end
+	(last_add[#last_add] or self):add_direct_child(s);
+	t_insert(last_add, s);
 	return self;
 end
 
 function stanza_mt:text(text)
-	(self.last_add[#self.last_add] or self):add_direct_child(text);
+	local last_add = self.last_add;
+	(last_add and last_add[#last_add] or self):add_direct_child(text);
 	return self;
 end
 
 function stanza_mt:up()
-	t_remove(self.last_add);
+	local last_add = self.last_add;
+	if last_add then t_remove(last_add); end
 	return self;
 end
 
 function stanza_mt:reset()
-	local last_add = self.last_add;
-	for i = 1,#last_add do
-		last_add[i] = nil;
-	end
+	self.last_add = nil;
 	return self;
 end
 
@@ -91,7 +92,8 @@ function stanza_mt:add_direct_child(child)
 end
 
 function stanza_mt:add_child(child)
-	(self.last_add[#self.last_add] or self):add_direct_child(child);
+	local last_add = self.last_add;
+	(last_add and last_add[#last_add] or self):add_direct_child(child);
 	return self;
 end
 
@@ -311,9 +313,6 @@ function deserialize(stanza)
 				end
 			end
 			stanza.tags = tags;
-			if not stanza.last_add then
-				stanza.last_add = {};
-			end
 		end
 	end
 	
