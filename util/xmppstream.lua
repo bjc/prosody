@@ -117,7 +117,8 @@ function new_sax_handlers(session, stream_callbacks)
 				chardata = {};
 			end
 			-- Complete stanza
-			if #stanza.last_add == 0 then
+			local last_add = stanza.last_add;
+			if not last_add or #last_add == 0 then
 				if tagname ~= stream_error_tag then
 					cb_handlestanza(session, stanza);
 				else
