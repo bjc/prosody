@@ -208,7 +208,7 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 	end
 end);
 
-module:hook("iq/bare/disco", function(event)
+module:hook("iq-result/bare/disco", function(event)
 	local session, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "result" then
 		local disco = stanza.tags[1];
