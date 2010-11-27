@@ -35,7 +35,9 @@ module:hook("iq/bare", function(data)
 
 	-- TODO fire post processing events
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		local ret = module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..stanza.attr.type.."/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		module:fire_event("iq-"..stanza.attr.type.."/bare/"..stanza.attr.id, data);
 		return true;
@@ -43,11 +45,13 @@ module:hook("iq/bare", function(data)
 end);
 
 module:hook("iq/self", function(data)
-	-- IQ to bare JID recieved
+	-- IQ to self JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		local ret = module:fire_event("iq/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..stanza.attr.type.."/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		module:fire_event("iq-"..stanza.attr.type.."/self/"..stanza.attr.id, data);
 		return true;
@@ -59,7 +63,9 @@ module:hook("iq/host", function(data)
 	local origin, stanza = data.origin, data.stanza;
 
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		local ret = module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..stanza.attr.type.."/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
 		module:fire_event("iq-"..stanza.attr.type.."/host/"..stanza.attr.id, data);
 		return true;
