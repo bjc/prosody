@@ -75,7 +75,7 @@ function open(host, store, typ)
 		if err == "unsupported-store" then
 			log("debug", "Storage driver %s does not support store %s (%s), falling back to internal driver",
 				driver_name, store, typ);
-			ret = setmetatable({ host = host, store = store }, default_driver_mt); end -- default to default driver
+			ret = setmetatable({ host = host, store = store }, default_driver_mt); -- default to default driver
 			err = nil;
 		end
 	end
