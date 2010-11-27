@@ -32,24 +32,32 @@ end);
 module:hook("iq/bare", function(data)
 	-- IQ to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
+	local type = stanza.attr.type;
 
 	-- TODO fire post processing events
-	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+	if type == "get" or type == "set" then
+		local child = stanza.tags[1];
+		local ret = module:fire_event("iq/bare/"..child.attr.xmlns..":"..child.name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..type.."/bare/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..stanza.attr.type.."/bare/"..stanza.attr.id, data);
+		module:fire_event("iq-"..type.."/bare/"..stanza.attr.id, data);
 		return true;
 	end
 end);
 
 module:hook("iq/self", function(data)
-	-- IQ to bare JID recieved
+	-- IQ to self JID recieved
 	local origin, stanza = data.origin, data.stanza;
+	local type = stanza.attr.type;
 
-	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+	if type == "get" or type == "set" then
+		local child = stanza.tags[1];
+		local ret = module:fire_event("iq/self/"..child.attr.xmlns..":"..child.name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..type.."/self/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..stanza.attr.type.."/self/"..stanza.attr.id, data);
+		module:fire_event("iq-"..type.."/self/"..stanza.attr.id, data);
 		return true;
 	end
 end);
@@ -57,11 +65,15 @@ end);
 module:hook("iq/host", function(data)
 	-- IQ to a local host recieved
 	local origin, stanza = data.origin, data.stanza;
+	local type = stanza.attr.type;
 
-	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
+	if type == "get" or type == "set" then
+		local child = stanza.tags[1];
+		local ret = module:fire_event("iq/host/"..child.attr.xmlns..":"..child.name, data);
+		if ret ~= nil then return ret; end
+		return module:fire_event("iq-"..type.."/host/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..stanza.attr.type.."/host/"..stanza.attr.id, data);
+		module:fire_event("iq-"..type.."/host/"..stanza.attr.id, data);
 		return true;
 	end
 end);
