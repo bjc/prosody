@@ -5,6 +5,7 @@ local setmetatable = setmetatable;
 local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
 local modulemanager = require "core.modulemanager";
+local multitable = require "util.multitable";
 local hosts = hosts;
 local log = require "util.logger".init("storagemanager");
 
