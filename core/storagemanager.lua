@@ -44,6 +44,7 @@ local function load_driver(host, driver_name)
 	if not driver then
 		if driver_name ~= "internal" then
 			modulemanager.load(host, "storage_"..driver_name);
+			return stores_available:get(host, driver_name);
 		else
 			return setmetatable({host = host}, default_driver_mt);
 		end
