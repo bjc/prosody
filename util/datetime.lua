@@ -41,8 +41,9 @@ function parse(s)
 			local time_offset = os_difftime(os_time(os_date("*t")), os_time(os_date("!*t"))); -- to deal with local timezone
 			local tzd_offset = 0;
 			if tzd ~= "" and tzd ~= "Z" then
-				local sign, h, m = tzd:match("([+%-])(%d%d):(%d%d)");
+				local sign, h, m = tzd:match("([+%-])(%d%d):?(%d*)");
 				if not sign then return; end
+				if #m ~= 2 then m = "0"; end
 				h, m = tonumber(h), tonumber(m);
 				tzd_offset = h * 60 * 60 + m * 60;
 				if sign == "-" then tzd_offset = -tzd_offset; end
