@@ -37,7 +37,7 @@ module:hook("iq/bare", function(data)
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/bare/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
-		module:fire_event("iq/bare/"..stanza.attr.id, data);
+		module:fire_event("iq-"..stanza.attr.type.."/bare/"..stanza.attr.id, data);
 		return true;
 	end
 end);
@@ -49,7 +49,7 @@ module:hook("iq/self", function(data)
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/self/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
-		module:fire_event("iq/self/"..stanza.attr.id, data);
+		module:fire_event("iq-"..stanza.attr.type.."/self/"..stanza.attr.id, data);
 		return true;
 	end
 end);
@@ -61,7 +61,7 @@ module:hook("iq/host", function(data)
 	if stanza.attr.type == "get" or stanza.attr.type == "set" then
 		return module:fire_event("iq/host/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name, data);
 	else
-		module:fire_event("iq/host/"..stanza.attr.id, data);
+		module:fire_event("iq-"..stanza.attr.type.."/host/"..stanza.attr.id, data);
 		return true;
 	end
 end);
