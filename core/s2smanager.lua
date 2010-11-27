@@ -376,7 +376,10 @@ end
 
 local function check_cert_status(session)
 	local conn = session.conn:socket()
-	local cert = conn:getpeercertificate()
+	local cert
+	if conn.getpeercertificate then
+		cert = conn:getpeercertificate()
+	end
 
 	if cert then
 		local chain_valid, err = conn:getpeerchainvalid()
