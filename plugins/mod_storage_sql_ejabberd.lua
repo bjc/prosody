@@ -12,16 +12,19 @@ local st = require "util.stanza";
 local DBI = require "DBI";
 
 -- connect to db
-local option_datastore_params = module:get_option("datastore_params") or error("Missing option: datastore_params");
+local params = module:get_option("sql_ejabberd") or error("No sql_ejabberd config option");
 local database;
 do
-	local driver, db = unpack(option_datastore_params);
-	module:log("debug", "Opening database: %s", "dbi:"..driver..":"..db);
+	module:log("debug", "Opening database: %s", "dbi:"..params.driver..":"..params.database);
 	prosody.unlock_globals();
-	local dbh, err = DBI.Connect(unpack(option_datastore_params));
+	local dbh, err = DBI.Connect(
+		params.driver, params.database,
+		params.username, params.password,
+		params.host, params.port
+	);
 	prosody.lock_globals();
 	assert(dbh, err);
-	dbh:autocommit(true)
+	dbh:autocommit(true);
 	database = dbh;
 end
 
