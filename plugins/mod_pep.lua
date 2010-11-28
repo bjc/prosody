@@ -145,6 +145,16 @@ module:hook("presence/bare", function(event)
 		end
 	elseif t == "unavailable" then
 		if recipients[user] then recipients[user][stanza.attr.from] = nil; end
+	elseif not self and t == "unsubscribe" then
+		local from = jid_bare(stanza.attr.from);
+		local subscriptions = recipients[user];
+		if subscriptions then
+			for subscriber in pairs(subscriptions) do
+				if jid_bare(subscriber) == from then
+					recipients[user][subscriber] = nil;
+				end
+			end
+		end
 	end
 end, 10);
 
