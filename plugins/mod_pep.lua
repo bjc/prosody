@@ -117,9 +117,10 @@ module:hook("presence/bare", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local t = stanza.attr.type;
+	local self = not stanza.attr.to;
 
 	if not t then -- available presence
-		if not stanza.attr.to or subscription_presence(user, stanza.attr.from) then
+		if self or subscription_presence(user, stanza.attr.from) then
 			local recipient = stanza.attr.from;
 			local current = recipients[user] and recipients[user][recipient];
 			local hash = get_caps_hash_from_presence(stanza, current);
@@ -133,10 +134,12 @@ module:hook("presence/bare", function(event)
 					publish_all(user, recipient, origin);
 				else
 					recipients[user][recipient] = hash;
-					origin.send(
-						st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
-							:query("http://jabber.org/protocol/disco#info")
-					);
+					if self or origin.type ~= "c2s" then
+						origin.send(
+							st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
+								:query("http://jabber.org/protocol/disco#info")
+						);
+					end
 				end
 			end
 		end
@@ -214,6 +217,7 @@ module:hook("iq-result/bare/disco", function(event)
 		local disco = stanza.tags[1];
 		if disco and disco.name == "query" and disco.attr.xmlns == "http://jabber.org/protocol/disco#info" then
 			-- Process disco response
+			local self = not stanza.attr.to;
 			local user = stanza.attr.to or (session.username..'@'..session.host);
 			local contact = stanza.attr.from;
 			local current = recipients[user] and recipients[user][contact];
@@ -230,7 +234,16 @@ module:hook("iq-result/bare/disco", function(event)
 				end
 			end
 			hash_map[ver] = notify; -- update hash map
-			recipients[user][contact] = notify; -- set recipient's data to calculated data
+			if self then
+				for jid, item in pairs(origin.roster) do -- for all interested contacts
+					if item.subscription == "both" or item.subscription == "from" then
+						if not recipients[jid] then recipients[jid] = {}; end
+						recipients[jid][contact] = notify;
+					end
+				end
+			else
+				recipients[user][contact] = notify; -- set recipient's data to calculated data
+			end
 			-- send messages to recipient
 			publish_all(user, contact, session);
 		end
