@@ -235,7 +235,7 @@ module:hook("iq-result/bare/disco", function(event)
 			end
 			hash_map[ver] = notify; -- update hash map
 			if self then
-				for jid, item in pairs(origin.roster) do -- for all interested contacts
+				for jid, item in pairs(session.roster) do -- for all interested contacts
 					if item.subscription == "both" or item.subscription == "from" then
 						if not recipients[jid] then recipients[jid] = {}; end
 						recipients[jid][contact] = notify;
