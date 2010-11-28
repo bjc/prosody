@@ -239,11 +239,11 @@ module:hook("iq-result/bare/disco", function(event)
 					if item.subscription == "both" or item.subscription == "from" then
 						if not recipients[jid] then recipients[jid] = {}; end
 						recipients[jid][contact] = notify;
+						publish_all(jid, contact, session);
 					end
 				end
-			else
-				recipients[user][contact] = notify; -- set recipient's data to calculated data
 			end
+			recipients[user][contact] = notify; -- set recipient's data to calculated data
 			-- send messages to recipient
 			publish_all(user, contact, session);
 		end
