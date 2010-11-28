@@ -81,6 +81,8 @@ end
 
 module:hook("item-added/identity", clear_disco_cache);
 module:hook("item-added/feature", clear_disco_cache);
+module:hook("item-removed/identity", clear_disco_cache);
+module:hook("item-removed/feature", clear_disco_cache);
 
 -- Handle disco requests to the server
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
