@@ -55,6 +55,28 @@ function handlers.get_items(origin, stanza, items)
 	return origin.send(reply);
 end
 
+function handlers.set_create(origin, stanza, create)
+	local node = create.attr.node;
+	local ok, ret, reply;
+	if node then
+		ok, ret = service:create(node, stanza.attr.from);
+		if ok then
+			reply = st.reply(stanza);
+		else
+			reply = st.error_reply(stanza, "cancel", ret);
+		end
+	else
+		repeat
+			node = uuid_generate();
+			ok, ret = service:create(node, stanza.attr.from);
+		until ok;
+		reply = st.reply(stanza)
+			:tag("pubsub", { xmlns = xmlns_pubsub })
+				:tag("create", { node = node });
+	end
+	origin.send(reply);
+end
+
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
 	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
