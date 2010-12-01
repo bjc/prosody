@@ -28,6 +28,14 @@ function service:get_subscription(node, actor, jid)
 	end
 end
 
+function service:create(node, actor)
+	if not self.nodes[node] then
+		self.nodes[node] = { name = node, subscribers = {}, config = {}, data = {} };
+		return true;
+	end
+	return false, "conflict";
+end
+
 function service:publish(node, actor, id, item)
 	local node_obj = self.nodes[node];
 	if not node_obj then
