@@ -25,10 +25,8 @@ function handle_pubsub_iq(event)
 end
 
 local pubsub_errors = {
-	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
 	["item-not-found"] = { "cancel", "item-not-found" };
-	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 };
 function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
@@ -52,7 +50,7 @@ function handlers.get_items(origin, stanza, items)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:add_child(data);
 	else
-		reply = pubsub_error_reply(stanza, "item-not-found");
+		reply = st.error_reply(stanza, "cancel", "item-not-found", "Item could not be found in this node");
 	end
 	return origin.send(reply);
 end
@@ -65,7 +63,7 @@ function handlers.set_create(origin, stanza, create)
 		if ok then
 			reply = st.reply(stanza);
 		else
-			reply = pubsub_error_reply(stanza, ret);
+			reply = st.error_reply(stanza, "cancel", ret);
 		end
 	else
 		repeat
@@ -76,7 +74,7 @@ function handlers.set_create(origin, stanza, create)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:tag("create", { node = node });
 	end
-	return origin.send(reply);
+	origin.send(reply);
 end
 
 function handlers.set_subscribe(origin, stanza, subscribe)
@@ -100,21 +98,6 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 	return origin.send(reply);
 end
 
-function handlers.set_unsubscribe(origin, stanza, unsubscribe)
-	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
-	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
-		return origin.send(pubsub_error_reply(stanza, "invalid-jid"));
-	end
-	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
-	local reply;
-	if ok then
-		reply = st.reply(stanza);
-	else
-		reply = pubsub_error_reply(stanza, ret);
-	end
-	return origin.send(reply);
-end
-
 function handlers.set_publish(origin, stanza, publish)
 	local node = publish.attr.node;
 	local item = publish:get_child("item");
@@ -132,27 +115,7 @@ function handlers.set_publish(origin, stanza, publish)
 	return origin.send(reply);
 end
 
-function handlers.set_retract(origin, stanza, retract)
-	local node, notify = retract.attr.node, retract.attr.notify;
-	notify = (notify == "1") or (notify == "true");
-	local item = retract:get_child("item");
-	local id = item and item.attr.id
-	local reply, notifier;
-	if notify then
-		notifier = st.stanza("retract", { id = id });
-	end
-	local ok, ret = service:retract(node, stanza.attr.from, id, notifier);
-	if ok then
-		reply = st.reply(stanza);
-	else
-		reply = pubsub_error_reply(stanza, ret);
-	end
-	return origin.send(reply);
-end
-
 function simple_broadcast(node, jids, item)
-	item = st.clone(item);
-	item.attr.xmlns = nil; -- Clear the pubsub namespace
 	local message = st.message({ from = module.host, type = "headline" })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag("items", { node = node })
@@ -166,40 +129,8 @@ end
 
 module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq);
 
-local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-	:tag("identity", { category = "pubsub", type = "service" }):up()
-	:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
-
-module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
-	event.origin.send(st.reply(event.stanza):add_child(disco_info));
-	return true;
-end);
-
-module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function (event)
-	local ok, ret = service:get_nodes(event.stanza.attr.from);
-	if not ok then
-		event.origin.send(pubsub_error_reply(stanza, ret));
-	else
-		local reply = st.reply(event.stanza)
-			:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
-		for node, node_obj in pairs(ret) do
-			reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
-		end
-		event.origin.send(reply);
-	end
-	return true;
-end);
-
 service = pubsub.new({
 	broadcaster = simple_broadcast
 });
 module.environment.service = service;
 
-function module.save()
-	return { service = service };
-end
-
-function module.restore(data)
-	service = data.service;
-	module.environment.service = service;
-end

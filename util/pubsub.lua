@@ -17,14 +17,7 @@ function service:add_subscription(node, actor, jid)
 end
 
 function service:remove_subscription(node, actor, jid)
-	local node_obj = self.nodes[node];
-	if not node_obj then
-		return false, "item-not-found";
-	end
-	if not node_obj.subscribers[jid] then
-		return false, "not-subscribed";
-	end
-	node_obj.subscribers[jid] = nil;
+	self.nodes[node].subscribers[jid] = nil;
 	return true;
 end
 
@@ -54,18 +47,6 @@ function service:publish(node, actor, id, item)
 	return true;
 end
 
-function service:retract(node, actor, id, retract)
-	local node_obj = self.nodes[node];
-	if (not node_obj) or (not node_obj.data[id]) then
-		return false, "item-not-found";
-	end
-	node_obj.data[id] = nil;
-	if retract then
-		self.cb.broadcaster(node, node_obj.subscribers, retract);
-	end
-	return true
-end
-
 function service:get(node, actor, id)
 	local node_obj = self.nodes[node];
 	if node_obj then
@@ -75,10 +56,6 @@ function service:get(node, actor, id)
 			return node_obj.data;
 		end
 	end
-end
-
-function service:get_nodes(actor)
-	return true, self.nodes;
 end
 
 return _M;
