@@ -41,8 +41,7 @@ module:hook("iq/bare", function(data)
 		if ret ~= nil then return ret; end
 		return module:fire_event("iq-"..type.."/bare/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..type.."/bare/"..stanza.attr.id, data);
-		return true;
+		return module:fire_event("iq-"..type.."/bare/"..stanza.attr.id, data);
 	end
 end);
 
@@ -57,8 +56,7 @@ module:hook("iq/self", function(data)
 		if ret ~= nil then return ret; end
 		return module:fire_event("iq-"..type.."/self/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..type.."/self/"..stanza.attr.id, data);
-		return true;
+		return module:fire_event("iq-"..type.."/self/"..stanza.attr.id, data);
 	end
 end);
 
@@ -73,7 +71,6 @@ module:hook("iq/host", function(data)
 		if ret ~= nil then return ret; end
 		return module:fire_event("iq-"..type.."/host/"..child.attr.xmlns..":"..child.name, data);
 	else
-		module:fire_event("iq-"..type.."/host/"..stanza.attr.id, data);
-		return true;
+		return module:fire_event("iq-"..type.."/host/"..stanza.attr.id, data);
 	end
 end);
