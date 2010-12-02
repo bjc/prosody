@@ -32,7 +32,6 @@ local STAT_UNIT = 1 -- byte
 local type = use "type"
 local pairs = use "pairs"
 local ipairs = use "ipairs"
-local tonumber = use "tonumber"
 local tostring = use "tostring"
 local collectgarbage = use "collectgarbage"
 
@@ -77,7 +76,6 @@ local stats
 local idfalse
 local addtimer
 local closeall
-local addsocket
 local addserver
 local getserver
 local wrapserver
@@ -128,8 +126,6 @@ local _cleanqueue
 local _timer
 
 local _maxclientsperserver
-
-local _maxsslhandshake
 
 ----------------------------------// DEFINITION //--
 
