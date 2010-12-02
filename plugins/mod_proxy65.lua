@@ -10,9 +10,10 @@ module:unload("proxy65");
 module:load("proxy65", <proxy65_jid>);
 ]]--
 
+if module:get_host_type() ~= "component" then
+	error("proxy65 should be loaded as a component, please see http://prosody.im/doc/components", 0);
+end
 
-local module = module;
-local tostring = tostring;
 local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
 local connlisteners = require "net.connlisteners";
@@ -20,7 +21,7 @@ local sha1 = require "util.hashes".sha1;
 local server = require "net.server";
 
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
-local sessions, transfers, replies_cache = {}, {}, {};
+local sessions, transfers, component, replies_cache = {}, {}, nil, {};
 
 local proxy_port = module:get_option("proxy65_port") or 5000;
 local proxy_interface = module:get_option("proxy65_interface") or "*";
@@ -33,12 +34,12 @@ local connlistener = { default_port = proxy_port, default_interface = proxy_inte
 function connlistener.onincoming(conn, data)
 	local session = sessions[conn] or {};
 	
-	if session.setup == nil and data ~= nil and data:byte(1) == 0x05 and #data > 2 then
-		local nmethods = data:byte(2);
+	if session.setup == nil and data ~= nil and data:sub(1):byte() == 0x05 and data:len() > 2 then
+		local nmethods = data:sub(2):byte();
 		local methods = data:sub(3);
 		local supported = false;
 		for i=1, nmethods, 1 do
-			if(methods:byte(i) == 0x00) then -- 0x00 == method: NO AUTH
+			if(methods:sub(i):byte() == 0x00) then -- 0x00 == method: NO AUTH
 				supported = true;
 				break;
 			end
@@ -63,14 +64,14 @@ function connlistener.onincoming(conn, data)
 				return;
 			end
 		end
-		if data ~= nil and #data == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
-			data:byte(1) == 0x05 and -- SOCKS5 has 5 in first byte
-			data:byte(2) == 0x01 and -- CMD must be 1
-			data:byte(3) == 0x00 and -- RSV must be 0
-			data:byte(4) == 0x03 and -- ATYP must be 3
-			data:byte(5) == 40 and -- SHA1 HASH length must be 40 (0x28)
-			data:byte(-2) == 0x00 and -- PORT must be 0, size 2 byte
-			data:byte(-1) == 0x00
+		if data ~= nil and data:len() == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
+			data:sub(1):byte() == 0x05 and -- SOCKS5 has 5 in first byte
+			data:sub(2):byte() == 0x01 and -- CMD must be 1
+			data:sub(3):byte() == 0x00 and -- RSV must be 0
+			data:sub(4):byte() == 0x03 and -- ATYP must be 3
+			data:sub(5):byte() == 40 and -- SHA1 HASH length must be 40 (0x28)
+			data:sub(-2):byte() == 0x00 and -- PORT must be 0, size 2 byte
+			data:sub(-1):byte() == 0x00
 		then
 			local sha = data:sub(6, 45); -- second param is not count! it's the ending index (included!)
 			if transfers[sha] == nil then
@@ -86,7 +87,7 @@ function connlistener.onincoming(conn, data)
 				server.link(conn, transfers[sha].target, max_buffer_size);
 				server.link(transfers[sha].target, conn, max_buffer_size);
 			end
-			conn:write(string.char(5, 0, 0, 3, #sha) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
+			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:lock_read(true)
 		else
 			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
@@ -117,11 +118,7 @@ function connlistener.ondisconnect(conn, err)
 	end
 end
 
-module:add_identity("proxy", "bytestreams", name);
-module:add_feature("http://jabber.org/protocol/bytestreams");
-
-module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
-	local origin, stanza = event.origin, event.stanza;
+local function get_disco_info(stanza)
 	local reply = replies_cache.disco_info;
 	if reply == nil then
 	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#info")
@@ -132,12 +129,10 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(
 
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
-	origin.send(reply);
-	return true;
-end, -1);
+	return reply;
+end
 
-module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
-	local origin, stanza = event.origin, event.stanza;
+local function get_disco_items(stanza)
 	local reply = replies_cache.disco_items;
 	if reply == nil then
 	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#items");
@@ -146,12 +141,10 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function
 	
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
-	origin.send(reply);
-	return true;
-end, -1);
+	return reply;
+end
 
-module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function(event)
-	local origin, stanza = event.origin, event.stanza;
+local function get_stream_host(origin, stanza)
 	local reply = replies_cache.stream_host;
 	local err_reply = replies_cache.stream_host_err;
 	local sid = stanza.tags[1].attr.sid;
@@ -186,21 +179,23 @@ module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
 	reply.tags[1].attr.sid = sid;
-	origin.send(reply);
-	return true;
-end);
+	return reply;
+end
 
 module.unload = function()
 	connlisteners.deregister(module.host .. ':proxy65');
 end
 
 local function set_activation(stanza)
-	local to, reply;
-	local from = stanza.attr.from;
-	local query = stanza.tags[1];
-	local sid = query.attr.sid;
-	if query.tags[1] and query.tags[1].name == "activate" then
-		to = query.tags[1][1];
+	local from, to, sid, reply = nil;
+	from = stanza.attr.from;
+	if stanza.tags[1] ~= nil and tostring(stanza.tags[1].name) == "query" then
+		if stanza.tags[1].attr ~= nil then
+			sid = stanza.tags[1].attr.sid;
+		end
+		if stanza.tags[1].tags[1] ~= nil and tostring(stanza.tags[1].tags[1].name) == "activate" then
+			to = stanza.tags[1].tags[1][1];
+		end
 	end
 	if from ~= nil and to ~= nil and sid ~= nil then
 		reply = st.iq({type="result", from=host, to=from});
@@ -209,35 +204,52 @@ local function set_activation(stanza)
 	return reply, from, to, sid;
 end
 
-module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function(event)
+function handle_to_domain(event)
 	local origin, stanza = event.origin, event.stanza;
-
-	module:log("debug", "Received activation request from %s", stanza.attr.from);
-	local reply, from, to, sid = set_activation(stanza);
-	if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
-		local sha = sha1(sid .. from .. to, true);
-		if transfers[sha] == nil then
-			module:log("error", "transfers[sha]: nil");
-		elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
-			origin.send(reply);
-			transfers[sha].activated = true;
-			transfers[sha].target:lock_read(false);
-			transfers[sha].initiator:lock_read(false);
+	if stanza.attr.type == "get" then
+		local xmlns = stanza.tags[1].attr.xmlns
+		if xmlns == "http://jabber.org/protocol/disco#info" then
+			origin.send(get_disco_info(stanza));
+			return true;
+		elseif xmlns == "http://jabber.org/protocol/disco#items" then
+			origin.send(get_disco_items(stanza));
+			return true;
+		elseif xmlns == "http://jabber.org/protocol/bytestreams" then
+			origin.send(get_stream_host(origin, stanza));
+			return true;
 		else
-			module:log("debug", "Both parties were not yet connected");
-			local message = "Neither party is connected to the proxy";
-			if transfers[sha].initiator then
-				message = "The recipient is not connected to the proxy";
-			elseif transfers[sha].target then
-				message = "The sender (you) is not connected to the proxy";
-			end
-			origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			return true;
 		end
-		return true;
-	else
-		module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+	else -- stanza.attr.type == "set"
+		module:log("debug", "Received activation request from %s", stanza.attr.from);
+		local reply, from, to, sid = set_activation(stanza);
+		if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
+			local sha = sha1(sid .. from .. to, true);
+			if transfers[sha] == nil then
+				module:log("error", "transfers[sha]: nil");
+			elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
+				origin.send(reply);
+				transfers[sha].activated = true;
+				transfers[sha].target:lock_read(false);
+				transfers[sha].initiator:lock_read(false);
+			else
+				module:log("debug", "Both parties were not yet connected");
+				local message = "Neither party is connected to the proxy";
+				if transfers[sha].initiator then
+					message = "The recipient is not connected to the proxy";
+				elseif transfers[sha].target then
+					message = "The sender (you) is not connected to the proxy";
+				end
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
+			end
+			return true;
+		else
+			module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+		end
 	end
-end);
+end
+module:hook("iq/host", handle_to_domain, -1);
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 	module:log("error", "mod_proxy65: Could not establish a connection listener. Check your configuration please.");
