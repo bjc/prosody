@@ -192,15 +192,12 @@ module.unload = function()
 end
 
 local function set_activation(stanza)
-	local from, to, sid, reply = nil;
-	from = stanza.attr.from;
-	if stanza.tags[1] ~= nil and tostring(stanza.tags[1].name) == "query" then
-		if stanza.tags[1].attr ~= nil then
-			sid = stanza.tags[1].attr.sid;
-		end
-		if stanza.tags[1].tags[1] ~= nil and tostring(stanza.tags[1].tags[1].name) == "activate" then
-			to = stanza.tags[1].tags[1][1];
-		end
+	local to, reply;
+	local from = stanza.attr.from;
+	local query = stanza.tags[1];
+	local sid = query.attr.sid;
+	if query.tags[1] and query.tags[1].name == "activate" then
+		to = query.tags[1][1];
 	end
 	if from ~= nil and to ~= nil and sid ~= nil then
 		reply = st.iq({type="result", from=host, to=from});
