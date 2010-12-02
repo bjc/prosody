@@ -117,6 +117,9 @@ function connlistener.ondisconnect(conn, err)
 	end
 end
 
+module:add_identity("proxy", "bytestreams", name);
+module:add_feature("http://jabber.org/protocol/bytestreams");
+
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local reply = replies_cache.disco_info;
