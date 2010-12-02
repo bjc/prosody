@@ -43,15 +43,15 @@ local function handle_stanza(event)
 	return true;
 end
 
-module:hook("iq/bare", handle_stanza);
-module:hook("message/bare", handle_stanza);
-module:hook("presence/bare", handle_stanza);
-module:hook("iq/full", handle_stanza);
-module:hook("message/full", handle_stanza);
-module:hook("presence/full", handle_stanza);
-module:hook("iq/host", handle_stanza);
-module:hook("message/host", handle_stanza);
-module:hook("presence/host", handle_stanza);
+module:hook("iq/bare", handle_stanza, -1);
+module:hook("message/bare", handle_stanza, -1);
+module:hook("presence/bare", handle_stanza, -1);
+module:hook("iq/full", handle_stanza, -1);
+module:hook("message/full", handle_stanza, -1);
+module:hook("presence/full", handle_stanza, -1);
+module:hook("iq/host", handle_stanza, -1);
+module:hook("message/host", handle_stanza, -1);
+module:hook("presence/host", handle_stanza, -1);
 
 --- Handle authentication attempts by components
 function handle_component_auth(event)
