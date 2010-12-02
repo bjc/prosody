@@ -77,6 +77,7 @@ local stats
 local idfalse
 local addtimer
 local closeall
+local addsocket
 local addserver
 local getserver
 local wrapserver
