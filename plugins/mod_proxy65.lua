@@ -249,7 +249,7 @@ function handle_to_domain(event)
 		end
 	end
 end
-module:hook("iq/host", handle_to_domain);
+module:hook("iq/host", handle_to_domain, -1);
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 	module:log("error", "mod_proxy65: Could not establish a connection listener. Check your configuration please.");
