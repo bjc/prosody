@@ -13,7 +13,7 @@ local jid_split = require "util.jid".split;
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
-if module::get_host_type() == "local" then
+if module:get_host_type() == "local" then
 	module:hook("iq/full", function(data)
 		-- IQ to full JID recieved
 		local origin, stanza = data.origin, data.stanza;
