@@ -31,12 +31,12 @@ local connlistener = { default_port = proxy_port, default_interface = proxy_inte
 function connlistener.onincoming(conn, data)
 	local session = sessions[conn] or {};
 	
-	if session.setup == nil and data ~= nil and data:sub(1):byte() == 0x05 and data:len() > 2 then
-		local nmethods = data:sub(2):byte();
+	if session.setup == nil and data ~= nil and data:byte(1) == 0x05 and data:len() > 2 then
+		local nmethods = data:byte(2);
 		local methods = data:sub(3);
 		local supported = false;
 		for i=1, nmethods, 1 do
-			if(methods:sub(i):byte() == 0x00) then -- 0x00 == method: NO AUTH
+			if(methods:byte(i) == 0x00) then -- 0x00 == method: NO AUTH
 				supported = true;
 				break;
 			end
@@ -62,13 +62,13 @@ function connlistener.onincoming(conn, data)
 			end
 		end
 		if data ~= nil and data:len() == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
-			data:sub(1):byte() == 0x05 and -- SOCKS5 has 5 in first byte
-			data:sub(2):byte() == 0x01 and -- CMD must be 1
-			data:sub(3):byte() == 0x00 and -- RSV must be 0
-			data:sub(4):byte() == 0x03 and -- ATYP must be 3
-			data:sub(5):byte() == 40 and -- SHA1 HASH length must be 40 (0x28)
-			data:sub(-2):byte() == 0x00 and -- PORT must be 0, size 2 byte
-			data:sub(-1):byte() == 0x00
+			data:byte(1) == 0x05 and -- SOCKS5 has 5 in first byte
+			data:byte(2) == 0x01 and -- CMD must be 1
+			data:byte(3) == 0x00 and -- RSV must be 0
+			data:byte(4) == 0x03 and -- ATYP must be 3
+			data:byte(5) == 40 and -- SHA1 HASH length must be 40 (0x28)
+			data:byte(-2) == 0x00 and -- PORT must be 0, size 2 byte
+			data:byte(-1) == 0x00
 		then
 			local sha = data:sub(6, 45); -- second param is not count! it's the ending index (included!)
 			if transfers[sha] == nil then
