@@ -11,7 +11,6 @@ module.host = "*" -- Global module
 local hosts = _G.hosts;
 local lxp = require "lxp";
 local init_xmlhandlers = require "core.xmlhandlers"
-local server = require "net.server";
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
@@ -21,6 +20,7 @@ local core_process_stanza = core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
+local timer = require "util.timer";
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -401,13 +401,14 @@ function on_timer()
 		dead_sessions[i] = nil;
 		sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 	end
+	return 1;
 end
 
 
 local function setup()
 	local ports = module:get_option("bosh_ports") or { 5280 };
 	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
-	server.addtimer(on_timer);
+	timer.add_task(1, on_timer);
 end
 if prosody.start_time then -- already started
 	setup();
