@@ -10,9 +10,6 @@ module:unload("proxy65");
 module:load("proxy65", <proxy65_jid>);
 ]]--
 
-if module:get_host_type() ~= "component" then
-	error("proxy65 should be loaded as a component, please see http://prosody.im/doc/components", 0);
-end
 
 local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
@@ -21,7 +18,7 @@ local sha1 = require "util.hashes".sha1;
 local server = require "net.server";
 
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
-local sessions, transfers, component, replies_cache = {}, {}, nil, {};
+local sessions, transfers, replies_cache = {}, {}, {};
 
 local proxy_port = module:get_option("proxy65_port") or 5000;
 local proxy_interface = module:get_option("proxy65_interface") or "*";
