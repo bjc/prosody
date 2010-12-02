@@ -11,6 +11,8 @@ module:load("proxy65", <proxy65_jid>);
 ]]--
 
 
+local module = module;
+local tostring = tostring;
 local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
 local st = require "util.stanza";
 local connlisteners = require "net.connlisteners";
