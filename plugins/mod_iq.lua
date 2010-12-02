@@ -13,21 +13,23 @@ local jid_split = require "util.jid".split;
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
-module:hook("iq/full", function(data)
-	-- IQ to full JID recieved
-	local origin, stanza = data.origin, data.stanza;
+if module::get_host_type() == "local" then
+	module:hook("iq/full", function(data)
+		-- IQ to full JID recieved
+		local origin, stanza = data.origin, data.stanza;
 
-	local session = full_sessions[stanza.attr.to];
-	if session then
-		-- TODO fire post processing event
-		session.send(stanza);
-	else -- resource not online
-		if stanza.attr.type == "get" or stanza.attr.type == "set" then
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		local session = full_sessions[stanza.attr.to];
+		if session then
+			-- TODO fire post processing event
+			session.send(stanza);
+		else -- resource not online
+			if stanza.attr.type == "get" or stanza.attr.type == "set" then
+				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+			end
 		end
-	end
-	return true;
-end);
+		return true;
+	end);
+end
 
 module:hook("iq/bare", function(data)
 	-- IQ to bare JID recieved
