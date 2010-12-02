@@ -14,7 +14,7 @@ local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
 
-local default_log = require "util.logger".init("xmlhandlers");
+local default_log = require "util.logger".init("xmppstream");
 
 local error = error;
 
