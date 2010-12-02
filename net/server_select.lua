@@ -44,8 +44,9 @@ local coroutine = use "coroutine"
 
 --// lua lib methods //--
 
-local os_time = os.time
 local os_difftime = os.difftime
+local math_min = math.min
+local math_huge = math.huge
 local table_concat = table.concat
 local table_remove = table.remove
 local string_len = string.len
@@ -57,6 +58,7 @@ local coroutine_yield = coroutine.yield
 
 local luasec = use "ssl"
 local luasocket = use "socket" or require "socket"
+local luasocket_gettime = luasocket.gettime
 
 --// extern lib methods //--
 
@@ -796,8 +798,9 @@ end
 loop = function(once) -- this is the main loop of the program
 	if quitting then return "quitting"; end
 	if once then quitting = "once"; end
+	local next_timer_time = math_huge;
 	repeat
-		local read, write, err = socket_select( _readlist, _sendlist, _selecttimeout )
+		local read, write, err = socket_select( _readlist, _sendlist, math_min(_selecttimeout, next_timer_time) )
 		for i, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
 			if handler then
@@ -821,12 +824,16 @@ loop = function(once) -- this is the main loop of the program
 			handler:close( true )	 -- forced disconnect
 		end
 		clean( _closelist )
-		_currenttime = os_time( )
-		if os_difftime( _currenttime - _timer ) >= 1 then
+		_currenttime = luasocket_gettime( )
+		if _currenttime - _timer >= math_min(next_timer_time, 1) then
+			next_timer_time = math_huge;
 			for i = 1, _timerlistlen do
-				_timerlist[ i ]( _currenttime ) -- fire timers
+				local t = _timerlist[ i ]( _currenttime ) -- fire timers
+				if t then next_timer_time = math_min(next_timer_time, t); end
 			end
 			_timer = _currenttime
+		else
+			next_timer_time = next_timer_time - (_currenttime - _timer);
 		end
 		socket_sleep( _sleeptime ) -- wait some time
 		--collectgarbage( )
@@ -886,8 +893,8 @@ use "setmetatable" ( _socketlist, { __mode = "k" } )
 use "setmetatable" ( _readtimes, { __mode = "k" } )
 use "setmetatable" ( _writetimes, { __mode = "k" } )
 
-_timer = os_time( )
-_starttime = os_time( )
+_timer = luasocket_gettime( )
+_starttime = luasocket_gettime( )
 
 addtimer( function( )
 		local difftime = os_difftime( _currenttime - _starttime )
