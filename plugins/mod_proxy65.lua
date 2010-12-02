@@ -33,7 +33,7 @@ local connlistener = { default_port = proxy_port, default_interface = proxy_inte
 function connlistener.onincoming(conn, data)
 	local session = sessions[conn] or {};
 	
-	if session.setup == nil and data ~= nil and data:byte(1) == 0x05 and data:len() > 2 then
+	if session.setup == nil and data ~= nil and data:byte(1) == 0x05 and #data > 2 then
 		local nmethods = data:byte(2);
 		local methods = data:sub(3);
 		local supported = false;
@@ -63,7 +63,7 @@ function connlistener.onincoming(conn, data)
 				return;
 			end
 		end
-		if data ~= nil and data:len() == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
+		if data ~= nil and #data == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
 			data:byte(1) == 0x05 and -- SOCKS5 has 5 in first byte
 			data:byte(2) == 0x01 and -- CMD must be 1
 			data:byte(3) == 0x00 and -- RSV must be 0
@@ -86,7 +86,7 @@ function connlistener.onincoming(conn, data)
 				server.link(conn, transfers[sha].target, max_buffer_size);
 				server.link(transfers[sha].target, conn, max_buffer_size);
 			end
-			conn:write(string.char(5, 0, 0, 3, sha:len()) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
+			conn:write(string.char(5, 0, 0, 3, #sha) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:lock_read(true)
 		else
 			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
