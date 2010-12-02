@@ -10,7 +10,7 @@ module.host = "*" -- Global module
 
 local hosts = _G.hosts;
 local lxp = require "lxp";
-local new_xmpp_stream = require "util.xmppstream".new;
+local init_xmlhandlers = require "core.xmlhandlers"
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
@@ -33,6 +33,7 @@ local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
 local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
 local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 5;
 local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
+local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
@@ -118,10 +119,9 @@ function handle_request(method, body, request)
 	request.log = log;
 	request.on_destroy = on_destroy_request;
 	
-	local stream = new_xmpp_stream(request, stream_callbacks);
-	-- stream:feed() calls the stream_callbacks, so all stanzas in
-	-- the body are processed in this next line before it returns.
-	stream:feed(body);
+	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
+	
+	parser:parse(body);
 	
 	local session = sessions[request.sid];
 	if session then
@@ -282,17 +282,9 @@ function stream_callbacks.streamopened(request, attr)
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
 		local response = st.stanza("body", { xmlns = xmlns_bosh,
-			wait = attr.wait,
-			inactivity = tostring(BOSH_DEFAULT_INACTIVITY),
-			polling = tostring(BOSH_DEFAULT_POLLING),
-			requests = tostring(BOSH_DEFAULT_REQUESTS),
-			hold = tostring(session.bosh_hold),
-			sid = sid, authid = sid,
-			ver  = '1.6', from = session.host,
-			secure = 'true', ["xmpp:version"] = "1.0",
-			["xmlns:xmpp"] = "urn:xmpp:xbosh",
-			["xmlns:stream"] = "http://etherx.jabber.org/streams"
-		}):add_child(features);
+									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120",
+									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0",
+									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
 		
 		request.sid = sid;
