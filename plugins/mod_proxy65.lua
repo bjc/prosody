@@ -118,7 +118,8 @@ function connlistener.ondisconnect(conn, err)
 	end
 end
 
-local function get_disco_info(stanza)
+module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
+	local origin, stanza = event.origin, event.stanza;
 	local reply = replies_cache.disco_info;
 	if reply == nil then
 	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#info")
@@ -129,10 +130,12 @@ local function get_disco_info(stanza)
 
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
-	return reply;
-end
+	origin.send(reply);
+	return true;
+end, -1);
 
-local function get_disco_items(stanza)
+module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
+	local origin, stanza = event.origin, event.stanza;
 	local reply = replies_cache.disco_items;
 	if reply == nil then
 	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#items");
@@ -141,10 +144,12 @@ local function get_disco_items(stanza)
 	
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
-	return reply;
-end
+	origin.send(reply);
+	return true;
+end, -1);
 
-local function get_stream_host(origin, stanza)
+module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function(event)
+	local origin, stanza = event.origin, event.stanza;
 	local reply = replies_cache.stream_host;
 	local err_reply = replies_cache.stream_host_err;
 	local sid = stanza.tags[1].attr.sid;
@@ -179,8 +184,9 @@ local function get_stream_host(origin, stanza)
 	reply.attr.id = stanza.attr.id;
 	reply.attr.to = stanza.attr.from;
 	reply.tags[1].attr.sid = sid;
-	return reply;
-end
+	origin.send(reply);
+	return true;
+end);
 
 module.unload = function()
 	connlisteners.deregister(module.host .. ':proxy65');
@@ -204,52 +210,35 @@ local function set_activation(stanza)
 	return reply, from, to, sid;
 end
 
-function handle_to_domain(event)
+module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type == "get" then
-		local xmlns = stanza.tags[1].attr.xmlns
-		if xmlns == "http://jabber.org/protocol/disco#info" then
-			origin.send(get_disco_info(stanza));
-			return true;
-		elseif xmlns == "http://jabber.org/protocol/disco#items" then
-			origin.send(get_disco_items(stanza));
-			return true;
-		elseif xmlns == "http://jabber.org/protocol/bytestreams" then
-			origin.send(get_stream_host(origin, stanza));
-			return true;
+
+	module:log("debug", "Received activation request from %s", stanza.attr.from);
+	local reply, from, to, sid = set_activation(stanza);
+	if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
+		local sha = sha1(sid .. from .. to, true);
+		if transfers[sha] == nil then
+			module:log("error", "transfers[sha]: nil");
+		elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
+			origin.send(reply);
+			transfers[sha].activated = true;
+			transfers[sha].target:lock_read(false);
+			transfers[sha].initiator:lock_read(false);
 		else
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-			return true;
-		end
-	else -- stanza.attr.type == "set"
-		module:log("debug", "Received activation request from %s", stanza.attr.from);
-		local reply, from, to, sid = set_activation(stanza);
-		if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
-			local sha = sha1(sid .. from .. to, true);
-			if transfers[sha] == nil then
-				module:log("error", "transfers[sha]: nil");
-			elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
-				origin.send(reply);
-				transfers[sha].activated = true;
-				transfers[sha].target:lock_read(false);
-				transfers[sha].initiator:lock_read(false);
-			else
-				module:log("debug", "Both parties were not yet connected");
-				local message = "Neither party is connected to the proxy";
-				if transfers[sha].initiator then
-					message = "The recipient is not connected to the proxy";
-				elseif transfers[sha].target then
-					message = "The sender (you) is not connected to the proxy";
-				end
-				origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
+			module:log("debug", "Both parties were not yet connected");
+			local message = "Neither party is connected to the proxy";
+			if transfers[sha].initiator then
+				message = "The recipient is not connected to the proxy";
+			elseif transfers[sha].target then
+				message = "The sender (you) is not connected to the proxy";
 			end
-			return true;
-		else
-			module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+			origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 		end
+		return true;
+	else
+		module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
 	end
-end
-module:hook("iq/host", handle_to_domain, -1);
+end);
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
 	module:log("error", "mod_proxy65: Could not establish a connection listener. Check your configuration please.");
