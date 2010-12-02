@@ -151,15 +151,15 @@ function stanza_handler(event)
 	handle_to_domain(origin, stanza);
 	return true;
 end
-module:hook("iq/bare", stanza_handler);
-module:hook("message/bare", stanza_handler);
-module:hook("presence/bare", stanza_handler);
-module:hook("iq/full", stanza_handler);
-module:hook("message/full", stanza_handler);
-module:hook("presence/full", stanza_handler);
-module:hook("iq/host", stanza_handler);
-module:hook("message/host", stanza_handler);
-module:hook("presence/host", stanza_handler);
+module:hook("iq/bare", stanza_handler, -1);
+module:hook("message/bare", stanza_handler, -1);
+module:hook("presence/bare", stanza_handler, -1);
+module:hook("iq/full", stanza_handler, -1);
+module:hook("message/full", stanza_handler, -1);
+module:hook("presence/full", stanza_handler, -1);
+module:hook("iq/host", stanza_handler, -1);
+module:hook("message/host", stanza_handler, -1);
+module:hook("presence/host", stanza_handler, -1);
 
 hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
