@@ -25,6 +25,7 @@ function handle_pubsub_iq(event)
 end
 
 local pubsub_errors = {
+	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 };
@@ -50,7 +51,7 @@ function handlers.get_items(origin, stanza, items)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:add_child(data);
 	else
-		reply = st.error_reply(stanza, "cancel", "item-not-found", "Item could not be found in this node");
+		reply = pubsub_error_reply(stanza, "item-not-found");
 	end
 	return origin.send(reply);
 end
@@ -63,7 +64,7 @@ function handlers.set_create(origin, stanza, create)
 		if ok then
 			reply = st.reply(stanza);
 		else
-			reply = st.error_reply(stanza, "cancel", ret);
+			reply = pubsub_error_reply(stanza, ret);
 		end
 	else
 		repeat
