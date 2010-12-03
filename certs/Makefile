@@ -11,8 +11,6 @@ keysize=2048
 # signing request that you can submit to a CA, or `make yourhost.cert`
 # to generate a self signed certificate.
 
-.PRECIOUS: %.cnf %.key
-
 # To request a cert
 %.csr: %.cnf %.key
 	openssl req -new -key $(lastword $^) -out $@ -utf8 -config $(firstword $^)
@@ -27,4 +25,4 @@ keysize=2048
 
 %.key:
 	openssl genrsa $(keysize) > $@
-	@chmod 400 $@
+	@chmod 400 -c $@
