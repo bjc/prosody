@@ -17,7 +17,14 @@ function service:add_subscription(node, actor, jid)
 end
 
 function service:remove_subscription(node, actor, jid)
-	self.nodes[node].subscribers[jid] = nil;
+	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
+	if not node_obj.subscribers[jid] then
+		return false, "not-subscribed";
+	end
+	node_obj.subscribers[jid] = nil;
 	return true;
 end
 
