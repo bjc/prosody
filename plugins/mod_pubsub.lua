@@ -28,6 +28,7 @@ local pubsub_errors = {
 	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
 	["item-not-found"] = { "cancel", "item-not-found" };
+	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 };
 function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
@@ -93,6 +94,21 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 					jid = jid,
 					subscription = "subscribed"
 				});
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
+function handlers.set_unsubscribe(origin, stanza, unsubscribe)
+	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
+	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
+		return origin.send(pubsub_error_reply(stanza, "invalid-jid"));
+	end
+	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
+	local reply;
+	if ok then
+		reply = st.reply(stanza);
 	else
 		reply = pubsub_error_reply(stanza, ret);
 	end
