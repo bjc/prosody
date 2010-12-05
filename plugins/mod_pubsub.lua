@@ -151,6 +151,8 @@ function handlers.set_retract(origin, stanza, retract)
 end
 
 function simple_broadcast(node, jids, item)
+	item = st.clone(item);
+	item.attr.xmlns = nil; -- Clear the pubsub namespace
 	local message = st.message({ from = module.host, type = "headline" })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag("items", { node = node })
