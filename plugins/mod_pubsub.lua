@@ -76,7 +76,7 @@ function handlers.set_create(origin, stanza, create)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:tag("create", { node = node });
 	end
-	origin.send(reply);
+	return origin.send(reply);
 end
 
 function handlers.set_subscribe(origin, stanza, subscribe)
@@ -126,6 +126,24 @@ function handlers.set_publish(origin, stanza, publish)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:tag("publish", { node = node })
 					:tag("item", { id = id });
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
+function handlers.set_retract(origin, stanza, retract)
+	local node, notify = retract.attr.node, retract.attr.notify;
+	notify = (notify == "1") or (notify == "true");
+	local item = retract:get_child("item");
+	local id = item and item.attr.id
+	local reply, notifier;
+	if notify then
+		notifier = st.stanza("retract", { id = id });
+	end
+	local ok, ret = service:retract(node, stanza.attr.from, id, notifier);
+	if ok then
+		reply = st.reply(stanza);
 	else
 		reply = pubsub_error_reply(stanza, ret);
 	end

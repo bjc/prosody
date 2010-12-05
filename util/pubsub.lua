@@ -54,6 +54,18 @@ function service:publish(node, actor, id, item)
 	return true;
 end
 
+function service:retract(node, actor, id, retract)
+	local node_obj = self.nodes[node];
+	if (not node_obj) or (not node_obj.data[id]) then
+		return false, "item-not-found";
+	end
+	node_obj.data[id] = nil;
+	if retract then
+		self.cb.broadcaster(node, node_obj.subscribers, retract);
+	end
+	return true
+end
+
 function service:get(node, actor, id)
 	local node_obj = self.nodes[node];
 	if node_obj then
