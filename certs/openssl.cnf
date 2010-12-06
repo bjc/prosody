@@ -22,7 +22,7 @@ prompt = no
 [ distinguished_name ]
 
 commonName             = example.com
-countryName            = UK
+countryName            = GB
 localityName           = The Internet
 organizationName       = Your Organisation
 organizationalUnitName = XMPP Department
