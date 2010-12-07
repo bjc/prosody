@@ -47,12 +47,13 @@ function adduser(params)
 end
 
 function user_exists(params)
-	local provider = prosody.hosts[params.host].users;
+	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
+	local provider = prosody.hosts[host].users;
 	if not(provider) or provider.name == "null" then
-		usermanager.initialize_host(params.host);
+		usermanager.initialize_host(host);
 	end
 	
-	return usermanager.user_exists(params.user, params.host);
+	return usermanager.user_exists(user, host);
 end
 
 function passwd(params)
