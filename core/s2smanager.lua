@@ -401,11 +401,13 @@ local function check_cert_status(session)
 	end
 
 	if cert then
-		local chain_valid, err = conn:getpeerchainvalid()
+		local chain_valid, errors = conn:getpeerverification()
+		-- Is there any interest in printing out all/the number of errors here?
 		if not chain_valid then
+			(session.log or log)("debug", "certificate chain validation result: invalid");
 			session.cert_chain_status = "invalid";
-			(session.log or log)("debug", "certificate chain validation result: %s", err);
 		else
+			(session.log or log)("debug", "certificate chain validation result: valid");
 			session.cert_chain_status = "valid";
 
 			local host = session.direction == "incoming" and session.from_host or session.to_host
