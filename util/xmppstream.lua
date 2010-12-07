@@ -31,6 +31,9 @@ local xmlns_streams = "http://etherx.jabber.org/streams";
 local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
+_M.ns_separator = ns_separator;
+_M.ns_pattern = ns_pattern;
+
 function new_sax_handlers(session, stream_callbacks)
 	local xml_handlers = {};
 	
