@@ -41,9 +41,10 @@ local new_xmpp_handlers = xmppstream.new_sax_handlers;
 local dm = require "util.datamanager"
 dm.set_data_path("data");
 
-local ns_xep227 = "http://www.xmpp.org/extensions/xep-0227.html#ns";
 local ns_separator = xmppstream.ns_separator;
 local ns_pattern = xmppstream.ns_pattern;
+
+local xmlns_xep227 = "http://www.xmpp.org/extensions/xep-0227.html#ns";
 
 -----------------------------------------------------------------------
 
@@ -147,7 +148,7 @@ local user_name = "";
 
 local cb = {
 	stream_tag = "user",
-	stream_ns = ns_xep227,
+	stream_ns = xmlns_xep227,
 };
 function cb.streamopened(session, attr)
 	session.notopen = false;
@@ -196,10 +197,10 @@ function lxp_handlers.StartElement(parser, elementname, attributes)
 	if curr_host ~= "" then
 		-- forward to xmlhandlers
 		user_handlers:StartElement(elementname, attributes);
-	elseif (curr_ns == ns_xep227) and (name == "host") then
+	elseif (curr_ns == xmlns_xep227) and (name == "host") then
 		curr_host = attributes["jid"]; -- start of host element
 		print("Begin parsing host "..curr_host);
-	elseif (curr_ns ~= ns_xep227) or (name ~= "server-data") then
+	elseif (curr_ns ~= xmlns_xep227) or (name ~= "server-data") then
 		io.stderr:write("Unhandled XML element: ", name, "\n");
 		os.exit(1);
 	end
@@ -214,14 +215,14 @@ function lxp_handlers.EndElement(parser, elementname)
 	--count = count - 1;
 	--io.write("- ", string.rep(" ", count), name, "  (", curr_ns, ")", "\n")
 	if curr_host ~= "" then
-		if (curr_ns == ns_xep227) and (name == "host") then
+		if (curr_ns == xmlns_xep227) and (name == "host") then
 			print("End parsing host "..curr_host);
 			curr_host = "" -- end of host element
 		else
 			-- forward to xmlhandlers
 			user_handlers:EndElement(elementname);
 		end
-	elseif (curr_ns ~= ns_xep227) or (name ~= "server-data") then
+	elseif (curr_ns ~= xmlns_xep227) or (name ~= "server-data") then
 		io.stderr:write("Unhandled XML element: ", name, "\n");
 		os.exit(1);
 	end
