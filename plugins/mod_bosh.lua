@@ -10,7 +10,7 @@ module.host = "*" -- Global module
 
 local hosts = _G.hosts;
 local lxp = require "lxp";
-local init_xmlhandlers = require "core.xmlhandlers"
+local new_xmpp_stream = require "util.xmppstream".new;
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
@@ -119,9 +119,10 @@ function handle_request(method, body, request)
 	request.log = log;
 	request.on_destroy = on_destroy_request;
 	
-	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
-	
-	parser:parse(body);
+	local stream = new_xmpp_stream(request, stream_callbacks);
+	-- stream:feed() calls the stream_callbacks, so all stanzas in
+	-- the body are processed in this next line before it returns.
+	stream:feed(body);
 	
 	local session = sessions[request.sid];
 	if session then
