@@ -10,7 +10,6 @@
 local config = require "core.configmanager";
 local encodings = require "util.encodings";
 local stringprep = encodings.stringprep;
-local storagemanager = require "core.storagemanager";
 local usermanager = require "core.usermanager";
 local signal = require "util.signal";
 local set = require "util.set";
@@ -39,11 +38,10 @@ function adduser(params)
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-	storagemanager.initialize_host(host);
 	
-	local ok, errmsg = usermanager.create_user(user, password, host);
+	local ok = usermanager.create_user(user, password, host);
 	if not ok then
-		return false, errmsg;
+		return false, "unable-to-save-data";
 	end
 	return true;
 end
@@ -54,7 +52,6 @@ function user_exists(params)
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-	storagemanager.initialize_host(host);
 	
 	return usermanager.user_exists(user, host);
 end
