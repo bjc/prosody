@@ -36,13 +36,14 @@ end
 
 local lxp = require "lxp";
 local st = require "util.stanza";
-local init_xmlhandlers = require "core.xmlhandlers";
+local xmppstream = require "util.xmppstream";
+local new_xmpp_handlers = xmppstream.new_sax_handlers;
 local dm = require "util.datamanager"
 dm.set_data_path("data");
 
-local ns_separator = "\1";
-local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 local ns_xep227 = "http://www.xmpp.org/extensions/xep-0227.html#ns";
+local ns_separator = xmppstream.ns_separator;
+local ns_pattern = xmppstream.ns_pattern;
 
 -----------------------------------------------------------------------
 
@@ -176,7 +177,7 @@ function cb.handlestanza(session, stanza)
 	end
 end
 
-local user_handlers = init_xmlhandlers({ notopen = true, }, cb);
+local user_handlers = new_xmpp_handlers({ notopen = true }, cb);
 
 -----------------------------------------------------------------------
 
