@@ -573,6 +573,20 @@ local function print_subject(print, subject)
 	end
 end
 
+-- As much as it pains me to use the 0-based depths that OpenSSL does,
+-- I think there's going to be more confusion among operators if we
+-- break from that.
+local function print_errors(print, errors)
+	for depth, t in ipairs(errors) do
+		print(
+			("    %d: %s"):format(
+				depth-1,
+				table.concat(t, "\n|        ")
+			)
+		);
+	end
+end
+
 function def_env.s2s:showcert(domain)
 	local ser = require "util.serialization".serialize;
 	local print = self.session.print;
@@ -588,16 +602,17 @@ function def_env.s2s:showcert(domain)
 	for session in domain_sessions do
 		local conn = session.conn;
 		conn = conn and conn:socket();
-		if not conn.getpeercertificate then
+		if not conn.getpeerchain then
 			if conn.dohandshake then
 				error("This version of LuaSec does not support certificate viewing");
 			end
 		else
-			local cert = conn:getpeercertificate();
+			local certs = conn:getpeerchain();
+			local cert = certs[1];
 			if cert then
 				local digest = cert:digest("sha1");
 				if not cert_set[digest] then
-					local chain_valid, chain_err = conn:getpeerchainvalid();
+					local chain_valid, chain_errors = conn:getpeerverification();
 					cert_set[digest] = {
 						{
 						  from = session.from_host,
@@ -605,8 +620,8 @@ function def_env.s2s:showcert(domain)
 						  direction = session.direction
 						};
 						chain_valid = chain_valid;
-						chain_err = chain_err;
-						cert = cert;
+						chain_errors = chain_errors;
+						certs = certs;
 					};
 				else
 					table.insert(cert_set[digest], {
@@ -635,7 +650,8 @@ function def_env.s2s:showcert(domain)
 	end
 	
 	for cert_info in values(domain_certs) do
-		local cert = cert_info.cert;
+		local certs = cert_info.certs;
+		local cert = certs[1];
 		print("---")
 		print("Fingerprint (SHA1): "..pretty_fingerprint(cert:digest("sha1")));
 		print("");
@@ -649,9 +665,15 @@ function def_env.s2s:showcert(domain)
 			end
 		end
 		print("");
-		local chain_valid, err = cert_info.chain_valid, cert_info.chain_err;
+		local chain_valid, errors = cert_info.chain_valid, cert_info.chain_errors;
 		local valid_identity = cert_verify_identity(domain, "xmpp-server", cert);
-		print("Trusted certificate: "..(chain_valid and "Yes" or ("No ("..err..")")));
+		if chain_valid then
+			print("Trusted certificate: Yes");
+		else
+			print("Trusted certificate: No");
+			print_errors(print, errors);
+		end
+		print("");
 		print("Issuer: ");
 		print_subject(print, cert:issuer());
 		print("");
