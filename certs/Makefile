@@ -27,4 +27,4 @@ keysize=2048
 
 %.key:
 	openssl genrsa $(keysize) > $@
-	@chmod 400 -c $@
+	@chmod 400 $@
