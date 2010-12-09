@@ -219,7 +219,7 @@ function list_load(username, host, datastore)
 	local success, ret = pcall(data);
 	if not success then
 		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return nil;
+		return nil, "Error reading storage";
 	end
 	return items;
 end
