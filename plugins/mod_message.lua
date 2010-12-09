@@ -14,7 +14,6 @@ local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local user_exists = require "core.usermanager".user_exists;
-local offlinemanager = require "core.offlinemanager";
 local t_insert = table.insert;
 
 local function process_to_bare(bare, origin, stanza)
@@ -47,7 +46,11 @@ local function process_to_bare(bare, origin, stanza)
 		local node, host = jid_split(bare);
 		if user_exists(node, host) then
 			-- TODO apply the default privacy list
-			offlinemanager.store(node, host, stanza);
+
+                        module:fire_event('message/offline/store', {
+                            origin = origin,
+                            stanza = stanza,
+                        });
 		else
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
