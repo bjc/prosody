@@ -708,31 +708,12 @@ function def_env.s2s:close(from, to)
 end
 
 def_env.host = {}; def_env.hosts = def_env.host;
-function def_env.host:activate(hostname, config)
-	local hostmanager_activate = require "core.hostmanager".activate;
-	if hosts[hostname] then
-		return false, "The host "..tostring(hostname).." is already activated";
-	end
-	
-	local defined_hosts = config or configmanager.getconfig();
-	if not config and not defined_hosts[hostname] then
-		return false, "Couldn't find "..tostring(hostname).." defined in the config, perhaps you need to config:reload()?";
-	end
-	hostmanager_activate(hostname, config or defined_hosts[hostname]);
-	return true, "Host "..tostring(hostname).." activated";
-end
 
+function def_env.host:activate(hostname, config)
+	return hostmanager.activate(hostname, config);
+end
 function def_env.host:deactivate(hostname, reason)
-	local hostmanager_deactivate = require "core.hostmanager".deactivate;
-	local host = hosts[hostname];
-	if not host then
-		return false, "The host "..tostring(hostname).." is not activated";
-	end
-	if reason then
-		reason = { condition = "host-gone", text = reason };
-	end
-	hostmanager_deactivate(hostname, reason);
-	return true, "Host "..tostring(hostname).." deactivated";
+	return hostmanager.deactivate(hostname, reason);
 end
 
 function def_env.host:list()
