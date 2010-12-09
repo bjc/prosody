@@ -29,7 +29,7 @@ module:hook("message/offline/store", function(event)
 	local result = datamanager.list_append(node, host, "offline", st.preserialize(stanza));
 	stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
 	
-	return true;
+	return result;
 end);
 
 module:hook("message/offline/broadcast", function(event)
