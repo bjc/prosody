@@ -2,8 +2,6 @@
 -- This file is included with Prosody IM. It has modifications,
 -- which are hereby placed in the public domain.
 
--- public domain 20080404 lua@ztact.com
-
 
 -- todo: quick (default) header generation
 -- todo: nxdomain, error handling
@@ -15,7 +13,6 @@
 
 
 local socket = require "socket";
-local ztact = require "util.ztact";
 local timer = require "util.timer";
 
 local _, windows = pcall(require, "util.windows");
@@ -24,9 +21,50 @@ local is_windows = (_ and windows) or os.getenv("WINDIR");
 local coroutine, io, math, string, table =
       coroutine, io, math, string, table;
 
-local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack =
-      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack;
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select =
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select;
 
+local ztact = { -- public domain 20080404 lua@ztact.com
+	get = function(parent, ...)
+		local len = select('#', ...);
+		for i=1,len do
+			parent = parent[select(i, ...)];
+			if parent == nil then break; end
+		end
+		return parent;
+	end;
+	set = function(parent, ...)
+		local len = select('#', ...);
+		local key, value = select(len-1, ...);
+		local cutpoint, cutkey;
+
+		for i=1,len-2 do
+			local key = select (i, ...)
+			local child = parent[key]
+
+			if value == nil then
+				if child == nil then
+					return;
+				elseif next(child, next(child)) then
+					cutpoint = nil; cutkey = nil;
+				elseif cutpoint == nil then
+					cutpoint = parent; cutkey = key;
+				end
+			elseif child == nil then
+				child = {};
+				parent[key] = child;
+			end
+			parent = child
+		end
+
+		if value == nil and cutpoint then
+			cutpoint[cutkey] = nil;
+		else
+			parent[key] = value;
+			return value;
+		end
+	end;
+};
 local get, set = ztact.get, ztact.set;
 
 local default_timeout = 15;
