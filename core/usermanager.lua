@@ -6,13 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-local datamanager = require "util.datamanager";
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
-local error = error;
 local ipairs = ipairs;
-local hashes = require "util.hashes";
 local jid_bare = require "util.jid".bare;
 local config = require "core.configmanager";
 local hosts = hosts;
