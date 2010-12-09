@@ -54,6 +54,7 @@ prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
 	if hosts[host] then return nil, "host-already-exists"; end
+	host_config = host_config or configmanager.getconfig()[host];
 	local host_session = {
 		host = host;
 		s2sout = {};
