@@ -24,6 +24,7 @@ end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
 local pairs, setmetatable = pairs, setmetatable;
+local tostring, type = tostring, type;
 
 module "hostmanager"
 
@@ -53,8 +54,9 @@ end
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	if hosts[host] then return nil, "host-already-exists"; end
+	if hosts[host] then return nil, "The host "..host.." is already activated"; end
 	host_config = host_config or configmanager.getconfig()[host];
+	if not host_config then return nil, "Couldn't find the host "..tostring(host).." defined in the current config"; end
 	local host_session = {
 		host = host;
 		s2sout = {};
@@ -88,10 +90,13 @@ end
 
 function deactivate(host, reason)
 	local host_session = hosts[host];
+	if not host_session then return nil, "The host "..tostring(host).." is not activated"; end
 	log("info", "Deactivating host: %s", host);
 	prosody_events.fire_event("host-deactivating", host, host_session);
 	
-	reason = reason or { condition = "host-gone", text = "This server has stopped serving "..host };
+	if type(reason) ~= "table" then
+		reason = { condition = "host-gone", text = tostring(reason or "This server has stopped serving "..host) };
+	end
 	
 	-- Disconnect local users, s2s connections
 	if host_session.sessions then
