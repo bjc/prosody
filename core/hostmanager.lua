@@ -130,6 +130,7 @@ function deactivate(host, reason)
 	end
 	prosody_events.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
+	return true;
 end
 
 function get_children(host)
