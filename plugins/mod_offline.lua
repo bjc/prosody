@@ -47,13 +47,7 @@ module:hook("message/offline/broadcast", function(event)
 			stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
 			origin.send(stanza);
 		end
+		datamanager.list_store(node, host, "offline", nil);
 		return true;
 	end
-end);
-
-module:hook("message/offline/delete", function(event)
-	local origin = event.origin;
-	local node, host = origin.username, origin.host;
-
-	return datamanager.list_store(node, host, "offline", nil);
 end);
