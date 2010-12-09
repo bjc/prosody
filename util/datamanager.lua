@@ -204,8 +204,15 @@ end
 function list_load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore, "list"));
 	if not data then
-		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return nil;
+		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
+		if not mode then
+			log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			return nil;
+		else -- file exists, but can't be read
+			-- TODO more detailed error checking and logging?
+			log("error", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			return nil, "Error reading storage";
+		end
 	end
 	local items = {};
 	setfenv(data, {item = function(i) t_insert(items, i); end});
