@@ -22,7 +22,6 @@ local NULL = {};
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
-local offlinemanager = require "core.offlinemanager";
 
 local function select_top_resources(user)
 	local priority = 0;
@@ -116,13 +115,9 @@ function handle_normal_presence(origin, stanza)
 		end
 
 		if priority >= 0 then
-			local offline = offlinemanager.load(node, host);
-			if offline then
-				for _, msg in ipairs(offline) do
-					origin.send(msg); -- FIXME do we need to modify to/from in any way?
-				end
-				offlinemanager.deleteAll(node, host);
-			end
+                        local event = { origin = origin }
+                        module:fire_event('message/offline/broadcast', event);
+                        module:fire_event('message/offline/delete', event);
 		end
 	end
 	if stanza.attr.type == "unavailable" then
