@@ -15,7 +15,7 @@ local jid_split = require "util.jid".split;
 
 module:add_feature("msgoffline");
 
-module:hook("message/offline/store", function(event)
+module:hook("message/offline/handle", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local to = stanza.attr.to;
 	local node, host;
