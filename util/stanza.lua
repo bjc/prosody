@@ -254,7 +254,7 @@ function stanza_mt.get_error(stanza)
 			end
 		end
 	end
-	return type, condition or "undefined-condition", text or "";
+	return type, condition or "undefined-condition", text;
 end
 
 function stanza_mt.__add(s1, s2)
