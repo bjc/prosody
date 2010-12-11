@@ -509,11 +509,8 @@ function commands.restart(arg)
 		return 1;
 	end
 	
-	local ret = commands.stop(arg);
-	if ret == 0 then
-		ret = commands.start(arg);
-	end
-	return ret;
+	commands.stop(arg);
+	return commands.start(arg);
 end
 
 -- ejabberdctl compatibility
