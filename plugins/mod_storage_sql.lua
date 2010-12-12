@@ -25,7 +25,7 @@ local tonumber = tonumber;
 local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
-local json = { stringify = function(s) return require"util.serialzation".serialize(s) end, parse = require"util.serialization".deserialze };
+local json = { stringify = function(s) return require"util.serialization".serialize(s) end, parse = require"util.serialization".deserialze };
 
 local connection = ...;
 local host,user,store = module.host;
