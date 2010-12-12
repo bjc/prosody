@@ -33,7 +33,7 @@ local host,user,store = module.host;
 do -- process options to get a db connection
 	local DBI = require "DBI";
 
-	local params = module:get_option("sql");
+	local params = module:get_option("sql") or { driver = "SQLite3", database = "prosody.sqlite" };
 	assert(params and params.driver and params.database, "invalid params");
 	
 	prosody.unlock_globals();
