@@ -47,6 +47,19 @@ do -- process options to get a db connection
 
 	dbh:autocommit(false); -- don't commit automatically
 	connection = dbh;
+	
+	if params.driver == "SQLite3" then -- auto initialize
+		local stmt = assert(connection:prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Prosody';"));
+		local ok = assert(stmt:execute());
+		local count = stmt:fetch()[1];
+		if count == 0 then
+			local stmt = assert(connection:prepare("CREATE TABLE Prosody (host TEXT, user TEXT, store TEXT, key TEXT, subkey TEXT, type TEXT, value TEXT);"));
+			assert(stmt:execute());
+			assert(connection:commit());
+			module:log("debug", "Initialized new SQLite3 database");
+		end
+		--print("===", json.stringify())
+	end
 end
 
 local function serialize(value)
