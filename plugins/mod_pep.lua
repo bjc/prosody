@@ -134,7 +134,7 @@ module:hook("presence/bare", function(event)
 					publish_all(user, recipient, origin);
 				else
 					recipients[user][recipient] = hash;
-					local from_bare = origin.username.."@"..origin.host;
+					local from_bare = origin.type == "c2s" and origin.username.."@"..origin.host;
 					if self or origin.type ~= "c2s" or (recipients[from_bare] and recipients[from_bare][origin.full_jid]) ~= hash then
 						origin.send(
 							st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
