@@ -40,9 +40,30 @@ local prosody = prosody;
 config = require "core.configmanager"
 
 do
-	-- TODO: Check for other formats when we add support for them
-	-- Use lfs? Make a new conf/ dir?
-	local ok, level, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+	local filenames = {};
+	
+	local filename;
+	if arg[1] == "--config" and arg[2] then
+		table.insert(filenames, arg[2]);
+		table.remove(arg, 1); table.remove(arg, 1);
+		if CFG_CONFIGDIR then
+			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
+		end
+	else
+		for _, format in ipairs(config.parsers()) do
+			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
+		end
+	end
+	for _,_filename in ipairs(filenames) do
+		filename = _filename;
+		local file = io.open(filename);
+		if file then
+			file:close();
+			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
+			break;
+		end
+	end
+	local ok, level, err = config.load(filename);
 	if not ok then
 		print("\n");
 		print("**************************");
