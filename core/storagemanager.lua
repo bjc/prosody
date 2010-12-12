@@ -25,6 +25,7 @@ function default_driver_mt:set(user, data) return olddm.store(user, self.host, s
 local stores_available = multitable.new();
 
 function initialize_host(host)
+	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/data-driver", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
