@@ -11,6 +11,7 @@ local log = require "util.logger".init("storagemanager");
 
 local olddm = {}; -- maintain old datamanager, for backwards compatibility
 for k,v in pairs(datamanager) do olddm[k] = v; end
+local prosody = prosody;
 
 module("storagemanager")
 
@@ -36,6 +37,7 @@ function initialize_host(host)
 		stores_available:set(host, item.name, nil);
 	end);
 end
+prosody.events.add_handler("host-activated", initialize_host, 101);
 
 local function load_driver(host, driver_name)
 	if not driver_name then
