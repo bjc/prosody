@@ -7,6 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
+-- prosody - main executable for Prosody XMPP server
+
 -- Will be modified by configure script if run --
 
 CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
