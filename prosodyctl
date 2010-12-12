@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -16,13 +16,15 @@ CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=os.getenv("PROSODY_PLUGINDIR");
 CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
--- -- -- -- -- -- -- ---- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+-- Tell Lua where to find our libraries
 if CFG_SOURCEDIR then
-	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
-	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
 end
 
+-- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
 		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
