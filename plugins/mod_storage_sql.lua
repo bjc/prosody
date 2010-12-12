@@ -25,7 +25,7 @@ local tonumber = tonumber;
 local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
-local json = { stringify = function(s) return require"util.serialization".serialize(s) end, parse = require"util.serialization".deserialize };
+local json = { stringify = function(s) return require"util.serialzation".serialize(s) end, parse = require"util.serialization".deserialze };
 
 local connection = ...;
 local host,user,store = module.host;
@@ -33,7 +33,7 @@ local host,user,store = module.host;
 do -- process options to get a db connection
 	local DBI = require "DBI";
 
-	local params = module:get_option("sql") or { driver = "SQLite3", database = "prosody.sqlite" };
+	local params = module:get_option("sql");
 	assert(params and params.driver and params.database, "invalid params");
 	
 	prosody.unlock_globals();
@@ -47,19 +47,6 @@ do -- process options to get a db connection
 
 	dbh:autocommit(false); -- don't commit automatically
 	connection = dbh;
-	
-	if params.driver == "SQLite3" then -- auto initialize
-		local stmt = assert(connection:prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Prosody';"));
-		local ok = assert(stmt:execute());
-		local count = stmt:fetch()[1];
-		if count == 0 then
-			local stmt = assert(connection:prepare("CREATE TABLE Prosody (host TEXT, user TEXT, store TEXT, key TEXT, subkey TEXT, type TEXT, value TEXT);"));
-			assert(stmt:execute());
-			assert(connection:commit());
-			module:log("debug", "Initialized new SQLite3 database");
-		end
-		--print("===", json.stringify())
-	end
 end
 
 local function serialize(value)
@@ -74,12 +61,12 @@ local function serialize(value)
 	return nil, "Unhandled value type: "..t;
 end
 local function deserialize(t, value)
-	if t == "string" then return value;
+	if t == "string" then return t;
 	elseif t == "boolean" then
 		if value == "true" then return true;
 		elseif value == "false" then return false; end
 	elseif t == "number" then return tonumber(value);
-	elseif t == "json" then
+	elseif value == "json" then
 		return json.parse(value);
 	end
 end
@@ -115,7 +102,7 @@ local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user,store = username,self.store;
-	local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND subkey IS NULL");
+	local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND subkey=NULL");
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -137,7 +124,7 @@ end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
 	-- start transaction
-	local affected, err = setsql("DELETE FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND subkey IS NULL");
+	local affected, err = setsql("DELETE FROM Prosody WHERE host=? AND user=? AND store=? AND subkey=NULL");
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -165,7 +152,7 @@ local map_store = {};
 map_store.__index = map_store;
 function map_store:get(username, key)
 	user,store = username,self.store;
-	local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
+	local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -187,7 +174,7 @@ end
 function map_store:set(username, key, data)
 	user,store = username,self.store;
 	-- start transaction
-	local affected, err = setsql("DELETE FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
+	local affected, err = setsql("DELETE FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -219,10 +206,10 @@ function list_store:scan(username, from, to, jid, typ)
 	local cols = {"from", "to", "jid", "typ"};
 	local vals = { from ,  to ,  jid ,  typ };
 	local stmt, err;
-	local query = "SELECT * FROM ProsodyArchive WHERE host IS ? AND user IS ? AND store IS ?";
+	local query = "SELECT * FROM ProsodyArchive WHERE host=? AND user=? AND store=?";
 	
 	query = query.." ORDER BY time";
-	--local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
+	--local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
 	
 	return nil, "not-implemented"
 end
