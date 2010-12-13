@@ -74,7 +74,7 @@ local function serialize(value)
 	return nil, "Unhandled value type: "..t;
 end
 local function deserialize(t, value)
-	if t == "string" then return t;
+	if t == "string" then return value;
 	elseif t == "boolean" then
 		if value == "true" then return true;
 		elseif value == "false" then return false; end
