@@ -115,7 +115,7 @@ local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user,store = username,self.store;
-	local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND subkey=NULL");
+	local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND subkey IS NULL");
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -137,7 +137,7 @@ end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
 	-- start transaction
-	local affected, err = setsql("DELETE FROM Prosody WHERE host=? AND user=? AND store=? AND subkey=NULL");
+	local affected, err = setsql("DELETE FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND subkey IS NULL");
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -165,7 +165,7 @@ local map_store = {};
 map_store.__index = map_store;
 function map_store:get(username, key)
 	user,store = username,self.store;
-	local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
+	local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -187,7 +187,7 @@ end
 function map_store:set(username, key, data)
 	user,store = username,self.store;
 	-- start transaction
-	local affected, err = setsql("DELETE FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
+	local affected, err = setsql("DELETE FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -219,10 +219,10 @@ function list_store:scan(username, from, to, jid, typ)
 	local cols = {"from", "to", "jid", "typ"};
 	local vals = { from ,  to ,  jid ,  typ };
 	local stmt, err;
-	local query = "SELECT * FROM ProsodyArchive WHERE host=? AND user=? AND store=?";
+	local query = "SELECT * FROM ProsodyArchive WHERE host IS ? AND user IS ? AND store IS ?";
 	
 	query = query.." ORDER BY time";
-	--local stmt, err = getsql("SELECT * FROM Prosody WHERE host=? AND user=? AND store=? AND key=?", key);
+	--local stmt, err = getsql("SELECT * FROM Prosody WHERE host IS ? AND user IS ? AND store IS ? AND key IS ?", key);
 	
 	return nil, "not-implemented"
 end
