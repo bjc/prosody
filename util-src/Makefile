@@ -13,11 +13,11 @@ LD?=gcc
 .SUFFIXES: .c .o .so
 
 encodings.o:
-	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o encodings.o encodings.c
+	$(CXX) $(CFLAGS) -I$(LUA_INCDIR) -c -o encodings.o encodings.cpp
 
 encodings.so: encodings.o
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
-	$(CC) $(LDFLAGS) $(IDNA_LIBS) -o encodings.so encodings.o -lcrypto
+	$(CXX) $(LDFLAGS) $(IDNA_LIBS) -o encodings.so encodings.o -lcrypto
 
 .c.o:
 	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
