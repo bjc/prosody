@@ -10,6 +10,9 @@
 local hosts = _G.hosts;
 
 local t_concat = table.concat;
+local tostring = tostring;
+local type = type;
+local pairs = pairs;
 
 local lxp = require "lxp";
 local logger = require "util.logger";
