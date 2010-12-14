@@ -10,22 +10,19 @@
 
 local logger = require "logger";
 local log = logger.init("xmppclient_listener");
-local lxp = require "lxp"
 local new_xmpp_stream = require "util.xmppstream".new;
-local sm_new_session = require "core.sessionmanager".new_session;
 
 local connlisteners_register = require "net.connlisteners".register;
 
-local t_insert = table.insert;
-local t_concat = table.concat;
-local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
-local m_random = math.random;
-local format = string.format;
 local sessionmanager = require "core.sessionmanager";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
 local sm_streamopened = sessionmanager.streamopened;
 local sm_streamclosed = sessionmanager.streamclosed;
 local st = require "util.stanza";
+local xpcall = xpcall;
+local tostring = tostring;
+local type = type;
+local traceback = debug.traceback;
 
 local config = require "core.configmanager";
 local opt_keepalives = config.get("*", "core", "tcp_keepalives");
@@ -62,7 +59,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[c2s]: %s: %s", tostring(err), debug.traceback()); end
+local function handleerr(err) log("error", "Traceback[c2s]: %s: %s", tostring(err), traceback()); end
 function stream_callbacks.handlestanza(session, stanza)
 	stanza = session.filter("stanzas/in", stanza);
 	if stanza then
