@@ -939,6 +939,9 @@ function resolver:lookupex(handler, qname, qtype, qclass)    -- - - - - - - - - 
 	return self:peek(qname, qtype, qclass) or self:query(qname, qtype, qclass);
 end
 
+function resolver:tohostname(ip)
+	return dns.lookup(ip:gsub("(%d+)%.(%d+)%.(%d+)%.(%d+)", "%4.%3.%2.%1.in-addr.arpa."), "PTR");
+end
 
 --print ---------------------------------------------------------------- print
 
@@ -1012,6 +1015,10 @@ dns._resolver = _resolver;
 
 function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);
+end
+
+function dns.tohostname(...)
+	return _resolver:tohostname(...);
 end
 
 function dns.purge(...)    -- - - - - - - - - - - - - - - - - - - - - -  purge
