@@ -281,7 +281,7 @@ else
 		exit 1
 	fi
 fi
-LDFLAGS="$LDFLAGS -llua"
+LDFLAGS="$LDFLAGS -llua$LUA_SUFFIX"
 
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
