@@ -11,8 +11,10 @@ LUA_BINDIR="/usr/bin"
 LUA_INCDIR="/usr/include"
 LUA_LIBDIR="/usr/lib"
 IDN_LIB=idn
+ICU_FLAGS="-licui18n -licudata -licuuc"
 OPENSSL_LIB=crypto
 CC=gcc
+CXX=g++
 LD=gcc
 
 CFLAGS="-fPIC -Wall"
@@ -43,6 +45,9 @@ Configure Prosody prior to building.
                             Default is \$LUA_DIR/lib
 --with-idn=LIB              The name of the IDN library to link with.
                             Default is $IDN_LIB
+--idn-library=(idn|icu)		 Select library to use for IDNA functionality.
+									 idn: use GNU libidn (default)
+									 icu: use ICU from IBM
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
@@ -96,7 +101,6 @@ do
 	LUA_INCDIR_SET=yes
 	LUA_LIBDIR=/usr/local/lib
 	LUA_LIBDIR_SET=yes
-	CFLAGS="-Wall"
 	LDFLAGS="-bundle -undefined dynamic_lookup"
 	fi
         if [ "$OSTYPE" = "linux" ]
@@ -143,6 +147,9 @@ do
    --with-idn=*)
       IDN_LIB="$value"
       ;;
+	--idn-library=*)
+		IDN_LIBRARY="$value"
+		;;
    --with-ssl=*)
       OPENSSL_LIB="$value"
       ;;
@@ -261,6 +268,21 @@ then
    LUA_BINDIR="$LUA_DIR/bin"
 fi
 
+if [ "$IDN_LIBRARY" = "icu" ]
+then
+	IDNA_LIBS="$ICU_FLAGS"
+	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
+else
+ 	if [ "$IDN_LIBRARY" = "idn" ] 
+	then
+		IDNA_LIBS="-l$IDN_LIB"
+	else
+		echo "Must use idn or icu as argument for --idn-library!"
+		exit 1
+	fi
+fi
+LDFLAGS="$LDFLAGS -llua"
+
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
 if [ -e "$lua_h" ]
@@ -311,10 +333,12 @@ LUA_LIBDIR=$LUA_LIBDIR
 LUA_BINDIR=$LUA_BINDIR
 REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
+IDNA_LIBS=$IDNA_LIBS
 OPENSSL_LIB=$OPENSSL_LIB
 CFLAGS=$CFLAGS
 LDFLAGS=$LDFLAGS
 CC=$CC
+CXX=$CXX
 LD=$LD
 
 EOF
