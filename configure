@@ -20,6 +20,7 @@ LD=gcc
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
 
+IDN_LIBRARY=idn
 # Help
 
 show_help() {
@@ -272,15 +273,12 @@ if [ "$IDN_LIBRARY" = "icu" ]
 then
 	IDNA_LIBS="$ICU_FLAGS"
 	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
-else
- 	if [ "$IDN_LIBRARY" = "idn" ] 
-	then
-		IDNA_LIBS="-l$IDN_LIB"
-	else
-		echo "Must use idn or icu as argument for --idn-library!"
-		exit 1
-	fi
 fi
+if [ "$IDN_LIBRARY" = "idn" ] 
+then
+	IDNA_LIBS="-l$IDN_LIB"
+fi
+
 LDFLAGS="$LDFLAGS -llua$LUA_SUFFIX"
 
 echo -n "Checking Lua includes... "
