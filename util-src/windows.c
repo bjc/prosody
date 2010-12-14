@@ -43,9 +43,38 @@ static int Lget_nameservers(lua_State *L) {
 	}
 }
 
+static void lassert(lua_State *L, BOOL test, char* string) {
+	if (!test) {
+		luaL_error(L, "%s: %d", string, GetLastError());
+	}
+}
+
+static int Lget_consolecolor(lua_State *L) {
+	HWND console = GetStdHandle(STD_OUTPUT_HANDLE);
+	WORD color; DWORD read_len;
+	
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	
+	lassert(L, console != INVALID_HANDLE_VALUE, "GetStdHandle");
+	lassert(L, GetConsoleScreenBufferInfo(console, &info), "GetConsoleScreenBufferInfo");
+	lassert(L, ReadConsoleOutputAttribute(console, &color, sizeof(WORD), info.dwCursorPosition, &read_len), "ReadConsoleOutputAttribute");
+
+	lua_pushnumber(L, color);
+	return 1;
+}
+static int Lset_consolecolor(lua_State *L) {
+	int color = luaL_checkint(L, 1);
+	HWND console = GetStdHandle(STD_OUTPUT_HANDLE);
+	lassert(L, console != INVALID_HANDLE_VALUE, "GetStdHandle");
+	lassert(L, SetConsoleTextAttribute(console, color), "SetConsoleTextAttribute");
+	return 0;
+}
+
 static const luaL_Reg Reg[] =
 {
 	{ "get_nameservers",	Lget_nameservers	},
+	{ "get_consolecolor",	Lget_consolecolor	},
+	{ "set_consolecolor",	Lset_consolecolor	},
 	{ NULL,		NULL	}
 };
 
