@@ -15,7 +15,7 @@ local tostring, setmetatable, rawset, pairs, ipairs, type =
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
 local os_date, os_getenv = os.date, os.getenv;
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local getstyle, setstyle = require "util.termcolours".getstyle, require "util.termcolours".setstyle;
 
 if os.getenv("__FLUSH_LOG") then
 	local io_flush = io.flush;
@@ -217,7 +217,7 @@ function log_sink_types.stdout()
 end
 
 do
-	local do_pretty_printing = not os_getenv("WINDIR");
+	local do_pretty_printing = true;
 	
 	local logstyles = {};
 	if do_pretty_printing then
@@ -244,10 +244,14 @@ do
 			if timestamps then
 				io_write(os_date(timestamps), " ");
 			end
+			io_write(name, rep(" ", sourcewidth-namelen));
+			setstyle(logstyles[level]);
+			io_write(level);
+			setstyle();
 			if ... then
-				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
+				io_write("\t", format(message, ...), "\n");
 			else
-				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
+				io_write("\t", message, "\n");
 			end
 		end
 	end
