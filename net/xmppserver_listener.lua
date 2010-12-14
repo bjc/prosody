@@ -16,6 +16,8 @@ local traceback = debug.traceback;
 local logger = require "logger";
 local log = logger.init("xmppserver_listener");
 local lxp = require "lxp"
+local st = require "util.stanza";
+local connlisteners_register = require "net.connlisteners".register;
 local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
@@ -63,17 +65,6 @@ function stream_callbacks.handlestanza(session, stanza)
 		return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
 	end
 end
-
-local connlisteners_register = require "net.connlisteners".register;
-
-local t_insert = table.insert;
-local t_concat = table.concat;
-local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
-local m_random = math.random;
-local format = string.format;
-local sessionmanager = require "core.sessionmanager";
-local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
-local st = require "util.stanza";
 
 local sessions = {};
 local xmppserver = { default_port = 5269, default_mode = "*a" };
