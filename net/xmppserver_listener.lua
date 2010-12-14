@@ -7,6 +7,11 @@
 --
 
 
+local tostring = tostring;
+local type = type;
+local xpcall = xpcall;
+local s_format = string.format;
+local traceback = debug.traceback;
 
 local logger = require "logger";
 local log = logger.init("xmppserver_listener");
@@ -48,7 +53,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), debug.traceback()); end
+local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), traceback()); end
 function stream_callbacks.handlestanza(session, stanza)
 	if stanza.attr.xmlns == "jabber:client" then --COMPAT: Prosody pre-0.6.2 may send jabber:client
 		stanza.attr.xmlns = nil;
@@ -173,9 +178,9 @@ function xmppserver.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
-			local format, to_host, from_host = string.format, session.to_host, session.from_host;
+			local to_host, from_host = session.to_host, session.from_host;
 			session.log("debug", "Sending stream header...");
-			session.sends2s(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
+			session.sends2s(s_format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 		end
 	end
 end
