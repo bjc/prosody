@@ -122,8 +122,9 @@ static const luaL_Reg Reg_base64[] =
 /***************** STRINGPREP *****************/
 #ifndef USE_STRINGPREP_ICU
 /****************** libidn ********************/
+extern "C" {
 #include <stringprep.h>
-
+}
 static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 {
 	size_t len;
@@ -140,7 +141,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 		return 1; // TODO return error message
 	}
 	strcpy(string, s);
-	ret = stringprep(string, 1024, 0, profile);
+	ret = stringprep(string, 1024, (Stringprep_profile_flags)0, profile);
 	if (ret == STRINGPREP_OK) {
 		lua_pushstring(L, string);
 		return 1;
@@ -169,7 +170,6 @@ static const luaL_Reg Reg_stringprep[] =
 
 #else
 #include <unicode/usprep.h>
-//#include <unicode/stringpiece.h>
 #include <unicode/unistr.h>
 #include <unicode/utrace.h>
 
