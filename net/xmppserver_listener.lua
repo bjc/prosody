@@ -15,7 +15,6 @@ local traceback = debug.traceback;
 
 local logger = require "logger";
 local log = logger.init("xmppserver_listener");
-local lxp = require "lxp"
 local st = require "util.stanza";
 local connlisteners_register = require "net.connlisteners".register;
 local new_xmpp_stream = require "util.xmppstream".new;
