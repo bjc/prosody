@@ -165,46 +165,42 @@ local function session_close(session, reason)
 end
 
 --- Component connlistener
+function component_listener.onconnect(conn)
+	local _send = conn.write;
+	local session = { type = "component", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
+
+	-- Logging functions --
+	local conn_name = "jcp"..tostring(conn):match("[a-f0-9]+$");
+	session.log = logger.init(conn_name);
+	session.close = session_close;
+	
+	session.log("info", "Incoming Jabber component connection");
+	
+	local stream = new_xmpp_stream(session, stream_callbacks);
+	session.stream = stream;
+	
+	session.notopen = true;
+	
+	function session.reset_stream()
+		session.notopen = true;
+		session.stream:reset();
+	end
+
+	function session.data(conn, data)
+		local ok, err = stream:feed(data);
+		if ok then return; end
+		log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+		session:close("not-well-formed");
+	end
+	
+	session.dispatch_stanza = stream_callbacks.handlestanza;
+
+	sessions[conn] = session;
+end
 function component_listener.onincoming(conn, data)
 	local session = sessions[conn];
-	if not session then
-		local _send = conn.write;
-		session = { type = "component", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
-		sessions[conn] = session;
-
-		-- Logging functions --
-		
-		local conn_name = "jcp"..tostring(conn):match("[a-f0-9]+$");
-		session.log = logger.init(conn_name);
-		session.close = session_close;
-		
-		session.log("info", "Incoming Jabber component connection");
-		
-		local stream = new_xmpp_stream(session, stream_callbacks);
-		session.stream = stream;
-		
-		session.notopen = true;
-		
-		function session.reset_stream()
-			session.notopen = true;
-			session.stream:reset();
-		end
-	
-		function session.data(conn, data)
-			local ok, err = stream:feed(data);
-			if ok then return; end
-			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
-			session:close("not-well-formed");
-		end
-		
-		session.dispatch_stanza = stream_callbacks.handlestanza;
-		
-	end
-	if data then
-		session.data(conn, data);
-	end
+	session.data(conn, data);
 end
-	
 function component_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
