@@ -195,3 +195,11 @@ service = pubsub.new({
 });
 module.environment.service = service;
 
+function module.save()
+	return { service = service };
+end
+
+function module.restore(data)
+	service = data.service;
+	module.environment.service = service;
+end
