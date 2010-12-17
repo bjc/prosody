@@ -166,6 +166,30 @@ end
 
 module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq);
 
+local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
+	:tag("identity", { category = "pubsub", type = "service" }):up()
+	:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
+
+module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
+	event.origin.send(st.reply(event.stanza):add_child(disco_info));
+	return true;
+end);
+
+module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function (event)
+	local ok, ret = service:get_nodes(event.stanza.attr.from);
+	if not ok then
+		event.origin.send(pubsub_error_reply(stanza, ret));
+	else
+		local reply = st.reply(event.stanza)
+			:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
+		for node, node_obj in pairs(ret) do
+			reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
+		end
+		event.origin.send(reply);
+	end
+	return true;
+end);
+
 service = pubsub.new({
 	broadcaster = simple_broadcast
 });
