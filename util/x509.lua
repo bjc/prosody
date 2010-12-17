@@ -20,9 +20,9 @@
 
 local nameprep = require "util.encodings".stringprep.nameprep;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
-local log = require "util.logger".init("certverification");
+local log = require "util.logger".init("x509");
 
-module "certverification"
+module "x509"
 
 local oid_commonname = "2.5.4.3"; -- [LDAP] 2.3
 local oid_subjectaltname = "2.5.29.17"; -- [PKIX] 4.2.1.6

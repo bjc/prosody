@@ -21,8 +21,8 @@ local is_windows = (_ and windows) or os.getenv("WINDIR");
 local coroutine, io, math, string, table =
       coroutine, io, math, string, table;
 
-local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select =
-      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select;
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type=
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type;
 
 local ztact = { -- public domain 20080404 lua@ztact.com
 	get = function(parent, ...)
@@ -160,29 +160,24 @@ resolver.timeout = default_timeout;
 
 local SRV_tostring;
 
+local function default_rr_tostring(rr)
+	local rr_val = rr.type and rr[rr.type:lower()];
+	if type(rr_val) ~= "string" then
+		return "<UNKNOWN RDATA TYPE>";
+	end
+	return rr_val;
+end
+
+local special_tostrings = {
+	LOC = resolver.LOC_tostring;
+	MX = function (rr) return string.format('%2i %s', rr.pref, rr.mx); end;
+	SRV = SRV_tostring;
+};
 
 local rr_metatable = {};   -- - - - - - - - - - - - - - - - - - -  rr_metatable
 function rr_metatable.__tostring(rr)
-	local s0 = string.format('%2s %-5s %6i %-28s', rr.class, rr.type, rr.ttl, rr.name);
-	local s1 = '';
-	if rr.type == 'A' then
-		s1 = ' '..rr.a;
-	elseif rr.type == 'MX' then
-		s1 = string.format(' %2i %s', rr.pref, rr.mx);
-	elseif rr.type == 'CNAME' then
-		s1 = ' '..rr.cname;
-	elseif rr.type == 'LOC' then
-		s1 = ' '..resolver.LOC_tostring(rr);
-	elseif rr.type == 'NS' then
-		s1 = ' '..rr.ns;
-	elseif rr.type == 'SRV' then
-		s1 = ' '..SRV_tostring(rr);
-	elseif rr.type == 'TXT' then
-		s1 = ' '..rr.txt;
-	else
-		s1 = ' <UNKNOWN RDATA TYPE>';
-	end
-	return s0..s1;
+	local rr_string = (special_tostrings[rr.type] or default_rr_tostring)(rr);
+	return string.format('%2s %-5s %6i %-28s %s', rr.class, rr.type, rr.ttl, rr.name, rr_string);
 end
 
 
@@ -939,6 +934,9 @@ function resolver:lookupex(handler, qname, qtype, qclass)    -- - - - - - - - - 
 	return self:peek(qname, qtype, qclass) or self:query(qname, qtype, qclass);
 end
 
+function resolver:tohostname(ip)
+	return dns.lookup(ip:gsub("(%d+)%.(%d+)%.(%d+)%.(%d+)", "%4.%3.%2.%1.in-addr.arpa."), "PTR");
+end
 
 --print ---------------------------------------------------------------- print
 
@@ -1012,6 +1010,10 @@ dns._resolver = _resolver;
 
 function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);
+end
+
+function dns.tohostname(...)
+	return _resolver:tohostname(...);
 end
 
 function dns.purge(...)    -- - - - - - - - - - - - - - - - - - - - - -  purge

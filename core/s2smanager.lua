@@ -27,7 +27,7 @@ local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
-local cert_verify_identity = require "util.certverification".verify_identity;
+local cert_verify_identity = require "util.x509".verify_identity;
 
 local fire_event = prosody.events.fire_event;
 local uuid_gen = require "util.uuid".generate;

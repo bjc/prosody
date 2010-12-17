@@ -11,6 +11,7 @@ local log = require "util.logger".init("storagemanager");
 
 local olddm = {}; -- maintain old datamanager, for backwards compatibility
 for k,v in pairs(datamanager) do olddm[k] = v; end
+local prosody = prosody;
 
 module("storagemanager")
 
@@ -25,6 +26,7 @@ function default_driver_mt:set(user, data) return olddm.store(user, self.host, s
 local stores_available = multitable.new();
 
 function initialize_host(host)
+	local host_session = hosts[host];
 	host_session.events.add_handler("item-added/data-driver", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
@@ -35,19 +37,19 @@ function initialize_host(host)
 		stores_available:set(host, item.name, nil);
 	end);
 end
+prosody.events.add_handler("host-activated", initialize_host, 101);
 
 local function load_driver(host, driver_name)
 	if not driver_name then
 		return;
 	end
 	local driver = stores_available:get(host, driver_name);
-	if not driver then
-		if driver_name ~= "internal" then
-			modulemanager.load(host, "storage_"..driver_name);
-			return stores_available:get(host, driver_name);
-		else
-			return setmetatable({host = host}, default_driver_mt);
-		end
+	if driver then return driver; end
+	if driver_name ~= "internal" then
+		modulemanager.load(host, "storage_"..driver_name);
+		return stores_available:get(host, driver_name);
+	else
+		return setmetatable({host = host}, default_driver_mt);
 	end
 end
 

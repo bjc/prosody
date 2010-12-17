@@ -19,7 +19,7 @@ local console_listener = { default_port = 5582; default_mode = "*l"; default_int
 require "util.iterators";
 local jid_bare = require "util.jid".bare;
 local set, array = require "util.set", require "util.array";
-local cert_verify_identity = require "util.certverification".verify_identity;
+local cert_verify_identity = require "util.x509".verify_identity;
 
 local commands = {};
 local def_env = {};

@@ -77,4 +77,8 @@ function service:get(node, actor, id)
 	end
 end
 
+function service:get_nodes(actor)
+	return true, self.nodes;
+end
+
 return _M;

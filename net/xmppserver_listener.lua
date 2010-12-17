@@ -7,10 +7,16 @@
 --
 
 
+local tostring = tostring;
+local type = type;
+local xpcall = xpcall;
+local s_format = string.format;
+local traceback = debug.traceback;
 
 local logger = require "logger";
 local log = logger.init("xmppserver_listener");
-local lxp = require "lxp"
+local st = require "util.stanza";
+local connlisteners_register = require "net.connlisteners".register;
 local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_streamopened = require "core.s2smanager".streamopened;
@@ -48,7 +54,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), debug.traceback()); end
+local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), traceback()); end
 function stream_callbacks.handlestanza(session, stanza)
 	if stanza.attr.xmlns == "jabber:client" then --COMPAT: Prosody pre-0.6.2 may send jabber:client
 		stanza.attr.xmlns = nil;
@@ -58,17 +64,6 @@ function stream_callbacks.handlestanza(session, stanza)
 		return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
 	end
 end
-
-local connlisteners_register = require "net.connlisteners".register;
-
-local t_insert = table.insert;
-local t_concat = table.concat;
-local t_concatall = function (t, sep) local tt = {}; for _, s in ipairs(t) do t_insert(tt, tostring(s)); end return t_concat(tt, sep); end
-local m_random = math.random;
-local format = string.format;
-local sessionmanager = require "core.sessionmanager";
-local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
-local st = require "util.stanza";
 
 local sessions = {};
 local xmppserver = { default_port = 5269, default_mode = "*a" };
@@ -173,9 +168,9 @@ function xmppserver.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
-			local format, to_host, from_host = string.format, session.to_host, session.from_host;
+			local to_host, from_host = session.to_host, session.from_host;
 			session.log("debug", "Sending stream header...");
-			session.sends2s(format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
+			session.sends2s(s_format([[<stream:stream xmlns='jabber:server' xmlns:db='jabber:server:dialback' xmlns:stream='http://etherx.jabber.org/streams' from='%s' to='%s' version='1.0'>]], from_host, to_host));
 		end
 	end
 end

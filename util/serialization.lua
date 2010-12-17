@@ -15,6 +15,10 @@ local error = error;
 local pairs = pairs;
 local next = next;
 
+local loadstring = loadstring;
+local setfenv = setfenv;
+local pcall = pcall;
+
 local debug_traceback = debug.traceback;
 local log = require "util.logger".init("serialization");
 module "serialization"
@@ -24,14 +28,20 @@ local indent = function(i)
 end
 local function basicSerialize (o)
 	if type(o) == "number" or type(o) == "boolean" then
-		return tostring(o);
+		-- no need to check for NaN, as that's not a valid table index
+		if o == 1/0 then return "(1/0)";
+		elseif o == -1/0 then return "(-1/0)";
+		else return tostring(o); end
 	else -- assume it is a string -- FIXME make sure it's a string. throw an error otherwise.
 		return (("%q"):format(tostring(o)):gsub("\\\n", "\\n"));
 	end
 end
 local function _simplesave(o, ind, t, func)
 	if type(o) == "number" then
-		func(t, tostring(o));
+		if o ~= o then func(t, "(0/0)");
+		elseif o == 1/0 then func(t, "(1/0)");
+		elseif o == -1/0 then func(t, "(-1/0)");
+		else func(t, tostring(o)); end
 	elseif type(o) == "string" then
 		func(t, (("%q"):format(o):gsub("\\\n", "\\n")));
 	elseif type(o) == "table" then
@@ -72,7 +82,14 @@ function serialize(o)
 end
 
 function deserialize(str)
-	error("Not implemented");
+	if type(str) ~= "string" then return nil; end
+	str = "return "..str;
+	local f, err = loadstring(str, "@data");
+	if not f then return nil, err; end
+	setfenv(f, {});
+	local success, ret = pcall(f);
+	if not success then return nil, ret; end
+	return ret;
 end
 
 return _M;
