@@ -77,6 +77,13 @@ function load_modules_for_host(host)
 	end
 	local modules = global_modules + host_modules;
 	
+	-- COMPAT w/ pre 0.8
+	if modules:contains("console") then
+		log("error", "The mod_console plugin has been renamed to mod_admin_telnet. Please update your config.");
+		modules:remove("console");
+		modules:add("admin_telnet");
+	end
+	
 	if component then
 		load(host, component);
 	end
