@@ -120,7 +120,7 @@ function is_admin(jid, host)
 	end
 	
 	-- Still not an admin, check with auth provider
-	if not is_admin and host ~= "*" and hosts[host].users.is_admin then
+	if not is_admin and host ~= "*" and hosts[host].users and hosts[host].users.is_admin then
 		is_admin = hosts[host].users.is_admin(jid);
 	end
 	return is_admin or false;
