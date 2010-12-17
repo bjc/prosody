@@ -190,6 +190,7 @@ function new_from_config(ports, handle_request, default_options)
 		log("warn", "Old syntax of httpserver.new_from_config being used to register %s", handle_request);
 		handle_request, default_options = default_options, { base = handle_request };
 	end
+	ports = ports or {5280};
 	for _, options in ipairs(ports) do
 		local port = default_options.port or 5280;
 		local base = default_options.base;
