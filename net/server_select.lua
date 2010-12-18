@@ -149,7 +149,7 @@ _timerlistlen = 0 -- lenght of timerlist
 _sendtraffic = 0 -- some stats
 _readtraffic = 0
 
-_selecttimeout = 3600 -- timeout of socket.select
+_selecttimeout = 1 -- timeout of socket.select
 _sleeptime = 0 -- time to wait at the end of every loop
 
 _maxsendlen = 51000 * 1024 -- max len of send buffer
