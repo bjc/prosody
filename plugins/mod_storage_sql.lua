@@ -25,7 +25,7 @@ local tonumber = tonumber;
 local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
-local json = { stringify = function(s) return require"util.serialization".serialize(s) end, parse = require"util.serialization".deserialze };
+local json = { stringify = function(s) return require"util.serialization".serialize(s) end, parse = require"util.serialization".deserialize };
 
 local connection = ...;
 local host,user,store = module.host;
@@ -79,7 +79,7 @@ local function deserialize(t, value)
 		if value == "true" then return true;
 		elseif value == "false" then return false; end
 	elseif t == "number" then return tonumber(value);
-	elseif value == "json" then
+	elseif t == "json" then
 		return json.parse(value);
 	end
 end
