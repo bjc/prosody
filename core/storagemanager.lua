@@ -71,7 +71,8 @@ function open(host, store, typ)
 		driver_name = config.get(host, "core", "default_storage");
 		driver = load_driver(host, driver_name);
 		if not driver then
-			if storage or driver_name then
+			if driver_name or (type(storage) == "string"
+			or type(storage) == "table" and storage[store]) then
 				log("warn", "Falling back to default driver for %s storage on %s", store, host);
 			end
 			driver_name = "internal";
