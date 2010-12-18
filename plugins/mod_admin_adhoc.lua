@@ -544,35 +544,39 @@ function shut_down_service_handler(self, data, state)
 	return true;
 end
 
--- TODO: Allow unloading multiple modules (depends on list-multi)
 function unload_modules_handler(self, data, state)
 	local layout = dataforms_new {
-		title = "Unload module";
-		instructions = "Select the module to be unloaded";
+		title = "Unload modules";
+		instructions = "Select the modules to be unloaded";
 
 		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#unload" };
-		{ name = "module", type = "list-single", required = true, label = "Module to be unloaded:"};
+		{ name = "modules", type = "list-multi", required = true, label = "Modules to be unloaded:"};
 	};
 	if state then
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
 		local fields = layout:data(data.form);
-		if (not fields.module) or (fields.module == "") then
+		if #fields.modules == 0 then
 			return { status = "completed", error = {
 				message = "Please specify a module. (This means your client misbehaved, as this field is required)"
 			} };
 		end
-		local ok, err = modulemanager.unload(data.to, fields.module);
-		if ok then
-			return { status = "completed", info = 'Module "'..fields.module..'" successfully unloaded on host "'..data.to..'".' };
-		else
-			return { status = "completed", error = { message = 'Failed to unload module "'..fields.module..'" on host "'..data.to..
-			'". Error was: "'..tostring(err)..'"' } };
+		local ok_list, err_list = {}, {};
+		for _, module in ipairs(fields.modules) do
+			local ok, err = modulemanager.unload(data.to, module);
+			if ok then
+				ok_list[#ok_list + 1] = module;
+			else
+				err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
+			end
 		end
+		local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")..
+			(#err_list > 0 and ("Failed to unload the following modules on host "..data.to..":\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
 	else
 		local modules = array.collect(keys(hosts[data.to].modules)):sort();
-		return { status = "executing", form = { layout = layout; values = { module = modules } } }, "executing";
+		return { status = "executing", form = { layout = layout; values = { modules = modules } } }, "executing";
 	end
 end
 
@@ -588,7 +592,7 @@ local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/pr
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "admin");
-local unload_modules_desc = adhoc_new("Unload module", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
+local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
 
 module:add_item("adhoc", add_user_desc);
 module:add_item("adhoc", change_user_password_desc);
