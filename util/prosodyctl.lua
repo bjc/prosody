@@ -41,9 +41,9 @@ function adduser(params)
 	end
 	storagemanager.initialize_host(host);
 	
-	local ok = usermanager.create_user(user, password, host);
+	local ok, errmsg = usermanager.create_user(user, password, host);
 	if not ok then
-		return false, "unable-to-save-data";
+		return false, errmsg;
 	end
 	return true;
 end

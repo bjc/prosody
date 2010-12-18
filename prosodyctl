@@ -331,7 +331,7 @@ function commands.adduser(arg)
 	
 	if ok then return 0; end
 	
-	show_message(error_messages[msg])
+	show_message(msg)
 	return 1;
 end
 
