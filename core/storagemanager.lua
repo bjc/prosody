@@ -46,7 +46,10 @@ local function load_driver(host, driver_name)
 	local driver = stores_available:get(host, driver_name);
 	if driver then return driver; end
 	if driver_name ~= "internal" then
-		modulemanager.load(host, "storage_"..driver_name);
+		local ok, err = modulemanager.load(host, "storage_"..driver_name);
+		if not ok then
+			log("error", "Failed to load storage driver plugin %s: %s", driver_name, err);
+		end
 		return stores_available:get(host, driver_name);
 	else
 		return setmetatable({host = host}, default_driver_mt);
