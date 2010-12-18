@@ -45,6 +45,9 @@ function new()
 		if map then
 			map[handler] = nil;
 			handlers[event] = nil;
+			if next(map) == nil then
+				event_map[event] = nil;
+			end
 		end
 	end;
 	local function add_handlers(handlers)
