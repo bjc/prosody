@@ -102,7 +102,7 @@ function load(filename, format)
 					config = config
 				});
 			end
-			return not not new_config, "parser", err;
+			return ok, "parser", err;
 		end
 		return f, "file", err;
 	end
