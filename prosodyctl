@@ -33,9 +33,11 @@ end
 
 -- Global 'prosody' object
 prosody = {
-	hosts = {},
-	events = require "util.events".new(),
-	platform = "posix"
+	hosts = {};
+	events = require "util.events".new();
+	platform = "posix";
+	lock_globals = function () end;
+	unlock_globals = function () end;
 };
 local prosody = prosody;
 
