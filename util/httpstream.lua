@@ -46,7 +46,7 @@ local function parser(success_cb, parser_type, options_cb)
 			local status_line = readline();
 			local method, path, httpversion = status_line:match("^(%S+)%s+(%S+)%s+HTTP/(%S+)$");
 			if not method then coroutine.yield("invalid-status-line"); end
-			-- TODO parse url
+			path = path:gsub("^//+", "/"); -- TODO parse url more
 			local headers = readheaders();
 			
 			-- read body
