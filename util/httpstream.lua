@@ -104,9 +104,12 @@ local function parser(success_cb, parser_type, options_cb)
 			
 			success_cb({
 				code = status_code;
+				httpversion = httpversion;
+				headers = headers;
+				body = body;
+				-- COMPAT the properties below are deprecated
 				responseversion = httpversion;
 				responseheaders = headers;
-				body = body;
 			});
 		end
 	else coroutine.yield("unknown-parser-type"); end
