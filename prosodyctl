@@ -41,6 +41,11 @@ prosody = {
 };
 local prosody = prosody;
 
+local dependencies = require "util.dependencies";
+if not dependencies.check_dependencies() then
+	os.exit(1);
+end
+
 config = require "core.configmanager"
 
 do
@@ -94,9 +99,7 @@ config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
 
 require "core.loggingmanager"
 
-if not require "util.dependencies".check_dependencies() then
-	os.exit(1);
-end
+dependencies.log_warnings();
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 require "util.datamanager".set_data_path(data_path);
