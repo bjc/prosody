@@ -7,12 +7,13 @@
 --
 
 local _G = _G;
-local 	setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, format =
-		setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table, string.format;
-
+local setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table =
+      setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table;
+local format, math_max = string.format, math.max;
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
 
+local lfs = require "lfs";
 local path_sep = package.config:sub(1,1);
 
 module "configmanager"
@@ -71,6 +72,10 @@ do
 	local rel_path_start = ".."..path_sep;
 	function resolve_relative_path(parent_path, path)
 		if path then
+			-- Some normalization
+			parent_path = parent_path:gsub("%"..path_sep.."+$", "");
+			path = path:gsub("^%.%"..path_sep.."+", "");
+			
 			local is_relative;
 			if path_sep == "/" and path:sub(1,1) ~= "/" then
 				is_relative = true;
@@ -83,6 +88,19 @@ do
 		end
 		return path;
 	end	
+end
+
+-- Helper function to convert a glob to a Lua pattern
+local function glob_to_pattern(glob)
+	return "^"..glob:gsub("[%p*?]", function (c)
+		if c == "*" then
+			return ".*";
+		elseif c == "?" then
+			return ".";
+		else
+			return "%"..c;
+		end
+	end).."$";
 end
 
 function load(filename, format)
@@ -137,7 +155,7 @@ do
 	local loadstring, pcall, setmetatable = _G.loadstring, _G.pcall, _G.setmetatable;
 	local setfenv, rawget, tostring = _G.setfenv, _G.rawget, _G.tostring;
 	parsers.lua = {};
-	function parsers.lua.load(data, filename, config)
+	function parsers.lua.load(data, config_file, config)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -199,24 +217,40 @@ do
 		end
 		env.component = env.Component;
 		
-		function env.Include(file)
-			local f, err = io.open(file);
-			if f then
-				local data = f:read("*a");
-				local file = resolve_relative_path(filename:gsub("[^"..path_sep.."]+$", ""), file);
-				local ret, err = parsers.lua.load(data, file, config);
-				if not ret then error(err:gsub("%[string.-%]", file), 0); end
+		function env.Include(file, wildcard)
+			if file:match("[*?]") then
+				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
+				local path = file:sub(1, math_max(path_pos-2,0));
+				if #path > 0 then
+					path = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), path);
+				else
+					path = ".";
+				end
+				local patt = glob_to_pattern(glob);
+				for f in lfs.dir(path) do
+					if f:sub(1,1) ~= "." and f:match(patt) then
+						env.Include(path..path_sep..f);
+					end
+				end
+			else
+				local f, err = io.open(file);
+				if f then
+					local data = f:read("*a");
+					local file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
+					local ret, err = parsers.lua.load(data, file, config);
+					if not ret then error(err:gsub("%[string.-%]", file), 0); end
+				end
+				if not f then error("Error loading included "..file..": "..err, 0); end
+				return f, err;
 			end
-			if not f then error("Error loading included "..file..": "..err, 0); end
-			return f, err;
 		end
 		env.include = env.Include;
 		
 		function env.RunScript(file)
-			return dofile(resolve_relative_path(filename:gsub("[^"..path_sep.."]+$", ""), file));
+			return dofile(resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file));
 		end
 		
-		local chunk, err = loadstring(data, "@"..filename);
+		local chunk, err = loadstring(data, "@"..config_file);
 		
 		if not chunk then
 			return nil, err;
