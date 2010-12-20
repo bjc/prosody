@@ -35,6 +35,12 @@ end
 prosody = { events = require "util.events".new(); };
 local prosody = prosody;
 
+-- Check dependencies
+local dependencies = require "util.dependencies";
+if not dependencies.check_dependencies() then
+	os.exit(1);
+end
+
 -- Load the config-parsing module
 config = require "core.configmanager"
 
@@ -99,11 +105,8 @@ function init_logging()
 	require "core.loggingmanager"
 end
 
-function check_dependencies()
-	-- Check runtime dependencies
-	if not require "util.dependencies".check_dependencies() then
-		os.exit(1);
-	end
+function log_dependency_warnings()
+	dependencies.log_warnings();
 end
 
 function sandbox_require()
@@ -442,13 +445,13 @@ end
 -- previous steps to have already been performed
 read_config();
 init_logging();
-check_dependencies();
 sandbox_require();
 set_function_metatable();
 load_libraries();
 init_global_state();
 read_version();
 log("info", "Hello and welcome to Prosody version %s", prosody.version);
+log_dependency_warnings();
 load_secondary_libraries();
 init_data_store();
 init_global_protection();
