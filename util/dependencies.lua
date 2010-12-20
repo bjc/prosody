@@ -78,11 +78,6 @@ function check_dependencies()
 				["luarocks"] = "luarocks install luasec";
 				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
 			}, "SSL/TLS support will not be available");
-	else
-		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
-		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
-			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
-		end
 	end
 	
 	local encodings, err = softreq "util.encodings"
@@ -121,5 +116,13 @@ function check_dependencies()
 	return not fatal;
 end
 
+function log_warnings()
+	if ssl then
+		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
+		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
+			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
+		end
+	end
+end
 
 return _M;
