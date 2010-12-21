@@ -221,10 +221,11 @@ do
 			if file:match("[*?]") then
 				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
 				local path = file:sub(1, math_max(path_pos-2,0));
+				local config_path = config_file:gsub("[^"..path_sep.."]+$", "");
 				if #path > 0 then
-					path = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), path);
+					path = resolve_relative_path(config_path, path);
 				else
-					path = ".";
+					path = config_path;
 				end
 				local patt = glob_to_pattern(glob);
 				for f in lfs.dir(path) do
