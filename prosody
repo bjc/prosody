@@ -77,9 +77,15 @@ function read_config()
 		print("\n");
 		print("**************************");
 		if level == "parser" then
-			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua"..":");
+			print("");
 			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
-			print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
+			if err:match("chunk has too many syntax levels$") then
+				print("An Include statement in a config file is including an already-included");
+				print("file and causing an infinite loop. An Include statement in a config file is...");
+			else
+				print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
+			end
 			print("");
 		elseif level == "file" then
 			print("Prosody was unable to find the configuration file.");
