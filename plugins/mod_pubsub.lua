@@ -205,10 +205,11 @@ local function add_disco_features_from_service(disco, service)
 end
 
 local function build_disco_info(service)
-	disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
+	local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
 		:tag("identity", { category = "pubsub", type = "service" }):up()
 		:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
 	add_disco_features_from_service(disco_info, service);
+	return disco_info;
 end
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
