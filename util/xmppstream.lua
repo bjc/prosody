@@ -45,7 +45,10 @@ function new_sax_handlers(session, stream_callbacks)
 	local cb_handlestanza = stream_callbacks.handlestanza;
 	
 	local stream_ns = stream_callbacks.stream_ns or xmlns_streams;
-	local stream_tag = stream_ns..ns_separator..(stream_callbacks.stream_tag or "stream");
+	local stream_tag = stream_callbacks.stream_tag or "stream";
+	if stream_ns ~= "" then
+		stream_tag = stream_ns..ns_separator..stream_tag;
+	end
 	local stream_error_tag = stream_ns..ns_separator..(stream_callbacks.error_tag or "error");
 	
 	local stream_default_ns = stream_callbacks.default_ns;
