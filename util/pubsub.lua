@@ -235,7 +235,7 @@ end
 
 function service:get_nodes(actor)
 	-- Access checking
-	if not self:may(node, actor, "get_nodes") then
+	if not self:may(nil, actor, "get_nodes") then
 		return false, "forbidden";
 	end
 	--
