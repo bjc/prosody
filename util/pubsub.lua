@@ -3,8 +3,19 @@ module("pubsub", package.seeall);
 local service = {};
 local service_mt = { __index = service };
 
-function new(cb)
-	return setmetatable({ cb = cb or {}, nodes = {} }, service_mt);
+local default_config = {
+	broadcaster = function () end;
+	get_affiliation = function () end;
+	capabilities = {};
+};
+
+function new(config)
+	config = config or {};
+	return setmetatable({
+		config = setmetatable(config, { __index = default_config });
+		affiliations = {};
+		nodes = {};
+	}, service_mt);
 end
 
 function service:add_subscription(node, actor, jid)
