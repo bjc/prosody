@@ -130,5 +130,10 @@ VirtualHost "example.com"
 --Component "proxy.example.com" "proxy65"
 
 ---Set up an external component (default component port is 5347)
+--
+-- External components allow adding various services, such as gateways/
+-- transports to other networks like ICQ, MSN and Yahoo. For more info
+-- see: http://prosody.im/doc/components#adding_an_external_component
+--
 --Component "gateway.example.com"
 --	component_secret = "password"
