@@ -192,7 +192,7 @@ local feature_map = {
 local function add_disco_features_from_service(disco, service)
 	for method, features in pairs(feature_map) do
 		if service[method] then
-			for _, feature in ipairs(feature_map) do
+			for _, feature in ipairs(features) do
 				disco:tag("feature", { var = xmlns_pubsub.."#"..feature }):up();
 			end
 		end
