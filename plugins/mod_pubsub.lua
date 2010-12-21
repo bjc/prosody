@@ -44,8 +44,14 @@ function handlers.get_items(origin, stanza, items)
 	local node = items.attr.node;
 	local item = items:get_child("item");
 	local id = item and item.attr.id;
+	
+	local ok, results = service:get_items(node, stanza.attr.from, id);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, results));
+	end
+	
 	local data = st.stanza("items", { node = node });
-	for _, entry in pairs(service:get(node, stanza.attr.from, id)) do
+	for _, entry in pairs(results) do
 		data:add_child(entry);
 	end
 	if data then
@@ -72,10 +78,14 @@ function handlers.set_create(origin, stanza, create)
 		repeat
 			node = uuid_generate();
 			ok, ret = service:create(node, stanza.attr.from);
-		until ok;
-		reply = st.reply(stanza)
-			:tag("pubsub", { xmlns = xmlns_pubsub })
-				:tag("create", { node = node });
+		until ok or ret ~= "conflict";
+		if ok then
+			reply = st.reply(stanza)
+				:tag("pubsub", { xmlns = xmlns_pubsub })
+					:tag("create", { node = node });
+		else
+			reply = pubsub_error_reply(stanza, ret);
+		end
 	end
 	return origin.send(reply);
 end
@@ -191,8 +201,67 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function
 	return true;
 end);
 
+local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
+local function get_affiliation(jid)
+	if usermanager.is_admin(jid, module.host) then
+		return admin_aff;
+	end
+end
+
 service = pubsub.new({
-	broadcaster = simple_broadcast
+	capabilities = {
+		none = {
+			create = false;
+			publish = false;
+			retract = false;
+			get_nodes = true;
+			
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			--get_items = true;
+			
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			
+			be_subscribed = true;
+			be_unsubscribed = true;
+			
+			set_affiliation = false;
+		};
+		owner = {
+			create = true;
+			publish = true;
+			retract = true;
+			get_nodes = true;
+			
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			--get_items = true;
+			
+			
+			subscribe_other = true;
+			unsubscribe_other = true;
+			get_subscription_other = true;
+			
+			be_subscribed = true;
+			be_unsubscribed = true;
+			
+			set_affiliation = true;
+		};
+		admin = { get_items = true };
+	};
+	
+	autocreate_on_publish = module:get_option_boolean("autocreate_on_publish");
+	autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe");
+	
+	broadcaster = simple_broadcast;
+	get_affiliation = get_affiliation;
+	jids_equal = function (jid1, jid2)
+		return jid_bare(jid1) == jid_bare(jid2);
+	end;
 });
 module.environment.service = service;
 
