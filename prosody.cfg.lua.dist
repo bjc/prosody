@@ -94,8 +94,11 @@ ssl = {
 
 -- Logging configuration
 -- For advanced logging see http://prosody.im/doc/logging
-log = "prosody.log";
-debug = false; -- Log debug messages?
+log = {
+	info = "prosody.log"; -- Change info to debug for verbose logging
+	error = "prosody.err";
+	-- "*syslog"; -- Uncomment this for logging to syslog
+}
 
 ----------- Virtual hosts -----------
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
