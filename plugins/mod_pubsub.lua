@@ -9,6 +9,9 @@ local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
 
+local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
+local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
+
 local service;
 
 local handlers = {};
@@ -177,9 +180,36 @@ end
 
 module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq);
 
-local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-	:tag("identity", { category = "pubsub", type = "service" }):up()
-	:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
+local disco_info;
+
+local feature_map = {
+	create = { "create-nodes", autocreate_on_publish and "instant-nodes", "item-ids" };
+	retract = { "delete-items", "retract-items" };
+	publish = { "publish" };
+	get_items = { "retrieve-items" };
+};
+
+local function add_disco_features_from_service(disco, service)
+	for method, features in pairs(feature_map) do
+		if service[method] then
+			for _, feature in ipairs(feature_map) do
+				disco:tag("feature", { var = xmlns_pubsub.."#"..feature }):up();
+			end
+		end
+	end
+	for affiliation in pairs(service.config.capabilities) do
+		if affiliation ~= "none" and affiliation ~= "owner" then
+			disco:tag("feature", { var = xmlns_pubsub.."#"..affiliation.."-affiliation" }):up();
+		end
+	end
+end
+
+local function build_disco_info(service)
+	disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
+		:tag("identity", { category = "pubsub", type = "service" }):up()
+		:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
+	add_disco_features_from_service(disco_info, service);
+end
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
 	event.origin.send(st.reply(event.stanza):add_child(disco_info));
@@ -208,7 +238,21 @@ local function get_affiliation(jid)
 	end
 end
 
-service = pubsub.new({
+function set_service(new_service)
+	service = new_service;
+	module.environment.service = service;
+	disco_info = build_disco_info(service);
+end
+
+function module.save()
+	return { service = service };
+end
+
+function module.restore(data)
+	set_service(data.service);
+end
+
+set_service(pubsub.new({
 	capabilities = {
 		none = {
 			create = false;
@@ -253,22 +297,12 @@ service = pubsub.new({
 		};
 	};
 	
-	autocreate_on_publish = module:get_option_boolean("autocreate_on_publish");
-	autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe");
+	autocreate_on_publish = autocreate_on_publish;
+	autocreate_on_subscribe = autocreate_on_subscribe;
 	
 	broadcaster = simple_broadcast;
 	get_affiliation = get_affiliation;
 	jids_equal = function (jid1, jid2)
 		return jid_bare(jid1) == jid_bare(jid2);
 	end;
-});
-module.environment.service = service;
-
-function module.save()
-	return { service = service };
-end
-
-function module.restore(data)
-	service = data.service;
-	module.environment.service = service;
-end
+}));
