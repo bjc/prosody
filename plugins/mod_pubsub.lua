@@ -219,7 +219,7 @@ service = pubsub.new({
 			subscribe = true;
 			unsubscribe = true;
 			get_subscription = true;
-			--get_items = true;
+			get_items = true;
 			
 			subscribe_other = false;
 			unsubscribe_other = false;
@@ -239,7 +239,7 @@ service = pubsub.new({
 			subscribe = true;
 			unsubscribe = true;
 			get_subscription = true;
-			--get_items = true;
+			get_items = true;
 			
 			
 			subscribe_other = true;
@@ -251,7 +251,6 @@ service = pubsub.new({
 			
 			set_affiliation = true;
 		};
-		admin = { get_items = true };
 	};
 	
 	autocreate_on_publish = module:get_option_boolean("autocreate_on_publish");
