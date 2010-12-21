@@ -29,6 +29,7 @@ local pubsub_errors = {
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
+	["forbidden"] = { "cancel", "forbidden" };
 };
 function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
