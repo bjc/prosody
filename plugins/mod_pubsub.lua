@@ -236,7 +236,8 @@ end);
 
 local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
 local function get_affiliation(jid)
-	if jid == module.host or usermanager.is_admin(jid, module.host) then
+	local bare_jid = jid_bare(jid);
+	if bare_jid == module.host or usermanager.is_admin(bare_jid, module.host) then
 		return admin_aff;
 	end
 end
