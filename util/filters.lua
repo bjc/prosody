@@ -76,4 +76,12 @@ function add_filter_hook(callback)
 	t_insert(new_filter_hooks, callback);
 end
 
+function remove_filter_hook(callback)
+	for i=1,#new_filter_hooks do
+		if new_filter_hooks[i] == callback then
+			t_remove(new_filter_hooks, i);
+		end
+	end
+end
+
 return _M;
