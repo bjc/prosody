@@ -108,6 +108,7 @@ function service:add_subscription(node, actor, jid, options)
 			if not ok then
 				return ok, err;
 			end
+			node_obj = self.nodes[node];
 		end
 	end
 	node_obj.subscribers[jid] = options or true;
