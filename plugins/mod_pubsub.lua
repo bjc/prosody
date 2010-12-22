@@ -329,7 +329,6 @@ set_service(pubsub.new({
 	
 	broadcaster = simple_broadcast;
 	get_affiliation = get_affiliation;
-	jids_equal = function (jid1, jid2)
-		return jid_bare(jid1) == jid_bare(jid2);
-	end;
+	
+	normalize_jid = jid_bare;
 }));
