@@ -232,7 +232,7 @@ local function handle_disco_items_on_node(event)
 		:tag("query", { xmlns = xmlns_disco_items });
 	
 	for id, item in pairs(ret) do
-		reply:tag("item", { jid = module.host, name = id });
+		reply:tag("item", { jid = module.host, name = id }):up();
 	end
 	
 	return origin.send(reply);
