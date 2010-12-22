@@ -18,6 +18,11 @@ function new(config)
 	}, service_mt);
 end
 
+function service:jids_equal(jid1, jid2)
+	local normalize = self.config.normalize_jid;
+	return normalize(jid1) == normalize(jid2);
+end
+
 function service:may(node, actor, action)
 	if actor == true then return true; end
 	
@@ -82,7 +87,7 @@ end
 function service:add_subscription(node, actor, jid, options)
 	-- Access checking
 	local cap;
-	if jid == actor or self.config.jids_equal(actor, jid) then
+	if jid == actor or self:jids_equal(actor, jid) then
 		cap = "subscribe";
 	else
 		cap = "subscribe_other";
@@ -112,7 +117,7 @@ end
 function service:remove_subscription(node, actor, jid)
 	-- Access checking
 	local cap;
-	if jid == actor or self.config.jids_equal(actor, jid) then
+	if jid == actor or self:jids_equal(actor, jid) then
 		cap = "unsubscribe";
 	else
 		cap = "unsubscribe_other";
@@ -138,7 +143,7 @@ end
 function service:get_subscription(node, actor, jid)
 	-- Access checking
 	local cap;
-	if jid == actor or self.config.jids_equal(actor, jid) then
+	if jid == actor or self:jids_equal(actor, jid) then
 		cap = "get_subscription";
 	else
 		cap = "get_subscription_other";
