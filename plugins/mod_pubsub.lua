@@ -187,6 +187,8 @@ local feature_map = {
 	retract = { "delete-items", "retract-items" };
 	publish = { "publish" };
 	get_items = { "retrieve-items" };
+	add_subscription = { "subscribe" };
+	get_subscriptions = { "retrieve-subscriptions" };
 };
 
 local function add_disco_features_from_service(disco, service)
