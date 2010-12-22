@@ -106,6 +106,7 @@ function send_to_host(from_host, to_host, data)
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", get_traceback());
 			log("error", "Stanza: %s", tostring(data));
+			return false;
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
@@ -126,8 +127,10 @@ function send_to_host(from_host, to_host, data)
 		if (not host_session.connecting) and (not host_session.conn) then
 			log("warn", "Connection to %s failed already, destroying session...", to_host);
 			destroy_session(host_session);
+			return false;
 		end
 	end
+	return true;
 end
 
 local open_sessions = 0;
