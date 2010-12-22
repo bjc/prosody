@@ -67,6 +67,20 @@ function handlers.get_items(origin, stanza, items)
 	return origin.send(reply);
 end
 
+function handlers.get_subscriptions(origin, stanza, subscriptions)
+	local node = subscriptions.attr.node;
+	local ok, ret = service:get_subscriptions(node, stanza.attr.from, stanza.attr.from);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, ret));
+	end
+	local reply = st.reply(stanza)
+		:tag("subscriptions", { xmlns = xmlns_pubsub });
+	for _, sub in ipairs(ret) do
+		reply:tag("subscription", { node = sub.node, jid = sub.jid, subscription = 'subscribed' }):up();
+	end
+	return origin.send(reply);
+end
+
 function handlers.set_create(origin, stanza, create)
 	local node = create.attr.node;
 	local ok, ret, reply;
