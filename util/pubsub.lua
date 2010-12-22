@@ -14,6 +14,7 @@ function new(config)
 	return setmetatable({
 		config = setmetatable(config, { __index = default_config });
 		affiliations = {};
+		subscriptions = {};
 		nodes = {};
 	}, service_mt);
 end
@@ -112,6 +113,17 @@ function service:add_subscription(node, actor, jid, options)
 		end
 	end
 	node_obj.subscribers[jid] = options or true;
+	local normal_jid = self.config.normalize_jid(jid);
+	local subs = self.subscriptions[normal_jid];
+	if subs then
+		if not subs[jid] then
+			subs[jid] = { [node] = true };
+		else
+			subs[jid][node] = true;
+		end
+	else
+		self.subscriptions[normal_jid] = { [jid] = { [node] = true } };
+	end
 	return true;
 end
 
@@ -138,6 +150,20 @@ function service:remove_subscription(node, actor, jid)
 		return false, "not-subscribed";
 	end
 	node_obj.subscribers[jid] = nil;
+	local normal_jid = self.config.normalize_jid(jid);
+	local subs = self.subscriptions[normal_jid];
+	if subs then
+		local jid_subs = subs[jid];
+		if jid_subs then
+			jid_subs[node] = nil;
+			if next(jid_subs) == nil then
+				subs[jid] = nil;
+			end
+		end
+		if next(subs) == nil then
+			self.subscriptions[normal_jid] = nil;
+		end
+	end
 	return true;
 end
 
@@ -247,6 +273,55 @@ function service:get_nodes(actor)
 	end
 	--
 	return true, self.nodes;
+end
+
+function service:get_subscriptions(node, actor, jid)
+	-- Access checking
+	local cap;
+	if jid == actor or self:jids_equal(actor, jid) then
+		cap = "get_subscriptions";
+	else
+		cap = "get_subscriptions_other";
+	end
+	if not self:may(node, actor, cap) then
+		return false, "forbidden";
+	end
+	--
+	local node_obj;
+	if node then
+		node_obj = self.nodes[node];
+		if not node_obj then
+			return false, "item-not-found";
+		end
+	end
+	local normal_jid = self.config.normalize_jid(jid);
+	local subs = self.subscriptions[normal_jid];
+	-- We return the subscription object from the node to save
+	-- a get_subscription() call for each node.
+	local ret = {};
+	if subs then
+		for jid, subscribed_nodes in pairs(subs) do
+			if node then -- Return only subscriptions to this node
+				if subscribed_nodes[node] then
+					ret[#ret+1] = {
+						node = node;
+						jid = jid;
+						subscription = node_obj.subscribers[jid];
+					};
+				end
+			else -- Return subscriptions to all nodes
+				local nodes = self.nodes;
+				for subscribed_node in pairs(subscribed_nodes) do
+					ret[#ret+1] = {
+						node = node;
+						jid = jid;
+						subscription = nodes[subscribed_node].subscribers[jid];
+					};
+				end
+			end
+		end
+	end
+	return true, ret;
 end
 
 -- Access models only affect 'none' affiliation caps, service/default access level...
