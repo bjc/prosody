@@ -219,7 +219,30 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function 
 	return true;
 end);
 
+local function handle_disco_items_on_node(event)
+	local stanza, origin = event.stanza, event.origin;
+	local query = stanza.tags[1];
+	local node = query.attr.node;
+	local ok, ret = service:get_items(node, stanza.attr.from);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, ret));
+	end
+	
+	local reply = st.reply(stanza)
+		:tag("query", { xmlns = xmlns_disco_items });
+	
+	for id, item in pairs(ret) do
+		reply:tag("item", { jid = module.host, name = id });
+	end
+	
+	return origin.send(reply);
+end
+
+
 module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function (event)
+	if event.stanza.tags[1].attr.node then
+		return handle_disco_items_on_node(event);
+	end
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
 		event.origin.send(pubsub_error_reply(stanza, ret));
