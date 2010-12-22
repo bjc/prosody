@@ -227,7 +227,7 @@ function service:get_items(node, actor, id)
 		return false, "item-not-found";
 	end
 	if id then -- Restrict results to a single specific item
-		return true, { node_obj.data[id] };
+		return true, { [id] = node_obj.data[id] };
 	else
 		return true, node_obj.data;
 	end
