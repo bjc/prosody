@@ -231,8 +231,23 @@ local function build_disco_info(service)
 end
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
-	event.origin.send(st.reply(event.stanza):add_child(disco_info));
-	return true;
+	local origin, stanza = event.origin, event.stanza;
+	local node = stanza.tags[1].attr.node;
+	if not node then
+		return origin.send(st.reply(stanza):add_child(disco_info));
+	else
+		local ok, ret = service:get_nodes(stanza.attr.from);
+		if ok and not ret[node] then
+			ok, ret = false, "item-not-found";
+		end
+		if not ok then
+			return origin.send(pubsub_error_reply(stanza, ret));
+		end
+		local reply = st.reply(stanza)
+			:tag("query", { xmlns = "http://jabber.org/protocol/disco#info", node = node })
+				:tag("identity", { category = "pubsub", type = "leaf" });
+		return origin.send(reply);
+	end
 end);
 
 local function handle_disco_items_on_node(event)
