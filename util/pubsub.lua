@@ -154,9 +154,10 @@ function service:get_subscription(node, actor, jid)
 	end
 	--
 	local node_obj = self.nodes[node];
-	if node_obj then
-		return true, node_obj.subscribers[jid];
+	if not node_obj then
+		return false, "item-not-found";
 	end
+	return true, node_obj.subscribers[jid];
 end
 
 function service:create(node, actor)
