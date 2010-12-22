@@ -313,7 +313,7 @@ function service:get_subscriptions(node, actor, jid)
 				local nodes = self.nodes;
 				for subscribed_node in pairs(subscribed_nodes) do
 					ret[#ret+1] = {
-						node = node;
+						node = subscribed_node;
 						jid = jid;
 						subscription = nodes[subscribed_node].subscribers[jid];
 					};
