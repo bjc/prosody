@@ -260,7 +260,7 @@ local function handle_disco_items_on_node(event)
 	end
 	
 	local reply = st.reply(stanza)
-		:tag("query", { xmlns = xmlns_disco_items });
+		:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
 	
 	for id, item in pairs(ret) do
 		reply:tag("item", { jid = module.host, name = id }):up();
