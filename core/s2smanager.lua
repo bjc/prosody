@@ -631,7 +631,8 @@ function destroy_session(session, reason)
 		end
 	end
 	
-	retire_session(session); -- Clean session until it is GC'd
+	retire_session(session, reason); -- Clean session until it is GC'd
+	return true;
 end
 
 return _M;
