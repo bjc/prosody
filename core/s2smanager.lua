@@ -316,7 +316,7 @@ function make_connect(host_session, connect_host, connect_port)
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
-	local conn, handler = socket.tcp()
+	local conn, handler = socket.tcp();
 	
 	if not conn then
 		log("warn", "Failed to create outgoing connection, system error: %s", handler);
