@@ -555,13 +555,15 @@ local resting_session = { -- Resting, not dead
 		filter = function (type, data) return data; end;
 	}; resting_session.__index = resting_session;
 
-function retire_session(session)
+function retire_session(session, reason)
 	local log = session.log or log;
 	for k in pairs(session) do
 		if k ~= "trace" and k ~= "log" and k ~= "id" then
 			session[k] = nil;
 		end
 	end
+
+	session.destruction_reason = reason;
 
 	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
