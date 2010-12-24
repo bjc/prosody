@@ -306,7 +306,13 @@ function try_connect(host_session, connect_host, connect_port)
 		
 		if reply and reply[#reply] and reply[#reply].a then
 			log("debug", "DNS reply for %s gives us %s", connect_host, reply[#reply].a);
-			return make_connect(host_session, reply[#reply].a, connect_port);
+			local ok, err = make_connect(host_session, reply[#reply].a, connect_port);
+			if not ok then
+				if not attempt_connection(host_session, err or "closed") then
+					err = err and (": "..err) or "";
+					destroy_session(host_session, "Connection failed"..err);
+				end
+			end
 		else
 			log("debug", "DNS lookup failed to get a response for %s", connect_host);
 			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
