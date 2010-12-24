@@ -722,7 +722,10 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		--set(self.yielded, co, qclass, qtype, qname, true);
 	end
 
-	local conn = self:getsocket(o.server)
+	local conn, err = self:getsocket(o.server)
+	if not conn then
+		return nil, err;
+	end
 	conn:send (o.packet)
 	
 	if timer and self.timeout then
@@ -734,16 +737,18 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					i = i + 1;
 					self:servfail(conn);
 					o.server = self.best_server;
-					conn = self:getsocket(o.server);
-					conn:send(o.packet);
-					return self.timeout;
-				else
-					-- Tried everything, failed
-					self:cancel(qclass, qtype, qname, co, true);
+					conn, err = self:getsocket(o.server);
+					if conn then
+						conn:send(o.packet);
+						return self.timeout;
+					end
 				end
+				-- Tried everything, failed
+				self:cancel(qclass, qtype, qname, co, true);
 			end
 		end)
 	end
+	return true;
 end
 
 function resolver:servfail(sock)
