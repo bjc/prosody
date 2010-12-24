@@ -177,6 +177,8 @@ function new_outgoing(from_host, to_host, connect)
 		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
+		host_session.close = destroy_session; -- This gets replaced by xmppserver_listener later
+		
 		local log;
 		do
 			local conn_name = "s2sout"..tostring(host_session):match("[a-f0-9]*$");
