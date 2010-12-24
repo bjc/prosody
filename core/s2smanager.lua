@@ -125,7 +125,10 @@ function send_to_host(from_host, to_host, data)
 		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
 		if (not host_session.connecting) and (not host_session.conn) then
 			log("warn", "Connection to %s failed already, destroying session...", to_host);
-			destroy_session(host_session);
+			if not destroy_session(host_session, "Connection failed") then
+				-- Already destroyed, we need to bounce our stanza
+				bounce_sendq(host_session, host_session.destruction_reason);
+			end
 			return false;
 		end
 	end
