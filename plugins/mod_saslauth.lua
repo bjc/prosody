@@ -321,7 +321,10 @@ module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 	return true;
 end);
 
-module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-session:session", function(event)
+local function handle_legacy_session(event)
 	event.origin.send(st.reply(event.stanza));
 	return true;
-end);
+end
+
+module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-session:session", handle_legacy_session);
+module:hook("iq/host/urn:ietf:params:xml:ns:xmpp-session:session", handle_legacy_session);
