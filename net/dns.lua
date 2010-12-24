@@ -602,7 +602,11 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	local sock = self.socket[servernum];
 	if sock then return sock; end
 
-	sock = socket.udp();
+	local err;
+	sock, err = socket.udp();
+	if not sock then
+		return nil, err;
+	end
 	if self.socket_wrapper then sock = self.socket_wrapper(sock, self); end
 	sock:settimeout(0);
 	-- todo: attempt to use a random port, fallback to 0
