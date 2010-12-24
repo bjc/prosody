@@ -190,7 +190,11 @@ function new_outgoing(from_host, to_host, connect)
 		
 		if connect ~= false then
 			-- Kick the connection attempting machine into life
-			attempt_connection(host_session);
+			if not attempt_connection(host_session) then
+				-- Intentionally not returning here, the
+				-- session is needed, connected or not
+				destroy_session(host_session);
+			end
 		end
 		
 		if not host_session.sends2s then
