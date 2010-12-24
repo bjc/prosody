@@ -26,10 +26,17 @@ function lookup(handler, qname, qtype, qclass)
 					return;
 				end
 				log("debug", "Records for %s not in cache, sending query (%s)...", qname, tostring(coroutine.running()));
-				dns.query(qname, qtype, qclass);
-				coroutine.yield({ qclass or "IN", qtype or "A", qname, coroutine.running()}); -- Wait for reply
-				log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
-				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
+				local ok, err = dns.query(qname, qtype, qclass);
+				if ok then
+					coroutine.yield({ qclass or "IN", qtype or "A", qname, coroutine.running()}); -- Wait for reply
+					log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
+				end
+				if ok then
+					ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
+				else
+					log("error", "Error sending DNS query: %s", err);
+					ok, err = pcall(handler, nil, err);
+				end
 				if not ok then
 					log("error", "Error in DNS response handler: %s", tostring(err));
 				end
