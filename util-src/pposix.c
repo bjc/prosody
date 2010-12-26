@@ -620,4 +620,4 @@ int luaopen_util_pposix(lua_State *L)
 	lua_setfield(L, -2, "_VERSION");
 
 	return 1;
-};
+}
