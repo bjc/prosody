@@ -12,7 +12,7 @@
 * Lua library for base64, stringprep and idna encodings
 */
 
-// Newer MSVC compilers deprecate strcpy as unsafe, but we use it in a safe way
+/* Newer MSVC compilers deprecate strcpy as unsafe, but we use it in a safe way */
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <string.h>
@@ -135,7 +135,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 	s = lua_tolstring(L, 1, &len);
 	if (len >= 1024) {
 		lua_pushnil(L);
-		return 1; // TODO return error message
+		return 1; /* TODO return error message */
 	}
 	strcpy(string, s);
 	ret = stringprep(string, 1024, (Stringprep_profile_flags)0, profile);
@@ -144,7 +144,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 		return 1;
 	} else {
 		lua_pushnil(L);
-		return 1; // TODO return error message
+		return 1; /* TODO return error message */
 	}
 }
 
@@ -261,7 +261,7 @@ static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 	} else {
 		lua_pushnil(L);
 		idn_free(output);
-		return 1; // TODO return error message
+		return 1; /* TODO return error message */
 	}
 }
 
@@ -278,7 +278,7 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 	} else {
 		lua_pushnil(L);
 		idn_free(output);
-		return 1; // TODO return error message
+		return 1; /* TODO return error message */
 	}
 }
 #else
