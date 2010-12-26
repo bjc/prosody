@@ -279,8 +279,6 @@ then
 	IDNA_LIBS="-l$IDN_LIB"
 fi
 
-LDFLAGS="$LDFLAGS -llua$LUA_SUFFIX"
-
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
 if [ -e "$lua_h" ]
