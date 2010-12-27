@@ -55,9 +55,9 @@ do -- process options to get a db connection
 		if count == 0 then
 			local stmt = assert(connection:prepare("CREATE TABLE `Prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `subkey` TEXT, `type` TEXT, `value` TEXT);"));
 			assert(stmt:execute());
-			assert(connection:commit());
 			module:log("debug", "Initialized new SQLite3 database");
 		end
+		assert(connection:commit());
 		--print("===", json.stringify())
 	end
 end
@@ -132,7 +132,7 @@ function keyval_store:get(username)
 			end
 		end
 	end
-	return haveany and result or nil;
+	return commit(haveany and result or nil);
 end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
@@ -182,7 +182,7 @@ function map_store:get(username, key)
 			end
 		end
 	end
-	return haveany and result or nil;
+	return commit(haveany and result or nil);
 end
 function map_store:set(username, key, data)
 	user,store = username,self.store;
