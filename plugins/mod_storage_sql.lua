@@ -3,16 +3,16 @@
 
 DB Tables:
 	Prosody - key-value, map
-		| host | user | store | key | subkey | type | value |
+		| host | user | store | key | type | value |
 	ProsodyArchive - list
 		| host | user | store | key | time | stanzatype | jsonvalue |
 
 Mapping:
 	Roster - Prosody
-		| host | user | "roster" | "contactjid" | item-subkey | type | value |
-		| host | user | "roster" | NULL | NULL | "json" | roster[false] data |
+		| host | user | "roster" | "contactjid" | type | value |
+		| host | user | "roster" | NULL | "json" | roster[false] data |
 	Account - Prosody
-		| host | user | "accounts" | "username" | NULL | type | value |
+		| host | user | "accounts" | "username" | type | value |
 
 	Offline - ProsodyArchive
 		| host | user | "offline" | "contactjid" | time | "message" | json|XML |
@@ -54,7 +54,7 @@ do -- process options to get a db connection
 		local ok = assert(stmt:execute());
 		local count = stmt:fetch()[1];
 		if count == 0 then
-			local stmt = assert(connection:prepare("CREATE TABLE `Prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `subkey` TEXT, `type` TEXT, `value` TEXT);"));
+			local stmt = assert(connection:prepare("CREATE TABLE `Prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);"));
 			assert(stmt:execute());
 			module:log("debug", "Initialized new SQLite3 database");
 		end
@@ -119,7 +119,7 @@ local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user,store = username,self.store;
-	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `subkey`=''");
+	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -128,8 +128,8 @@ function keyval_store:get(username)
 		haveany = true;
 		local k = row.key;
 		local v = deserialize(row.type, row.value);
-		if v then
-			if k then result[k] = v; elseif type(v) == "table" then
+		if k and v then
+			if k ~= "" then result[k] = v; elseif type(v) == "table" then
 				for a,b in pairs(v) do
 					result[a] = b;
 				end
@@ -141,7 +141,7 @@ end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
 	-- start transaction
-	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `subkey`=''");
+	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -149,7 +149,7 @@ function keyval_store:set(username, data)
 			if type(key) == "string" and key ~= "" then
 				local t, value = serialize(value);
 				if not t then return rollback(t, value); end
-				local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`,`subkey`) VALUES (?,?,?,?,?,?,'')", key or "", t, value);
+				local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
 				if not ok then return rollback(ok, err); end
 			else
 				extradata[key] = value;
@@ -158,7 +158,7 @@ function keyval_store:set(username, data)
 		if next(extradata) ~= nil then
 			local t, extradata = serialize(extradata);
 			if not t then return rollback(t, extradata); end
-			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`,`subkey`) VALUES (?,?,?,?,?,?,'')", "", t, extradata);
+			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", "", t, extradata);
 			if not ok then return rollback(ok, err); end
 		end
 	end
@@ -176,17 +176,17 @@ function map_store:get(username, key)
 	local result = {};
 	for row in stmt:rows(true) do
 		haveany = true;
-		local k = row.subkey;
+		local k = row.key;
 		local v = deserialize(row.type, row.value);
-		if v then
-			if k then result[k] = v; elseif type(v) == "table" then
+		if k and v then
+			if k ~= "" then result[k] = v; elseif type(v) == "table" then
 				for a,b in pairs(v) do
 					result[a] = b;
 				end
 			end
 		end
 	end
-	return commit(haveany and result or nil);
+	return commit(haveany and result[key] or nil);
 end
 function map_store:set(username, key, data)
 	user,store = username,self.store;
@@ -194,22 +194,13 @@ function map_store:set(username, key, data)
 	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	
 	if data and next(data) ~= nil then
-		local extradata = {};
-		for subkey, value in pairs(data) do
-			if type(subkey) == "string" and key ~= "" then
-				local t, value = serialize(value);
-				if not t then return rollback(t, value); end
-				local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`subkey`,`type`,`value`) VALUES (?,?,?,?,?,?,?)", key or "", subkey or "", t, value);
-				if not ok then return rollback(ok, err); end
-			else
-				extradata[subkey] = value;
-			end
-		end
-		if next(extradata) ~= nil then
-			local t, extradata = serialize(extradata);
-			if not t then return rollback(t, extradata); end
-			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`subkey`,`type`,`value`) VALUES (?,?,?,?,?,?,?)", key or "", "", t, extradata);
+		if type(key) == "string" and key ~= "" then
+			local t, value = serialize(data);
+			if not t then return rollback(t, value); end
+			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
 			if not ok then return rollback(ok, err); end
+		else
+			-- TODO non-string keys
 		end
 	end
 	return commit(true);
