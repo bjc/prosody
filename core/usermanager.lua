@@ -36,6 +36,7 @@ function initialize_host(host)
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "core", "authentication") or default_provider;
+		if config.get(host, "core", "anonymous_login") then auth_provider = "anonymous"; end -- COMPAT 0.7
 		if provider.name == auth_provider then
 			host_session.users = provider;
 		end
@@ -51,6 +52,7 @@ function initialize_host(host)
 	end);
 	host_session.users = new_null_provider(); -- Start with the default usermanager provider
 	local auth_provider = config.get(host, "core", "authentication") or default_provider;
+	if config.get(host, "core", "anonymous_login") then auth_provider = "anonymous"; end -- COMPAT 0.7
 	if auth_provider ~= "null" then
 		modulemanager.load(host, "auth_"..auth_provider);
 	end
