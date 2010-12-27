@@ -36,7 +36,7 @@ function new_default_provider(host)
 	function provider.get_sasl_handler()
 		local realm = module:get_option("sasl_realm") or module.host;
 		local anonymous_authentication_profile = {
-			anonymous = function(username, realm)
+			anonymous = function(sasl, username, realm)
 				return true; -- for normal usage you should always return true here
 			end
 		};

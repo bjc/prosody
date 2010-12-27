@@ -34,7 +34,7 @@ local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 local new_sasl = require "util.sasl".new;
 
 local anonymous_authentication_profile = {
-	anonymous = function(username, realm)
+	anonymous = function(sasl, username, realm)
 		return true; -- for normal usage you should always return true here
 	end
 };
