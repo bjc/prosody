@@ -138,7 +138,7 @@ function new_hashpass_provider(host)
 	function provider.get_sasl_handler()
 		local realm = module:get_option("sasl_realm") or module.host;
 		local testpass_authentication_profile = {
-			plain_test = function(username, password, realm)
+			plain_test = function(sasl, username, password, realm)
 				local prepped_username = nodeprep(username);
 				if not prepped_username then
 					log("debug", "NODEprep failed on username: %s", username);
@@ -146,7 +146,7 @@ function new_hashpass_provider(host)
 				end
 				return usermanager.test_password(prepped_username, realm, password), true;
 			end,
-			scram_sha_1 = function(username, realm)
+			scram_sha_1 = function(sasl, username, realm)
 				local credentials = datamanager.load(username, host, "accounts");
 				if not credentials then return; end
 				if credentials.password then
