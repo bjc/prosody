@@ -29,12 +29,13 @@ local json = { stringify = function(s) return require"util.serialization".serial
 
 local connection = ...;
 local host,user,store = module.host;
+local params = module:get_option("sql");
 
 do -- process options to get a db connection
 	local DBI = require "DBI";
 
-	local params = module:get_option("sql") or { driver = "SQLite3", database = "prosody.sqlite" };
-	assert(params and params.driver and params.database, "invalid params");
+	params = params or { driver = "SQLite3", database = "prosody.sqlite" };
+	assert(params.driver and params.database, "invalid params");
 	
 	prosody.unlock_globals();
 	local dbh, err = DBI.Connect(
@@ -85,6 +86,9 @@ local function deserialize(t, value)
 end
 
 local function getsql(sql, ...)
+	if params.driver == "PostgreSQL" then
+		sql = sql:gsub("`", "\"");
+	end
 	-- do prepared statement stuff
 	local stmt, err = connection:prepare(sql);
 	if not stmt then return nil, err; end
