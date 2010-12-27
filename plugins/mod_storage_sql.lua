@@ -91,7 +91,7 @@ local function getsql(sql, ...)
 	end
 	-- do prepared statement stuff
 	local stmt, err = connection:prepare(sql);
-	if not stmt then return nil, err; end
+	if not stmt then module:log("error", "QUERY FAILED: %s %s", err, debug.traceback()); return nil, err; end
 	-- run query
 	local ok, err = stmt:execute(host or "", user or "", store or "", ...);
 	if not ok then return nil, err; end
