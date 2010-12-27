@@ -66,7 +66,7 @@ function new_default_provider(host)
 	function provider.get_sasl_handler()
 		local realm = module:get_option("sasl_realm") or module.host;
 		local getpass_authentication_profile = {
-			plain = function(username, realm)
+			plain = function(sasl, username, realm)
 				local prepped_username = nodeprep(username);
 				if not prepped_username then
 					log("debug", "NODEprep failed on username: %s", username);
