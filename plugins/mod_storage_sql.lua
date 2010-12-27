@@ -25,7 +25,7 @@ local tonumber = tonumber;
 local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
-local json = { stringify = function(s) return require"util.serialization".serialize(s) end, parse = require"util.serialization".deserialize };
+local json = require "util.json";
 
 local connection = ...;
 local host,user,store = module.host;
@@ -59,7 +59,7 @@ do -- process options to get a db connection
 			module:log("debug", "Initialized new SQLite3 database");
 		end
 		assert(connection:commit());
-		--print("===", json.stringify())
+		--print("===", json.encode())
 	end
 end
 
@@ -68,7 +68,7 @@ local function serialize(value)
 	if t == "string" or t == "boolean" or t == "number" then
 		return t, tostring(value);
 	elseif t == "table" then
-		local value,err = json.stringify(value);
+		local value,err = json.encode(value);
 		if value then return "json", value; end
 		return nil, err;
 	end
@@ -81,7 +81,7 @@ local function deserialize(t, value)
 		elseif value == "false" then return false; end
 	elseif t == "number" then return tonumber(value);
 	elseif t == "json" then
-		return json.parse(value);
+		return json.decode(value);
 	end
 end
 
