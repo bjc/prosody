@@ -18,11 +18,9 @@ local cert_verify_identity = require "util.x509".verify_identity;
 
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
-local t_concat, t_insert = table.concat, table.insert;
 local tostring = tostring;
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
-local anonymous_login = module:get_option("anonymous_login");
 local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
 
 local log = module._log;
@@ -30,14 +28,6 @@ local log = module._log;
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
-
-local new_sasl = require "util.sasl".new;
-
-local anonymous_authentication_profile = {
-	anonymous = function(sasl, username, realm)
-		return true; -- for normal usage you should always return true here
-	end
-};
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
@@ -217,22 +207,9 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 		session.sasl_handler = nil; -- allow starting a new SASL negotiation before completing an old one
 	end
 	if not session.sasl_handler then
-		if anonymous_login then
-			session.sasl_handler = new_sasl(module.host, anonymous_authentication_profile);
-		else
-			session.sasl_handler = usermanager_get_sasl_handler(module.host);
-		end
+		session.sasl_handler = usermanager_get_sasl_handler(module.host);
 	end
 	local mechanism = stanza.attr.mechanism;
-	if anonymous_login then
-		if mechanism ~= "ANONYMOUS" then
-			session.send(build_reply("failure", "invalid-mechanism"));
-			return true;
-		end
-	elseif mechanism == "ANONYMOUS" then
-		session.send(build_reply("failure", "mechanism-too-weak"));
-		return true;
-	end
 	if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
 		session.send(build_reply("failure", "encryption-required"));
 		return true;
@@ -268,11 +245,7 @@ module:hook("stream-features", function(event)
 		if secure_auth_only and not origin.secure then
 			return;
 		end
-		if anonymous_login then
-			origin.sasl_handler = new_sasl(module.host, anonymous_authentication_profile);
-		else
-			origin.sasl_handler = usermanager_get_sasl_handler(module.host);
-		end
+		origin.sasl_handler = usermanager_get_sasl_handler(module.host);
 		features:tag("mechanisms", mechanisms_attr);
 		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
 			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
