@@ -67,9 +67,6 @@ function activate(host, host_config)
 	if not host_config.core.component_module then -- host
 		host_session.type = "local";
 		host_session.sessions = {};
-		if configmanager.get(host, "core", "anonymous_login") then
-			host_session.disallow_s2s = (configmanager.get(host, "core", "disallow_s2s") ~= false);
-		end
 	else -- component
 		host_session.type = "component";
 	end
