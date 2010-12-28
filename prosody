@@ -334,12 +334,6 @@ end
 function init_data_store()
 	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 	require "util.datamanager".set_data_path(data_path);
-	require "util.datamanager".add_callback(function(username, host, datastore, data)
-		if config.get(host, "core", "anonymous_login") then
-			return false;
-		end
-		return username, host, datastore, data;
-	end);
 	require "core.storagemanager";
 end
 
