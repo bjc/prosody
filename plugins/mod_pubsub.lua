@@ -74,7 +74,8 @@ function handlers.get_subscriptions(origin, stanza, subscriptions)
 		return origin.send(pubsub_error_reply(stanza, ret));
 	end
 	local reply = st.reply(stanza)
-		:tag("subscriptions", { xmlns = xmlns_pubsub });
+		:tag("pubsub", { xmlns = xmlns_pubsub })
+			:tag("subscriptions");
 	for _, sub in ipairs(ret) do
 		reply:tag("subscription", { node = sub.node, jid = sub.jid, subscription = 'subscribed' }):up();
 	end
