@@ -9,10 +9,13 @@
 
 local lxp = require "lxp";
 local st = require "util.stanza";
+local stanza_mt = st.stanza_mt;
 
 local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
+local t_remove = table.remove;
+local setmetatable = setmetatable;
 
 local default_log = require "util.logger".init("xmppstream");
 
@@ -53,12 +56,13 @@ function new_sax_handlers(session, stream_callbacks)
 	
 	local stream_default_ns = stream_callbacks.default_ns;
 	
+	local stack = {};
 	local chardata, stanza = {};
 	local non_streamns_depth = 0;
 	function xml_handlers:StartElement(tagname, attr)
 		if stanza and #chardata > 0 then
 			-- We have some character data in the buffer
-			stanza:text(t_concat(chardata));
+			t_insert(stanza, t_concat(chardata));
 			chardata = {};
 		end
 		local curr_ns,name = tagname:match(ns_pattern);
@@ -102,9 +106,13 @@ function new_sax_handlers(session, stream_callbacks)
 				cb_error(session, "invalid-top-level-element");
 			end
 			
-			stanza = st.stanza(name, attr);
+			stanza = setmetatable({ name = name, attr = attr, tags = {} }, stanza_mt);
 		else -- we are inside a stanza, so add a tag
-			stanza:tag(name, attr);
+			t_insert(stack, stanza);
+			local oldstanza = stanza;
+			stanza = setmetatable({ name = name, attr = attr, tags = {} }, stanza_mt);
+			t_insert(oldstanza, stanza);
+			t_insert(oldstanza.tags, stanza);
 		end
 	end
 	function xml_handlers:CharacterData(data)
@@ -119,12 +127,11 @@ function new_sax_handlers(session, stream_callbacks)
 		if stanza then
 			if #chardata > 0 then
 				-- We have some character data in the buffer
-				stanza:text(t_concat(chardata));
+				t_insert(stanza, t_concat(chardata));
 				chardata = {};
 			end
 			-- Complete stanza
-			local last_add = stanza.last_add;
-			if not last_add or #last_add == 0 then
+			if #stack == 0 then
 				if tagname ~= stream_error_tag then
 					cb_handlestanza(session, stanza);
 				else
@@ -132,7 +139,7 @@ function new_sax_handlers(session, stream_callbacks)
 				end
 				stanza = nil;
 			else
-				stanza:up();
+				stanza = t_remove(stack);
 			end
 		else
 			if tagname == stream_tag then
@@ -147,11 +154,13 @@ function new_sax_handlers(session, stream_callbacks)
 				cb_error(session, "parse-error", "unexpected-element-close", name);
 			end
 			stanza, chardata = nil, {};
+			stack = {};
 		end
 	end
 	
 	local function reset()
 		stanza, chardata = nil, {};
+		stack = {};
 	end
 	
 	local function set_session(stream, new_session)
