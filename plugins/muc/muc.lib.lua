@@ -356,7 +356,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					pr.attr.to = from;
 					pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
 						:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
-						:tag("status", {code='110'});
+						:tag("status", {code='110'}):up();
 					self:_route_stanza(pr);
 					if jid ~= new_jid then
 						pr = st.clone(occupant.sessions[new_jid])
@@ -454,7 +454,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						if not is_merge then
 							self:broadcast_except_nick(pr, to);
 						end
-						pr:tag("status", {code='110'});
+						pr:tag("status", {code='110'}):up();
 						if self._data.whois == 'anyone' then
 							pr:tag("status", {code='100'}):up();
 						end
