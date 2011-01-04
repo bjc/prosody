@@ -135,6 +135,10 @@ function new_hashpass_provider(host)
 		return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
 	end
 
+	function provider.delete_user(username)
+		return datamanager.store(username, host, "accounts", nil);
+	end
+
 	function provider.get_sasl_handler()
 		local realm = module:get_option("sasl_realm") or module.host;
 		local testpass_authentication_profile = {
