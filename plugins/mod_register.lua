@@ -13,6 +13,7 @@ local datamanager = require "util.datamanager";
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_set_password = require "core.usermanager".set_password;
+local usermanager_delete_user = require "core.usermanager".delete_user;
 local os_time = os.time;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
@@ -36,11 +37,15 @@ local function handle_registration_stanza(event)
 		if query.tags[1] and query.tags[1].name == "remove" then
 			-- TODO delete user auth data, send iq response, kick all user resources with a <not-authorized/>, delete all user data
 			local username, host = session.username, session.host;
-			--session.send(st.error_reply(stanza, "cancel", "not-allowed"));
-			--return;
-			usermanager_set_password(username, nil, host); -- Disable account
-			-- FIXME the disabling currently allows a different user to recreate the account
-			-- we should add an in-memory account block mode when we have threading
+			
+			local ok, err = usermanager_delete_user(username, host);
+			
+			if not ok then
+				module:log("debug", "Removing user account %s@%s failed: %s", username, host, err);
+				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
+				return true;
+			end
+			
 			session.send(st.reply(stanza));
 			local roster = session.roster;
 			for _, session in pairs(hosts[host].sessions[username].sessions) do -- disconnect all resources
@@ -63,7 +68,6 @@ local function handle_registration_stanza(event)
 			end
 			datamanager.store(username, host, "roster", nil);
 			datamanager.store(username, host, "privacy", nil);
-			datamanager.store(username, host, "accounts", nil); -- delete accounts datastore at the end
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
@@ -180,4 +184,3 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	end
 	return true;
 end);
-
