@@ -125,6 +125,12 @@ function handle_request(method, body, request)
 	
 	local session = sessions[request.sid];
 	if session then
+               -- Session was marked as inactive, since we have
+               -- a request open now, unmark it
+               if inactive_sessions[session] then
+                       inactive_sessions[session] = nil;
+               end
+
 		local r = session.requests;
 		log("debug", "Session %s has %d out of %d requests open", request.sid, #r, session.bosh_hold);
 		log("debug", "and there are %d things in the send_buffer", #session.send_buffer);
@@ -153,11 +159,6 @@ function handle_request(method, body, request)
 			if session.bosh_wait then
 				request.reply_before = os_time() + session.bosh_wait;
 				waiting_requests[request] = true;
-			end
-			if inactive_sessions[session] then
-				-- Session was marked as inactive, since we have
-				-- a request open now, unmark it
-				inactive_sessions[session] = nil;
 			end
 		end
 		
