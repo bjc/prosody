@@ -31,6 +31,8 @@ function new_null_provider()
 	});
 end
 
+local provider_mt = { __index = new_null_provider() };
+
 function initialize_host(host)
 	local host_session = hosts[host];
 	if host_session.type ~= "local" then return; end
@@ -40,7 +42,7 @@ function initialize_host(host)
 		local auth_provider = config.get(host, "core", "authentication") or default_provider;
 		if config.get(host, "core", "anonymous_login") then auth_provider = "anonymous"; end -- COMPAT 0.7
 		if provider.name == auth_provider then
-			host_session.users = provider;
+			host_session.users = setmetatable(provider, provider_mt);
 		end
 		if host_session.users ~= nil and host_session.users.name ~= nil then
 			log("debug", "host '%s' now set to use user provider '%s'", host, host_session.users.name);
