@@ -15,10 +15,13 @@ local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_set_password = require "core.usermanager".set_password;
 local os_time = os.time;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
+local jid_bare = require "util.jid".bare;
+
+local compat = module:get_option_boolean("registration_compat", true);
 
 module:add_feature("jabber:iq:register");
 
-module:hook("iq/self/jabber:iq:register:query", function(event)
+local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
 
 	local query = stanza.tags[1];
@@ -86,7 +89,17 @@ module:hook("iq/self/jabber:iq:register:query", function(event)
 		end
 	end
 	return true;
-end);
+end
+
+module:hook("iq/self/jabber:iq:register:query", handle_registration_stanza);
+if compat then
+	module:hook("iq/host/jabber:iq:register:query", function (event)
+		local session, stanza = event.origin, event.stanza;
+		if session.type == "c2s" and jid_bare(stanza.attr.to) == session.host then
+			return handle_registration_stanza(event);
+		end
+	end);
+end
 
 local recent_ips = {};
 local min_seconds_between_registrations = module:get_option("min_seconds_between_registrations");
