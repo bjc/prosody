@@ -32,8 +32,8 @@ if CFG_DATADIR then
 end
 
 -- Global 'prosody' object
-prosody = { events = require "util.events".new(); };
-local prosody = prosody;
+local prosody = { events = require "util.events".new(); };
+_G.prosody = prosody;
 
 -- Check dependencies
 local dependencies = require "util.dependencies";
