@@ -32,14 +32,14 @@ if CFG_DATADIR then
 end
 
 -- Global 'prosody' object
-prosody = {
+local prosody = {
 	hosts = {};
 	events = require "util.events".new();
 	platform = "posix";
 	lock_globals = function () end;
 	unlock_globals = function () end;
 };
-local prosody = prosody;
+_G.prosody = prosody;
 
 local dependencies = require "util.dependencies";
 if not dependencies.check_dependencies() then
