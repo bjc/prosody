@@ -18,10 +18,22 @@ CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+local function is_relative(path)
+	local path_sep = package.config:sub(1,1);
+        return ((path_sep == "/" and path:sub(1,1) ~= "/")
+	or (path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\")))
+end
+
 -- Tell Lua where to find our libraries
 if CFG_SOURCEDIR then
-	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
-	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
+	local function filter_relative_paths(path)
+		if is_relative(path) then return ""; end
+	end
+	local function sanitise_paths(paths)
+		return (paths:gsub("[^;]+;?", filter_relative_paths):gsub(";;+", ";"));
+	end
+	package.path = sanitise_paths(CFG_SOURCEDIR.."/?.lua;"..package.path);
+	package.cpath = sanitise_paths(CFG_SOURCEDIR.."/?.so;"..package.cpath);
 end
 
 -- Substitute ~ with path to home directory in data path
