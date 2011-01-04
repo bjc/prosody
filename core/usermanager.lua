@@ -24,9 +24,11 @@ local default_provider = "internal_plain";
 module "usermanager"
 
 function new_null_provider()
-	local function dummy() end;
+	local function dummy() return nil, "method not implemented"; end;
 	local function dummy_get_sasl_handler() return sasl_new(nil, {}); end
-	return setmetatable({name = "null", get_sasl_handler = dummy_get_sasl_handler}, { __index = function() return dummy; end });
+	return setmetatable({name = "null", get_sasl_handler = dummy_get_sasl_handler}, {
+		__index = function(self, method) return dummy; end
+	});
 end
 
 function initialize_host(host)
