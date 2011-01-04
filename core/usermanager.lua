@@ -83,6 +83,10 @@ function create_user(username, password, host)
 	return hosts[host].users.create_user(username, password);
 end
 
+function delete_user(username, host)
+	return hosts[host].users.delete_user(username);
+end
+
 function get_sasl_handler(host)
 	return hosts[host].users.get_sasl_handler();
 end
