@@ -71,12 +71,9 @@ local function handle_registration_stanza(event)
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
-			local username = query:child_with_name("username");
-			local password = query:child_with_name("password");
+			local username = nodeprep(query:get_child("username"):get_text());
+			local password = query:get_child("password"):get_text();
 			if username and password then
-				-- FIXME shouldn't use table.concat
-				username = nodeprep(table.concat(username));
-				password = table.concat(password);
 				if username == session.username then
 					if usermanager_set_password(username, password, session.host) then
 						session.send(st.reply(stanza));
