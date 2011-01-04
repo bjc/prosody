@@ -78,7 +78,10 @@ function new_async_socket(sock, resolver)
 	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(dummy_send); return ret; end
 	handler.connect = function (_, ...) return sock:connect(...) end
 	--handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
-	handler.send = function (_, data) return sock:send(data); end
+	handler.send = function (_, data)
+		log("debug", "Sending DNS query to %s", sock:getpeername());
+		return sock:send(data);
+	end
 	return handler;
 end
 
