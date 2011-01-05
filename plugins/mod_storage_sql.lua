@@ -25,6 +25,7 @@ local tonumber = tonumber;
 local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
+local xpcall = xpcall;
 local json = require "util.json";
 
 local connection;
@@ -115,10 +116,7 @@ local function commit(...)
 	return ...;
 end
 
-local keyval_store = {};
-keyval_store.__index = keyval_store;
-function keyval_store:get(username)
-	user,store = username,self.store;
+local function keyval_store_get()
 	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	if not stmt then return nil, err; end
 	
@@ -138,9 +136,7 @@ function keyval_store:get(username)
 	end
 	return commit(haveany and result or nil);
 end
-function keyval_store:set(username, data)
-	user,store = username,self.store;
-	-- start transaction
+local function keyval_store_set(data)
 	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	
 	if data and next(data) ~= nil then
@@ -165,10 +161,20 @@ function keyval_store:set(username, data)
 	return commit(true);
 end
 
-local map_store = {};
-map_store.__index = map_store;
-function map_store:get(username, key)
+local keyval_store = {};
+keyval_store.__index = keyval_store;
+function keyval_store:get(username)
 	user,store = username,self.store;
+	local success, ret, err = xpcall(keyval_store_get, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+function keyval_store:set(username, data)
+	user,store = username,self.store;
+	local success, ret, err = xpcall(function() return keyval_store_set(data); end, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+
+local function map_store_get(key)
 	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	if not stmt then return nil, err; end
 	
@@ -188,9 +194,7 @@ function map_store:get(username, key)
 	end
 	return commit(haveany and result[key] or nil);
 end
-function map_store:set(username, key, data)
-	user,store = username,self.store;
-	-- start transaction
+local function map_store_set(key, data)
 	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	
 	if data and next(data) ~= nil then
@@ -204,6 +208,19 @@ function map_store:set(username, key, data)
 		end
 	end
 	return commit(true);
+end
+
+local map_store = {};
+map_store.__index = map_store;
+function map_store:get(username, key)
+	user,store = username,self.store;
+	local success, ret, err = xpcall(function() return map_store_get(key); end, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+function map_store:set(username, key, data)
+	user,store = username,self.store;
+	local success, ret, err = xpcall(function() return map_store_set(key, data); end, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
 end
 
 local list_store = {};
