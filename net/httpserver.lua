@@ -119,6 +119,7 @@ local function request_reader(request, data, startpos)
 		local function success_cb(r)
 			for k,v in pairs(r) do request[k] = v; end
 			request.url = url_parse(request.path);
+			request.url.path = request.url.path and request.url.path:gsub("%%(%x%x)", function(x) return x.char(tonumber(x, 16)) end);
 			request.body = { request.body };
 			call_callback(request);
 		end
