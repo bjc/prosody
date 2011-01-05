@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local plugin_dir = CFG_PLUGINDIR or "./plugins/";
-
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
