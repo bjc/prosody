@@ -47,6 +47,15 @@ function get(host, section, key)
 	end
 	return nil;
 end
+function _M.rawget(host, section, key)
+	local hostconfig = rawget(config, host);
+	if hostconfig then
+		local sectionconfig = rawget(hostconfig, section);
+		if sectionconfig then
+			return rawget(sectionconfig, key);
+		end
+	end
+end
 
 local function set(config, host, section, key, value)
 	if host and section and key then
