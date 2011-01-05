@@ -20,7 +20,7 @@ local t_insert, t_concat = table.insert, table.concat;
 local s_match, s_gmatch = string.match, string.gmatch;
 local tonumber, tostring, pairs, ipairs, type = tonumber, tostring, pairs, ipairs, type;
 
-local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
+local urlencode = function (s) return s and (s:gsub("%W", function (c) return ("%%%02x"):format(c:byte()); end)); end
 
 local log = require "util.logger".init("httpserver");
 
