@@ -27,7 +27,7 @@ local next = next;
 local setmetatable = setmetatable;
 local json = require "util.json";
 
-local connection = ...;
+local connection;
 local host,user,store = module.host;
 local params = module:get_option("sql");
 
