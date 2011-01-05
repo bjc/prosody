@@ -7,7 +7,6 @@
 --
 
 
-local socket = require "socket"
 local server = require "net.server"
 local url_parse = require "socket.url".parse;
 local httpstream_new = require "util.httpstream".new;
@@ -17,7 +16,6 @@ local connlisteners_get = require "net.connlisteners".get;
 local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
-local s_match, s_gmatch = string.match, string.gmatch;
 local tonumber, tostring, pairs, ipairs, type = tonumber, tostring, pairs, ipairs, type;
 
 local urlencode = function (s) return s and (s:gsub("%W", function (c) return ("%%%02x"):format(c:byte()); end)); end
