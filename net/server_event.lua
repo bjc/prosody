@@ -726,7 +726,7 @@ local addserver = ( function( )
 		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslcfg or "nil", startssl or "nil")
 		local server, err = socket.bind( addr, port, cfg.ACCEPT_QUEUE )  -- create server socket
 		if not server then
-			debug( "creating server socket failed because:", err )
+			debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 			return nil, err
 		end
 		local sslctx
