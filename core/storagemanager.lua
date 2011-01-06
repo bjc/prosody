@@ -15,6 +15,19 @@ local prosody = prosody;
 
 module("storagemanager")
 
+local null_storage_method = function () return false, "no data storage active"; end
+local null_storage_driver = setmetatable(
+	{
+		name = "null",
+		open = function (self) return self; end
+	}, {
+		__index = function (self, method)
+			return null_storage_method;
+		end
+	}
+);
+
+--TODO: Move default driver to mod_auth_internal
 local default_driver_mt = { name = "internal" };
 default_driver_mt.__index = default_driver_mt;
 function default_driver_mt:open(store)
@@ -73,10 +86,13 @@ function open(host, store, typ)
 		if not driver then
 			if driver_name or (type(storage) == "string"
 			or type(storage) == "table" and storage[store]) then
-				log("warn", "Falling back to default driver for %s storage on %s", store, host);
+				log("warn", "Falling back to null driver for %s storage on %s", store, host);
+				driver_name = "null";
+				driver = null_storage_driver;
+			else
+				driver_name = "internal";
+				driver = load_driver(host, driver_name);
 			end
-			driver_name = "internal";
-			driver = load_driver(host, driver_name);
 		end
 	end
 	
@@ -85,7 +101,7 @@ function open(host, store, typ)
 		if err == "unsupported-store" then
 			log("debug", "Storage driver %s does not support store %s (%s), falling back to internal driver",
 				driver_name, store, typ);
-			ret = setmetatable({ host = host, store = store }, default_driver_mt); -- default to default driver
+			ret = null_storage_driver;
 			err = nil;
 		end
 	end
