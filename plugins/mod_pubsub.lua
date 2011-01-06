@@ -67,6 +67,21 @@ function handlers.get_items(origin, stanza, items)
 	return origin.send(reply);
 end
 
+function handlers.get_subscriptions(origin, stanza, subscriptions)
+	local node = subscriptions.attr.node;
+	local ok, ret = service:get_subscriptions(node, stanza.attr.from, stanza.attr.from);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, ret));
+	end
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub })
+			:tag("subscriptions");
+	for _, sub in ipairs(ret) do
+		reply:tag("subscription", { node = sub.node, jid = sub.jid, subscription = 'subscribed' }):up();
+	end
+	return origin.send(reply);
+end
+
 function handlers.set_create(origin, stanza, create)
 	local node = create.attr.node;
 	local ok, ret, reply;
@@ -187,6 +202,8 @@ local feature_map = {
 	retract = { "delete-items", "retract-items" };
 	publish = { "publish" };
 	get_items = { "retrieve-items" };
+	add_subscription = { "subscribe" };
+	get_subscriptions = { "retrieve-subscriptions" };
 };
 
 local function add_disco_features_from_service(disco, service)
@@ -215,11 +232,49 @@ local function build_disco_info(service)
 end
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
-	event.origin.send(st.reply(event.stanza):add_child(disco_info));
-	return true;
+	local origin, stanza = event.origin, event.stanza;
+	local node = stanza.tags[1].attr.node;
+	if not node then
+		return origin.send(st.reply(stanza):add_child(disco_info));
+	else
+		local ok, ret = service:get_nodes(stanza.attr.from);
+		if ok and not ret[node] then
+			ok, ret = false, "item-not-found";
+		end
+		if not ok then
+			return origin.send(pubsub_error_reply(stanza, ret));
+		end
+		local reply = st.reply(stanza)
+			:tag("query", { xmlns = "http://jabber.org/protocol/disco#info", node = node })
+				:tag("identity", { category = "pubsub", type = "leaf" });
+		return origin.send(reply);
+	end
 end);
 
+local function handle_disco_items_on_node(event)
+	local stanza, origin = event.stanza, event.origin;
+	local query = stanza.tags[1];
+	local node = query.attr.node;
+	local ok, ret = service:get_items(node, stanza.attr.from);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, ret));
+	end
+	
+	local reply = st.reply(stanza)
+		:tag("query", { xmlns = "http://jabber.org/protocol/disco#items", node = node });
+	
+	for id, item in pairs(ret) do
+		reply:tag("item", { jid = module.host, name = id }):up();
+	end
+	
+	return origin.send(reply);
+end
+
+
 module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function (event)
+	if event.stanza.tags[1].attr.node then
+		return handle_disco_items_on_node(event);
+	end
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
 		event.origin.send(pubsub_error_reply(stanza, ret));
@@ -267,11 +322,13 @@ set_service(pubsub.new({
 			subscribe = true;
 			unsubscribe = true;
 			get_subscription = true;
+			get_subscriptions = true;
 			get_items = true;
 			
 			subscribe_other = false;
 			unsubscribe_other = false;
 			get_subscription_other = false;
+			get_subscriptions_other = false;
 			
 			be_subscribed = true;
 			be_unsubscribed = true;
@@ -287,12 +344,14 @@ set_service(pubsub.new({
 			subscribe = true;
 			unsubscribe = true;
 			get_subscription = true;
+			get_subscriptions = true;
 			get_items = true;
 			
 			
 			subscribe_other = true;
 			unsubscribe_other = true;
 			get_subscription_other = true;
+			get_subscriptions_other = true;
 			
 			be_subscribed = true;
 			be_unsubscribed = true;
@@ -306,7 +365,6 @@ set_service(pubsub.new({
 	
 	broadcaster = simple_broadcast;
 	get_affiliation = get_affiliation;
-	jids_equal = function (jid1, jid2)
-		return jid_bare(jid1) == jid_bare(jid2);
-	end;
+	
+	normalize_jid = jid_bare;
 }));
