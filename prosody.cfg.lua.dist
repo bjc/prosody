@@ -73,9 +73,10 @@ modules_enabled = {
 -- (for some mad reason) want to disable
 -- them then uncomment them below
 modules_disabled = {
-	-- "presence";
-	-- "message";
-	-- "iq";
+	-- "presence"; -- Route user/contact status information
+	-- "message"; -- Route messages
+	-- "iq"; -- Route info queries
+	-- "offline"; -- Store offline messages
 };
 
 -- Disable account creation by default, for security
@@ -113,9 +114,10 @@ ssl = {
 -- Logging configuration
 -- For advanced logging see http://prosody.im/doc/logging
 log = {
-	info = "prosody.log"; -- Change info to debug for verbose logging
+	info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
 	error = "prosody.err";
 	-- "*syslog"; -- Uncomment this for logging to syslog
+	-- "*console"; -- Log to the console, useful for debugging with daemonize=false
 }
 
 ----------- Virtual hosts -----------
