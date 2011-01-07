@@ -1,5 +1,5 @@
 
-local error, type = error, type;
+local error, type, pairs = error, type, pairs;
 local setmetatable = setmetatable;
 
 local config = require "core.configmanager";
@@ -9,11 +9,13 @@ local multitable = require "util.multitable";
 local hosts = hosts;
 local log = require "util.logger".init("storagemanager");
 
-local olddm = {}; -- maintain old datamanager, for backwards compatibility
-for k,v in pairs(datamanager) do olddm[k] = v; end
 local prosody = prosody;
 
 module("storagemanager")
+
+local olddm = {}; -- maintain old datamanager, for backwards compatibility
+for k,v in pairs(datamanager) do olddm[k] = v; end
+_M.olddm = olddm;
 
 local null_storage_method = function () return false, "no data storage active"; end
 local null_storage_driver = setmetatable(
@@ -26,15 +28,6 @@ local null_storage_driver = setmetatable(
 		end
 	}
 );
-
---TODO: Move default driver to mod_auth_internal
-local default_driver_mt = { name = "internal" };
-default_driver_mt.__index = default_driver_mt;
-function default_driver_mt:open(store)
-	return setmetatable({ host = self.host, store = store }, default_driver_mt);
-end
-function default_driver_mt:get(user) return olddm.load(user, self.host, self.store); end
-function default_driver_mt:set(user, data) return olddm.store(user, self.host, self.store, data); end
 
 local stores_available = multitable.new();
 
@@ -53,20 +46,16 @@ end
 prosody.events.add_handler("host-activated", initialize_host, 101);
 
 local function load_driver(host, driver_name)
-	if not driver_name then
-		return;
+	if driver_name == "null" then
+		return null_storage_provider;
 	end
 	local driver = stores_available:get(host, driver_name);
 	if driver then return driver; end
-	if driver_name ~= "internal" then
-		local ok, err = modulemanager.load(host, "storage_"..driver_name);
-		if not ok then
-			log("error", "Failed to load storage driver plugin %s on %s: %s", driver_name, host, err);
-		end
-		return stores_available:get(host, driver_name);
-	else
-		return setmetatable({host = host}, default_driver_mt);
+	local ok, err = modulemanager.load(host, "storage_"..driver_name);
+	if not ok then
+		log("error", "Failed to load storage driver plugin %s on %s: %s", driver_name, host, err);
 	end
+	return stores_available:get(host, driver_name);
 end
 
 function open(host, store, typ)
@@ -78,22 +67,15 @@ function open(host, store, typ)
 	elseif option_type == "table" then
 		driver_name = storage[store];
 	end
+	if not driver_name then
+		driver_name = config.get(host, "core", "default_storage") or "internal";
+	end
 	
 	local driver = load_driver(host, driver_name);
 	if not driver then
-		driver_name = config.get(host, "core", "default_storage");
-		driver = load_driver(host, driver_name);
-		if not driver then
-			if driver_name or (type(storage) == "string"
-			or type(storage) == "table" and storage[store]) then
-				log("warn", "Falling back to null driver for %s storage on %s", store, host);
-				driver_name = "null";
-				driver = null_storage_driver;
-			else
-				driver_name = "internal";
-				driver = load_driver(host, driver_name);
-			end
-		end
+		log("warn", "Falling back to null driver for %s storage on %s", store, host);
+		driver_name = "null";
+		driver = null_storage_driver;
 	end
 	
 	local ret, err = driver:open(store, typ);
