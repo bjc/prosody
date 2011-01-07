@@ -114,7 +114,7 @@ ssl = {
 -- Logging configuration
 -- For advanced logging see http://prosody.im/doc/logging
 log = {
-	info = "prosody.log"; -- Change info to debug for verbose logging
+	info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
 	error = "prosody.err";
 	-- "*syslog"; -- Uncomment this for logging to syslog
 }
