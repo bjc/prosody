@@ -89,7 +89,12 @@ ssl = {
 	certificate = "certs/localhost.cert";
 }
 
--- Require encryption on client/server connections?
+-- Only allow encrypted streams? Encryption is already used when
+-- available. These options will cause Prosody to deny connections that
+-- are not encrypted. Note that some servers do not support s2s
+-- encryption or have it disabled, including gmail.com and Google Apps
+-- domains.
+
 --c2s_require_encryption = false
 --s2s_require_encryption = false
 
