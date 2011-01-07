@@ -73,9 +73,10 @@ modules_enabled = {
 -- (for some mad reason) want to disable
 -- them then uncomment them below
 modules_disabled = {
-	-- "presence";
-	-- "message";
-	-- "iq";
+	-- "presence"; -- Route user/contact status information
+	-- "message"; -- Route messages
+	-- "iq"; -- Route info queries
+	-- "offline"; -- Store offline messages
 };
 
 -- Disable account creation by default, for security
