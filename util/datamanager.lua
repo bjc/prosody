@@ -22,6 +22,7 @@ local t_insert = table.insert;
 local append = require "util.serialization".append;
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local lfs = require "lfs";
+local prosody = prosody;
 local raw_mkdir;
 
 if prosody.platform == "posix" then
@@ -56,7 +57,7 @@ local function mkdir(path)
 	return path;
 end
 
-local data_path = "data";
+local data_path = prosody.paths.data;
 local callbacks = {};
 
 ------- API -------------

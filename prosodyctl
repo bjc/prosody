@@ -109,12 +109,13 @@ end
 local original_logging_config = config.get("*", "core", "log");
 config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
 
+local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
+	          plugins = CFG_PLUGINDIR, data = data_path };
+
 require "core.loggingmanager"
 
 dependencies.log_warnings();
-
-local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-require "util.datamanager".set_data_path(data_path);
 
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;

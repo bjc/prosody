@@ -183,9 +183,10 @@ function init_global_state()
 	prosody.full_sessions = full_sessions;
 	prosody.hosts = hosts;
 	
+	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
 	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
-	                  plugins = CFG_PLUGINDIR, data = CFG_DATADIR };
-	
+	                  plugins = CFG_PLUGINDIR, data = data_path };
+
 	prosody.arg = _G.arg;
 
 	prosody.platform = "unknown";
@@ -344,8 +345,6 @@ function load_secondary_libraries()
 end
 
 function init_data_store()
-	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-	require "util.datamanager".set_data_path(data_path);
 	require "core.storagemanager";
 end
 
