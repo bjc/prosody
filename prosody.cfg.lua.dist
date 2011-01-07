@@ -98,6 +98,18 @@ ssl = {
 --c2s_require_encryption = false
 --s2s_require_encryption = false
 
+-- Select the storage backend to use. By default Prosody uses flat files
+-- in its configured data directory, but it also supports more backends
+-- through modules. An "sql" backend is included by default, but requires
+-- additional dependencies. See http://prosody.im/doc/storage for more info.
+
+--storage = "sql" -- Default is "internal"
+
+-- For the "sql" backend, you can uncomment *one* of the below to configure:
+--sql = { driver = "SQLite3", database = "prosody.sqlite" } -- Default. 'database' is the filename.
+--sql = { driver = "MySQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
+--sql = { driver = "PostgreSQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
+
 -- Logging configuration
 -- For advanced logging see http://prosody.im/doc/logging
 log = {
