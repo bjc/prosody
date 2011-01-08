@@ -69,14 +69,14 @@ function service:set_affiliation(node, actor, jid, affiliation)
 		return false, "item-not-found";
 	end
 	node_obj.affiliations[jid] = affiliation;
-	local _, jid_sub = self:get_subscription(node, nil, jid);
+	local _, jid_sub = self:get_subscription(node, true, jid);
 	if not jid_sub and not self:may(node, jid, "be_unsubscribed") then
-		local ok, err = self:add_subscription(node, nil, jid);
+		local ok, err = self:add_subscription(node, true, jid);
 		if not ok then
 			return ok, err;
 		end
 	elseif jid_sub and not self:may(node, jid, "be_subscribed") then
-		local ok, err = self:add_subscription(node, nil, jid);
+		local ok, err = self:add_subscription(node, true, jid);
 		if not ok then
 			return ok, err;
 		end
@@ -87,7 +87,7 @@ end
 function service:add_subscription(node, actor, jid, options)
 	-- Access checking
 	local cap;
-	if jid == actor or self:jids_equal(actor, jid) then
+	if actor == true or jid == actor or self:jids_equal(actor, jid) then
 		cap = "subscribe";
 	else
 		cap = "subscribe_other";
@@ -129,7 +129,7 @@ end
 function service:remove_subscription(node, actor, jid)
 	-- Access checking
 	local cap;
-	if jid == actor or self:jids_equal(actor, jid) then
+	if actor == true or jid == actor or self:jids_equal(actor, jid) then
 		cap = "unsubscribe";
 	else
 		cap = "unsubscribe_other";
@@ -169,7 +169,7 @@ end
 function service:get_subscription(node, actor, jid)
 	-- Access checking
 	local cap;
-	if jid == actor or self:jids_equal(actor, jid) then
+	if actor == true or jid == actor or self:jids_equal(actor, jid) then
 		cap = "get_subscription";
 	else
 		cap = "get_subscription_other";
@@ -277,7 +277,7 @@ end
 function service:get_subscriptions(node, actor, jid)
 	-- Access checking
 	local cap;
-	if jid == actor or self:jids_equal(actor, jid) then
+	if actor == true or jid == actor or self:jids_equal(actor, jid) then
 		cap = "get_subscriptions";
 	else
 		cap = "get_subscriptions_other";
