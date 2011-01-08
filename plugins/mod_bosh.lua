@@ -274,6 +274,7 @@ function stream_callbacks.streamopened(request, attr)
 				t_insert(session.send_buffer, tostring(s));
 				log("debug", "There are now %d things in the send_buffer", #session.send_buffer);
 			end
+			return true;
 		end
 		
 		-- Send creation response
