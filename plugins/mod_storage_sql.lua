@@ -57,17 +57,19 @@ do -- process options to get a db connection
 	dbh:autocommit(false); -- don't commit automatically
 	connection = dbh;
 	
-	if params.driver == "SQLite3" then -- auto initialize
-		local stmt = assert(connection:prepare("SELECT COUNT(*) FROM `sqlite_master` WHERE `type`='table' AND `name`='Prosody';"));
-		local ok = assert(stmt:execute());
-		local count = stmt:fetch()[1];
-		if count == 0 then
-			local stmt = assert(connection:prepare("CREATE TABLE `Prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);"));
-			assert(stmt:execute());
-			module:log("debug", "Initialized new SQLite3 database");
+	-- Automatically create table, ignore failure (table probably already exists)
+	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
+	if params.driver == "PostgreSQL" then
+		create_sql = create_sql:gsub("`", "\"");
+	end
+	
+	local stmt = connection:prepare(create_sql);
+	if stmt then
+		local ok = stmt:execute();
+		local commit_ok = connection:commit();
+		if ok and commit_ok then
+			module:log("info", "Initialized new %s database with prosody table", params.driver);
 		end
-		assert(connection:commit());
-		--print("===", json.encode())
 	end
 end
 
@@ -124,7 +126,7 @@ local function commit(...)
 end
 
 local function keyval_store_get()
-	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
+	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -144,7 +146,7 @@ local function keyval_store_get()
 	return commit(haveany and result or nil);
 end
 local function keyval_store_set(data)
-	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=?");
+	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -152,7 +154,7 @@ local function keyval_store_set(data)
 			if type(key) == "string" and key ~= "" then
 				local t, value = serialize(value);
 				if not t then return rollback(t, value); end
-				local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
+				local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
 				if not ok then return rollback(ok, err); end
 			else
 				extradata[key] = value;
@@ -161,7 +163,7 @@ local function keyval_store_set(data)
 		if next(extradata) ~= nil then
 			local t, extradata = serialize(extradata);
 			if not t then return rollback(t, extradata); end
-			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", "", t, extradata);
+			local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", "", t, extradata);
 			if not ok then return rollback(ok, err); end
 		end
 	end
@@ -182,7 +184,7 @@ function keyval_store:set(username, data)
 end
 
 local function map_store_get(key)
-	local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	if not stmt then return nil, err; end
 	
 	local haveany;
@@ -202,13 +204,13 @@ local function map_store_get(key)
 	return commit(haveany and result[key] or nil);
 end
 local function map_store_set(key, data)
-	local affected, err = setsql("DELETE FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	
 	if data and next(data) ~= nil then
 		if type(key) == "string" and key ~= "" then
 			local t, value = serialize(data);
 			if not t then return rollback(t, value); end
-			local ok, err = setsql("INSERT INTO `Prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
+			local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
 			if not ok then return rollback(ok, err); end
 		else
 			-- TODO non-string keys
@@ -238,10 +240,10 @@ function list_store:scan(username, from, to, jid, typ)
 	local cols = {"from", "to", "jid", "typ"};
 	local vals = { from ,  to ,  jid ,  typ };
 	local stmt, err;
-	local query = "SELECT * FROM `ProsodyArchive` WHERE `host`=? AND `user`=? AND `store`=?";
+	local query = "SELECT * FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=?";
 	
 	query = query.." ORDER BY time";
-	--local stmt, err = getsql("SELECT * FROM `Prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	--local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	
 	return nil, "not-implemented"
 end
