@@ -43,10 +43,10 @@ subjectAltName   = @subject_alternative_name
 # See http://tools.ietf.org/html/draft-ietf-xmpp-3920bis#section-13.7.1.2 for more info.
 
 DNS.0       =                                           example.com
-otherName.0 =                             xmppAddr;UTF8:example.com
+otherName.0 =                 xmppAddr;FORMAT:UTF8,UTF8:example.com
 otherName.1 =            SRVName;IA5STRING:_xmpp-client.example.com
 otherName.2 =            SRVName;IA5STRING:_xmpp-server.example.com
 
 DNS.1       =                                conference.example.com
-otherName.3 =                  xmppAddr;UTF8:conference.example.com
+otherName.3 =      xmppAddr;FORMAT:UTF8,UTF8:conference.example.com
 otherName.4 = SRVName;IA5STRING:_xmpp-server.conference.example.com
