@@ -27,17 +27,14 @@ end
 function service:may(node, actor, action)
 	if actor == true then return true; end
 	
-	
 	local node_obj = self.nodes[node];
 	local node_aff = node_obj and node_obj.affiliations[actor];
 	local service_aff = self.affiliations[actor]
 	                 or self.config.get_affiliation(actor, node, action)
 	                 or "none";
 	
+	-- Check if node allows/forbids it
 	local node_capabilities = node_obj and node_obj.capabilities;
-	local service_capabilities = self.config.capabilities;
-	
-	-- Check if node allows/forbids it	
 	if node_capabilities then
 		local caps = node_capabilities[node_aff or service_aff];
 		if caps then
@@ -47,7 +44,9 @@ function service:may(node, actor, action)
 			end
 		end
 	end
+	
 	-- Check service-wide capabilities instead
+	local service_capabilities = self.config.capabilities;
 	local caps = service_capabilities[node_aff or service_aff];
 	if caps then
 		local can = caps[action];
