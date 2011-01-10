@@ -28,14 +28,44 @@ local setmetatable = setmetatable;
 local xpcall = xpcall;
 local json = require "util.json";
 
+local DBI;
 local connection;
 local host,user,store = module.host;
 local params = module:get_option("sql");
 
 local resolve_relative_path = require "core.configmanager".resolve_relative_path;
 
+local function test_connection()
+	if not connection then return nil; end
+	if connection:ping() then
+		return true;
+	else
+		module:log("debug", "Database connection closed");
+		connection = nil;
+	end
+end
+local function connect()
+	if not test_connection() then
+		prosody.unlock_globals();
+		local dbh, err = DBI.Connect(
+			params.driver, params.database,
+			params.username, params.password,
+			params.host, params.port
+		);
+		prosody.lock_globals();
+		if not dbh then
+			module:log("debug", "Database connection failed: %s", tostring(err));
+			return nil, err;
+		end
+		module:log("debug", "Successfully connected to database");
+		dbh:autocommit(false); -- don't commit automatically
+		connection = dbh;
+		return connection;
+	end
+end
+
 do -- process options to get a db connection
-	local DBI = require "DBI";
+	DBI = require "DBI";
 
 	params = params or { driver = "SQLite3" };
 	
@@ -45,17 +75,7 @@ do -- process options to get a db connection
 	
 	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
 	
-	prosody.unlock_globals();
-	local dbh, err = DBI.Connect(
-		params.driver, params.database,
-		params.username, params.password,
-		params.host, params.port
-	);
-	prosody.lock_globals();
-	assert(dbh, err);
-
-	dbh:autocommit(false); -- don't commit automatically
-	connection = dbh;
+	assert(connect());
 	
 	-- Automatically create table, ignore failure (table probably already exists)
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
@@ -101,9 +121,11 @@ local function getsql(sql, ...)
 	end
 	-- do prepared statement stuff
 	local stmt, err = connection:prepare(sql);
+	if not stmt and not test_connection() then error("connection failed"); end
 	if not stmt then module:log("error", "QUERY FAILED: %s %s", err, debug.traceback()); return nil, err; end
 	-- run query
 	local ok, err = stmt:execute(host or "", user or "", store or "", ...);
+	if not ok and not test_connection() then error("connection failed"); end
 	if not ok then return nil, err; end
 	
 	return stmt;
@@ -117,7 +139,7 @@ local function transact(...)
 	-- ...
 end
 local function rollback(...)
-	connection:rollback(); -- FIXME check for rollback error?
+	if connection then connection:rollback(); end -- FIXME check for rollback error?
 	return ...;
 end
 local function commit(...)
@@ -127,7 +149,7 @@ end
 
 local function keyval_store_get()
 	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
-	if not stmt then return nil, err; end
+	if not stmt then return rollback(nil, err); end
 	
 	local haveany;
 	local result = {};
@@ -147,6 +169,7 @@ local function keyval_store_get()
 end
 local function keyval_store_set(data)
 	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
+	if not affected then return rollback(affected, err); end
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -174,18 +197,26 @@ local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user,store = username,self.store;
+	if not connection and not connect() then return nil, "Unable to connect to database"; end
 	local success, ret, err = xpcall(keyval_store_get, debug.traceback);
+	if not connection and connect() then
+		success, ret, err = xpcall(keyval_store_get, debug.traceback);
+	end
 	if success then return ret, err; else return rollback(nil, ret); end
 end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
+	if not connection and not connect() then return nil, "Unable to connect to database"; end
 	local success, ret, err = xpcall(function() return keyval_store_set(data); end, debug.traceback);
+	if not connection and connect() then
+		success, ret, err = xpcall(function() return keyval_store_set(data); end, debug.traceback);
+	end
 	if success then return ret, err; else return rollback(nil, ret); end
 end
 
 local function map_store_get(key)
 	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
-	if not stmt then return nil, err; end
+	if not stmt then return rollback(nil, err); end
 	
 	local haveany;
 	local result = {};
@@ -205,6 +236,7 @@ local function map_store_get(key)
 end
 local function map_store_set(key, data)
 	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	if not affected then return rollback(affected, err); end
 	
 	if data and next(data) ~= nil then
 		if type(key) == "string" and key ~= "" then
