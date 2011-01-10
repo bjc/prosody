@@ -70,8 +70,7 @@ local function bounce_sendq(session, reason)
 		};
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
-			local xmlns = reply.attr.xmlns;
-			if not(xmlns) and bouncy_stanzas[reply.name] then
+			if reply and not(reply.attr.xmlns) and bouncy_stanzas[reply.name] then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
@@ -98,8 +97,8 @@ function send_to_host(from_host, to_host, data)
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			
 			-- Queue stanza until we are able to send it
-			if host.sendq then t_insert(host.sendq, {tostring(data), st.reply(data)});
-			else host.sendq = { {tostring(data), st.reply(data)} }; end
+			if host.sendq then t_insert(host.sendq, {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)});
+			else host.sendq = { {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)} }; end
 			host.log("debug", "stanza [%s] queued ", data.name);
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
@@ -121,7 +120,7 @@ function send_to_host(from_host, to_host, data)
 		local host_session = new_outgoing(from_host, to_host);
 
 		-- Store in buffer
-		host_session.sendq = { {tostring(data), st.reply(data)} };
+		host_session.sendq = { {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)} };
 		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
 		if (not host_session.connecting) and (not host_session.conn) then
 			log("warn", "Connection to %s failed already, destroying session...", to_host);
