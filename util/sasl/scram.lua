@@ -24,7 +24,7 @@ local t_concat = table.concat;
 local char = string.char;
 local byte = string.byte;
 
-module "scram"
+module "sasl.scram"
 
 --=========================
 --SASL SCRAM-SHA-1 according to RFC 5802
