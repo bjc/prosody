@@ -266,12 +266,6 @@ function log_sink_types.file(config)
 	end
 	local write, flush = logfile.write, logfile.flush;
 
-	prosody.events.add_handler("logging-reloading", function ()
-			if logfile then
-				logfile:close();
-			end
-		end);
-
 	local timestamps = config.timestamps;
 
 	if timestamps == nil or timestamps == true then
