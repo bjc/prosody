@@ -24,7 +24,7 @@ local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
 local generate_uuid = require "util.uuid".generate;
 
-module "digest-md5"
+module "sasl.digest-md5"
 
 --=========================
 --SASL DIGEST-MD5 according to RFC 2831
