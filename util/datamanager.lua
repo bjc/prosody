@@ -57,7 +57,7 @@ local function mkdir(path)
 	return path;
 end
 
-local data_path = prosody.paths.data;
+local data_path = (prosody and prosody.paths and prosody.paths.data) or ".";
 local callbacks = {};
 
 ------- API -------------
