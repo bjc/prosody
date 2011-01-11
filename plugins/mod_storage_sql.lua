@@ -64,6 +64,37 @@ local function connect()
 	end
 end
 
+local function create_table()
+	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
+	if params.driver == "PostgreSQL" then
+		create_sql = create_sql:gsub("`", "\"");
+	end
+	
+	local stmt = connection:prepare(create_sql);
+	if stmt then
+		local ok = stmt:execute();
+		local commit_ok = connection:commit();
+		if ok and commit_ok then
+			module:log("info", "Initialized new %s database with prosody table", params.driver);
+			local index_sql = "CREATE INDEX `prosody_index` ON `prosody` (`host`, `user`, `store`, `key`)";
+			if params.driver == "PostgreSQL" then
+				index_sql = index_sql:gsub("`", "\"");
+			elseif params.driver == "MySQL" then
+				index_sql = index_sql:gsub("`([,)])", "`(20)%1");
+			end
+			local stmt, err = connection:prepare(index_sql);
+			local ok, commit_ok, commit_err;
+			if stmt then
+				ok, err = stmt:execute();
+				commit_ok, commit_err = connection:commit();
+			end
+			if not(ok and commit_ok) then
+				module:log("warn", "Failed to create index (%s), lookups may not be optimised", err or commit_err);
+			end
+		end
+	end
+end
+
 do -- process options to get a db connection
 	DBI = require "DBI";
 
@@ -78,19 +109,7 @@ do -- process options to get a db connection
 	assert(connect());
 	
 	-- Automatically create table, ignore failure (table probably already exists)
-	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
-	if params.driver == "PostgreSQL" then
-		create_sql = create_sql:gsub("`", "\"");
-	end
-	
-	local stmt = connection:prepare(create_sql);
-	if stmt then
-		local ok = stmt:execute();
-		local commit_ok = connection:commit();
-		if ok and commit_ok then
-			module:log("info", "Initialized new %s database with prosody table", params.driver);
-		end
-	end
+	create_table();
 end
 
 local function serialize(value)
