@@ -45,7 +45,7 @@ function initialize_host(host)
 end
 prosody.events.add_handler("host-activated", initialize_host, 101);
 
-local function load_driver(host, driver_name)
+function load_driver(host, driver_name)
 	if driver_name == "null" then
 		return null_storage_provider;
 	end
