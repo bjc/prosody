@@ -115,7 +115,7 @@ function load(username, host, datastore)
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
-			log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
@@ -207,7 +207,7 @@ function list_load(username, host, datastore)
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
 		if not mode then
-			log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?

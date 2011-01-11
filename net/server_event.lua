@@ -221,12 +221,12 @@ do
 								self.eventhandshake = nil
 								return -1
 							end
-							debug( "error during ssl handshake:", err )
 							if err == "wantwrite" then
 								event = EV_WRITE
 							elseif err == "wantread" then
 								event = EV_READ
 							else
+								debug( "ssl handshake error:", err )
 								self.fatalerror = err
 							end
 						end
