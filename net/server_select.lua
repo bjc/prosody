@@ -530,7 +530,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						_readlistlen = addsocket(_readlist, client, _readlistlen)
 						return true
 					else
-						out_put( "server.lua: error during ssl handshake: ", tostring(err) )
 						if err == "wantwrite" and not wrote then
 							_sendlistlen = addsocket(_sendlist, client, _sendlistlen)
 							wrote = true
@@ -538,6 +537,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 							_readlistlen = addsocket(_readlist, client, _readlistlen)
 							read = true
 						else
+							out_put( "server.lua: ssl handshake error: ", tostring(err) )
 							break;
 						end
 						--coroutine_yield( handler, nil, err )	 -- handshake not finished

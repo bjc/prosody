@@ -15,7 +15,7 @@ local s_match = string.match;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local log = require "util.logger".init("sasl");
 
-module "plain"
+module "sasl.plain"
 
 -- ================================
 -- SASL PLAIN according to RFC 4616

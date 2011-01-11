@@ -16,7 +16,7 @@ local s_match = string.match;
 local log = require "util.logger".init("sasl");
 local generate_uuid = require "util.uuid".generate;
 
-module "anonymous"
+module "sasl.anonymous"
 
 --=========================
 --SASL ANONYMOUS according to RFC 4505
