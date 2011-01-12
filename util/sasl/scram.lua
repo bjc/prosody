@@ -14,6 +14,7 @@
 local s_match = string.match;
 local type = type
 local string = string
+local tostring = tostring;
 local base64 = require "util.encodings".base64;
 local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
@@ -110,6 +111,8 @@ function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	return true, stored_key, server_key
 end
 
+local support_channel_binding = true;
+
 local function scram_gen(hash_name, H_f, HMAC_f)
 	local function scram_hash(self, message)
 		if not self.state then self["state"] = {} end
@@ -118,15 +121,26 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 		if not self.state.name then
 			-- we are processing client_first_message
 			local client_first_message = message;
-			
+			log("debug", client_first_message);
 			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
-			self.state["gs2_cbind_flag"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
-				= client_first_message:match("^(%a),(.*),n=(.*),r=([^,]*).*");
+			self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
+				= client_first_message:match("^(%a)=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
 
 			-- we don't do any channel binding yet
-			if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
-				return "failure", "malformed-request";
+			log("debug", "Decoded: cbind_flag: %s, cbind_name: %s, authzid: %s, name: %s, clientnonce: %s", tostring(self.state.gs2_cbind_flag),
+																								tostring(self.state.gs2_cbind_name),
+																								tostring(self.state.authzid), 
+																								tostring(self.state.name), 
+																								tostring(self.state.clientnonce));
+			if support_channel_binding then
+				if string.sub(self.state.gs2_cbind_flag, 0, 1) == "y" then
+					return "failure", "malformed-request";
+				end
+			else
+				if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
+					return "failure", "malformed-request";
+				end
 			end
 
 			if not self.state.name or not self.state.clientnonce then
@@ -179,7 +193,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 		else
 			-- we are processing client_final_message
 			local client_final_message = message;
-			
+			log("debug", "client_final_message: %s", client_final_message);
 			self.state["channelbinding"], self.state["nonce"], self.state["proof"] = client_final_message:match("^c=(.*),r=(.*),.*p=(.*)");
 	
 			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
@@ -213,6 +227,9 @@ end
 function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
 		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
+		
+		-- register channel binding equivalent
+		registerMechanism("SCRAM-"..hash_name.."-PLUS", {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
 	end
 
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
