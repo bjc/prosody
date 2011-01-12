@@ -27,8 +27,6 @@ local config = require "core.configmanager";
 local logger = require "util.logger";
 local prosody = prosody;
 
-local debug_mode = config.get("*", "core", "debug");
-
 _G.log = logger.init("general");
 
 module "loggingmanager"
@@ -165,6 +163,8 @@ function reload_logging()
 	end
 	
 	logger.reset();
+
+	local debug_mode = config.get("*", "core", "debug");
 
 	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
 	default_file_logging = {
