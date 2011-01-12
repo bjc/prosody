@@ -195,7 +195,7 @@ end
 -- Column width for "source" (used by stdout and console)
 local sourcewidth = 20;
 
-function log_sink_types.stdout()
+function log_sink_types.stdout(config)
 	local timestamps = config.timestamps;
 	
 	if timestamps == true then
