@@ -327,6 +327,16 @@ end
 function room_mt:is_hidden()
 	return self._data.hidden;
 end
+function room_mt:set_changesubject(changesubject)
+	changesubject = changesubject and true or nil;
+	if self._data.changesubject ~= changesubject then
+		self._data.changesubject = changesubject;
+		if self.save then self:save(true); end
+	end
+end
+function room_mt:get_changesubject()
+	return self._data.changesubject;
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -565,6 +575,12 @@ function room_mt:get_form_layout()
 			value = not self:is_hidden()
 		},
 		{
+			name = 'muc#roomconfig_changesubject',
+			type = 'boolean',
+			label = 'Allow Occupants to Change Subject?',
+			value = self:get_changesubject()
+		},
+		{
 			name = 'muc#roomconfig_whois',
 			type = 'list-single',
 			label = 'Who May Discover Real JIDs?',
@@ -637,6 +653,10 @@ function room_mt:process_form(origin, stanza)
 	local public = fields['muc#roomconfig_publicroom'];
 	dirty = dirty or (self:is_hidden() ~= (not public and true or nil))
 
+	local changesubject = fields['muc#roomconfig_changesubject'];
+	dirty = dirty or (self:get_changesubject() ~= (not changesubject and true or nil))
+	module:log('debug', 'changesubject=%s', changesubject and "true" or "false")
+
 	local whois = fields['muc#roomconfig_whois'];
 	if not valid_whois[whois] then
 	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request', "Invalid value for 'whois'"));
@@ -654,6 +674,7 @@ function room_mt:process_form(origin, stanza)
 	self:set_members_only(membersonly);
 	self:set_persistent(persistent);
 	self:set_hidden(not public);
+	self:set_changesubject(changesubject);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
@@ -817,7 +838,8 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			stanza.attr.from = current_nick;
 			local subject = getText(stanza, {"subject"});
 			if subject then
-				if occupant.role == "moderator" then
+				if occupant.role == "moderator" or
+					( self._data.changesubject and occupant.role == "participant" ) then -- and participant
 					self:set_subject(current_nick, subject); -- TODO use broadcast_message_stanza
 				else
 					stanza.attr.from = from;
