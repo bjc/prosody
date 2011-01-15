@@ -27,6 +27,17 @@ Authentication Backend Prototypes:
 state = false : disabled
 state = true : enabled
 state = nil : non-existant
+
+Channel Binding:
+
+To enable support of channel binding in some mechanisms you need to provide appropriate callbacks in a table
+at profile.cb.
+
+Example:
+	profile.cb["tls-unique"] = function(self)
+		return self.user
+	end
+
 ]]
 
 local method = {};

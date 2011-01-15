@@ -137,6 +137,11 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				if string.sub(self.state.gs2_cbind_flag, 0, 1) == "y" then
 					return "failure", "malformed-request";
 				end
+				
+				-- check whether we support the proposed channel binding type
+				if not self.profile.cb[self.state.gs2_cbind_name] then
+					return "failure", "malformed-request", "Proposed channel binding type isn't supported.";
+				end
 			else
 				if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
 					return "failure", "malformed-request";
