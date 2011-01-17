@@ -70,6 +70,15 @@ function new(realm, profile)
 	return setmetatable({ profile = profile, realm = realm, mechs = mechanisms }, method);
 end
 
+-- add a channel binding handler
+function method:add_cb_handler(name, f)
+	if type(self.profile.cb) ~= "table" then
+		self.profile.cb = {};
+	end
+	self.profile.cb[name] = f;
+	return self;
+end
+
 -- get a fresh clone with the same realm and profile
 function method:clean_clone()
 	return new(self.realm, self.profile)
