@@ -111,12 +111,12 @@ function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	return true, stored_key, server_key
 end
 
-local support_channel_binding = true;
-
 local function scram_gen(hash_name, H_f, HMAC_f)
 	local function scram_hash(self, message)
 		if not self.state then self["state"] = {} end
-	
+		local support_channel_binding = false;
+		if self.profile.cb then support_channel_binding = true; end
+		
 		if type(message) ~= "string" or #message == 0 then return "failure", "malformed-request" end
 		if not self.state.name then
 			-- we are processing client_first_message
