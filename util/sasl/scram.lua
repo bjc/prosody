@@ -200,9 +200,18 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local client_final_message = message;
 			log("debug", "client_final_message: %s", client_final_message);
 			self.state["channelbinding"], self.state["nonce"], self.state["proof"] = client_final_message:match("^c=(.*),r=(.*),.*p=(.*)");
-	
-			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
-				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
+
+			if self.state.gs2_cbind_name then
+				local client_gs2_header = base64.decode(self.state.channelbinding)
+				local our_client_gs2_header = "p="..self.state.gs2_cbind_name..","..self.state["authzid"]..","..self.profile.cb[self.state.gs2_cbind_name](self);
+
+				if client_gs2_header ~= our_client_gs2_header then
+					return "failure", "malformed-request", "Invalid channel binding value.";
+				end
+			else
+				if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
+					return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
+				end
 			end
 
 			if self.state.nonce ~= self.state.clientnonce..self.state.servernonce then
