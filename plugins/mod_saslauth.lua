@@ -246,8 +246,10 @@ module:hook("stream-features", function(event)
 			return;
 		end
 		origin.sasl_handler = usermanager_get_sasl_handler(module.host);
-		
 		if origin.secure then
+			origin.sasl_handler:add_cb_handler("tls-unique", function(self)
+				return self.userdata:getpeerfinished();
+			end);
 			origin.sasl_handler["userdata"] = origin.conn:socket();
 		end
 		features:tag("mechanisms", mechanisms_attr);
