@@ -38,6 +38,10 @@ scram_{MECH}:
 	function(username, realm)
 		return stored_key, server_key, iteration_count, salt, state;
 	end
+
+Supported Channel Binding Backends
+
+'tls-unique' according to RFC 5929
 ]]
 
 local default_i = 4096
