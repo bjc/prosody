@@ -131,12 +131,6 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
 				= client_first_message:match("^(%a)=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
 
-			-- we don't do any channel binding yet
-			log("debug", "Decoded: cbind_flag: %s, cbind_name: %s, authzid: %s, name: %s, clientnonce: %s", tostring(self.state.gs2_cbind_flag),
-																								tostring(self.state.gs2_cbind_name),
-																								tostring(self.state.authzid), 
-																								tostring(self.state.name), 
-																								tostring(self.state.clientnonce));
 			if support_channel_binding then
 				if string.sub(self.state.gs2_cbind_flag, 0, 1) == "y" then
 					return "failure", "malformed-request";
