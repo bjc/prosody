@@ -3,8 +3,6 @@ local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local uuid_generate = require "util.uuid".generate;
 
-require "core.modulemanager".load(module.host, "iq");
-
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
