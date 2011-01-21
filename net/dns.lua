@@ -158,8 +158,6 @@ resolver.__index = resolver;
 
 resolver.timeout = default_timeout;
 
-local SRV_tostring;
-
 local function default_rr_tostring(rr)
 	local rr_val = rr.type and rr[rr.type:lower()];
 	if type(rr_val) ~= "string" then
@@ -170,8 +168,13 @@ end
 
 local special_tostrings = {
 	LOC = resolver.LOC_tostring;
-	MX = function (rr) return string.format('%2i %s', rr.pref, rr.mx); end;
-	SRV = SRV_tostring;
+	MX  = function (rr)
+		return string.format('%2i %s', rr.pref, rr.mx);
+	end;
+	SRV = function (rr)
+		local s = rr.srv;
+		return string.format('%5d %5d %5d %s', s.priority, s.weight, s.port, s.target);
+	end;
 };
 
 local rr_metatable = {};   -- - - - - - - - - - - - - - - - - - -  rr_metatable
@@ -474,12 +477,6 @@ end
 function resolver:PTR(rr)
 	rr.ptr = self:name();
 end
-
-function SRV_tostring(rr)    -- - - - - - - - - - - - - - - - - - SRV_tostring
-	local s = rr.srv;
-	return string.format( '%5d %5d %5d %s', s.priority, s.weight, s.port, s.target );
-end
-
 
 function resolver:TXT(rr)    -- - - - - - - - - - - - - - - - - - - - - -  TXT
 	rr.txt = self:sub (rr.rdlength);
