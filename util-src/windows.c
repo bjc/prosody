@@ -38,15 +38,16 @@ static int Lget_nameservers(lua_State *L) {
 		}
 		return 1;
 	} else {
-		luaL_error(L, "DnsQueryConfig returned %d", status);
-		return 0; // unreachable, but prevents a compiler warning
+		lua_pushnil(L);
+		lua_pushfstring(L, "DnsQueryConfig returned %d", status);
+		return 2;
 	}
 }
 
-static void lassert(lua_State *L, BOOL test, char* string) {
-	if (!test) {
-		luaL_error(L, "%s: %d", string, GetLastError());
-	}
+static int lerror(lua_State *L, char* string) {
+	lua_pushnil(L);
+	lua_pushfstring(L, "%s: %d", string, GetLastError());
+	return 2;
 }
 
 static int Lget_consolecolor(lua_State *L) {
@@ -55,9 +56,9 @@ static int Lget_consolecolor(lua_State *L) {
 	
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	
-	lassert(L, console != INVALID_HANDLE_VALUE, "GetStdHandle");
-	lassert(L, GetConsoleScreenBufferInfo(console, &info), "GetConsoleScreenBufferInfo");
-	lassert(L, ReadConsoleOutputAttribute(console, &color, sizeof(WORD), info.dwCursorPosition, &read_len), "ReadConsoleOutputAttribute");
+	if (console == INVALID_HANDLE_VALUE) return lerror(L, "GetStdHandle");
+	if (!GetConsoleScreenBufferInfo(console, &info)) return lerror(L, "GetConsoleScreenBufferInfo");
+	if (!ReadConsoleOutputAttribute(console, &color, sizeof(WORD), info.dwCursorPosition, &read_len)) return lerror(L, "ReadConsoleOutputAttribute");
 
 	lua_pushnumber(L, color);
 	return 1;
@@ -65,9 +66,10 @@ static int Lget_consolecolor(lua_State *L) {
 static int Lset_consolecolor(lua_State *L) {
 	int color = luaL_checkint(L, 1);
 	HWND console = GetStdHandle(STD_OUTPUT_HANDLE);
-	lassert(L, console != INVALID_HANDLE_VALUE, "GetStdHandle");
-	lassert(L, SetConsoleTextAttribute(console, color), "SetConsoleTextAttribute");
-	return 0;
+	if (console == INVALID_HANDLE_VALUE) return lerror(L, "GetStdHandle");
+	if (!SetConsoleTextAttribute(console, color)) return lerror(L, "SetConsoleTextAttribute");
+	lua_pushboolean(L, 1);
+	return 1;
 }
 
 static const luaL_Reg Reg[] =
