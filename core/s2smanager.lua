@@ -76,7 +76,8 @@ local function bounce_sendq(session, reason)
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
 				if reason then
-					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):text("Connection failed: "..reason):up();
+					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"})
+						:text("Server-to-server connection failed: "..reason):up();
 				end
 				core_process_stanza(dummy, reply);
 			end
