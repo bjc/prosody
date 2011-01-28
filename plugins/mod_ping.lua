@@ -22,8 +22,10 @@ module:hook("iq/host/urn:xmpp:ping:ping", ping_handler);
 
 -- Ad-hoc command
 
+local datetime = require "util.datetime".datetime;
+
 function ping_command_handler (self, data, state)
-	local now = os.date("%Y-%m-%dT%X");
+	local now = datetime();
 	return { info = "Pong\n"..now, status = "completed" };
 end
 
