@@ -27,6 +27,7 @@ local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
+local cert_verify_identity = require "util.x509".verify_identity;
 
 local fire_event = prosody.events.fire_event;
 local uuid_gen = require "util.uuid".generate;
@@ -392,16 +393,47 @@ function session_open_stream(session, from, to)
 		from=from, to=to, version='1.0', ["xml:lang"]='en'}):top_tag());
 end
 
+local function check_cert_status(session)
+	local conn = session.conn:socket()
+	local cert
+	if conn.getpeercertificate then
+		cert = conn:getpeercertificate()
+	end
+
+	if cert then
+		local chain_valid, err = conn:getpeerchainvalid()
+		if not chain_valid then
+			session.cert_chain_status = "invalid";
+			(session.log or log)("debug", "certificate chain validation result: %s", err);
+		else
+			session.cert_chain_status = "valid";
+
+			local host = session.direction == "incoming" and session.from_host or session.to_host
+
+			-- We'll go ahead and verify the asserted identity if the
+			-- connecting server specified one.
+			if host then
+				if cert_verify_identity(host, "xmpp-server", cert) then
+					session.cert_identity_status = "valid"
+				else
+					session.cert_identity_status = "invalid"
+				end
+			end
+		end
+	end
+end
+
 function streamopened(session, attr)
 	local send = session.sends2s;
 	
 	-- TODO: #29: SASL/TLS on s2s streams
 	session.version = tonumber(attr.version) or 0;
 	
+	-- TODO: Rename session.secure to session.encrypted
 	if session.secure == false then
 		session.secure = true;
 	end
-	
+
 	if session.direction == "incoming" then
 		-- Send a reply stream header
 		session.to_host = attr.to and nameprep(attr.to);
@@ -426,6 +458,9 @@ function streamopened(session, attr)
 				return;
 			end
 		end
+
+		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
@@ -445,7 +480,9 @@ function streamopened(session, attr)
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
-	
+
+		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
 		-- Note that this is *not* the stanza queue (which
