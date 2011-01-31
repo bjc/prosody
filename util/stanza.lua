@@ -108,6 +108,14 @@ function stanza_mt:get_child(name, xmlns)
 	end
 end
 
+function stanza_mt:get_child_text(name, xmlns)
+	local tag = self:get_child(name, xmlns);
+	if tag then
+		return tag:get_text();
+	end
+	return nil;
+end
+
 function stanza_mt:child_with_name(name)
 	for _, child in ipairs(self.tags) do
 		if child.name == name then return child; end
