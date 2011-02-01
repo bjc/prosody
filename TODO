@@ -1,6 +1,9 @@
 == 0.9 ==
-- Clustering
+- IPv6
+- SASL EXTERNAL
+- Roster providers
+- Web interface
 
 == 1.0 ==
-- Web interface?
+- Clustering
 - World domination
