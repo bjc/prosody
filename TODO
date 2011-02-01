@@ -1,13 +1,3 @@
-== 0.8 ==
-- Ad-hoc commands:
-	http://code.google.com/p/prosody-modules/wiki/mod_adhoc
-	http://code.google.com/p/prosody-modules/wiki/mod_adhoc_cmd_admin
-	http://code.google.com/p/prosody-modules/wiki/mod_adhoc_cmd_ping
-	http://code.google.com/p/prosody-modules/wiki/mod_adhoc_cmd_uptime
-	
-- Pubsub
-- Data storage backend abstraction
-
 == 0.9 ==
 - Clustering
 
