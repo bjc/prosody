@@ -68,12 +68,11 @@ function load_modules_for_host(host)
 	if host_modules_enabled == global_modules_enabled then host_modules_enabled = nil; end
 	if host_modules_disabled == global_modules_disabled then host_modules_disabled = nil; end
 	
-	local host_modules = set.new(host_modules_enabled) - set.new(host_modules_disabled);
 	local global_modules = set.new(autoload_modules) + set.new(global_modules_enabled) - set.new(global_modules_disabled);
 	if component then
 		global_modules = set.intersection(set.new(component_inheritable_modules), global_modules);
 	end
-	local modules = global_modules + host_modules;
+	local modules = (global_modules + set.new(host_modules_enabled)) - set.new(host_modules_disabled);
 	
 	-- COMPAT w/ pre 0.8
 	if modules:contains("console") then
