@@ -131,6 +131,12 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
 				= client_first_message:match("^(%a)=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
 
+			-- check for invalid gs2_flag_type start
+			local gs2_flag_type == string.sub(self.state.gs2_cbind_flag, 0, 1)
+			if gs2_flag_type ~=  "y" and gs2_flag_type ~=  "n" and gs2_flag_type ~=  "p" then
+				return "failure", "malformed-request", "The GS2 header has to start with 'y', 'n', or 'p'."
+			end
+
 			if support_channel_binding then
 				if string.sub(self.state.gs2_cbind_flag, 0, 1) == "y" then
 					return "failure", "malformed-request";
@@ -141,6 +147,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					return "failure", "malformed-request", "Proposed channel binding type isn't supported.";
 				end
 			else
+				-- we don't support channelbinding, 
 				if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
 					return "failure", "malformed-request";
 				end
