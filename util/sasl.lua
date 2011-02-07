@@ -18,6 +18,7 @@ local type = type
 local setmetatable = setmetatable;
 local assert = assert;
 local require = require;
+local print = print
 
 module "sasl"
 
@@ -44,13 +45,21 @@ local method = {};
 method.__index = method;
 local mechanisms = {};
 local backend_mechanism = {};
+local mechanism_channelbindings = {};
 
 -- register a new SASL mechanims
-local function registerMechanism(name, backends, f)
+local function registerMechanism(name, backends, f, cb_backends)
 	assert(type(name) == "string", "Parameter name MUST be a string.");
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
 	assert(type(f) == "function", "Parameter f MUST be a function.");
+	if cb_backends then assert(type(cb_backends) == "table"); end
 	mechanisms[name] = f
+	if cb_backends then
+		mechanism_channelbindings[name] = {};
+		for _, cb_name in ipairs(cb_backends) do
+			mechanism_channelbindings[name][cb_name] = true;
+		end
+	end
 	for _, backend_name in ipairs(backends) do
 		if backend_mechanism[backend_name] == nil then backend_mechanism[backend_name] = {}; end
 		t_insert(backend_mechanism[backend_name], name);
@@ -86,7 +95,21 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	return self.mechs;
+	local current_mechs = {};
+	for mech, _ in pairs(self.mechs) do
+		if mechanism_channelbindings[mech] and self.profile.cb then
+			local ok = false;
+			for cb_name, _ in pairs(self.profile.cb) do
+				if mechanism_channelbindings[mech][cb_name] then
+					ok = true;
+				end
+			end
+			if ok == true then current_mechs[mech] = true; end
+		else
+			current_mechs[mech] = true;
+		end
+	end
+	return current_mechs;
 end
 
 -- select a mechanism to use
