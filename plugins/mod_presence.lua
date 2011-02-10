@@ -203,6 +203,8 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 			rostermanager.roster_push(node, host, to_bare);
 		end
 		core_post_stanza(origin, stanza);
+	else
+		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
 	return true;
@@ -253,7 +255,9 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
-	end -- discard any other type
+	else
+		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
+	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
 	return true;
 end
@@ -307,6 +311,8 @@ module:hook("presence/bare", function(data)
 		end -- no resources not online, discard
 	elseif not t or t == "unavailable" then
 		handle_normal_presence(origin, stanza);
+	else
+		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
 	end
 	return true;
 end);
