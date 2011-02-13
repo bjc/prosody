@@ -15,18 +15,104 @@ local usermanager = require "core.usermanager";
 local signal = require "util.signal";
 local set = require "util.set";
 local lfs = require "lfs";
+local pcall = pcall;
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
 local io, os = io, os;
+local print = print;
 local tostring, tonumber = tostring, tonumber;
 
 local CFG_SOURCEDIR = _G.CFG_SOURCEDIR;
 
+local _G = _G;
 local prosody = prosody;
 
 module "prosodyctl"
 
+-- UI helpers
+function show_message(msg, ...)
+	print(msg:format(...));
+end
+
+function show_warning(msg, ...)
+	print(msg:format(...));
+end
+
+function show_usage(usage, desc)
+	print("Usage: ".._G.arg[0].." "..usage);
+	if desc then
+		print(" "..desc);
+	end
+end
+
+function getchar(n)
+	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
+	local ok, char;
+	if stty_ret == 0 then
+		ok, char = pcall(io.read, n or 1);
+		os.execute("stty sane");
+	else
+		ok, char = pcall(io.read, "*l");
+		if ok then
+			char = char:sub(1, n or 1);
+		end
+	end
+	if ok then
+		return char;
+	end
+end
+
+function getpass()
+	local stty_ret = os.execute("stty -echo 2>/dev/null");
+	if stty_ret ~= 0 then
+		io.write("\027[08m"); -- ANSI 'hidden' text attribute
+	end
+	local ok, pass = pcall(io.read, "*l");
+	if stty_ret == 0 then
+		os.execute("stty sane");
+	else
+		io.write("\027[00m");
+	end
+	io.write("\n");
+	if ok then
+		return pass;
+	end
+end
+
+function show_yesno(prompt)
+	io.write(prompt, " ");
+	local choice = getchar():lower();
+	io.write("\n");
+	if not choice:match("%a") then
+		choice = prompt:match("%[.-(%U).-%]$");
+		if not choice then return nil; end
+	end
+	return (choice == "y");
+end
+
+function read_password()
+	local password;
+	while true do
+		io.write("Enter new password: ");
+		password = getpass();
+		if not password then
+			show_message("No password - cancelled");
+			return;
+		end
+		io.write("Retype new password: ");
+		if getpass() ~= password then
+			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
+				return;
+			end
+		else
+			break;
+		end
+	end
+	return password;
+end
+
+-- Server control
 function adduser(params)
 	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
 	if not user then

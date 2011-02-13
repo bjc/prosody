@@ -226,86 +226,11 @@ require "util.prosodyctl"
 require "socket"
 -----------------------
 
-function show_message(msg, ...)
-	print(msg:format(...));
-end
-
-function show_warning(msg, ...)
-	print(msg:format(...));
-end
-
-function show_usage(usage, desc)
-	print("Usage: "..arg[0].." "..usage);
-	if desc then
-		print(" "..desc);
-	end
-end
-
-local function getchar(n)
-	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
-	local ok, char;
-	if stty_ret == 0 then
-		ok, char = pcall(io.read, n or 1);
-		os.execute("stty sane");
-	else
-		ok, char = pcall(io.read, "*l");
-		if ok then
-			char = char:sub(1, n or 1);
-		end
-	end
-	if ok then
-		return char;
-	end
-end
-	
-local function getpass()
-	local stty_ret = os.execute("stty -echo 2>/dev/null");
-	if stty_ret ~= 0 then
-		io.write("\027[08m"); -- ANSI 'hidden' text attribute
-	end
-	local ok, pass = pcall(io.read, "*l");
-	if stty_ret == 0 then
-		os.execute("stty sane");
-	else
-		io.write("\027[00m");
-	end
-	io.write("\n");
-	if ok then
-		return pass;
-	end
-end
-
-function show_yesno(prompt)
-	io.write(prompt, " ");
-	local choice = getchar():lower();
-	io.write("\n");
-	if not choice:match("%a") then
-		choice = prompt:match("%[.-(%U).-%]$");
-		if not choice then return nil; end
-	end
-	return (choice == "y");
-end
-
-local function read_password()
-	local password;
-	while true do
-		io.write("Enter new password: ");
-		password = getpass();
-		if not password then
-			show_message("No password - cancelled");
-			return;
-		end
-		io.write("Retype new password: ");
-		if getpass() ~= password then
-			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
-				return;
-			end
-		else
-			break;
-		end
-	end
-	return password;
-end
+local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
+local show_usage = prosodyctl.show_usage;
+local getchar, getpass = prosodyctl.getchar, prosodyctl.getpass;
+local show_yesno = prosodyctl.show_yesno;
+local read_password = prosodyctl.read_password;
 
 local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
 -----------------------
