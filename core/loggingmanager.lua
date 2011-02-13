@@ -88,14 +88,20 @@ end
 function apply_sink_rules(sink_type)
 	if type(logging_config) == "table" then
 		
-		if sink_type == "file" then
-			for _, level in ipairs(logging_levels) do
-				if type(logging_config[level]) == "string" then
+		for _, level in ipairs(logging_levels) do
+			if type(logging_config[level]) == "string" then
+				local value = logging_config[level];
+				if sink_type == "file" then
 					add_rule({
-						to = "file",
-						filename = logging_config[level],
-						timestamps = true,
-						levels = { min = level },
+						to = sink_type;
+						filename = value;
+						timestamps = true;
+						levels = { min = level };
+					});
+				elseif value == "*"..sink_type then
+					add_rule({
+						to = sink_type;
+						levels = { min = level };
 					});
 				end
 			end
