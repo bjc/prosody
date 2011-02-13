@@ -101,7 +101,7 @@ function apply_sink_rules(sink_type)
 			end
 		end
 		
-		for _, sink_config in pairs(logging_config) do
+		for _, sink_config in ipairs(logging_config) do
 			if (type(sink_config) == "table" and sink_config.to == sink_type) then
 				add_rule(sink_config);
 			elseif (type(sink_config) == "string" and sink_config:match("^%*(.+)") == sink_type) then
