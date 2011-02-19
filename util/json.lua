@@ -268,7 +268,9 @@ function json.decode(json)
 		return tonumber(s);
 	end
 	local function readmember(t)
+		skipstuff();
 		local k = readstring();
+		skipstuff();
 		checkandskip(":");
 		t[k] = readvalue();
 	end
