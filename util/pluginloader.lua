@@ -62,7 +62,10 @@ end
 function load_code(plugin, resource)
 	local content, err = load_resource(plugin, resource);
 	if not content then return content, err; end
-	return loadstring(content, "@"..err);
+	local path = err;
+	local f, err = loadstring(content, "@"..path);
+	if not f then return f, err; end
+	return f, path;
 end
 
 return _M;
