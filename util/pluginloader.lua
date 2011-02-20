@@ -20,15 +20,16 @@ local loadstring, pairs = loadstring, pairs;
 module "pluginloader"
 
 local function load_file(name)
-	local file, err;
+	local file, err, path;
 	for i=1,#plugin_dir do
-		file, err = io_open(plugin_dir[i]..name);
+		path = plugin_dir[i]..name;
+		file, err = io_open(path);
 		if file then break; end
 	end
 	if not file then return file, err; end
 	local content = file:read("*a");
 	file:close();
-	return content, name;
+	return content, path;
 end
 
 function load_resource(plugin, resource, loader)
