@@ -320,24 +320,21 @@ function deserialize(stanza)
 	return stanza;
 end
 
-function clone(stanza)
-	local lookup_table = {};
-	local function _copy(object)
-		if type(object) ~= "table" then
-			return object;
-		elseif lookup_table[object] then
-			return lookup_table[object];
+local function _clone(stanza)
+	local attr, tags = {}, {};
+	for k,v in pairs(stanza.attr) do attr[k] = v; end
+	local new = { name = stanza.name, attr = attr, tags = tags };
+	for i=1,#stanza do
+		local child = stanza[i];
+		if child.name then
+			child = _clone(child);
+			t_insert(tags, child);
 		end
-		local new_table = {};
-		lookup_table[object] = new_table;
-		for index, value in pairs(object) do
-			new_table[_copy(index)] = _copy(value);
-		end
-		return setmetatable(new_table, getmetatable(object));
+		t_insert(new, child);
 	end
-	
-	return _copy(stanza)
+	return setmetatable(new, stanza_mt);
 end
+clone = _clone;
 
 function message(attr, body)
 	if not body then
