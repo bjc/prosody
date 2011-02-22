@@ -27,6 +27,19 @@ local new_sasl = function(realm)
 	);
 end
 
+do -- diagnostic
+	local realm = module:get_option("sasl_realm") or module.host;
+	local list;
+	for mechanism in pairs(new_sasl(realm):mechanisms()) do
+		list = (not(list) and mechanism) or (list..", "..mechanism);
+	end
+	if not list then
+		module:log("error", "No Cyrus SASL mechanisms available");
+	else
+		module:log("debug", "Available Cyrus SASL mechanisms: %s", list);
+	end
+end
+
 function new_default_provider(host)
 	local provider = { name = "cyrus" };
 	log("debug", "initializing default authentication provider for host '%s'", host);
