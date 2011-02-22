@@ -140,7 +140,6 @@ function new_hashpass_provider(host)
 	end
 
 	function provider.get_sasl_handler()
-		local realm = module:get_option("sasl_realm") or module.host;
 		local testpass_authentication_profile = {
 			plain_test = function(sasl, username, password, realm)
 				local prepped_username = nodeprep(username);
@@ -175,7 +174,7 @@ function new_hashpass_provider(host)
 				return stored_key, server_key, iteration_count, salt, true;
 			end
 		};
-		return new_sasl(realm, testpass_authentication_profile);
+		return new_sasl(module.host, testpass_authentication_profile);
 	end
 	
 	return provider;
