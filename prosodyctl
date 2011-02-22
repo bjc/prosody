@@ -110,6 +110,10 @@ local original_logging_config = config.get("*", "core", "log");
 config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
 
 local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+if custom_plugin_paths then
+	CFG_PLUGINDIR = table.concat(custom_plugin_paths, package.config:sub(3,3)); -- path1;path2;path3
+end
 prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
 	          plugins = CFG_PLUGINDIR, data = data_path };
 
