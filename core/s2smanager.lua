@@ -167,7 +167,7 @@ function new_incoming(conn)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
+		(session.log or log)("debug", "Destroying incomplete session %s->%s due to inactivity",
 		    session.from_host or "(unknown)", session.to_host or "(unknown)");
 		session:close("connection-timeout");
 	end);
@@ -625,7 +625,7 @@ end
 
 function destroy_session(session, reason)
 	if session.destroyed then return; end
-	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
+	(session.log or log)("debug", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
