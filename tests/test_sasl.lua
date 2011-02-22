@@ -6,13 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
---- WARNING! ---
--- This file contains a mix of encodings below.
--- Many editors will unquestioningly convert these for you.
--- Please be careful :(  (I recommend Scite)
----------------------------------
-
 local gmatch = string.gmatch;
 local t_concat, t_insert = table.concat, table.insert;
 local to_byte, to_char = string.byte, string.char;
@@ -41,5 +34,5 @@ function latin1toutf8()
 	assert_utf8("", "")
 	assert_utf8("test", "test")
 	assert_utf8(nil, nil)
-	assert_utf8("foobar.råkat.se", "foobar.rÃ¥kat.se")
+	assert_utf8("foobar.r\229kat.se", "foobar.r\195\165kat.se")
 end
