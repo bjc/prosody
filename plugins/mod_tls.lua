@@ -47,7 +47,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 		local host = origin.to_host or origin.host;
 		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
 		origin.conn:starttls(ssl_ctx);
-		origin.log("info", "TLS negotiation started for %s...", origin.type);
+		origin.log("debug", "TLS negotiation started for %s...", origin.type);
 		origin.secure = false;
 	else
 		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
