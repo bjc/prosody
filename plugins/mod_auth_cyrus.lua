@@ -28,9 +28,8 @@ local new_sasl = function(realm)
 end
 
 do -- diagnostic
-	local realm = module:get_option("sasl_realm") or module.host;
 	local list;
-	for mechanism in pairs(new_sasl(realm):mechanisms()) do
+	for mechanism in pairs(new_sasl(module.host):mechanisms()) do
 		list = (not(list) and mechanism) or (list..", "..mechanism);
 	end
 	if not list then
@@ -68,8 +67,7 @@ function new_default_provider(host)
 	end
 
 	function provider.get_sasl_handler()
-		local realm = module:get_option("sasl_realm") or module.host;
-		local handler = new_sasl(realm);
+		local handler = new_sasl(module.host);
 		if require_provisioning then
 			function handler.require_provisioning(username)
 				return usermanager_user_exists(username, module.host);
