@@ -17,6 +17,8 @@ local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
 local tonumber, tostring, pairs, ipairs, type = tonumber, tostring, pairs, ipairs, type;
+local xpcall = xpcall;
+local debug_traceback = debug.traceback;
 
 local urlencode = function (s) return s and (s:gsub("%W", function (c) return ("%%%02x"):format(c:byte()); end)); end
 
@@ -86,6 +88,12 @@ local function call_callback(request, err)
 		callback = (request.server and request.server.handlers[base]) or default_handler;
 	end
 	if callback then
+		local _callback = callback;
+		function callback(a, b, c)
+			local status, result = xpcall(function() _callback(a, b, c) end, debug_traceback);
+			if status then return result; end
+			log("error", "Error in HTTP server handler: %s", result);
+		end
 		if err then
 			log("debug", "Request error: "..err);
 			if not callback(nil, err, request) then
