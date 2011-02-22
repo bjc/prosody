@@ -68,7 +68,6 @@ function new_default_provider(host)
 	end
 
 	function provider.get_sasl_handler()
-		local realm = module:get_option("sasl_realm") or module.host;
 		local getpass_authentication_profile = {
 			plain = function(sasl, username, realm)
 				local prepped_username = nodeprep(username);
@@ -83,7 +82,7 @@ function new_default_provider(host)
 				return password, true;
 			end
 		};
-		return new_sasl(realm, getpass_authentication_profile);
+		return new_sasl(module.host, getpass_authentication_profile);
 	end
 	
 	return provider;
