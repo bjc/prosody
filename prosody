@@ -184,7 +184,10 @@ function init_global_state()
 	prosody.hosts = hosts;
 	
 	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-	CFG_PLUGINDIR = config.get("*", "core", "plugin_path") or CFG_PLUGINDIR or "plugins"
+	local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+	if custom_plugin_paths then
+		CFG_PLUGINDIR = table.concat(custom_plugin_paths, package.config:sub(3,3)); -- path1;path2;path3
+	end
 	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
 	                  plugins = CFG_PLUGINDIR, data = data_path };
 
