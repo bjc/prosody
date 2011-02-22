@@ -19,40 +19,33 @@ local loadstring, pairs = loadstring, pairs;
 
 module "pluginloader"
 
-local function load_file(name)
+local function load_file(names)
 	local file, err, path;
 	for i=1,#plugin_dir do
-		path = plugin_dir[i]..name;
-		file, err = io_open(path);
-		if file then break; end
+		for j=1,#names do
+			path = plugin_dir[i]..names[j];
+			file, err = io_open(path);
+			if file then
+				local content = file:read("*a");
+				file:close();
+				return content, path;
+			end
+		end
 	end
-	if not file then return file, err; end
-	local content = file:read("*a");
-	file:close();
-	return content, path;
+	return file, err;
 end
 
 function load_resource(plugin, resource)
-	local path, name = plugin:match("([^/]*)/?(.*)");
-	if name == "" then
-		if not resource then
-			resource = "mod_"..plugin..".lua";
-		end
+	resource = resource or "mod_"..plugin..".lua";
 
-		local content, err = load_file(plugin.."/"..resource);
-		if not content then content, err = load_file(resource); end
-		
-		return content, err;
-	else
-		if not resource then
-			resource = "mod_"..name..".lua";
-		end
+	local names = {
+		"mod_"..plugin.."/"..plugin.."/"..resource; -- mod_hello/hello/mod_hello.lua
+		"mod_"..plugin.."/"..resource;              -- mod_hello/mod_hello.lua
+		plugin.."/"..resource;                      -- hello/mod_hello.lua
+		resource;                                   -- mod_hello.lua
+	};
 
-		local content, err = load_file(plugin.."/"..resource);
-		if not content then content, err = load_file(path.."/"..resource); end
-		
-		return content, err;
-	end
+	return load_file(names);
 end
 
 function load_code(plugin, resource)
