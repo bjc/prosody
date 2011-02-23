@@ -89,10 +89,20 @@ local function call_callback(request, err)
 	end
 	if callback then
 		local _callback = callback;
-		function callback(a, b, c)
-			local status, result = xpcall(function() _callback(a, b, c) end, debug_traceback);
-			if status then return result; end
+		function callback(method, body, request)
+			local ok, result = xpcall(function() return _callback(method, body, request) end, debug_traceback);
+			if ok then return result; end
 			log("error", "Error in HTTP server handler: %s", result);
+			-- TODO: When we support pipelining, request.destroyed
+			-- won't be the right flag - we just want to see if there
+			-- has been a response to this request yet.
+			if not request.destroyed then
+				return {
+					status = "500 Internal Server Error";
+					headers = { ["Content-Type"] = "text/plain" };
+					body = "There was an error processing your request. See the error log for more details.";
+				};
+			end
 		end
 		if err then
 			log("debug", "Request error: "..err);
