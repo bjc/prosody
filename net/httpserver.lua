@@ -30,10 +30,6 @@ module "httpserver"
 
 local default_handler;
 
-local function expectbody(reqt)
-	return reqt.method == "POST";
-end
-
 local function send_response(request, response)
 	-- Write status line
 	local resp;
