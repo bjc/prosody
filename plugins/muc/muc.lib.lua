@@ -798,7 +798,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			end
 		elseif xmlns == "http://jabber.org/protocol/muc#owner" and (type == "get" or type == "set") and stanza.tags[1].name == "query" then
 			if self:get_affiliation(stanza.attr.from) ~= "owner" then
-				origin.send(st.error_reply(stanza, "auth", "forbidden"));
+				origin.send(st.error_reply(stanza, "auth", "forbidden", "Only owners can configure rooms"));
 			elseif stanza.attr.type == "get" then
 				self:send_form(origin, stanza);
 			elseif stanza.attr.type == "set" then
@@ -929,8 +929,23 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
 		return nil, "modify", "not-acceptable";
 	end
-	if self:get_affiliation(actor) ~= "owner" then return nil, "cancel", "not-allowed"; end
-	if jid_bare(actor) == jid then return nil, "cancel", "not-allowed"; end
+	local actor_affiliation = self:get_affiliation(actor);
+	local target_affiliation = self:get_affiliation(jid);
+	if target_affiliation == affiliation then -- no change, shortcut
+		if callback then callback(); end
+		return true;
+	end
+	if actor_affiliation ~= "owner" then
+		if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+			return nil, "cancel", "not-allowed";
+		end
+	elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
+		local is_last = true;
+		for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
+		if is_last then
+			return nil, "cancel", "conflict";
+		end
+	end
 	self._affiliations[jid] = affiliation;
 	local role = self:get_default_role(affiliation);
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
