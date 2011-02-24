@@ -138,29 +138,20 @@ function stanza_mt:children()
 		end, self, i;
 end
 
-function stanza_mt:matching_tags(name, xmlns)
+function stanza_mt:childtags(name, xmlns)
 	xmlns = xmlns or self.attr.xmlns;
 	local tags = self.tags;
 	local start_i, max_i = 1, #tags;
 	return function ()
-			for i=start_i,max_i do
-				v = tags[i];
-				if (not name or v.name == name)
-				and (not xmlns or xmlns == v.attr.xmlns) then
-					start_i = i+1;
-					return v;
-				end
+		for i = start_i, max_i do
+			local v = tags[i];
+			if (not name or v.name == name)
+			and (not xmlns or xmlns == v.attr.xmlns) then
+				start_i = i+1;
+				return v;
 			end
-		end, tags, i;
-end
-
-function stanza_mt:childtags()
-	local i = 0;
-	return function (a)
-			i = i + 1
-			local v = self.tags[i]
-			if v then return v; end
-		end, self.tags[1], i;
+		end
+	end;
 end
 
 function stanza_mt:maptags(callback)
