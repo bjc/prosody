@@ -798,7 +798,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			end
 		elseif xmlns == "http://jabber.org/protocol/muc#owner" and (type == "get" or type == "set") and stanza.tags[1].name == "query" then
 			if self:get_affiliation(stanza.attr.from) ~= "owner" then
-				origin.send(st.error_reply(stanza, "auth", "forbidden"));
+				origin.send(st.error_reply(stanza, "auth", "forbidden", "Only owners can configure rooms"));
 			elseif stanza.attr.type == "get" then
 				self:send_form(origin, stanza);
 			elseif stanza.attr.type == "set" then
