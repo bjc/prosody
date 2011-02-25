@@ -1,26 +1,26 @@
+local data_path = "../../data";
+
 input {
+	type = "prosody_files";
+	path = data_path;
+}
+
+output {
 	type = "prosody_sql";
 	driver = "SQLite3";
-	database = "out.sqlite";
-}
-output {
-	type = "prosody_files";
-	path = "out";
+	database = data_path.."/prosody.sqlite";
 }
 
 --[[
 
 input {
-	path = "../../data";
 	type = "prosody_files";
-	driver = "SQLite3";
-	database = "../../prosody.sqlite";
+	path = data_path;
 }
 output {
 	type = "prosody_sql";
 	driver = "SQLite3";
-	database = "out.sqlite";
-	path = "out";
+	database = data_path.."/prosody.sqlite";
 }
 
 ]]
