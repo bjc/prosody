@@ -1,3 +1,5 @@
+local default_config = "./migrator.cfg.lua";
+
 -- Command-line parsing
 local options = {};
 local handled_opts = 0;
@@ -15,23 +17,82 @@ end
 table.remove(arg, handled_opts);
 
 -- Load config file
-local function loadfilein(file, env) return loadin and loadin(env, io.open(file):read("*a")) or setfenv(loadfile(file), env); end
+local function loadfilein(file, env)
+	if loadin then
+		return loadin(env, io.open(file):read("*a"));
+	else
+		local chunk, err = loadfile(file);
+		if chunk then
+			setfenv(chunk, env);
+		end
+		return chunk, err;
+	end
+end
+
+local config_file = options.config or default_config;
+local from_store = arg[1] or "input";
+local to_store = arg[2] or "output";
+
 config = {};
 local config_env = setmetatable({}, { __index = function(t, k) return function(tbl) config[k] = tbl; end; end });
-loadfilein(options.config or "config.lua", config_env)();
+local config_chunk, err = loadfilein(config_file, config_env);
+if not config_chunk then
+	print("There was an error loading the config file, check the file exists");
+	print("and that the syntax is correct:");
+	print("", err);
+	os.exit(1);
+end
+
+config_chunk();
 
 if not package.loaded["util.json"] then
 	package.path = "../../?.lua;"..package.path
 	package.cpath = "../../?.dll;"..package.cpath
 end
 
-local from_store = arg[1] or "input";
-local to_store = arg[2] or "output";
+local have_err;
+if #arg > 0 and #arg ~= 2 then
+	have_err = true;
+	print("Error: Incorrect number of parameters supplied.");
+end
+if not config[from_store] then
+	have_err = true;
+	print("Error: Input store '"..from_store.."' not found in the config file.");
+end
+if not config[to_store] then
+	have_err = true;
+	print("Error: Output store '"..to_store.."' not found in the config file.");
+end
+if not config[from_store].type then
+	have_err = true;
+	print("Error: Input store type not specified in the config file");
+elseif not pcall(require, config[from_store].type) then
+	have_err = true;
+	print("Error: Unrecognised store type for '"..from_store.."': "..config[from_store].type);
+end
+if not config[to_store].type then
+	have_err = true;
+	print("Error: Output store type not specified in the config file");
+elseif not pcall(require, config[to_store].type) then
+	have_err = true;
+	print("Error: Unrecognised store type for '"..to_store.."': "..config[to_store].type);
+end
 
-assert(config[from_store], "no input specified")
-assert(config[to_store], "no output specified")
-local itype = assert(config[from_store].type, "no type specified for "..from_store);
-local otype = assert(config[to_store].type, "no type specified for "..to_store);
+if have_err then
+	print("");
+	print("Usage: "..arg[0].." FROM_STORE TO_STORE");
+	print("If no stores are specified, 'input' and 'output' are used.");
+	print("");
+	print("The available stores in your migrator config are:");
+	print("");
+	for store in pairs(config) do
+		print("", store);
+	end
+	os.exit(1);
+end
+	
+local itype = config[from_store].type;
+local otype = config[to_store].type;
 local reader = require(itype).reader(config[from_store]);
 local writer = require(otype).writer(config[to_store]);
 
