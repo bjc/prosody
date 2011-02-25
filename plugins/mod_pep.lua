@@ -124,7 +124,7 @@ module:hook("presence/bare", function(event)
 			local recipient = stanza.attr.from;
 			local current = recipients[user] and recipients[user][recipient];
 			local hash = get_caps_hash_from_presence(stanza, current);
-			if current == hash then return; end
+			if current == hash or (current and current == hash_map[hash]) then return; end
 			if not hash then
 				if recipients[user] then recipients[user][recipient] = nil; end
 			else
