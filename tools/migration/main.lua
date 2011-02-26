@@ -1,4 +1,9 @@
-local default_config = "./migrator.cfg.lua";
+#!/usr/bin/env lua
+
+CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
+CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
+
+local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 -- Command-line parsing
 local options = {};
@@ -45,9 +50,12 @@ end
 
 config_chunk();
 
-if not package.loaded["util.json"] then
+if CFG_SOURCEDIR then
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
+elseif not package.loaded["util.json"] then
 	package.path = "../../?.lua;"..package.path
-	package.cpath = "../../?.dll;"..package.cpath
+	package.cpath = "../../?.so;"..package.cpath
 end
 
 local have_err;
@@ -66,14 +74,14 @@ end
 if not config[from_store].type then
 	have_err = true;
 	print("Error: Input store type not specified in the config file");
-elseif not pcall(require, config[from_store].type) then
+elseif not pcall(require, "migrator."..config[from_store].type) then
 	have_err = true;
 	print("Error: Unrecognised store type for '"..from_store.."': "..config[from_store].type);
 end
 if not config[to_store].type then
 	have_err = true;
 	print("Error: Output store type not specified in the config file");
-elseif not pcall(require, config[to_store].type) then
+elseif not pcall(require, "migrator."..config[to_store].type) then
 	have_err = true;
 	print("Error: Unrecognised store type for '"..to_store.."': "..config[to_store].type);
 end
@@ -88,13 +96,14 @@ if have_err then
 	for store in pairs(config) do
 		print("", store);
 	end
+	print("");
 	os.exit(1);
 end
 	
 local itype = config[from_store].type;
 local otype = config[to_store].type;
-local reader = require(itype).reader(config[from_store]);
-local writer = require(otype).writer(config[to_store]);
+local reader = require("migrator."..itype).reader(config[from_store]);
+local writer = require("migrator."..otype).writer(config[to_store]);
 
 local json = require "util.json";
 
