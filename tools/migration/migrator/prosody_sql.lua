@@ -7,7 +7,7 @@ local next = next;
 local pairs = pairs;
 local t_sort = table.sort;
 local json = require "util.json";
-local mtools = require "mtools";
+local mtools = require "migrator.mtools";
 local tostring = tostring;
 local tonumber = tonumber;
 
