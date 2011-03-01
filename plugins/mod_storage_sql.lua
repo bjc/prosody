@@ -96,7 +96,18 @@ local function create_table()
 end
 
 do -- process options to get a db connection
-	DBI = require "DBI";
+	local ok;
+	prosody.unlock_globals();
+	ok, DBI = pcall(require, "DBI");
+	if not ok then
+		package.loaded["DBI"] = {};
+		module:log("error", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
+		module:log("error", "More information on installing LuaDBI can be found at http://prosody.im/doc/depends#luadbi");
+	end
+	prosody.lock_globals();
+	if not ok or not DBI.Connect then
+		return; -- Halt loading of this module
+	end
 
 	params = params or { driver = "SQLite3" };
 	
