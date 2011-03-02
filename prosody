@@ -345,6 +345,7 @@ function load_secondary_libraries()
 	]]
 
 	require "net.connlisteners";
+	require "net.httpserver";
 	
 	require "util.stanza"
 	require "util.jid"
