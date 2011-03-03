@@ -12,9 +12,9 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
-SOURCE_FILES = main.lua migrator/*.lua
+SOURCE_FILES = migrator/*.lua
 
-all: prosody-migrator.install migrator.cfg.lua.install $(SOURCE_FILES)
+all: prosody-migrator.install migrator.cfg.lua.install main.lua $(SOURCE_FILES)
 
 install: prosody-migrator.install migrator.cfg.lua.install
 	install -d $(BIN) $(CONFIG) $(SOURCE) $(SOURCE)/migrator
