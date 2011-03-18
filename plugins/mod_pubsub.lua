@@ -108,9 +108,6 @@ end
 
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
-	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
-		return origin.send(pubsub_error_reply(stanza, "invalid-jid"));
-	end
 	local ok, ret = service:add_subscription(node, stanza.attr.from, jid);
 	local reply;
 	if ok then
@@ -129,9 +126,6 @@ end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe)
 	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
-	if jid_bare(jid) ~= jid_bare(stanza.attr.from) then
-		return origin.send(pubsub_error_reply(stanza, "invalid-jid"));
-	end
 	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
 	local reply;
 	if ok then
