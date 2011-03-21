@@ -14,7 +14,7 @@ INSTALLEDDATA = $(DATADIR)
 
 SOURCE_FILES = migrator/*.lua
 
-all: prosody-migrator.install migrator.cfg.lua.install main.lua $(SOURCE_FILES)
+all: prosody-migrator.install migrator.cfg.lua.install prosody-migrator.lua $(SOURCE_FILES)
 
 install: prosody-migrator.install migrator.cfg.lua.install
 	install -d $(BIN) $(CONFIG) $(SOURCE) $(SOURCE)/migrator
@@ -28,10 +28,10 @@ clean:
 	rm -f prosody-migrator.install
 	rm -f migrator.cfg.lua.install
 
-prosody-migrator.install: main.lua
+prosody-migrator.install: prosody-migrator.lua
 	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
 		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;" \
-			< main.lua > prosody-migrator.install
+			< prosody-migrator.lua > prosody-migrator.install
 
 migrator.cfg.lua.install: migrator.cfg.lua
 	sed "s|^local data_path = .*;$$|local data_path = '$(INSTALLEDDATA)';|;" \
