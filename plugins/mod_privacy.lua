@@ -45,28 +45,6 @@ function isAnotherSessionUsingDefaultList(origin)
 	end
 end
 
-function sendUnavailable(origin, to, from)
---[[ example unavailable presence stanza
-<presence from="node@host/resource" type="unavailable" to="node@host" >
-	<status>Logged out</status>
-</presence>
-]]--
-	local presence = st.presence({from=from, type="unavailable"});
-	presence:tag("status"):text("Logged out");
-
-	local node, host = jid_bare(to);
-	local bare = node .. "@" .. host;
-	
-	local user = bare_sessions[bare];
-	if user then
-		for resource, session in pairs(user.sessions) do
-			presence.attr.to = session.full_jid;
-			module:log("debug", "send unavailable to: %s; from: %s", tostring(presence.attr.to), tostring(presence.attr.from));
-			origin.send(presence);
-		end
-	end
-end
-
 function declineList(privacy_lists, origin, stanza, which)
 	if which == "default" then
 		if isAnotherSessionUsingDefaultList(origin) then
