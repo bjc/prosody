@@ -101,7 +101,7 @@ function deleteList(privacy_lists, origin, stanza, name)
 	return {"modify", "bad-request", "Not existing list specifed to be deleted."};
 end
 
-function createOrReplaceList (privacy_lists, origin, stanza, name, entries, roster)
+function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 	local bare_jid = origin.username.."@"..origin.host;
 	
 	if privacy_lists.lists == nil then
@@ -301,7 +301,6 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
-	local item;
 	local listname = session.activePrivacyList;
 	if listname == nil then
 		listname = privacy_lists.default; -- no active list selected, use default list
@@ -392,7 +391,6 @@ function preCheckIncoming(e)
 		end
 		if resource == nil then
 			local prio = 0;
-			local session_;
 			if bare_sessions[node.."@"..host] ~= nil then
 				for resource, session_ in pairs(bare_sessions[node.."@"..host].sessions) do
 					if session_.priority ~= nil and session_.priority > prio then
