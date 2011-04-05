@@ -22,7 +22,7 @@ module "prosody_files"
 local function is_dir(path) return lfs.attributes(path, "mode") == "directory"; end
 local function is_file(path) return lfs.attributes(path, "mode") == "file"; end
 local function clean_path(path)
-	return path:gsub("\\", "/"):gsub("//+", "/");
+	return path:gsub("\\", "/"):gsub("//+", "/"):gsub("^~", os.getenv("HOME") or "~");
 end
 local encode, decode; do
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
