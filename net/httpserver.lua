@@ -136,7 +136,6 @@ local function request_reader(request, data, startpos)
 			call_callback(request);
 		end
 		local function error_cb(r)
-			log("error", "Error in HTTP server handler: %s", r or "connection-closed");
 			call_callback(request, r or "connection-closed");
 			destroy_request(request);
 		end

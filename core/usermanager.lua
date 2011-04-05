@@ -96,6 +96,8 @@ function get_provider(host)
 end
 
 function is_admin(jid, host)
+	if host and not hosts[host] then return false; end
+
 	local is_admin;
 	jid = jid_bare(jid);
 	host = host or "*";

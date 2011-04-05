@@ -71,20 +71,29 @@ if not config[to_store] then
 	have_err = true;
 	print("Error: Output store '"..to_store.."' not found in the config file.");
 end
-if not config[from_store].type then
-	have_err = true;
-	print("Error: Input store type not specified in the config file");
-elseif not pcall(require, "migrator."..config[from_store].type) then
-	have_err = true;
-	print("Error: Unrecognised store type for '"..from_store.."': "..config[from_store].type);
+
+function load_store_handler(name)
+	local store_type = config[name].type;
+	if not store_type then
+		print("Error: "..name.." store type not specified in the config file");
+		return false;
+	else
+		local ok, err = pcall(require, "migrator."..store_type);
+		if not ok then
+			if package.loaded["migrator."..store_type] then
+				print(("Error: Failed to initialize '%s' store:\n\t%s")
+					:format(name, err));
+			else
+				print(("Error: Unrecognised store type for '%s': %s")
+					:format(from_store, store_type));
+			end
+			return false;
+		end
+	end
+	return true;
 end
-if not config[to_store].type then
-	have_err = true;
-	print("Error: Output store type not specified in the config file");
-elseif not pcall(require, "migrator."..config[to_store].type) then
-	have_err = true;
-	print("Error: Unrecognised store type for '"..to_store.."': "..config[to_store].type);
-end
+
+have_err = have_err or not(load_store_handler(from_store, "input") and load_store_handler(to_store, "output"));
 
 if have_err then
 	print("");
