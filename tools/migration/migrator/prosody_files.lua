@@ -13,6 +13,7 @@ local mtools = require "migrator.mtools";
 local next = next;
 local pairs = pairs;
 local json = require "util.json";
+local os_getenv = os.getenv;
 
 prosody = {};
 local dm = require "util.datamanager"
@@ -22,7 +23,7 @@ module "prosody_files"
 local function is_dir(path) return lfs.attributes(path, "mode") == "directory"; end
 local function is_file(path) return lfs.attributes(path, "mode") == "file"; end
 local function clean_path(path)
-	return path:gsub("\\", "/"):gsub("//+", "/"):gsub("^~", os.getenv("HOME") or "~");
+	return path:gsub("\\", "/"):gsub("//+", "/"):gsub("^~", os_getenv("HOME") or "~");
 end
 local encode, decode; do
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber("0x"..k)); return t[k]; end });
