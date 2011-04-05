@@ -12,7 +12,6 @@ local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local s2s_initiate_dialback = require "core.s2smanager".initiate_dialback;
 local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
-local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local log = module._log;
 
@@ -126,7 +125,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		if stanza.attr.type == "valid" then
 			s2s_make_authenticated(origin, attr.from);
 		else
-			s2s_destroy_session(origin)
+			origin:close("not-authorized", "dialback authentication failed");
 		end
 		return true;
 	end
