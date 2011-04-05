@@ -125,9 +125,10 @@ local writer = require("migrator."..otype).writer(config[to_store]);
 
 local json = require "util.json";
 
+io.stderr:write("Migrating...\n");
 for x in reader do
 	--print(json.encode(x))
 	writer(x);
 end
 writer(nil); -- close
-
+io.stderr:write("Done!\n");
