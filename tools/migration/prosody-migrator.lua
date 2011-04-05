@@ -3,6 +3,15 @@
 CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
 CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 
+-- Substitute ~ with path to home directory in paths
+if CFG_CONFIGDIR then
+        CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+end
+
+if CFG_SOURCEDIR then
+        CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
+end
+
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 -- Command-line parsing
@@ -116,9 +125,10 @@ local writer = require("migrator."..otype).writer(config[to_store]);
 
 local json = require "util.json";
 
+io.stderr:write("Migrating...\n");
 for x in reader do
 	--print(json.encode(x))
 	writer(x);
 end
 writer(nil); -- close
-
+io.stderr:write("Done!\n");
