@@ -1,6 +1,6 @@
 
 local assert = assert;
-local DBI = require "DBI";
+local have_DBI, DBI = pcall(require,"DBI");
 local print = print;
 local type = type;
 local next = next;
@@ -10,6 +10,10 @@ local json = require "util.json";
 local mtools = require "migrator.mtools";
 local tostring = tostring;
 local tonumber = tonumber;
+
+if not have_DBI then
+	error("LuaDBI (required for SQL support) was not found, please see http://prosody.im/doc/depends#luadbi", 0);
+end
 
 module "prosody_sql"
 
