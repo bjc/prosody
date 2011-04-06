@@ -9,6 +9,8 @@ local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
 
 local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
+local pubsub_disco_name = module:get_option("name");
+if type(pubsub_disco_name) ~= "string" then pubsub_disco_name = "Prosody PubSub Service"; end
 
 local service;
 
@@ -217,7 +219,7 @@ end
 
 local function build_disco_info(service)
 	local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-		:tag("identity", { category = "pubsub", type = "service" }):up()
+		:tag("identity", { category = "pubsub", type = "service", name = pubsub_disco_name }):up()
 		:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
 	add_disco_features_from_service(disco_info, service);
 	return disco_info;
