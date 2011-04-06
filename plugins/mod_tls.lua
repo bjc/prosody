@@ -91,10 +91,9 @@ module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 end);
 
 function module.load()
-	local global_ssl_config = config.get("*", "core", "ssl");
-	local ssl_config = config.get(module.host, "core", "ssl");
-	local base_host = module.host:match("%.(.*)");
-	if ssl_config == global_ssl_config and hosts[base_host] then
+	local ssl_config = config.rawget(module.host, "core", "ssl");
+	if not ssl_config then
+		local base_host = module.host:match("%.(.*)");
 		ssl_config = config.get(base_host, "core", "ssl");
 	end
 	host.ssl_ctx = create_context(host.host, "client", ssl_config); -- for outgoing connections
