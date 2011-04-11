@@ -149,7 +149,11 @@ function writer(output, iter)
 	assert(stmt:execute());
 	local stmt = assert(dbh:prepare("DELETE FROM prosody"));
 	assert(stmt:execute());
-	local insert = assert(dbh:prepare("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)"));
+	local insert_sql = "INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)";
+	if output.driver == "PostgreSQL" then
+		insert_sql = insert_sql:gsub("`", "\"");
+	end
+	local insert = assert(dbh:prepare(insert_sql));
 
 	return function(item)
 		if not item then assert(dbh:commit()) return dbh:close(); end -- end of input
