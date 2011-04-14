@@ -127,6 +127,19 @@ function log_dependency_warnings()
 	dependencies.log_warnings();
 end
 
+function sanity_check()
+	for host, host_config in pairs(configmanager.getconfig()) do
+		if host ~= "*"
+		and host_config.core.enabled ~= false
+		and not host_config.core.component_module then
+			return;
+		end
+	end
+	log("error", "No enabled VirtualHost entries found in the config file.");
+	log("error", "At least one active host is required for Prosody to function. Exiting...");
+	os.exit(1);
+end
+
 function sandbox_require()
 	-- Replace require() with one that doesn't pollute _G, required
 	-- for neat sandboxing of modules
@@ -463,6 +476,7 @@ end
 -- previous steps to have already been performed
 read_config();
 init_logging();
+sanity_check();
 sandbox_require();
 set_function_metatable();
 load_libraries();
