@@ -479,7 +479,7 @@ function resolver:PTR(rr)
 end
 
 function resolver:TXT(rr)    -- - - - - - - - - - - - - - - - - - - - - -  TXT
-	rr.txt = self:sub (rr.rdlength);
+	rr.txt = self:sub (self:byte());
 end
 
 
