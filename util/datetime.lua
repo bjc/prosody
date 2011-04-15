@@ -49,7 +49,7 @@ function parse(s)
 				if sign == "-" then tzd_offset = -tzd_offset; end
 			end
 			sec = (sec + time_offset) - tzd_offset;
-			return os_time({year=year, month=month, day=day, hour=hour, min=min, sec=sec});
+			return os_time({year=year, month=month, day=day, hour=hour, min=min, sec=sec, isdst=false});
 		end
 	end
 end
