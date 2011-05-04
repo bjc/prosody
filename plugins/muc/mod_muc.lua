@@ -58,6 +58,9 @@ local function room_save(room, forced)
 		room._data.history = history;
 	elseif forced then
 		datamanager.store(node, muc_host, "config", nil);
+		if not next(room._occupants) then -- Room empty
+			rooms[room.jid] = nil;
+		end
 	end
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
