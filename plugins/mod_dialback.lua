@@ -148,5 +148,5 @@ end, 100);
 
 -- Offer dialback to incoming hosts
 module:hook("s2s-stream-features", function (data)
-	data.features:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):tag("optional"):up():up();
+	data.features:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):up();
 end);
