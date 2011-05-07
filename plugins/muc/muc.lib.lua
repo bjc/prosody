@@ -213,6 +213,7 @@ function room_mt:send_history(to, stanza)
 end
 
 function room_mt:get_disco_info(stanza)
+	local count = 0; for _ in pairs(self._occupants) do count = count + 1; end
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
 		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
@@ -224,7 +225,8 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
 		:add_child(dataform.new({
 			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
-			{ name = "muc#roominfo_description", label = "Description"}
+			{ name = "muc#roominfo_description", label = "Description"},
+			{ name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) }
 		}):form({["muc#roominfo_description"] = self:get_description()}, 'result'))
 	;
 end
