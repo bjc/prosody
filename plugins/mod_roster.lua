@@ -22,7 +22,7 @@ local core_post_stanza = core_post_stanza;
 
 module:add_feature("jabber:iq:roster");
 
-local rosterver_stream_feature = st.stanza("ver", {xmlns="urn:xmpp:features:rosterver"}):tag("optional"):up();
+local rosterver_stream_feature = st.stanza("ver", {xmlns="urn:xmpp:features:rosterver"});
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	if origin.username then
