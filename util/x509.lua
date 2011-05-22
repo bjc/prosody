@@ -11,8 +11,8 @@
 -- IDN libraries complicate that.
 
 
--- [TLS-CERTS] - http://tools.ietf.org/html/draft-saintandre-tls-server-id-check-10
--- [XMPP-CORE] - http://tools.ietf.org/html/draft-ietf-xmpp-3920bis-18
+-- [TLS-CERTS] - http://tools.ietf.org/html/rfc6125
+-- [XMPP-CORE] - http://tools.ietf.org/html/rfc6120
 -- [SRV-ID]    - http://tools.ietf.org/html/rfc4985
 -- [IDNA]      - http://tools.ietf.org/html/rfc5890
 -- [LDAP]      - http://tools.ietf.org/html/rfc4519
@@ -32,7 +32,7 @@ local oid_dnssrv   = "1.3.6.1.5.5.7.8.7"; -- [SRV-ID]
 -- Compare a hostname (possibly international) with asserted names
 -- extracted from a certificate.
 -- This function follows the rules laid out in
--- sections 4.4.1 and 4.4.2 of [TLS-CERTS]
+-- sections 6.4.1 and 6.4.2 of [TLS-CERTS]
 --
 -- A wildcard ("*") all by itself is allowed only as the left-most label
 local function compare_dnsname(host, asserted_names)
@@ -150,7 +150,7 @@ function verify_identity(host, service, cert)
 	if ext[oid_subjectaltname] then
 		local sans = ext[oid_subjectaltname];
 
-		-- Per [TLS-CERTS] 4.3, 4.4.4, "a client MUST NOT seek a match for a
+		-- Per [TLS-CERTS] 6.3, 6.4.4, "a client MUST NOT seek a match for a
 		-- reference identifier if the presented identifiers include a DNS-ID
 		-- SRV-ID, URI-ID, or any application-specific identifier types"
 		local had_supported_altnames = false
@@ -183,7 +183,7 @@ function verify_identity(host, service, cert)
 	-- a dNSName subjectAltName (wildcards may apply for, and receive,
 	-- cat treats)
 	--
-	-- Per [TLS-CERTS] 1.5, a CN-ID is the Common Name from a cert subject
+	-- Per [TLS-CERTS] 1.8, a CN-ID is the Common Name from a cert subject
 	-- which has one and only one Common Name
 	local subject = cert:subject()
 	local cn = nil
@@ -200,7 +200,7 @@ function verify_identity(host, service, cert)
 	end
 
 	if cn then
-		-- Per [TLS-CERTS] 4.4.4, follow the comparison rules for dNSName SANs.
+		-- Per [TLS-CERTS] 6.4.4, follow the comparison rules for dNSName SANs.
 		return compare_dnsname(host, { cn })
 	end
 
