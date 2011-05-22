@@ -315,7 +315,7 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 	size_t len;
 	int32_t ulen, dest_len, output_len;
 	const char *s = luaL_checklstring(L, 1, &len);
-	UChar* ustr;
+	UChar ustr[1024];
 	UErrorCode err = U_ZERO_ERROR;
 	UChar dest[1024];
 	char output[1024];
