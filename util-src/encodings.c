@@ -117,55 +117,8 @@ static const luaL_Reg Reg_base64[] =
 };
 
 /***************** STRINGPREP *****************/
-#ifndef USE_STRINGPREP_ICU
-/****************** libidn ********************/
+#ifdef USE_STRINGPREP_ICU
 
-#include <stringprep.h>
-
-static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
-{
-	size_t len;
-	const char *s;
-	char string[1024];
-	int ret;
-	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
-		return 1;
-	}
-	s = lua_tolstring(L, 1, &len);
-	if (len >= 1024) {
-		lua_pushnil(L);
-		return 1; /* TODO return error message */
-	}
-	strcpy(string, s);
-	ret = stringprep(string, 1024, (Stringprep_profile_flags)0, profile);
-	if (ret == STRINGPREP_OK) {
-		lua_pushstring(L, string);
-		return 1;
-	} else {
-		lua_pushnil(L);
-		return 1; /* TODO return error message */
-	}
-}
-
-#define MAKE_PREP_FUNC(myFunc, prep) \
-static int myFunc(lua_State *L) { return stringprep_prep(L, prep); }
-
-MAKE_PREP_FUNC(Lstringprep_nameprep, stringprep_nameprep)		/** stringprep.nameprep(s) */
-MAKE_PREP_FUNC(Lstringprep_nodeprep, stringprep_xmpp_nodeprep)		/** stringprep.nodeprep(s) */
-MAKE_PREP_FUNC(Lstringprep_resourceprep, stringprep_xmpp_resourceprep)		/** stringprep.resourceprep(s) */
-MAKE_PREP_FUNC(Lstringprep_saslprep, stringprep_saslprep)		/** stringprep.saslprep(s) */
-
-static const luaL_Reg Reg_stringprep[] =
-{
-	{ "nameprep",	Lstringprep_nameprep	},
-	{ "nodeprep",	Lstringprep_nodeprep	},
-	{ "resourceprep",	Lstringprep_resourceprep	},
-	{ "saslprep",	Lstringprep_saslprep	},
-	{ NULL,		NULL	}
-};
-
-#else
 #include <unicode/usprep.h>
 #include <unicode/ustring.h>
 #include <unicode/utrace.h>
@@ -239,49 +192,58 @@ static const luaL_Reg Reg_stringprep[] =
 	{ "saslprep",	Lstringprep_saslprep	},
 	{ NULL,		NULL	}
 };
+#else /* USE_STRINGPREP_ICU */
+
+/****************** libidn ********************/
+
+#include <stringprep.h>
+
+static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
+{
+	size_t len;
+	const char *s;
+	char string[1024];
+	int ret;
+	if(!lua_isstring(L, 1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	s = lua_tolstring(L, 1, &len);
+	if (len >= 1024) {
+		lua_pushnil(L);
+		return 1; /* TODO return error message */
+	}
+	strcpy(string, s);
+	ret = stringprep(string, 1024, (Stringprep_profile_flags)0, profile);
+	if (ret == STRINGPREP_OK) {
+		lua_pushstring(L, string);
+		return 1;
+	} else {
+		lua_pushnil(L);
+		return 1; /* TODO return error message */
+	}
+}
+
+#define MAKE_PREP_FUNC(myFunc, prep) \
+static int myFunc(lua_State *L) { return stringprep_prep(L, prep); }
+
+MAKE_PREP_FUNC(Lstringprep_nameprep, stringprep_nameprep)		/** stringprep.nameprep(s) */
+MAKE_PREP_FUNC(Lstringprep_nodeprep, stringprep_xmpp_nodeprep)		/** stringprep.nodeprep(s) */
+MAKE_PREP_FUNC(Lstringprep_resourceprep, stringprep_xmpp_resourceprep)		/** stringprep.resourceprep(s) */
+MAKE_PREP_FUNC(Lstringprep_saslprep, stringprep_saslprep)		/** stringprep.saslprep(s) */
+
+static const luaL_Reg Reg_stringprep[] =
+{
+	{ "nameprep",	Lstringprep_nameprep	},
+	{ "nodeprep",	Lstringprep_nodeprep	},
+	{ "resourceprep",	Lstringprep_resourceprep	},
+	{ "saslprep",	Lstringprep_saslprep	},
+	{ NULL,		NULL	}
+};
 #endif
 
 /***************** IDNA *****************/
-#ifndef USE_STRINGPREP_ICU
-/****************** libidn ********************/
-
-#include <idna.h>
-#include <idn-free.h>
-
-static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
-{
-	size_t len;
-	const char *s = luaL_checklstring(L, 1, &len);
-	char* output = NULL;
-	int ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
-	if (ret == IDNA_SUCCESS) {
-		lua_pushstring(L, output);
-		idn_free(output);
-		return 1;
-	} else {
-		lua_pushnil(L);
-		idn_free(output);
-		return 1; /* TODO return error message */
-	}
-}
-
-static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
-{
-	size_t len;
-	const char *s = luaL_checklstring(L, 1, &len);
-	char* output = NULL;
-	int ret = idna_to_unicode_8z8z(s, &output, 0);
-	if (ret == IDNA_SUCCESS) {
-		lua_pushstring(L, output);
-		idn_free(output);
-		return 1;
-	} else {
-		lua_pushnil(L);
-		idn_free(output);
-		return 1; /* TODO return error message */
-	}
-}
-#else
+#ifdef USE_STRINGPREP_ICU
 #include <unicode/ustdio.h>
 #include <unicode/uidna.h>
 /* IDNA2003 or IDNA2008 ? ? ? */
@@ -332,6 +294,46 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 		else
 			lua_pushnil(L);
 		return 1;
+	}
+}
+
+#else /* USE_STRINGPREP_ICU */
+/****************** libidn ********************/
+
+#include <idna.h>
+#include <idn-free.h>
+
+static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
+{
+	size_t len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	char* output = NULL;
+	int ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
+	if (ret == IDNA_SUCCESS) {
+		lua_pushstring(L, output);
+		idn_free(output);
+		return 1;
+	} else {
+		lua_pushnil(L);
+		idn_free(output);
+		return 1; /* TODO return error message */
+	}
+}
+
+static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
+{
+	size_t len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	char* output = NULL;
+	int ret = idna_to_unicode_8z8z(s, &output, 0);
+	if (ret == IDNA_SUCCESS) {
+		lua_pushstring(L, output);
+		idn_free(output);
+		return 1;
+	} else {
+		lua_pushnil(L);
+		idn_free(output);
+		return 1; /* TODO return error message */
 	}
 }
 #endif
