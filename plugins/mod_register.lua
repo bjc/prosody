@@ -19,7 +19,7 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
 
 local compat = module:get_option_boolean("registration_compat", true);
-local allow_registration = module:get_option_boolean("allow_registration", true);
+local allow_registration = module:get_option_boolean("allow_registration", false);
 
 module:add_feature("jabber:iq:register");
 
