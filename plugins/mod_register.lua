@@ -22,6 +22,18 @@ local compat = module:get_option_boolean("registration_compat", true);
 
 module:add_feature("jabber:iq:register");
 
+local register_stream_feature = st.stanza("register", {xmlns="http://jabber.org/features/iq-register"}):up();
+module:hook("stream-features", function(event)
+        local session, features = event.origin, event.features;
+
+	-- Advertise registration to unauthorized clients only.
+	if module:get_option("allow_registration") == false or session.type ~= "c2s_unauthed" then
+		return
+	end
+
+	features:add_child(register_stream_feature);
+end);
+
 local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
 
