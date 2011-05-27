@@ -19,6 +19,7 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
 
 local compat = module:get_option_boolean("registration_compat", true);
+local allow_registration = module:get_option_boolean("allow_registration", true);
 
 module:add_feature("jabber:iq:register");
 
@@ -27,7 +28,7 @@ module:hook("stream-features", function(event)
         local session, features = event.origin, event.features;
 
 	-- Advertise registration to unauthorized clients only.
-	if module:get_option("allow_registration") == false or session.type ~= "c2s_unauthed" then
+	if not(allow_registration) or session.type ~= "c2s_unauthed" then
 		return
 	end
 
@@ -126,7 +127,7 @@ for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
 
-	if module:get_option("allow_registration") == false or session.type ~= "c2s_unauthed" then
+	if not(allow_registration) or session.type ~= "c2s_unauthed" then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	else
 		local query = stanza.tags[1];
