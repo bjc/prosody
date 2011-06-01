@@ -24,10 +24,10 @@ local t_concat = table.concat;
 local char = string.char;
 local byte = string.byte;
 
-module "scram"
+module "sasl.scram"
 
 --=========================
---SASL SCRAM-SHA-1 according to draft-ietf-sasl-scram-10
+--SASL SCRAM-SHA-1 according to RFC 5802
 
 --[[
 Supported Authentication Backends
@@ -35,7 +35,7 @@ Supported Authentication Backends
 scram_{MECH}:
 	-- MECH being a standard hash name (like those at IANA's hash registry) with '-' replaced with '_'
 	function(username, realm)
-		return salted_password, iteration_count, salt, state;
+		return stored_key, server_key, iteration_count, salt, state;
 	end
 ]]
 
@@ -65,9 +65,9 @@ local function binaryXOR( a, b )
 end
 
 -- hash algorithm independent Hi(PBKDF2) implementation
-local function Hi(hmac, str, salt, i)
+function Hi(hmac, str, salt, i)
 	local Ust = hmac(str, salt.."\0\0\0\1");
-	local res = Ust;	
+	local res = Ust;
 	for n=1,i-1 do
 		local Und = hmac(str, Ust)
 		res = binaryXOR(res, Und)
@@ -79,13 +79,13 @@ end
 local function validate_username(username)
 	-- check for forbidden char sequences
 	for eq in username:gmatch("=(.?.?)") do
-		if eq ~= "2D" and eq ~= "3D" then
-			return false 
-		end 
+		if eq ~= "2C" and eq ~= "3D" then
+			return false
+		end
 	end
 	
-	-- replace =2D with , and =3D with =
-	username = username:gsub("=2D", ",");
+	-- replace =2C with , and =3D with =
+	username = username:gsub("=2C", ",");
 	username = username:gsub("=3D", "=");
 	
 	-- apply SASLprep
@@ -93,22 +93,21 @@ local function validate_username(username)
 	return username;
 end
 
-local function hashprep( hashname ) 
-	local hash = hashname:lower()
-	hash = hash:gsub("-", "_")
-	return hash
+local function hashprep(hashname)
+	return hashname:lower():gsub("-", "_");
 end
 
-function saltedPasswordSHA1(password, salt, iteration_count)
-	local salted_password
+function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	if type(password) ~= "string" or type(salt) ~= "string" or type(iteration_count) ~= "number" then
 		return false, "inappropriate argument types"
 	end
 	if iteration_count < 4096 then
 		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 	end
-
-	return true, Hi(hmac_sha1, password, salt, iteration_count);
+	local salted_password = Hi(hmac_sha1, password, salt, iteration_count);
+	local stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
+	local server_key = hmac_sha1(salted_password, "Server Key");
+	return true, stored_key, server_key
 end
 
 local function scram_gen(hash_name, H_f, HMAC_f)
@@ -144,7 +143,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			
 			-- retreive credentials
 			if self.profile.plain then
-				local password, state = self.profile.plain(self.state.name, self.realm)
+				local password, state = self.profile.plain(self, self.state.name, self.realm)
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
@@ -158,17 +157,18 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				self.state.iteration_count = default_i;
 
 				local succ = false;
-				succ, self.state.salted_password = saltedPasswordSHA1(password, self.state.salt, default_i, self.state.iteration_count);
+				succ, self.state.stored_key, self.state.server_key = getAuthenticationDatabaseSHA1(password, self.state.salt, default_i, self.state.iteration_count);
 				if not succ then
-					log("error", "Generating salted password failed. Reason: %s", self.state.salted_password);
+					log("error", "Generating authentication database failed. Reason: %s", self.state.stored_key);
 					return "failure", "temporary-auth-failure";
 				end
 			elseif self.profile["scram_"..hashprep(hash_name)] then
-				local salted_password, iteration_count, salt, state = self.profile["scram_"..hashprep(hash_name)](self.state.name, self.realm);
+				local stored_key, server_key, iteration_count, salt, state = self.profile["scram_"..hashprep(hash_name)](self, self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
-				self.state.salted_password = salted_password;
+				self.state.stored_key = stored_key;
+				self.state.server_key = server_key;
 				self.state.iteration_count = iteration_count;
 				self.state.salt = salt
 			end
@@ -190,16 +190,15 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				return "failure", "malformed-request", "Wrong nonce in client-final-message.";
 			end
 			
-			local SaltedPassword = self.state.salted_password;
-			local ClientKey = HMAC_f(SaltedPassword, "Client Key")
-			local ServerKey = HMAC_f(SaltedPassword, "Server Key")
-			local StoredKey = H_f(ClientKey)
+			local ServerKey = self.state.server_key;
+			local StoredKey = self.state.stored_key;
+			
 			local AuthMessage = "n=" .. s_match(self.state.client_first_message,"n=(.+)") .. "," .. self.state.server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
 			local ClientSignature = HMAC_f(StoredKey, AuthMessage)
-			local ClientProof     = binaryXOR(ClientKey, ClientSignature)
+			local ClientKey = binaryXOR(ClientSignature, base64.decode(self.state.proof))
 			local ServerSignature = HMAC_f(ServerKey, AuthMessage)
 
-			if base64.encode(ClientProof) == self.state.proof then
+			if StoredKey == H_f(ClientKey) then
 				local server_final_message = "v="..base64.encode(ServerSignature);
 				self["username"] = self.state.name;
 				return "success", server_final_message;

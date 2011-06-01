@@ -35,6 +35,19 @@ function missingdep(name, sources, msg)
 	print("");
 end
 
+-- COMPAT w/pre-0.8 Debian: The Debian config file used to use 
+-- util.ztact, which has been removed from Prosody in 0.8. This
+-- is to log an error for people who still use it, so they can
+-- update their configs.
+package.preload["util.ztact"] = function ()
+	if not package.loaded["core.loggingmanager"] then
+		error("util.ztact has been removed from Prosody and you need to fix your config "
+		    .."file. More information can be found at http://prosody.im/doc/packagers#ztact", 0);
+	else
+		error("module 'util.ztact' has been deprecated in Prosody 0.8.");
+	end
+end;
+
 function check_dependencies()
 	local fatal;
 	
@@ -78,11 +91,6 @@ function check_dependencies()
 				["luarocks"] = "luarocks install luasec";
 				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
 			}, "SSL/TLS support will not be available");
-	else
-		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
-		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
-			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
-		end
 	end
 	
 	local encodings, err = softreq "util.encodings"
@@ -121,5 +129,13 @@ function check_dependencies()
 	return not fatal;
 end
 
+function log_warnings()
+	if ssl then
+		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
+		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
+			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
+		end
+	end
+end
 
 return _M;

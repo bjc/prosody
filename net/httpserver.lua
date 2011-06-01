@@ -7,19 +7,20 @@
 --
 
 
-local socket = require "socket"
 local server = require "net.server"
 local url_parse = require "socket.url".parse;
+local httpstream_new = require "util.httpstream".new;
 
 local connlisteners_start = require "net.connlisteners".start;
 local connlisteners_get = require "net.connlisteners".get;
 local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
-local s_match, s_gmatch = string.match, string.gmatch;
 local tonumber, tostring, pairs, ipairs, type = tonumber, tostring, pairs, ipairs, type;
+local xpcall = xpcall;
+local debug_traceback = debug.traceback;
 
-local urlencode = function (s) return s and (s:gsub("%W", function (c) return string.format("%%%02x", c:byte()); end)); end
+local urlencode = function (s) return s and (s:gsub("%W", function (c) return ("%%%02x"):format(c:byte()); end)); end
 
 local log = require "util.logger".init("httpserver");
 
@@ -28,10 +29,6 @@ local http_servers = {};
 module "httpserver"
 
 local default_handler;
-
-local function expectbody(reqt)
-    return reqt.method == "POST";
-end
 
 local function send_response(request, response)
 	-- Write status line
@@ -87,6 +84,22 @@ local function call_callback(request, err)
 		callback = (request.server and request.server.handlers[base]) or default_handler;
 	end
 	if callback then
+		local _callback = callback;
+		function callback(method, body, request)
+			local ok, result = xpcall(function() return _callback(method, body, request) end, debug_traceback);
+			if ok then return result; end
+			log("error", "Error in HTTP server handler: %s", result);
+			-- TODO: When we support pipelining, request.destroyed
+			-- won't be the right flag - we just want to see if there
+			-- has been a response to this request yet.
+			if not request.destroyed then
+				return {
+					status = "500 Internal Server Error";
+					headers = { ["Content-Type"] = "text/plain" };
+					body = "There was an error processing your request. See the error log for more details.";
+				};
+			end
+		end
 		if err then
 			log("debug", "Request error: "..err);
 			if not callback(nil, err, request) then
@@ -114,94 +127,21 @@ local function call_callback(request, err)
 end
 
 local function request_reader(request, data, startpos)
-	if not data then
-		if request.body then
+	if not request.parser then
+		local function success_cb(r)
+			for k,v in pairs(r) do request[k] = v; end
+			request.url = url_parse(request.path);
+			request.url.path = request.url.path and request.url.path:gsub("%%(%x%x)", function(x) return x.char(tonumber(x, 16)) end);
+			request.body = { request.body };
 			call_callback(request);
-		else
-			-- Error.. connection was closed prematurely
-			call_callback(request, "connection-closed");
 		end
-		-- Here we force a destroy... the connection is gone, so we can't reply later
-		destroy_request(request);
-		return;
+		local function error_cb(r)
+			call_callback(request, r or "connection-closed");
+			destroy_request(request);
+		end
+		request.parser = httpstream_new(success_cb, error_cb);
 	end
-	if request.state == "body" then
-		log("debug", "Reading body...")
-		if not request.body then request.body = {}; request.havebodylength, request.bodylength = 0, tonumber(request.headers["content-length"]); end
-		if startpos then
-			data = data:sub(startpos, -1)
-		end
-		t_insert(request.body, data);
-		if request.bodylength then
-			request.havebodylength = request.havebodylength + #data;
-			if request.havebodylength >= request.bodylength then
-				-- We have the body
-				call_callback(request);
-			end
-		end
-	elseif request.state == "headers" then
-		log("debug", "Reading headers...")
-		local pos = startpos;
-		local headers, headers_complete = request.headers;
-		if not headers then
-			headers = {};
-			request.headers = headers;
-		end
-		
-		for line in data:gmatch("(.-)\r\n") do
-			startpos = (startpos or 1) + #line + 2;
-			local k, v = line:match("(%S+): (.+)");
-			if k and v then
-				headers[k:lower()] = v;
-				--log("debug", "Header: '"..k:lower().."' = '"..v.."'");
-			elseif #line == 0 then
-				headers_complete = true;
-				break;
-			else
-				log("debug", "Unhandled header line: "..line);
-			end
-		end
-		
-		if not headers_complete then return; end
-		
-		if not expectbody(request) then
-			call_callback(request);
-			return;
-		end
-		
-		-- Reached the end of the headers
-		request.state = "body";
-		if #data > startpos then
-			return request_reader(request, data:sub(startpos, -1));
-		end
-	elseif request.state == "request" then
-		log("debug", "Reading request line...")
-		local method, path, http, linelen = data:match("^(%S+) (%S+) HTTP/(%S+)\r\n()", startpos);
-		if not method then
-			log("warn", "Invalid HTTP status line, telling callback then closing");
-			local ret = call_callback(request, "invalid-status-line");
-			request:destroy();
-			return ret;
-		end
-		
-		request.method, request.path, request.httpversion = method, path, http;
-		
-		request.url = url_parse(request.path);
-		
-		log("debug", method.." request for "..tostring(request.path) .. " on port "..request.handler:serverport());
-		
-		if request.onlystatus then
-			if not call_callback(request) then
-				return;
-			end
-		end
-		
-		request.state = "headers";
-		
-		if #data > linelen then
-			return request_reader(request, data:sub(linelen, -1));
-		end
-	end
+	request.parser:feed(data);
 end
 
 -- The default handler for requests
@@ -263,6 +203,7 @@ function new_from_config(ports, handle_request, default_options)
 		log("warn", "Old syntax of httpserver.new_from_config being used to register %s", handle_request);
 		handle_request, default_options = default_options, { base = handle_request };
 	end
+	ports = ports or {5280};
 	for _, options in ipairs(ports) do
 		local port = default_options.port or 5280;
 		local base = default_options.base;
@@ -285,8 +226,8 @@ function new_from_config(ports, handle_request, default_options)
 			ssl.options = "no_sslv2";
 		end
 		
-		new{ port = port, interface = interface, 
-			base = base, handler = handle_request, 
+		new{ port = port, interface = interface,
+			base = base, handler = handle_request,
 			ssl = ssl, type = (ssl and "ssl") or "tcp" };
 	end
 end

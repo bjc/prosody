@@ -16,20 +16,19 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
-      setmetatable
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber,
-      setmetatable;
+local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
+local initialize_filters = require "util.filters".initialize;
 local wrapclient = require "net.server".wrapclient;
 local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
-local fire_event = require "core.eventmanager".fire_event;
+local fire_event = prosody.events.fire_event;
 local uuid_gen = require "util.uuid".generate;
 
 local logger_init = require "util.logger".init;
@@ -41,11 +40,14 @@ local sha256_hash = require "util.hashes".sha256;
 local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
-local dns_timeout = config.get("*", "core", "dns_timeout") or 60;
+local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 
+dns.settimeout(dns_timeout);
+
+local prosody = _G.prosody;
 incoming_s2s = {};
-_G.prosody.incoming_s2s = incoming_s2s;
+prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
 
 module "s2smanager"
@@ -54,6 +56,7 @@ function compare_srv_priorities(a,b)
 	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
 end
 
+local bouncy_stanzas = { message = true, presence = true, iq = true };
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if sendq then
@@ -67,13 +70,13 @@ local function bounce_sendq(session, reason)
 		};
 		for i, data in ipairs(sendq) do
 			local reply = data[2];
-			local xmlns = reply.attr.xmlns;
-			if not xmlns then
+			if reply and not(reply.attr.xmlns) and bouncy_stanzas[reply.name] then
 				reply.attr.type = "error";
 				reply:tag("error", {type = "cancel"})
 					:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
 				if reason then
-					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):text("Connection failed: "..reason):up();
+					reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"})
+						:text("Server-to-server connection failed: "..reason):up();
 				end
 				core_process_stanza(dummy, reply);
 			end
@@ -95,13 +98,14 @@ function send_to_host(from_host, to_host, data)
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 			
 			-- Queue stanza until we are able to send it
-			if host.sendq then t_insert(host.sendq, {tostring(data), st.reply(data)});
-			else host.sendq = { {tostring(data), st.reply(data)} }; end
+			if host.sendq then t_insert(host.sendq, {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)});
+			else host.sendq = { {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)} }; end
 			host.log("debug", "stanza [%s] queued ", data.name);
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", get_traceback());
 			log("error", "Stanza: %s", tostring(data));
+			return false;
 		else
 			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
@@ -117,13 +121,18 @@ function send_to_host(from_host, to_host, data)
 		local host_session = new_outgoing(from_host, to_host);
 
 		-- Store in buffer
-		host_session.sendq = { {tostring(data), st.reply(data)} };
+		host_session.sendq = { {tostring(data), data.attr.type ~= "error" and data.attr.type ~= "result" and st.reply(data)} };
 		log("debug", "stanza [%s] queued until connection complete", tostring(data.name));
 		if (not host_session.connecting) and (not host_session.conn) then
 			log("warn", "Connection to %s failed already, destroying session...", to_host);
-			destroy_session(host_session);
+			if not destroy_session(host_session, "Connection failed") then
+				-- Already destroyed, we need to bounce our stanza
+				bounce_sendq(host_session, host_session.destruction_reason);
+			end
+			return false;
 		end
 	end
+	return true;
 end
 
 local open_sessions = 0;
@@ -137,7 +146,19 @@ function new_incoming(conn)
 	open_sessions = open_sessions + 1;
 	local w, log = conn.write, logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
 	session.log = log;
-	session.sends2s = function (t) log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)")); w(conn, tostring(t)); end
+	local filter = initialize_filters(session);
+	session.sends2s = function (t)
+		log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)"));
+		if t.name then
+			t = filter("stanzas/out", t);
+		end
+		if t then
+			t = filter("bytes/out", tostring(t));
+			if t then
+				return w(conn, t);
+			end
+		end
+	end
 	incoming_s2s[session] = true;
 	add_task(connect_timeout, function ()
 		if session.conn ~= conn or
@@ -145,7 +166,7 @@ function new_incoming(conn)
 			return; -- Ok, we're connect[ed|ing]
 		end
 		-- Not connected, need to close session and clean up
-		(session.log or log)("warn", "Destroying incomplete session %s->%s due to inactivity",
+		(session.log or log)("debug", "Destroying incomplete session %s->%s due to inactivity",
 		    session.from_host or "(unknown)", session.to_host or "(unknown)");
 		session:close("connection-timeout");
 	end);
@@ -159,6 +180,8 @@ function new_outgoing(from_host, to_host, connect)
 		
 		hosts[from_host].s2sout[to_host] = host_session;
 		
+		host_session.close = destroy_session; -- This gets replaced by xmppserver_listener later
+		
 		local log;
 		do
 			local conn_name = "s2sout"..tostring(host_session):match("[a-f0-9]*$");
@@ -166,9 +189,15 @@ function new_outgoing(from_host, to_host, connect)
 			host_session.log = log;
 		end
 		
+		initialize_filters(host_session);
+		
 		if connect ~= false then
 			-- Kick the connection attempting machine into life
-			attempt_connection(host_session);
+			if not attempt_connection(host_session) then
+				-- Intentionally not returning here, the
+				-- session is needed, connected or not
+				destroy_session(host_session);
+			end
 		end
 		
 		if not host_session.sends2s then
@@ -234,13 +263,6 @@ function attempt_connection(host_session, err)
 			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
 		
-		-- Set handler for DNS timeout
-		add_task(dns_timeout, function ()
-			if handle then
-				adns.cancel(handle, true);
-			end
-		end);
-		
 		return true; -- Attempt in progress
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
@@ -265,7 +287,7 @@ end
 function try_connect(host_session, connect_host, connect_port)
 	host_session.connecting = true;
 	local handle;
-	handle = adns.lookup(function (reply)
+	handle = adns.lookup(function (reply, err)
 		handle = nil;
 		host_session.connecting = nil;
 		
@@ -283,23 +305,23 @@ function try_connect(host_session, connect_host, connect_port)
 		
 		if reply and reply[#reply] and reply[#reply].a then
 			log("debug", "DNS reply for %s gives us %s", connect_host, reply[#reply].a);
-			return make_connect(host_session, reply[#reply].a, connect_port);
+			local ok, err = make_connect(host_session, reply[#reply].a, connect_port);
+			if not ok then
+				if not attempt_connection(host_session, err or "closed") then
+					err = err and (": "..err) or "";
+					destroy_session(host_session, "Connection failed"..err);
+				end
+			end
 		else
 			log("debug", "DNS lookup failed to get a response for %s", connect_host);
 			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
 				log("debug", "No other records to try for %s - destroying", host_session.to_host);
-				destroy_session(host_session, "DNS resolution failed"); -- End of the line, we can't
+				err = err and (": "..err) or "";
+				destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
 			end
 		end
 	end, connect_host, "A", "IN");
 
-	-- Set handler for DNS timeout
-	add_task(dns_timeout, function ()
-		if handle then
-			adns.cancel(handle, true);
-		end
-	end);
-	
 	return true;
 end
 
@@ -309,7 +331,7 @@ function make_connect(host_session, connect_host, connect_port)
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
-	local conn, handler = socket.tcp()
+	local conn, handler = socket.tcp();
 	
 	if not conn then
 		log("warn", "Failed to create outgoing connection, system error: %s", handler);
@@ -327,12 +349,24 @@ function make_connect(host_session, connect_host, connect_port)
 	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1 );
 	host_session.conn = conn;
 	
+	local filter = initialize_filters(host_session);
+	local w, log = conn.write, host_session.log;
+	host_session.sends2s = function (t)
+		log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?"));
+		if t.name then
+			t = filter("stanzas/out", t);
+		end
+		if t then
+			t = filter("bytes/out", tostring(t));
+			if t then
+				return w(conn, tostring(t));
+			end
+		end
+	end
+	
 	-- Register this outgoing connection so that xmppserver_listener knows about it
 	-- otherwise it will assume it is a new incoming connection
 	cl.register_outgoing(conn, host_session);
-	
-	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t) log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?")); w(conn, tostring(t)); end
 	
 	host_session:open_stream(from_host, to_host);
 	
@@ -375,10 +409,22 @@ function streamopened(session, attr)
 	
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "incoming s2s received <stream:stream>");
-		if session.to_host and not hosts[session.to_host] then
-			-- Attempting to connect to a host we don't serve
-			session:close({ condition = "host-unknown"; text = "This host does not serve "..session.to_host });
-			return;
+		if session.to_host then
+			if not hosts[session.to_host] then
+				-- Attempting to connect to a host we don't serve
+				session:close({
+					condition = "host-unknown";
+					text = "This host does not serve "..session.to_host
+				});
+				return;
+			elseif hosts[session.to_host].disallow_s2s then
+				-- Attempting to connect to a host that disallows s2s
+				session:close({
+					condition = "policy-violation";
+					text = "Server-to-server communication is not allowed to this host";
+				});
+				return;
+			end
 		end
 		send("<?xml version='1.0'?>");
 		send(stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
@@ -463,9 +509,11 @@ function make_authenticated(session, host)
 	elseif session.type == "s2sin_unauthed" then
 		session.type = "s2sin";
 		if host then
+			if not session.hosts[host] then session.hosts[host] = {}; end
 			session.hosts[host].authed = true;
 		end
 	elseif session.type == "s2sin" and host then
+		if not session.hosts[host] then session.hosts[host] = {}; end
 		session.hosts[host].authed = true;
 	else
 		return false;
@@ -486,8 +534,16 @@ function mark_connected(session)
 	session.log("info", session.direction.." s2s connection "..from.."->"..to.." complete");
 	
 	local send_to_host = send_to_host;
-	function session.send(data) send_to_host(to, from, data); end
+	function session.send(data) return send_to_host(to, from, data); end
 	
+	local event_data = { session = session };
+	if session.type == "s2sout" then
+		prosody.events.fire_event("s2sout-established", event_data);
+		hosts[session.from_host].events.fire_event("s2sout-established", event_data);
+	else
+		prosody.events.fire_event("s2sin-established", event_data);
+		hosts[session.to_host].events.fire_event("s2sin-established", event_data);
+	end
 	
 	if session.direction == "outgoing" then
 		if sendq then
@@ -512,15 +568,18 @@ local resting_session = { -- Resting, not dead
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
+		filter = function (type, data) return data; end;
 	}; resting_session.__index = resting_session;
 
-function retire_session(session)
+function retire_session(session, reason)
 	local log = session.log or log;
 	for k in pairs(session) do
 		if k ~= "trace" and k ~= "log" and k ~= "id" then
 			session[k] = nil;
 		end
 	end
+
+	session.destruction_reason = reason;
 
 	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
@@ -529,7 +588,7 @@ end
 
 function destroy_session(session, reason)
 	if session.destroyed then return; end
-	(session.log or log)("info", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
+	(session.log or log)("debug", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host));
 	
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
@@ -538,7 +597,21 @@ function destroy_session(session, reason)
 		incoming_s2s[session] = nil;
 	end
 	
-	retire_session(session); -- Clean session until it is GC'd
+	local event_data = { session = session, reason = reason };
+	if session.type == "s2sout" then
+		prosody.events.fire_event("s2sout-destroyed", event_data);
+		if hosts[session.from_host] then
+			hosts[session.from_host].events.fire_event("s2sout-destroyed", event_data);
+		end
+	elseif session.type == "s2sin" then
+		prosody.events.fire_event("s2sin-destroyed", event_data);
+		if hosts[session.to_host] then
+			hosts[session.to_host].events.fire_event("s2sin-destroyed", event_data);
+		end
+	end
+	
+	retire_session(session, reason); -- Clean session until it is GC'd
+	return true;
 end
 
 return _M;

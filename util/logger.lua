@@ -8,9 +8,6 @@
 
 local pcall = pcall;
 
-local config = require "core.configmanager";
-local log_sources = config.get("*", "core", "log_sources");
-
 local find = string.find;
 local ipairs, pairs, setmetatable = ipairs, pairs, setmetatable;
 
@@ -19,25 +16,9 @@ module "logger"
 local name_sinks, level_sinks = {}, {};
 local name_patterns = {};
 
--- Weak-keyed so that loggers are collected
-local modify_hooks = setmetatable({}, { __mode = "k" });
-
 local make_logger;
-local outfunction = nil;
 
 function init(name)
-	if log_sources then
-		local log_this = false;
-		for _, source in ipairs(log_sources) do
-			if find(name, source) then 
-				log_this = true;
-				break;
-			end
-		end
-		
-		if not log_this then return function () end end
-	end
-	
 	local log_debug = make_logger(name, "debug");
 	local log_info = make_logger(name, "info");
 	local log_warn = make_logger(name, "warn");
@@ -46,8 +27,6 @@ function init(name)
 	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
 	local namelen = #name;
 	return function (level, message, ...)
-			if outfunction then return outfunction(name, level, message, ...); end
-			
 			if level == "debug" then
 				return log_debug(message, ...);
 			elseif level == "info" then
@@ -69,38 +48,32 @@ function make_logger(source_name, level)
 
 	local source_handlers = name_sinks[source_name];
 	
-	-- All your premature optimisation is belong to me!
-	local num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers;
-	
 	local logger = function (message, ...)
 		if source_handlers then
-			for i = 1,num_source_handlers do
+			for i = 1,#source_handlers do
 				if source_handlers[i](source_name, level, message, ...) == false then
 					return;
 				end
 			end
 		end
 		
-		for i = 1,num_level_handlers do
+		for i = 1,#level_handlers do
 			level_handlers[i](source_name, level, message, ...);
 		end
 	end
 
-	-- To make sure our cached lengths stay in sync with reality
-	modify_hooks[logger] = function () num_level_handlers, num_source_handlers = #level_handlers, source_handlers and #source_handlers; end; 
-	
 	return logger;
 end
 
-function setwriter(f)
-	local old_func = outfunction;
-	if not f then outfunction = nil; return true, old_func; end
-	local ok, ret = pcall(f, "logger", "info", "Switched logging output successfully");
-	if ok then
-		outfunction = f;
-		ret = old_func;
+function reset()
+	for k in pairs(name_sinks) do name_sinks[k] = nil; end
+	for level, handler_list in pairs(level_sinks) do
+		-- Clear all handlers for this level
+		for i = 1, #handler_list do
+			handler_list[i] = nil;
+		end
 	end
-	return ok, ret;
+	for k in pairs(name_patterns) do name_patterns[k] = nil; end
 end
 
 function add_level_sink(level, sink_function)
@@ -109,10 +82,6 @@ function add_level_sink(level, sink_function)
 	else
 		level_sinks[level][#level_sinks[level] + 1 ] = sink_function;
 	end
-	
-	for _, modify_hook in pairs(modify_hooks) do
-		modify_hook();
-	end
 end
 
 function add_name_sink(name, sink_function, exclusive)
@@ -120,10 +89,6 @@ function add_name_sink(name, sink_function, exclusive)
 		name_sinks[name] = { sink_function };
 	else
 		name_sinks[name][#name_sinks[name] + 1] = sink_function;
-	end
-	
-	for _, modify_hook in pairs(modify_hooks) do
-		modify_hook();
 	end
 end
 

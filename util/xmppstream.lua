@@ -14,7 +14,17 @@ local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
 
-local default_log = require "util.logger".init("xmlhandlers");
+local default_log = require "util.logger".init("xmppstream");
+
+-- COMPAT: w/LuaExpat 1.1.0
+local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
+
+if not lxp_supports_doctype then
+	default_log("warn", "The version of LuaExpat on your system leaves Prosody "
+		.."vulnerable to denial-of-service attacks. You should upgrade to "
+		.."LuaExpat 1.1.1 or higher as soon as possible. See "
+		.."http://prosody.im/doc/depends#luaexpat for more information.");
+end
 
 local error = error;
 
@@ -31,6 +41,9 @@ local xmlns_streams = "http://etherx.jabber.org/streams";
 local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
+_M.ns_separator = ns_separator;
+_M.ns_pattern = ns_pattern;
+
 function new_sax_handlers(session, stream_callbacks)
 	local xml_handlers = {};
 	
@@ -42,12 +55,16 @@ function new_sax_handlers(session, stream_callbacks)
 	local cb_handlestanza = stream_callbacks.handlestanza;
 	
 	local stream_ns = stream_callbacks.stream_ns or xmlns_streams;
-	local stream_tag = stream_ns..ns_separator..(stream_callbacks.stream_tag or "stream");
+	local stream_tag = stream_callbacks.stream_tag or "stream";
+	if stream_ns ~= "" then
+		stream_tag = stream_ns..ns_separator..stream_tag;
+	end
 	local stream_error_tag = stream_ns..ns_separator..(stream_callbacks.error_tag or "error");
 	
 	local stream_default_ns = stream_callbacks.default_ns;
 	
 	local chardata, stanza = {};
+	local non_streamns_depth = 0;
 	function xml_handlers:StartElement(tagname, attr)
 		if stanza and #chardata > 0 then
 			-- We have some character data in the buffer
@@ -59,8 +76,9 @@ function new_sax_handlers(session, stream_callbacks)
 			curr_ns, name = "", curr_ns;
 		end
 
-		if curr_ns ~= stream_default_ns then
+		if curr_ns ~= stream_default_ns or non_streamns_depth > 0 then
 			attr.xmlns = curr_ns;
+			non_streamns_depth = non_streamns_depth + 1;
 		end
 		
 		-- FIXME !!!!!
@@ -69,8 +87,8 @@ function new_sax_handlers(session, stream_callbacks)
 			attr[i] = nil;
 			local ns, nm = k:match(ns_pattern);
 			if nm ~= "" then
-				ns = ns_prefixes[ns]; 
-				if ns then 
+				ns = ns_prefixes[ns];
+				if ns then
 					attr[ns..":"..nm] = attr[k];
 					attr[k] = nil;
 				end
@@ -80,6 +98,7 @@ function new_sax_handlers(session, stream_callbacks)
 		if not stanza then --if we are not currently inside a stanza
 			if session.notopen then
 				if tagname == stream_tag then
+					non_streamns_depth = 0;
 					if cb_streamopened then
 						cb_streamopened(session, attr);
 					end
@@ -95,10 +114,6 @@ function new_sax_handlers(session, stream_callbacks)
 			
 			stanza = st.stanza(name, attr);
 		else -- we are inside a stanza, so add a tag
-			attr.xmlns = nil;
-			if curr_ns ~= stream_default_ns then
-				attr.xmlns = curr_ns;
-			end
 			stanza:tag(name, attr);
 		end
 	end
@@ -108,6 +123,9 @@ function new_sax_handlers(session, stream_callbacks)
 		end
 	end
 	function xml_handlers:EndElement(tagname)
+		if non_streamns_depth > 0 then
+			non_streamns_depth = non_streamns_depth - 1;
+		end
 		if stanza then
 			if #chardata > 0 then
 				-- We have some character data in the buffer
@@ -115,7 +133,8 @@ function new_sax_handlers(session, stream_callbacks)
 				chardata = {};
 			end
 			-- Complete stanza
-			if #stanza.last_add == 0 then
+			local last_add = stanza.last_add;
+			if not last_add or #last_add == 0 then
 				if tagname ~= stream_error_tag then
 					cb_handlestanza(session, stanza);
 				else
@@ -141,11 +160,27 @@ function new_sax_handlers(session, stream_callbacks)
 		end
 	end
 	
+	local function restricted_handler()
+		cb_error(session, "parse-error", "restricted-xml", "Restricted XML, see RFC 6120 section 11.1.");
+	end
+	
+	if lxp_supports_doctype then
+		xml_handlers.StartDoctypeDecl = restricted_handler;
+	end
+	xml_handlers.Comment = restricted_handler;
+	xml_handlers.StartCdataSection = restricted_handler;
+	xml_handlers.ProcessingInstruction = restricted_handler;
+	
 	local function reset()
 		stanza, chardata = nil, {};
 	end
 	
-	return xml_handlers, { reset = reset };
+	local function set_session(stream, new_session)
+		session = new_session;
+		log = new_session.log or default_log;
+	end
+	
+	return xml_handlers, { reset = reset, set_session = set_session };
 end
 
 function new(session, stream_callbacks)
@@ -161,7 +196,8 @@ function new(session, stream_callbacks)
 		end,
 		feed = function (self, data)
 			return parse(parser, data);
-		end
+		end,
+		set_session = meta.set_session;
 	};
 end
 

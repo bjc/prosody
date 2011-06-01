@@ -29,7 +29,7 @@ end
 
 function set(set, u)
 	assert_equal(set("*"), false, "Set with no section/key");
-	assert_equal(set("*", "set_test"), false, "Set with no key");	
+	assert_equal(set("*", "set_test"), false, "Set with no key");
 
 	assert_equal(set("*", "set_test", "testkey"), true, "Setting a nil global value");
 	assert_equal(set("*", "set_test", "testkey", 123), true, "Setting a global value");

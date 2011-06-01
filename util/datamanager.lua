@@ -22,6 +22,7 @@ local t_insert = table.insert;
 local append = require "util.serialization".append;
 local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
 local lfs = require "lfs";
+local prosody = prosody;
 local raw_mkdir;
 
 if prosody.platform == "posix" then
@@ -56,7 +57,7 @@ local function mkdir(path)
 	return path;
 end
 
-local data_path = "data";
+local data_path = (prosody and prosody.paths and prosody.paths.data) or ".";
 local callbacks = {};
 
 ------- API -------------
@@ -114,7 +115,7 @@ function load(username, host, datastore)
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
-			log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
@@ -204,15 +205,22 @@ end
 function list_load(username, host, datastore)
 	local data, ret = loadfile(getpath(username, host, datastore, "list"));
 	if not data then
-		log("debug", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return nil;
+		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
+		if not mode then
+			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			return nil;
+		else -- file exists, but can't be read
+			-- TODO more detailed error checking and logging?
+			log("error", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			return nil, "Error reading storage";
+		end
 	end
 	local items = {};
 	setfenv(data, {item = function(i) t_insert(items, i); end});
 	local success, ret = pcall(data);
 	if not success then
 		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
-		return nil;
+		return nil, "Error reading storage";
 	end
 	return items;
 end

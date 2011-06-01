@@ -165,13 +165,13 @@ static struct signal_event *last_event = NULL;
 
 static void sighook(lua_State *L, lua_Debug *ar)
 {
+  struct signal_event *event;
   /* restore the old hook */
   lua_sethook(L, Hsig, Hmask, Hcount);
 
   lua_pushstring(L, LUA_SIGNAL);
   lua_gettable(L, LUA_REGISTRYINDEX);
 
-  struct signal_event *event;
   while((event = signal_queue))
   {
     lua_pushnumber(L, event->Nsig);
@@ -326,7 +326,7 @@ static int l_raise(lua_State *L)
   return 1;
 }
 
-#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
+#if defined(__unix__) || defined(__APPLE__)
 
 /* define some posix only functions */
 
@@ -373,7 +373,7 @@ static int l_kill(lua_State *L)
 static const struct luaL_Reg lsignal_lib[] = {
   {"signal", l_signal},
   {"raise", l_raise},
-#if defined _POSIX_SOURCE || (defined(sun) || defined(__sun))
+#if defined(__unix__) || defined(__APPLE__)
   {"kill", l_kill},
 #endif
   {NULL, NULL}

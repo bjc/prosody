@@ -143,9 +143,9 @@ do
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
 					if plainssl and ssl then  -- start ssl session
-						self:starttls()
+						self:starttls(nil, true)
 					else  -- normal connection
-						self:_start_session( self.listener.onconnect )
+						self:_start_session(true)
 					end
 					debug( "new connection established. id:", self.id )
 				end
@@ -155,13 +155,15 @@ do
 			self.eventconnect = addevent( base, self.conn, EV_WRITE, callback, cfg.CONNECT_TIMEOUT )
 			return true
 	end
-	function interface_mt:_start_session(onconnect) -- new session, for example after startssl
+	function interface_mt:_start_session(call_onconnect) -- new session, for example after startssl
 		if self.type == "client" then
 			local callback = function( )
 				self:_lock( false,  false, false )
 				--vdebug( "start listening on client socket with id:", self.id )
 				self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
-				self:onconnect()
+				if call_onconnect then
+					self:onconnect()
+				end
 				self.eventsession = nil
 				return -1
 			end
@@ -173,7 +175,7 @@ do
 		end
 		return true
 	end
-	function interface_mt:_start_ssl(arg) -- old socket will be destroyed, therefore we have to close read/write events first
+	function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed, therefore we have to close read/write events first
 			--vdebug( "starting ssl session with client id:", self.id )
 			local _
 			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
@@ -184,7 +186,7 @@ do
 			if err then
 				self.fatalerror = err
 				self.conn = nil  -- cannot be used anymore
-				if "onconnect" == arg then
+				if call_onconnect then
 					self.ondisconnect = nil  -- dont call this when client isnt really connected
 				end
 				self:_close()
@@ -211,28 +213,25 @@ do
 								self.send = self.conn.send  -- caching table lookups with new client object
 								self.receive = self.conn.receive
 								local onsomething
-								if "onconnect" == arg then  -- trigger listener
-									onsomething = self.onconnect
-								else
-									onsomething = self.onsslconnection
+								if not call_onconnect then  -- trigger listener
+									self:onstatus("ssl-handshake-complete");
 								end
-								self:_start_session( onsomething )
+								self:_start_session( call_onconnect )
 								debug( "ssl handshake done" )
-								self:onstatus("ssl-handshake-complete");
 								self.eventhandshake = nil
 								return -1
 							end
-							debug( "error during ssl handshake:", err )
 							if err == "wantwrite" then
 								event = EV_WRITE
 							elseif err == "wantread" then
 								event = EV_READ
 							else
+								debug( "ssl handshake error:", err )
 								self.fatalerror = err
 							end
 						end
 						if self.fatalerror then
-							if "onconnect" == arg then
+							if call_onconnect then
 								self.ondisconnect = nil  -- dont call this when client isnt really connected
 							end
 							self:_close()
@@ -362,6 +361,10 @@ do
 		end
 	end
 	
+	function interface_mt:socket()
+		return self.conn
+	end
+	
 	function interface_mt:server()
 		return self._server or self;
 	end
@@ -414,7 +417,7 @@ do
 		-- No-op, we always use the underlying connection's send
 	end
 	
-	function interface_mt:starttls(sslctx)
+	function interface_mt:starttls(sslctx, call_onconnect)
 		debug( "try to start ssl at client id:", self.id )
 		local err
 		self._sslctx = sslctx;
@@ -428,7 +431,7 @@ do
 		self._usingssl = true
 		self.startsslcallback = function( )  -- we have to start the handshake outside of a read/write event
 			self.startsslcallback = nil
-			self:_start_ssl();
+			self:_start_ssl(call_onconnect);
 			self.eventstarthandshake = nil
 			return -1
 		end
@@ -468,7 +471,6 @@ do
 	function interface_mt:ondrain()
 	end
 	function interface_mt:onstatus()
-		debug("server.lua: Dummy onstatus()")
 	end
 end
 
@@ -700,9 +702,9 @@ do
 				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, nil, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
 				if ssl and sslctx then
-					clientinterface:starttls(sslctx)
+					clientinterface:starttls(sslctx, true)
 				else
-					clientinterface:_start_session( clientinterface.onconnect )
+					clientinterface:_start_session( true )
 				end
 				debug( "accepted incoming client connection from:", client_ip or "<unknown IP>", client_port or "<unknown port>", "to", port or "<unknown port>");
 				
@@ -724,7 +726,7 @@ local addserver = ( function( )
 		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslcfg or "nil", startssl or "nil")
 		local server, err = socket.bind( addr, port, cfg.ACCEPT_QUEUE )  -- create server socket
 		if not server then
-			debug( "creating server socket failed because:", err )
+			debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 			return nil, err
 		end
 		local sslctx
@@ -846,7 +848,6 @@ function hook_signal(signal_num, handler)
 end
 
 local function link(sender, receiver, buffersize)
-	sender:set_mode(buffersize);
 	local sender_locked;
 	
 	function receiver:ondrain()

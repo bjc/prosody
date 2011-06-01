@@ -6,25 +6,25 @@
 -- COPYING file in the source package for more information.
 --
 
-local ssl = ssl
-
-local hosts = hosts;
-local certmanager = require "core.certmanager";
 local configmanager = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local modulemanager = require "core.modulemanager";
 local events_new = require "util.events".new;
+local disco_items = require "util.multitable".new();
+local NULL = {};
 
 local uuid_gen = require "util.uuid".generate;
 
+local log = require "util.logger".init("hostmanager");
+
+local hosts = hosts;
+local prosody_events = prosody.events;
 if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
-local log = require "util.logger".init("hostmanager");
-
 local pairs, setmetatable = pairs, setmetatable;
+local tostring, type = tostring, type;
 
 module "hostmanager"
 
@@ -35,8 +35,10 @@ local function load_enabled_hosts(config)
 	local activated_any_host;
 	
 	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and host_config.core.enabled ~= false and not host_config.core.component_module then
-			activated_any_host = true;
+		if host ~= "*" and host_config.core.enabled ~= false then
+			if not host_config.core.component_module then
+				activated_any_host = true;
+			end
 			activate(host, host_config);
 		end
 	end
@@ -45,39 +47,53 @@ local function load_enabled_hosts(config)
 		log("error", "No active VirtualHost entries in the config file. This may cause unexpected behaviour as no modules will be loaded.");
 	end
 	
-	eventmanager.fire_event("hosts-activated", defined_hosts);
+	prosody_events.fire_event("hosts-activated", defined_hosts);
 	hosts_loaded_once = true;
 end
 
-eventmanager.add_event_hook("server-starting", load_enabled_hosts);
+prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 function activate(host, host_config)
-	hosts[host] = {type = "local", connected = true, sessions = {},
-			host = host, s2sout = {}, events = events_new(),
-			disallow_s2s = configmanager.get(host, "core", "disallow_s2s")
-				or (configmanager.get(host, "core", "anonymous_login")
-				and (configmanager.get(host, "core", "disallow_s2s") ~= false));
-			dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
-	              };
+	if hosts[host] then return nil, "The host "..host.." is already activated"; end
+	host_config = host_config or configmanager.getconfig()[host];
+	if not host_config then return nil, "Couldn't find the host "..tostring(host).." defined in the current config"; end
+	local host_session = {
+		host = host;
+		s2sout = {};
+		events = events_new();
+		dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
+		disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
+	};
+	if not host_config.core.component_module then -- host
+		host_session.type = "local";
+		host_session.sessions = {};
+	else -- component
+		host_session.type = "component";
+	end
+	hosts[host] = host_session;
+	if not host:match("[@/]") then
+		disco_items:set(host:match("%.(.*)") or "*", host, true);
+	end
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
 		end
 	end
 	
-	hosts[host].ssl_ctx = certmanager.create_context(host, "client", host_config); -- for outgoing connections
-	hosts[host].ssl_ctx_in = certmanager.create_context(host, "server", host_config); -- for incoming connections
-	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
-	eventmanager.fire_event("host-activated", host, host_config);
+	prosody_events.fire_event("host-activated", host, host_config);
+	return true;
 end
 
 function deactivate(host, reason)
 	local host_session = hosts[host];
+	if not host_session then return nil, "The host "..tostring(host).." is not activated"; end
 	log("info", "Deactivating host: %s", host);
-	eventmanager.fire_event("host-deactivating", host, host_session);
+	prosody_events.fire_event("host-deactivating", host, host_session);
 	
-	reason = reason or { condition = "host-gone", text = "This server has stopped serving "..host };
+	if type(reason) ~= "table" then
+		reason = { condition = "host-gone", text = tostring(reason or "This server has stopped serving "..host) };
+	end
 	
 	-- Disconnect local users, s2s connections
 	if host_session.sessions then
@@ -111,11 +127,16 @@ function deactivate(host, reason)
 	end
 
 	hosts[host] = nil;
-	eventmanager.fire_event("host-deactivated", host);
+	if not host:match("[@/]") then
+		disco_items:remove(host:match("%.(.*)") or "*", host);
+	end
+	prosody_events.fire_event("host-deactivated", host);
 	log("info", "Deactivated host: %s", host);
+	return true;
 end
 
-function getconfig(name)
+function get_children(host)
+	return disco_items:get(host) or NULL;
 end
 
 return _M;

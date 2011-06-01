@@ -6,11 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local plugin_dir = CFG_PLUGINDIR or "./plugins/";
-
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
-local eventmanager = require "core.eventmanager";
 local config = require "core.configmanager";
 local multitable_new = require "util.multitable".new;
 local st = require "util.stanza";
@@ -18,6 +15,7 @@ local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
 local prosody = prosody;
+local prosody_events = prosody.events;
 
 local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -34,12 +32,13 @@ local unpack, select = unpack, select;
 pcall = function(f, ...)
 	local n = select("#", ...);
 	local params = {...};
-	return xpcall(function() f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
+	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
 
 local array, set = require "util.array", require "util.set";
 
-local autoload_modules = {"presence", "message", "iq"};
+local autoload_modules = {"presence", "message", "iq", "offline"};
+local component_inheritable_modules = {"tls", "dialback", "iq"};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
@@ -51,66 +50,52 @@ local api = api; -- Module API container
 
 local modulemap = { ["*"] = {} };
 
-local stanza_handlers = multitable_new();
-local handler_info = {};
-
 local modulehelpers = setmetatable({}, { __index = _G });
 
-local handler_table = multitable_new();
-local hooked = multitable_new();
 local hooks = multitable_new();
-local event_hooks = multitable_new();
 
 local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
-	local disabled_set = {};
-	local modules_disabled = config.get(host, "core", "modules_disabled");
-	if modules_disabled then
-		for _, module in ipairs(modules_disabled) do
-			disabled_set[module] = true;
-		end
+	local component = config.get(host, "core", "component_module");
+	
+	local global_modules_enabled = config.get("*", "core", "modules_enabled");
+	local global_modules_disabled = config.get("*", "core", "modules_disabled");
+	local host_modules_enabled = config.get(host, "core", "modules_enabled");
+	local host_modules_disabled = config.get(host, "core", "modules_disabled");
+	
+	if host_modules_enabled == global_modules_enabled then host_modules_enabled = nil; end
+	if host_modules_disabled == global_modules_disabled then host_modules_disabled = nil; end
+	
+	local global_modules = set.new(autoload_modules) + set.new(global_modules_enabled) - set.new(global_modules_disabled);
+	if component then
+		global_modules = set.intersection(set.new(component_inheritable_modules), global_modules);
 	end
-
-	-- Load auto-loaded modules for this host
-	if hosts[host].type == "local" then
-		for _, module in ipairs(autoload_modules) do
-			if not disabled_set[module] then
-				load(host, module);
-			end
-		end
-	end
-
-	-- Load modules from global section
-	if config.get(host, "core", "load_global_modules") ~= false then
-		local modules_enabled = config.get("*", "core", "modules_enabled");
-		if modules_enabled then
-			for _, module in ipairs(modules_enabled) do
-				if not disabled_set[module] and not is_loaded(host, module) then
-					load(host, module);
-				end
-			end
-		end
+	local modules = (global_modules + set.new(host_modules_enabled)) - set.new(host_modules_disabled);
+	
+	-- COMPAT w/ pre 0.8
+	if modules:contains("console") then
+		log("error", "The mod_console plugin has been renamed to mod_admin_telnet. Please update your config.");
+		modules:remove("console");
+		modules:add("admin_telnet");
 	end
 	
-	-- Load modules from just this host
-	local modules_enabled = config.get(host, "core", "modules_enabled");
-	if modules_enabled and modules_enabled ~= config.get("*", "core", "modules_enabled") then
-		for _, module in pairs(modules_enabled) do
-			if not is_loaded(host, module) then
-				load(host, module);
-			end
-		end
+	if component then
+		load(host, component);
+	end
+	for module in modules do
+		load(host, module);
 	end
 end
-eventmanager.add_event_hook("host-activated", load_modules_for_host);
-eventmanager.add_event_hook("component-activated", load_modules_for_host);
+prosody_events.add_handler("host-activated", load_modules_for_host);
 --
 
 function load(host, module_name, config)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
+	elseif not hosts[host] then
+		return nil, "unknown-host";
 	end
 	
 	if not modulemap[host] then
@@ -132,18 +117,12 @@ function load(host, module_name, config)
 	end
 
 	local _log = logger.init(host..":"..module_name);
-	local api_instance = setmetatable({ name = module_name, host = host, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
+	local api_instance = setmetatable({ name = module_name, host = host, path = err, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
-	if not hosts[host] then
-		local create_component = _G.require "core.componentmanager".create_component;
-		hosts[host] = create_component(host);
-		hosts[host].connected = false;
-		log("debug", "Created new component: %s", host);
-	end
 	hosts[host].modules = modulemap[host];
 	modulemap[host][module_name] = pluginenv;
 	
@@ -192,15 +171,6 @@ function unload(host, name, ...)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	local params = handler_table:get(host, name); -- , {module.host, origin_type, tag, xmlns}
-	for _, param in pairs(params or NULL) do
-		local handlers = stanza_handlers:get(param[1], param[2], param[3], param[4]);
-		if handlers then
-			handler_info[handlers[1]] = nil;
-			stanza_handlers:remove(param[1], param[2], param[3], param[4]);
-		end
-	end
-	event_hooks:remove(host, name);
 	-- unhook event handlers hooked by module:hook
 	for event, handlers in pairs(hooks:get(host, name) or NULL) do
 		for handler in pairs(handlers or NULL) do
@@ -264,36 +234,6 @@ function reload(host, name, ...)
 	return ok, err;
 end
 
-function handle_stanza(host, origin, stanza)
-	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
-	if name == "iq" and xmlns == "jabber:client" then
-		if stanza.attr.type == "get" or stanza.attr.type == "set" then
-			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
-			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
-		else
-			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
-			return true;
-		end
-	end
-	local handlers = stanza_handlers:get(host, origin_type, name, xmlns);
-	if not handlers then handlers = stanza_handlers:get("*", origin_type, name, xmlns); end
-	if handlers then
-		log("debug", "Passing stanza to mod_%s", handler_info[handlers[1]].name);
-		(handlers[1])(origin, stanza);
-		return true;
-	else
-		if stanza.attr.xmlns == nil then
-			log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
-			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-			end
-		elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
-			log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
-			origin:close("unsupported-stanza-type");
-		end
-	end
-end
-
 function module_has_method(module, method)
 	return type(module.module[method]) == "function";
 end
@@ -332,52 +272,11 @@ function api:set_global()
 	self._log = _log;
 end
 
-local function _add_handler(module, origin_type, tag, xmlns, handler)
-	local handlers = stanza_handlers:get(module.host, origin_type, tag, xmlns);
-	local msg = (tag == "iq") and "namespace" or "payload namespace";
-	if not handlers then
-		stanza_handlers:add(module.host, origin_type, tag, xmlns, handler);
-		handler_info[handler] = module;
-		handler_table:add(module.host, module.name, {module.host, origin_type, tag, xmlns});
-		--module:log("debug", "I now handle tag '%s' [%s] with %s '%s'", tag, origin_type, msg, xmlns);
-	else
-		module:log("warn", "I wanted to handle tag '%s' [%s] with %s '%s' but mod_%s already handles that", tag, origin_type, msg, xmlns, handler_info[handlers[1]].module.name);
-	end
-end
-
-function api:add_handler(origin_type, tag, xmlns, handler)
-	if not (origin_type and tag and xmlns and handler) then return false; end
-	if type(origin_type) == "table" then
-		for _, origin_type in ipairs(origin_type) do
-			_add_handler(self, origin_type, tag, xmlns, handler);
-		end
-	else
-		_add_handler(self, origin_type, tag, xmlns, handler);
-	end
-end
-function api:add_iq_handler(origin_type, xmlns, handler)
-	self:add_handler(origin_type, "iq", xmlns, handler);
-end
-
 function api:add_feature(xmlns)
 	self:add_item("feature", xmlns);
 end
 function api:add_identity(category, type, name)
 	self:add_item("identity", {category = category, type = type, name = name});
-end
-
-local event_hook = function(host, mod_name, event_name, ...)
-	if type((...)) == "table" and (...).host and (...).host ~= host then return; end
-	for handler in pairs(event_hooks:get(host, mod_name, event_name) or NULL) do
-		handler(...);
-	end
-end;
-function api:add_event_hook(name, handler)
-	if not hooked:get(self.host, self.name, name) then
-		eventmanager.add_event_hook(name, function(...) event_hook(self.host, self.name, name, ...); end);
-		hooked:set(self.host, self.name, name, true);
-	end
-	event_hooks:set(self.host, self.name, name, handler, true);
 end
 
 function api:fire_event(...)

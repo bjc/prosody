@@ -32,6 +32,7 @@ local STAT_UNIT = 1 -- byte
 local type = use "type"
 local pairs = use "pairs"
 local ipairs = use "ipairs"
+local tonumber = use "tonumber"
 local tostring = use "tostring"
 local collectgarbage = use "collectgarbage"
 
@@ -44,8 +45,9 @@ local coroutine = use "coroutine"
 
 --// lua lib methods //--
 
-local os_time = os.time
 local os_difftime = os.difftime
+local math_min = math.min
+local math_huge = math.huge
 local table_concat = table.concat
 local table_remove = table.remove
 local string_len = string.len
@@ -57,6 +59,7 @@ local coroutine_yield = coroutine.yield
 
 local luasec = use "ssl"
 local luasocket = use "socket" or require "socket"
+local luasocket_gettime = luasocket.gettime
 
 --// extern lib methods //--
 
@@ -74,6 +77,7 @@ local stats
 local idfalse
 local addtimer
 local closeall
+local addsocket
 local addserver
 local getserver
 local wrapserver
@@ -125,6 +129,8 @@ local _timer
 
 local _maxclientsperserver
 
+local _maxsslhandshake
+
 ----------------------------------// DEFINITION //--
 
 _server = { } -- key = port, value = table; list of listening servers
@@ -167,7 +173,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 
 	local connections = 0
 
-	local dispatch, disconnect = listeners.onincoming, listeners.ondisconnect
+	local dispatch, disconnect = listeners.onconnect or listeners.onincoming, listeners.ondisconnect
 
 	local accept = socket.accept
 
@@ -483,7 +489,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if drain then
 				drain(handler)
 			end
-			_ = needtls and handler:starttls(nil, true)
+			_ = needtls and handler:starttls(nil)
 			_ = toclose and handler:close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
@@ -524,7 +530,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						_readlistlen = addsocket(_readlist, client, _readlistlen)
 						return true
 					else
-						out_put( "server.lua: error during ssl handshake: ", tostring(err) )
 						if err == "wantwrite" and not wrote then
 							_sendlistlen = addsocket(_sendlist, client, _sendlistlen)
 							wrote = true
@@ -532,6 +537,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 							_readlistlen = addsocket(_readlist, client, _readlistlen)
 							read = true
 						else
+							out_put( "server.lua: ssl handshake error: ", tostring(err) )
 							break;
 						end
 						--coroutine_yield( handler, nil, err )	 -- handshake not finished
@@ -564,13 +570,13 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		else
 			local sslctx;
-			handler.starttls = function( self, _sslctx, now )
+			handler.starttls = function( self, _sslctx)
 				if _sslctx then
 					sslctx = _sslctx;
 					handler:set_sslctx(sslctx);
 				end
-				if not now then
-					out_put "server.lua: we need to do tls, but delaying until later"
+				if bufferqueuelen > 0 then
+					out_put "server.lua: we need to do tls, but delaying until send buffer empty"
 					needtls = true
 					return
 				end
@@ -623,16 +629,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
-	if listeners.onconnect then
-		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
-		handler.sendbuffer = function ()
-			listeners.onconnect(handler);
-			handler.sendbuffer = _sendbuffer;
-			if bufferqueuelen > 0 then
-				return _sendbuffer();
-			end
-		end
-	end
 	return handler, socket
 end
 
@@ -676,7 +672,6 @@ closesocket = function( socket )
 end
 
 local function link(sender, receiver, buffersize)
-	sender:set_mode(buffersize);
 	local sender_locked;
 	local _sendbuffer = receiver.sendbuffer;
 	function receiver.sendbuffer()
@@ -798,16 +793,18 @@ stats = function( )
 	return _readtraffic, _sendtraffic, _readlistlen, _sendlistlen, _timerlistlen
 end
 
-local dontstop = true; -- thinking about tomorrow, ...
+local quitting;
 
 setquitting = function (quit)
-	dontstop = not quit;
-	return;
+	quitting = not not quit;
 end
 
-loop = function( ) -- this is the main loop of the program
-	while dontstop do
-		local read, write, err = socket_select( _readlist, _sendlist, _selecttimeout )
+loop = function(once) -- this is the main loop of the program
+	if quitting then return "quitting"; end
+	if once then quitting = "once"; end
+	local next_timer_time = math_huge;
+	repeat
+		local read, write, err = socket_select( _readlist, _sendlist, math_min(_selecttimeout, next_timer_time) )
 		for i, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
 			if handler then
@@ -831,17 +828,26 @@ loop = function( ) -- this is the main loop of the program
 			handler:close( true )	 -- forced disconnect
 		end
 		clean( _closelist )
-		_currenttime = os_time( )
-		if os_difftime( _currenttime - _timer ) >= 1 then
+		_currenttime = luasocket_gettime( )
+		if _currenttime - _timer >= math_min(next_timer_time, 1) then
+			next_timer_time = math_huge;
 			for i = 1, _timerlistlen do
-				_timerlist[ i ]( _currenttime ) -- fire timers
+				local t = _timerlist[ i ]( _currenttime ) -- fire timers
+				if t then next_timer_time = math_min(next_timer_time, t); end
 			end
 			_timer = _currenttime
+		else
+			next_timer_time = next_timer_time - (_currenttime - _timer);
 		end
 		socket_sleep( _sleeptime ) -- wait some time
 		--collectgarbage( )
-	end
+	until quitting;
+	if once and quitting == "once" then quitting = nil; return; end
 	return "quitting"
+end
+
+step = function ()
+	return loop(true);
 end
 
 local function get_backend()
@@ -854,6 +860,18 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
 	_socketlist[ socket ] = handler
 	_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
+	if listeners.onconnect then
+		-- When socket is writeable, call onconnect
+		local _sendbuffer = handler.sendbuffer;
+		handler.sendbuffer = function ()
+			handler.sendbuffer = _sendbuffer;
+			listeners.onconnect(handler);
+			-- If there was data with the incoming packet, handle it now.
+			if #handler:bufferqueue() > 0 then
+				return _sendbuffer();
+			end
+		end
+	end
 	return handler, socket
 end
 
@@ -879,8 +897,8 @@ use "setmetatable" ( _socketlist, { __mode = "k" } )
 use "setmetatable" ( _readtimes, { __mode = "k" } )
 use "setmetatable" ( _writetimes, { __mode = "k" } )
 
-_timer = os_time( )
-_starttime = os_time( )
+_timer = luasocket_gettime( )
+_starttime = luasocket_gettime( )
 
 addtimer( function( )
 		local difftime = os_difftime( _currenttime - _starttime )

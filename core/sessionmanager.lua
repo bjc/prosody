@@ -27,7 +27,8 @@ local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 
-local fire_event = require "core.eventmanager".fire_event;
+local initialize_filters = require "util.filters".initialize;
+local fire_event = prosody.events.fire_event;
 local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
 
@@ -50,8 +51,20 @@ function new_session(conn)
 	end
 	open_sessions = open_sessions + 1;
 	log("debug", "open sessions now: ".. open_sessions);
+	
+	local filter = initialize_filters(session);
 	local w = conn.write;
-	session.send = function (t) w(conn, tostring(t)); end
+	session.send = function (t)
+		if t.name then
+			t = filter("stanzas/out", t);
+		end
+		if t then
+			t = filter("bytes/out", tostring(t));
+			if t then
+				return w(conn, t);
+			end
+		end
+	end
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
@@ -73,6 +86,7 @@ local resting_session = { -- Resting, not dead
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
+		filter = function (type, data) return data; end;
 	}; resting_session.__index = resting_session;
 
 function retire_session(session)
@@ -94,16 +108,23 @@ function destroy_session(session, err)
 	
 	-- Remove session/resource from user's session list
 	if session.full_jid then
-		hosts[session.host].sessions[session.username].sessions[session.resource] = nil;
+		local host_session = hosts[session.host];
+		
+		-- Allow plugins to prevent session destruction
+		if host_session.events.fire_event("pre-resource-unbind", {session=session, error=err}) then
+			return;
+		end
+		
+		host_session.sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
 		
-		if not next(hosts[session.host].sessions[session.username].sessions) then
+		if not next(host_session.sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
-			hosts[session.host].sessions[session.username] = nil;
+			host_session.sessions[session.username] = nil;
 			bare_sessions[session.username..'@'..session.host] = nil;
 		end
 
-		hosts[session.host].events.fire_event("resource-unbind", {session=session, error=err});
+		host_session.events.fire_event("resource-unbind", {session=session, error=err});
 	end
 	
 	retire_session(session);

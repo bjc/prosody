@@ -10,6 +10,14 @@
 local t_concat, t_insert = table.concat, table.insert;
 local char, format = string.char, string.format;
 local ipairs = ipairs;
+local io_write = io.write;
+
+local windows;
+if os.getenv("WINDIR") then
+	windows = require "util.windows";
+end
+local orig_color = windows and windows.get_consolecolor and windows.get_consolecolor();
+
 module "termcolours"
 
 local stylemap = {
@@ -18,6 +26,13 @@ local stylemap = {
 			["black background"] = 40; ["red background"] = 41; ["green background"] = 42; ["yellow background"] = 43; ["blue background"] = 44; ["magenta background"] = 45; ["cyan background"] = 46; ["white background"] = 47;
 			bold = 1, dark = 2, underline = 4, underlined = 4, normal = 0;
 		}
+
+local winstylemap = {
+	["0"] = orig_color, -- reset
+	["1"] = 7+8, -- bold
+	["1;33"] = 2+4+8, -- bold yellow
+	["1;31"] = 4+8 -- bold red
+}
 
 local fmt_string = char(0x1B).."[%sm%s"..char(0x1B).."[0m";
 function getstring(style, text)
@@ -37,6 +52,28 @@ function getstyle(...)
 		end
 	end
 	return t_concat(result, ";");
+end
+
+local last = "0";
+function setstyle(style)
+	style = style or "0";
+	if style ~= last then
+		io_write("\27["..style.."m");
+		last = style;
+	end
+end
+
+if windows then
+	function setstyle(style)
+		style = style or "0";
+		if style ~= last then
+			windows.set_consolecolor(winstylemap[style] or orig_color);
+			last = style;
+		end
+	end
+	if not orig_color then
+		function setstyle(style) end
+	end
 end
 
 return _M;

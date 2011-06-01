@@ -7,8 +7,8 @@
 --
 
 
-local ipairs, pairs, setmetatable, type = 
-        ipairs, pairs, setmetatable, type;
+local ipairs, pairs, setmetatable, type =
+      ipairs, pairs, setmetatable, type;
 
 module "pubsub"
 

@@ -16,9 +16,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local type = type;
-local load_roster = require "core.rostermanager".load_roster;
-local sha1 = require "util.hashes".sha1;
-local base64 = require "util.encodings".base64.encode;
+local calculate_hash = require "util.caps".calculate_hash;
 
 local NULL = {};
 local data = {};
@@ -40,8 +38,8 @@ module:add_feature("http://jabber.org/protocol/pubsub#publish");
 local function subscription_presence(user_bare, recipient)
 	local recipient_bare = jid_bare(recipient);
 	if (recipient_bare == user_bare) then return true end
-	local item = load_roster(jid_split(user_bare))[recipient_bare];
-	return item and (item.subscription == 'from' or item.subscription == 'both');
+	local username, host = jid_split(user_bare);
+	return is_contact_subscribed(username, host, recipient_bare);
 end
 
 local function publish(session, node, id, item)
@@ -118,25 +116,44 @@ module:hook("presence/bare", function(event)
 	-- inbound presence to bare JID recieved
 	local origin, stanza = event.origin, event.stanza;
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
+	local t = stanza.attr.type;
+	local self = not stanza.attr.to;
 
-	if not stanza.attr.to or subscription_presence(user, stanza.attr.from) then
-		local recipient = stanza.attr.from;
-		local current = recipients[user] and recipients[user][recipient];
-		local hash = get_caps_hash_from_presence(stanza, current);
-		if current == hash then return; end
-		if not hash then
-			if recipients[user] then recipients[user][recipient] = nil; end
-		else
-			recipients[user] = recipients[user] or {};
-			if hash_map[hash] then
-				recipients[user][recipient] = hash_map[hash];
-				publish_all(user, recipient, origin);
+	if not t then -- available presence
+		if self or subscription_presence(user, stanza.attr.from) then
+			local recipient = stanza.attr.from;
+			local current = recipients[user] and recipients[user][recipient];
+			local hash = get_caps_hash_from_presence(stanza, current);
+			if current == hash or (current and current == hash_map[hash]) then return; end
+			if not hash then
+				if recipients[user] then recipients[user][recipient] = nil; end
 			else
-				recipients[user][recipient] = hash;
-				origin.send(
-					st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
-						:query("http://jabber.org/protocol/disco#info")
-				);
+				recipients[user] = recipients[user] or {};
+				if hash_map[hash] then
+					recipients[user][recipient] = hash_map[hash];
+					publish_all(user, recipient, origin);
+				else
+					recipients[user][recipient] = hash;
+					local from_bare = origin.type == "c2s" and origin.username.."@"..origin.host;
+					if self or origin.type ~= "c2s" or (recipients[from_bare] and recipients[from_bare][origin.full_jid]) ~= hash then
+						origin.send(
+							st.stanza("iq", {from=stanza.attr.to, to=stanza.attr.from, id="disco", type="get"})
+								:query("http://jabber.org/protocol/disco#info")
+						);
+					end
+				end
+			end
+		end
+	elseif t == "unavailable" then
+		if recipients[user] then recipients[user][stanza.attr.from] = nil; end
+	elseif not self and t == "unsubscribe" then
+		local from = jid_bare(stanza.attr.from);
+		local subscriptions = recipients[user];
+		if subscriptions then
+			for subscriber in pairs(subscriptions) do
+				if jid_bare(subscriber) == from then
+					recipients[user][subscriber] = nil;
+				end
 			end
 		end
 	end
@@ -205,56 +222,13 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 	end
 end);
 
-local function calculate_hash(disco_info)
-	local identities, features, extensions = {}, {}, {};
-	for _, tag in pairs(disco_info) do
-		if tag.name == "identity" then
-			table.insert(identities, (tag.attr.category or "").."\0"..(tag.attr.type or "").."\0"..(tag.attr["xml:lang"] or "").."\0"..(tag.attr.name or ""));
-		elseif tag.name == "feature" then
-			table.insert(features, tag.attr.var or "");
-		elseif tag.name == "x" and tag.attr.xmlns == "jabber:x:data" then
-			local form = {};
-			local FORM_TYPE;
-			for _, field in pairs(tag.tags) do
-				if field.name == "field" and field.attr.var then
-					local values = {};
-					for _, val in pairs(field.tags) do
-						val = #val.tags == 0 and table.concat(val); -- FIXME use get_text?
-						if val then table.insert(values, val); end
-					end
-					table.sort(values);
-					if field.attr.var == "FORM_TYPE" then
-						FORM_TYPE = values[1];
-					elseif #values > 0 then
-						table.insert(form, field.attr.var.."\0"..table.concat(values, "<"));
-					else
-						table.insert(form, field.attr.var);
-					end
-				end
-			end
-			table.sort(form);
-			form = table.concat(form, "<");
-			if FORM_TYPE then form = FORM_TYPE.."\0"..form; end
-			table.insert(extensions, form);
-		end
-	end
-	table.sort(identities);
-	table.sort(features);
-	table.sort(extensions);
-	if #identities > 0 then identities = table.concat(identities, "<"):gsub("%z", "/").."<"; else identities = ""; end
-	if #features > 0 then features = table.concat(features, "<").."<"; else features = ""; end
-	if #extensions > 0 then extensions = table.concat(extensions, "<"):gsub("%z", "<").."<"; else extensions = ""; end
-	local S = identities..features..extensions;
-	local ver = base64(sha1(S));
-	return ver, S;
-end
-
-module:hook("iq/bare/disco", function(event)
+module:hook("iq-result/bare/disco", function(event)
 	local session, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "result" then
 		local disco = stanza.tags[1];
 		if disco and disco.name == "query" and disco.attr.xmlns == "http://jabber.org/protocol/disco#info" then
 			-- Process disco response
+			local self = not stanza.attr.to;
 			local user = stanza.attr.to or (session.username..'@'..session.host);
 			local contact = stanza.attr.from;
 			local current = recipients[user] and recipients[user][contact];
@@ -271,6 +245,15 @@ module:hook("iq/bare/disco", function(event)
 				end
 			end
 			hash_map[ver] = notify; -- update hash map
+			if self then
+				for jid, item in pairs(session.roster) do -- for all interested contacts
+					if item.subscription == "both" or item.subscription == "from" then
+						if not recipients[jid] then recipients[jid] = {}; end
+						recipients[jid][contact] = notify;
+						publish_all(jid, contact, session);
+					end
+				end
+			end
 			recipients[user][contact] = notify; -- set recipient's data to calculated data
 			-- send messages to recipient
 			publish_all(user, contact, session);
@@ -285,8 +268,8 @@ module:hook("account-disco-info", function(event)
 end);
 
 module:hook("account-disco-items", function(event)
-	local session, stanza = event.session, event.stanza;
-	local bare = session.username..'@'..session.host;
+	local stanza = event.stanza;
+	local bare = stanza.attr.to;
 	local user_data = data[bare];
 
 	if user_data then

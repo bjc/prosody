@@ -13,8 +13,10 @@ local server = require "net.server";
 local log = require "util.logger".init("connlisteners");
 local tostring = tostring;
 
-local dofile, pcall, error = 
-	dofile, pcall, error
+local dofile, xpcall, error =
+      dofile, xpcall, error
+
+local debug_traceback = debug.traceback;
 
 module "connlisteners"
 
@@ -37,7 +39,7 @@ end
 function get(name)
 	local h = listeners[name];
 	if not h then
-		local ok, ret = pcall(dofile, listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua");
+		local ok, ret = xpcall(function() dofile(listeners_dir..name:gsub("[^%w%-]", "_").."_listener.lua") end, debug_traceback);
 		if not ok then
 			log("error", "Error while loading listener '%s': %s", tostring(name), tostring(ret));
 			return nil, ret;

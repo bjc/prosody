@@ -10,12 +10,12 @@
 local format, rep = string.format, string.rep;
 local pcall = pcall;
 local debug = debug;
-local tostring, setmetatable, rawset, pairs, ipairs, type = 
+local tostring, setmetatable, rawset, pairs, ipairs, type =
 	tostring, setmetatable, rawset, pairs, ipairs, type;
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
 local os_date, os_getenv = os.date, os.getenv;
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local getstyle, setstyle = require "util.termcolours".getstyle, require "util.termcolours".setstyle;
 
 if os.getenv("__FLUSH_LOG") then
 	local io_flush = io.flush;
@@ -24,20 +24,19 @@ if os.getenv("__FLUSH_LOG") then
 end
 
 local config = require "core.configmanager";
-local eventmanager = require "core.eventmanager";
 local logger = require "util.logger";
-local debug_mode = config.get("*", "core", "debug");
+local prosody = prosody;
 
 _G.log = logger.init("general");
 
 module "loggingmanager"
 
--- The log config used if none specified in the config file
-local default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
-local default_file_logging = { { to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true } };
+-- The log config used if none specified in the config file (see reload_logging for initialization)
+local default_logging;
+local default_file_logging;
 local default_timestamp = "%b %d %H:%M:%S";
 -- The actual config loggingmanager is using
-local logging_config = config.get("*", "core", "log") or default_logging;
+local logging_config;
 
 local apply_sink_rules;
 local log_sink_types = setmetatable({}, { __newindex = function (t, k, v) rawset(t, k, v); apply_sink_rules(k); end; });
@@ -88,9 +87,31 @@ end
 -- the log_sink_types table.
 function apply_sink_rules(sink_type)
 	if type(logging_config) == "table" then
-		for _, sink_config in pairs(logging_config) do
-			if sink_config.to == sink_type then
+		
+		for _, level in ipairs(logging_levels) do
+			if type(logging_config[level]) == "string" then
+				local value = logging_config[level];
+				if sink_type == "file" then
+					add_rule({
+						to = sink_type;
+						filename = value;
+						timestamps = true;
+						levels = { min = level };
+					});
+				elseif value == "*"..sink_type then
+					add_rule({
+						to = sink_type;
+						levels = { min = level };
+					});
+				end
+			end
+		end
+		
+		for _, sink_config in ipairs(logging_config) do
+			if (type(sink_config) == "table" and sink_config.to == sink_type) then
 				add_rule(sink_config);
+			elseif (type(sink_config) == "string" and sink_config:match("^%*(.+)") == sink_type) then
+				add_rule({ levels = { min = "debug" }, to = sink_type });
 			end
 		end
 	elseif type(logging_config) == "string" and (not logging_config:match("^%*")) and sink_type == "file" then
@@ -138,6 +159,38 @@ function get_levels(criteria, set)
 	return set;
 end
 
+-- Initialize config, etc. --
+function reload_logging()
+	local old_sink_types = {};
+	
+	for name, sink_maker in pairs(log_sink_types) do
+		old_sink_types[name] = sink_maker;
+		log_sink_types[name] = nil;
+	end
+	
+	logger.reset();
+
+	local debug_mode = config.get("*", "core", "debug");
+
+	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
+	default_file_logging = {
+		{ to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true }
+	};
+	default_timestamp = "%b %d %H:%M:%S";
+
+	logging_config = config.get("*", "core", "log") or default_logging;
+	
+	
+	for name, sink_maker in pairs(old_sink_types) do
+		log_sink_types[name] = sink_maker;
+	end
+	
+	prosody.events.fire_event("logging-reloaded");
+end
+
+reload_logging();
+prosody.events.add_handler("config-reloaded", reload_logging);
+
 --- Definition of built-in logging sinks ---
 
 -- Null sink, must enter log_sink_types *first*
@@ -148,7 +201,7 @@ end
 -- Column width for "source" (used by stdout and console)
 local sourcewidth = 20;
 
-function log_sink_types.stdout()
+function log_sink_types.stdout(config)
 	local timestamps = config.timestamps;
 	
 	if timestamps == true then
@@ -170,7 +223,7 @@ function log_sink_types.stdout()
 end
 
 do
-	local do_pretty_printing = not os_getenv("WINDIR");
+	local do_pretty_printing = true;
 	
 	local logstyles = {};
 	if do_pretty_printing then
@@ -197,10 +250,14 @@ do
 			if timestamps then
 				io_write(os_date(timestamps), " ");
 			end
+			io_write(name, rep(" ", sourcewidth-namelen));
+			setstyle(logstyles[level]);
+			io_write(level);
+			setstyle();
 			if ... then
-				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", format(message, ...), "\n");
+				io_write("\t", format(message, ...), "\n");
 			else
-				io_write(name, rep(" ", sourcewidth-namelen), getstring(logstyles[level], level), "\t", message, "\n");
+				io_write("\t", message, "\n");
 			end
 		end
 	end
@@ -214,18 +271,6 @@ function log_sink_types.file(config)
 		return empty_function;
 	end
 	local write, flush = logfile.write, logfile.flush;
-
-	eventmanager.add_event_hook("reopen-log-files", function ()
-			if logfile then
-				logfile:close();
-			end
-			logfile = io_open(log, "a+");
-			if not logfile then
-				write, flush = empty_function, empty_function;
-			else
-				write, flush = logfile.write, logfile.flush;
-			end
-		end);
 
 	local timestamps = config.timestamps;
 

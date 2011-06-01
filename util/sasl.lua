@@ -12,27 +12,13 @@
 --    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-local md5 = require "util.hashes".md5;
-local log = require "util.logger".init("sasl");
-local st = require "util.stanza";
-local set = require "util.set";
-local array = require "util.array";
-local to_unicode = require "util.encodings".idna.to_unicode;
-
-local tostring = tostring;
 local pairs, ipairs = pairs, ipairs;
-local t_insert, t_concat = table.insert, table.concat;
-local s_match = string.match;
+local t_insert = table.insert;
 local type = type
-local error = error
 local setmetatable = setmetatable;
 local assert = assert;
 local require = require;
 
-require "util.iterators"
-local keys = keys
-
-local array = require "util.array"
 module "sasl"
 
 --[[
@@ -61,72 +47,50 @@ local function registerMechanism(name, backends, f)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-function new(realm, profile, forbidden)
-	local sasl_i = {profile = profile};
-	sasl_i.realm = realm;
-	local s = setmetatable(sasl_i, method);
-	if forbidden == nil then forbidden = {} end
-	s:forbidden(forbidden)
-	return s;
-end
-
--- get a fresh clone with the same realm, profiles and forbidden mechanisms
-function method:clean_clone()
-	return new(self.realm, self.profile, self:forbidden())
-end
-
--- set the forbidden mechanisms
-function method:forbidden( restrict )
-	if restrict then
-		-- set forbidden
-		self.restrict = set.new(restrict);
-	else
-		-- get forbidden
-		return array.collect(self.restrict:items());
-	end
-end
-
--- get a list of possible SASL mechanims to use
-function method:mechanisms()
-	local mechanisms = {}
-	for backend, f in pairs(self.profile) do
-		if backend_mechanism[backend] then
-			for _, mechanism in ipairs(backend_mechanism[backend]) do
-				if not self.restrict:contains(mechanism) then
+function new(realm, profile)
+	local mechanisms = profile.mechanisms;
+	if not mechanisms then
+		mechanisms = {};
+		for backend, f in pairs(profile) do
+			if backend_mechanism[backend] then
+				for _, mechanism in ipairs(backend_mechanism[backend]) do
 					mechanisms[mechanism] = true;
 				end
 			end
 		end
+		profile.mechanisms = mechanisms;
 	end
-	self["possible_mechanisms"] = mechanisms;
-	return array.collect(keys(mechanisms));
+	return setmetatable({ profile = profile, realm = realm, mechs = mechanisms }, method);
+end
+
+-- get a fresh clone with the same realm and profile
+function method:clean_clone()
+	return new(self.realm, self.profile)
+end
+
+-- get a list of possible SASL mechanims to use
+function method:mechanisms()
+	return self.mechs;
 end
 
 -- select a mechanism to use
 function method:select(mechanism)
-	if self.mech_i then
-		return false;
+	if not self.selected and self.mechs[mechanism] then
+		self.selected = mechanism;
+		return true;
 	end
-	
-	self.mech_i = mechanisms[mechanism]
-	if self.mech_i == nil then 
-		return false;
-	end
-	return true;
 end
 
 -- feed new messages to process into the library
 function method:process(message)
 	--if message == "" or message == nil then return "failure", "malformed-request" end
-	return self.mech_i(self, message);
+	return mechanisms[self.selected](self, message);
 end
 
 -- load the mechanisms
-local load_mechs = {"plain", "digest-md5", "anonymous", "scram"}
-for _, mech in ipairs(load_mechs) do
-	local name = "util.sasl."..mech;
-	local m = require(name);
-	m.init(registerMechanism)
-end
+require "util.sasl.plain"     .init(registerMechanism);
+require "util.sasl.digest-md5".init(registerMechanism);
+require "util.sasl.anonymous" .init(registerMechanism);
+require "util.sasl.scram"     .init(registerMechanism);
 
 return _M;

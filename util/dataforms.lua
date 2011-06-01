@@ -67,9 +67,25 @@ function form_t.form(layout, data, formtype)
 					form:tag("value"):text(line):up();
 				end
 			elseif field_type == "list-single" then
+				local has_default = false;
 				for _, val in ipairs(value) do
 					if type(val) == "table" then
 						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+						if val.default and (not has_default) then
+							form:tag("value"):text(val.value):up();
+							has_default = true;
+						end
+					else
+						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					end
+				end
+			elseif field_type == "list-multi" then
+				for _, val in ipairs(value) do
+					if type(val) == "table" then
+						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+						if val.default then
+							form:tag("value"):text(val.value):up();
+						end
 					else
 						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
 					end
@@ -110,7 +126,7 @@ function form_t.data(layout, stanza)
 	return data;
 end
 
-field_readers["text-single"] = 
+field_readers["text-single"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then
@@ -118,13 +134,13 @@ field_readers["text-single"] =
 		end
 	end
 
-field_readers["text-private"] = 
+field_readers["text-private"] =
 	field_readers["text-single"];
 
 field_readers["jid-single"] =
 	field_readers["text-single"];
 
-field_readers["jid-multi"] = 
+field_readers["jid-multi"] =
 	function (field_tag)
 		local result = {};
 		for value_tag in field_tag:childtags() do
@@ -135,7 +151,7 @@ field_readers["jid-multi"] =
 		return result;
 	end
 
-field_readers["text-multi"] = 
+field_readers["text-multi"] =
 	function (field_tag)
 		local result = {};
 		for value_tag in field_tag:childtags() do
@@ -149,7 +165,18 @@ field_readers["text-multi"] =
 field_readers["list-single"] =
 	field_readers["text-single"];
 
-field_readers["boolean"] = 
+field_readers["list-multi"] =
+	function (field_tag)
+		local result = {};
+		for value_tag in field_tag:childtags() do
+			if value_tag.name == "value" then
+				result[#result+1] = value_tag[1];
+			end
+		end
+		return result;
+	end
+
+field_readers["boolean"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then
@@ -158,10 +185,10 @@ field_readers["boolean"] =
 			else
 				return false;
 			end
-		end		
+		end
 	end
 
-field_readers["hidden"] = 
+field_readers["hidden"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then

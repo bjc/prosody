@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.3"
+#define MODULE_VERSION "0.3.5"
 
 #include <stdlib.h>
 #include <math.h>
@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <fcntl.h>
 
 #include <syslog.h>
@@ -359,6 +360,62 @@ int lc_setgid(lua_State* L)
 	return 2;
 }
 
+int lc_initgroups(lua_State* L)
+{
+	int ret;
+	gid_t gid;
+	struct passwd *p;
+
+	if(!lua_isstring(L, 1))
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, "invalid-username");
+		return 2;
+	}
+	p = getpwnam(lua_tostring(L, 1));
+	if(!p)
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, "no-such-user");
+		return 2;
+	}
+	if(lua_gettop(L) < 2)
+		lua_pushnil(L);
+	switch(lua_type(L, 2))
+	{
+	case LUA_TNIL:
+		gid = p->pw_gid;
+		break;
+	case LUA_TNUMBER:
+		gid = lua_tointeger(L, 2);
+		break;
+	default:
+		lua_pushnil(L);
+		lua_pushstring(L, "invalid-gid");
+		return 2;
+	}
+	ret = initgroups(lua_tostring(L, 1), gid);
+	switch(errno)
+	{
+	case 0:
+		lua_pushboolean(L, 1);
+		lua_pushnil(L);
+		break;
+	case ENOMEM:
+		lua_pushnil(L);
+		lua_pushstring(L, "no-memory");
+		break;
+	case EPERM:
+		lua_pushnil(L);
+		lua_pushstring(L, "permission-denied");
+		break;
+	default:
+		lua_pushnil(L);
+		lua_pushstring(L, "unknown-error");
+	}
+	return 2;
+}
+
 int lc_umask(lua_State* L)
 {
 	char old_mode_string[7];
@@ -497,6 +554,29 @@ int lc_abort(lua_State* L)
 	return 0;
 }
 
+int lc_uname(lua_State* L)
+{
+	struct utsname uname_info;
+	if(uname(&uname_info) != 0)
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	lua_newtable(L);
+	lua_pushstring(L, uname_info.sysname);
+	lua_setfield(L, -2, "sysname");
+	lua_pushstring(L, uname_info.nodename);
+	lua_setfield(L, -2, "nodename");
+	lua_pushstring(L, uname_info.release);
+	lua_setfield(L, -2, "release");
+	lua_pushstring(L, uname_info.version);
+	lua_setfield(L, -2, "version");
+	lua_pushstring(L, uname_info.machine);
+	lua_setfield(L, -2, "machine");
+	return 1;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -517,6 +597,7 @@ int luaopen_util_pposix(lua_State *L)
 
 		{ "setuid", lc_setuid },
 		{ "setgid", lc_setgid },
+		{ "initgroups", lc_initgroups },
 
 		{ "umask", lc_umask },
 
@@ -524,6 +605,8 @@ int luaopen_util_pposix(lua_State *L)
 
 		{ "setrlimit", lc_setrlimit },
 		{ "getrlimit", lc_getrlimit },
+
+		{ "uname", lc_uname },
 
 		{ NULL, NULL }
 	};
@@ -537,4 +620,4 @@ int luaopen_util_pposix(lua_State *L)
 	lua_setfield(L, -2, "_VERSION");
 
 	return 1;
-};
+}

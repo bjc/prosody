@@ -9,7 +9,7 @@
 
 local host = module:get_host();
 
-local registration_watchers = module:get_option("registration_watchers") 
+local registration_watchers = module:get_option("registration_watchers")
 	or module:get_option("admins") or {};
 
 local registration_alert = module:get_option("registration_notification") or "User $username just registered on $host from $ip";
@@ -21,7 +21,7 @@ module:hook("user-registered",
 		module:log("debug", "Notifying of new registration");
 		local message = st.message{ type = "chat", from = host }
 					:tag("body")
-					:text(registration_alert:gsub("%$(%w+)", 
+					:text(registration_alert:gsub("%$(%w+)",
 						function (v) return user[v] or user.session and user.session[v] or nil; end));
 		
 		for _, jid in ipairs(registration_watchers) do

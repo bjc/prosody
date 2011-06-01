@@ -8,9 +8,11 @@
 
 
 local httpserver = require "net.httpserver";
+local lfs = require "lfs";
 
 local open = io.open;
 local t_concat = table.concat;
+local stat = lfs.attributes;
 
 local http_base = config.get("*", "core", "http_path") or "www_files";
 
@@ -48,7 +50,14 @@ local function preprocess_path(path)
 end
 
 function serve_file(path)
-	local f, err = open(http_base..path, "rb");
+	local full_path = http_base..path;
+	if stat(full_path, "mode") == "directory" then
+		if stat(full_path.."/index.html", "mode") == "file" then
+			return serve_file(path.."/index.html");
+		end
+		return response_403;
+	end
+	local f, err = open(full_path, "rb");
 	if not f then return response_404; end
 	local data = f:read("*a");
 	f:close();

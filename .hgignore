@@ -9,6 +9,7 @@ prosody.cfg.lua
 prosody.version
 config.unix
 *.patch
+*.diff
 *.orig
 *.rej
 *.save
@@ -21,3 +22,7 @@ config.unix
 *.log
 *.err
 *.debug
+*.dll
+*.exp
+*.lib
+*.obj

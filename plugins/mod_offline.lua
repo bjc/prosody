@@ -15,7 +15,7 @@ local jid_split = require "util.jid".split;
 
 module:add_feature("msgoffline");
 
-module:hook("message/offline/store", function(event)
+module:hook("message/offline/handle", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local to = stanza.attr.to;
 	local node, host;
@@ -29,13 +29,14 @@ module:hook("message/offline/store", function(event)
 	local result = datamanager.list_append(node, host, "offline", st.preserialize(stanza));
 	stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
 	
-	return true;
+	return result;
 end);
 
 module:hook("message/offline/broadcast", function(event)
 	local origin = event.origin;
+
 	local node, host = origin.username, origin.host;
-	
+
 	local data = datamanager.list_load(node, host, "offline");
 	if not data then return true; end
 	for _, stanza in ipairs(data) do
@@ -45,12 +46,6 @@ module:hook("message/offline/broadcast", function(event)
 		stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
 		origin.send(stanza);
 	end
+	datamanager.list_store(node, host, "offline", nil);
 	return true;
-end);
-
-module:hook("message/offline/delete", function(event)
-	local origin = event.origin;
-	local node, host = origin.username, origin.host;
-
-	return datamanager.list_store(node, host, "offline", nil);
 end);

@@ -1,0 +1,322 @@
+
+--[[
+
+DB Tables:
+	Prosody - key-value, map
+		| host | user | store | key | type | value |
+	ProsodyArchive - list
+		| host | user | store | key | time | stanzatype | jsonvalue |
+
+Mapping:
+	Roster - Prosody
+		| host | user | "roster" | "contactjid" | type | value |
+		| host | user | "roster" | NULL | "json" | roster[false] data |
+	Account - Prosody
+		| host | user | "accounts" | "username" | type | value |
+
+	Offline - ProsodyArchive
+		| host | user | "offline" | "contactjid" | time | "message" | json|XML |
+
+]]
+
+local type = type;
+local tostring = tostring;
+local tonumber = tonumber;
+local pairs = pairs;
+local next = next;
+local setmetatable = setmetatable;
+local xpcall = xpcall;
+local json = require "util.json";
+
+local DBI;
+local connection;
+local host,user,store = module.host;
+local params = module:get_option("sql");
+
+local resolve_relative_path = require "core.configmanager".resolve_relative_path;
+
+local function test_connection()
+	if not connection then return nil; end
+	if connection:ping() then
+		return true;
+	else
+		module:log("debug", "Database connection closed");
+		connection = nil;
+	end
+end
+local function connect()
+	if not test_connection() then
+		prosody.unlock_globals();
+		local dbh, err = DBI.Connect(
+			params.driver, params.database,
+			params.username, params.password,
+			params.host, params.port
+		);
+		prosody.lock_globals();
+		if not dbh then
+			module:log("debug", "Database connection failed: %s", tostring(err));
+			return nil, err;
+		end
+		module:log("debug", "Successfully connected to database");
+		dbh:autocommit(false); -- don't commit automatically
+		connection = dbh;
+		return connection;
+	end
+end
+
+local function create_table()
+	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
+	if params.driver == "PostgreSQL" then
+		create_sql = create_sql:gsub("`", "\"");
+	end
+	
+	local stmt = connection:prepare(create_sql);
+	if stmt then
+		local ok = stmt:execute();
+		local commit_ok = connection:commit();
+		if ok and commit_ok then
+			module:log("info", "Initialized new %s database with prosody table", params.driver);
+			local index_sql = "CREATE INDEX `prosody_index` ON `prosody` (`host`, `user`, `store`, `key`)";
+			if params.driver == "PostgreSQL" then
+				index_sql = index_sql:gsub("`", "\"");
+			elseif params.driver == "MySQL" then
+				index_sql = index_sql:gsub("`([,)])", "`(20)%1");
+			end
+			local stmt, err = connection:prepare(index_sql);
+			local ok, commit_ok, commit_err;
+			if stmt then
+				ok, err = stmt:execute();
+				commit_ok, commit_err = connection:commit();
+			end
+			if not(ok and commit_ok) then
+				module:log("warn", "Failed to create index (%s), lookups may not be optimised", err or commit_err);
+			end
+		end
+	end
+end
+
+do -- process options to get a db connection
+	local ok;
+	prosody.unlock_globals();
+	ok, DBI = pcall(require, "DBI");
+	if not ok then
+		package.loaded["DBI"] = {};
+		module:log("error", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
+		module:log("error", "More information on installing LuaDBI can be found at http://prosody.im/doc/depends#luadbi");
+	end
+	prosody.lock_globals();
+	if not ok or not DBI.Connect then
+		return; -- Halt loading of this module
+	end
+
+	params = params or { driver = "SQLite3" };
+	
+	if params.driver == "SQLite3" then
+		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
+	end
+	
+	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
+	
+	assert(connect());
+	
+	-- Automatically create table, ignore failure (table probably already exists)
+	create_table();
+end
+
+local function serialize(value)
+	local t = type(value);
+	if t == "string" or t == "boolean" or t == "number" then
+		return t, tostring(value);
+	elseif t == "table" then
+		local value,err = json.encode(value);
+		if value then return "json", value; end
+		return nil, err;
+	end
+	return nil, "Unhandled value type: "..t;
+end
+local function deserialize(t, value)
+	if t == "string" then return value;
+	elseif t == "boolean" then
+		if value == "true" then return true;
+		elseif value == "false" then return false; end
+	elseif t == "number" then return tonumber(value);
+	elseif t == "json" then
+		return json.decode(value);
+	end
+end
+
+local function getsql(sql, ...)
+	if params.driver == "PostgreSQL" then
+		sql = sql:gsub("`", "\"");
+	end
+	-- do prepared statement stuff
+	local stmt, err = connection:prepare(sql);
+	if not stmt and not test_connection() then error("connection failed"); end
+	if not stmt then module:log("error", "QUERY FAILED: %s %s", err, debug.traceback()); return nil, err; end
+	-- run query
+	local ok, err = stmt:execute(host or "", user or "", store or "", ...);
+	if not ok and not test_connection() then error("connection failed"); end
+	if not ok then return nil, err; end
+	
+	return stmt;
+end
+local function setsql(sql, ...)
+	local stmt, err = getsql(sql, ...);
+	if not stmt then return stmt, err; end
+	return stmt:affected();
+end
+local function transact(...)
+	-- ...
+end
+local function rollback(...)
+	if connection then connection:rollback(); end -- FIXME check for rollback error?
+	return ...;
+end
+local function commit(...)
+	if not connection:commit() then return nil, "SQL commit failed"; end
+	return ...;
+end
+
+local function keyval_store_get()
+	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
+	if not stmt then return rollback(nil, err); end
+	
+	local haveany;
+	local result = {};
+	for row in stmt:rows(true) do
+		haveany = true;
+		local k = row.key;
+		local v = deserialize(row.type, row.value);
+		if k and v then
+			if k ~= "" then result[k] = v; elseif type(v) == "table" then
+				for a,b in pairs(v) do
+					result[a] = b;
+				end
+			end
+		end
+	end
+	return commit(haveany and result or nil);
+end
+local function keyval_store_set(data)
+	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
+	if not affected then return rollback(affected, err); end
+	
+	if data and next(data) ~= nil then
+		local extradata = {};
+		for key, value in pairs(data) do
+			if type(key) == "string" and key ~= "" then
+				local t, value = serialize(value);
+				if not t then return rollback(t, value); end
+				local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
+				if not ok then return rollback(ok, err); end
+			else
+				extradata[key] = value;
+			end
+		end
+		if next(extradata) ~= nil then
+			local t, extradata = serialize(extradata);
+			if not t then return rollback(t, extradata); end
+			local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", "", t, extradata);
+			if not ok then return rollback(ok, err); end
+		end
+	end
+	return commit(true);
+end
+
+local keyval_store = {};
+keyval_store.__index = keyval_store;
+function keyval_store:get(username)
+	user,store = username,self.store;
+	if not connection and not connect() then return nil, "Unable to connect to database"; end
+	local success, ret, err = xpcall(keyval_store_get, debug.traceback);
+	if not connection and connect() then
+		success, ret, err = xpcall(keyval_store_get, debug.traceback);
+	end
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+function keyval_store:set(username, data)
+	user,store = username,self.store;
+	if not connection and not connect() then return nil, "Unable to connect to database"; end
+	local success, ret, err = xpcall(function() return keyval_store_set(data); end, debug.traceback);
+	if not connection and connect() then
+		success, ret, err = xpcall(function() return keyval_store_set(data); end, debug.traceback);
+	end
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+
+local function map_store_get(key)
+	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	if not stmt then return rollback(nil, err); end
+	
+	local haveany;
+	local result = {};
+	for row in stmt:rows(true) do
+		haveany = true;
+		local k = row.key;
+		local v = deserialize(row.type, row.value);
+		if k and v then
+			if k ~= "" then result[k] = v; elseif type(v) == "table" then
+				for a,b in pairs(v) do
+					result[a] = b;
+				end
+			end
+		end
+	end
+	return commit(haveany and result[key] or nil);
+end
+local function map_store_set(key, data)
+	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	if not affected then return rollback(affected, err); end
+	
+	if data and next(data) ~= nil then
+		if type(key) == "string" and key ~= "" then
+			local t, value = serialize(data);
+			if not t then return rollback(t, value); end
+			local ok, err = setsql("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
+			if not ok then return rollback(ok, err); end
+		else
+			-- TODO non-string keys
+		end
+	end
+	return commit(true);
+end
+
+local map_store = {};
+map_store.__index = map_store;
+function map_store:get(username, key)
+	user,store = username,self.store;
+	local success, ret, err = xpcall(function() return map_store_get(key); end, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+function map_store:set(username, key, data)
+	user,store = username,self.store;
+	local success, ret, err = xpcall(function() return map_store_set(key, data); end, debug.traceback);
+	if success then return ret, err; else return rollback(nil, ret); end
+end
+
+local list_store = {};
+list_store.__index = list_store;
+function list_store:scan(username, from, to, jid, typ)
+	user,store = username,self.store;
+	
+	local cols = {"from", "to", "jid", "typ"};
+	local vals = { from ,  to ,  jid ,  typ };
+	local stmt, err;
+	local query = "SELECT * FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=?";
+	
+	query = query.." ORDER BY time";
+	--local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
+	
+	return nil, "not-implemented"
+end
+
+local driver = { name = "sql" };
+
+function driver:open(store, typ)
+	if not typ then -- default key-value store
+		return setmetatable({ store = store }, keyval_store);
+	end
+	return nil, "unsupported-store";
+end
+
+module:add_item("data-driver", driver);

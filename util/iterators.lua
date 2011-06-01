@@ -73,7 +73,7 @@ function count(f, s, var)
 		var = ret[1];
 	        if var == nil then break; end
 		x = x + 1;
-	end	
+	end
 	
 	return x;
 end
@@ -90,6 +90,15 @@ function head(n, f, s, var)
 	end, s;
 end
 
+-- Skip the first n items an iterator returns
+function skip(n, f, s, var)
+	for i=1,n do
+		var = f(s, var);
+	end
+	return f, s, var;
+end
+
+-- Return the last n items an iterator returns
 function tail(n, f, s, var)
 	local results, count = {}, 0;
 	while true do
@@ -122,7 +131,7 @@ function it2array(f, s, var)
 	return t;
 end
 
--- Treat the return of an iterator as key,value pairs, 
+-- Treat the return of an iterator as key,value pairs,
 -- and build a table
 function it2table(f, s, var)
 	local t, var = {};

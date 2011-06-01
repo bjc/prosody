@@ -10,31 +10,33 @@ module.host = "*" -- Global module
 
 local hosts = _G.hosts;
 local lxp = require "lxp";
-local init_xmlhandlers = require "core.xmlhandlers"
-local server = require "net.server";
+local new_xmpp_stream = require "util.xmppstream".new;
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
 local new_uuid = require "util.uuid".generate;
-local fire_event = require "core.eventmanager".fire_event;
+local fire_event = prosody.events.fire_event;
 local core_process_stanza = core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
+local timer = require "util.timer";
 
+local xmlns_streams = "http://etherx.jabber.org/streams";
+local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a literal in session.send)
-local stream_callbacks = { stream_ns = "http://jabber.org/protocol/httpbind", stream_tag = "body", default_ns = "jabber:client" };
+
+local stream_callbacks = {
+	stream_ns = xmlns_bosh, stream_tag = "body", default_ns = "jabber:client" };
 
 local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
 local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
 local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 5;
 local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
-local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
-local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
 local cross_domain = module:get_option("cross_domain_bosh");
 if cross_domain then
@@ -50,6 +52,22 @@ if cross_domain then
 	if type(cross_domain) == "string" then
 		default_headers["Access-Control-Allow-Origin"] = cross_domain;
 	end
+end
+
+local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
+
+local function get_ip_from_request(request)
+	local ip = request.handler:ip();
+	local forwarded_for = request.headers["x-forwarded-for"];
+	if forwarded_for then
+		forwarded_for = forwarded_for..", "..ip;
+		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
+			if not trusted_proxies[forwarded_ip] then
+				ip = forwarded_ip;
+			end
+		end
+	end
+	return ip;
 end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
@@ -83,7 +101,10 @@ end
 function handle_request(method, body, request)
 	if (not body) or request.method ~= "POST" then
 		if request.method == "OPTIONS" then
-			return { headers = default_headers, body = "" };
+			local headers = {};
+			for k,v in pairs(default_headers) do headers[k] = v; end
+			headers["Content-Type"] = nil;
+			return { headers = headers, body = "" };
 		else
 			return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
 		end
@@ -97,12 +118,19 @@ function handle_request(method, body, request)
 	request.log = log;
 	request.on_destroy = on_destroy_request;
 	
-	local parser = lxp.new(init_xmlhandlers(request, stream_callbacks), "\1");
-	
-	parser:parse(body);
+	local stream = new_xmpp_stream(request, stream_callbacks);
+	-- stream:feed() calls the stream_callbacks, so all stanzas in
+	-- the body are processed in this next line before it returns.
+	stream:feed(body);
 	
 	local session = sessions[request.sid];
 	if session then
+               -- Session was marked as inactive, since we have
+               -- a request open now, unmark it
+               if inactive_sessions[session] then
+                       inactive_sessions[session] = nil;
+               end
+
 		local r = session.requests;
 		log("debug", "Session %s has %d out of %d requests open", request.sid, #r, session.bosh_hold);
 		log("debug", "and there are %d things in the send_buffer", #session.send_buffer);
@@ -132,11 +160,6 @@ function handle_request(method, body, request)
 				request.reply_before = os_time() + session.bosh_wait;
 				waiting_requests[request] = true;
 			end
-			if inactive_sessions[session] then
-				-- Session was marked as inactive, since we have
-				-- a request open now, unmark it
-				inactive_sessions[session] = nil;
-			end
 		end
 		
 		return true; -- Inform httpserver we shall reply later
@@ -146,11 +169,42 @@ end
 
 local function bosh_reset_stream(session) session.notopen = true; end
 
+local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
+
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
-	session_close_reply.attr.condition = reason;
+	
+	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+		["xmlns:streams"] = xmlns_streams });
+	
+
+	if reason then
+		close_reply.attr.condition = "remote-stream-error";
+		if type(reason) == "string" then -- assume stream error
+			close_reply:tag("stream:error")
+				:tag(reason, {xmlns = xmlns_xmpp_streams});
+		elseif type(reason) == "table" then
+			if reason.condition then
+				close_reply:tag("stream:error")
+					:tag(reason.condition, stream_xmlns_attr):up();
+				if reason.text then
+					close_reply:tag("text", stream_xmlns_attr):text(reason.text):up();
+				end
+				if reason.extra then
+					close_reply:add_child(reason.extra);
+				end
+			elseif reason.name then -- a stanza
+				close_reply = reason;
+			end
+		end
+		log("info", "Disconnecting client, <stream:error> is: %s", tostring(close_reply));
+	end
+
+	local session_close_response = { headers = default_headers, body = tostring(close_reply) };
+
+	--FIXME: Quite sure we shouldn't reply to all requests with the error
 	for _, held_request in ipairs(session.requests) do
-		held_request:send(session_close_reply);
+		held_request:send(session_close_response);
 		held_request:destroy();
 	end
 	sessions[session.sid]  = nil;
@@ -168,28 +222,35 @@ function stream_callbacks.streamopened(request, attr)
 		if not hosts[attr.to] then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
-			session_close_reply.body.attr.condition = "host-unknown";
-			request:send(session_close_reply);
-			request.notopen = nil
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:streams"] = xmlns_streams, condition = "host-unknown" });
+			request:send(tostring(close_reply));
 			return;
 		end
 		
 		-- New session
 		sid = new_uuid();
 		local session = {
-			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
+			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid), host = attr.to,
 			bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid,
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza,
-			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure
+			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
+			ip = get_ip_from_request(request);
 		};
 		sessions[sid] = session;
 		
+		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 		local r, send_buffer = session.requests, session.send_buffer;
 		local response = { headers = default_headers }
 		function session.send(s)
+			-- We need to ensure that outgoing stanzas have the jabber:client xmlns
+			if s.attr and not s.attr.xmlns then
+				s = st.clone(s);
+				s.attr.xmlns = "jabber:client";
+			end
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
 			if oldest_request then
@@ -213,6 +274,7 @@ function stream_callbacks.streamopened(request, attr)
 				t_insert(session.send_buffer, tostring(s));
 				log("debug", "There are now %d things in the send_buffer", #session.send_buffer);
 			end
+			return true;
 		end
 		
 		-- Send creation response
@@ -222,9 +284,17 @@ function stream_callbacks.streamopened(request, attr)
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
 		local response = st.stanza("body", { xmlns = xmlns_bosh,
-									inactivity = tostring(BOSH_DEFAULT_INACTIVITY), polling = tostring(BOSH_DEFAULT_POLLING), requests = tostring(BOSH_DEFAULT_REQUESTS), hold = tostring(session.bosh_hold), maxpause = "120",
-									sid = sid, authid = sid, ver  = '1.6', from = session.host, secure = 'true', ["xmpp:version"] = "1.0",
-									["xmlns:xmpp"] = "urn:xmpp:xbosh", ["xmlns:stream"] = "http://etherx.jabber.org/streams" }):add_child(features);
+			wait = attr.wait,
+			inactivity = tostring(BOSH_DEFAULT_INACTIVITY),
+			polling = tostring(BOSH_DEFAULT_POLLING),
+			requests = tostring(BOSH_DEFAULT_REQUESTS),
+			hold = tostring(session.bosh_hold),
+			sid = sid, authid = sid,
+			ver  = '1.6', from = session.host,
+			secure = 'true', ["xmpp:version"] = "1.0",
+			["xmlns:xmpp"] = "urn:xmpp:xbosh",
+			["xmlns:stream"] = "http://etherx.jabber.org/streams"
+		}):add_child(features);
 		request:send{ headers = default_headers, body = tostring(response) };
 		
 		request.sid = sid;
@@ -249,6 +319,7 @@ function stream_callbacks.streamopened(request, attr)
 			-- Repeated, ignore
 			session.log("debug", "rid repeated (on request %s), ignoring: %s (diff %d)", request.id, session.rid, diff);
 			request.notopen = nil;
+			request.ignore = true;
 			request.sid = sid;
 			t_insert(session.requests, request);
 			return;
@@ -277,14 +348,29 @@ function stream_callbacks.streamopened(request, attr)
 end
 
 function stream_callbacks.handlestanza(request, stanza)
+	if request.ignore then return; end
 	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
 	local session = sessions[request.sid];
 	if session then
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
 		end
-		session.ip = request.handler:ip();
 		core_process_stanza(session, stanza);
+	end
+end
+
+function stream_callbacks.error(request, error)
+	log("debug", "Error parsing BOSH request payload; %s", error);
+	if not request.sid then
+		request:send({ headers = default_headers, status = "400 Bad Request" });
+		return;
+	end
+	
+	local session = sessions[request.sid];
+	if error == "stream-error" then -- Remote stream error, we close normally
+		session:close();
+	else
+		session:close({ condition = "bad-format", text = "Error processing stream" });
 	end
 end
 
@@ -325,13 +411,14 @@ function on_timer()
 		dead_sessions[i] = nil;
 		sm_destroy_session(session, "BOSH client silent for over "..session.bosh_max_inactive.." seconds");
 	end
+	return 1;
 end
 
 
 local function setup()
 	local ports = module:get_option("bosh_ports") or { 5280 };
 	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
-	server.addtimer(on_timer);
+	timer.add_task(1, on_timer);
 end
 if prosody.start_time then -- already started
 	setup();

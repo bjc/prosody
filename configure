@@ -11,13 +11,16 @@ LUA_BINDIR="/usr/bin"
 LUA_INCDIR="/usr/include"
 LUA_LIBDIR="/usr/lib"
 IDN_LIB=idn
+ICU_FLAGS="-licui18n -licudata -licuuc"
 OPENSSL_LIB=crypto
 CC=gcc
+CXX=g++
 LD=gcc
 
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
 
+IDN_LIBRARY=idn
 # Help
 
 show_help() {
@@ -26,7 +29,7 @@ Configure Prosody prior to building.
 
 --help                      This help.
 --ostype=OS                 Use one of the OS presets.
-                            May be one of: debian, macosx, linux
+                            May be one of: debian, macosx, linux, freebsd
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
@@ -43,6 +46,9 @@ Configure Prosody prior to building.
                             Default is \$LUA_DIR/lib
 --with-idn=LIB              The name of the IDN library to link with.
                             Default is $IDN_LIB
+--idn-library=(idn|icu)		 Select library to use for IDNA functionality.
+									 idn: use GNU libidn (default)
+									 icu: use ICU from IBM
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
@@ -85,6 +91,37 @@ do
    --ostype=*)
       OSTYPE="$value"
       OSTYPE_SET=yes
+      if [ "$OSTYPE" = "debian" ]
+      then LUA_SUFFIX="5.1";
+	LUA_SUFFIX_SET=yes
+	LUA_INCDIR=/usr/include/lua5.1;
+	LUA_INCDIR_SET=yes
+	fi
+	if [ "$OSTYPE" = "macosx" ]
+	then LUA_INCDIR=/usr/local/include;
+	LUA_INCDIR_SET=yes
+	LUA_LIBDIR=/usr/local/lib
+	LUA_LIBDIR_SET=yes
+	LDFLAGS="-bundle -undefined dynamic_lookup"
+	fi
+        if [ "$OSTYPE" = "linux" ]
+        then LUA_INCDIR=/usr/local/include;
+        LUA_INCDIR_SET=yes
+        LUA_LIBDIR=/usr/local/lib
+        LUA_LIBDIR_SET=yes
+        CFLAGS="-Wall -fPIC"
+        LDFLAGS="-shared"
+        fi
+        if [ "$OSTYPE" = "freebsd" ]
+        then LUA_INCDIR="/usr/local/include/lua51"
+        LUA_INCDIR_SET=yes
+        CFLAGS="-Wall -fPIC -I/usr/local/include"
+        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+        LUA_SUFFIX="-5.1"
+        LUA_SUFFIX_SET=yes
+        LUA_DIR=/usr/local
+        LUA_DIR_SET=yes
+        fi
       ;;
    --datadir=*)
    	DATADIR="$value"
@@ -111,6 +148,9 @@ do
    --with-idn=*)
       IDN_LIB="$value"
       ;;
+	--idn-library=*)
+		IDN_LIBRARY="$value"
+		;;
    --with-ssl=*)
       OPENSSL_LIB="$value"
       ;;
@@ -133,32 +173,6 @@ do
    esac
    shift
 done
-
-if [ "$OSTYPE_SET" = "yes" ]
-then
-	if [ "$OSTYPE" = "debian" ]
-	then LUA_SUFFIX="5.1";
-	LUA_SUFFIX_SET=yes
-	LUA_INCDIR=/usr/include/lua5.1;
-	LUA_INCDIR_SET=yes
-	fi
-	if [ "$OSTYPE" = "macosx" ]
-	then LUA_INCDIR=/usr/local/include;
-	LUA_INCDIR_SET=yes
-	LUA_LIBDIR=/usr/local/lib
-	LUA_LIBDIR_SET=yes
-	CFLAGS="-Wall"
-	LDFLAGS="-bundle -undefined dynamic_lookup"
-	fi
-        if [ "$OSTYPE" = "linux" ]
-        then LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yes
-        LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yes
-        CFLAGS="-Wall -fPIC"
-        LDFLAGS="-shared"
-        fi
-fi
 
 if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
 then
@@ -255,6 +269,16 @@ then
    LUA_BINDIR="$LUA_DIR/bin"
 fi
 
+if [ "$IDN_LIBRARY" = "icu" ]
+then
+	IDNA_LIBS="$ICU_FLAGS"
+	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
+fi
+if [ "$IDN_LIBRARY" = "idn" ] 
+then
+	IDNA_LIBS="-l$IDN_LIB"
+fi
+
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
 if [ -e "$lua_h" ]
@@ -305,10 +329,12 @@ LUA_LIBDIR=$LUA_LIBDIR
 LUA_BINDIR=$LUA_BINDIR
 REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
+IDNA_LIBS=$IDNA_LIBS
 OPENSSL_LIB=$OPENSSL_LIB
 CFLAGS=$CFLAGS
 LDFLAGS=$LDFLAGS
 CC=$CC
+CXX=$CXX
 LD=$LD
 
 EOF

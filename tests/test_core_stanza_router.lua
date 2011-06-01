@@ -66,7 +66,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_post_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_handled = true;		
+			target_handled = true;
 		end
 
 		env.hosts = hosts;
@@ -84,7 +84,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_route_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_routed = true;		
+			target_routed = true;
 		end
 
 		function env.core_post_stanza(...) env.core_route_stanza(...); end
@@ -104,7 +104,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_route_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_routed = true;		
+			target_routed = true;
 		end
 
 		function env.core_post_stanza(...)
@@ -129,7 +129,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_route_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_routed = true;		
+			target_routed = true;
 		end
 
 		function env.core_post_stanza(...)
@@ -151,7 +151,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_route_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, s2sin_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_routed = true;		
+			target_routed = true;
 		end
 
 		function env.core_post_stanza(...)
@@ -173,7 +173,7 @@ function core_process_stanza(core_process_stanza, u)
 		function env.core_post_stanza(p_origin, p_stanza)
 			assert_equal(p_origin, local_user_session, "origin of handled stanza is not correct");
 			assert_equal(p_stanza, msg, "handled stanza is not correct one: "..p_stanza:pretty_print());
-			target_handled = true;		
+			target_handled = true;
 		end
 
 		env.hosts = hosts;

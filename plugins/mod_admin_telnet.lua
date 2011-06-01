@@ -27,7 +27,13 @@ local default_env_mt = { __index = def_env };
 prosody.console = { commands = commands, env = def_env };
 
 local function redirect_output(_G, session)
-	return setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end, __newindex = function (t, k, v) rawset(_G, k, v); end });
+	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
+	env.dofile = function(name)
+		local f, err = loadfile(name);
+		if not f then return f, err; end
+		return setfenv(f, env)();
+	end;
+	return env;
 end
 
 console = {};
@@ -36,7 +42,13 @@ function console:new_session(conn)
 	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t) w(tostring(t)); end;
-			print = function (t) w("| "..tostring(t).."\n"); end;
+			print = function (...)
+				local t = {};
+				for i=1,select("#", ...) do
+					t[i] = tostring(select(i, ...));
+				end
+				w("| "..table.concat(t, "\t").."\n");
+			end;
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
@@ -148,7 +160,7 @@ end
 commands.quit, commands.exit = commands.bye, commands.bye;
 
 commands["!"] = function (session, data)
-	if data:match("^!!") then
+	if data:match("^!!") and session.env._ then
 		session.print("!> "..session.env._);
 		return console_listener.onincoming(session.conn, session.env._);
 	end
@@ -165,6 +177,7 @@ commands["!"] = function (session, data)
 	session.print("Sorry, not sure what you want");
 end
 
+
 function commands.help(session, data)
 	local print = session.print;
 	local section = data:match("^help (%w+)");
@@ -175,6 +188,7 @@ function commands.help(session, data)
 		print [[c2s - Commands to manage local client-to-server sessions]]
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
+		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
@@ -191,6 +205,10 @@ function commands.help(session, data)
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
 		print [[module:list(host) - List the modules loaded on the specified host]]
+	elseif section == "host" then
+		print [[host:activate(hostname) - Activates the specified host]]
+		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
+		print [[host:list() - List the currently-activated hosts]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -239,8 +257,8 @@ function def_env.server:uptime()
 	local hours = t%24;
 	t = (t - hours)/24;
 	local days = t;
-	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)", 
-		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "", 
+	return true, string.format("This server has been running for %d day%s, %d hour%s and %d minute%s (since %s)",
+		days, (days ~= 1 and "s") or "", hours, (hours ~= 1 and "s") or "",
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
@@ -508,11 +526,11 @@ function def_env.s2s:show(match_jid)
 				end
 			end
 		end	
-		local subhost_filter = function (h) 
+		local subhost_filter = function (h)
 				return (match_jid and h:match(match_jid));
 			end
 		for session in pairs(incoming_s2s) do
-			if session.to_host == host and ((not match_jid) or host:match(match_jid) 
+			if session.to_host == host and ((not match_jid) or host:match(match_jid)
 				or (session.from_host and session.from_host:match(match_jid))
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
@@ -555,7 +573,7 @@ function def_env.s2s:close(from, to)
 	if hosts[from] and not hosts[to] then
 		-- Is an outgoing connection
 		local session = hosts[from].s2sout[to];
-		if not session then 
+		if not session then
 			print("No outgoing connection from "..from.." to "..to)
 		else
 			(session.close or s2smanager.destroy_session)(session);
@@ -586,31 +604,12 @@ function def_env.s2s:close(from, to)
 end
 
 def_env.host = {}; def_env.hosts = def_env.host;
-function def_env.host:activate(hostname, config)
-	local hostmanager_activate = require "core.hostmanager".activate;
-	if hosts[hostname] then
-		return false, "The host "..tostring(hostname).." is already activated";
-	end
-	
-	local defined_hosts = config or configmanager.getconfig();
-	if not config and not defined_hosts[hostname] then
-		return false, "Couldn't find "..tostring(hostname).." defined in the config, perhaps you need to config:reload()?";
-	end
-	hostmanager_activate(hostname, config or defined_hosts[hostname]);
-	return true, "Host "..tostring(hostname).." activated";
-end
 
+function def_env.host:activate(hostname, config)
+	return hostmanager.activate(hostname, config);
+end
 function def_env.host:deactivate(hostname, reason)
-	local hostmanager_deactivate = require "core.hostmanager".deactivate;
-	local host = hosts[hostname];
-	if not host then
-		return false, "The host "..tostring(hostname).." is not activated";
-	end
-	if reason then
-		reason = { condition = "host-gone", text = reason };
-	end
-	hostmanager_deactivate(hostname, reason);
-	return true, "Host "..tostring(hostname).." deactivated";
+	return hostmanager.deactivate(hostname, reason);
 end
 
 function def_env.host:list()

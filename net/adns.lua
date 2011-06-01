@@ -26,22 +26,26 @@ function lookup(handler, qname, qtype, qclass)
 					return;
 				end
 				log("debug", "Records for %s not in cache, sending query (%s)...", qname, tostring(coroutine.running()));
-				dns.query(qname, qtype, qclass);
-				coroutine.yield({ qclass or "IN", qtype or "A", qname, coroutine.running()}); -- Wait for reply
-				log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
-				local ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
+				local ok, err = dns.query(qname, qtype, qclass);
+				if ok then
+					coroutine.yield({ qclass or "IN", qtype or "A", qname, coroutine.running()}); -- Wait for reply
+					log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
+				end
+				if ok then
+					ok, err = pcall(handler, dns.peek(qname, qtype, qclass));
+				else
+					log("error", "Error sending DNS query: %s", err);
+					ok, err = pcall(handler, nil, err);
+				end
 				if not ok then
 					log("error", "Error in DNS response handler: %s", tostring(err));
 				end
 			end)(dns.peek(qname, qtype, qclass));
 end
 
-function cancel(handle, call_handler)
+function cancel(handle, call_handler, reason)
 	log("warn", "Cancelling DNS lookup for %s", tostring(handle[3]));
-	dns.cancel(handle);
-	if call_handler then
-		coroutine.resume(handle[4]);
-	end
+	dns.cancel(handle[1], handle[2], handle[3], handle[4], call_handler);
 end
 
 function new_async_socket(sock, resolver)
@@ -74,7 +78,11 @@ function new_async_socket(sock, resolver)
 	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(dummy_send); return ret; end
 	handler.connect = function (_, ...) return sock:connect(...) end
 	--handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
-	handler.send = function (_, data) return sock:send(data); end
+	handler.send = function (_, data)
+		local getpeername = sock.getpeername;
+		log("debug", "Sending DNS query to %s", (getpeername and getpeername(sock)) or "<unconnected>");
+		return sock:send(data);
+	end
 	return handler;
 end
 

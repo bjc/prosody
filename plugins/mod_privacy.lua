@@ -45,28 +45,6 @@ function isAnotherSessionUsingDefaultList(origin)
 	end
 end
 
-function sendUnavailable(origin, to, from)
---[[ example unavailable presence stanza
-<presence from="node@host/resource" type="unavailable" to="node@host" >
-	<status>Logged out</status>
-</presence>
-]]--
-	local presence = st.presence({from=from, type="unavailable"});
-	presence:tag("status"):text("Logged out");
-
-	local node, host = jid_bare(to);
-	local bare = node .. "@" .. host;
-	
-	local user = bare_sessions[bare];
-	if user then
-		for resource, session in pairs(user.sessions) do
-			presence.attr.to = session.full_jid;
-			module:log("debug", "send unavailable to: %s; from: %s", tostring(presence.attr.to), tostring(presence.attr.from));
-			origin.send(presence);
-		end
-	end
-end
-
 function declineList(privacy_lists, origin, stanza, which)
 	if which == "default" then
 		if isAnotherSessionUsingDefaultList(origin) then
@@ -123,7 +101,7 @@ function deleteList(privacy_lists, origin, stanza, name)
 	return {"modify", "bad-request", "Not existing list specifed to be deleted."};
 end
 
-function createOrReplaceList (privacy_lists, origin, stanza, name, entries, roster)
+function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 	local bare_jid = origin.username.."@"..origin.host;
 	
 	if privacy_lists.lists == nil then
@@ -203,7 +181,7 @@ function getList(privacy_lists, origin, stanza, name)
 
 	if name == nil then
 		if privacy_lists.lists then
-			if origin.ActivePrivacyList then
+			if origin.activePrivacyList then
 				reply:tag("active", {name=origin.activePrivacyList}):up();
 			end
 			if privacy_lists.default then
@@ -323,7 +301,6 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
-	local item;
 	local listname = session.activePrivacyList;
 	if listname == nil then
 		listname = privacy_lists.default; -- no active list selected, use default list
@@ -414,7 +391,6 @@ function preCheckIncoming(e)
 		end
 		if resource == nil then
 			local prio = 0;
-			local session_;
 			if bare_sessions[node.."@"..host] ~= nil then
 				for resource, session_ in pairs(bare_sessions[node.."@"..host].sessions) do
 					if session_.priority ~= nil and session_.priority > prio then
@@ -442,7 +418,9 @@ function preCheckOutgoing(e)
 		 	e.stanza.attr.from = e.stanza.attr.from .. "/" .. session.resource;
 		end
 	end
-	return checkIfNeedToBeBlocked(e, session);
+	if session.username then -- FIXME do properly
+		return checkIfNeedToBeBlocked(e, session);
+	end
 end
 
 module:hook("pre-message/full", preCheckOutgoing, 500);

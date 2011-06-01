@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 -- Prosody IM
--- Copyright (C) 2008-2009 Matthew Wild
--- Copyright (C) 2008-2009 Waqas Hussain
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -11,30 +11,80 @@
 
 -- Will be modified by configure script if run --
 
-CFG_SOURCEDIR=nil;
+CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
 CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
-CFG_PLUGINDIR=nil;
+CFG_PLUGINDIR=os.getenv("PROSODY_PLUGINDIR");
 CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
--- -- -- -- -- -- -- ---- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-if CFG_SOURCEDIR then
-	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path
-	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath
+local function is_relative(path)
+	local path_sep = package.config:sub(1,1);
+        return ((path_sep == "/" and path:sub(1,1) ~= "/")
+	or (path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\")))
 end
 
+-- Tell Lua where to find our libraries
+if CFG_SOURCEDIR then
+	local function filter_relative_paths(path)
+		if is_relative(path) then return ""; end
+	end
+	local function sanitise_paths(paths)
+		return (paths:gsub("[^;]+;?", filter_relative_paths):gsub(";;+", ";"));
+	end
+	package.path = sanitise_paths(CFG_SOURCEDIR.."/?.lua;"..package.path);
+	package.cpath = sanitise_paths(CFG_SOURCEDIR.."/?.so;"..package.cpath);
+end
+
+-- Substitute ~ with path to home directory in data path
 if CFG_DATADIR then
 	if os.getenv("HOME") then
 		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
 	end
 end
 
+-- Global 'prosody' object
+local prosody = {
+	hosts = {};
+	events = require "util.events".new();
+	platform = "posix";
+	lock_globals = function () end;
+	unlock_globals = function () end;
+};
+_G.prosody = prosody;
+
+local dependencies = require "util.dependencies";
+if not dependencies.check_dependencies() then
+	os.exit(1);
+end
+
 config = require "core.configmanager"
 
 do
-	-- TODO: Check for other formats when we add support for them
-	-- Use lfs? Make a new conf/ dir?
-	local ok, level, err = config.load((CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+	local filenames = {};
+	
+	local filename;
+	if arg[1] == "--config" and arg[2] then
+		table.insert(filenames, arg[2]);
+		table.remove(arg, 1); table.remove(arg, 1);
+		if CFG_CONFIGDIR then
+			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
+		end
+	else
+		for _, format in ipairs(config.parsers()) do
+			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
+		end
+	end
+	for _,_filename in ipairs(filenames) do
+		filename = _filename;
+		local file = io.open(filename);
+		if file then
+			file:close();
+			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
+			break;
+		end
+	end
+	local ok, level, err = config.load(filename);
 	if not ok then
 		print("\n");
 		print("**************************");
@@ -56,22 +106,27 @@ do
 		os.exit(1);
 	end
 end
+local original_logging_config = config.get("*", "core", "log");
+config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
+
+local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
+local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+if custom_plugin_paths then
+	local path_sep = package.config:sub(3,3);
+	-- path1;path2;path3;defaultpath...
+	CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
+end
+prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
+	          plugins = CFG_PLUGINDIR or "plugins", data = data_path };
 
 require "core.loggingmanager"
 
-if not require "util.dependencies".check_dependencies() then
-	os.exit(1);
-end
-
-prosody = { hosts = {}, events = events, platform = "posix" };
-
-local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-require "util.datamanager".set_data_path(data_path);
+dependencies.log_warnings();
 
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 
-local want_pposix_version = "0.3.3";
+local want_pposix_version = "0.3.5";
 local ok, pposix = pcall(require, "util.pposix");
 
 if ok and pposix then
@@ -82,6 +137,9 @@ if ok and pposix then
 		local desired_user = config.get("*", "core", "prosody_user") or "prosody";
 		local desired_group = config.get("*", "core", "prosody_group") or desired_user;
 		local ok, err = pposix.setgid(desired_group);
+		if ok then
+			ok, err = pposix.initgroups(desired_user);
+		end
 		if ok then
 			ok, err = pposix.setuid(desired_user);
 			if ok then
@@ -103,6 +161,45 @@ else
 	print(tostring(pposix))
 end
 
+local function test_writeable(filename)
+	local f, err = io.open(filename, "a");
+	if not f then
+		return false, err;
+	end
+	f:close();
+	return true;
+end
+
+local unwriteable_files = {};
+if type(original_logging_config) == "string" and original_logging_config:sub(1,1) ~= "*" then
+	local ok, err = test_writeable(original_logging_config);
+	if not ok then
+		table.insert(unwriteable_files, err);
+	end
+elseif type(original_logging_config) == "table" then
+	for _, rule in ipairs(original_logging_config) do
+		if rule.filename then
+			local ok, err = test_writeable(rule.filename);
+			if not ok then
+				table.insert(unwriteable_files, err);
+			end
+		end
+	end
+end
+
+if #unwriteable_files > 0 then
+	print("One of more of the Prosody log files are not");
+	print("writeable, please correct the errors and try");
+	print("starting prosodyctl again.");
+	print("");
+	for _, err in ipairs(unwriteable_files) do
+		print(err);
+	end
+	print("");
+	os.exit(1);
+end
+
+
 local error_messages = setmetatable({ 
 		["invalid-username"] = "The given username is invalid in a Jabber ID";
 		["invalid-hostname"] = "The given hostname is invalid";
@@ -110,16 +207,23 @@ local error_messages = setmetatable({
 		["no-such-user"] = "The given user does not exist on the server";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
+		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see http://prosody.im/doc/prosodyctl for more info";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-local events = require "util.events".new();
-
 hosts = prosody.hosts;
 
+local function make_host(hostname)
+	return {
+		type = "local",
+		events = prosody.events,
+		users = require "core.usermanager".new_null_provider(hostname)
+	};
+end
+
 for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = { events = events };
+	hosts[hostname] = make_host(hostname);
 end
 	
 require "core.modulemanager"
@@ -128,86 +232,11 @@ require "util.prosodyctl"
 require "socket"
 -----------------------
 
-function show_message(msg, ...)
-	print(msg:format(...));
-end
-
-function show_warning(msg, ...)
-	print(msg:format(...));
-end
-
-function show_usage(usage, desc)
-	print("Usage: "..arg[0].." "..usage);
-	if desc then
-		print(" "..desc);
-	end
-end
-
-local function getchar(n)
-	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
-	local ok, char;
-	if stty_ret == 0 then
-		ok, char = pcall(io.read, n or 1);
-		os.execute("stty sane");
-	else
-		ok, char = pcall(io.read, "*l");
-		if ok then
-			char = char:sub(1, n or 1);
-		end
-	end
-	if ok then
-		return char;
-	end
-end
-	
-local function getpass()
-	local stty_ret = os.execute("stty -echo 2>/dev/null");
-	if stty_ret ~= 0 then
-		io.write("\027[08m"); -- ANSI 'hidden' text attribute
-	end
-	local ok, pass = pcall(io.read, "*l");
-	if stty_ret == 0 then
-		os.execute("stty sane");
-	else
-		io.write("\027[00m");
-	end
-	io.write("\n");
-	if ok then
-		return pass;
-	end
-end
-
-function show_yesno(prompt)
-	io.write(prompt, " ");
-	local choice = getchar():lower();
-	io.write("\n");
-	if not choice:match("%a") then
-		choice = prompt:match("%[.-(%U).-%]$");
-		if not choice then return nil; end
-	end
-	return (choice == "y");
-end
-
-local function read_password()
-	local password;
-	while true do
-		io.write("Enter new password: ");
-		password = getpass();
-		if not password then
-			show_message("No password - cancelled");
-			return;
-		end
-		io.write("Retype new password: ");
-		if getpass() ~= password then
-			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
-				return;
-			end
-		else
-			break;
-		end
-	end
-	return password;
-end
+local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
+local show_usage = prosodyctl.show_usage;
+local getchar, getpass = prosodyctl.getchar, prosodyctl.getpass;
+local show_yesno = prosodyctl.show_yesno;
+local read_password = prosodyctl.read_password;
 
 local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
 -----------------------
@@ -231,14 +260,15 @@ function commands.adduser(arg)
 		return 1;
 	end
 	
-	if prosodyctl.user_exists{ user = user, host = host } then
-		show_message [[That user already exists]];
-		return 1;
-	end
-	
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
+	end
+	
+	if prosodyctl.user_exists{ user = user, host = host } then
+		show_message [[That user already exists]];
+		return 1;
 	end
 	
 	local password = read_password();
@@ -248,7 +278,7 @@ function commands.adduser(arg)
 	
 	if ok then return 0; end
 	
-	show_message(error_messages[msg])
+	show_message(msg)
 	return 1;
 end
 
@@ -267,6 +297,12 @@ function commands.passwd(arg)
 	if not host then
 		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
 		return 1;
+	end
+	
+	if not hosts[host] then
+		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
+		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
 	end
 	
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -302,6 +338,12 @@ function commands.deluser(arg)
 		return 1;
 	end
 	
+	if not hosts[host] then
+		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
+		show_warning("The user will not be able to log in until this is changed.");
+		hosts[host] = make_host(host);
+	end
+
 	if not prosodyctl.user_exists { user = user, host = host } then
 		show_message [[That user does not exist on this server]]
 		return 1;
@@ -439,11 +481,8 @@ function commands.restart(arg)
 		return 1;
 	end
 	
-	local ret = commands.stop(arg);
-	if ret == 0 then
-		ret = commands.start(arg);
-	end
-	return ret;
+	commands.stop(arg);
+	return commands.start(arg);
 end
 
 -- ejabberdctl compatibility

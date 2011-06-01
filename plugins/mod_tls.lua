@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local config = require "core.configmanager";
+local create_context = require "core.certmanager".create_context;
 local st = require "util.stanza";
 
 local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
@@ -45,7 +47,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 		local host = origin.to_host or origin.host;
 		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
 		origin.conn:starttls(ssl_ctx);
-		origin.log("info", "TLS negotiation started for %s...", origin.type);
+		origin.log("debug", "TLS negotiation started for %s...", origin.type);
 		origin.secure = false;
 	else
 		origin.log("warn", "Attempt to start TLS, but TLS is not available on this %s connection", origin.type);
@@ -83,7 +85,22 @@ module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 	module:log("debug", "Proceeding with TLS on s2sout...");
 	session:reset_stream();
 	local ssl_ctx = session.from_host and hosts[session.from_host].ssl_ctx or global_ssl_ctx;
-	session.conn:starttls(ssl_ctx, true);
+	session.conn:starttls(ssl_ctx);
 	session.secure = false;
 	return true;
 end);
+
+function module.load()
+	local ssl_config = config.rawget(module.host, "core", "ssl");
+	if not ssl_config then
+		local base_host = module.host:match("%.(.*)");
+		ssl_config = config.get(base_host, "core", "ssl");
+	end
+	host.ssl_ctx = create_context(host.host, "client", ssl_config); -- for outgoing connections
+	host.ssl_ctx_in = create_context(host.host, "server", ssl_config); -- for incoming connections
+end
+
+function module.unload()
+	host.ssl_ctx = nil;
+	host.ssl_ctx_in = nil;
+end

@@ -12,14 +12,35 @@ local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local send_s2s = require "core.s2smanager".send_to_host;
-local modules_handle_stanza = require "core.modulemanager".handle_stanza;
-local component_handle_stanza = require "core.componentmanager".handle_stanza;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 
 local full_sessions = _G.prosody.full_sessions;
 local bare_sessions = _G.prosody.bare_sessions;
 
+local function handle_unhandled_stanza(host, origin, stanza)
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
+	if name == "iq" and xmlns == "jabber:client" then
+		if stanza.attr.type == "get" or stanza.attr.type == "set" then
+			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
+			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
+		else
+			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
+			return true;
+		end
+	end
+	if stanza.attr.xmlns == nil then
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
+	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+		log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
+		origin:close("unsupported-stanza-type");
+	end
+end
+
+local iq_types = { set=true, get=true, result=true, error=true };
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
@@ -27,8 +48,8 @@ function core_process_stanza(origin, stanza)
 	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
 	if stanza.name == "iq" then
 		if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
-		if (stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1) then
-			origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		if not iq_types[stanza.attr.type] or ((stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1)) then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
 			return;
 		end
 	end
@@ -114,7 +135,7 @@ function core_process_stanza(origin, stanza)
 			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
 		if host and not hosts[host] then host = nil; end -- COMPAT: workaround for a Pidgin bug which sets 'to' to the SRV result
-		modules_handle_stanza(host or origin.host or origin.to_host, origin, stanza);
+		handle_unhandled_stanza(host or origin.host or origin.to_host, origin, stanza);
 	end
 end
 
@@ -151,12 +172,7 @@ function core_post_stanza(origin, stanza, preevents)
 	if h then
 		if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
 		if to_self and h.events.fire_event(stanza.name..'/self', event_data) then return; end -- do processing
-
-		if h.type == "component" then
-			component_handle_stanza(origin, stanza);
-			return;
-		end
-		modules_handle_stanza(h.host, origin, stanza);
+		handle_unhandled_stanza(h.host, origin, stanza);
 	else
 		core_route_stanza(origin, stanza);
 	end

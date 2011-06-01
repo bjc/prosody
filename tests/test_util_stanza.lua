@@ -21,7 +21,6 @@ function deserialize(deserialize, st)
 	
 	local stanza2 = deserialize(st.preserialize(stanza));
 	assert_is(stanza2 and stanza.name, "deserialize returns a stanza");
-	assert_is(stanza2.last_add, "Deserialized stanza is missing last_add for adding child tags");
 	assert_table(stanza2.attr, "Deserialized stanza has attributes");
 	assert_equal(stanza2.attr.a, "a", "Deserialized stanza retains attributes");
 	assert_table(getmetatable(stanza2), "Deserialized stanza has metatable");

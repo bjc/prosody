@@ -15,7 +15,7 @@ local s_match = string.match;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local log = require "util.logger".init("sasl");
 
-module "plain"
+module "sasl.plain"
 
 -- ================================
 -- SASL PLAIN according to RFC 4616
@@ -29,7 +29,7 @@ plain:
 	end
 
 plain_test:
-	function(username, realm, password)
+	function(username, password, realm)
 		return true or false, state;
 	end
 ]]
@@ -57,10 +57,10 @@ local function plain(self, message)
 	local correct, state = false, false;
 	if self.profile.plain then
 		local correct_password;
-		correct_password, state = self.profile.plain(authentication, self.realm);
-		if correct_password == password then correct = true; else correct = false; end
+		correct_password, state = self.profile.plain(self, authentication, self.realm);
+		correct = (correct_password == password);
 	elseif self.profile.plain_test then
-		correct, state = self.profile.plain_test(authentication, self.realm, password);
+		correct, state = self.profile.plain_test(self, authentication, password, self.realm);
 	end
 
 	self.username = authentication
