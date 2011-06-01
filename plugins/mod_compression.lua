@@ -55,7 +55,7 @@ module:hook_stanza(xmlns_stream, "features",
 						local algorithm = a[1]
 						if algorithm == "zlib" then
 							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):tag("method"):text("zlib"))
-							session.log("info", "Enabled compression using zlib.")
+							session.log("debug", "Enabled compression using zlib.")
 							return true;
 						end
 					end
@@ -98,7 +98,6 @@ local function setup_compression(session, deflate_stream)
 	
 	local new_send = function(t)
 			--TODO: Better code injection in the sending process
-			session.log(t)
 			local status, compressed, eof = pcall(deflate_stream, tostring(t), 'sync');
 			if status == false then
 				session:close({

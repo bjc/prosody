@@ -48,11 +48,12 @@ function create_context(host, mode, config)
 			else
 				log("error", "SSL/TLS: Error initialising for host %s: %s", host, err );
 			end
-			ssl = false
         	end
         	return ctx, err;
+	elseif not ssl then
+		return nil, "LuaSec (required for encryption) was not found";
 	end
-	return nil;
+	return nil, "No SSL/TLS configuration present for "..host;
 end
 
 function reload_ssl_config()

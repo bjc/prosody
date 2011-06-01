@@ -18,7 +18,7 @@ local jid_bare, jid_prep = jid.bare, jid.prep;
 local module_host = module:get_host();
 
 function inject_roster_contacts(username, host, roster)
-	module:log("warn", "Injecting group members to roster");
+	--module:log("debug", "Injecting group members to roster");
 	local bare_jid = username.."@"..host;
 	if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
 	
@@ -41,7 +41,7 @@ function inject_roster_contacts(username, host, roster)
 	-- Find groups this JID is a member of
 	if members[bare_jid] then
 		for _, group_name in ipairs(members[bare_jid]) do
-			module:log("debug", "Importing group %s", group_name);
+			--module:log("debug", "Importing group %s", group_name);
 			import_jids_to_roster(group_name);
 		end
 	end
@@ -49,7 +49,7 @@ function inject_roster_contacts(username, host, roster)
 	-- Import public groups
 	if members[false] then
 		for _, group_name in ipairs(members[false]) do
-			module:log("debug", "Importing group %s", group_name);
+			--module:log("debug", "Importing group %s", group_name);
 			import_jids_to_roster(group_name);
 		end
 	end
@@ -67,7 +67,9 @@ function remove_virtual_contacts(username, host, datastore, data)
 				new_roster[jid] = contact;
 			end
 		end
-		new_roster[false].version = nil; -- Version is void
+		if new_roster[false] then
+			new_roster[false].version = nil; -- Version is void
+		end
 		return username, host, datastore, new_roster;
 	end
 

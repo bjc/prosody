@@ -25,6 +25,7 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local fire_event = require "core.eventmanager".fire_event;
 local add_task = require "util.timer".add_task;
@@ -109,6 +110,8 @@ function destroy_session(session, err)
 end
 
 function make_authenticated(session, username)
+	username = nodeprep(username);
+	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s";
@@ -136,7 +139,7 @@ function bind_resource(session, resource)
 		local sessions = hosts[session.host].sessions[session.username].sessions;
 		local limit = config_get(session.host, "core", "max_resources") or 10;
 		if #sessions >= limit then
-			return nil, "cancel", "conflict", "Resource limit reached; only "..limit.." resources allowed";
+			return nil, "cancel", "resource-constraint", "Resource limit reached; only "..limit.." resources allowed";
 		end
 		if sessions[resource] then
 			-- Resource conflict
@@ -174,7 +177,19 @@ function bind_resource(session, resource)
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	full_sessions[session.full_jid] = session;
 	
-	session.roster = rm_load_roster(session.username, session.host);
+	local err;
+	session.roster, err = rm_load_roster(session.username, session.host);
+	if err then
+		full_sessions[session.full_jid] = nil;
+		hosts[session.host].sessions[session.username].sessions[resource] = nil;
+		session.full_jid = nil;
+		session.resource = nil;
+		if next(bare_sessions[session.username..'@'..session.host].sessions) == nil then
+			bare_sessions[session.username..'@'..session.host] = nil;
+			hosts[session.host].sessions[session.username] = nil;
+		end
+		return nil, "cancel", "internal-server-error", "Error loading roster";
+	end
 	
 	hosts[session.host].events.fire_event("resource-bind", {session=session});
 	

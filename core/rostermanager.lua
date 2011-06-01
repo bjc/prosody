@@ -93,15 +93,18 @@ function load_roster(username, host)
 	else -- Attempt to load roster for non-loaded user
 		log("debug", "load_roster: loading for offline user: "..username.."@"..host);
 	end
-	roster = datamanager.load(username, host, "roster") or {};
+	local data, err = datamanager.load(username, host, "roster");
+	roster = data or {};
 	if user then user.roster = roster; end
-	if not roster[false] then roster[false] = { }; end
+	if not roster[false] then roster[false] = { broken = err or nil }; end
 	if roster[jid] then
 		roster[jid] = nil;
 		log("warn", "roster for "..jid.." has a self-contact");
 	end
-	hosts[host].events.fire_event("roster-load", username, host, roster);
-	return roster;
+	if not err then
+		hosts[host].events.fire_event("roster-load", username, host, roster);
+	end
+	return roster, err;
 end
 
 function save_roster(username, host, roster)
@@ -122,6 +125,7 @@ function save_roster(username, host, roster)
 		if metadata.version ~= true then
 			metadata.version = (metadata.version or 0) + 1;
 		end
+		if roster[false].broken then return nil, "Not saving broken roster" end
 		return datamanager.store(username, host, "roster", roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
@@ -187,9 +191,9 @@ function process_inbound_unsubscribe(username, host, jid)
 end
 
 function is_contact_subscribed(username, host, jid)
-	local roster = load_roster(username, host);
+	local roster, err = load_roster(username, host);
 	local item = roster[jid];
-	return item and (item.subscription == "from" or item.subscription == "both");
+	return item and (item.subscription == "from" or item.subscription == "both"), err;
 end
 
 function is_contact_pending_in(username, host, jid)

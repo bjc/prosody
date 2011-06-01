@@ -31,6 +31,8 @@ local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 
 local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
 local BOSH_DEFAULT_MAXPAUSE = tonumber(module:get_option("bosh_max_pause")) or 300;
 
+local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
+
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 local session_close_reply = { headers = default_headers, body = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate" }), attr = {} };
 
@@ -174,10 +176,14 @@ function stream_callbacks.streamopened(request, attr)
 		
 		-- New session
 		sid = new_uuid();
-		local session = { type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to, bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid, 
-						bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
-						requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream, close = bosh_close_stream, 
-						dispatch_stanza = core_process_stanza, log = logger.init("bosh"..sid), secure = request.secure };
+		local session = {
+			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
+			bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid,
+			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
+			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
+			close = bosh_close_stream, dispatch_stanza = core_process_stanza,
+			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure
+		};
 		sessions[sid] = session;
 		
 		log("info", "New BOSH session, assigned it sid '%s'", sid);

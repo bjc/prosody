@@ -1,15 +1,15 @@
 -- sasl.lua v0.4
 -- Copyright (C) 2008-2010 Tobias Markmann
 --
---    All rights reserved.
+--	  All rights reserved.
 --
---    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+--	  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 --
---        * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
---        * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
---        * Neither the name of Tobias Markmann nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+--		  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+--		  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+--		  * Neither the name of Tobias Markmann nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 --
---    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--	  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local s_match = string.match;
 local type = type
@@ -32,7 +32,8 @@ module "scram"
 --[[
 Supported Authentication Backends
 
-scram-{MECH}:
+scram_{MECH}:
+	-- MECH being a standard hash name (like those at IANA's hash registry) with '-' replaced with '_'
 	function(username, realm)
 		return salted_password, iteration_count, salt, state;
 	end
@@ -92,19 +93,45 @@ local function validate_username(username)
 	return username;
 end
 
+local function hashprep( hashname ) 
+	local hash = hashname:lower()
+	hash = hash:gsub("-", "_")
+	return hash
+end
+
+function saltedPasswordSHA1(password, salt, iteration_count)
+	local salted_password
+	if type(password) ~= "string" or type(salt) ~= "string" or type(iteration_count) ~= "number" then
+		return false, "inappropriate argument types"
+	end
+	if iteration_count < 4096 then
+		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
+	end
+
+	return true, Hi(hmac_sha1, password, salt, iteration_count);
+end
+
 local function scram_gen(hash_name, H_f, HMAC_f)
 	local function scram_hash(self, message)
 		if not self.state then self["state"] = {} end
 	
+		if type(message) ~= "string" or #message == 0 then return "failure", "malformed-request" end
 		if not self.state.name then
 			-- we are processing client_first_message
 			local client_first_message = message;
+			
+			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
-			self.state["name"] = client_first_message:match("n=(.+),r=")
-			self.state["clientnonce"] = client_first_message:match("r=([^,]+)")
-		
-			if not self.state.name or not self.state.clientnonce then
+			self.state["gs2_cbind_flag"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
+				= client_first_message:match("^(%a),(.*),n=(.*),r=([^,]*).*");
+
+			-- we don't do any channel binding yet
+			if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
 				return "failure", "malformed-request";
+			end
+
+			if not self.state.name or not self.state.clientnonce then
+				return "failure", "malformed-request", "Channel binding isn't support at this time.";
 			end
 		
 			self.state.name = validate_username(self.state.name);
@@ -126,11 +153,18 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					log("debug", "Password violates SASLprep.");
 					return "failure", "not-authorized", "Invalid password."
 				end
+
 				self.state.salt = generate_uuid();
 				self.state.iteration_count = default_i;
-				self.state.salted_password = Hi(HMAC_f, password, self.state.salt, default_i);
-			elseif self.profile["scram_"..hash_name] then
-				local salted_password, iteration_count, salt, state = self.profile["scram-"..hash_name](self.state.name, self.realm);
+
+				local succ = false;
+				succ, self.state.salted_password = saltedPasswordSHA1(password, self.state.salt, default_i, self.state.iteration_count);
+				if not succ then
+					log("error", "Generating salted password failed. Reason: %s", self.state.salted_password);
+					return "failure", "temporary-auth-failure";
+				end
+			elseif self.profile["scram_"..hashprep(hash_name)] then
+				local salted_password, iteration_count, salt, state = self.profile["scram_"..hashprep(hash_name)](self.state.name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 				
@@ -143,17 +177,19 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			self.state["server_first_message"] = server_first_message;
 			return "challenge", server_first_message
 		else
-			if type(message) ~= "string" then return "failure", "malformed-request" end
 			-- we are processing client_final_message
 			local client_final_message = message;
-		
-			self.state["proof"] = client_final_message:match("p=(.+)");
-			self.state["nonce"] = client_final_message:match("r=(.+),p=");
-			self.state["channelbinding"] = client_final_message:match("c=(.+),r=");
+			
+			self.state["channelbinding"], self.state["nonce"], self.state["proof"] = client_final_message:match("^c=(.*),r=(.*),.*p=(.*)");
+	
 			if not self.state.proof or not self.state.nonce or not self.state.channelbinding then
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 			end
-		
+
+			if self.state.nonce ~= self.state.clientnonce..self.state.servernonce then
+				return "failure", "malformed-request", "Wrong nonce in client-final-message.";
+			end
+			
 			local SaltedPassword = self.state.salted_password;
 			local ClientKey = HMAC_f(SaltedPassword, "Client Key")
 			local ServerKey = HMAC_f(SaltedPassword, "Server Key")
@@ -162,7 +198,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local ClientSignature = HMAC_f(StoredKey, AuthMessage)
 			local ClientProof     = binaryXOR(ClientKey, ClientSignature)
 			local ServerSignature = HMAC_f(ServerKey, AuthMessage)
-		
+
 			if base64.encode(ClientProof) == self.state.proof then
 				local server_final_message = "v="..base64.encode(ServerSignature);
 				self["username"] = self.state.name;
@@ -177,9 +213,9 @@ end
 
 function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
-		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hash_name:lower())}, scram_gen(hash_name:lower(), hash, hmac_hash));
+		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
 	end
-	
+
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
 end
 

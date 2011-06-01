@@ -851,7 +851,13 @@ end
 
 function resolver:lookup(qname, qtype, qclass)    -- - - - - - - - - -  lookup
 	self:query (qname, qtype, qclass)
-	while self:pulse() do socket.select(self.socket, nil, 4); end
+	while self:pulse() do
+           local recvt = {}
+           for i, s in ipairs(self.socket) do
+              recvt[i] = s
+           end
+           socket.select(recvt, nil, 4)
+        end
 	--print(self.cache);
 	return self:peek(qname, qtype, qclass);
 end

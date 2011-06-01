@@ -7,13 +7,15 @@
 -- COPYING file in the source package for more information.
 --
 
+module:add_feature("jabber:iq:privacy");
+
 local prosody = prosody;
 local st = require "util.stanza";
 local datamanager = require "util.datamanager";
 local bare_sessions, full_sessions = bare_sessions, full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
-local jid_split = util_Jid.split;
+local jid_split, jid_join = util_Jid.split, util_Jid.join;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
 
@@ -93,8 +95,10 @@ function activateList(privacy_lists, origin, stanza, which, name)
 	elseif which == "active" and list then
 		origin.activePrivacyList = name;
 		origin.send(st.reply(stanza));
+	elseif not list then
+		return {"cancel", "item-not-found", "No such list: "..name};
 	else
-		return {"modify", "bad-request", "Either not active or default given or unknown list name specified."};
+		return {"modify", "bad-request", "No list chosen to be active or default."};
 	end
 	return true;
 end
@@ -160,26 +164,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries, rost
 			end
 		end
 		
-		if tmp.type == "group" then
-			local found = false;
-			local roster = load_roster(origin.username, origin.host);
-			for jid,item in pairs(roster) do
-				if item.groups ~= nil then
-					for group in pairs(item.groups) do
-						if group == tmp.value then
-							found = true;
-							break;
-						end
-					end
-					if found == true then
-						break;
-					end
-				end
-			end
-			if found == false then
-				return {"cancel", "item-not-found", "Specifed roster group not existing."};
-			end
-		elseif tmp.type == "subscription" then
+		if tmp.type == "subscription" then
 			if	tmp.value ~= "both" and
 				tmp.value ~= "to" and
 				tmp.value ~= "from" and
@@ -320,13 +305,13 @@ function checkIfNeedToBeBlocked(e, session)
 	local origin, stanza = e.origin, e.stanza;
 	local privacy_lists = datamanager.load(session.username, session.host, "privacy") or {};
 	local bare_jid = session.username.."@"..session.host;
-	local to = stanza.attr.to;
+	local to = stanza.attr.to or bare_jid;
 	local from = stanza.attr.from;
 	
 	local is_to_user = bare_jid == jid_bare(to);
 	local is_from_user = bare_jid == jid_bare(from);
 	
-	module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
+	--module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 	
 	if privacy_lists.lists == nil or
 		not (session.activePrivacyList or privacy_lists.default)
@@ -334,7 +319,7 @@ function checkIfNeedToBeBlocked(e, session)
 		return; -- Nothing to block, default is Allow all
 	end
 	if is_from_user and is_to_user then
-		module:log("debug", "Not blocking communications between user's resources");
+		--module:log("debug", "Not blocking communications between user's resources");
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
 	
@@ -344,8 +329,8 @@ function checkIfNeedToBeBlocked(e, session)
 		listname = privacy_lists.default; -- no active list selected, use default list
 	end
 	local list = privacy_lists.lists[listname];
-	if not list then
-		module:log("debug", "given privacy list not found. name: %s", listname);
+	if not list then -- should never happen
+		module:log("warn", "given privacy list not found. name: %s for user %s", listname, bare_jid);
 		return;
 	end
 	for _,item in ipairs(list.items) do
@@ -364,10 +349,10 @@ function checkIfNeedToBeBlocked(e, session)
 			local evilJid = {};
 			apply = false;
 			if is_to_user then
-				module:log("debug", "evil jid is (from): %s", from);
+				--module:log("debug", "evil jid is (from): %s", from);
 				evilJid.node, evilJid.host, evilJid.resource = jid_split(from);
 			else
-				module:log("debug", "evil jid is (to): %s", to);
+				--module:log("debug", "evil jid is (to): %s", to);
 				evilJid.node, evilJid.host, evilJid.resource = jid_split(to);
 			end
 			if	item.type == "jid" and
@@ -379,17 +364,22 @@ function checkIfNeedToBeBlocked(e, session)
 				block = (item.action == "deny");
 			elseif item.type == "group" then
 				local roster = load_roster(session.username, session.host);
-				local groups = roster[evilJid.node .. "@" .. evilJid.host].groups;
-				for group in pairs(groups) do
-					if group == item.value then
-						apply = true;
-						block = (item.action == "deny");
-						break;
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if roster_entry then
+					local groups = roster_entry.groups;
+					for group in pairs(groups) do
+						if group == item.value then
+							apply = true;
+							block = (item.action == "deny");
+							break;
+						end
 					end
 				end
-			elseif item.type == "subscription" and evilJid.node ~= nil and evilJid.host ~= nil then -- we need a valid bare evil jid
+			elseif item.type == "subscription" then -- we need a valid bare evil jid
 				local roster = load_roster(session.username, session.host);
-				if roster[evilJid.node .. "@" .. evilJid.host].subscription == item.value then
+				local roster_entry = roster[jid_join(evilJid.node, evilJid.host)];
+				if (not(roster_entry) and item.value == "none")
+				   or (roster_entry and roster_entry.subscription == item.value) then
 					apply = true;
 					block = (item.action == "deny");
 				end
@@ -408,7 +398,7 @@ function checkIfNeedToBeBlocked(e, session)
 				end
 				return true; -- stanza blocked !
 			else
-				module:log("debug", "stanza explicitly allowed!")
+				--module:log("debug", "stanza explicitly allowed!")
 				return;
 			end
 		end
@@ -439,7 +429,7 @@ function preCheckIncoming(e)
 		if session ~= nil then
 			return checkIfNeedToBeBlocked(e, session);
 		else
-			module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource));
+			--module:log("debug", "preCheckIncoming: Couldn't get session for jid: %s@%s/%s", tostring(node), tostring(host), tostring(resource));
 		end
 	end
 end
