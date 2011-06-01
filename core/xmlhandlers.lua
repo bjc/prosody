@@ -17,6 +17,16 @@ local t_concat = table.concat;
 
 local default_log = require "util.logger".init("xmlhandlers");
 
+-- COMPAT: w/LuaExpat 1.1.0
+local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
+
+if not lxp_supports_doctype then
+	default_log("warn", "The version of LuaExpat on your system leaves Prosody "
+		.."vulnerable to denial-of-service attacks. You should upgrade to "
+		.."LuaExpat 1.1.1 or higher as soon as possible. See "
+		.."http://prosody.im/doc/depends#luaexpat for more information.");
+end
+
 local error = error;
 
 module "xmlhandlers"
@@ -139,6 +149,18 @@ function init_xmlhandlers(session, stream_callbacks)
 			stanza, chardata = nil, {};
 		end
 	end
+
+	local function restricted_handler()
+		cb_error(session, "parse-error", "restricted-xml", "Restricted XML, see RFC 6120 section 11.1.");
+	end
+
+	if lxp_supports_doctype then
+		xml_handlers.StartDoctypeDecl = restricted_handler;
+	end
+	xml_handlers.Comment = restricted_handler;
+	xml_handlers.StartCdataSection = restricted_handler;
+	xml_handlers.ProcessingInstruction = restricted_handler;
+
 	return xml_handlers;
 end
 
