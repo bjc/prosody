@@ -176,7 +176,6 @@ function new_sax_handlers(session, stream_callbacks)
 		xml_handlers.StartDoctypeDecl = restricted_handler;
 	end
 	xml_handlers.Comment = restricted_handler;
-	xml_handlers.StartCdataSection = restricted_handler;
 	xml_handlers.ProcessingInstruction = restricted_handler;
 	
 	local function reset()
