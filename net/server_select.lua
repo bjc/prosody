@@ -939,6 +939,7 @@ return {
 	
 	loop = loop,
 	link = link,
+	step = step,
 	stats = stats,
 	closeall = closeall,
 	addtimer = addtimer,
