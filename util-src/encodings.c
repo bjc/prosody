@@ -117,7 +117,87 @@ static const luaL_Reg Reg_base64[] =
 };
 
 /***************** STRINGPREP *****************/
-#ifndef USE_STRINGPREP_ICU
+#ifdef USE_STRINGPREP_ICU
+
+#include <unicode/usprep.h>
+#include <unicode/ustring.h>
+#include <unicode/utrace.h>
+
+static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile)
+{
+	size_t input_len;
+	int32_t unprepped_len, prepped_len, output_len;
+	const char *input;
+	char output[1024];
+
+	UChar unprepped[1024]; /* Temporary unicode buffer (1024 characters) */
+	UChar prepped[1024];
+	
+	UErrorCode err = U_ZERO_ERROR;
+
+	if(!lua_isstring(L, 1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	input = lua_tolstring(L, 1, &input_len);
+	if (input_len >= 1024) {
+		lua_pushnil(L);
+		return 1;
+	}
+	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
+	if (U_FAILURE(err)) {
+		luah_pushnil(L);
+		return 1;
+	}
+	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, 0, NULL, &err);
+	if (U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	} else {
+		u_strToUTF8(output, 1024, &output_len, prepped, prepped_len, &err);
+		if (U_SUCCESS(err) && output_len < 1024)
+			lua_pushlstring(L, output, output_len);
+		else
+			lua_pushnil(L);
+		return 1;
+	}
+}
+
+UStringPrepProfile *icu_nameprep;
+UStringPrepProfile *icu_nodeprep;
+UStringPrepProfile *icu_resourceprep; 
+UStringPrepProfile *icu_saslprep;
+
+/* initialize global ICU stringprep profiles */
+void init_icu()
+{
+	UErrorCode err = U_ZERO_ERROR;
+	utrace_setLevel(UTRACE_VERBOSE);
+	icu_nameprep = usprep_openByType(USPREP_RFC3491_NAMEPREP, &err);
+	icu_nodeprep = usprep_openByType(USPREP_RFC3920_NODEPREP, &err);
+	icu_resourceprep = usprep_openByType(USPREP_RFC3920_RESOURCEPREP, &err);
+	icu_saslprep = usprep_openByType(USPREP_RFC4013_SASLPREP, &err);
+	if (U_FAILURE(err)) fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
+}
+
+#define MAKE_PREP_FUNC(myFunc, prep) \
+static int myFunc(lua_State *L) { return icu_stringprep_prep(L, prep); }
+
+MAKE_PREP_FUNC(Lstringprep_nameprep, icu_nameprep)		/** stringprep.nameprep(s) */
+MAKE_PREP_FUNC(Lstringprep_nodeprep, icu_nodeprep)		/** stringprep.nodeprep(s) */
+MAKE_PREP_FUNC(Lstringprep_resourceprep, icu_resourceprep)		/** stringprep.resourceprep(s) */
+MAKE_PREP_FUNC(Lstringprep_saslprep, icu_saslprep)		/** stringprep.saslprep(s) */
+
+static const luaL_Reg Reg_stringprep[] =
+{
+	{ "nameprep",	Lstringprep_nameprep	},
+	{ "nodeprep",	Lstringprep_nodeprep	},
+	{ "resourceprep",	Lstringprep_resourceprep	},
+	{ "saslprep",	Lstringprep_saslprep	},
+	{ NULL,		NULL	}
+};
+#else /* USE_STRINGPREP_ICU */
+
 /****************** libidn ********************/
 
 #include <stringprep.h>
@@ -164,41 +244,36 @@ static const luaL_Reg Reg_stringprep[] =
 	{ "saslprep",	Lstringprep_saslprep	},
 	{ NULL,		NULL	}
 };
+#endif
 
-#else
-#include <unicode/usprep.h>
-#include <unicode/ustring.h>
-#include <unicode/utrace.h>
-
-static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile)
+/***************** IDNA *****************/
+#ifdef USE_STRINGPREP_ICU
+#include <unicode/ustdio.h>
+#include <unicode/uidna.h>
+/* IDNA2003 or IDNA2008 ? ? ? */
+static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 {
-	size_t input_len;
-	int32_t unprepped_len, prepped_len, output_len;
-	const char *input;
+	size_t len;
+	int32_t ulen, dest_len, output_len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	UChar ustr[1024];
+	UErrorCode err = U_ZERO_ERROR;
+	UChar dest[1024];
 	char output[1024];
 
-	UChar unprepped[1024]; /* Temporary unicode buffer (1024 characters) */
-	UChar prepped[1024];
-	
-	UErrorCode err = U_ZERO_ERROR;
+	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
+	if (U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	}
 
-	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
-		return 1;
-	}
-	input = lua_tolstring(L, 1, &input_len);
-	if (input_len >= 1024) {
-		lua_pushnil(L);
-		return 1;
-	}
-	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
-	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, 0, NULL, &err);
+	dest_len = uidna_IDNToASCII(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
 	if (U_FAILURE(err)) {
 		lua_pushnil(L);
 		return 1;
 	} else {
-		u_strToUTF8(output, 1024, &output_len, prepped, prepped_len, &err);
-		if(output_len < 1024)
+		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
+		if (U_SUCCESS(err) && output_len < 1024)
 			lua_pushlstring(L, output, output_len);
 		else
 			lua_pushnil(L);
@@ -206,43 +281,37 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile)
 	}
 }
 
-UStringPrepProfile *icu_nameprep;
-UStringPrepProfile *icu_nodeprep;
-UStringPrepProfile *icu_resourceprep; 
-UStringPrepProfile *icu_saslprep;
-
-/* initialize global ICU stringprep profiles */
-void init_icu()
+static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 {
+	size_t len;
+	int32_t ulen, dest_len, output_len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	UChar ustr[1024];
 	UErrorCode err = U_ZERO_ERROR;
-	utrace_setLevel(UTRACE_VERBOSE);
-	icu_nameprep = usprep_openByType(USPREP_RFC3491_NAMEPREP, &err);
-	icu_nodeprep = usprep_openByType(USPREP_RFC3920_NODEPREP, &err);
-	icu_resourceprep = usprep_openByType(USPREP_RFC3920_RESOURCEPREP, &err);
-	icu_saslprep = usprep_openByType(USPREP_RFC4013_SASLPREP, &err);
-	if (U_FAILURE(err)) fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
+	UChar dest[1024];
+	char output[1024];
+
+	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
+	if (U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	dest_len = uidna_IDNToUnicode(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
+	if (U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	} else {
+		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
+		if (U_SUCCESS(err) && output_len < 1024)
+			lua_pushlstring(L, output, output_len);
+		else
+			lua_pushnil(L);
+		return 1;
+	}
 }
 
-#define MAKE_PREP_FUNC(myFunc, prep) \
-static int myFunc(lua_State *L) { return icu_stringprep_prep(L, prep); }
-
-MAKE_PREP_FUNC(Lstringprep_nameprep, icu_nameprep)		/** stringprep.nameprep(s) */
-MAKE_PREP_FUNC(Lstringprep_nodeprep, icu_nodeprep)		/** stringprep.nodeprep(s) */
-MAKE_PREP_FUNC(Lstringprep_resourceprep, icu_resourceprep)		/** stringprep.resourceprep(s) */
-MAKE_PREP_FUNC(Lstringprep_saslprep, icu_saslprep)		/** stringprep.saslprep(s) */
-
-static const luaL_Reg Reg_stringprep[] =
-{
-	{ "nameprep",	Lstringprep_nameprep	},
-	{ "nodeprep",	Lstringprep_nodeprep	},
-	{ "resourceprep",	Lstringprep_resourceprep	},
-	{ "saslprep",	Lstringprep_saslprep	},
-	{ NULL,		NULL	}
-};
-#endif
-
-/***************** IDNA *****************/
-#ifndef USE_STRINGPREP_ICU
+#else /* USE_STRINGPREP_ICU */
 /****************** libidn ********************/
 
 #include <idna.h>
@@ -279,59 +348,6 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 		lua_pushnil(L);
 		idn_free(output);
 		return 1; /* TODO return error message */
-	}
-}
-#else
-#include <unicode/ustdio.h>
-#include <unicode/uidna.h>
-/* IDNA2003 or IDNA2008 ? ? ? */
-static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
-{
-	size_t len;
-	int32_t ulen, dest_len, output_len;
-	const char *s = luaL_checklstring(L, 1, &len);
-	UChar ustr[1024];
-	UErrorCode err = U_ZERO_ERROR;
-	UChar dest[1024];
-	char output[1024];
-
-	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
-	dest_len = uidna_IDNToASCII(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
-	if (U_FAILURE(err)) {
-		lua_pushnil(L);
-		return 1;
-	} else {
-		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
-		if(output_len < 1024)
-			lua_pushlstring(L, output, output_len);
-		else
-			lua_pushnil(L);
-		return 1;
-	}
-}
-
-static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
-{
-	size_t len;
-	int32_t ulen, dest_len, output_len;
-	const char *s = luaL_checklstring(L, 1, &len);
-	UChar* ustr;
-	UErrorCode err = U_ZERO_ERROR;
-	UChar dest[1024];
-	char output[1024];
-
-	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
-	dest_len = uidna_IDNToUnicode(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
-	if (U_FAILURE(err)) {
-		lua_pushnil(L);
-		return 1;
-	} else {
-		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
-		if(output_len < 1024)
-			lua_pushlstring(L, output, output_len);
-		else
-			lua_pushnil(L);
-		return 1;
 	}
 }
 #endif

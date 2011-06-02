@@ -19,6 +19,7 @@ local console_listener = { default_port = 5582; default_mode = "*l"; default_int
 require "util.iterators";
 local jid_bare = require "util.jid".bare;
 local set, array = require "util.set", require "util.array";
+local cert_verify_identity = require "util.x509".verify_identity;
 
 local commands = {};
 local def_env = {};
@@ -498,7 +499,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print("    "..host.." -> "..remotehost..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -535,7 +536,7 @@ function def_env.s2s:show(match_jid)
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
@@ -559,6 +560,109 @@ function def_env.s2s:show(match_jid)
 	end
 	
 	return true, "Total: "..count_out.." outgoing, "..count_in.." incoming connections";
+end
+
+local function print_subject(print, subject)
+	for _, entry in ipairs(subject) do
+		print(
+			("    %s: %q"):format(
+				entry.name or entry.oid,
+				entry.value:gsub("[\r\n%z%c]", " ")
+			)
+		);
+	end
+end
+
+function def_env.s2s:showcert(domain)
+	local ser = require "util.serialization".serialize;
+	local print = self.session.print;
+	local domain_sessions = set.new(array.collect(keys(incoming_s2s)))
+		/function(session) return session.from_host == domain; end;
+	for local_host in values(prosody.hosts) do
+		local s2sout = local_host.s2sout;
+		if s2sout and s2sout[domain] then
+			domain_sessions:add(s2sout[domain]);
+		end
+	end
+	local cert_set = {};
+	for session in domain_sessions do
+		local conn = session.conn;
+		conn = conn and conn:socket();
+		if not conn.getpeercertificate then
+			if conn.dohandshake then
+				error("This version of LuaSec does not support certificate viewing");
+			end
+		else
+			local cert = conn:getpeercertificate();
+			if cert then
+				local digest = cert:digest("sha1");
+				if not cert_set[digest] then
+					local chain_valid, chain_err = conn:getpeerchainvalid();
+					cert_set[digest] = {
+						{
+						  from = session.from_host,
+						  to = session.to_host,
+						  direction = session.direction
+						};
+						chain_valid = chain_valid;
+						chain_err = chain_err;
+						cert = cert;
+					};
+				else
+					table.insert(cert_set[digest], {
+						from = session.from_host,
+						to = session.to_host,
+						direction = session.direction
+					});
+				end
+			end
+		end
+	end
+	local domain_certs = array.collect(values(cert_set));
+	-- Phew. We now have a array of unique certificates presented by domain.
+	local print = self.session.print;
+	local n_certs = #domain_certs;
+	
+	if n_certs == 0 then
+		return "No certificates found for "..domain;
+	end
+	
+	local function _capitalize_and_colon(byte)
+		return string.upper(byte)..":";
+	end
+	local function pretty_fingerprint(hash)
+		return hash:gsub("..", _capitalize_and_colon):sub(1, -2);
+	end
+	
+	for cert_info in values(domain_certs) do
+		local cert = cert_info.cert;
+		print("---")
+		print("Fingerprint (SHA1): "..pretty_fingerprint(cert:digest("sha1")));
+		print("");
+		local n_streams = #cert_info;
+		print("Currently used on "..n_streams.." stream"..(n_streams==1 and "" or "s")..":");
+		for _, stream in ipairs(cert_info) do
+			if stream.direction == "incoming" then
+				print("    "..stream.to.." <- "..stream.from);
+			else
+				print("    "..stream.from.." -> "..stream.to);
+			end
+		end
+		print("");
+		local chain_valid, err = cert_info.chain_valid, cert_info.chain_err;
+		local valid_identity = cert_verify_identity(domain, "xmpp-server", cert);
+		print("Trusted certificate: "..(chain_valid and "Yes" or ("No ("..err..")")));
+		print("Issuer: ");
+		print_subject(print, cert:issuer());
+		print("");
+		print("Valid for "..domain..": "..(valid_identity and "Yes" or "No"));
+		print("Subject:");
+		print_subject(print, cert:subject());
+	end
+	print("---");
+	return ("Showing "..n_certs.." certificate"
+		..(n_certs==1 and "" or "s")
+		.." presented by "..domain..".");
 end
 
 function def_env.s2s:close(from, to)

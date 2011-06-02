@@ -389,6 +389,14 @@ function resolver:A(rr)    -- - - - - - - - - - - - - - - - - - - - - - - -  A
 	rr.a = string.format('%i.%i.%i.%i', b1, b2, b3, b4);
 end
 
+function resolver:AAAA(rr)
+	local addr = {};
+	for i = 1, rr.rdlength, 2 do
+		local b1, b2 = self:byte(2);
+		table.insert(addr, ("%02x%02x"):format(b1, b2));
+	end
+	rr.aaaa = table.concat(addr, ":");
+end
 
 function resolver:CNAME(rr)    -- - - - - - - - - - - - - - - - - - - -  CNAME
 	rr.cname = self:name();
@@ -479,7 +487,7 @@ function resolver:PTR(rr)
 end
 
 function resolver:TXT(rr)    -- - - - - - - - - - - - - - - - - - - - - -  TXT
-	rr.txt = self:sub (rr.rdlength);
+	rr.txt = self:sub (self:byte());
 end
 
 
