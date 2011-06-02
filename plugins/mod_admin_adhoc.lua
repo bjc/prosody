@@ -1,4 +1,4 @@
--- Copyright (C) 2009-2010 Florian Zeitz
+-- Copyright (C) 2009-2011 Florian Zeitz
 --
 -- This file is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -100,6 +100,16 @@ function change_user_password_command_handler(self, data, state)
 		return { status = "executing", form = change_user_password_layout }, "executing";
 	end
 end
+
+function config_reload_handler(self, data, state)
+	local ok, err = prosody.reload_config();
+	if ok then
+		return { status = "completed", info = "Configuration reloaded (modules may need to be reloaded for this to have an effect)" };
+	else
+		return { status = "completed", error = { message = "Failed to reload config: " .. tostring(err) } };
+	end
+end
+
 
 function delete_user_command_handler(self, data, state)
 	local delete_user_layout = dataforms_new{
@@ -540,8 +550,6 @@ function shut_down_service_handler(self, data, state)
 	else
 		return { status = "executing", form = shut_down_service_layout }, "executing";
 	end
-
-	return true;
 end
 
 function unload_modules_handler(self, data, state)
@@ -582,6 +590,7 @@ end
 
 local add_user_desc = adhoc_new("Add User", "http://jabber.org/protocol/admin#add-user", add_user_command_handler, "admin");
 local change_user_password_desc = adhoc_new("Change User Password", "http://jabber.org/protocol/admin#change-user-password", change_user_password_command_handler, "admin");
+local config_reload_desc = adhoc_new("Reload configuration", "http://prosody.im/protocol/config#reload", config_reload_handler, "global_admin");
 local delete_user_desc = adhoc_new("Delete User", "http://jabber.org/protocol/admin#delete-user", delete_user_command_handler, "admin");
 local end_user_session_desc = adhoc_new("End User Session", "http://jabber.org/protocol/admin#end-user-session", end_user_session_handler, "admin");
 local get_user_password_desc = adhoc_new("Get User Password", "http://jabber.org/protocol/admin#get-user-password", get_user_password_handler, "admin");
@@ -596,6 +605,7 @@ local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/proto
 
 module:add_item("adhoc", add_user_desc);
 module:add_item("adhoc", change_user_password_desc);
+module:add_item("adhoc", config_reload_desc);
 module:add_item("adhoc", delete_user_desc);
 module:add_item("adhoc", end_user_session_desc);
 module:add_item("adhoc", get_user_password_desc);
