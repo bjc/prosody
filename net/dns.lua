@@ -2,6 +2,8 @@
 -- This file is included with Prosody IM. It has modifications,
 -- which are hereby placed in the public domain.
 
+-- public domain 20080404 lua@ztact.com
+
 
 -- todo: quick (default) header generation
 -- todo: nxdomain, error handling
@@ -13,61 +15,18 @@
 
 
 local socket = require "socket";
-local timer = require "util.timer";
-
+local ztact = require "util.ztact";
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
 
 local coroutine, io, math, string, table =
       coroutine, io, math, string, table;
 
-local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type=
-      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type;
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack =
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack;
 
-local ztact = { -- public domain 20080404 lua@ztact.com
-	get = function(parent, ...)
-		local len = select('#', ...);
-		for i=1,len do
-			parent = parent[select(i, ...)];
-			if parent == nil then break; end
-		end
-		return parent;
-	end;
-	set = function(parent, ...)
-		local len = select('#', ...);
-		local key, value = select(len-1, ...);
-		local cutpoint, cutkey;
-
-		for i=1,len-2 do
-			local key = select (i, ...)
-			local child = parent[key]
-
-			if value == nil then
-				if child == nil then
-					return;
-				elseif next(child, next(child)) then
-					cutpoint = nil; cutkey = nil;
-				elseif cutpoint == nil then
-					cutpoint = parent; cutkey = key;
-				end
-			elseif child == nil then
-				child = {};
-				parent[key] = child;
-			end
-			parent = child
-		end
-
-		if value == nil and cutpoint then
-			cutpoint[cutkey] = nil;
-		else
-			parent[key] = value;
-			return value;
-		end
-	end;
-};
 local get, set = ztact.get, ztact.set;
 
-local default_timeout = 15;
 
 -------------------------------------------------- module dns
 module('dns')
@@ -156,31 +115,32 @@ end
 local resolver = {};
 resolver.__index = resolver;
 
-resolver.timeout = default_timeout;
 
-local function default_rr_tostring(rr)
-	local rr_val = rr.type and rr[rr.type:lower()];
-	if type(rr_val) ~= "string" then
-		return "<UNKNOWN RDATA TYPE>";
-	end
-	return rr_val;
-end
+local SRV_tostring;
 
-local special_tostrings = {
-	LOC = resolver.LOC_tostring;
-	MX  = function (rr)
-		return string.format('%2i %s', rr.pref, rr.mx);
-	end;
-	SRV = function (rr)
-		local s = rr.srv;
-		return string.format('%5d %5d %5d %s', s.priority, s.weight, s.port, s.target);
-	end;
-};
 
 local rr_metatable = {};   -- - - - - - - - - - - - - - - - - - -  rr_metatable
 function rr_metatable.__tostring(rr)
-	local rr_string = (special_tostrings[rr.type] or default_rr_tostring)(rr);
-	return string.format('%2s %-5s %6i %-28s %s', rr.class, rr.type, rr.ttl, rr.name, rr_string);
+	local s0 = string.format('%2s %-5s %6i %-28s', rr.class, rr.type, rr.ttl, rr.name);
+	local s1 = '';
+	if rr.type == 'A' then
+		s1 = ' '..rr.a;
+	elseif rr.type == 'MX' then
+		s1 = string.format(' %2i %s', rr.pref, rr.mx);
+	elseif rr.type == 'CNAME' then
+		s1 = ' '..rr.cname;
+	elseif rr.type == 'LOC' then
+		s1 = ' '..resolver.LOC_tostring(rr);
+	elseif rr.type == 'NS' then
+		s1 = ' '..rr.ns;
+	elseif rr.type == 'SRV' then
+		s1 = ' '..SRV_tostring(rr);
+	elseif rr.type == 'TXT' then
+		s1 = ' '..rr.txt;
+	else
+		s1 = ' <UNKNOWN RDATA TYPE>';
+	end
+	return s0..s1;
 end
 
 
@@ -389,14 +349,6 @@ function resolver:A(rr)    -- - - - - - - - - - - - - - - - - - - - - - - -  A
 	rr.a = string.format('%i.%i.%i.%i', b1, b2, b3, b4);
 end
 
-function resolver:AAAA(rr)
-	local addr = {};
-	for i = 1, rr.rdlength, 2 do
-		local b1, b2 = self:byte(2);
-		table.insert(addr, ("%02x%02x"):format(b1, b2));
-	end
-	rr.aaaa = table.concat(addr, ":");
-end
 
 function resolver:CNAME(rr)    -- - - - - - - - - - - - - - - - - - - -  CNAME
 	rr.cname = self:name();
@@ -482,12 +434,15 @@ function resolver:SRV(rr)    -- - - - - - - - - - - - - - - - - - - - - -  SRV
 	  rr.srv.target   = self:name();
 end
 
-function resolver:PTR(rr)
-	rr.ptr = self:name();
+
+function SRV_tostring(rr)    -- - - - - - - - - - - - - - - - - - SRV_tostring
+	local s = rr.srv;
+	return string.format( '%5d %5d %5d %s', s.priority, s.weight, s.port, s.target );
 end
 
+
 function resolver:TXT(rr)    -- - - - - - - - - - - - - - - - - - - - - -  TXT
-	rr.txt = self:sub (self:byte());
+	rr.txt = self:sub (rr.rdlength);
 end
 
 
@@ -569,7 +524,7 @@ end
 
 function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 	if is_windows then
-		if windows and windows.get_nameservers then
+		if windows then
 			for _, server in ipairs(windows.get_nameservers()) do
 				self:addnameserver(server);
 			end
@@ -607,11 +562,7 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	local sock = self.socket[servernum];
 	if sock then return sock; end
 
-	local err;
-	sock, err = socket.udp();
-	if not sock then
-		return nil, err;
-	end
+	sock = socket.udp();
 	if self.socket_wrapper then sock = self.socket_wrapper(sock, self); end
 	sock:settimeout(0);
 	-- todo: attempt to use a random port, fallback to 0
@@ -716,44 +667,18 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		retry  = socket.gettime() + self.delays[1]
 	};
 
-	-- remember the query
+  -- remember the query
 	self.active[id] = self.active[id] or {};
 	self.active[id][question] = o;
 
-	-- remember which coroutine wants the answer
+  -- remember which coroutine wants the answer
 	local co = coroutine.running();
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
 		--set(self.yielded, co, qclass, qtype, qname, true);
 	end
 
-	local conn, err = self:getsocket(o.server)
-	if not conn then
-		return nil, err;
-	end
-	conn:send (o.packet)
-	
-	if timer and self.timeout then
-		local num_servers = #self.server;
-		local i = 1;
-		timer.add_task(self.timeout, function ()
-			if get(self.wanted, qclass, qtype, qname, co) then
-				if i < num_servers then
-					i = i + 1;
-					self:servfail(conn);
-					o.server = self.best_server;
-					conn, err = self:getsocket(o.server);
-					if conn then
-						conn:send(o.packet);
-						return self.timeout;
-					end
-				end
-				-- Tried everything, failed
-				self:cancel(qclass, qtype, qname, co, true);
-			end
-		end)
-	end
-	return true;
+	self:getsocket (o.server):send (o.packet)
 end
 
 function resolver:servfail(sock)
@@ -785,7 +710,7 @@ function resolver:servfail(sock)
 			end
 		end
 	end
-
+   
 	if num == self.best_server then
 		self.best_server = self.best_server + 1;
 		if self.best_server > #self.server then
@@ -793,10 +718,6 @@ function resolver:servfail(sock)
 			self.best_server = 1;
 		end
 	end
-end
-
-function resolver:settimeout(seconds)
-	self.timeout = seconds;
 end
 
 function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
@@ -848,11 +769,11 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 end
 
 
-function resolver:feed(sock, packet, force)
+function resolver:feed(sock, packet)
 	--print('receive'); print(self.socket);
 	self.time = socket.gettime();
 
-	local response = self:decode(packet, force);
+	local response = self:decode(packet);
 	if response and self.active[response.header.id]
 		and self.active[response.header.id][response.question.raw] then
 		--print('received response');
@@ -885,13 +806,10 @@ function resolver:feed(sock, packet, force)
 	return response;
 end
 
-function resolver:cancel(qclass, qtype, qname, co, call_handler)
-	local cos = get(self.wanted, qclass, qtype, qname);
+function resolver:cancel(data)
+	local cos = get(self.wanted, unpack(data, 1, 3));
 	if cos then
-		if call_handler then
-			coroutine.resume(co);
-		end
-		cos[co] = nil;
+		cos[data[4]] = nil;
 	end
 end
 
@@ -934,12 +852,12 @@ end
 function resolver:lookup(qname, qtype, qclass)    -- - - - - - - - - -  lookup
 	self:query (qname, qtype, qclass)
 	while self:pulse() do
-		local recvt = {}
-		for i, s in ipairs(self.socket) do
-			recvt[i] = s
-		end
-		socket.select(recvt, nil, 4)
-	end
+           local recvt = {}
+           for i, s in ipairs(self.socket) do
+              recvt[i] = s
+           end
+           socket.select(recvt, nil, 4)
+        end
 	--print(self.cache);
 	return self:peek(qname, qtype, qclass);
 end
@@ -948,9 +866,6 @@ function resolver:lookupex(handler, qname, qtype, qclass)    -- - - - - - - - - 
 	return self:peek(qname, qtype, qclass) or self:query(qname, qtype, qclass);
 end
 
-function resolver:tohostname(ip)
-	return dns.lookup(ip:gsub("(%d+)%.(%d+)%.(%d+)%.(%d+)", "%4.%3.%2.%1.in-addr.arpa."), "PTR");
-end
 
 --print ---------------------------------------------------------------- print
 
@@ -1026,10 +941,6 @@ function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);
 end
 
-function dns.tohostname(...)
-	return _resolver:tohostname(...);
-end
-
 function dns.purge(...)    -- - - - - - - - - - - - - - - - - - - - - -  purge
 	return _resolver:purge(...);
 end
@@ -1048,10 +959,6 @@ end
 
 function dns.cancel(...)  -- - - - - - - - - - - - - - - - - - - - - -  cancel
 	return _resolver:cancel(...);
-end
-
-function dns.settimeout(...)
-	return _resolver:settimeout(...);
 end
 
 function dns.socket_wrapper_set(...)    -- - - - - - - - -  socket_wrapper_set

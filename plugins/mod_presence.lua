@@ -22,6 +22,21 @@ local NULL = {};
 
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
+local offlinemanager = require "core.offlinemanager";
+
+local _core_route_stanza = core_route_stanza;
+local core_route_stanza;
+function core_route_stanza(origin, stanza)
+	if stanza.attr.type ~= nil and stanza.attr.type ~= "unavailable" and stanza.attr.type ~= "error" then
+		local node, host = jid_split(stanza.attr.to);
+		host = hosts[host];
+		if node and host and host.type == "local" then
+			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+			return;
+		end
+	end
+	_core_route_stanza(origin, stanza);
+end
 
 local function select_top_resources(user)
 	local priority = 0;
@@ -49,7 +64,7 @@ end
 
 local ignore_presence_priority = module:get_option("ignore_presence_priority");
 
-function handle_normal_presence(origin, stanza)
+function handle_normal_presence(origin, stanza, core_route_stanza)
 	if ignore_presence_priority then
 		local priority = stanza:child_with_name("priority");
 		if priority and priority[1] ~= "0" then
@@ -58,15 +73,6 @@ function handle_normal_presence(origin, stanza)
 			priority[1] = "0";
 		end
 	end
-	local priority = stanza:child_with_name("priority");
-	if priority and #priority > 0 then
-		priority = t_concat(priority);
-		if s_find(priority, "^[+-]?[0-9]+$") then
-			priority = tonumber(priority);
-			if priority < -128 then priority = -128 end
-			if priority > 127 then priority = 127 end
-		else priority = 0; end
-	else priority = 0; end
 	if full_sessions[origin.full_jid] then -- if user is still connected
 		origin.send(stanza); -- reflect their presence back to them
 	end
@@ -76,13 +82,13 @@ function handle_normal_presence(origin, stanza)
 	for _, res in pairs(user and user.sessions or NULL) do -- broadcast to all resources
 		if res ~= origin and res.presence then -- to resource
 			stanza.attr.to = res.full_jid;
-			core_post_stanza(origin, stanza, true);
+			core_route_stanza(origin, stanza);
 		end
 	end
 	for jid, item in pairs(roster) do -- broadcast to all interested contacts
 		if item.subscription == "both" or item.subscription == "from" then
 			stanza.attr.to = jid;
-			core_post_stanza(origin, stanza, true);
+			core_route_stanza(origin, stanza);
 		end
 	end
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
@@ -91,13 +97,13 @@ function handle_normal_presence(origin, stanza)
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
 			if item.subscription == "both" or item.subscription == "to" then
 				probe.attr.to = jid;
-				core_post_stanza(origin, probe, true);
+				core_route_stanza(origin, probe);
 			end
 		end
 		for _, res in pairs(user and user.sessions or NULL) do -- broadcast from all available resources
 			if res ~= origin and res.presence then
 				res.presence.attr.to = origin.full_jid;
-				core_post_stanza(res, res.presence, true);
+				core_route_stanza(res, res.presence);
 				res.presence.attr.to = nil;
 			end
 		end
@@ -110,13 +116,15 @@ function handle_normal_presence(origin, stanza)
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
 			if item.ask then
 				request.attr.to = jid;
-				core_post_stanza(origin, request, true);
+				core_route_stanza(origin, request);
 			end
 		end
-
-		if priority >= 0 then
-                        local event = { origin = origin }
-                        module:fire_event('message/offline/broadcast', event);
+		local offline = offlinemanager.load(node, host);
+		if offline then
+			for _, msg in ipairs(offline) do
+				origin.send(msg); -- FIXME do we need to modify to/from in any way?
+			end
+			offlinemanager.deleteAll(node, host);
 		end
 	end
 	if stanza.attr.type == "unavailable" then
@@ -128,12 +136,21 @@ function handle_normal_presence(origin, stanza)
 		if origin.directed then
 			for jid in pairs(origin.directed) do
 				stanza.attr.to = jid;
-				core_post_stanza(origin, stanza, true);
+				core_route_stanza(origin, stanza);
 			end
 			origin.directed = nil;
 		end
 	else
 		origin.presence = stanza;
+		local priority = stanza:child_with_name("priority");
+		if priority and #priority > 0 then
+			priority = t_concat(priority);
+			if s_find(priority, "^[+-]?[0-9]+$") then
+				priority = tonumber(priority);
+				if priority < -128 then priority = -128 end
+				if priority > 127 then priority = 127 end
+			else priority = 0; end
+		else priority = 0; end
 		if origin.priority ~= priority then
 			origin.priority = priority;
 			recalc_resource_map(user);
@@ -142,7 +159,7 @@ function handle_normal_presence(origin, stanza)
 	stanza.attr.to = nil; -- reset it
 end
 
-function send_presence_of_available_resources(user, host, jid, recipient_session, stanza)
+function send_presence_of_available_resources(user, host, jid, recipient_session, core_route_stanza, stanza)
 	local h = hosts[host];
 	local count = 0;
 	if h and h.type == "local" then
@@ -153,7 +170,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 				if pres then
 					if stanza then pres = stanza; pres.attr.from = session.full_jid; end
 					pres.attr.to = jid;
-					core_post_stanza(session, pres, true);
+					core_route_stanza(session, pres);
 					pres.attr.to = nil;
 					count = count + 1;
 				end
@@ -164,29 +181,26 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 	return count;
 end
 
-function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
+function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza)
 	local node, host = jid_split(from_bare);
-	if to_bare == from_bare then return; end -- No self contacts
+	if to_bare == origin.username.."@"..origin.host then return; end -- No self contacts
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "outbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
-	if stanza.attr.type == "probe" then
-		stanza.attr.from, stanza.attr.to = st_from, st_to;
-		return;
-	elseif stanza.attr.type == "subscribe" then
+	if stanza.attr.type == "subscribe" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none, ask = subscribe)
 		if rostermanager.set_contact_pending_out(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end -- else file error
-		core_post_stanza(origin, stanza);
+		core_route_stanza(origin, stanza);
 	elseif stanza.attr.type == "unsubscribe" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none or from)
 		if rostermanager.unsubscribe(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare); -- FIXME do roster push when roster has in fact not changed?
 		end -- else file error
-		core_post_stanza(origin, stanza);
+		core_route_stanza(origin, stanza);
 	elseif stanza.attr.type == "subscribed" then
 		-- 1. route stanza
 		-- 2. roster_push ()
@@ -194,23 +208,20 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end
-		core_post_stanza(origin, stanza);
-		send_presence_of_available_resources(node, host, to_bare, origin);
+		core_route_stanza(origin, stanza);
+		send_presence_of_available_resources(node, host, to_bare, origin, core_route_stanza);
 	elseif stanza.attr.type == "unsubscribed" then
 		-- 1. route stanza
 		-- 2. roster push (subscription = none or to)
 		if rostermanager.unsubscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end
-		core_post_stanza(origin, stanza);
-	else
-		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
+		core_route_stanza(origin, stanza);
 	end
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
-	return true;
 end
 
-function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare)
+function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_bare, to_bare, core_route_stanza)
 	local node, host = jid_split(to_bare);
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
@@ -219,21 +230,21 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	if stanza.attr.type == "probe" then
 		local result, err = rostermanager.is_contact_subscribed(node, host, from_bare);
 		if result then
-			if 0 == send_presence_of_available_resources(node, host, st_from, origin) then
-				core_post_stanza(hosts[host], st.presence({from=to_bare, to=st_from, type="unavailable"}), true); -- TODO send last activity
+			if 0 == send_presence_of_available_resources(node, host, st_from, origin, core_route_stanza) then
+				core_route_stanza(hosts[host], st.presence({from=to_bare, to=st_from, type="unavailable"})); -- TODO send last activity
 			end
 		elseif not err then
-			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}), true);
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unsubscribed"}));
 		end
 	elseif stanza.attr.type == "subscribe" then
 		if rostermanager.is_contact_subscribed(node, host, from_bare) then
-			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"}), true); -- already subscribed
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"})); -- already subscribed
 			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
-			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
-				core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- TODO send last activity
+			if 0 == send_presence_of_available_resources(node, host, from_bare, origin, core_route_stanza) then
+				core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- TODO send last activity
 			end
 		else
-			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- acknowledging receipt
+			core_route_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"})); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
 				if rostermanager.set_contact_pending_in(node, host, from_bare) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
@@ -255,11 +266,8 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			sessionmanager.send_to_interested_resources(node, host, stanza);
 			rostermanager.roster_push(node, host, from_bare);
 		end
-	else
-		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
-	end
+	end -- discard any other type
 	stanza.attr.from, stanza.attr.to = st_from, st_to;
-	return true;
 end
 
 local outbound_presence_handler = function(data)
@@ -270,12 +278,12 @@ local outbound_presence_handler = function(data)
 	if to then
 		local t = stanza.attr.type;
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes
-			return handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
+			handle_outbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+			return true;
 		end
 
 		local to_bare = jid_bare(to);
-		local roster = origin.roster;
-		if roster and not(roster[to_bare] and (roster[to_bare].subscription == "both" or roster[to_bare].subscription == "from")) then -- directed presence
+		if not(origin.roster[to_bare] and (origin.roster[to_bare].subscription == "both" or origin.roster[to_bare].subscription == "from")) then -- directed presence
 			origin.directed = origin.directed or {};
 			if t then -- removing from directed presence list on sending an error or unavailable
 				origin.directed[to] = nil; -- FIXME does it make more sense to add to_bare rather than to?
@@ -298,7 +306,8 @@ module:hook("presence/bare", function(data)
 	local t = stanza.attr.type;
 	if to then
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
-			return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
+			handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+			return true;
 		end
 	
 		local user = bare_sessions[to];
@@ -310,9 +319,7 @@ module:hook("presence/bare", function(data)
 			end
 		end -- no resources not online, discard
 	elseif not t or t == "unavailable" then
-		handle_normal_presence(origin, stanza);
-	else
-		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
+		handle_normal_presence(origin, stanza, core_route_stanza);
 	end
 	return true;
 end);
@@ -322,7 +329,8 @@ module:hook("presence/full", function(data)
 
 	local t = stanza.attr.type;
 	if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to full JID
-		return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
+		handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to), core_route_stanza);
+		return true;
 	end
 
 	local session = full_sessions[stanza.attr.to];
@@ -339,10 +347,10 @@ module:hook("presence/host", function(data)
 	local from_bare = jid_bare(stanza.attr.from);
 	local t = stanza.attr.type;
 	if t == "probe" then
-		core_post_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
 	elseif t == "subscribe" then
-		core_post_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id, type = "subscribed" }));
-		core_post_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id, type = "subscribed" }));
+		core_route_stanza(hosts[module.host], st.presence({ from = module.host, to = from_bare, id = stanza.attr.id }));
 	end
 	return true;
 end);
@@ -361,7 +369,7 @@ module:hook("resource-unbind", function(event)
 		pres:tag("status"):text("Disconnected: "..err):up();
 		for jid in pairs(session.directed) do
 			pres.attr.to = jid;
-			core_post_stanza(session, pres, true);
+			core_route_stanza(session, pres);
 		end
 		session.directed = nil;
 	end

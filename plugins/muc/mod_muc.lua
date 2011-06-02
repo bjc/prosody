@@ -15,14 +15,11 @@ local muc_host = module:get_host();
 local muc_name = module:get_option("name");
 if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local restrict_room_creation = module:get_option("restrict_room_creation");
-if restrict_room_creation then
-	if restrict_room_creation == true then 
-		restrict_room_creation = "admin";
-	elseif restrict_room_creation ~= "admin" and restrict_room_creation ~= "local" then
-		restrict_room_creation = nil;
-	end
-end
+if restrict_room_creation and restrict_room_creation ~= true then restrict_room_creation = nil; end
+
 local muc_new_room = module:require "muc".new_room;
+local register_component = require "core.componentmanager".register_component;
+local deregister_component = require "core.componentmanager".deregister_component;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -30,16 +27,12 @@ local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
 
-rooms = {};
-local rooms = rooms;
+local rooms = {};
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
-local component = hosts[module.host];
-
--- Configurable options
-local max_history_messages = module:get_option_number("max_history_messages");
+local component;
 
 local function is_admin(jid)
-	return um_is_admin(jid, module.host);
+	return um_is_admin(jid) or um_is_admin(jid, module.host);
 end
 
 local function room_route_stanza(room, stanza) core_post_stanza(component, stanza); end
@@ -58,9 +51,6 @@ local function room_save(room, forced)
 		room._data.history = history;
 	elseif forced then
 		datamanager.store(node, muc_host, "config", nil);
-		if not next(room._occupants) then -- Room empty
-			rooms[room.jid] = nil;
-		end
 	end
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
@@ -68,20 +58,15 @@ end
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
 	local data = datamanager.load(node, muc_host, "config") or {};
-	local room = muc_new_room(jid, {
-		history_length = max_history_messages;
-	});
+	local room = muc_new_room(jid);
 	room._data = data._data;
-	room._data.history_length = max_history_messages; --TODO: Need to allow per-room with a global limit
 	room._affiliations = data._affiliations;
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
 end
 
-local host_room = muc_new_room(muc_host, {
-	history_length = max_history_messages;
-});
+local host_room = muc_new_room(muc_host);
 host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
 
@@ -93,8 +78,8 @@ end
 local function get_disco_items(stanza)
 	local reply = st.iq({type='result', id=stanza.attr.id, from=muc_host, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#items");
 	for jid, room in pairs(rooms) do
-		if not room:is_hidden() then
-			reply:tag("item", {jid=jid, name=room:get_name()}):up();
+		if not room._data.hidden then
+			reply:tag("item", {jid=jid, name=jid}):up();
 		end
 	end
 	return reply; -- TODO cache disco reply
@@ -120,20 +105,15 @@ local function handle_to_domain(origin, stanza)
 	end
 end
 
-function stanza_handler(event)
-	local origin, stanza = event.origin, event.stanza;
+component = register_component(muc_host, function(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
 	if to_node then
 		local bare = to_node.."@"..to_host;
 		if to_host == muc_host or bare == muc_host then
 			local room = rooms[bare];
 			if not room then
-				if not(restrict_room_creation) or
-				  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
-				  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-					room = muc_new_room(bare, {
-						history_length = max_history_messages;
-					});
+				if not(restrict_room_creation) or is_admin(stanza.attr.from) then
+					room = muc_new_room(bare);
 					room.route_stanza = room_route_stanza;
 					room.save = room_save;
 					rooms[bare] = room;
@@ -148,23 +128,12 @@ function stanza_handler(event)
 				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 			end
 		else --[[not for us?]] end
-		return true;
+		return;
 	end
 	-- to the main muc domain
 	handle_to_domain(origin, stanza);
-	return true;
-end
-module:hook("iq/bare", stanza_handler, -1);
-module:hook("message/bare", stanza_handler, -1);
-module:hook("presence/bare", stanza_handler, -1);
-module:hook("iq/full", stanza_handler, -1);
-module:hook("message/full", stanza_handler, -1);
-module:hook("presence/full", stanza_handler, -1);
-module:hook("iq/host", stanza_handler, -1);
-module:hook("message/host", stanza_handler, -1);
-module:hook("presence/host", stanza_handler, -1);
-
-hosts[module.host].send = function(stanza) -- FIXME do a generic fix
+end);
+function component.send(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
 		core_post_stanza(component, stanza);
 	else error("component.send only supports result and error stanzas at the moment"); end
@@ -172,10 +141,14 @@ end
 
 prosody.hosts[module:get_host()].muc = { rooms = rooms };
 
+module.unload = function()
+	deregister_component(muc_host);
+end
 module.save = function()
 	return {rooms = rooms};
 end
 module.restore = function(data)
+	rooms = {};
 	for jid, oldroom in pairs(data.rooms or {}) do
 		local room = muc_new_room(jid);
 		room._jid_nick = oldroom._jid_nick;

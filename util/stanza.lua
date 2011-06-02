@@ -44,13 +44,11 @@ module "stanza"
 
 stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
-local stanza_mt = stanza_mt;
 
 function stanza(name, attr)
-	local stanza = { name = name, attr = attr or {}, tags = {} };
+	local stanza = { name = name, attr = attr or {}, tags = {}, last_add = {}};
 	return setmetatable(stanza, stanza_mt);
 end
-local stanza = stanza;
 
 function stanza_mt:query(xmlns)
 	return self:tag("query", { xmlns = xmlns });
@@ -62,27 +60,26 @@ end
 
 function stanza_mt:tag(name, attrs)
 	local s = stanza(name, attrs);
-	local last_add = self.last_add;
-	if not last_add then last_add = {}; self.last_add = last_add; end
-	(last_add[#last_add] or self):add_direct_child(s);
-	t_insert(last_add, s);
+	(self.last_add[#self.last_add] or self):add_direct_child(s);
+	t_insert(self.last_add, s);
 	return self;
 end
 
 function stanza_mt:text(text)
-	local last_add = self.last_add;
-	(last_add and last_add[#last_add] or self):add_direct_child(text);
+	(self.last_add[#self.last_add] or self):add_direct_child(text);
 	return self;
 end
 
 function stanza_mt:up()
-	local last_add = self.last_add;
-	if last_add then t_remove(last_add); end
+	t_remove(self.last_add);
 	return self;
 end
 
 function stanza_mt:reset()
-	self.last_add = nil;
+	local last_add = self.last_add;
+	for i = 1,#last_add do
+		last_add[i] = nil;
+	end
 	return self;
 end
 
@@ -94,8 +91,7 @@ function stanza_mt:add_direct_child(child)
 end
 
 function stanza_mt:add_child(child)
-	local last_add = self.last_add;
-	(last_add and last_add[#last_add] or self):add_direct_child(child);
+	(self.last_add[#self.last_add] or self):add_direct_child(child);
 	return self;
 end
 
@@ -108,14 +104,6 @@ function stanza_mt:get_child(name, xmlns)
 			return child;
 		end
 	end
-end
-
-function stanza_mt:get_child_text(name, xmlns)
-	local tag = self:get_child(name, xmlns);
-	if tag then
-		return tag:get_text();
-	end
-	return nil;
 end
 
 function stanza_mt:child_with_name(name)
@@ -134,48 +122,17 @@ function stanza_mt:children()
 	local i = 0;
 	return function (a)
 			i = i + 1
-			return a[i];
+			local v = a[i]
+			if v then return v; end
 		end, self, i;
 end
-
-function stanza_mt:childtags(name, xmlns)
-	xmlns = xmlns or self.attr.xmlns;
-	local tags = self.tags;
-	local start_i, max_i = 1, #tags;
-	return function ()
-		for i = start_i, max_i do
-			local v = tags[i];
-			if (not name or v.name == name)
-			and (not xmlns or xmlns == v.attr.xmlns) then
-				start_i = i+1;
-				return v;
-			end
-		end
-	end;
-end
-
-function stanza_mt:maptags(callback)
-	local tags, curr_tag = self.tags, 1;
-	local n_children, n_tags = #self, #tags;
-	
-	local i = 1;
-	while curr_tag <= n_tags do
-		if self[i] == tags[curr_tag] then
-			local ret = callback(self[i]);
-			if ret == nil then
-				t_remove(self, i);
-				t_remove(tags, curr_tag);
-				n_children = n_children - 1;
-				n_tags = n_tags - 1;
-			else
-				self[i] = ret;
-				tags[i] = ret;
-			end
-			i = i + 1;
-			curr_tag = curr_tag + 1;
-		end
-	end
-	return self;
+function stanza_mt:childtags()
+	local i = 0;
+	return function (a)
+			i = i + 1
+			local v = self.tags[i]
+			if v then return v; end
+		end, self.tags[1], i;
 end
 
 local xml_escape
@@ -243,7 +200,7 @@ function stanza_mt.get_error(stanza)
 	end
 	type = error_tag.attr.type;
 	
-	for child in error_tag:childtags() do
+	for child in error_tag:children() do
 		if child.attr.xmlns == xmlns_stanzas then
 			if not text and child.name == "text" then
 				text = child:get_text();
@@ -255,7 +212,7 @@ function stanza_mt.get_error(stanza)
 			end
 		end
 	end
-	return type, condition or "undefined-condition", text;
+	return type, condition or "undefined-condition", text or "";
 end
 
 function stanza_mt.__add(s1, s2)
@@ -314,33 +271,39 @@ function deserialize(stanza)
 				end
 			end
 			stanza.tags = tags;
+			if not stanza.last_add then
+				stanza.last_add = {};
+			end
 		end
 	end
 	
 	return stanza;
 end
 
-local function _clone(stanza)
-	local attr, tags = {}, {};
-	for k,v in pairs(stanza.attr) do attr[k] = v; end
-	local new = { name = stanza.name, attr = attr, tags = tags };
-	for i=1,#stanza do
-		local child = stanza[i];
-		if child.name then
-			child = _clone(child);
-			t_insert(tags, child);
+function clone(stanza)
+	local lookup_table = {};
+	local function _copy(object)
+		if type(object) ~= "table" then
+			return object;
+		elseif lookup_table[object] then
+			return lookup_table[object];
 		end
-		t_insert(new, child);
+		local new_table = {};
+		lookup_table[object] = new_table;
+		for index, value in pairs(object) do
+			new_table[_copy(index)] = _copy(value);
+		end
+		return setmetatable(new_table, getmetatable(object));
 	end
-	return setmetatable(new, stanza_mt);
+	
+	return _copy(stanza)
 end
-clone = _clone;
 
 function message(attr, body)
 	if not body then
 		return stanza("message", attr);
 	else
-		return stanza("message", attr):tag("body"):text(body):up();
+		return stanza("message", attr):tag("body"):text(body);
 	end
 end
 function iq(attr)

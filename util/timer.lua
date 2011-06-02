@@ -11,9 +11,7 @@ local ns_addtimer = require "net.server".addtimer;
 local event = require "net.server".event;
 local event_base = require "net.server".event_base;
 
-local math_min = math.min
-local math_huge = math.huge
-local get_time = require "socket".gettime;
+local get_time = os.time;
 local t_insert = table.insert;
 local t_remove = table.remove;
 local ipairs, pairs = ipairs, pairs;
@@ -45,21 +43,14 @@ if not event then
 			new_data = {};
 		end
 		
-		local next_time = math_huge;
 		for i, d in pairs(data) do
 			local t, func = d[1], d[2];
 			if t <= current_time then
 				data[i] = nil;
 				local r = func(current_time);
-				if type(r) == "number" then
-					_add_task(r, func);
-					next_time = math_min(next_time, r);
-				end
-			else
-				next_time = math_min(next_time, t - current_time);
+				if type(r) == "number" then _add_task(r, func); end
 			end
 		end
-		return next_time;
 	end);
 else
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;

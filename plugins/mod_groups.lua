@@ -29,9 +29,6 @@ function inject_roster_contacts(username, host, roster)
 			if jid ~= bare_jid then
 				if not roster[jid] then roster[jid] = {}; end
 				roster[jid].subscription = "both";
-				if groups[group_name][jid] then
-					roster[jid].name = groups[group_name][jid];
-				end
 				if not roster[jid].groups then
 					roster[jid].groups = { [group_name] = true };
 				end
@@ -103,13 +100,10 @@ function module.load()
 			groups[curr_group] = groups[curr_group] or {};
 		else
 			-- Add JID
-			local entryjid, name = line:match("([^=]*)=?(.*)");
-			module:log("debug", "entryjid = '%s', name = '%s'", entryjid, name);
-			local jid;
-			jid = jid_prep(entryjid:match("%S+"));
+			local jid = jid_prep(line:match("%S+"));
 			if jid then
 				module:log("debug", "New member of %s: %s", tostring(curr_group), tostring(jid));
-				groups[curr_group][jid] = name or false;
+				groups[curr_group][jid] = true;
 				members[jid] = members[jid] or {};
 				members[jid][#members[jid]+1] = curr_group;
 			end
