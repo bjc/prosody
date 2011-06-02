@@ -98,7 +98,12 @@ function reader(input)
 			local x = iter();
 			if x then
 				dm.set_data_path(path);
-				x.data = assert(dm.load(x.user, x.host, x.store));
+				local err;
+				x.data, err = dm.load(x.user, x.host, x.store);
+				if x.data == nil and err then
+					error(("Error loading data at path %s for %s@%s (%s store)")
+						:format(path, x.user or "<nil>", x.host or "<nil>", x.store or "<nil>"), 0);
+				end
 				return x;
 			end
 		end;
