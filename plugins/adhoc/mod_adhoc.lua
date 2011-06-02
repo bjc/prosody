@@ -1,5 +1,5 @@
 -- Copyright (C) 2009 Thilo Cestonaro
--- Copyright (C) 2009-2010 Florian Zeitz
+-- Copyright (C) 2009-2011 Florian Zeitz
 --
 -- This file is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -51,12 +51,14 @@ module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type == "get" and stanza.tags[1].attr.node
 	    and stanza.tags[1].attr.node == xmlns_cmd then
-		local privileged = is_admin(stanza.attr.from, stanza.attr.to);
+		local admin = is_admin(stanza.attr.from, stanza.attr.to);
+		local global_admin = is_admin(stanza.attr.from);
 		reply = st.reply(stanza);
 		reply:tag("query", { xmlns = xmlns_disco.."#items",
 		    node = xmlns_cmd });
 		for node, command in pairs(commands) do
-			if (command.permission == "admin" and privileged)
+			if (command.permission == "admin" and admin)
+			    or (command.permission == "global_admin" and global_admin)
 			    or (command.permission == "user") then
 				reply:tag("item", { name = command.name,
 				    node = node, jid = module:get_host() });
@@ -73,9 +75,10 @@ module:hook("iq/host/"..xmlns_cmd..":command", function (event)
 	if stanza.attr.type == "set" then
 		local node = stanza.tags[1].attr.node
 		if commands[node] then
-			local privileged = is_admin(stanza.attr.from, stanza.attr.to);
-			if commands[node].permission == "admin"
-			    and not privileged then
+			local admin = is_admin(stanza.attr.from, stanza.attr.to);
+			local global_admin = is_admin(stanza.attr.from);
+			if (commands[node].permission == "admin" and not admin)
+			    or (commands[node].permission == "global_admin" and not global_admin) then
 				origin.send(st.error_reply(stanza, "auth", "forbidden", "You don't have permission to execute this command"):up()
 				    :add_child(commands[node]:cmdtag("canceled")
 					:tag("note", {type="error"}):text("You don't have permission to execute this command")));
