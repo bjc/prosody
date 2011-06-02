@@ -134,12 +134,14 @@ end
 
 
 function json.decode(json)
+	json = json.." "; -- appending a space ensures valid json wouldn't touch EOF
 	local pos = 1;
 	local current = {};
 	local stack = {};
 	local ch, peek;
 	local function next()
 		ch = json:sub(pos, pos);
+		if ch == "" then error("Unexpected EOF"); end
 		pos = pos+1;
 		peek = json:sub(pos, pos);
 		return ch;
