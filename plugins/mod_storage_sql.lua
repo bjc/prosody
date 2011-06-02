@@ -68,6 +68,8 @@ local function create_table()
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
 	if params.driver == "PostgreSQL" then
 		create_sql = create_sql:gsub("`", "\"");
+	elseif params.driver == "MySQL" then
+		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
 	end
 	
 	local stmt = connection:prepare(create_sql);
@@ -90,6 +92,22 @@ local function create_table()
 			end
 			if not(ok and commit_ok) then
 				module:log("warn", "Failed to create index (%s), lookups may not be optimised", err or commit_err);
+			end
+		else -- COMPAT: Upgrade tables from 0.8.0
+			-- Failed to create, but check existing MySQL table here
+			local stmt = connection:prepare("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			local ok = stmt:execute();
+			local commit_ok = connection:commit();
+			if ok and commit_ok then
+				if stmt:rowcount() > 0 then
+					local stmt = connection:prepare("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+					local ok = stmt:execute();
+					local commit_ok = connection:commit();
+					if ok and commit_ok then
+						module:log("info", "Database table automatically upgraded");
+					end
+				end
+				repeat until not stmt:fetch();
 			end
 		end
 	end
