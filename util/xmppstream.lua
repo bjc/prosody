@@ -167,9 +167,12 @@ function new_sax_handlers(session, stream_callbacks)
 			stack = {};
 		end
 	end
-	
-	local function restricted_handler()
+
+	local function restricted_handler(parser)
 		cb_error(session, "parse-error", "restricted-xml", "Restricted XML, see RFC 6120 section 11.1.");
+		if not parser:stop() then
+			error("Failed to abort parsing");
+		end
 	end
 	
 	if lxp_supports_doctype then
