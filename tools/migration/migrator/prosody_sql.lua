@@ -21,6 +21,8 @@ local function create_table(connection, params)
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
 	if params.driver == "PostgreSQL" then
 		create_sql = create_sql:gsub("`", "\"");
+	elseif params.driver == "MySQL" then
+		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
 	end
 	
 	local stmt = connection:prepare(create_sql);
@@ -39,6 +41,22 @@ local function create_table(connection, params)
 			if stmt then
 				ok, err = assert(stmt:execute());
 				commit_ok, commit_err = assert(connection:commit());
+			end
+		else -- COMPAT: Upgrade tables from 0.8.0
+			-- Failed to create, but check existing MySQL table here
+			local stmt = connection:prepare("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			local ok = stmt:execute();
+			local commit_ok = connection:commit();
+			if ok and commit_ok then
+				if stmt:rowcount() > 0 then
+					local stmt = connection:prepare("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+					local ok = stmt:execute();
+					local commit_ok = connection:commit();
+					if ok and commit_ok then
+						print("Database table automatically upgraded");
+					end
+				end
+				repeat until not stmt:fetch();
 			end
 		end
 	end
