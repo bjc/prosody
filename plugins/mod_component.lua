@@ -86,7 +86,7 @@ function handle_component_auth(event)
 		send = session.send;
 		main_session = session;
 		session.on_destroy = on_destroy;
-		session.component_validate_from = module:get_option_boolean("validate_from_addresses") ~= false;
+		session.component_validate_from = module:get_option_boolean("validate_from_addresses", true);
 		log("info", "Component successfully authenticated: %s", session.host);
 		session.send(st.stanza("handshake"));
 	else -- TODO: Implement stanza distribution
