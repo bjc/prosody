@@ -108,6 +108,8 @@ local function create_table()
 					end
 				end
 				repeat until not stmt:fetch();
+			else
+				module:log("error", "Failed to upgrade database schema, please see http://prosody.im/doc/mysql for help");
 			end
 		end
 	end
