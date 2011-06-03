@@ -600,7 +600,7 @@ local get_online_users_desc = adhoc_new("Get List of Online Users", "http://jabb
 local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/protocol/modules#list", list_modules_handler, "admin");
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
-local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "admin");
+local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
 
 module:add_item("adhoc", add_user_desc);
