@@ -162,7 +162,7 @@ function new_sax_handlers(session, stream_callbacks)
 
 	local function restricted_handler(parser)
 		cb_error(session, "parse-error", "restricted-xml", "Restricted XML, see RFC 6120 section 11.1.");
-		if not parser:stop() then
+		if not parser.stop or not parser:stop() then
 			error("Failed to abort parsing");
 		end
 	end
