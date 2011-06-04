@@ -146,7 +146,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile)
 	}
 	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
 	if (U_FAILURE(err)) {
-		luah_pushnil(L);
+		lua_pushnil(L);
 		return 1;
 	}
 	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, 0, NULL, &err);
