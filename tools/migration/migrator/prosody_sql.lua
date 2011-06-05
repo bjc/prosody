@@ -42,7 +42,7 @@ local function create_table(connection, params)
 				ok, err = assert(stmt:execute());
 				commit_ok, commit_err = assert(connection:commit());
 			end
-		else -- COMPAT: Upgrade tables from 0.8.0
+		elseif params.driver == "MySQL" then -- COMPAT: Upgrade tables from 0.8.0
 			-- Failed to create, but check existing MySQL table here
 			local stmt = connection:prepare("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
 			local ok = stmt:execute();
