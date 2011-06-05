@@ -125,11 +125,11 @@ function handle_request(method, body, request)
 	
 	local session = sessions[request.sid];
 	if session then
-               -- Session was marked as inactive, since we have
-               -- a request open now, unmark it
-               if inactive_sessions[session] then
-                       inactive_sessions[session] = nil;
-               end
+		-- Session was marked as inactive, since we have
+		-- a request open now, unmark it
+		if inactive_sessions[session] and #session.requests > 0 then
+			inactive_sessions[session] = nil;
+		end
 
 		local r = session.requests;
 		log("debug", "Session %s has %d out of %d requests open", request.sid, #r, session.bosh_hold);
