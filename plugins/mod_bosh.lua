@@ -162,13 +162,7 @@ function handle_request(method, body, request)
 			end
 		end
 		
-		if session.bosh_terminate then
-			session.log("debug", "Closing session with %d requests open", #session.requests);
-			session:close();
-			return nil;
-		else
-			return true; -- Inform httpserver we shall reply later
-		end
+		return true; -- Inform httpserver we shall reply later
 	end
 end
 
@@ -208,6 +202,7 @@ local function bosh_close_stream(session, reason)
 
 	local session_close_response = { headers = default_headers, body = tostring(close_reply) };
 
+	--FIXME: Quite sure we shouldn't reply to all requests with the error
 	for _, held_request in ipairs(session.requests) do
 		held_request:send(session_close_response);
 		held_request:destroy();
@@ -260,13 +255,7 @@ function stream_callbacks.streamopened(request, attr)
 			local oldest_request = r[1];
 			if oldest_request then
 				log("debug", "We have an open request, so sending on that");
-				response.body = t_concat({
-					"<body xmlns='http://jabber.org/protocol/httpbind' ",
-					session.bosh_terminate and "type='terminate' " or "",
-					"sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>",
-					tostring(s),
-					"</body>"
-				});
+				response.body = t_concat{"<body xmlns='http://jabber.org/protocol/httpbind' sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>", tostring(s), "</body>" };
 				oldest_request:send(response);
 				--log("debug", "Sent");
 				if oldest_request.stayopen then
@@ -338,6 +327,13 @@ function stream_callbacks.streamopened(request, attr)
 		session.rid = rid;
 	end
 	
+	if attr.type == "terminate" then
+		-- Client wants to end this session
+		session:close();
+		request.notopen = nil;
+		return;
+	end
+	
 	if session.notopen then
 		local features = st.stanza("stream:features");
 		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
@@ -346,12 +342,6 @@ function stream_callbacks.streamopened(request, attr)
 		session.notopen = nil;
 	end
 	
-	if attr.type == "terminate" then
-		-- Client wants to end this session, which we'll do
-		-- after processing any stanzas in this request
-		session.bosh_terminate = true;
-	end
-
 	request.notopen = nil; -- Signals that we accept this opening tag
 	t_insert(session.requests, request);
 	request.sid = sid;
