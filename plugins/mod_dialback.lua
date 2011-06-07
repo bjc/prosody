@@ -60,7 +60,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		end
 		
-		dialback_requests[attr.from] = origin;
+		dialback_requests[attr.from.."/"..origin.streamid] = origin;
 		
 		if not origin.from_host then
 			-- Just used for friendlier logging
@@ -83,8 +83,8 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 	
 	if origin.type == "s2sout_unauthed" or origin.type == "s2sout" then
 		local attr = stanza.attr;
-		local dialback_verifying = dialback_requests[attr.from];
-		if dialback_verifying then
+		local dialback_verifying = dialback_requests[attr.from.."/"..(attr.id or "")];
+		if dialback_verifying and attr.from == origin.to_host then
 			local valid;
 			if attr.type == "valid" then
 				s2s_make_authenticated(dialback_verifying, attr.from);
@@ -101,7 +101,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 						st.stanza("db:result", { from = attr.to, to = attr.from, id = attr.id, type = valid })
 								:text(dialback_verifying.hosts[attr.from].dialback_key));
 			end
-			dialback_requests[attr.from] = nil;
+			dialback_requests[attr.from.."/"..(attr.id or "")] = nil;
 		end
 		return true;
 	end
