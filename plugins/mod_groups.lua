@@ -34,9 +34,9 @@ function inject_roster_contacts(username, host, roster)
 				end
 				if not roster[jid].groups then
 					roster[jid].groups = { [group_name] = true };
-					roster[jid].persist = false;
 				end
 				roster[jid].groups[group_name] = true;
+				roster[jid].persist = false;
 			end
 		end
 	end
