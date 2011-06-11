@@ -65,6 +65,9 @@ local function connect()
 end
 
 local function create_table()
+	if not module:get_option("sql_manage_tables", true) then
+		return;
+	end
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
 	if params.driver == "PostgreSQL" then
 		create_sql = create_sql:gsub("`", "\"");
@@ -72,7 +75,7 @@ local function create_table()
 		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
 	end
 	
-	local stmt = connection:prepare(create_sql);
+	local stmt, err = connection:prepare(create_sql);
 	if stmt then
 		local ok = stmt:execute();
 		local commit_ok = connection:commit();
@@ -100,18 +103,25 @@ local function create_table()
 			local commit_ok = connection:commit();
 			if ok and commit_ok then
 				if stmt:rowcount() > 0 then
+					module:log("info", "Upgrading database schema...");
 					local stmt = connection:prepare("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
-					local ok = stmt:execute();
+					local ok, err = stmt:execute();
 					local commit_ok = connection:commit();
 					if ok and commit_ok then
 						module:log("info", "Database table automatically upgraded");
+					else
+						module:log("error", "Failed to upgrade database schema (%s), please see "
+							.."http://prosody.im/doc/mysql for help",
+							err or "unknown error");
 					end
 				end
 				repeat until not stmt:fetch();
-			else
-				module:log("error", "Failed to upgrade database schema, please see http://prosody.im/doc/mysql for help");
 			end
 		end
+	elseif params.driver ~= "SQLite3" then -- SQLite normally fails to prepare for existing table
+		module:log("warn", "Prosody was not able to automatically check/create the database table (%s), "
+			.."see http://prosody.im/doc/modules/mod_storage_sql#table_management for help.",
+			err or "unknown error");
 	end
 end
 
