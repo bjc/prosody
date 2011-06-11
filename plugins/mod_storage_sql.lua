@@ -65,6 +65,9 @@ local function connect()
 end
 
 local function create_table()
+	if not module:get_option("sql_manage_tables", true) then
+		return;
+	end
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
 	if params.driver == "PostgreSQL" then
 		create_sql = create_sql:gsub("`", "\"");
