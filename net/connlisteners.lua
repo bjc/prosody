@@ -12,6 +12,8 @@ local listeners_dir = (CFG_SOURCEDIR or ".").."/net/";
 local server = require "net.server";
 local log = require "util.logger".init("connlisteners");
 local tostring = tostring;
+local type = type
+local ipairs = ipairs
 
 local dofile, xpcall, error =
       dofile, xpcall, error
@@ -55,7 +57,8 @@ function start(name, udata)
 		error("No such connection module: "..name.. (err and (" ("..err..")") or ""), 0);
 	end
 	
-	local interface = (udata and udata.interface) or h.default_interface or "*";
+	local interfaces = (udata and udata.interface) or h.default_interface or "*";
+	if type(interfaces) == "string" then interfaces = {interfaces}; end
 	local port = (udata and udata.port) or h.default_port or error("Can't start listener "..name.." because no port was specified, and it has no default port", 0);
 	local mode = (udata and udata.mode) or h.default_mode or 1;
 	local ssl = (udata and udata.ssl) or nil;
@@ -64,8 +67,15 @@ function start(name, udata)
 	if autossl and not ssl then
 		return nil, "no ssl context";
 	end
-	
-	return server.addserver(interface, port, h, mode, autossl and ssl or nil);
+
+	ok, err = true, {};
+	for _, interface in ipairs(interfaces) do
+		local handler
+		handler, err[interface] = server.addserver(interface, port, h, mode, autossl and ssl or nil);
+		ok = ok and handler;
+	end
+
+	return ok, err;
 end
 
 return _M;

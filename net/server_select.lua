@@ -701,19 +701,19 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 	end
 	if type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
 		err = "invalid port"
-	elseif _server[ port ] then
-		err = "listeners on port '" .. port .. "' already exist"
+	elseif _server[ addr..":"..port ] then
+		err = "listeners on '[" .. addr .. "]:" .. port .. "' already exist"
 	elseif sslctx and not luasec then
 		err = "luasec not found"
 	end
 	if err then
-		out_error( "server.lua, port ", port, ": ", err )
+		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
 	addr = addr or "*"
 	local server, err = socket_bind( addr, port )
 	if err then
-		out_error( "server.lua, port ", port, ": ", err )
+		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
 	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, _maxclientsperserver ) -- wrap new server socket
@@ -723,23 +723,23 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 	end
 	server:settimeout( 0 )
 	_readlistlen = addsocket(_readlist, server, _readlistlen)
-	_server[ port ] = handler
+	_server[ addr..":"..port ] = handler
 	_socketlist[ server ] = handler
-	out_put( "server.lua: new "..(sslctx and "ssl " or "").."server listener on '", addr, ":", port, "'" )
+	out_put( "server.lua: new "..(sslctx and "ssl " or "").."server listener on '[", addr, "]:", port, "'" )
 	return handler
 end
 
-getserver = function ( port )
-	return _server[ port ];
+getserver = function ( addr, port )
+	return _server[ addr..":"..port ];
 end
 
-removeserver = function( port )
-	local handler = _server[ port ]
+removeserver = function( addr, port )
+	local handler = _server[ addr..":"..port ]
 	if not handler then
-		return nil, "no server found on port '" .. tostring( port ) .. "'"
+		return nil, "no server found on '[" .. addr .. "]:" .. tostring( port ) .. "'"
 	end
 	handler:close( )
-	_server[ port ] = nil
+	_server[ addr..":"..port ] = nil
 	return true
 end
 

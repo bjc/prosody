@@ -270,7 +270,7 @@ function init_global_state()
 				if type(port) ~= "number" then
 					log("error", "Non-numeric "..ports_option..": "..tostring(port));
 				else
-					local ok, err = cl.start(listener, {
+					local ok, errors = cl.start(listener, {
 						ssl = conntype == "ssl" and global_ssl_ctx,
 						port = port,
 						interface = (option and config.get("*", "core", option.."_interface"))
@@ -279,31 +279,33 @@ function init_global_state()
 						type = conntype
 					});
 					if not ok then
-						local friendly_message = err;
-						if err:match(" in use") then
-							if port == 5222 or port == 5223 or port == 5269 then
-								friendly_message = "check that Prosody or another XMPP server is "
-									.."not already running and using this port";
-							elseif port == 80 or port == 81 then
-								friendly_message = "check that a HTTP server is not already using "
-									.."this port";
-							elseif port == 5280 then
-								friendly_message = "check that Prosody or a BOSH connection manager "
-									.."is not already running";
-							else
-								friendly_message = "this port is in use by another application";
+						for addr, err in pairs(errors) do
+							local friendly_message = err;
+							if err:match(" in use") then
+								if port == 5222 or port == 5223 or port == 5269 then
+									friendly_message = "check that Prosody or another XMPP server is "
+										.."not already running and using this port";
+								elseif port == 80 or port == 81 then
+									friendly_message = "check that a HTTP server is not already using "
+										.."this port";
+								elseif port == 5280 then
+									friendly_message = "check that Prosody or a BOSH connection manager "
+										.."is not already running";
+								else
+									friendly_message = "this port is in use by another application";
+								end
+							elseif err:match("permission") then
+								friendly_message = "Prosody does not have sufficient privileges to use this port";
+							elseif err == "no ssl context" then
+								if not config.get("*", "core", "ssl") then
+									friendly_message = "there is no 'ssl' config under Host \"*\" which is "
+										.."require for legacy SSL ports";
+								else
+									friendly_message = "initializing SSL support failed, see previous log entries";
+								end
 							end
-						elseif err:match("permission") then
-							friendly_message = "Prosody does not have sufficient privileges to use this port";
-						elseif err == "no ssl context" then
-							if not config.get("*", "core", "ssl") then
-								friendly_message = "there is no 'ssl' config under Host \"*\" which is "
-									.."require for legacy SSL ports";
-							else
-								friendly_message = "initializing SSL support failed, see previous log entries";
-							end
+							log("error", "Failed to open server port %d on %s, %s", port, addr, friendly_message);
 						end
-						log("error", "Failed to open server port %d, %s", port, friendly_message);
 					end
 				end
 			end
