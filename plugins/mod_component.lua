@@ -35,7 +35,7 @@ local function handle_stanza(event)
 		stanza.attr.xmlns = nil;
 		send(stanza);
 	else
-		log("warn", "Stanza being handled by default component; bouncing error for: %s", stanza:top_tag());
+		log("warn", "Component not connected, bouncing error for: %s", stanza:top_tag());
 		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
 		end
