@@ -10,7 +10,7 @@
 
 local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local format = import("string", "format");
+local format = string.format;
 
 local hosts = hosts;
 local full_sessions = full_sessions;
