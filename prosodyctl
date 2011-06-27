@@ -485,6 +485,49 @@ function commands.restart(arg)
 	return commands.start(arg);
 end
 
+function commands.about(arg)
+	require "util.array";
+	require "util.iterators";
+	
+	print("Prosody "..(prosody.version or "(unknown version)"));
+	print("");
+	print("# Prosody directories");
+	print("Data directory:  ", CFG_DATADIR or "./");
+	print("Plugin directory:", CFG_PLUGINDIR or "./");
+	print("Config directory:", CFG_CONFIGDIR or "./");
+	print("Source directory:", CFG_SOURCEDIR or "./");
+	print("");
+	print("# Lua environment");
+	print("Lua version:             ", _G._VERSION);
+	print("");
+	print("Lua module search paths:");
+	for path in package.path:gmatch("[^;]+") do
+		print("  "..path);
+	end
+	print("");
+	print("Lua C module search paths:");
+	for path in package.cpath:gmatch("[^;]+") do
+		print("  "..path);
+	end
+	print("");
+	print("# Lua module versions");
+	local module_versions, longest_name = {}, 8;
+	for name, module in pairs(package.loaded) do
+		if type(module) == "table" and rawget(module, "_VERSION")
+		and name ~= "_G" and not name:match("%.") then
+			if #name > longest_name then
+				longest_name = #name;
+			end
+			module_versions[name] = module._VERSION;
+		end
+	end
+	local sorted_keys = array.collect(keys(module_versions)):sort();
+	for _, name in ipairs(array.collect(keys(module_versions)):sort()) do
+		print(name..":"..string.rep(" ", longest_name-#name), module_versions[name]);
+	end
+	print("");
+end
+
 -- ejabberdctl compatibility
 
 function commands.register(arg)
@@ -588,7 +631,7 @@ if not commands[command] then -- Show help for all commands
 	print("Where COMMAND may be one of:\n");
 
 	local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart" };
+	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "about" };
 
 	local done = {};
 
