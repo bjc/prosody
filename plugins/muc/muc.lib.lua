@@ -806,7 +806,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			elseif stanza.attr.type == "set" then
 				local child = stanza.tags[1].tags[1];
 				if not child then
-					origin.send(st.error_reply(stanza, "auth", "bad-request"));
+					origin.send(st.error_reply(stanza, "modify", "bad-request"));
 				elseif child.name == "destroy" then
 					local newjid = child.attr.jid;
 					local reason, password;
