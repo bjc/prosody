@@ -217,8 +217,8 @@ local function bosh_close_stream(session, reason)
 end
 
 function stream_callbacks.streamopened(request, attr)
-	log("debug", "BOSH body open (sid: %s)", attr.sid);
-	local sid = attr.sid
+	local sid = attr.sid;
+	log("debug", "BOSH body open (sid: %s)", sid or "<none>");
 	if not sid then
 		-- New session request
 		request.notopen = nil; -- Signals that we accept this opening tag
