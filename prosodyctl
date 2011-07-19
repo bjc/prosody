@@ -486,6 +486,11 @@ function commands.restart(arg)
 end
 
 function commands.about(arg)
+	if arg[1] == "--help" then
+		show_usage([[about]], [[Show information about this Prosody installation]]);
+		return 1;
+	end
+	
 	require "util.array";
 	require "util.iterators";
 	
