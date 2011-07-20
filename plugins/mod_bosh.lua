@@ -29,16 +29,16 @@ local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a 
 local stream_callbacks = {
 	stream_ns = xmlns_bosh, stream_tag = "body", default_ns = "jabber:client" };
 
-local BOSH_DEFAULT_HOLD = tonumber(module:get_option("bosh_default_hold")) or 1;
-local BOSH_DEFAULT_INACTIVITY = tonumber(module:get_option("bosh_max_inactivity")) or 60;
-local BOSH_DEFAULT_POLLING = tonumber(module:get_option("bosh_max_polling")) or 5;
-local BOSH_DEFAULT_REQUESTS = tonumber(module:get_option("bosh_max_requests")) or 2;
+local BOSH_DEFAULT_HOLD = module:get_option_number("bosh_default_hold", 1);
+local BOSH_DEFAULT_INACTIVITY = module:get_option_number("bosh_max_inactivity", 60);
+local BOSH_DEFAULT_POLLING = module:get_option_number("bosh_max_polling", 5);
+local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 
-local cross_domain = module:get_option("cross_domain_bosh");
+local cross_domain = module:get_option("cross_domain_bosh", false);
 if cross_domain then
 	default_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
 	default_headers["Access-Control-Allow-Headers"] = "Content-Type";
@@ -426,7 +426,7 @@ end
 
 
 local function setup()
-	local ports = module:get_option("bosh_ports") or { 5280 };
+	local ports = module:get_option_array("bosh_ports") or { 5280 };
 	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
 	timer.add_task(1, on_timer);
 end
