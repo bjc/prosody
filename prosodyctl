@@ -515,6 +515,11 @@ function commands.about(arg)
 		print("  "..path);
 	end
 	print("");
+	local luarocks_status = (pcall(require, "luarocks.loader") and "Installed ("..(luarocks.cfg.program_version or "2.x+")..")")
+		or (pcall(require, "luarocks.require") and "Installed (1.x+)")
+		or "Not installed";
+	print("LuaRocks:        ", luarocks_status);
+	print("");
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
 	for name, module in pairs(package.loaded) do
