@@ -552,7 +552,7 @@ function commands.reload(arg)
 	local ok, ret = prosodyctl.reload();
 	if ok then
 		
-		show_message("Config updated");
+		show_message("Prosody log files re-opened and config file reloaded. You may need to reload modules for some changes to take effect.");
 		return 0;
 	end
 
