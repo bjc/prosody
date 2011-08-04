@@ -538,6 +538,27 @@ function commands.about(arg)
 	print("");
 end
 
+function commands.reload(arg)
+	if arg[1] == "--help" then
+		show_usage([[reload]], [[Reload prosody configuration file]]);
+		return 1;
+	end
+
+	if not prosodyctl.isrunning() then
+		show_message("Prosody is not running");
+		return 1;
+	end
+	
+	local ok, ret = prosodyctl.reload();
+	if ok then
+		
+		show_message("Config updated");
+		return 0;
+	end
+
+	show_message(error_messages[ret]);
+	return 1;
+end
 -- ejabberdctl compatibility
 
 function commands.register(arg)
@@ -641,7 +662,7 @@ if not commands[command] then -- Show help for all commands
 	print("Where COMMAND may be one of:\n");
 
 	local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "about" };
+	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
 
 	local done = {};
 
