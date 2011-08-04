@@ -238,3 +238,19 @@ function stop()
 	signal.kill(pid, signal.SIGTERM);
 	return true;
 end
+
+function reload()
+	local ok, ret = _M.isrunning();
+	if not ok then
+		return ok, ret;
+	end
+	if not ret then
+		return false, "not-running";
+	end
+	
+	local ok, pid = _M.getpid()
+	if not ok then return false, pid; end
+	
+	signal.kill(pid, signal.SIGHUP);
+	return true;
+end
