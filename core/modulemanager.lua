@@ -278,6 +278,9 @@ end
 function api:add_identity(category, type, name)
 	self:add_item("identity", {category = category, type = type, name = name});
 end
+function api:add_extension(data)
+	self:add_item("extension", data);
+end
 
 function api:fire_event(...)
 	return (hosts[self.host] or prosody).events.fire_event(...);
