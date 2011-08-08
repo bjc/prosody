@@ -54,6 +54,12 @@ local function build_server_disco_info()
 			done[feature] = true;
 		end
 	end
+	for _,extension in ipairs(module:get_host_items("extension")) do
+		if not done[extension] then
+			query:add_child(extension);
+			done[extension] = true;
+		end
+	end
 	_cached_server_disco_info = query;
 	_cached_server_caps_hash = calculate_hash(query);
 	_cached_server_caps_feature = st.stanza("c", {
@@ -81,8 +87,10 @@ end
 
 module:hook("item-added/identity", clear_disco_cache);
 module:hook("item-added/feature", clear_disco_cache);
+module:hook("item-added/extension", clear_disco_cache);
 module:hook("item-removed/identity", clear_disco_cache);
 module:hook("item-removed/feature", clear_disco_cache);
+module:hook("item-removed/extension", clear_disco_cache);
 
 -- Handle disco requests to the server
 module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
