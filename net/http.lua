@@ -38,12 +38,25 @@ local function _formencodepart(s)
 		end
 	end));
 end
+
 function formencode(form)
 	local result = {};
 	for _, field in ipairs(form) do
 		t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
 	end
 	return t_concat(result, "&");
+end
+
+function formdecode(s)
+	if not s:match("=") then return urldecode(s); end
+	local r = {};
+	for k, v in s:gmatch("([^=&]*)=([^&]*)") do
+		k, v = k:gsub("%+", "%%20"), v:gsub("%+", "%%20");
+		k, v = urldecode(k), urldecode(v);
+		t_insert(r, { name = k, value = v });
+		r[k] = v;
+	end
+	return r;
 end
 
 local function request_reader(request, data, startpos)
