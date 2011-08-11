@@ -8,9 +8,10 @@
 
 local setmetatable = setmetatable;
 local pairs, ipairs = pairs, ipairs;
-local tostring, type = tostring, type;
+local tostring, type, next = tostring, type, next;
 local t_concat = table.concat;
 local st = require "util.stanza";
+local jid_prep = require "util.jid".prep;
 
 module "dataforms"
 
@@ -104,24 +105,32 @@ function form_t.form(layout, data, formtype)
 end
 
 local field_readers = {};
+local field_verifiers = {};
 
 function form_t.data(layout, stanza)
 	local data = {};
-	
-	for field_tag in stanza:childtags() do
-		local field_type;
-		for n, field in ipairs(layout) do
+	local errors = {};
+
+	for _, field in ipairs(layout) do
+		local tag;
+		for field_tag in stanza:childtags() do
 			if field.name == field_tag.attr.var then
-				field_type = field.type;
+				tag = field_tag;
 				break;
 			end
 		end
-		
-		local reader = field_readers[field_type];
+
+		local reader = field_readers[field.type];
+		local verifier = field.verifier or field_verifiers[field.type];
 		if reader then
-			data[field_tag.attr.var] = reader(field_tag);
+			data[field.name] = reader(tag);
+			if verifier then
+				errors[field.name] = verifier(data[field.name], tag, field.required);
+			end
 		end
-		
+	end
+	if next(errors) then
+		return data, errors;
 	end
 	return data;
 end
@@ -134,11 +143,31 @@ field_readers["text-single"] =
 		end
 	end
 
+field_verifiers["text-single"] =
+	function (data, field_tag, required)
+		if ((not data) or (#data == 0)) and required then
+			return "Required value missing";
+		end
+	end
+
 field_readers["text-private"] =
 	field_readers["text-single"];
 
+field_verifiers["text-private"] =
+	field_verifiers["text-single"];
+
 field_readers["jid-single"] =
 	field_readers["text-single"];
+
+field_verifiers["jid-single"] =
+	function (data, field_tag, required)
+		if #data == 0 and required then
+			return "Required value missing";
+		end
+		if not jid_prep(data) then
+			return "Invalid JID";
+		end
+	end
 
 field_readers["jid-multi"] =
 	function (field_tag)
@@ -149,6 +178,19 @@ field_readers["jid-multi"] =
 			end
 		end
 		return result;
+	end
+
+field_verifiers["jid-multi"] =
+	function (data, field_tag, required)
+		if #data == 0 and required then
+			return "Required value missing";
+		end
+
+		for _, jid in ipairs(data) do
+			if not jid_prep(jid) then
+				return "Invalid JID";
+			end
+		end
 	end
 
 field_readers["text-multi"] =
@@ -162,8 +204,14 @@ field_readers["text-multi"] =
 		return t_concat(result, "\n");
 	end
 
+field_verifiers["text-multi"] =
+	field_verifiers["text-single"];
+
 field_readers["list-single"] =
 	field_readers["text-single"];
+
+field_verifiers["list-single"] =
+	field_verifiers["text-single"];
 
 field_readers["list-multi"] =
 	function (field_tag)
@@ -174,6 +222,13 @@ field_readers["list-multi"] =
 			end
 		end
 		return result;
+	end
+
+field_verifiers["list-multi"] =
+	function (data, field_tag, required)
+		if #data == 0 and required then
+			return "Required value missing";
+		end
 	end
 
 field_readers["boolean"] =
@@ -188,12 +243,28 @@ field_readers["boolean"] =
 		end
 	end
 
+field_verifiers["boolean"] =
+	function (data, field_tag, required)
+		data = field_readers["text-single"](field_tag);
+		if #data == 0 and required then
+			return "Required value missing";
+		end
+		if data ~= "1" and data ~= "true" and data ~= "0" and data ~= "false" then
+			return "Invalid boolean representation";
+		end
+	end
+
 field_readers["hidden"] =
 	function (field_tag)
 		local value = field_tag:child_with_name("value");
 		if value then
 			return value[1];
 		end
+	end
+
+field_verifiers["hidden"] =
+	function (data, field_tag, required)
+		return nil;
 	end
 	
 return _M;
