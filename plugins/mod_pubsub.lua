@@ -130,7 +130,17 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 	else
 		reply = pubsub_error_reply(stanza, ret);
 	end
-	return origin.send(reply);
+	origin.send(reply);
+	if ok then
+		-- Send all current items
+		local ok, items = service:get_items(node, stanza.attr.from);
+		if items then
+			local jids = { [jid] = options or true };
+			for id, item in pairs(items) do
+				service.config.broadcaster(node, jids, item);
+			end
+		end
+	end
 end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe)
