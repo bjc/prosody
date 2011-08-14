@@ -346,6 +346,28 @@ set_service(pubsub.new({
 			
 			set_affiliation = false;
 		};
+		publisher = {
+			create = false;
+			publish = true;
+			retract = true;
+			get_nodes = true;
+			
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			get_subscriptions = true;
+			get_items = true;
+			
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			get_subscriptions_other = false;
+			
+			be_subscribed = true;
+			be_unsubscribed = true;
+			
+			set_affiliation = false;
+		};
 		owner = {
 			create = true;
 			publish = true;
