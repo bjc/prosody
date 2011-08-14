@@ -9,7 +9,7 @@
 local st = require "util.stanza";
 
 local start_time = prosody.start_time;
-prosody.events.add_handler("server-started", function() start_time = prosody.start_time end);
+module:hook_global("server-started", function() start_time = prosody.start_time end);
 
 -- XEP-0012: Last activity
 module:add_feature("jabber:iq:last");
