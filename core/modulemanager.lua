@@ -177,6 +177,12 @@ function unload(host, name, ...)
 			(hosts[host] or prosody).events.remove_handler(event, handler);
 		end
 	end
+	-- unhook event handlers hooked by module:hook_global
+	for event, handlers in pairs(hooks:get("*", name) or NULL) do
+		for handler in pairs(handlers or NULL) do
+			prosody.events.remove_handler(event, handler);
+		end
+	end
 	hooks:remove(host, name);
 	if mod.module.items then -- remove items
 		for key,t in pairs(mod.module.items) do
@@ -289,6 +295,11 @@ end
 function api:hook(event, handler, priority)
 	hooks:set(self.host, self.name, event, handler, true);
 	(hosts[self.host] or prosody).events.add_handler(event, handler, priority);
+end
+
+function api:hook_global(event, handler, priority)
+	hooks:set("*", self.name, event, handler, true);
+	prosody.events.add_handler(event, handler, priority);
 end
 
 function api:hook_stanza(xmlns, name, handler, priority)
