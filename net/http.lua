@@ -97,22 +97,24 @@ function request(u, ex, callback)
 		req.path = "/";
 	end
 	
-	local custom_headers, body;
-	local default_headers = { ["Host"] = req.host, ["User-Agent"] = "Prosody XMPP Server" }
+	local method, headers, body;
 	
+	headers = {
+		["Host"] = req.host;
+		["User-Agent"] = "Prosody XMPP Server";
+	};
 	
 	if req.userinfo then
-		default_headers["Authorization"] = "Basic "..mime.b64(req.userinfo);
+		headers["Authorization"] = "Basic "..mime.b64(req.userinfo);
 	end
 
 	if ex then
-		custom_headers = ex.headers;
 		req.onlystatus = ex.onlystatus;
 		body = ex.body;
 		if body then
-			req.method = "POST ";
-			default_headers["Content-Length"] = tostring(#body);
-			default_headers["Content-Type"] = "application/x-www-form-urlencoded";
+			method = "POST ";
+			headers["Content-Length"] = tostring(#body);
+			headers["Content-Type"] = "application/x-www-form-urlencoded";
 		end
 		if ex.method then method = ex.method; end
 		if ex.headers then
@@ -122,42 +124,23 @@ function request(u, ex, callback)
 		end
 	end
 	
-	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
-	req.write = function (...) return req.handler:write(...); end
-	req.conn:settimeout(0);
-	local ok, err = req.conn:connect(req.host, req.port or 80);
+	-- Attach to request object
+	req.method, req.headers, req.body = method, headers, body;
+	
+	local using_https = req.scheme == "https";
+	local port = req.port or (using_https and 443 or 80);
+	
+	-- Connect the socket, and wrap it with net.server
+	local conn = socket.tcp();
+	conn:settimeout(10);
+	local ok, err = conn:connect(req.host, port);
 	if not ok and err ~= "timeout" then
 		callback(nil, 0, req);
 		return nil, err;
 	end
 	
-	local request_line = { req.method or "GET", " ", req.path, " HTTP/1.1\r\n" };
-	
-	if req.query then
-		t_insert(request_line, 4, "?");
-		t_insert(request_line, 5, req.query);
-	end
-	
-	req.write(t_concat(request_line));
-	local t = { [2] = ": ", [4] = "\r\n" };
-	if custom_headers then
-		for k, v in pairs(custom_headers) do
-			t[1], t[3] = k, v;
-			req.write(t_concat(t));
-			default_headers[k] = nil;
-		end
-	end
-	
-	for k, v in pairs(default_headers) do
-		t[1], t[3] = k, v;
-		req.write(t_concat(t));
-		default_headers[k] = nil;
-	end
-	req.write("\r\n");
-	
-	if body then
-		req.write(body);
-	end
+	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", using_https and { mode = "client", protocol = "sslv23" });
+	req.write = function (...) return req.handler:write(...); end
 	
 	req.callback = function (content, code, request) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
 	req.reader = request_reader;
