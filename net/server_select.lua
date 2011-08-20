@@ -512,8 +512,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local handshake;
 	function handler.set_sslctx(self, new_sslctx)
 		sslctx = new_sslctx;
-		local wrote
-		local read
+		local read, wrote
 		handshake = coroutine_wrap( function( client ) -- create handshake coroutine
 				local err
 				for i = 1, _maxsslhandshake do
@@ -529,10 +528,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						_readlistlen = addsocket(_readlist, client, _readlistlen)
 						return true
 					else
-						if err == "wantwrite" and not wrote then
+						if err == "wantwrite" then
 							_sendlistlen = addsocket(_sendlist, client, _sendlistlen)
 							wrote = true
-						elseif err == "wantread" and not read then
+						elseif err == "wantread" then
 							_readlistlen = addsocket(_readlist, client, _readlistlen)
 							read = true
 						else
