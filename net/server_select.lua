@@ -511,7 +511,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	-- Set the sslctx
 	local handshake;
 	function handler.set_sslctx(self, new_sslctx)
-		ssl = true
 		sslctx = new_sslctx;
 		local wrote
 		local read
