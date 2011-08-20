@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-
 local socket = require "socket"
 local mime = require "mime"
 local url = require "socket.url"
@@ -105,7 +104,7 @@ function request(u, ex, callback)
 	if req.userinfo then
 		default_headers["Authorization"] = "Basic "..mime.b64(req.userinfo);
 	end
-	
+
 	if ex then
 		custom_headers = ex.headers;
 		req.onlystatus = ex.onlystatus;
@@ -115,7 +114,12 @@ function request(u, ex, callback)
 			default_headers["Content-Length"] = tostring(#body);
 			default_headers["Content-Type"] = "application/x-www-form-urlencoded";
 		end
-		if ex.method then req.method = ex.method; end
+		if ex.method then method = ex.method; end
+		if ex.headers then
+			for k, v in pairs(ex.headers) do
+				headers[k] = v;
+			end
+		end
 	end
 	
 	req.handler, req.conn = server.wrapclient(socket.tcp(), req.host, req.port or 80, listener, "*a");
@@ -158,7 +162,7 @@ function request(u, ex, callback)
 	req.callback = function (content, code, request) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
 	req.reader = request_reader;
 	req.state = "status";
-	
+
 	listener.register_request(req.handler, req);
 
 	return req;
