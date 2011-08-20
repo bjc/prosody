@@ -32,8 +32,8 @@ function httpclient.onconnect(conn)
 	end
 	conn:write("\r\n");
 	
-	if body then
-		conn:write(body);
+	if req.body then
+		conn:write(req.body);
 	end
 end
 
