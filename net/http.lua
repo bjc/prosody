@@ -40,8 +40,14 @@ end
 
 function formencode(form)
 	local result = {};
-	for _, field in ipairs(form) do
-		t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
+	if form[1] then -- Array of ordered { name, value }
+		for _, field in ipairs(form) do
+			t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
+		end
+	else -- Unordered map of name -> value
+		for name, value in pairs(form) do
+			t_insert(result, _formencodepart(name).."=".._formencodepart(value));
+		end
 	end
 	return t_concat(result, "&");
 end
