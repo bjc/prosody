@@ -535,13 +535,13 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 							_readlistlen = addsocket(_readlist, client, _readlistlen)
 							read = true
 						else
-							out_put( "server.lua: ssl handshake error: ", tostring(err) )
 							break;
 						end
-						--coroutine_yield( handler, nil, err )	 -- handshake not finished
-						coroutine_yield( )
+						err = nil;
+						coroutine_yield( ) -- handshake not finished
 					end
 				end
+				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
 				disconnect( handler, "ssl handshake failed" )
 				_ = handler and handler:close( true )	 -- forced disconnect
 				return false	-- handshake failed
