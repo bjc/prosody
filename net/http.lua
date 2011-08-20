@@ -61,6 +61,7 @@ end
 
 local function request_reader(request, data, startpos)
 	if not request.parser then
+		if not data then return; end
 		local function success_cb(r)
 			if request.callback then
 				for k,v in pairs(r) do request[k] = v; end
