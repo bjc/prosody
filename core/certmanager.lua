@@ -41,11 +41,19 @@ function create_context(host, mode, user_ssl_config)
 		cafile = resolve_path(config_path, user_ssl_config.cafile);
 		verify = user_ssl_config.verify or default_verify;
 		options = user_ssl_config.options or default_options;
-		ciphers = user_ssl_config.ciphers;
 		depth = user_ssl_config.depth;
 	};
 
 	local ctx, err = ssl_newcontext(ssl_config);
+
+	-- LuaSec ignores the cipher list from the config, so we have to take care
+	-- of it ourselves (W/A for #x)
+	if ctx and user_ssl_config.ciphers then
+		local success;
+		success, err = ssl.context.setcipher(ctx, user_ssl_config.ciphers);
+		if not success then ctx = nil; end
+	end
+
 	if not ctx then
 		err = err or "invalid ssl config"
 		local file = err:match("^error loading (.-) %(");
