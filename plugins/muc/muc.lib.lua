@@ -931,21 +931,23 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
 		return nil, "modify", "not-acceptable";
 	end
-	local actor_affiliation = self:get_affiliation(actor);
-	local target_affiliation = self:get_affiliation(jid);
-	if target_affiliation == affiliation then -- no change, shortcut
-		if callback then callback(); end
-		return true;
-	end
-	if actor_affiliation ~= "owner" then
-		if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
-			return nil, "cancel", "not-allowed";
+	if actor ~= true then
+		local actor_affiliation = self:get_affiliation(actor);
+		local target_affiliation = self:get_affiliation(jid);
+		if target_affiliation == affiliation then -- no change, shortcut
+			if callback then callback(); end
+			return true;
 		end
-	elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
-		local is_last = true;
-		for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
-		if is_last then
-			return nil, "cancel", "conflict";
+		if actor_affiliation ~= "owner" then
+			if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+				return nil, "cancel", "not-allowed";
+			end
+		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
+			local is_last = true;
+			for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
+			if is_last then
+				return nil, "cancel", "conflict";
+			end
 		end
 	end
 	self._affiliations[jid] = affiliation;
