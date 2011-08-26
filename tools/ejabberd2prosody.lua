@@ -78,6 +78,70 @@ function offline_msg(node, host, t, stanza)
 	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));
 	print("["..(err or "success").."] offline: " ..node.."@"..host.." - "..os.date("!%Y-%m-%dT%H:%M:%SZ", t));
 end
+function privacy(node, host, default, lists)
+	local privacy = { lists = {} };
+	local count = 0;
+	if default then privacy.default = default; end
+	for _, inlist in ipairs(lists) do
+		local name, items = inlist[1], inlist[2];
+		local list = { name = name; items = {}; };
+		local orders = {};
+		for _, item in pairs(items) do
+			repeat
+				if item[1] ~= "listitem" then print("[error] privacy: unhandled item: "..tostring(item[1])); break; end
+				local _type, value = item[2], item[3];
+				if _type == "jid" then
+					if type(value) ~= "table" then print("[error] privacy: jid value is not valid: "..tostring(value)); break; end
+					local _node, _host, _resource = value[1], value[2], value[3];
+					if (type(_node) == "table") then _node = nil; end
+					if (type(_host) == "table") then _host = nil; end
+					if (type(_resource) == "table") then _resource = nil; end
+					value = (_node and _node.."@".._host or _host)..(_resource and "/".._resource or "");
+				elseif _type == "none" then
+					_type = nil;
+					value = nil;
+				elseif _type == "group" then
+					if type(value) ~= "string" then print("[error] privacy: group value is not string: "..tostring(value)); break; end
+				elseif _type == "subscription" then
+					if value~="both" and value~="from" and value~="to" and value~="none" then
+						print("[error] privacy: subscription value is invalid: "..tostring(value)); break;
+					end
+				else print("[error] privacy: invalid item type: "..tostring(_type)); break; end
+				local action = item[4];
+				if action ~= "allow" and action ~= "deny" then print("[error] privacy: unhandled action: "..tostring(action)); break; end
+				local order = item[5];
+				if type(order) ~= "number" or order<0 then print("[error] privacy: order is not numeric: "..tostring(order)); break; end
+				if orders[order] then print("[error] privacy: duplicate order value: "..tostring(order)); break; end
+				orders[order] = true;
+				local match_all = item[6];
+				local match_iq = item[7];
+				local match_message = item[8];
+				local match_presence_in = item[9];
+				local match_presence_out = item[10];
+				list.items[#list.items+1] = {
+					type = _type;
+					value = value;
+					action = action;
+					order = order;
+					message = match_message == "true";
+					iq = match_iq == "true";
+					["presence-in"] = match_presence_in == "true";
+					["presence-out"] = match_presence_out == "true";
+				};
+			until true;
+		end
+		table.sort(list.items, function(a, b) return a.order < b.order; end);
+		if privacy.lists[list.name] then print("[warn] duplicate privacy list: "..tostring(list.name)); end
+		privacy.lists[list.name] = list;
+		count = count + 1;
+	end
+	if default and not privacy.lists[default] then
+		if default == "none" then privacy.default = nil;
+		else print("[warn] default privacy list doesn't exist: "..tostring(default)); end
+	end
+	local ret, err = dm.store(node, host, "privacy", privacy);
+	print("["..(err or "success").."] privacy: " ..node.."@"..host.." - "..count.." list(s)");
+end
 
 
 local filters = {
@@ -118,6 +182,9 @@ local filters = {
 	end;
 	offline_msg = function(tuple)
 		offline_msg(tuple[2][1], tuple[2][2], build_time(tuple[3]), build_stanza(tuple[7]));
+	end;
+	privacy = function(tuple)
+		privacy(tuple[2][1], tuple[2][2], tuple[3], tuple[4]);
 	end;
 	config = function(tuple)
 		if tuple[2] == "hosts" then
