@@ -453,4 +453,14 @@ function api:get_host_items(key)
 	return result;
 end
 
+function api:handle_items(type, added_cb, removed_cb, existing)
+	self:hook("item-added/"..type, added_cb);
+	self:hook("item-removed/"..type, removed_cb);
+	if existing ~= false then
+		for _, item in ipairs(self:get_host_items(type)) do
+			added_cb({ item = item });
+		end
+	end
+end
+
 return _M;
