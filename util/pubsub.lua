@@ -104,7 +104,7 @@ function service:add_subscription(node, actor, jid, options)
 		if not self.config.autocreate_on_subscribe then
 			return false, "item-not-found";
 		else
-			local ok, err = self:create(node, actor);
+			local ok, err = self:create(node, true);
 			if not ok then
 				return ok, err;
 			end
@@ -220,7 +220,7 @@ function service:publish(node, actor, id, item)
 		if not self.config.autocreate_on_publish then
 			return false, "item-not-found";
 		end
-		local ok, err = self:create(node, actor);
+		local ok, err = self:create(node, true);
 		if not ok then
 			return ok, err;
 		end
