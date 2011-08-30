@@ -172,20 +172,6 @@ function service:remove_subscription(node, actor, jid)
 end
 
 function service:remove_all_subscriptions(actor, jid)
-	-- Access checking
-	local cap;
-	if actor == true or jid == actor or self:jids_equal(actor, jid) then
-		cap = "unsubscribe";
-	else
-		cap = "unsubscribe_other";
-	end
-	if not self:may(node, actor, cap) then
-		return false, "forbidden";
-	end
-	if not self:may(node, jid, "be_unsubscribed") then
-		return false, "forbidden";
-	end
-	--
 	local normal_jid = self.config.normalize_jid(jid);
 	local subs = self.subscriptions[normal_jid]
 	subs = subs and subs[jid];
