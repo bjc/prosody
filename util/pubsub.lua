@@ -1,3 +1,5 @@
+local events = require "util.events";
+
 module("pubsub", package.seeall);
 
 local service = {};
@@ -16,6 +18,7 @@ function new(config)
 		affiliations = {};
 		subscriptions = {};
 		nodes = {};
+		events = events.new();
 	}, service_mt);
 end
 
@@ -123,6 +126,7 @@ function service:add_subscription(node, actor, jid, options)
 	else
 		self.subscriptions[normal_jid] = { [jid] = { [node] = true } };
 	end
+	self.events.fire_event("subscription-added", { node = node, jid = jid, normalized_jid = normal_jid, options = options });
 	return true;
 end
 
@@ -163,6 +167,7 @@ function service:remove_subscription(node, actor, jid)
 			self.subscriptions[normal_jid] = nil;
 		end
 	end
+	self.events.fire_event("subscription-removed", { node = node, jid = jid, normalized_jid = normal_jid });
 	return true;
 end
 
