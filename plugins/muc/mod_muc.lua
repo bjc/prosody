@@ -100,7 +100,8 @@ local function get_disco_items(stanza)
 	return reply; -- TODO cache disco reply
 end
 
-local function handle_to_domain(origin, stanza)
+local function handle_to_domain(event)
+	local origin, stanza = event.origin, event.stanza;
 	local type = stanza.attr.type;
 	if type == "error" or type == "result" then return; end
 	if stanza.name == "iq" and type == "get" then
@@ -118,40 +119,33 @@ local function handle_to_domain(origin, stanza)
 		host_room:handle_stanza(origin, stanza);
 		--origin.send(st.error_reply(stanza, "cancel", "service-unavailable", "The muc server doesn't deal with messages and presence directed at it"));
 	end
+	return true;
 end
 
 function stanza_handler(event)
 	local origin, stanza = event.origin, event.stanza;
-	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	if to_node then
-		local bare = to_node.."@"..to_host;
-		if to_host == muc_host or bare == muc_host then
-			local room = rooms[bare];
-			if not room then
-				if not(restrict_room_creation) or
-				  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
-				  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-					room = muc_new_room(bare, {
-						history_length = max_history_messages;
-					});
-					room.route_stanza = room_route_stanza;
-					room.save = room_save;
-					rooms[bare] = room;
-				end
-			end
-			if room then
-				room:handle_stanza(origin, stanza);
-				if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
-					rooms[bare] = nil; -- discard room
-				end
-			else
-				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
-			end
-		else --[[not for us?]] end
-		return true;
+	local bare = jid_bare(stanza.attr.to);
+	local room = rooms[bare];
+	if not room then
+		if not(restrict_room_creation) or
+		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
+		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
+			room = muc_new_room(bare, {
+				history_length = max_history_messages;
+			});
+			room.route_stanza = room_route_stanza;
+			room.save = room_save;
+			rooms[bare] = room;
+		end
 	end
-	-- to the main muc domain
-	handle_to_domain(origin, stanza);
+	if room then
+		room:handle_stanza(origin, stanza);
+		if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+			rooms[bare] = nil; -- discard room
+		end
+	else
+		origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+	end
 	return true;
 end
 module:hook("iq/bare", stanza_handler, -1);
@@ -160,9 +154,9 @@ module:hook("presence/bare", stanza_handler, -1);
 module:hook("iq/full", stanza_handler, -1);
 module:hook("message/full", stanza_handler, -1);
 module:hook("presence/full", stanza_handler, -1);
-module:hook("iq/host", stanza_handler, -1);
-module:hook("message/host", stanza_handler, -1);
-module:hook("presence/host", stanza_handler, -1);
+module:hook("iq/host", handle_to_domain, -1);
+module:hook("message/host", handle_to_domain, -1);
+module:hook("presence/host", handle_to_domain, -1);
 
 hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
