@@ -90,7 +90,7 @@ local function validate_username(username)
 	
 	-- apply SASLprep
 	username = saslprep(username);
-	return username;
+	return username and #username>0 and username;
 end
 
 local function hashprep(hashname)
