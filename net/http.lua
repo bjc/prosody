@@ -118,7 +118,7 @@ function request(u, ex, callback)
 		req.onlystatus = ex.onlystatus;
 		body = ex.body;
 		if body then
-			method = "POST ";
+			method = "POST";
 			headers["Content-Length"] = tostring(#body);
 			headers["Content-Type"] = "application/x-www-form-urlencoded";
 		end
