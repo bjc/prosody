@@ -7,7 +7,7 @@
 --
 
 local log = require "util.logger".init("httpclient_listener");
-local t_concat = table.concat;
+local t_concat, t_insert = table.concat, table.insert;
 
 local connlisteners_register = require "net.connlisteners".register;
 
