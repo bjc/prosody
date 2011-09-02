@@ -158,35 +158,25 @@ module.unload = function()
 	connlisteners.deregister(module.host .. ':proxy65');
 end
 
-local function set_activation(stanza)
-	local to, reply;
-	local from = stanza.attr.from;
-	local query = stanza.tags[1];
-	local sid = query.attr.sid;
-	if query.tags[1] and query.tags[1].name == "activate" then
-		to = query.tags[1][1];
-	end
-	if from ~= nil and to ~= nil and sid ~= nil then
-		reply = st.iq({type="result", from=host, to=from});
-		reply.attr.id = stanza.attr.id;
-	end
-	return reply, from, to, sid;
-end
-
 module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 
-	module:log("debug", "Received activation request from %s", stanza.attr.from);
-	local reply, from, to, sid = set_activation(stanza);
-	if reply ~= nil and from ~= nil and to ~= nil and sid ~= nil then
+	local query = stanza.tags[1];
+	local sid = query.attr.sid;
+	local from = stanza.attr.from;
+	local to = query:get_child_text("activate");
+
+	module:log("debug", "received activation request from %s", stanza.attr.from);
+	if to and sid then
 		local sha = sha1(sid .. from .. to, true);
 		if transfers[sha] == nil then
 			module:log("error", "transfers[sha]: nil");
+			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
 		elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
-			origin.send(reply);
 			transfers[sha].activated = true;
 			transfers[sha].target:lock_read(false);
 			transfers[sha].initiator:lock_read(false);
+			origin.send(st.reply(stanza));
 		else
 			module:log("debug", "Both parties were not yet connected");
 			local message = "Neither party is connected to the proxy";
@@ -197,10 +187,11 @@ module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function
 			end
 			origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 		end
-		return true;
 	else
 		module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	end
+	return true;
 end);
 
 if not connlisteners.register(module.host .. ':proxy65', connlistener) then
