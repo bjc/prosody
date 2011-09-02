@@ -20,7 +20,7 @@ local sha1 = require "util.hashes".sha1;
 local server = require "net.server";
 
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
-local sessions, transfers, replies_cache = {}, {}, {};
+local sessions, transfers = {}, {};
 
 local proxy_port = module:get_option("proxy65_port") or 5000;
 local proxy_interface = module:get_option("proxy65_interface") or "*";
@@ -122,71 +122,35 @@ module:add_feature("http://jabber.org/protocol/bytestreams");
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	local reply = replies_cache.disco_info;
-	if reply == nil then
-	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#info")
-			:tag("identity", {category='proxy', type='bytestreams', name=name}):up()
-			:tag("feature", {var="http://jabber.org/protocol/bytestreams"});
-		replies_cache.disco_info = reply;
-	end
-
-	reply.attr.id = stanza.attr.id;
-	reply.attr.to = stanza.attr.from;
-	origin.send(reply);
+	origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#info")
+		:tag("identity", {category='proxy', type='bytestreams', name=name}):up()
+		:tag("feature", {var="http://jabber.org/protocol/bytestreams"}) );
 	return true;
 end, -1);
 
 module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	local reply = replies_cache.disco_items;
-	if reply == nil then
-	 	reply = st.iq({type='result', from=host}):query("http://jabber.org/protocol/disco#items");
-		replies_cache.disco_items = reply;
-	end
-	
-	reply.attr.id = stanza.attr.id;
-	reply.attr.to = stanza.attr.from;
-	origin.send(reply);
+	origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#items"));
 	return true;
 end, -1);
 
 module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	local reply = replies_cache.stream_host;
-	local err_reply = replies_cache.stream_host_err;
-	local sid = stanza.tags[1].attr.sid;
-	local allow = false;
-	local jid = stanza.attr.from;
 	
-	if proxy_acl and #proxy_acl > 0 then
+	-- check ACL
+	while proxy_acl and #proxy_acl > 0 do -- using 'while' instead of 'if' so we can break out of it
+		local jid = stanza.attr.from;
 		for _, acl in ipairs(proxy_acl) do
-			if jid_compare(jid, acl) then allow = true; end
+			if jid_compare(jid, acl) then break; end
 		end
-	else
-		allow = true;
+		module:log("warn", "Denying use of proxy for %s", tostring(stanza.attr.from));
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		return true;
 	end
-	if allow == true then
-		if reply == nil then
-			reply = st.iq({type="result", from=host})
-				:query("http://jabber.org/protocol/bytestreams")
-				:tag("streamhost", {jid=host, host=proxy_address, port=proxy_port});
-			replies_cache.stream_host = reply;
-		end
-	else
-		module:log("warn", "Denying use of proxy for %s", tostring(jid));
-		if err_reply == nil then
-			err_reply = st.iq({type="error", from=host})
-				:query("http://jabber.org/protocol/bytestreams")
-				:tag("error", {code='403', type='auth'})
-				:tag("forbidden", {xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'});
-			replies_cache.stream_host_err = err_reply;
-		end
-		reply = err_reply;
-	end
-	reply.attr.id = stanza.attr.id;
-	reply.attr.to = stanza.attr.from;
-	reply.tags[1].attr.sid = sid;
-	origin.send(reply);
+
+	local sid = stanza.tags[1].attr.sid;
+	origin.send(st.reply(stanza):tag("query", {xmlns="http://jabber.org/protocol/bytestreams", sid=sid})
+		:tag("streamhost", {jid=host, host=proxy_address, port=proxy_port}));
 	return true;
 end);
 
