@@ -395,7 +395,18 @@ function resolver:AAAA(rr)
 		local b1, b2 = self:byte(2);
 		table.insert(addr, ("%02x%02x"):format(b1, b2));
 	end
-	rr.aaaa = table.concat(addr, ":");
+	addr = table.concat(addr, ":"):gsub("%f[%x]0+(%x)","%1");
+	local zeros = {};
+	for item in addr:gmatch(":[0:]+:") do
+		table.insert(zeros, item)
+	end
+	if #zeros == 0 then
+		rr.aaaa = addr;
+		return
+	elseif #zeros > 1 then
+		table.sort(zeros, function(a, b) return #a > #b end);
+	end
+	rr.aaaa = addr:gsub(zeros[1], "::", 1):gsub("^0::", "::"):gsub("::0$", "::");
 end
 
 function resolver:CNAME(rr)    -- - - - - - - - - - - - - - - - - - - -  CNAME
