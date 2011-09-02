@@ -13,7 +13,7 @@ module:load("proxy65", <proxy65_jid>);
 
 local module = module;
 local tostring = tostring;
-local jid_split, jid_join, jid_compare = require "util.jid".split, require "util.jid".join, require "util.jid".compare;
+local jid_compare, jid_prep = require "util.jid".compare, require "util.jid".prep;
 local st = require "util.stanza";
 local connlisteners = require "net.connlisteners";
 local sha1 = require "util.hashes".sha1;
@@ -165,10 +165,11 @@ module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function
 	local sid = query.attr.sid;
 	local from = stanza.attr.from;
 	local to = query:get_child_text("activate");
+	local prepped_to = jid_prep(to);
 
 	module:log("debug", "received activation request from %s", stanza.attr.from);
-	if to and sid then
-		local sha = sha1(sid .. from .. to, true);
+	if prepped_to and sid then
+		local sha = sha1(sid .. from .. prepped_to, true);
 		if transfers[sha] == nil then
 			module:log("error", "transfers[sha]: nil");
 			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
@@ -187,6 +188,8 @@ module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function
 			end
 			origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 		end
+	elseif to and sid then
+		origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
 	else
 		module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
