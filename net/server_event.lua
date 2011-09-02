@@ -460,7 +460,6 @@ do
 	
 	-- Stub handlers
 	function interface_mt:onconnect()
-		return self:onincoming(nil);
 	end
 	function interface_mt:onincoming()
 	end
