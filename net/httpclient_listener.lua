@@ -52,7 +52,7 @@ end
 
 function httpclient.ondisconnect(conn, err)
 	local request = requests[conn];
-	if request and err ~= "closed" then
+	if request and request.conn then
 		request:reader(nil);
 	end
 	requests[conn] = nil;
