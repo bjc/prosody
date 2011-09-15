@@ -181,7 +181,7 @@ local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
 	
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
-		["xmlns:streams"] = xmlns_streams });
+		["xmlns:stream"] = xmlns_streams });
 	
 
 	if reason then
@@ -228,7 +228,7 @@ function stream_callbacks.streamopened(request, attr)
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
-				["xmlns:streams"] = xmlns_streams, condition = "host-unknown" });
+				["xmlns:stream"] = xmlns_streams, condition = "host-unknown" });
 			request:send(tostring(close_reply));
 			return;
 		end
