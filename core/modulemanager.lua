@@ -189,7 +189,7 @@ function unload(host, name, ...)
 			for i = #t,1,-1 do
 				local value = t[i];
 				t[i] = nil;
-				hosts[host].events.fire_event("item-removed/"..key, {source = self, item = value});
+				hosts[host].events.fire_event("item-removed/"..key, {source = mod.module, item = value});
 			end
 		end
 	end
