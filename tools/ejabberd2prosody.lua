@@ -26,15 +26,22 @@ local dm = require "util.datamanager"
 dm.set_data_path("data");
 
 function build_stanza(tuple, stanza)
+	assert(type(tuple) == "table", "XML node is of unexpected type: "..type(tuple));
 	if tuple[1] == "xmlelement" then
+		assert(type(tuple[2]) == "string", "element name has type: "..type(tuple[2]));
+		assert(type(tuple[3]) == "table", "element attribute array has type: "..type(tuple[3]));
+		assert(type(tuple[4]) == "table", "element children array has type: "..type(tuple[4]));
 		local name = tuple[2];
 		local attr = {};
-		for _, a in ipairs(tuple[3]) do attr[a[1]] = a[2]; end
+		for _, a in ipairs(tuple[3]) do
+			if type(a[1]) == "string" and type(a[2]) == "string" then attr[a[1]] = a[2]; end
+		end
 		local up;
 		if stanza then stanza:tag(name, attr); up = true; else stanza = st.stanza(name, attr); end
 		for _, a in ipairs(tuple[4]) do build_stanza(a, stanza); end
 		if up then stanza:up(); else return stanza end
 	elseif tuple[1] == "xmlcdata" then
+		assert(type(tuple[2]) == "string", "XML CDATA has unexpected type: "..type(tuple[2]));
 		stanza:text(tuple[2]);
 	else
 		error("unknown element type: "..serialize(tuple));
