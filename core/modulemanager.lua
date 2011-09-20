@@ -215,7 +215,7 @@ function reload(host, name, ...)
 		if ok then
 			saved = ret;
 		else
-			log("warn", "Error saving module '%s:%s' state: %s", host, module, ret);
+			log("warn", "Error saving module '%s:%s' state: %s", host, name, ret);
 			if not config.get(host, "core", "force_module_reload") then
 				log("warn", "Aborting reload due to error, set force_module_reload to ignore this");
 				return nil, "save-state-failed";
