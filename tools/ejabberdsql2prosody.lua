@@ -21,12 +21,16 @@ function parseFile(filename)
 
 local file = nil;
 local last = nil;
+local line = 1;
 local function read(expected)
 	local ch;
 	if last then
 		ch = last; last = nil;
-	else ch = file:read(1); end
-	if expected and ch ~= expected then error("expected: "..expected.."; got: "..(ch or "nil")); end
+	else
+		ch = file:read(1);
+		if ch == "\n" then line = line + 1; end
+	end
+	if expected and ch ~= expected then error("expected: "..expected.."; got: "..(ch or "nil").." on line "..line); end
 	return ch;
 end
 local function pushback(ch)
