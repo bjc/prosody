@@ -32,7 +32,10 @@ if not event then
 		if delay >= current_time then
 			t_insert(new_data, {delay, func});
 		else
-			func();
+			local r = func();
+			if r and type(r) == "number" then
+				return _add_task(r, func);
+			end
 		end
 	end
 
