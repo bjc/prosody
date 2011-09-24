@@ -98,7 +98,7 @@ array_methods.length = function (t) return #t; end
 
 --- These methods always create a new array
 function array.collect(f, s, var)
-	local t, var = {};
+	local t = {};
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
