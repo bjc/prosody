@@ -120,6 +120,12 @@ function tail(n, f, s, var)
 	--return reverse(head(n, reverse(f, s, var)));
 end
 
+local function _range_iter(max, curr) if curr < max then return curr + 1; end end
+function range(x, y)
+	if not y then x, y = 1, x; end -- Default to 1..x if y not given
+	return _range_iter, y, x-1;
+end
+
 -- Convert the values returned by an iterator to an array
 function it2array(f, s, var)
 	local t, var = {};
@@ -142,3 +148,4 @@ function it2table(f, s, var)
 	end
 	return t;
 end
+
