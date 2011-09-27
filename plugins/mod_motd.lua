@@ -8,8 +8,10 @@
 --
 
 local host = module:get_host();
-local motd_text = module:get_option("motd_text") or "MOTD: (blank)";
+local motd_text = module:get_option("motd_text");
 local motd_jid = module:get_option("motd_jid") or host;
+
+if not motd_text then return; end
 
 local st = require "util.stanza";
 
