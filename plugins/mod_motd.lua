@@ -8,8 +8,8 @@
 --
 
 local host = module:get_host();
-local motd_text = module:get_option("motd_text");
-local motd_jid = module:get_option("motd_jid") or host;
+local motd_text = module:get_option_string("motd_text");
+local motd_jid = module:get_option_string("motd_jid", host);
 
 if not motd_text then return; end
 
