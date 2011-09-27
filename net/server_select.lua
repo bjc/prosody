@@ -173,7 +173,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 
 	local connections = 0
 
-	local dispatch, disconnect = listeners.onconnect or listeners.onincoming, listeners.ondisconnect
+	local dispatch, disconnect = listeners.onconnect, listeners.ondisconnect
 
 	local accept = socket.accept
 
@@ -232,7 +232,10 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 			end
 			connections = connections + 1
 			out_put( "server.lua: accepted new client connection from ", tostring(ip), ":", tostring(clientport), " to ", tostring(serverport))
-			return dispatch( handler )
+			if dispatch then
+				return dispatch( handler );
+			end
+			return;
 		elseif err then -- maybe timeout or something else
 			out_put( "server.lua: error with new client connection: ", tostring(err) )
 			return false
