@@ -248,8 +248,10 @@ module:hook("stream-features", function(event)
 			return;
 		end
 		origin.sasl_handler = usermanager_get_sasl_handler(module.host);
+		local mechanisms = origin.sasl_handler:mechanisms();
+		if not next(mechanisms) then return; end
 		features:tag("mechanisms", mechanisms_attr);
-		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
+		for mechanism in pairs(mechanisms) do
 			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
 				features:tag("mechanism"):text(mechanism):up();
 			end
