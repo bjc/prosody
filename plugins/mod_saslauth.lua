@@ -248,15 +248,13 @@ module:hook("stream-features", function(event)
 			return;
 		end
 		origin.sasl_handler = usermanager_get_sasl_handler(module.host);
-		local mechanisms = origin.sasl_handler:mechanisms();
-		if not next(mechanisms) then return; end
-		features:tag("mechanisms", mechanisms_attr);
-		for mechanism in pairs(mechanisms) do
+		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
+		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
 			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
-				features:tag("mechanism"):text(mechanism):up();
+				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end
-		features:up();
+		if mechanisms[1] then features:add_child(mechanisms); end
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
