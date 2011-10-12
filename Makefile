@@ -13,6 +13,8 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
+.PHONY: all clean install
+
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
 
