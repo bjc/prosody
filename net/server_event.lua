@@ -827,14 +827,14 @@ local function setquitting(yes)
 	end
 end
 
-function get_backend()
+local function get_backend()
 	return base:method();
 end
 
 -- We need to hold onto the events to stop them
 -- being garbage-collected
 local signal_events = {}; -- [signal_num] -> event object
-function hook_signal(signal_num, handler)
+local function hook_signal(signal_num, handler)
 	local function _handler(event)
 		local ret = handler();
 		if ret ~= false then -- Continue handling this signal?

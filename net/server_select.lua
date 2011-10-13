@@ -781,7 +781,7 @@ end
 
 local quitting;
 
-setquitting = function (quit)
+local function setquitting(quit)
 	quitting = not not quit;
 end
 
@@ -832,7 +832,7 @@ loop = function(once) -- this is the main loop of the program
 	return "quitting"
 end
 
-step = function ()
+local function step()
 	return loop(true);
 end
 
