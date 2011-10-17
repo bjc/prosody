@@ -50,36 +50,19 @@ clean:
 	rm -f prosody.version
 	$(MAKE) clean -C util-src
 
-util/encodings.so:
+util/%.so:
 	$(MAKE) install -C util-src
 
-util/hashes.so:
-	$(MAKE) install -C util-src
-
-util/pposix.so:
-	$(MAKE) install -C util-src
-
-util/signal.so:
-	$(MAKE) install -C util-src
-
-prosody.install: prosody
+%.install: %
 	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
 		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
 		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
-		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" < prosody > prosody.install
+		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" < $^ > $@
 
-prosodyctl.install: prosodyctl
-	sed "s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
-		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
-		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
-		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" < prosodyctl > prosodyctl.install
+prosody.cfg.lua.install: prosody.cfg.lua.dist
+	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' $^ > $@
 
-prosody.cfg.lua.install:
-	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > prosody.cfg.lua.install
-
-prosody.release:
+prosody.version: $(wildcard prosody.release .hg/dirstate)
 	test -e .hg/dirstate && hexdump -n6 -e'6/1 "%02x"' .hg/dirstate \
-	    > prosody.version || true
-
-prosody.version: prosody.release
-	cp prosody.release prosody.version || true
+		> $@
+	test -f prosody.release && cp prosody.release $@ || true
