@@ -705,7 +705,7 @@ function resolver:purge(soft)    -- - - - - - - - - - - - - - - - - - -  purge
 				end
 			end
 		end
-	else self.cache = {}; end
+	else self.cache = setmetatable({}, cache_metatable); end
 end
 
 
