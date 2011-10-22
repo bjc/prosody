@@ -16,8 +16,8 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable
-    = tostring, pairs, ipairs, getmetatable, newproxy, error, tonumber, setmetatable;
+local tostring, pairs, ipairs, getmetatable, newproxy, next, error, tonumber, setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, next, error, tonumber, setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
@@ -28,6 +28,8 @@ local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local cert_verify_identity = require "util.x509".verify_identity;
+local new_ip = require "util.ip".new_ip;
+local rfc3484_dest = require "util.rfc3484".destination;
 
 local fire_event = prosody.events.fire_event;
 local uuid_gen = require "util.uuid".generate;
@@ -43,6 +45,7 @@ local config = require "core.configmanager";
 local connect_timeout = config.get("*", "core", "s2s_timeout") or 60;
 local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
 local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
+local sources;
 
 dns.settimeout(dns_timeout);
 
@@ -265,6 +268,8 @@ function attempt_connection(host_session, err)
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
 		
 		return true; -- Attempt in progress
+	elseif host_session.ip_hosts then
+		return try_connect(host_session, connect_host, connect_port, err);
 	elseif host_session.srv_hosts and #host_session.srv_hosts > host_session.srv_choice then -- Not our first attempt, and we also have SRV
 		host_session.srv_choice = host_session.srv_choice + 1;
 		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
@@ -285,54 +290,118 @@ function attempt_connection(host_session, err)
 	return try_connect(host_session, connect_host, connect_port);
 end
 
-function try_connect(host_session, connect_host, connect_port)
-	host_session.connecting = true;
-	local handle;
-	handle = adns.lookup(function (reply, err)
-		handle = nil;
-		host_session.connecting = nil;
-		
-		-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
-		if not (reply and reply[#reply] and reply[#reply].a) then
-			local count = max_dns_depth;
-			reply = dns.peek(connect_host, "CNAME", "IN");
-			while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
-				log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
-				reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
-				count = count - 1;
-			end
+function try_next_ip(host_session, connect_port)
+	host_session.connecting = nil;
+	host_session.ip_choice = host_session.ip_choice + 1;
+	local ip = host_session.ip_hosts[host_session.ip_choice];
+	local ok, err= make_connect(host_session, ip, connect_port);
+	if not ok then
+		if not attempt_connection(host_session, err or "closed") then
+			err = err and (": "..err) or "";
+			destroy_session(host_session, "Connection failed"..err);
 		end
-		-- end of CNAME resolving
-		
-		if reply and reply[#reply] and reply[#reply].a then
-			log("debug", "DNS reply for %s gives us %s", connect_host, reply[#reply].a);
-			local ok, err = make_connect(host_session, reply[#reply].a, connect_port);
-			if not ok then
-				if not attempt_connection(host_session, err or "closed") then
-					err = err and (": "..err) or "";
-					destroy_session(host_session, "Connection failed"..err);
+	end
+end
+
+function try_connect(host_session, connect_host, connect_port, err)
+	host_session.connecting = true;
+
+	if not err then
+		local IPs = {};
+		host_session.ip_hosts = IPs;
+		local handle4, handle6;
+		local has_other = false;
+
+		if not sources then
+			sources =  {};
+			local cfg_sources = connlisteners_get("xmppserver").default_interface or config.get("*", "core", "interface");
+			for i, source in ipairs(cfg_sources) do
+				if source == "*" then
+					sources[i] = new_ip("0.0.0.0", "IPv4");
+				else
+					sources[i] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
 				end
 			end
-		else
-			log("debug", "DNS lookup failed to get a response for %s", connect_host);
-			if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
-				log("debug", "No other records to try for %s - destroying", host_session.to_host);
-				err = err and (": "..err) or "";
-				destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
-			end
 		end
-	end, connect_host, "A", "IN");
+
+		handle4 = adns.lookup(function (reply, err)
+			handle4 = nil;
+
+			-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
+			if not (reply and reply[#reply] and reply[#reply].a) then
+				local count = max_dns_depth;
+				reply = dns.peek(connect_host, "CNAME", "IN");
+				while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
+					log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
+					reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
+					count = count - 1;
+				end
+			end
+			-- end of CNAME resolving
+
+			if reply and reply[#reply] and reply[#reply].a then
+				for _, ip in ipairs(reply) do
+					log("debug", "DNS reply for %s gives us %s", connect_host, ip.a);
+					IPs[#IPs+1] = new_ip(ip.a, "IPv4");
+				end
+			end
+
+			if has_other then
+				rfc3484_dest(host_session.ip_hosts, sources);
+				host_session.ip_choice = 0;
+				try_next_ip(host_session, connect_port);
+			else
+				has_other = true;
+			end
+		end, connect_host, "A", "IN");
+
+		handle6 = adns.lookup(function (reply, err)
+			handle6 = nil;
+
+			if reply and reply[#reply] and reply[#reply].aaaa then
+				for _, ip in ipairs(reply) do
+					log("debug", "DNS reply for %s gives us %s", connect_host, ip.aaaa);
+					IPs[#IPs+1] = new_ip(ip.aaaa, "IPv6");
+				end
+			end
+
+			if has_other then
+				rfc3484_dest(host_session.ip_hosts, sources);
+				host_session.ip_choice = 0;
+				try_next_ip(host_session, connect_port);
+			else
+				has_other = true;
+			end
+		end, connect_host, "AAAA", "IN");
+
+		return true;
+	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
+		try_next_ip(host_session, connect_port);
+	else
+		host_session.ip_hosts = nil;
+		if not attempt_connection(host_session, "out of IP addresses") then -- Retry if we can
+			log("debug", "No other records to try for %s - destroying", host_session.to_host);
+			err = err and (": "..err) or "";
+			destroy_session(host_session, "Connecting failed"..err); -- End of the line, we can't
+			return false;
+		end
+	end
 
 	return true;
 end
 
 function make_connect(host_session, connect_host, connect_port)
-	(host_session.log or log)("info", "Beginning new connection attempt to %s (%s:%d)", host_session.to_host, connect_host, connect_port);
+	(host_session.log or log)("info", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
 	-- Ok, we're going to try to connect
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
-	local conn, handler = socket.tcp();
+	local conn, handler;
+	if connect_host.proto == "IPv4" then
+		conn, handler = socket.tcp();
+	else
+		conn, handler = socket.tcp6();
+	end
 	
 	if not conn then
 		log("warn", "Failed to create outgoing connection, system error: %s", handler);
@@ -340,14 +409,14 @@ function make_connect(host_session, connect_host, connect_port)
 	end
 
 	conn:settimeout(0);
-	local success, err = conn:connect(connect_host, connect_port);
+	local success, err = conn:connect(connect_host.addr, connect_port);
 	if not success and err ~= "timeout" then
-		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host, connect_port, err);
+		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host.addr, connect_port, err);
 		return false, err;
 	end
 	
 	local cl = connlisteners_get("xmppserver");
-	conn = wrapclient(conn, connect_host, connect_port, cl, cl.default_mode or 1 );
+	conn = wrapclient(conn, connect_host.addr, connect_port, cl, cl.default_mode or 1 );
 	host_session.conn = conn;
 	
 	local filter = initialize_filters(host_session);
