@@ -12,6 +12,7 @@ function run_all_tests()
 	package.loaded["net.connlisteners"] = { get = function () return {} end };
 	dotest "util.jid"
 	dotest "util.multitable"
+	dotest "util.rfc3484"
 	dotest "net.http"
 	dotest "core.modulemanager"
 	dotest "core.stanza_router"
