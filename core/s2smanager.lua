@@ -246,6 +246,11 @@ function attempt_connection(host_session, err)
 				for _, record in ipairs(answer) do
 					t_insert(srv_hosts, record.srv);
 				end
+				if #srv_hosts == 1 and srv_hosts[1].target == "." then
+					log("debug", to_host.." does not provide a XMPP service");
+					destroy_session(host_session, err); -- Nothing to see here
+					return;
+				end
 				t_sort(srv_hosts, compare_srv_priorities);
 				
 				local srv_choice = srv_hosts[1];
@@ -347,9 +352,19 @@ function try_connect(host_session, connect_host, connect_port, err)
 			end
 
 			if has_other then
-				rfc3484_dest(host_session.ip_hosts, sources);
-				host_session.ip_choice = 0;
-				try_next_ip(host_session, connect_port);
+				if #IPs > 0 then
+					rfc3484_dest(host_session.ip_hosts, sources);
+					host_session.ip_choice = 0;
+					try_next_ip(host_session, connect_port);
+				else
+					log("debug", "DNS lookup failed to get a response for %s", connect_host);
+					host_session.ip_hosts = nil;
+					if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+						log("debug", "No other records to try for %s - destroying", host_session.to_host);
+						err = err and (": "..err) or "";
+						destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
+					end
+				end
 			else
 				has_other = true;
 			end
@@ -366,9 +381,19 @@ function try_connect(host_session, connect_host, connect_port, err)
 			end
 
 			if has_other then
-				rfc3484_dest(host_session.ip_hosts, sources);
-				host_session.ip_choice = 0;
-				try_next_ip(host_session, connect_port);
+				if #IPs > 0 then
+					rfc3484_dest(host_session.ip_hosts, sources);
+					host_session.ip_choice = 0;
+					try_next_ip(host_session, connect_port);
+				else
+					log("debug", "DNS lookup failed to get a response for %s", connect_host);
+					host_session.ip_hosts = nil;
+					if not attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+						log("debug", "No other records to try for %s - destroying", host_session.to_host);
+						err = err and (": "..err) or "";
+						destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
+					end
+				end
 			else
 				has_other = true;
 			end
