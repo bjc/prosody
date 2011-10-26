@@ -168,7 +168,7 @@ function json.decode(json)
 			skipwhitespace();
 			if ch == "/" and peek == "*" then
 				skipstarcomment();
-			elseif ch == "/" and peek == "*" then
+			elseif ch == "/" and peek == "/" then
 				skiplinecomment();
 			else
 				return;
