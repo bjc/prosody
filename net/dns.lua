@@ -358,6 +358,7 @@ function resolver:name()    -- - - - - - - - - - - - - - - - - - - - - -  name
 	local remember, pointers = nil, 0;
 	local len = self:byte();
 	local n = {};
+	if len == 0 then return "." end -- Root label
 	while len > 0 do
 		if len >= 0xc0 then    -- name is "compressed"
 			pointers = pointers + 1;
