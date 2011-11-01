@@ -203,7 +203,7 @@ function init_global_state()
 		-- path1;path2;path3;defaultpath...
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 	end
-	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
+	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".", 
 	                  plugins = CFG_PLUGINDIR or "plugins", data = data_path };
 
 	prosody.arg = _G.arg;
