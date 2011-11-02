@@ -13,6 +13,16 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 
+local escapes = {
+	[" "] = "\\20"; ['"'] = "\\22";
+	["&"] = "\\26"; ["'"] = "\\27";
+	["/"] = "\\2f"; [":"] = "\\3a";
+	["<"] = "\\3c"; [">"] = "\\3e";
+	["@"] = "\\40"; ["\\"] = "\\5c";
+};
+local unescapes = {};
+for k,v in pairs(escapes) do unescapes[v] = k; end
+
 module "jid"
 
 local function _split(jid)
@@ -90,5 +100,8 @@ function compare(jid, acl)
 	end
 	return false
 end
+
+function escape(s) return s and (s:gsub(".", escapes)); end
+function unescape(s) return s and (s:gsub("\\%x%x", unescapes)); end
 
 return _M;
