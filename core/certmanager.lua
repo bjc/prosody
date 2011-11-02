@@ -75,9 +75,9 @@ function create_context(host, mode, user_ssl_config)
 			else
 				reason = "Reason: "..tostring(reason):lower();
 			end
-			log("error", "SSL/TLS: Failed to load %s: %s", file, reason);
+			log("error", "SSL/TLS: Failed to load %s: %s (host: %s)", file, reason, host);
 		else
-			log("error", "SSL/TLS: Error initialising for host %s: %s", host, err );
+			log("error", "SSL/TLS: Error initialising for host %s: %s (host: %s)", host, err, host);
 		end
 	end
 	return ctx, err;
