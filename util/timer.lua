@@ -26,15 +26,15 @@ module "timer"
 
 local _add_task;
 if not event then
-	function _add_task(delay, func)
+	function _add_task(delay, callback)
 		local current_time = get_time();
 		delay = delay + current_time;
 		if delay >= current_time then
-			t_insert(new_data, {delay, func});
+			t_insert(new_data, {delay, callback});
 		else
-			local r = func();
+			local r = callback();
 			if r and type(r) == "number" then
-				return _add_task(r, func);
+				return _add_task(r, callback);
 			end
 		end
 	end
@@ -50,12 +50,12 @@ if not event then
 		
 		local next_time = math_huge;
 		for i, d in pairs(data) do
-			local t, func = d[1], d[2];
+			local t, callback = d[1], d[2];
 			if t <= current_time then
 				data[i] = nil;
-				local r = func(current_time);
+				local r = callback(current_time);
 				if type(r) == "number" then
-					_add_task(r, func);
+					_add_task(r, callback);
 					next_time = math_min(next_time, r);
 				end
 			else
@@ -66,10 +66,10 @@ if not event then
 	end);
 else
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
-	function _add_task(delay, func)
+	function _add_task(delay, callback)
 		local event_handle;
 		event_handle = event_base:addevent(nil, 0, function ()
-			local ret = func();
+			local ret = callback();
 			if ret then
 				return 0, ret;
 			elseif event_handle then
