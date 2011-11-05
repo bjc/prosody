@@ -1,3 +1,6 @@
+-- Prosody IM
+-- Copyright (C) 2008-2011 Matthew Wild
+-- Copyright (C) 2008-2011 Waqas Hussain
 -- Copyright (C) 2009 Thilo Cestonaro
 -- 
 -- This project is MIT/X11 licensed. Please see the
@@ -18,6 +21,7 @@ local st = require "util.stanza";
 local connlisteners = require "net.connlisteners";
 local sha1 = require "util.hashes".sha1;
 local server = require "net.server";
+local b64 = require "util.encodings".base64.encode;
 
 local host, name = module:get_host(), "SOCKS5 Bytestreams Service";
 local sessions, transfers = {}, {};
@@ -32,70 +36,50 @@ local connlistener = { default_port = proxy_port, default_interface = proxy_inte
 
 function connlistener.onincoming(conn, data)
 	local session = sessions[conn] or {};
-	
-	if session.setup == nil and data ~= nil and data:byte(1) == 0x05 and #data > 2 then
-		local nmethods = data:byte(2);
-		local methods = data:sub(3);
-		local supported = false;
-		for i=1, nmethods, 1 do
-			if(methods:byte(i) == 0x00) then -- 0x00 == method: NO AUTH
-				supported = true;
-				break;
-			end
-		end
-		if(supported) then
-			module:log("debug", "new session found ... ")
-			session.setup = true;
-			sessions[conn] = session;
-			conn:write(string.char(5, 0));
-		end
+
+	local transfer = transfers[session.sha];
+	if transfer and transfer.activated then -- copy data between initiator and target
+		local initiator, target = transfer.initiator, transfer.target;
+		(conn == initiator and target or initiator):write(data);
 		return;
-	end
-	if session.setup then
-		if session.sha ~= nil and transfers[session.sha] ~= nil then
-			local sha = session.sha;
-			if transfers[sha].activated == true and transfers[sha].target ~= nil then
-				if  transfers[sha].initiator == conn then
-					transfers[sha].target:write(data);
-				else
-					transfers[sha].initiator:write(data);
-				end
+	end -- FIXME server.link should be doing this?
+	
+	if not session.greeting_done then
+		local nmethods = data:byte(2) or 0;
+		if data:byte(1) == 0x05 and nmethods > 0 and #data == 2 + nmethods then -- check if we have all the data
+			if data:find("%z") then -- 0x00 = 'No authentication' is supported
+				session.greeting_done = true;
+				sessions[conn] = session;
+				conn:write("\5\0"); -- send (SOCKS version 5, No authentication)
+				module:log("debug", "SOCKS5 greeting complete");
 				return;
 			end
-		end
-		if data ~= nil and #data == 0x2F and  -- 40 == length of SHA1 HASH, and 7 other bytes => 47 => 0x2F
-			data:byte(1) == 0x05 and -- SOCKS5 has 5 in first byte
-			data:byte(2) == 0x01 and -- CMD must be 1
-			data:byte(3) == 0x00 and -- RSV must be 0
-			data:byte(4) == 0x03 and -- ATYP must be 3
-			data:byte(5) == 40 and -- SHA1 HASH length must be 40 (0x28)
-			data:byte(-2) == 0x00 and -- PORT must be 0, size 2 byte
-			data:byte(-1) == 0x00
-		then
-			local sha = data:sub(6, 45); -- second param is not count! it's the ending index (included!)
-			if transfers[sha] == nil then
+		end -- else error, unexpected input
+		conn:write("\5\255"); -- send (SOCKS version 5, no acceptable method)
+		conn:close();
+		module:log("debug", "Invalid SOCKS5 greeting recieved: '%s'", b64(data));
+	else -- connection request
+		--local head = string.char( 0x05, 0x01, 0x00, 0x03, 40 ); -- ( VER=5=SOCKS5, CMD=1=CONNECT, RSV=0=RESERVED, ATYP=3=DOMAIMNAME, SHA-1 size )
+		if #data == 47 and data:sub(1,5) == "\5\1\0\3\40" and data:sub(-2) == "\0\0" then
+			local sha = data:sub(6, 45);
+			conn:pause();
+			conn:write("\5\0\0\3\40" .. sha .. "\0\0"); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
+			if not transfers[sha] then
 				transfers[sha] = {};
-				transfers[sha].activated = false;
 				transfers[sha].target = conn;
 				session.sha = sha;
-				module:log("debug", "target connected ... ");
-			elseif transfers[sha].target ~= nil then
+				module:log("debug", "SOCKS5 target connected for session %s", sha);
+			else -- transfers[sha].target ~= nil
 				transfers[sha].initiator = conn;
 				session.sha = sha;
-				module:log("debug", "initiator connected ... ");
+				module:log("debug", "SOCKS5 initiator connected for session %s", sha);
 				server.link(conn, transfers[sha].target, max_buffer_size);
 				server.link(transfers[sha].target, conn, max_buffer_size);
 			end
-			conn:write(string.char(5, 0, 0, 3, #sha) .. sha .. string.char(0, 0)); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
-			conn:lock_read(true)
-		else
-			module:log("warn", "Neither data transfer nor initial connect of a participator of a transfer.")
+		else -- error, unexpected input
+			conn:write("\5\1\0\3\0\0\0"); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:close();
-		end
-	else
-		if data ~= nil then
-			module:log("warn", "unknown connection with no authentication data -> closing it");
-			conn:close();
+			module:log("debug", "Invalid SOCKS5 negotiation recieved: '%s'", b64(data));
 		end
 	end
 end
@@ -103,7 +87,7 @@ end
 function connlistener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if session.sha and transfers[session.sha] then
+		if transfers[session.sha] then
 			local initiator, target = transfers[session.sha].initiator, transfers[session.sha].target;
 			if initiator == conn and target ~= nil then
 				target:close();
@@ -167,31 +151,30 @@ module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function
 	local to = query:get_child_text("activate");
 	local prepped_to = jid_prep(to);
 
-	module:log("debug", "received activation request from %s", stanza.attr.from);
+	local info = "sid: "..tostring(sid)..", initiator: "..tostring(from)..", target: "..tostring(prepped_to or to);
 	if prepped_to and sid then
 		local sha = sha1(sid .. from .. prepped_to, true);
-		if transfers[sha] == nil then
-			module:log("error", "transfers[sha]: nil");
+		if not transfers[sha] then
+			module:log("debug", "Activation request has unknown session id; activation failed (%s)", info);
 			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
-		elseif(transfers[sha] ~= nil and transfers[sha].initiator ~= nil and transfers[sha].target ~= nil) then
+		elseif not transfers[sha].initiator then
+			module:log("debug", "The sender was not connected to the proxy; activation failed (%s)", info);
+			origin.send(st.error_reply(stanza, "cancel", "not-allowed", "The sender (you) is not connected to the proxy"));
+		--elseif not transfers[sha].target then -- can't happen, as target is set when a transfer object is created
+		--	module:log("debug", "The recipient was not connected to the proxy; activation failed (%s)", info);
+		--	origin.send(st.error_reply(stanza, "cancel", "not-allowed", "The recipient is not connected to the proxy"));
+		else -- if transfers[sha].initiator ~= nil and transfers[sha].target ~= nil then
+			module:log("debug", "Transfer activated (%s)", info);
 			transfers[sha].activated = true;
-			transfers[sha].target:lock_read(false);
-			transfers[sha].initiator:lock_read(false);
+			transfers[sha].target:resume();
+			transfers[sha].initiator:resume();
 			origin.send(st.reply(stanza));
-		else
-			module:log("debug", "Both parties were not yet connected");
-			local message = "Neither party is connected to the proxy";
-			if transfers[sha].initiator then
-				message = "The recipient is not connected to the proxy";
-			elseif transfers[sha].target then
-				message = "The sender (you) is not connected to the proxy";
-			end
-			origin.send(st.error_reply(stanza, "cancel", "not-allowed", message));
 		end
 	elseif to and sid then
+		module:log("debug", "Malformed activation jid; activation failed (%s)", info);
 		origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
 	else
-		module:log("error", "activation failed: sid: %s, initiator: %s, target: %s", tostring(sid), tostring(from), tostring(to));
+		module:log("debug", "Bad request; activation failed (%s)", info);
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 	end
 	return true;
