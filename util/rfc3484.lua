@@ -5,9 +5,19 @@
 -- COPYING file in the source package for more information.
 --
 
-local t_sort = table.sort;
 local commonPrefixLength = require"util.ip".commonPrefixLength
 local new_ip = require"util.ip".new_ip;
+
+local function t_sort(t, comp)
+	for i = 1, (#t - 1) do
+		for j = (i + 1), #t do
+			local a, b = t[i], t[j];
+			if not comp(a,b) then
+				t[i], t[j] = b, a;
+			end
+		end
+	end
+end
 
 function source(dest, candidates)
 	local function comp(ipA, ipB)
@@ -61,7 +71,6 @@ function source(dest, candidates)
 end
 
 function destination(candidates, sources)
-	local t_sort = table.sort;
 	local sourceAddrs = {};
 	local function comp(ipA, ipB)
 		local ipAsource = sourceAddrs[ipA];
