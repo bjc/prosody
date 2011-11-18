@@ -395,23 +395,27 @@ int lc_initgroups(lua_State* L)
 		return 2;
 	}
 	ret = initgroups(lua_tostring(L, 1), gid);
-	switch(errno)
+	if(ret)
 	{
-	case 0:
+		switch(errno)
+		{
+		case ENOMEM:
+			lua_pushnil(L);
+			lua_pushstring(L, "no-memory");
+			break;
+		case EPERM:
+			lua_pushnil(L);
+			lua_pushstring(L, "permission-denied");
+			break;
+		default:
+			lua_pushnil(L);
+			lua_pushstring(L, "unknown-error");
+		}
+	}
+	else
+	{
 		lua_pushboolean(L, 1);
 		lua_pushnil(L);
-		break;
-	case ENOMEM:
-		lua_pushnil(L);
-		lua_pushstring(L, "no-memory");
-		break;
-	case EPERM:
-		lua_pushnil(L);
-		lua_pushstring(L, "permission-denied");
-		break;
-	default:
-		lua_pushnil(L);
-		lua_pushstring(L, "unknown-error");
 	}
 	return 2;
 }
