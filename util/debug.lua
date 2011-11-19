@@ -20,10 +20,12 @@ end
 
 local function get_upvalues_table(func)
 	local upvalues = {};
-	for upvalue_num = 1, math.huge do
-		local name, value = debug.getupvalue(func, upvalue_num);
-		if not name then break; end
-		table.insert(upvalues, { name = name, value = value });
+	if func then
+		for upvalue_num = 1, math.huge do
+			local name, value = debug.getupvalue(func, upvalue_num);
+			if not name then break; end
+			table.insert(upvalues, { name = name, value = value });
+		end
 	end
 	return upvalues;
 end
