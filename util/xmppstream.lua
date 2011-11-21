@@ -11,25 +11,22 @@ local lxp = require "lxp";
 local st = require "util.stanza";
 local stanza_mt = st.stanza_mt;
 
+local error = error;
 local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
 local t_remove = table.remove;
 local setmetatable = setmetatable;
 
-local default_log = require "util.logger".init("xmppstream");
-
 -- COMPAT: w/LuaExpat 1.1.0
 local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
-
 if not lxp_supports_doctype then
+	local default_log = require "util.logger".init("xmppstream");
 	default_log("warn", "The version of LuaExpat on your system leaves Prosody "
 		.."vulnerable to denial-of-service attacks. You should upgrade to "
 		.."LuaExpat 1.1.1 or higher as soon as possible. See "
 		.."http://prosody.im/doc/depends#luaexpat for more information.");
 end
-
-local error = error;
 
 module "xmppstream"
 
@@ -49,8 +46,6 @@ _M.ns_pattern = ns_pattern;
 
 function new_sax_handlers(session, stream_callbacks)
 	local xml_handlers = {};
-	
-	local log = session.log or default_log;
 	
 	local cb_streamopened = stream_callbacks.streamopened;
 	local cb_streamclosed = stream_callbacks.streamclosed;
@@ -188,7 +183,6 @@ function new_sax_handlers(session, stream_callbacks)
 	
 	local function set_session(stream, new_session)
 		session = new_session;
-		log = new_session.log or default_log;
 	end
 	
 	return xml_handlers, { reset = reset, set_session = set_session };
