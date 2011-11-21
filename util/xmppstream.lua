@@ -20,13 +20,6 @@ local setmetatable = setmetatable;
 
 -- COMPAT: w/LuaExpat 1.1.0
 local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
-if not lxp_supports_doctype then
-	local default_log = require "util.logger".init("xmppstream");
-	default_log("warn", "The version of LuaExpat on your system leaves Prosody "
-		.."vulnerable to denial-of-service attacks. You should upgrade to "
-		.."LuaExpat 1.1.1 or higher as soon as possible. See "
-		.."http://prosody.im/doc/depends#luaexpat for more information.");
-end
 
 module "xmppstream"
 
