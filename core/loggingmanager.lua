@@ -41,7 +41,7 @@ local logging_config;
 local apply_sink_rules;
 local log_sink_types = setmetatable({}, { __newindex = function (t, k, v) rawset(t, k, v); apply_sink_rules(k); end; });
 local get_levels;
-local logging_levels = { "debug", "info", "warn", "error", "critical" }
+local logging_levels = { "debug", "info", "warn", "error" }
 
 -- Put a rule into action. Requires that the sink type has already been registered.
 -- This function is called automatically when a new sink type is added [see apply_sink_rules()]
