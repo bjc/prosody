@@ -136,6 +136,14 @@ function log_warnings()
 			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
 		end
 	end
+	if lxp then
+		if not pcall(lxp.new, { StartDoctypeDecl = false }) then
+			log("error", "The version of LuaExpat on your system leaves Prosody "
+				.."vulnerable to denial-of-service attacks. You should upgrade to "
+				.."LuaExpat 1.1.1 or higher as soon as possible. See "
+				.."http://prosody.im/doc/depends#luaexpat for more information.");
+		end
+	end
 end
 
 return _M;

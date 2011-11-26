@@ -358,6 +358,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		elseif type == "unavailable" then -- unavailable
 			if current_nick then
 				log("debug", "%s leaving %s", current_nick, room);
+				self._jid_nick[from] = nil;
 				local occupant = self._occupants[current_nick];
 				local new_jid = next(occupant.sessions);
 				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
@@ -382,7 +383,6 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					self:broadcast_presence(pr, from);
 					self._occupants[current_nick] = nil;
 				end
-				self._jid_nick[from] = nil;
 			end
 		elseif not type then -- available
 			if current_nick then
