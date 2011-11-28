@@ -66,7 +66,7 @@ function stream_callbacks.handlestanza(session, stanza)
 end
 
 local sessions = {};
-local xmppserver = { default_port = 5269, default_mode = "*a" };
+local xmppserver = { default_port = 5269, default_mode = "*a", default_interface = "*" };
 
 -- These are session methods --
 
