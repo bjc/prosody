@@ -65,7 +65,7 @@ local function v4scope(ip)
 	elseif fields[1] == 169 and fields[2] == 254 then
 		return 0x2;
 	-- Site-local unicast:
-	elseif (fields[1] == 10) or (fields[1] == 192 and fields[2] == 168) or (fields[1] == 172 and fields[2] > 16) then
+	elseif (fields[1] == 10) or (fields[1] == 192 and fields[2] == 168) or (fields[1] == 172 and (fields[2] >= 16 and fields[2] < 32) then
 		return 0x5;
 	-- Global unicast:
 	else
