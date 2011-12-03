@@ -252,7 +252,7 @@ field_readers["boolean"] =
 field_verifiers["boolean"] =
 	function (data, field_tag, required)
 		data = field_readers["text-single"](field_tag);
-		if #data == 0 and required then
+		if ((not data) or (#data == 0)) and required then
 			return "Required value missing";
 		end
 		if data ~= "1" and data ~= "true" and data ~= "0" and data ~= "false" then
