@@ -91,9 +91,10 @@ function on_destroy_request(request)
 		end
 		
 		-- If this session now has no requests open, mark it as inactive
-		if #requests == 0 and session.bosh_max_inactive and not inactive_sessions[session] then
-			inactive_sessions[session] = os_time();
-			(session.log or log)("debug", "BOSH session marked as inactive at %d", inactive_sessions[session]);
+		local max_inactive = session.bosh_max_inactive;
+		if max_inactive and #requests == 0 then
+			inactive_sessions[session] = os_time() + max_inactive;
+			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
 	end
 end
@@ -402,17 +403,13 @@ function on_timer()
 	
 	now = now - 3;
 	local n_dead_sessions = 0;
-	for session, inactive_since in pairs(inactive_sessions) do
-		if session.bosh_max_inactive then
-			if now - inactive_since > session.bosh_max_inactive then
-				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
-				sessions[session.sid]  = nil;
-				inactive_sessions[session] = nil;
-				n_dead_sessions = n_dead_sessions + 1;
-				dead_sessions[n_dead_sessions] = session;
-			end
-		else
+	for session, close_after in pairs(inactive_sessions) do
+		if close_after < now then
+			(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
+			sessions[session.sid]  = nil;
 			inactive_sessions[session] = nil;
+			n_dead_sessions = n_dead_sessions + 1;
+			dead_sessions[n_dead_sessions] = session;
 		end
 	end
 
