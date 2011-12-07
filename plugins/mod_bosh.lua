@@ -35,6 +35,7 @@ local BOSH_DEFAULT_POLLING = module:get_option_number("bosh_max_polling", 5);
 local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
+local auto_cork = module:get_option_boolean("bosh_auto_cork", false);
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 
@@ -268,7 +269,7 @@ function stream_callbacks.streamopened(request, attr)
 			end
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
-			if oldest_request then
+			if oldest_request and (not(auto_cork) or waiting_requests[oldest_request]) then
 				log("debug", "We have an open request, so sending on that");
 				response.body = t_concat({
 					"<body xmlns='http://jabber.org/protocol/httpbind' ",
