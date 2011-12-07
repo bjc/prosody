@@ -295,11 +295,11 @@ function attempt_connection(host_session, err)
 	return try_connect(host_session, connect_host, connect_port);
 end
 
-function try_next_ip(host_session, connect_port)
+function try_next_ip(host_session)
 	host_session.connecting = nil;
 	host_session.ip_choice = host_session.ip_choice + 1;
 	local ip = host_session.ip_hosts[host_session.ip_choice];
-	local ok, err= make_connect(host_session, ip, connect_port);
+	local ok, err= make_connect(host_session, ip.ip, ip.port);
 	if not ok then
 		if not attempt_connection(host_session, err or "closed") then
 			err = err and (": "..err) or "";
@@ -354,8 +354,11 @@ function try_connect(host_session, connect_host, connect_port, err)
 			if has_other then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
+					for i = 1, #IPs do
+						IPs[i] = {ip = IPs[i], port = connect_port};
+					end
 					host_session.ip_choice = 0;
-					try_next_ip(host_session, connect_port);
+					try_next_ip(host_session);
 				else
 					log("debug", "DNS lookup failed to get a response for %s", connect_host);
 					host_session.ip_hosts = nil;
@@ -383,8 +386,11 @@ function try_connect(host_session, connect_host, connect_port, err)
 			if has_other then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
+					for i = 1, #IPs do
+						IPs[i] = {ip = IPs[i], port = connect_port};
+					end
 					host_session.ip_choice = 0;
-					try_next_ip(host_session, connect_port);
+					try_next_ip(host_session);
 				else
 					log("debug", "DNS lookup failed to get a response for %s", connect_host);
 					host_session.ip_hosts = nil;
@@ -401,7 +407,7 @@ function try_connect(host_session, connect_host, connect_port, err)
 
 		return true;
 	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
-		try_next_ip(host_session, connect_port);
+		try_next_ip(host_session);
 	else
 		host_session.ip_hosts = nil;
 		if not attempt_connection(host_session, "out of IP addresses") then -- Retry if we can
