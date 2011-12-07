@@ -60,6 +60,13 @@ function array_base.sort(outa, ina, ...)
 	return outa;
 end
 
+function array_base.pluck(outa, ina, key)
+	for i=1,#ina do
+		outa[i] = ina[i][key];
+	end
+	return outa;
+end
+
 --- These methods only mutate
 function array_methods:random()
 	return self[math.random(1,#self)];
