@@ -214,6 +214,7 @@ local function bosh_close_stream(session, reason)
 		held_request:destroy();
 	end
 	sessions[session.sid]  = nil;
+	inactive_sessions[session] = nil;
 	sm_destroy_session(session);
 end
 
