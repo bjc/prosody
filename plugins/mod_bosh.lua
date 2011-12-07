@@ -120,10 +120,17 @@ function handle_request(method, body, request)
 	request.on_destroy = on_destroy_request;
 	
 	local stream = new_xmpp_stream(request, stream_callbacks);
+	
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
+	-- In particular, the streamopened() stream callback is where
+	-- much of the session logic happens, because it's where we first
+	-- get to see the 'sid' of this request.
 	stream:feed(body);
 	
+	-- Stanzas (if any) in the request have now been processed, and
+	-- we take care of the high-level BOSH logic here, including
+	-- giving a response or putting the request "on hold".
 	local session = sessions[request.sid];
 	if session then
 		-- Session was marked as inactive, since we have
@@ -218,6 +225,7 @@ local function bosh_close_stream(session, reason)
 	sm_destroy_session(session);
 end
 
+-- Handle the <body> tag in the request payload.
 function stream_callbacks.streamopened(request, attr)
 	local sid = attr.sid;
 	log("debug", "BOSH body open (sid: %s)", sid or "<none>");
@@ -340,14 +348,6 @@ function stream_callbacks.streamopened(request, attr)
 		session.rid = rid;
 	end
 	
-	if session.notopen then
-		local features = st.stanza("stream:features");
-		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-		fire_event("stream-features", session, features);
-		session.send(features);
-		session.notopen = nil;
-	end
-	
 	if attr.type == "terminate" then
 		-- Client wants to end this session, which we'll do
 		-- after processing any stanzas in this request
@@ -357,6 +357,14 @@ function stream_callbacks.streamopened(request, attr)
 	request.notopen = nil; -- Signals that we accept this opening tag
 	t_insert(session.requests, request);
 	request.sid = sid;
+
+	if session.notopen then
+		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+		fire_event("stream-features", session, features);
+		session.send(features);
+		session.notopen = nil;
+	end
 end
 
 function stream_callbacks.handlestanza(request, stanza)
