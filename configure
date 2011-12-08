@@ -59,8 +59,6 @@ Configure Prosody prior to building.
                             Default is $CC
 --linker=CC                 The linker to use when building modules.
                             Default is $LD
---require-config            Will cause Prosody to refuse to run when
-                            it fails to find a configuration file
 EOF
 }
 
@@ -126,9 +124,6 @@ do
    --datadir=*)
    	DATADIR="$value"
    	DATADIR_SET=yes
-      ;;
-   --require-config)
-      REQUIRE_CONFIG=yes
       ;;
    --lua-suffix=*)
       LUA_SUFFIX="$value"
@@ -327,7 +322,6 @@ LUA_DIR=$LUA_DIR
 LUA_INCDIR=$LUA_INCDIR
 LUA_LIBDIR=$LUA_LIBDIR
 LUA_BINDIR=$LUA_BINDIR
-REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 IDNA_LIBS=$IDNA_LIBS
 OPENSSL_LIB=$OPENSSL_LIB
