@@ -58,7 +58,7 @@ end
 local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
 
 local function get_ip_from_request(request)
-	local ip = request.handler:ip();
+	local ip = request.conn:ip();
 	local forwarded_for = request.headers["x-forwarded-for"];
 	if forwarded_for then
 		forwarded_for = forwarded_for..", "..ip;
