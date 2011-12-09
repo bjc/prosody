@@ -105,6 +105,7 @@ end
 
 function array_methods:push(x)
 	table.insert(self, x);
+	return self;
 end
 
 function array_methods:pop(x)
