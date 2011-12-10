@@ -41,6 +41,9 @@ function getconfig()
 end
 
 function get(host, section, key)
+	if not key then
+		section, key = "core", section;
+	end
 	local sec = config[host][section];
 	if sec then
 		return sec[key];
