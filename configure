@@ -59,6 +59,8 @@ Configure Prosody prior to building.
                             Default is $CC
 --linker=CC                 The linker to use when building modules.
                             Default is $LD
+--require-config            Will cause Prosody to refuse to run when
+                            it fails to find a configuration file
 EOF
 }
 
@@ -110,7 +112,7 @@ do
         CFLAGS="-Wall -fPIC"
         LDFLAGS="-shared"
         fi
-        if [ "$OSTYPE" = "freebsd" ]
+        if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]
         then LUA_INCDIR="/usr/local/include/lua51"
         LUA_INCDIR_SET=yes
         CFLAGS="-Wall -fPIC -I/usr/local/include"
@@ -120,10 +122,16 @@ do
         LUA_DIR=/usr/local
         LUA_DIR_SET=yes
         fi
+        if [ "$OSTYPE" = "openbsd" ]
+        then LUA_INCDIR="/usr/local/include";
+        fi
       ;;
    --datadir=*)
    	DATADIR="$value"
    	DATADIR_SET=yes
+      ;;
+   --require-config)
+      REQUIRE_CONFIG=yes
       ;;
    --lua-suffix=*)
       LUA_SUFFIX="$value"
@@ -322,6 +330,7 @@ LUA_DIR=$LUA_DIR
 LUA_INCDIR=$LUA_INCDIR
 LUA_LIBDIR=$LUA_LIBDIR
 LUA_BINDIR=$LUA_BINDIR
+REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 IDNA_LIBS=$IDNA_LIBS
 OPENSSL_LIB=$OPENSSL_LIB
