@@ -18,7 +18,7 @@ module:hook("user-registered", function (user)
 	module:log("debug", "Notifying of new registration");
 	local message = st.message{ type = "chat", from = host }
 		:tag("body")
-			:text(registration_alert:gsub("%$(%w+)", function (v)
+			:text(registration_notification:gsub("%$(%w+)", function (v)
 				return user[v] or user.session and user.session[v] or nil;
 			end));
 	for _, jid in ipairs(registration_watchers) do
