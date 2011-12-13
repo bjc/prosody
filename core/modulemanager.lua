@@ -117,7 +117,7 @@ function load(host, module_name, config)
 	end
 
 	local _log = logger.init(host..":"..module_name);
-	local api_instance = setmetatable({ name = module_name, host = host, path = err, config = config,  _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
+	local api_instance = setmetatable({ name = module_name, host = host, path = err, _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
