@@ -23,7 +23,6 @@ local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
 local initialize_filters = require "util.filters".initialize;
 local wrapclient = require "net.server".wrapclient;
-local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
