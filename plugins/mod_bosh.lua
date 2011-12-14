@@ -9,7 +9,6 @@
 module.host = "*" -- Global module
 
 local hosts = _G.hosts;
-local lxp = require "lxp";
 local new_xmpp_stream = require "util.xmppstream".new;
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
