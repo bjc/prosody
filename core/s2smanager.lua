@@ -319,6 +319,9 @@ function try_connect(host_session, connect_host, connect_port, err)
 		if not sources then
 			sources =  {};
 			local cfg_sources = config.get("*", "core", "interface") or connlisteners_get("xmppserver").default_interface;
+			if type(cfg_sources) == "string" then
+				cfg_sources = { cfg_sources };
+			end
 			for i, source in ipairs(cfg_sources) do
 				if source == "*" then
 					sources[i] = new_ip("0.0.0.0", "IPv4");
