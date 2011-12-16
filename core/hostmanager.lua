@@ -53,6 +53,17 @@ end
 
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
+local function host_send(stanza)
+	local name, type = stanza.name, stanza.attr.type;
+	if type == "error" or (name == "iq" and type == "result") then
+		local dest_host_name = select(2, jid_split(stanza.attr.to));
+		local dest_host = hosts[dest_host_name] or { type = "unknown" };
+		log("warn", "Unhandled response sent to %s host %s: %s", dest_host.type, dest_host_name, tostring(stanza));
+		return;
+	end
+	core_route_stanza(nil, stanza);
+end
+
 function activate(host, host_config)
 	if hosts[host] then return nil, "The host "..host.." is already activated"; end
 	host_config = host_config or configmanager.getconfig()[host];
@@ -63,6 +74,7 @@ function activate(host, host_config)
 		events = events_new();
 		dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
 		disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
+		send = host_send;
 	};
 	if not host_config.core.component_module then -- host
 		host_session.type = "local";
