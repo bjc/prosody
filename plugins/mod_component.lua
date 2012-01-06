@@ -10,8 +10,6 @@ if module:get_host_type() ~= "component" then
 	error("Don't load mod_component manually, it should be for a component, please see http://prosody.im/doc/components", 0);
 end
 
-local hosts = _G.hosts;
-
 local t_concat = table.concat;
 
 local sha1 = require "util.hashes".sha1;
@@ -23,6 +21,7 @@ local main_session, send;
 
 local function on_destroy(session, err)
 	if main_session == session then
+		connected = false;
 		main_session = nil;
 		send = nil;
 		session.on_destroy = nil;
@@ -83,6 +82,7 @@ function handle_component_auth(event)
 	
 	-- If component not already created for this host, create one now
 	if not main_session then
+		connected = true;
 		send = session.send;
 		main_session = session;
 		session.on_destroy = on_destroy;
