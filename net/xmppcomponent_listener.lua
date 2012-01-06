@@ -7,8 +7,6 @@
 --
 
 
-local hosts = _G.hosts;
-
 local t_concat = table.concat;
 local tostring = tostring;
 local type = type;
