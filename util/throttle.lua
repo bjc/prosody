@@ -1,5 +1,6 @@
 
 local gettime = require "socket".gettime;
+local setmetatable = setmetatable;
 
 module "throttle"
 
