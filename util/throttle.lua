@@ -34,7 +34,7 @@ function throttle:poll(cost, split)
 		if split then
 			self.balance = 0;
 		end
-		return false, balance, (cost-self.balance);
+		return false, balance, (cost-balance);
 	end
 end
 
