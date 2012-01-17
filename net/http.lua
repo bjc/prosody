@@ -70,7 +70,7 @@ local function request_reader(request, data, startpos)
 		local function success_cb(r)
 			if request.callback then
 				for k,v in pairs(r) do request[k] = v; end
-				request.callback(r.body, r.code, request);
+				request.callback(r.body, r.code, request, r);
 				request.callback = nil;
 			end
 			destroy_request(request);
@@ -148,7 +148,7 @@ function request(u, ex, callback)
 	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", using_https and { mode = "client", protocol = "sslv23" });
 	req.write = function (...) return req.handler:write(...); end
 	
-	req.callback = function (content, code, request) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request) end, handleerr)); end
+	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
 	req.reader = request_reader;
 	req.state = "status";
 
