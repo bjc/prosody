@@ -1,6 +1,6 @@
 
 local type = type;
-local t_insert, t_concat, t_remove = table.insert, table.concat, table.remove;
+local t_insert, t_concat, t_remove, t_sort = table.insert, table.concat, table.remove, table.sort;
 local s_char = string.char;
 local tostring, tonumber = tostring, tonumber;
 local pairs, ipairs = pairs, ipairs;
@@ -79,11 +79,25 @@ function tablesave(o, buffer)
 	if next(__hash) ~= nil or next(hash) ~= nil or next(__array) == nil then
 		t_insert(buffer, "{");
 		local mark = #buffer;
-		for k,v in pairs(hash) do
-			stringsave(k, buffer);
-			t_insert(buffer, ":");
-			simplesave(v, buffer);
-			t_insert(buffer, ",");
+		if buffer.ordered then
+			local keys = {};
+			for k in pairs(hash) do
+				t_insert(keys, k);
+			end
+			t_sort(keys);
+			for _,k in ipairs(keys) do
+				stringsave(k, buffer);
+				t_insert(buffer, ":");
+				simplesave(hash[k], buffer);
+				t_insert(buffer, ",");
+			end
+		else
+			for k,v in pairs(hash) do
+				stringsave(k, buffer);
+				t_insert(buffer, ":");
+				simplesave(v, buffer);
+				t_insert(buffer, ",");
+			end
 		end
 		if next(__hash) ~= nil then
 			t_insert(buffer, "\"__hash\":[");
@@ -126,6 +140,11 @@ end
 
 function json.encode(obj)
 	local t = {};
+	simplesave(obj, t);
+	return t_concat(t);
+end
+function json.encode_ordered(obj)
+	local t = { ordered = true };
 	simplesave(obj, t);
 	return t_concat(t);
 end
