@@ -540,7 +540,7 @@ end
 
 function commands.reload(arg)
 	if arg[1] == "--help" then
-		show_usage([[reload]], [[Reload prosody configuration file]]);
+		show_usage([[reload]], [[Reload Prosody's configuration and re-open log files]]);
 		return 1;
 	end
 
