@@ -16,7 +16,7 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 local compression_stream_feature = st.stanza("compression", {xmlns=xmlns_compression_feature}):tag("method"):text("zlib"):up();
 local add_filter = require "util.filters".add_filter;
 
-local compression_level = module:get_option_number("compression_level", 9);
+local compression_level = module:get_option_number("compression_level", 7);
 
 if not compression_level or compression_level < 1 or compression_level > 9 then
 	module:log("warn", "Invalid compression level in config: %s", tostring(compression_level));
