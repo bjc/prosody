@@ -236,6 +236,7 @@ local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warn
 local show_usage = prosodyctl.show_usage;
 local getchar, getpass = prosodyctl.getchar, prosodyctl.getpass;
 local show_yesno = prosodyctl.show_yesno;
+local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
 
 local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
@@ -610,6 +611,106 @@ function commands.unregister(arg)
 	
 	show_message(error_messages[msg])
 	return 1;
+end
+
+local x509 = require "util.x509";
+local genx509san = x509.genx509san;
+local opensslbaseconf = x509.baseconf;
+local seralizeopensslbaseconf = x509.serialize_conf;
+
+local cert_commands = {};
+
+-- TODO Should this be moved to util.prosodyctl or x509?
+function cert_commands.config(arg)
+	if #arg >= 1 and arg[1] ~= "--help" then
+		local conf_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cnf";
+		if os.execute("test -f "..conf_filename) == 0
+			and not show_yesno("Overwrite "..conf_filename .. "?") then
+			return nil, conf_filename;
+		end
+		local conf = opensslbaseconf();
+		conf.subject_alternative_name = genx509san(hosts, config, arg, true)
+		for k, v in pairs(conf.distinguished_name) do
+			local nv;
+			if k == "commonName" then 
+				v = arg[1]
+			elseif k == "emailAddress" then
+				v = "xmpp@" .. arg[1];
+			end
+			nv = show_prompt(("%s (%s):"):format(k, nv or v));
+			nv = (not nv or nv == "") and v or nv;
+			conf.distinguished_name[k] = nv ~= "." and nv or nil;
+		end
+		local conf_file = io.open(conf_filename, "w");
+		conf_file:write(seralizeopensslbaseconf(conf));
+		conf_file:close();
+		print("");
+		show_message("Config written to " .. conf_filename);
+		return nil, conf_filename;
+	else
+		show_usage("cert config HOSTNAME", "generates config for OpenSSL")
+	end
+end
+
+function cert_commands.key(arg)
+	if #arg >= 1 and arg[1] ~= "--help" then
+		local key_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".key";
+		if os.execute("test -f "..key_filename) == 0
+			and not show_yesno("Overwrite "..key_filename .. "?") then
+			return nil, key_filename;
+		end
+		local key_size = tonumber(arg[2] or show_prompt("Choose key size (2048):") or 2048);
+		os.execute(("openssl genrsa -out %s %d"):format(key_filename, tonumber(key_size)));
+		os.execute(("chmod 400 %s"):format(key_filename));
+		show_message("Key written to ".. key_filename);
+		return nil, key_filename;
+	else
+		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key")
+	end
+end
+
+function cert_commands.request(arg)
+	if #arg >= 1 and arg[1] ~= "--help" then
+		local req_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".req";
+		if os.execute("test -f "..req_filename) == 0
+			and not show_yesno("Overwrite "..req_filename .. "?") then
+			return nil, req_filename;
+		end
+		local _, key_filename = cert_commands.key({arg[1]});
+		local _, conf_filename = cert_commands.config({arg[1]});
+		os.execute(("openssl req -new -key %s -utf8 -config %s -out %s")
+			:format(key_filename, conf_filename, req_filename));
+		show_message("Certificate request written to ".. req_filename);
+	else
+		show_usage("cert request HOSTNAME", "Generates a certificate request")
+	end
+end
+
+function cert_commands.generate(arg)
+	if #arg >= 1 and arg[1] ~= "--help" then
+		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
+		if os.execute("test -f "..cert_filename) == 0
+			and not show_yesno("Overwrite "..cert_filename .. "?") then
+			return nil, cert_filename;
+		end
+		local _, key_filename = cert_commands.key({arg[1]});
+		local _, conf_filename = cert_commands.config({arg[1]});
+		os.execute(("openssl req -new -x509 -nodes -key %s -days 365 -sha1 -utf8 -config %s -out %s")
+			:format(key_filename, conf_filename, cert_filename));
+		show_message("Certificate written to ".. cert_filename);
+	else
+		show_usage("cert generate HOSTNAME", "Generates a self-signed certificate")
+	end
+end
+
+function commands.cert(arg)
+	if #arg >= 1 and arg[1] ~= "--help" then
+		local subcmd = table.remove(arg, 1);
+		if type(cert_commands[subcmd]) == "function" then
+			return cert_commands[subcmd](arg);
+		end
+	end
+	show_usage("cert config|request|generate|key", "Helpers for X.509 certificates.")
 end
 
 ---------------------
