@@ -90,77 +90,9 @@ end
 prosody_events.add_handler("host-activated", load_modules_for_host);
 --
 
-function load(host, module_name, config)
-	if not (host and module_name) then
-		return nil, "insufficient-parameters";
-	elseif not hosts[host] then
-		return nil, "unknown-host";
-	end
-	
-	if not modulemap[host] then
-		modulemap[host] = {};
-	end
-	
-	if modulemap[host][module_name] then
-		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
-		return nil, "module-already-loaded";
-	elseif modulemap["*"][module_name] then
-		return nil, "global-module-already-loaded";
-	end
-	
+--- Private helpers ---
 
-	local mod, err = pluginloader.load_code(module_name);
-	if not mod then
-		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
-		return nil, err;
-	end
-
-	local _log = logger.init(host..":"..module_name);
-	local api_instance = setmetatable({ name = module_name, host = host, path = err, _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
-
-	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
-	api_instance.environment = pluginenv;
-	
-	setfenv(mod, pluginenv);
-	hosts[host].modules = modulemap[host];
-	modulemap[host][module_name] = pluginenv;
-	
-	local success, err = pcall(mod);
-	if success then
-		if module_has_method(pluginenv, "load") then
-			success, err = call_module_method(pluginenv, "load");
-			if not success then
-				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
-			end
-		end
-
-		-- Use modified host, if the module set one
-		if api_instance.host == "*" and host ~= "*" then
-			modulemap[host][module_name] = nil;
-			modulemap["*"][module_name] = pluginenv;
-			api_instance:set_global();
-		end
-	else
-		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
-	end
-	if success then
-		(hosts[api_instance.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
-		return true;
-	else -- load failed, unloading
-		unload(api_instance.host, module_name);
-		return nil, err;
-	end
-end
-
-function get_module(host, name)
-	return modulemap[host] and modulemap[host][name];
-end
-
-function is_loaded(host, name)
-	return modulemap[host] and modulemap[host][name] and true;
-end
-
-function unload(host, name, ...)
+local function do_unload_module(host, name)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 	
@@ -193,11 +125,70 @@ function unload(host, name, ...)
 		end
 	end
 	modulemap[host][name] = nil;
-	(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	return true;
 end
 
-function reload(host, name, ...)
+local function do_load_module(host, module_name)
+	if not (host and module_name) then
+		return nil, "insufficient-parameters";
+	elseif not hosts[host] then
+		return nil, "unknown-host";
+	end
+	
+	if not modulemap[host] then
+		modulemap[host] = {};
+	end
+	
+	if modulemap[host][module_name] then
+		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
+		return nil, "module-already-loaded";
+	elseif modulemap["*"][module_name] then
+		return nil, "global-module-already-loaded";
+	end
+	
+
+	local mod, err = pluginloader.load_code(module_name);
+	if not mod then
+		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		return nil, err;
+	end
+
+	local _log = logger.init(host..":"..module_name);
+	local api_instance = setmetatable({ name = module_name, host = host, path = err,
+		_log = _log, log = function (self, ...) return _log(...); end }
+		, { __index = api });
+
+	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
+	api_instance.environment = pluginenv;
+	
+	setfenv(mod, pluginenv);
+	hosts[host].modules = modulemap[host];
+	modulemap[host][module_name] = pluginenv;
+	
+	local ok, err = pcall(mod);
+	if ok then
+		-- Call module's "load"
+		if module_has_method(pluginenv, "load") then
+			ok, err = call_module_method(pluginenv, "load");
+			if not ok then
+				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+			end
+		end
+
+		-- Use modified host, if the module set one
+		if api_instance.host == "*" and host ~= "*" then
+			modulemap[host][module_name] = nil;
+			modulemap["*"][module_name] = pluginenv;
+			api_instance:set_global();
+		end
+	else
+		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
+		do_unload_module(api_instance.host, module_name); -- Ignore error, module may be partially-loaded
+	end
+	return ok and mod, err;
+end
+
+local function do_reload_module(host, name)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 
@@ -224,8 +215,8 @@ function reload(host, name, ...)
 		end
 	end
 
-	unload(host, name, ...);
-	local ok, err = load(host, name, ...);
+	do_unload_module(host, name);
+	local ok, err = do_load_module(host, name);
 	if ok then
 		mod = get_module(host, name);
 		if module_has_method(mod, "restore") then
@@ -234,9 +225,50 @@ function reload(host, name, ...)
 				log("warn", "Error restoring module '%s' from '%s': %s", name, host, err);
 			end
 		end
-		return true;
+	end
+	return ok and mod, err;
+end
+
+--- Public API ---
+
+-- Load a module and fire module-loaded event
+function load(host, name)
+	local mod, err = do_load_module(host, name);
+	if mod then
+		(hosts[mod.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
+	end
+	return mod, err;
+end
+
+-- Unload a module and fire module-unloaded
+function unload(host, name)
+	local ok, err = do_unload_module(host, name);
+	if ok then
+		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	end
 	return ok, err;
+end
+
+function reload(host, name)
+	local ok, err = do_reload_module(host, name);
+	if ok then
+		(hosts[host] or prosody).events.fire_event("module-reloaded", { module = name, host = host });
+	elseif not is_loaded(host, name) then
+		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
+	end
+	return ok, err;
+end
+
+function get_module(host, name)
+	return modulemap[host] and modulemap[host][name];
+end
+
+function get_modules(host)
+	return modulemap[host];
+end
+
+function is_loaded(host, name)
+	return modulemap[host] and modulemap[host][name] and true;
 end
 
 function module_has_method(module, method)
