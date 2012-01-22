@@ -178,7 +178,7 @@ end
 function xmppserver.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if err and err ~= "closed" then
+		if err and err ~= "closed"  and session.type == "s2sout_unauthed" then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2s_attempt_connect(session, err) then
 				(session.log or log)("debug", "...so we're going to try another target");

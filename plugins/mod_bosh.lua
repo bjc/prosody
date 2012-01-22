@@ -9,7 +9,6 @@
 module.host = "*" -- Global module
 
 local hosts = _G.hosts;
-local lxp = require "lxp";
 local new_xmpp_stream = require "util.xmppstream".new;
 local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
@@ -35,6 +34,7 @@ local BOSH_DEFAULT_POLLING = module:get_option_number("bosh_max_polling", 5);
 local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
+local auto_cork = module:get_option_boolean("bosh_auto_cork", false);
 
 local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 
@@ -57,7 +57,7 @@ end
 local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
 
 local function get_ip_from_request(request)
-	local ip = request.handler:ip();
+	local ip = request.conn:ip();
 	local forwarded_for = request.headers["x-forwarded-for"];
 	if forwarded_for then
 		forwarded_for = forwarded_for..", "..ip;
@@ -91,9 +91,10 @@ function on_destroy_request(request)
 		end
 		
 		-- If this session now has no requests open, mark it as inactive
-		if #requests == 0 and session.bosh_max_inactive and not inactive_sessions[session] then
-			inactive_sessions[session] = os_time();
-			(session.log or log)("debug", "BOSH session marked as inactive at %d", inactive_sessions[session]);
+		local max_inactive = session.bosh_max_inactive;
+		if max_inactive and #requests == 0 then
+			inactive_sessions[session] = os_time() + max_inactive;
+			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
 	end
 end
@@ -119,10 +120,17 @@ function handle_request(method, body, request)
 	request.on_destroy = on_destroy_request;
 	
 	local stream = new_xmpp_stream(request, stream_callbacks);
+	
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
+	-- In particular, the streamopened() stream callback is where
+	-- much of the session logic happens, because it's where we first
+	-- get to see the 'sid' of this request.
 	stream:feed(body);
 	
+	-- Stanzas (if any) in the request have now been processed, and
+	-- we take care of the high-level BOSH logic here, including
+	-- giving a response or putting the request "on hold".
 	local session = sessions[request.sid];
 	if session then
 		-- Session was marked as inactive, since we have
@@ -213,9 +221,11 @@ local function bosh_close_stream(session, reason)
 		held_request:destroy();
 	end
 	sessions[session.sid]  = nil;
+	inactive_sessions[session] = nil;
 	sm_destroy_session(session);
 end
 
+-- Handle the <body> tag in the request payload.
 function stream_callbacks.streamopened(request, attr)
 	local sid = attr.sid;
 	log("debug", "BOSH body open (sid: %s)", sid or "<none>");
@@ -258,7 +268,7 @@ function stream_callbacks.streamopened(request, attr)
 			end
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			local oldest_request = r[1];
-			if oldest_request then
+			if oldest_request and (not(auto_cork) or waiting_requests[oldest_request]) then
 				log("debug", "We have an open request, so sending on that");
 				response.body = t_concat({
 					"<body xmlns='http://jabber.org/protocol/httpbind' ",
@@ -338,14 +348,6 @@ function stream_callbacks.streamopened(request, attr)
 		session.rid = rid;
 	end
 	
-	if session.notopen then
-		local features = st.stanza("stream:features");
-		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-		fire_event("stream-features", session, features);
-		session.send(features);
-		session.notopen = nil;
-	end
-	
 	if attr.type == "terminate" then
 		-- Client wants to end this session, which we'll do
 		-- after processing any stanzas in this request
@@ -355,6 +357,14 @@ function stream_callbacks.streamopened(request, attr)
 	request.notopen = nil; -- Signals that we accept this opening tag
 	t_insert(session.requests, request);
 	request.sid = sid;
+
+	if session.notopen then
+		local features = st.stanza("stream:features");
+		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+		fire_event("stream-features", session, features);
+		session.send(features);
+		session.notopen = nil;
+	end
 end
 
 function stream_callbacks.handlestanza(request, stanza)
@@ -402,17 +412,13 @@ function on_timer()
 	
 	now = now - 3;
 	local n_dead_sessions = 0;
-	for session, inactive_since in pairs(inactive_sessions) do
-		if session.bosh_max_inactive then
-			if now - inactive_since > session.bosh_max_inactive then
-				(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
-				sessions[session.sid]  = nil;
-				inactive_sessions[session] = nil;
-				n_dead_sessions = n_dead_sessions + 1;
-				dead_sessions[n_dead_sessions] = session;
-			end
-		else
+	for session, close_after in pairs(inactive_sessions) do
+		if close_after < now then
+			(session.log or log)("debug", "BOSH client inactive too long, destroying session at %d", now);
+			sessions[session.sid]  = nil;
 			inactive_sessions[session] = nil;
+			n_dead_sessions = n_dead_sessions + 1;
+			dead_sessions[n_dead_sessions] = session;
 		end
 	end
 

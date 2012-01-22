@@ -295,7 +295,10 @@ do
 	end
 
 	function interface_mt:resume()
-		return self:_lock(self.nointerface, false, self.nowriting);
+		self:_lock(self.nointerface, false, self.nowriting);
+		if not self.eventread then
+			self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
+		end
 	end
 
 	function interface_mt:counter(c)
@@ -641,6 +644,10 @@ do
 						interface.eventread = nil
 						return -1
 					end
+				end
+				if interface.noreading then
+					interface.eventread = nil;
+					return -1;
 				end
 				return EV_READ, cfg.READ_TIMEOUT
 			end

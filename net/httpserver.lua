@@ -7,7 +7,6 @@
 --
 
 
-local server = require "net.server"
 local url_parse = require "socket.url".parse;
 local httpstream_new = require "util.httpstream".new;
 

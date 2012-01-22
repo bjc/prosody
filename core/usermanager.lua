@@ -11,6 +11,7 @@ local log = require "util.logger".init("usermanager");
 local type = type;
 local ipairs = ipairs;
 local jid_bare = require "util.jid".bare;
+local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local hosts = hosts;
 local sasl_new = require "util.sasl".new;
@@ -97,6 +98,7 @@ end
 
 function is_admin(jid, host)
 	if host and not hosts[host] then return false; end
+	if type(jid) ~= "string" then return false; end
 
 	local is_admin;
 	jid = jid_bare(jid);
@@ -108,7 +110,7 @@ function is_admin(jid, host)
 	if host_admins and host_admins ~= global_admins then
 		if type(host_admins) == "table" then
 			for _,admin in ipairs(host_admins) do
-				if admin == jid then
+				if jid_prep(admin) == jid then
 					is_admin = true;
 					break;
 				end
@@ -121,7 +123,7 @@ function is_admin(jid, host)
 	if not is_admin and global_admins then
 		if type(global_admins) == "table" then
 			for _,admin in ipairs(global_admins) do
-				if admin == jid then
+				if jid_prep(admin) == jid then
 					is_admin = true;
 					break;
 				end

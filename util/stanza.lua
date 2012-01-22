@@ -258,11 +258,6 @@ function stanza_mt.get_error(stanza)
 	return type, condition or "undefined-condition", text;
 end
 
-function stanza_mt.__add(s1, s2)
-	return s1:add_direct_child(s2);
-end
-
-
 do
 	local id = 0;
 	function new_id()

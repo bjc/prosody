@@ -140,7 +140,7 @@ end
 -- Treat the return of an iterator as key,value pairs,
 -- and build a table
 function it2table(f, s, var)
-	local t, var = {};
+	local t, var2 = {};
 	while true do
 		var, var2 = f(s, var);
 	        if var == nil then break; end

@@ -120,12 +120,18 @@ function form_t.data(layout, stanza)
 			end
 		end
 
-		local reader = field_readers[field.type];
-		local verifier = field.verifier or field_verifiers[field.type];
-		if reader then
-			data[field.name] = reader(tag);
-			if verifier then
-				errors[field.name] = verifier(data[field.name], tag, field.required);
+		if not tag then
+			if field.required then
+				errors[field.name] = "Required value missing";
+			end
+		else
+			local reader = field_readers[field.type];
+			local verifier = field.verifier or field_verifiers[field.type];
+			if reader then
+				data[field.name] = reader(tag);
+				if verifier then
+					errors[field.name] = verifier(data[field.name], tag, field.required);
+				end
 			end
 		end
 	end
@@ -161,7 +167,7 @@ field_readers["jid-single"] =
 
 field_verifiers["jid-single"] =
 	function (data, field_tag, required)
-		if #data == 0 and required then
+		if ((not data) or (#data == 0)) and required then
 			return "Required value missing";
 		end
 		if not jid_prep(data) then
@@ -246,7 +252,7 @@ field_readers["boolean"] =
 field_verifiers["boolean"] =
 	function (data, field_tag, required)
 		data = field_readers["text-single"](field_tag);
-		if #data == 0 and required then
+		if ((not data) or (#data == 0)) and required then
 			return "Required value missing";
 		end
 		if data ~= "1" and data ~= "true" and data ~= "0" and data ~= "false" then
