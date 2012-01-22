@@ -82,8 +82,10 @@ function new(list)
 	end
 	
 	function set:add_list(list)
-		for _, item in ipairs(list) do
-			items[item] = true;
+		if list then
+			for _, item in ipairs(list) do
+				items[item] = true;
+			end
 		end
 	end
 	
