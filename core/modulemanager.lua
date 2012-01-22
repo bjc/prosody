@@ -170,7 +170,7 @@ local function do_load_module(host, module_name)
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 		do_unload_module(api_instance.host, module_name); -- Ignore error, module may be partially-loaded
 	end
-	return ok and mod, err;
+	return ok and pluginenv, err;
 end
 
 local function do_reload_module(host, name)
@@ -219,7 +219,7 @@ end
 function load(host, name)
 	local mod, err = do_load_module(host, name);
 	if mod then
-		(hosts[mod.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
+		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = host });
 	end
 	return mod, err;
 end
