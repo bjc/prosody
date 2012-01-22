@@ -15,7 +15,6 @@ local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
 local prosody = prosody;
-local prosody_events = prosody.events;
 
 local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -87,8 +86,7 @@ function load_modules_for_host(host)
 		load(host, module);
 	end
 end
-prosody_events.add_handler("host-activated", load_modules_for_host);
---
+prosody.events.add_handler("host-activated", load_modules_for_host);
 
 --- Private helpers ---
 
