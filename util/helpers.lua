@@ -28,7 +28,7 @@ function log_events(events, name, logger)
 end
 
 function revert_log_events(events)
-	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :)
+	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
 end
 
 function get_upvalue(f, get_name)
