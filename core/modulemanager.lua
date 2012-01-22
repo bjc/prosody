@@ -48,10 +48,6 @@ local api = _G.require "core.moduleapi"; -- Module API container
 
 local modulemap = { ["*"] = {} };
 
-local modulehelpers = setmetatable({}, { __index = _G });
-
-local hooks = multitable_new();
-
 local NULL = {};
 
 -- Load modules when a host is activated
@@ -100,19 +96,11 @@ local function do_unload_module(host, name)
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	-- unhook event handlers hooked by module:hook
-	for event, handlers in pairs(hooks:get(host, name) or NULL) do
-		for handler in pairs(handlers or NULL) do
-			(hosts[host] or prosody).events.remove_handler(event, handler);
-		end
+	
+	for handler, event in pairs(mod.module.event_handlers) do
+		event.object.remove_handler(event.name, handler);
 	end
-	-- unhook event handlers hooked by module:hook_global
-	for event, handlers in pairs(hooks:get("*", name) or NULL) do
-		for handler in pairs(handlers or NULL) do
-			prosody.events.remove_handler(event, handler);
-		end
-	end
-	hooks:remove(host, name);
+	
 	if mod.module.items then -- remove items
 		for key,t in pairs(mod.module.items) do
 			for i = #t,1,-1 do
@@ -153,7 +141,7 @@ local function do_load_module(host, module_name)
 
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host, path = err,
-		_log = _log, log = function (self, ...) return _log(...); end }
+		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = {} }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });

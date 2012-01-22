@@ -66,14 +66,17 @@ function api:fire_event(...)
 	return (hosts[self.host] or prosody).events.fire_event(...);
 end
 
+function api:hook_object_event(object, event, handler, priority)
+	self.event_handlers[handler] = { name = event, priority = priority, object = object };
+	return object.add_handler(event, handler, priority);
+end
+
 function api:hook(event, handler, priority)
-	hooks:set(self.host, self.name, event, handler, true);
-	(hosts[self.host] or prosody).events.add_handler(event, handler, priority);
+	return self:hook_object_event((hosts[self.host] or prosody).events, event, handler, priority);
 end
 
 function api:hook_global(event, handler, priority)
-	hooks:set("*", self.name, event, handler, true);
-	prosody.events.add_handler(event, handler, priority);
+	return self:hook_object_event(prosody.events, event, handler, priority);
 end
 
 function api:hook_stanza(xmlns, name, handler, priority)
