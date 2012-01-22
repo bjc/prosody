@@ -100,6 +100,35 @@ function api:require(lib)
 	return f();
 end
 
+function api:depends(name)
+	if not self.dependencies then
+		self.dependencies = {};
+		self:hook("module-reloaded", function (event)
+			if self.dependencies[event.module] then
+				self:log("info", "Auto-reloading due to reload of %s:%s", event.host, event.module);
+				modulemanager.reload(self.host, self.name);
+				return;
+			end
+		end);
+		self:hook("module-unloaded", function (event)
+			if self.dependencies[event.module] then
+				self:log("info", "Auto-unloading due to unload of %s:%s", event.host, event.module);
+				modulemanager.unload(self.host, self.name);
+			end
+		end);
+	end
+	local mod = modulemanager.get_module(self.host, name) or modulemanager.get_module("*", name);
+	if not mod then
+		local err;
+		mod, err = modulemanager.load(self.host, name);
+		if not mod then
+			return error(("Unable to load required module, mod_%s: %s"):format(name, ((err or "unknown error"):gsub("%-", " ")) ));
+		end
+	end
+	self.dependencies[name] = true;
+	return mod;
+end
+
 function api:get_option(name, default_value)
 	local value = config.get(self.host, self.name, name);
 	if value == nil then
