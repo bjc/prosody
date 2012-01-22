@@ -9,6 +9,7 @@ local censored_names = {
 };
 
 local function get_locals_table(level)
+	level = level + 1; -- Skip this function itself
 	local locals = {};
 	for local_num = 1, math.huge do
 		local name, value = debug.getlocal(level, local_num);

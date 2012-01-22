@@ -16,7 +16,6 @@ local hosts = hosts;
 local full_sessions = full_sessions;
 local bare_sessions = bare_sessions;
 
-local modulemanager = require "core.modulemanager";
 local logger = require "util.logger";
 local log = logger.init("sessionmanager");
 local error = error;

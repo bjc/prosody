@@ -16,14 +16,13 @@ local socket = require "socket";
 local format = string.format;
 local t_insert, t_sort = table.insert, table.sort;
 local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, next, error, tonumber, setmetatable
-    = tostring, pairs, ipairs, getmetatable, newproxy, next, error, tonumber, setmetatable;
+local tostring, pairs, ipairs, getmetatable, newproxy, type, error, tonumber, setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, type, error, tonumber, setmetatable;
 
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local connlisteners_get = require "net.connlisteners".get;
 local initialize_filters = require "util.filters".initialize;
 local wrapclient = require "net.server".wrapclient;
-local modulemanager = require "core.modulemanager";
 local st = require "stanza";
 local stanza = st.stanza;
 local nameprep = require "util.encodings".stringprep.nameprep;
@@ -295,11 +294,11 @@ function attempt_connection(host_session, err)
 	return try_connect(host_session, connect_host, connect_port);
 end
 
-function try_next_ip(host_session, connect_port)
+function try_next_ip(host_session)
 	host_session.connecting = nil;
 	host_session.ip_choice = host_session.ip_choice + 1;
 	local ip = host_session.ip_hosts[host_session.ip_choice];
-	local ok, err= make_connect(host_session, ip, connect_port);
+	local ok, err= make_connect(host_session, ip.ip, ip.port);
 	if not ok then
 		if not attempt_connection(host_session, err or "closed") then
 			err = err and (": "..err) or "";
@@ -320,6 +319,9 @@ function try_connect(host_session, connect_host, connect_port, err)
 		if not sources then
 			sources =  {};
 			local cfg_sources = config.get("*", "core", "interface") or connlisteners_get("xmppserver").default_interface;
+			if type(cfg_sources) == "string" then
+				cfg_sources = { cfg_sources };
+			end
 			for i, source in ipairs(cfg_sources) do
 				if source == "*" then
 					sources[i] = new_ip("0.0.0.0", "IPv4");
@@ -354,8 +356,11 @@ function try_connect(host_session, connect_host, connect_port, err)
 			if has_other then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
+					for i = 1, #IPs do
+						IPs[i] = {ip = IPs[i], port = connect_port};
+					end
 					host_session.ip_choice = 0;
-					try_next_ip(host_session, connect_port);
+					try_next_ip(host_session);
 				else
 					log("debug", "DNS lookup failed to get a response for %s", connect_host);
 					host_session.ip_hosts = nil;
@@ -383,8 +388,11 @@ function try_connect(host_session, connect_host, connect_port, err)
 			if has_other then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
+					for i = 1, #IPs do
+						IPs[i] = {ip = IPs[i], port = connect_port};
+					end
 					host_session.ip_choice = 0;
-					try_next_ip(host_session, connect_port);
+					try_next_ip(host_session);
 				else
 					log("debug", "DNS lookup failed to get a response for %s", connect_host);
 					host_session.ip_hosts = nil;
@@ -401,7 +409,7 @@ function try_connect(host_session, connect_host, connect_port, err)
 
 		return true;
 	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
-		try_next_ip(host_session, connect_port);
+		try_next_ip(host_session);
 	else
 		host_session.ip_hosts = nil;
 		if not attempt_connection(host_session, "out of IP addresses") then -- Retry if we can

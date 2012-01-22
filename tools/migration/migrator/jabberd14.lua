@@ -67,15 +67,12 @@ local parse_xml = (function()
 end)();
 
 local function load_xml(path)
-	if path then
-		local f, err = io_open(path);
-		if not f then return f, err; end
-		local data = f:read("*a");
-		f:close();
-		if data then
-			return parse_xml(data);
-		end
-	end
+	local f, err = io_open(path);
+	if not f then return f, err; end
+	local data = f:read("*a");
+	f:close();
+	if not data then return; end
+	return parse_xml(data);
 end
 
 local function load_spool_file(host, filename, path)
