@@ -9,8 +9,6 @@
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
-local multitable_new = require "util.multitable".new;
-local st = require "util.stanza";
 local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
@@ -46,6 +44,7 @@ module "modulemanager"
 
 local api = _G.require "core.moduleapi"; -- Module API container
 
+-- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };
 
 local NULL = {};
@@ -185,7 +184,6 @@ local function do_reload_module(host, name)
 	end
 
 	local saved;
-
 	if module_has_method(mod, "save") then
 		local ok, ret, err = call_module_method(mod, "save");
 		if ok then
