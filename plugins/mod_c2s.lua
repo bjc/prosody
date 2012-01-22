@@ -6,31 +6,77 @@
 -- COPYING file in the source package for more information.
 --
 
+module:set_global();
 
-
-local logger = require "logger";
-local log = logger.init("xmppclient_listener");
 local new_xmpp_stream = require "util.xmppstream".new;
-
-local connlisteners_register = require "net.connlisteners".register;
-
+local nameprep = require "util.encodings".stringprep.nameprep;
+local portmanager = require "core.portmanager";
 local sessionmanager = require "core.sessionmanager";
-local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
-local sm_streamopened = sessionmanager.streamopened;
-local sm_streamclosed = sessionmanager.streamclosed;
 local st = require "util.stanza";
-local xpcall = xpcall;
-local tostring = tostring;
-local type = type;
+local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
+local uuid_generate = require "util.uuid".generate;
+
+local xpcall, tostring, type = xpcall, tostring, type;
+local format = string.format;
 local traceback = debug.traceback;
 
-local config = require "core.configmanager";
-local opt_keepalives = config.get("*", "core", "tcp_keepalives");
-
-local stream_callbacks = { default_ns = "jabber:client",
-		streamopened = sm_streamopened, streamclosed = sm_streamclosed, handlestanza = core_process_stanza };
-
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
+
+local log = module._log;
+
+local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
+
+local sessions = module:shared("sessions");
+
+local stream_callbacks = { default_ns = "jabber:client", handlestanza = core_process_stanza };
+local listener = { default_port = 5222, default_mode = "*a" };
+
+--- Stream events handlers
+local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
+local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+
+function stream_callbacks.streamopened(session, attr)
+	local send = session.send;
+	session.host = attr.to;
+	if not session.host then
+		session:close{ condition = "improper-addressing",
+			text = "A 'to' attribute is required on stream headers" };
+		return;
+	end
+	session.host = nameprep(session.host);
+	session.version = tonumber(attr.version) or 0;
+	session.streamid = uuid_generate();
+	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
+
+	if not hosts[session.host] then
+		-- We don't serve this host...
+		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
+		return;
+	end
+
+	send("<?xml version='1.0'?>");
+	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
+
+	(session.log or log)("debug", "Sent reply <stream:stream> to client");
+	session.notopen = nil;
+
+	-- If session.secure is *false* (not nil) then it means we /were/ encrypting
+	-- since we now have a new stream header, session is secured
+	if session.secure == false then
+		session.secure = true;
+	end
+
+	local features = st.stanza("stream:features");
+	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+	module:fire_event("stream-features", session, features);
+
+	send(features);
+end
+
+function stream_callbacks.streamclosed(session)
+	session.log("debug", "Received </stream:stream>");
+	session:close();
+end
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
@@ -67,13 +113,7 @@ function stream_callbacks.handlestanza(session, stanza)
 	end
 end
 
-local sessions = {};
-local xmppclient = { default_port = 5222, default_mode = "*a" };
-
--- These are session methods --
-
-local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
+--- Session methods
 local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
@@ -104,14 +144,12 @@ local function session_close(session, reason)
 		end
 		session.send("</stream:stream>");
 		session.conn:close();
-		xmppclient.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
+		listener.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
 	end
 end
 
-
--- End of session methods --
-
-function xmppclient.onconnect(conn)
+--- Port listener
+function listener.onconnect(conn)
 	local session = sm_new_session(conn);
 	sessions[conn] = session;
 	
@@ -122,7 +160,7 @@ function xmppclient.onconnect(conn)
 		session.secure = true;
 	end
 	
-	if opt_keepalives ~= nil then
+	if opt_keepalives then
 		conn:setoption("keepalive", opt_keepalives);
 	end
 	
@@ -130,7 +168,6 @@ function xmppclient.onconnect(conn)
 	
 	local stream = new_xmpp_stream(session, stream_callbacks);
 	session.stream = stream;
-	
 	session.notopen = true;
 	
 	function session.reset_stream()
@@ -148,21 +185,18 @@ function xmppclient.onconnect(conn)
 			session:close("not-well-formed");
 		end
 	end
-	
-	local handlestanza = stream_callbacks.handlestanza;
-	function session.dispatch_stanza(session, stanza)
-		return handlestanza(session, stanza);
-	end
+
+	session.dispatch_stanza = stream_callbacks.handlestanza;
 end
 
-function xmppclient.onincoming(conn, data)
+function listener.onincoming(conn, data)
 	local session = sessions[conn];
 	if session then
 		session.data(data);
 	end
 end
-	
-function xmppclient.ondisconnect(conn, err)
+
+function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err);
@@ -172,8 +206,19 @@ function xmppclient.ondisconnect(conn, err)
 	end
 end
 
-function xmppclient.associate_session(conn, session)
+function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
-connlisteners_register("xmppclient", xmppclient);
+portmanager.register_service("c2s", {
+	listener = listener;
+	default_port = 5222;
+	encryption = "starttls";
+});
+
+portmanager.register_service("legacy_ssl", {
+	listener = listener;
+	encryption = "ssl";
+});
+
+
