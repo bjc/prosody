@@ -11,7 +11,6 @@ local log = require "util.logger".init("stanzarouter")
 local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
-local send_s2s = require "core.s2smanager".send_to_host;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 
@@ -184,26 +183,18 @@ function core_route_stanza(origin, stanza)
 	if hosts[host] then
 		-- old stanza routing code removed
 		core_post_stanza(origin, stanza);
-	elseif origin.type == "c2s" then
-		-- Remote host
+	else
+		log("debug", "Routing to remote...");
 		if not hosts[from_host] then
 			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
-		end
-		if (not hosts[from_host]) or (not hosts[from_host].disallow_s2s) then
-			local xmlns = stanza.attr.xmlns;
-			--stanza.attr.xmlns = "jabber:server";
-			stanza.attr.xmlns = nil;
-			log("debug", "sending s2s stanza: %s", tostring(stanza.top_tag and stanza:top_tag()) or stanza);
-			send_s2s(origin.host, host, stanza); -- TODO handle remote routing errors
-			stanza.attr.xmlns = xmlns; -- reset
 		else
-			core_route_stanza(hosts[from_host], st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote servers is not allowed"));
+			local xmlns = stanza.attr.xmlns;
+			stanza.attr.xmlns = nil;
+			local routed = prosody.events.fire_event("route/remote", { origin = origin, stanza = stanza, from_host = from_host, to_host = host }); --FIXME: Should be per-host (shared modules!)
+			stanza.attr.xmlns = xmlns; -- reset
+			if routed == nil then
+				core_route_stanza(hosts[from_host], st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
+			end
 		end
-	elseif origin.type == "component" or origin.type == "local" then
-		-- Route via s2s for components and modules
-		log("debug", "Routing outgoing stanza for %s to %s", from_host, host);
-		send_s2s(from_host, host, stanza);
-	else
-		log("warn", "received %s stanza from unhandled connection type: %s", tostring(stanza.name), tostring(origin.type));
 	end
 end
