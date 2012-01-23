@@ -105,11 +105,6 @@ function core_process_stanza(origin, stanza)
 		stanza.attr.from = from;
 	end
 
-	--[[if to and not(hosts[to]) and not(hosts[to_bare]) and (hosts[host] and hosts[host].type ~= "local") then -- not for us?
-		log("warn", "stanza recieved for a non-local server");
-		return; -- FIXME what should we do here?
-	end]] -- FIXME
-
 	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
 		if origin.type == "s2sin" and not origin.dummy then
 			local host_status = origin.hosts[from_host];
