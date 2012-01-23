@@ -12,9 +12,8 @@ local _G = _G;
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
-local connlisteners_register = require "net.connlisteners".register;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; default_interface = "127.0.0.1" };
+local console_listener = { default_port = 5582; default_mode = "*l"; interface = "127.0.0.1" };
 
 require "util.iterators";
 local jid_bare = require "util.jid".bare;
@@ -146,8 +145,6 @@ function console_listener.ondisconnect(conn, err)
 		sessions[conn] = nil;
 	end
 end
-
-connlisteners_register('console', console_listener);
 
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
@@ -776,4 +773,7 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 end
 end
 
-prosody.net_activate_ports("console", "console", {5582}, "tcp");
+require "core.portmanager".register_service("console", {
+	listener = console_listener;
+	default_port = 5582;
+});
