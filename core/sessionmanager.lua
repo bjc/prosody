@@ -20,6 +20,7 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
+local uuid_generate = require "util.uuid".generate;
 
 local initialize_filters = require "util.filters".initialize;
 local fire_event = prosody.events.fire_event;
