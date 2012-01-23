@@ -8,6 +8,7 @@
 
 module:set_global();
 
+local add_task = require "util.timer".add_task;
 local new_xmpp_stream = require "util.xmppstream".new;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local portmanager = require "core.portmanager";
@@ -24,6 +25,7 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 local log = module._log;
 
+local c2s_timeout = module:get_option_number("c2s_timeout");
 local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
 
 local sessions = module:shared("sessions");
@@ -184,6 +186,15 @@ function listener.onconnect(conn)
 			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 			session:close("not-well-formed");
 		end
+	end
+
+	
+	if c2s_timeout then
+		add_task(c2s_timeout, function ()
+			if session.type == "c2s_unauthed" then
+				session:close("connection-timeout");
+			end
+		end);
 	end
 
 	session.dispatch_stanza = stream_callbacks.handlestanza;
