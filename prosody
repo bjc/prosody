@@ -254,63 +254,6 @@ function init_global_state()
 	local global_ssl_ctx = certmanager.create_context("*", "server");
 	prosody.global_ssl_ctx = global_ssl_ctx;
 
-	local cl = require "net.connlisteners";
-	function prosody.net_activate_ports(option, listener, default, conntype)
-		conntype = conntype or (global_ssl_ctx and "tls") or "tcp";
-		local ports_option = option and option.."_ports" or "ports";
-		if not cl.get(listener) then return; end
-		local ports = config.get("*", "core", ports_option) or default;
-		if type(ports) == "number" then ports = {ports} end;
-		
-		if type(ports) ~= "table" then
-			log("error", "core."..ports_option.." is not a table");
-		else
-			for _, port in ipairs(ports) do
-				port = tonumber(port);
-				if type(port) ~= "number" then
-					log("error", "Non-numeric "..ports_option..": "..tostring(port));
-				else
-					local ok, errors = cl.start(listener, {
-						ssl = conntype == "ssl" and global_ssl_ctx,
-						port = port,
-						interface = (option and config.get("*", "core", option.."_interface"))
-							or cl.get(listener).default_interface
-							or config.get("*", "core", "interface"),
-						type = conntype
-					});
-					if not ok then
-						for addr, err in pairs(errors) do
-							local friendly_message = err;
-							if err:match(" in use") then
-								if port == 5222 or port == 5223 or port == 5269 then
-									friendly_message = "check that Prosody or another XMPP server is "
-										.."not already running and using this port";
-								elseif port == 80 or port == 81 then
-									friendly_message = "check that a HTTP server is not already using "
-										.."this port";
-								elseif port == 5280 then
-									friendly_message = "check that Prosody or a BOSH connection manager "
-										.."is not already running";
-								else
-									friendly_message = "this port is in use by another application";
-								end
-							elseif err:match("permission") then
-								friendly_message = "Prosody does not have sufficient privileges to use this port";
-							elseif err == "no ssl context" then
-								if not config.get("*", "core", "ssl") then
-									friendly_message = "there is no 'ssl' config under Host \"*\" which is "
-										.."require for legacy SSL ports";
-								else
-									friendly_message = "initializing SSL support failed, see previous log entries";
-								end
-							end
-							log("error", "Failed to open server port %d on %s, %s", port, addr, friendly_message);
-						end
-					end
-				end
-			end
-		end
-	end
 end
 
 function read_version()
@@ -359,7 +302,6 @@ function load_secondary_libraries()
 	if remdebug then remdebug.engine.start() end
 	]]
 
-	require "net.connlisteners";
 	require "net.httpserver";
 	
 	require "util.stanza"
@@ -374,20 +316,6 @@ function prepare_to_start()
 	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
 	prosody.events.fire_event("server-starting");
-
-	-- start listening on sockets
-	if config.get("*", "core", "ports") then
-		prosody.net_activate_ports(nil, "multiplex", {5222, 5269});
-		if config.get("*", "core", "ssl_ports") then
-			prosody.net_activate_ports("ssl", "multiplex", {5223}, "ssl");
-		end
-	else
-		prosody.net_activate_ports("c2s", "xmppclient", {5222});
-		prosody.net_activate_ports("s2s", "xmppserver", {5269});
-		prosody.net_activate_ports("component", "xmppcomponent", {5347}, "tcp");
-		prosody.net_activate_ports("legacy_ssl", "xmppclient", {}, "ssl");
-	end
-
 	prosody.start_time = os.time();
 end	
 
