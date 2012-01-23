@@ -21,7 +21,7 @@ local active_services = multitable.new();
 
 --- Private helpers
 
-local function error_to_friendly_message(service_name, err)
+local function error_to_friendly_message(service_name, port, err)
 	local friendly_message = err;
 	if err:match(" in use") then
 		-- FIXME: Use service_name here
@@ -90,7 +90,7 @@ function activate_service(service_name)
 			else
 				local handler, err = server.addserver(interface, port, listener, mode, ssl);
 				if not handler then
-					log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, err));
+					log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, port, err));
 				else
 					log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port);
 					active_services:add(service_name, interface, port, {
