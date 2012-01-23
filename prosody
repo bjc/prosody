@@ -150,10 +150,14 @@ function sandbox_require()
 		local curr_env_mt = getmetatable(getfenv(2));
 		local _realG_mt = getmetatable(_realG);
 		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
-			local old_newindex
+			local old_newindex, old_index;
 			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
+			old_index, _realG_mt.__index = _realG_mt.__index, function (_G, k)
+				return rawget(curr_env, k);
+			end;
 			local ret = _real_require(...);
 			_realG_mt.__newindex = old_newindex;
+			_realG_mt.__index = old_index;
 			return ret;
 		end
 		return _real_require(...);
