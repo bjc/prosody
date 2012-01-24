@@ -191,8 +191,10 @@ local function s2s_external_auth(session, stanza)
 		session.from_host = text;
 	end
 	session.sends2s(build_reply("success"))
-	module:log("info", "Accepting SASL EXTERNAL identity from %s", text or session.from_host);
-	s2s_make_authenticated(session, text or session.from_host)
+
+	local domain = text ~= "" and text or session.from_host;
+	module:log("info", "Accepting SASL EXTERNAL identity from %s", domain);
+	s2s_make_authenticated(session, domain);
 	session:reset_stream();
 	return true
 end
