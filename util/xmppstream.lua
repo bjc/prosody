@@ -25,8 +25,11 @@ module "xmppstream"
 
 local new_parser = lxp.new;
 
-local ns_prefixes = {
-	["http://www.w3.org/XML/1998/namespace"] = "xml";
+local xml_namespace = {
+	["http://www.w3.org/XML/1998/namespace\1lang"] = "xml:lang";
+	["http://www.w3.org/XML/1998/namespace\1space"] = "xml:space";
+	["http://www.w3.org/XML/1998/namespace\1base"] = "xml:base";
+	["http://www.w3.org/XML/1998/namespace\1id"] = "xml:id";
 };
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
@@ -73,17 +76,13 @@ function new_sax_handlers(session, stream_callbacks)
 			non_streamns_depth = non_streamns_depth + 1;
 		end
 		
-		-- FIXME !!!!!
 		for i=1,#attr do
 			local k = attr[i];
 			attr[i] = nil;
-			local ns, nm = k:match(ns_pattern);
-			if nm ~= "" then
-				ns = ns_prefixes[ns];
-				if ns then
-					attr[ns..":"..nm] = attr[k];
-					attr[k] = nil;
-				end
+			local xmlk = xml_namespace[k];
+			if xmlk then
+				attr[xmlk] = attr[k];
+				attr[k] = nil;
 			end
 		end
 		
