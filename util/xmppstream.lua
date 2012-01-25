@@ -151,8 +151,6 @@ function new_sax_handlers(session, stream_callbacks)
 				end
 				cb_error(session, "parse-error", "unexpected-element-close", name);
 			end
-			stanza, chardata = nil, {};
-			stack = {};
 		end
 	end
 
