@@ -140,16 +140,8 @@ function new_sax_handlers(session, stream_callbacks)
 				stanza = t_remove(stack);
 			end
 		else
-			if tagname == stream_tag then
-				if cb_streamclosed then
-					cb_streamclosed(session);
-				end
-			else
-				local curr_ns,name = tagname:match(ns_pattern);
-				if name == "" then
-					curr_ns, name = "", curr_ns;
-				end
-				cb_error(session, "parse-error", "unexpected-element-close", name);
+			if cb_streamclosed then
+				cb_streamclosed(session);
 			end
 		end
 	end
