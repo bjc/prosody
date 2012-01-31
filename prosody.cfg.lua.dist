@@ -45,7 +45,6 @@ modules_enabled = {
 		--"compression"; -- Stream compression
 
 	-- Nice to have
-		"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 		"version"; -- Replies to server version requests
 		"uptime"; -- Report how long server has been running
 		"time"; -- Let others know the time here on this server
@@ -67,6 +66,7 @@ modules_enabled = {
 		--"welcome"; -- Welcome users who register accounts
 		--"watchregistrations"; -- Alert admins of registrations
 		--"motd"; -- Send a message to users when they log in
+		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 };
 
 -- These modules are auto-loaded, should you
