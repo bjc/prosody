@@ -129,7 +129,12 @@ local function readInsert()
 		end
 	end
 	local tname = readTableName();
-	for ch in ("` VALUES "):gmatch(".") do read(ch); end -- expect this
+	read("`"); read(" ") -- expect this
+	if peek() == "(" then -- skip column list
+		repeat until read() == ")";
+		read(" ");
+	end
+	for ch in ("VALUES "):gmatch(".") do read(ch); end -- expect this
 	local tuples = readTuples();
 	read(";"); read("\n");
 	return tname, tuples;
