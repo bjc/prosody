@@ -16,7 +16,6 @@ local signal = require "util.signal";
 local set = require "util.set";
 local lfs = require "lfs";
 local pcall = pcall;
-local type = type;
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
@@ -61,13 +60,6 @@ function getchar(n)
 	end
 	if ok then
 		return char;
-	end
-end
-
-function getline()
-	local ok, line = pcall(io.read, "*l");
-	if ok then
-		return line;
 	end
 end
 
@@ -120,13 +112,6 @@ function read_password()
 	return password;
 end
 
-function show_prompt(prompt)
-	io.write(prompt, " ");
-	local line = getline();
-	line = line and line:gsub("\n$","");
-	return (line and #line > 0) and line or nil;
-end
-
 -- Server control
 function adduser(params)
 	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
@@ -136,7 +121,11 @@ function adduser(params)
 		return false, "invalid-hostname";
 	end
 
-	local provider = prosody.hosts[host].users;
+	local host = prosody.hosts[host];
+	if not host then
+		return false, "no-such-host";
+	end
+	local provider = host.users;
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
