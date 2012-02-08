@@ -121,7 +121,11 @@ function adduser(params)
 		return false, "invalid-hostname";
 	end
 
-	local provider = prosody.hosts[host].users;
+	local host = prosody.hosts[host];
+	if not host then
+		return false, "no-such-host";
+	end
+	local provider = host.users;
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
