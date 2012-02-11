@@ -12,6 +12,7 @@ local events_new = require "util.events".new;
 local disco_items = require "util.multitable".new();
 local NULL = {};
 
+local jid_split = require "util.jid".split;
 local uuid_gen = require "util.uuid".generate;
 
 local log = require "util.logger".init("hostmanager");
