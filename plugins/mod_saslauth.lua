@@ -60,6 +60,7 @@ local function handle_status(session, status, ret, err_msg)
 			session:reset_stream();
 		else
 			module:log("warn", "SASL succeeded but username was invalid");
+			module:fire_event("authentication-failure", { session = session, condition = "not-authorized", text = err });
 			session.sasl_handler = session.sasl_handler:clean_clone();
 			return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
 		end
