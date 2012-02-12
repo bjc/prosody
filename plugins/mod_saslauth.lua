@@ -51,11 +51,11 @@ local function handle_status(session, status, ret, err_msg)
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
-		module:fire_event("authentication-success", { session = session });
 		local username = nodeprep(session.sasl_handler.username);
 
 		local ok, err = sm_make_authenticated(session, session.sasl_handler.username);
 		if ok then
+			module:fire_event("authentication-success", { session = session });
 			session.sasl_handler = nil;
 			session:reset_stream();
 		else
