@@ -25,6 +25,9 @@ local s2sout = {};
 
 local s2s_listener;
 
+local cfg_sources = config.get("*", "core", "s2s_interfaces") or {"*"};
+local sources
+
 function s2sout.set_listener(listener)
 	s2s_listener = listener;
 end
