@@ -45,7 +45,7 @@ end
 
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
-	session.open_stream = session_open_stream;
+	host_session.open_stream = session_open_stream;
 	
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
