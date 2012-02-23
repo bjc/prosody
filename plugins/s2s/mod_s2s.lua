@@ -192,6 +192,9 @@ function stream_callbacks.streamopened(session, attr)
 
 		if session.secure and not session.cert_chain_status then check_cert_status(session); end
 
+		function session.send(data)
+			return send_to_host(session.to_host, session.from_host, data);
+		end
 		send("<?xml version='1.0'?>");
 		send(st.stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
