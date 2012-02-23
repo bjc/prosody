@@ -92,6 +92,7 @@ function send_to_host(from_host, to_host, stanza)
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = s2s_new_outgoing(from_host, to_host);
+		s2sout.initiate_connection(host_session);
 
 		-- Store in buffer
 		host_session.bounce_sendq = bounce_sendq;
