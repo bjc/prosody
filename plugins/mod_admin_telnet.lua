@@ -776,4 +776,5 @@ end
 require "core.portmanager".register_service("console", {
 	listener = console_listener;
 	default_port = 5582;
+	private = true;
 });
