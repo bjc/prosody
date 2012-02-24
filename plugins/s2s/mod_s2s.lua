@@ -255,7 +255,7 @@ function stream_callbacks.streamdisconnected(session, err)
 		end
 	end
 	(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
-	sessions[session.conn]  = nil;
+	sessions[session.conn] = nil;
 	s2s_destroy_session(session, err);
 end
 
