@@ -20,6 +20,7 @@ local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
+local cert_verify_identity = require "util.x509".verify_identity;
 
 local s2sout = module:require("s2sout");
 
