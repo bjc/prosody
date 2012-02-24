@@ -8,12 +8,23 @@
 
 --- Module containing all the logic for connecting to a remote server
 
+local t_insert = table.insert;
+local t_sort = table.sort;
+local ipairs = ipairs;
+
+local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local add_task = require "util.timer".add_task;
+local st = require "util.stanza";
+local new_ip = require "util.ip".new_ip;
+local rfc3484_dest = require "util.rfc3484".destination;
 local socket = require "socket";
 
+local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
+
+local cfg_sources = config.get("*", "core", "s2s_interfaces") or socket.local_addresses();
 
 local s2sout = {};
 
@@ -36,7 +47,7 @@ end
 
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
-	session.open_stream = session_open_stream;
+	host_session.open_stream = session_open_stream;
 	
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
@@ -147,6 +158,7 @@ function s2sout.try_next_ip(host_session)
 end
 
 function s2sout.try_connect(host_session, connect_host, connect_port, err)
+	local sources;
 	host_session.connecting = true;
 
 	if not err then
@@ -156,7 +168,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local has_other = false;
 
 		if not sources then
-			sources =  {};
+			sources = {};
 			for i, source in ipairs(cfg_sources) do
 				if source == "*" then
 					sources[i] = new_ip("0.0.0.0", "IPv4");
