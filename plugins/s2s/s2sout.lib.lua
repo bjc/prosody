@@ -15,18 +15,18 @@ local add_task = require "util.timer".add_task;
 local new_ip = require "util.ip".new_ip;
 local rfc3484_dest = require "util.rfc3484".destination;
 local socket = require "socket";
-local t_insert, t_sort = table.insert, table.sort;
+local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
 local st = require "util.stanza";
 
-local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
+local s2s_destroy_session = require "core.s2smanager".destroy_session;
+
+local cfg_sources = config.get("*", "core", "s2s_interfaces") or socket.local_addresses and socket.local_addresses() or { "*" };
 
 local s2sout = {};
 
 local s2s_listener;
 
-local cfg_sources = config.get("*", "core", "s2s_interfaces") or {"*"};
-local sources
 
 function s2sout.set_listener(listener)
 	s2s_listener = listener;
@@ -156,6 +156,7 @@ function s2sout.try_next_ip(host_session)
 end
 
 function s2sout.try_connect(host_session, connect_host, connect_port, err)
+	local sources;
 	host_session.connecting = true;
 
 	if not err then
@@ -165,7 +166,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local has_other = false;
 
 		if not sources then
-			sources =  {};
+			sources = {};
 			for i, source in ipairs(cfg_sources) do
 				if source == "*" then
 					sources[i] = new_ip("0.0.0.0", "IPv4");

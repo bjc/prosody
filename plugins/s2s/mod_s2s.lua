@@ -14,11 +14,11 @@ local xpcall, traceback = xpcall, debug.traceback;
 local add_task = require "util.timer".add_task;
 local st = require "util.stanza";
 local initialize_filters = require "util.filters".initialize;
+local nameprep = require "util.encodings".stringprep.nameprep;
 local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
-local nameprep = require "util.encodings".stringprep.nameprep;
 local uuid_gen = require "util.uuid".generate;
 local cert_verify_identity = require "util.x509".verify_identity;
 
@@ -92,12 +92,12 @@ function send_to_host(from_host, to_host, stanza)
 	else
 		log("debug", "opening a new outgoing connection for this stanza");
 		local host_session = s2s_new_outgoing(from_host, to_host);
-		s2sout.initiate_connection(host_session);
 
 		-- Store in buffer
 		host_session.bounce_sendq = bounce_sendq;
 		host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
 		log("debug", "stanza [%s] queued until connection complete", tostring(stanza.name));
+		s2sout.initiate_connection(host_session);
 		if (not host_session.connecting) and (not host_session.conn) then
 			log("warn", "Connection to %s failed already, destroying session...", to_host);
 			if not s2s_destroy_session(host_session, "Connection failed") then
@@ -106,7 +106,6 @@ function send_to_host(from_host, to_host, stanza)
 			end
 			return false;
 		end
-		s2sout.initiate_connection(host_session);
 	end
 	return true;
 end
@@ -192,9 +191,6 @@ function stream_callbacks.streamopened(session, attr)
 
 		if session.secure and not session.cert_chain_status then check_cert_status(session); end
 
-		function session.send(data)
-			return send_to_host(session.to_host, session.from_host, data);
-		end
 		send("<?xml version='1.0'?>");
 		send(st.stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
@@ -242,6 +238,7 @@ function stream_callbacks.streamopened(session, attr)
 		end
 	end
 	session.notopen = nil;
+	session.send = function(stanza) send_to_host(session.to_host, session.from_host, stanza); end;
 end
 
 function stream_callbacks.streamclosed(session)
@@ -250,7 +247,7 @@ function stream_callbacks.streamclosed(session)
 end
 
 function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" then
+	if err and err ~= "stream closed" then
 		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 		if s2sout.attempt_connection(session, err) then
 			(session.log or log)("debug", "...so we're going to try another target");
@@ -258,7 +255,7 @@ function stream_callbacks.streamdisconnected(session, err)
 		end
 	end
 	(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
-	sessions[session.conn]  = nil;
+	if session.con then sessions[session.conn] = nil; else (session.log or log)("debug", "stale session's connection already closed"); end
 	s2s_destroy_session(session, err);
 end
 
