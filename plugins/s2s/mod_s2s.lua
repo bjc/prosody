@@ -247,7 +247,7 @@ function stream_callbacks.streamclosed(session)
 end
 
 function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" then
+	if err and err ~= "stream closed" then
 		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 		if s2sout.attempt_connection(session, err) then
 			(session.log or log)("debug", "...so we're going to try another target");
@@ -255,7 +255,7 @@ function stream_callbacks.streamdisconnected(session, err)
 		end
 	end
 	(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
-	sessions[session.conn]  = nil;
+	if session.con then sessions[session.conn] = nil; else (session.log or log)("debug", "stale session's connection already closed"); end
 	s2s_destroy_session(session, err);
 end
 
