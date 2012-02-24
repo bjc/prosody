@@ -6,21 +6,36 @@
 -- COPYING file in the source package for more information.
 --
 
+local format = string.format;
 
 local hosts = _G.hosts;
 local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
-local s2s_initiate_dialback = require "core.s2smanager".initiate_dialback;
-local s2s_verify_dialback = require "core.s2smanager".verify_dialback;
 
 local log = module._log;
 
 local st = require "util.stanza";
+local sha256_hash = require "util.hashes".sha256;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 local xmlns_dialback = "jabber:server:dialback";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
+
+function generate_dialback(id, to, from)
+	return sha256_hash(id..to..from..hosts[from].dialback_secret, true);
+end
+
+function initiate_dialback(session)
+	-- generate dialback key
+	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
+	session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
+	session.log("info", "sent dialback key on outgoing s2s stream");
+end
+
+function verify_dialback(id, to, from, key)
+	return key == generate_dialback(id, to, from);
+end
 
 module:hook("stanza/jabber:server:dialback:verify", function(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -32,7 +47,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 		-- COMPAT: Grr, ejabberd breaks this one too?? it is black and white in XEP-220 example 34
 		--if attr.from ~= origin.to_host then error("invalid-from"); end
 		local type;
-		if s2s_verify_dialback(attr.id, attr.from, attr.to, stanza[1]) then
+		if verify_dialback(attr.id, attr.from, attr.to, stanza[1]) then
 			type = "valid"
 		else
 			type = "invalid"
@@ -72,8 +87,8 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		end
 		
 		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
-		send_s2s(attr.to, attr.from,
-			st.stanza("db:verify", { from = attr.to, to = attr.from, id = origin.streamid }):text(stanza[1]));
+		--send_s2s(attr.to, attr.from,
+		origin.send(st.stanza("db:verify", { from = attr.to, to = attr.from, id = origin.streamid }):text(stanza[1]));
 		return true;
 	end
 end);
@@ -84,6 +99,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 	if origin.type == "s2sout_unauthed" or origin.type == "s2sout" then
 		local attr = stanza.attr;
 		local dialback_verifying = dialback_requests[attr.from.."/"..(attr.id or "")];
+		module:log("debug", tostring(dialback_verifying).." "..attr.from.." "..origin.to_host);
 		if dialback_verifying and attr.from == origin.to_host then
 			local valid;
 			if attr.type == "valid" then
@@ -134,14 +150,14 @@ end);
 module:hook_stanza("urn:ietf:params:xml:ns:xmpp-sasl", "failure", function (origin, stanza)
 	if origin.external_auth == "failed" then
 		module:log("debug", "SASL EXTERNAL failed, falling back to dialback");
-		s2s_initiate_dialback(origin);
+		initiate_dialback(origin);
 		return true;
 	end
 end, 100);
 
 module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	if not origin.external_auth or origin.external_auth == "failed" then
-		s2s_initiate_dialback(origin);
+		initiate_dialback(origin);
 		return true;
 	end
 end, 100);
