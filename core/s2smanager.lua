@@ -134,6 +134,7 @@ function mark_connected(session)
 			session.sendq = nil;
 		end
 		
+		session.ip_hosts = nil;
 		session.srv_hosts = nil;
 	end
 end
