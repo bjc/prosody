@@ -114,10 +114,7 @@ function mark_connected(session)
 	local from, to = session.from_host, session.to_host;
 	
 	session.log("info", session.direction.." s2s connection "..from.."->"..to.." complete");
-	
-	local send_to_host = send_to_host;
-	function session.send(data) return send_to_host(to, from, data); end
-	
+
 	local event_data = { session = session };
 	if session.type == "s2sout" then
 		prosody.events.fire_event("s2sout-established", event_data);
