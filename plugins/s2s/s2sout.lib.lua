@@ -8,18 +8,15 @@
 
 --- Module containing all the logic for connecting to a remote server
 
-local t_insert = table.insert;
-local t_sort = table.sort;
-local ipairs = ipairs;
-
 local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local add_task = require "util.timer".add_task;
-local st = require "util.stanza";
 local new_ip = require "util.ip".new_ip;
 local rfc3484_dest = require "util.rfc3484".destination;
 local socket = require "socket";
+local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
+local st = require "util.stanza";
 
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
@@ -29,6 +26,7 @@ local cfg_sources = config.get("*", "core", "s2s_interfaces") or socket.local_ad
 local s2sout = {};
 
 local s2s_listener;
+
 
 function s2sout.set_listener(listener)
 	s2s_listener = listener;
