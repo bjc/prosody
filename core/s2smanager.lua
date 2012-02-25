@@ -432,7 +432,7 @@ function make_connect(host_session, connect_host, connect_port)
 	local conn, handler;
 	if connect_host.proto == "IPv4" then
 		conn, handler = socket.tcp();
-	else
+	elseif socket.tcp6 then
 		conn, handler = socket.tcp6();
 	end
 	
