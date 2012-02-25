@@ -512,7 +512,12 @@ local function check_cert_status(session)
 			(session.log or log)("debug", "certificate chain validation result: valid");
 			session.cert_chain_status = "valid";
 
-			local host = session.direction == "incoming" and session.from_host or session.to_host
+			local host;
+			if session.direction == "incoming" then
+				host = session.from_host;
+			else
+				host = session.to_host;
+			end
 
 			-- We'll go ahead and verify the asserted identity if the
 			-- connecting server specified one.
