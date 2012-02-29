@@ -9,6 +9,7 @@
 module:set_global();
 
 local tostring, type = tostring, type;
+local t_insert = table.insert;
 local xpcall, traceback = xpcall, debug.traceback;
 
 local add_task = require "util.timer".add_task;
