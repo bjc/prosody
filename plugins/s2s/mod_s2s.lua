@@ -90,6 +90,7 @@ module:hook("route/remote", function (event)
 			end
 			host.sends2s(stanza);
 			host.log("debug", "stanza sent over "..host.type);
+			return true;
 		end
 	end
 end, 200);
@@ -112,6 +113,7 @@ module:hook("route/remote", function (event)
 		end
 		return false;
 	end
+	return true;
 end, 100);
 
 --- Helper to check that a session peer's certificate is valid
