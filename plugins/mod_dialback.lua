@@ -9,7 +9,6 @@
 local format = string.format;
 
 local hosts = _G.hosts;
-local send_s2s = require "core.s2smanager".send_to_host;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 
 local log = module._log;
@@ -87,7 +86,6 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		end
 		
 		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
-		--send_s2s(attr.to, attr.from,
 		origin.send(st.stanza("db:verify", { from = attr.to, to = attr.from, id = origin.streamid }):text(stanza[1]));
 		return true;
 	end
