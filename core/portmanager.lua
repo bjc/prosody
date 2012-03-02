@@ -62,9 +62,9 @@ function activate_service(service_name)
 
 	local bind_interfaces = set.new(config.get("*", service_name.."_interfaces")
 		or config.get("*", service_name.."_interface") -- COMPAT w/pre-0.9
+		or (service_info.private and default_local_interfaces)
 		or config.get("*", "interfaces")
 		or config.get("*", "interface") -- COMPAT w/pre-0.9
-		or (service_info.private and default_local_interfaces)
 		or service_info.default_interface -- COMPAT w/pre0.9
 		or default_interfaces);
 	
