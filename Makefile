@@ -33,6 +33,7 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -d $(SOURCE)/util/sasl
 	install -m644 util/sasl/* $(SOURCE)/util/sasl
 	install -m644 plugins/*.lua $(MODULES)
+	install -m644 plugins/s2s/*.lua $(MODULES)
 	install -d $(MODULES)/muc
 	install -m644 plugins/muc/* $(MODULES)/muc
 	install -m644 certs/* $(CONFIG)/certs
