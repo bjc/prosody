@@ -60,7 +60,8 @@ local function bounce_sendq(session, reason)
 	session.sendq = nil;
 end
 
-function send_to_host(from_host, to_host, stanza)
+module:hook("route/remote", function (event)
+	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	if not hosts[from_host] then
 		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
 		return false;
@@ -70,7 +71,7 @@ function send_to_host(from_host, to_host, stanza)
 		-- We have a connection to this host already
 		if host.type == "s2sout_unauthed" and (stanza.name ~= "db:verify" or not host.dialback_key) then
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
-			
+
 			-- Queue stanza until we are able to send it
 			if host.sendq then t_insert(host.sendq, {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)});
 			else host.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} }; end
@@ -90,30 +91,28 @@ function send_to_host(from_host, to_host, stanza)
 			host.sends2s(stanza);
 			host.log("debug", "stanza sent over "..host.type);
 		end
-	else
-		log("debug", "opening a new outgoing connection for this stanza");
-		local host_session = s2s_new_outgoing(from_host, to_host);
-
-		-- Store in buffer
-		host_session.bounce_sendq = bounce_sendq;
-		host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
-		log("debug", "stanza [%s] queued until connection complete", tostring(stanza.name));
-		s2sout.initiate_connection(host_session);
-		if (not host_session.connecting) and (not host_session.conn) then
-			log("warn", "Connection to %s failed already, destroying session...", to_host);
-			if not s2s_destroy_session(host_session, "Connection failed") then
-				-- Already destroyed, we need to bounce our stanza
-				host_session:bounce_sendq(host_session.destruction_reason);
-			end
-			return false;
-		end
 	end
-	return true;
-end
+end, 200);
 
 module:hook("route/remote", function (event)
-	return send_to_host(event.from_host, event.to_host, event.stanza);
-end);
+	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
+	log("debug", "opening a new outgoing connection for this stanza");
+	local host_session = s2s_new_outgoing(from_host, to_host);
+
+	-- Store in buffer
+	host_session.bounce_sendq = bounce_sendq;
+	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
+	log("debug", "stanza [%s] queued until connection complete", tostring(stanza.name));
+	s2sout.initiate_connection(host_session);
+	if (not host_session.connecting) and (not host_session.conn) then
+		log("warn", "Connection to %s failed already, destroying session...", to_host);
+		if not s2s_destroy_session(host_session, "Connection failed") then
+			-- Already destroyed, we need to bounce our stanza
+			host_session:bounce_sendq(host_session.destruction_reason);
+		end
+		return false;
+	end
+end, 100);
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
@@ -239,7 +238,7 @@ function stream_callbacks.streamopened(session, attr)
 		end
 	end
 	session.notopen = nil;
-	session.send = function(stanza) send_to_host(session.to_host, session.from_host, stanza); end;
+	session.send = function(stanza) prosody.events.fire_event("route/remote", { from_host = session.to_host, to_host = session.from_host, stanza = stanza}) end;
 end
 
 function stream_callbacks.streamclosed(session)
