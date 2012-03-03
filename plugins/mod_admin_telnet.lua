@@ -15,7 +15,8 @@ local hosts = prosody.hosts;
 
 local console_listener = { default_port = 5582; default_mode = "*l"; interface = "127.0.0.1" };
 
-require "util.iterators";
+local iterators = require "util.iterators";
+local keys, values = iterators.keys, iterators.values;
 local jid_bare = require "util.jid".bare;
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
