@@ -160,6 +160,11 @@ module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	end
 end, 100);
 
+module:hook("s2s-no-stream-features", function (event)
+	initiate_dialback(event.origin);
+	return true;
+end, 100);
+
 -- Offer dialback to incoming hosts
 module:hook("s2s-stream-features", function (data)
 	data.features:tag("dialback", { xmlns='urn:xmpp:features:dialback' }):up();
