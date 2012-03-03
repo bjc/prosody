@@ -155,12 +155,14 @@ end, 100);
 
 module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	if not origin.external_auth or origin.external_auth == "failed" then
+		module:log("debug", "Initiating dialback...");
 		initiate_dialback(origin);
 		return true;
 	end
 end, 100);
 
-module:hook("s2s-no-stream-features", function (event)
+module:hook("s2s-authenticate-legacy", function (event)
+	module:log("debug", "Initiating dialback...");
 	initiate_dialback(event.origin);
 	return true;
 end, 100);
