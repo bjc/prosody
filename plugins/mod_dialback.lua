@@ -160,7 +160,7 @@ module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	end
 end, 100);
 
-module:hook("s2s-no-stream-features", function (event)
+module:hook("s2s-authenticate-legacy", function (event)
 	initiate_dialback(event.origin);
 	return true;
 end, 100);

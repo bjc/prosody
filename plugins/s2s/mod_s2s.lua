@@ -233,7 +233,7 @@ function stream_callbacks.streamopened(session, attr)
 		if session.version < 1.0 then
 			if not session.dialback_verifying then
 				log("debug", "Initiating dialback...");
-				hosts[session.from_host].events.fire_event("s2s-no-stream-features", { origin = session });
+				hosts[session.from_host].events.fire_event("s2s-authenticate-legacy", { origin = session });
 			else
 				s2s_mark_connected(session);
 			end
