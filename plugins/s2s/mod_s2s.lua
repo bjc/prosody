@@ -168,9 +168,33 @@ function stream_callbacks.streamopened(session, attr)
 
 	if session.direction == "incoming" then
 		-- Send a reply stream header
-		session.to_host = attr.to and nameprep(attr.to);
-		session.from_host = attr.from and nameprep(attr.from);
-	
+		
+		-- Validate to/from
+		local to, from = nameprep(attr.to), nameprep(attr.from);
+		if not to and attr.to then -- COMPAT: Some servers do not reliably set 'to' (especially on stream restarts)
+			session:close({ condition = "improper-addressing", text = "Invalid 'to' address" });
+			return;
+		end
+		if not from and attr.from then -- COMPAT: Some servers do not reliably set 'from' (especially on stream restarts)
+			session:close({ condition = "improper-addressing", text = "Invalid 'from' address" });
+			return;
+		end
+		
+		-- Set session.[from/to]_host if they have not been set already and if
+		-- this session isn't already authenticated
+		if session.type == "s2sin_unauthed" and from and not session.from_host then
+			session.from_host = from;
+		elseif from ~= session.from_host then
+			session:close({ condition = "improper-addressing", text = "New stream 'from' attribute does not match original" });
+			return;
+		end
+		if session.type == "s2sin_unauthed" and to and not session.to_host then
+			session.to_host = to;
+		elseif to ~= session.to_host then
+			session:close({ condition = "improper-addressing", text = "New stream 'to' attribute does not match original" });
+			return;
+		end
+		
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "Incoming s2s received <stream:stream>");
 		if session.to_host then
