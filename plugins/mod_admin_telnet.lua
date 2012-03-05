@@ -496,6 +496,9 @@ local function session_flags(session, line)
 	if session.compressed then
 		line[#line+1] = "(compressed)";
 	end
+	if session.smacks then
+		line[#line+1] = "(sm)";
+	end
 	return table.concat(line, " ");
 end
 
