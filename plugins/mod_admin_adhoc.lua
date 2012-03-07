@@ -10,7 +10,8 @@ local prosody = _G.prosody;
 local hosts = prosody.hosts;
 local t_concat = table.concat;
 
-require "util.iterators";
+local iterators = require "util.iterators";
+local keys, values = iterators.keys, iterators.values;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_get_password = require "core.usermanager".get_password;
