@@ -196,7 +196,7 @@ function stream_callbacks.streamopened(session, attr)
 		end
 		
 		session.streamid = uuid_gen();
-		(session.log or log)("debug", "Incoming s2s received <stream:stream>");
+		(session.log or log)("debug", "Incoming s2s received %s", st.stanza("stream:stream", attr):top_tag());
 		if session.to_host then
 			if not hosts[session.to_host] then
 				-- Attempting to connect to a host we don't serve
