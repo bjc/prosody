@@ -132,4 +132,8 @@ function get_service(service_name)
 	return services[service_name];
 end
 
+function get_active_services(...)
+	return active_services;
+end
+
 return _M;
