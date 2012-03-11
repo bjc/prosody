@@ -128,5 +128,8 @@ function register_service(service_name, service_info)
 	return true;
 end
 
+function get_service(service_name)
+	return services[service_name];
+end
 
 return _M;
