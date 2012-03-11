@@ -37,7 +37,6 @@ local sha256_hash = require "util.hashes".sha256;
 local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
 local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
-local max_dns_depth = config.get("*", "core", "dns_max_depth") or 3;
 local cfg_sources = config.get("*", "core", "s2s_interface")
 	or config.get("*", "core", "interface");
 local sources;
