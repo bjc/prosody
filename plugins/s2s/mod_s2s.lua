@@ -320,7 +320,7 @@ function stream_callbacks.handlestanza(session, stanza)
 	end
 end
 
-local listener = { default_port = 5269, default_mode = "*a", default_interface = "*" };
+local listener = { default_port = 5269, default_mode = "*a" };
 
 --- Session methods
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
