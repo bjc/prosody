@@ -8,6 +8,7 @@
 
 --- Module containing all the logic for connecting to a remote server
 
+local portmanager = require "core.portmanager";
 local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
@@ -21,7 +22,7 @@ local st = require "util.stanza";
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
-local cfg_sources = config.get("*", "core", "s2s_interfaces") or socket.local_addresses and socket.local_addresses() or { "*" };
+local sources = {};
 
 local max_dns_depth = module:get_option_number("dns_max_depth", 3);
 
@@ -158,7 +159,6 @@ function s2sout.try_next_ip(host_session)
 end
 
 function s2sout.try_connect(host_session, connect_host, connect_port, err)
-	local sources;
 	host_session.connecting = true;
 
 	if not err then
@@ -166,17 +166,6 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		host_session.ip_hosts = IPs;
 		local handle4, handle6;
 		local has_other = false;
-
-		if not sources then
-			sources = {};
-			for i, source in ipairs(cfg_sources) do
-				if source == "*" then
-					sources[i] = new_ip("0.0.0.0", "IPv4");
-				else
-					sources[i] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
-				end
-			end
-		end
 
 		handle4 = adns.lookup(function (reply, err)
 			handle4 = nil;
@@ -322,5 +311,33 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	log("debug", "Connection attempt in progress...");
 	return true;
 end
+
+module:hook_global("service-added", function (event)
+	if event.name ~= "s2s" then return end
+
+	local s2s_sources = portmanager.get_active_services():get("s2s");
+
+	for source, _ in pairs(s2s_sources) do
+		if source == "*" or source == "0.0.0.0" then
+			if not socket.local_addresses then
+				sources[#sources + 1] = new_ip("0.0.0.0", "IPv4");
+			else
+				for _, addr in ipairs(socket.local_addresses("ipv4", true)) do
+					sources[#sources + 1] = new_ip(addr, "IPv4");
+				end
+			end
+		elseif source == "::" then
+			if not socket.local_addresses then
+				sources[#sources + 1] = new_ip("::", "IPv4");
+			else
+				for _, addr in ipairs(socket.local_addresses("ipv6", true)) do
+					sources[#sources + 1] = new_ip(addr, "IPv6");
+				end
+			end
+		else
+			sources[#sources + 1] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
+		end
+	end
+end);
 
 return s2sout;
