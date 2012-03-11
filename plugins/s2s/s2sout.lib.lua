@@ -23,6 +23,8 @@ local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local cfg_sources = config.get("*", "core", "s2s_interfaces") or socket.local_addresses and socket.local_addresses() or { "*" };
 
+local max_dns_depth = module:get_option_number("dns_max_depth", 3);
+
 local s2sout = {};
 
 local s2s_listener;
