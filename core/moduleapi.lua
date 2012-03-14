@@ -50,6 +50,7 @@ function api:set_global()
 	local _log = logger.init("mod_"..self.name);
 	self.log = function (self, ...) return _log(...); end;
 	self._log = _log;
+	self.global = true;
 end
 
 function api:add_feature(xmlns)
