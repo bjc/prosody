@@ -316,7 +316,10 @@ module:hook_global("service-added", function (event)
 	if event.name ~= "s2s" then return end
 
 	local s2s_sources = portmanager.get_active_services():get("s2s");
-
+	if not s2s_sources then
+		module:log("warn", "s2s not listening on any ports, outgoing connections may fail");
+		return;
+	end
 	for source, _ in pairs(s2s_sources) do
 		if source == "*" or source == "0.0.0.0" then
 			if not socket.local_addresses then
