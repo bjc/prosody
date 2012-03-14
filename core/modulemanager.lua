@@ -123,6 +123,7 @@ local function do_load_module(host, module_name)
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
+		hosts[host].modules = modulemap[host];
 	end
 	
 	if modulemap[host][module_name] then
@@ -148,8 +149,6 @@ local function do_load_module(host, module_name)
 	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
-	hosts[host].modules = modulemap[host];
-	modulemap[host][module_name] = pluginenv;
 	
 	local ok, err = pcall(mod);
 	if ok then
@@ -161,15 +160,18 @@ local function do_load_module(host, module_name)
 			end
 		end
 
-		-- Use modified host, if the module set one
-		if api_instance.host == "*" and host ~= "*" then
-			modulemap[host][module_name] = nil;
-			modulemap["*"][module_name] = pluginenv;
-			api_instance:set_global();
+		modulemap[pluginenv.module.host][module_name] = pluginenv;
+		if pluginenv.module.host == "*" then
+			if not pluginenv.module.global then -- COMPAT w/pre-0.9
+				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+				api_instance:set_global();
+			end
+		else
+			hosts[host].modules[module_name] = pluginenv;
 		end
-	else
+	end
+	if not ok then
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
-		do_unload_module(api_instance.host, module_name); -- Ignore error, module may be partially-loaded
 	end
 	return ok and pluginenv, err;
 end
