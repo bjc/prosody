@@ -101,11 +101,12 @@ local function do_unload_module(host, name)
 	end
 	
 	if mod.module.items then -- remove items
+		local events = (host == "*" and prosody.events) or hosts[host].events;
 		for key,t in pairs(mod.module.items) do
 			for i = #t,1,-1 do
 				local value = t[i];
 				t[i] = nil;
-				hosts[host].events.fire_event("item-removed/"..key, {source = mod.module, item = value});
+				events.fire_event("item-removed/"..key, {source = mod.module, item = value});
 			end
 		end
 	end
