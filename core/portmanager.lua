@@ -52,6 +52,15 @@ end
 
 module("portmanager", package.seeall);
 
+prosody.events.add_handler("item-added/net-provider", function (event)
+	local item = event.item;
+	register_service(item.name, item);
+end);
+prosody.events.add_handler("item-removed/net-provider", function (event)
+	local item = event.item;
+	unregister_service(item.name, item);
+end);
+
 --- Public API
 
 function activate_service(service_name)
