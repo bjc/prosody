@@ -13,8 +13,8 @@ end
 
 --- Private state
 
--- service_name -> service_info
-local services = {};
+-- service_name -> { service_info, ... }
+local services = setmetatable({}, { __index = function (t, k) rawset(t, k, {}); return rawget(t, k); end });
 
 -- service_name, interface (string), port (number)
 local active_services = multitable.new();
@@ -55,7 +55,7 @@ module("portmanager", package.seeall);
 --- Public API
 
 function activate_service(service_name)
-	local service_info = services[service_name];
+	local service_info = services[service_name][1];
 	if not service_info then
 		return nil, "Unknown service: "..service_name;
 	end
@@ -102,6 +102,7 @@ function activate_service(service_name)
 		end
 	end
 	log("info", "Activated service '%s'", service_name);
+	return true;
 end
 
 function deactivate(service_name)
@@ -118,14 +119,33 @@ function deactivate(service_name)
 end
 
 function register_service(service_name, service_info)
-	services[service_name] = service_info;
+	table.insert(services[service_name], service_info);
 
-	if not active_services[service_name] then
-		activate_service(service_name);
+	if not active_services:get(service_name) then
+		log("debug", "No active service for %s, activating...", service_name);
+		local ok, err = activate_service(service_name);
+		if not ok then
+			log("error", "Failed to activate service '%s': %s", service_name, err or "unknown error");
+		end
 	end
 	
 	fire_event("service-added", { name = service_name, service = service_info });
 	return true;
+end
+
+function unregister_service(service_name, service_info)
+	local service_info_list = services[service_name];
+	for i, service in ipairs(service_info_list) do
+		if service == service_info then
+			table.remove(service_info_list, i);
+		end
+	end
+	if active_services[service_name] == service_info then
+		deactivate(service_name);
+		if #service_info_list > 0 then -- Other services registered with this name
+			activate(service_name); -- Re-activate with the next available one
+		end
+	end
 end
 
 function get_service(service_name)
