@@ -467,7 +467,8 @@ end
 
 s2sout.set_listener(listener);
 
-require "core.portmanager".register_service("s2s", {
+module:add_item("net-provider", {
+	name = "s2s";
 	listener = listener;
 	default_port = 5269;
 	encryption = "starttls";

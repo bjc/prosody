@@ -220,13 +220,15 @@ function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
-portmanager.register_service("c2s", {
+module:add_item("net-provider", {
+	name = "c2s";
 	listener = listener;
 	default_port = 5222;
 	encryption = "starttls";
 });
 
-portmanager.register_service("legacy_ssl", {
+module:add_item("net-provider", {
+	name = "legacy_ssl";
 	listener = listener;
 	encryption = "ssl";
 });
