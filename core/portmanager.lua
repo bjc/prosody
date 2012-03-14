@@ -95,7 +95,7 @@ function activate_service(service_name)
 	for interface in bind_interfaces do
 		for port in bind_ports do
 			if not service_info.multiplex and #active_services:search(nil, interface, port) > 0 then
-				log("error", "Multiple services configured to listen on the same port: %s, %s", table.concat(active_services:search(nil, interface, port), ", "), service_name);
+				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port, active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
 				local handler, err = server.addserver(interface, port, listener, mode, ssl);
 				if not handler then
