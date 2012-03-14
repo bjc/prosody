@@ -155,6 +155,7 @@ function unregister_service(service_name, service_info)
 			activate(service_name); -- Re-activate with the next available one
 		end
 	end
+	fire_event("service-removed", { name = service_name, service = service_info });
 end
 
 function get_service(service_name)
