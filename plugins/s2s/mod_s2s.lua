@@ -107,10 +107,7 @@ module:hook("route/remote", function (event)
 	s2sout.initiate_connection(host_session);
 	if (not host_session.connecting) and (not host_session.conn) then
 		log("warn", "Connection to %s failed already, destroying session...", to_host);
-		if not s2s_destroy_session(host_session, "Connection failed") then
-			-- Already destroyed, we need to bounce our stanza
-			host_session:bounce_sendq(host_session.destruction_reason);
-		end
+		s2s_destroy_session(host_session, "Connection failed");
 		return false;
 	end
 	return true;
