@@ -48,34 +48,12 @@ local logging_levels = { "debug", "info", "warn", "error" }
 local function add_rule(sink_config)
 	local sink_maker = log_sink_types[sink_config.to];
 	if sink_maker then
-		if sink_config.levels and not sink_config.source then
-			-- Create sink
-			local sink = sink_maker(sink_config);
-			
-			-- Set sink for all chosen levels
-			for level in pairs(get_levels(sink_config.levels)) do
-				logger.add_level_sink(level, sink);
-			end
-		elseif sink_config.source and not sink_config.levels then
-			logger.add_name_sink(sink_config.source, sink_maker(sink_config));
-		elseif sink_config.source and sink_config.levels then
-			local levels = get_levels(sink_config.levels);
-			local sink = sink_maker(sink_config);
-			logger.add_name_sink(sink_config.source,
-				function (name, level, ...)
-					if levels[level] then
-						return sink(name, level, ...);
-					end
-				end);
-		else
-			-- All sources
-			-- Create sink
-			local sink = sink_maker(sink_config);
-			
-			-- Set sink for all levels
-			for _, level in pairs(logging_levels) do
-				logger.add_level_sink(level, sink);
-			end
+		-- Create sink
+		local sink = sink_maker(sink_config);
+		
+		-- Set sink for all chosen levels
+		for level in pairs(get_levels(sink_config.levels or logging_levels)) do
+			logger.add_level_sink(level, sink);
 		end
 	else
 		-- No such sink type
