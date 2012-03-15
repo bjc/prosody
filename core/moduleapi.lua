@@ -22,6 +22,7 @@ local tonumber, tostring = tonumber, tostring;
 
 local prosody = prosody;
 local hosts = prosody.hosts;
+local core_post_stanza = prosody.core_post_stanza;
 
 -- Registry of shared module data
 local shared_data = setmetatable({}, { __mode = "v" });
@@ -304,6 +305,10 @@ function api:provides(name, item)
 		item.name = item_name;
 	end
 	self:add_item(name, item);
+end
+
+function api:send(stanza)
+	return core_post_stanza(hosts[self.host], stanza);
 end
 
 return api;
