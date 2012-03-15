@@ -31,7 +31,7 @@ local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
 local sessions = module:shared("sessions");
 
 local stream_callbacks = { default_ns = "jabber:client", handlestanza = core_process_stanza };
-local listener = { default_port = 5222, default_mode = "*a" };
+local listener = {};
 
 --- Stream events handlers
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
