@@ -86,7 +86,9 @@ function activate_service(service_name)
 	
 	local bind_ports = set.new(config.get("*", config_prefix.."ports")
 		or service_info.default_ports
-		or {listener.default_port}); -- COMPAT w/pre-0.9
+		or {service_info.default_port
+		    or listener.default_port -- COMPAT w/pre-0.9
+		   });
 
 	local mode = listener.default_mode or "*a";
 	local ssl;
