@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-module.host = "*";
+module:set_global();
 
 local _G = _G;
 
