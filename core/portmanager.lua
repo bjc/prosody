@@ -69,6 +69,8 @@ function activate_service(service_name)
 		return nil, "Unknown service: "..service_name;
 	end
 	
+	local listener = service_info.listener;
+
 	local config_prefix = (service_info.config_prefix or service_name).."_";
 	if config_prefix == "_" then
 		config_prefix = "";
@@ -79,14 +81,13 @@ function activate_service(service_name)
 		or (service_info.private and default_local_interfaces)
 		or config.get("*", "interfaces")
 		or config.get("*", "interface") -- COMPAT w/pre-0.9
-		or service_info.default_interface -- COMPAT w/pre0.9
+		or listener.default_interface -- COMPAT w/pre0.9
 		or default_interfaces);
 	
-		or service_info.default_ports
-		or {service_info.default_port});
 	local bind_ports = set.new(config.get("*", config_prefix.."ports")
+		or service_info.default_ports
+		or {listener.default_port}); -- COMPAT w/pre-0.9
 
-	local listener = service_info.listener;
 	local mode = listener.default_mode or "*a";
 	local ssl;
 	if service_info.encryption == "ssl" then
