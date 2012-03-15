@@ -171,4 +171,8 @@ function get_active_services(...)
 	return active_services;
 end
 
+function get_registered_services()
+	return services;
+end
+
 return _M;
