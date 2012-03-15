@@ -68,19 +68,23 @@ function activate_service(service_name)
 	if not service_info then
 		return nil, "Unknown service: "..service_name;
 	end
+	
+	local config_prefix = (service_info.config_prefix or service_name).."_";
+	if config_prefix == "_" then
+		config_prefix = "";
+	end
 
-	local bind_interfaces = set.new(config.get("*", service_name.."_interfaces")
-		or config.get("*", service_name.."_interface") -- COMPAT w/pre-0.9
+	local bind_interfaces = set.new(config.get("*", config_prefix.."interfaces")
+		or config.get("*", config_prefix.."interface") -- COMPAT w/pre-0.9
 		or (service_info.private and default_local_interfaces)
 		or config.get("*", "interfaces")
 		or config.get("*", "interface") -- COMPAT w/pre-0.9
 		or service_info.default_interface -- COMPAT w/pre0.9
 		or default_interfaces);
 	
-	local bind_ports = set.new(config.get("*", service_name.."_ports")
-		or (service_info.multiplex and config.get("*", "ports"))
 		or service_info.default_ports
 		or {service_info.default_port});
+	local bind_ports = set.new(config.get("*", config_prefix.."ports")
 
 	local listener = service_info.listener;
 	local mode = listener.default_mode or "*a";
