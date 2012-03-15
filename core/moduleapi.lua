@@ -292,4 +292,18 @@ function api:handle_items(type, added_cb, removed_cb, existing)
 	end
 end
 
+function api:provides(name, item)
+	if not item then item = self.environment; end
+	if not item.name then
+		local item_name = module.name;
+		-- Strip a provider prefix to find the item name
+		-- (e.g. "auth_foo" -> "foo" for an auth provider)
+		if item_name:find(name.."_", 1, true) == 1 then
+			item_name = item_name:sub(#name+2);
+		end
+		item.name = item_name;
+	end
+	self:add_item(name, item);
+end
+
 return api;
