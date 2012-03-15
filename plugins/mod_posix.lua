@@ -22,7 +22,7 @@ local stat = lfs.attributes;
 
 local prosody = _G.prosody;
 
-module.host = "*"; -- we're a global module
+module:set_global(); -- we're a global module
 
 local umask = module:get_option("umask") or "027";
 pposix.umask(umask);
