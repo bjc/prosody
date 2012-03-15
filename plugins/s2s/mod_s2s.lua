@@ -472,5 +472,8 @@ module:add_item("net-provider", {
 	listener = listener;
 	default_port = 5269;
 	encryption = "starttls";
+	multiplex = {
+		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:server%1.*>";
+	};
 });
 
