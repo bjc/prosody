@@ -19,6 +19,7 @@ do
 		filename         = _("bright", "blue");
 		level_num        = _("green");
 		funcname         = _("yellow");
+		location         = _("yellow");
 	};
 end
 
@@ -143,9 +144,9 @@ function debug._traceback(thread, message, level)
 		local source_desc = (info.short_src == "[C]" and "C code") or info.short_src or "Unknown";
 		if func_type == " " then func_type = ""; end;
 		if info.short_src == "[C]" then
-			line = "[ C ] "..func_type.."C function "..(info.name and ("%q"):format(info.name) or "(unknown name)")
+			line = "[ C ] "..func_type.."C function "..getstring(styles.location, (info.name and ("%q"):format(info.name) or "(unknown name)"));
 		elseif info.what == "main" then
-			line = "[Lua] "..info.short_src.." line "..info.currentline;
+			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline);
 		else
 			local name = info.name or " ";
 			if name ~= " " then
@@ -154,7 +155,7 @@ function debug._traceback(thread, message, level)
 			if func_type == "global " or func_type == "local " then
 				func_type = func_type.."function ";
 			end
-			line = "[Lua] "..info.short_src.." line "..info.currentline.." in "..func_type..getstring(styles.funcname, name).." defined on line "..info.linedefined;
+			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline).." in "..func_type..getstring(styles.funcname, name).." (defined on line "..info.linedefined..")";
 		end
 		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
 			if last_source_desc then
