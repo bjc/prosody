@@ -9,6 +9,18 @@ local censored_names = {
 };
 local optimal_line_length = 65;
 
+local termcolours = require "util.termcolours";
+local getstring = termcolours.getstring;
+local styles;
+do
+	_ = termcolours.getstyle;
+	styles = {
+		boundary_padding = _("bright", "white");
+		filename         = _("bright", "blue");
+		level_num        = _("green");
+		funcname         = _("yellow");
+	};
+end
 
 local function get_locals_table(level)
 	level = level + 1; -- Skip this function itself
@@ -98,6 +110,11 @@ function debug.traceback(...)
 	return ret;
 end
 
+local function build_source_boundary_marker(last_source_desc)
+	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
+	return getstring(styles.boundary_padding, "^"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-^" or "^ "));
+end
+
 function debug._traceback(thread, message, level)
 	if type(thread) ~= "thread" then
 		thread, message, level = coroutine.running(), thread, message;
@@ -137,17 +154,16 @@ function debug._traceback(thread, message, level)
 			if func_type == "global " or func_type == "local " then
 				func_type = func_type.."function ";
 			end
-			line = "[Lua] "..info.short_src.." line "..info.currentline.." in "..func_type..name.." defined on line "..info.linedefined;
+			line = "[Lua] "..info.short_src.." line "..info.currentline.." in "..func_type..getstring(styles.funcname, name).." defined on line "..info.linedefined;
 		end
 		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
 			if last_source_desc then
-				local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
-				table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
+				table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
 			end
 			last_source_desc = source_desc;
 		end
 		nlevel = nlevel-1;
-		table.insert(lines, "\t"..(nlevel==0 and ">" or " ").."("..nlevel..") "..line);
+		table.insert(lines, "\t"..(nlevel==0 and ">" or " ")..getstring(styles.level_num, "("..nlevel..") ")..line);
 		local npadding = (" "):rep(#tostring(nlevel));
 		local locals_str = string_from_var_table(level.locals, optimal_line_length, "\t            "..npadding);
 		if locals_str then
@@ -159,8 +175,7 @@ function debug._traceback(thread, message, level)
 		end
 	end
 
-	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc) / 2));
-	table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
+	table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
 
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
