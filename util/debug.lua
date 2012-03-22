@@ -95,7 +95,11 @@ function debug.traceback(thread, message, level)
 	if level and type(message) ~= "string" then
 		return nil, "invalid message";
 	elseif not level then
-		level = message or 2;
+		if type(message) == "number" then
+			level, message = message, nil;
+		else
+			level = 2;
+		end
 	end
 	
 	message = message and (message.."\n") or "";
