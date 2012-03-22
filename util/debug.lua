@@ -88,7 +88,15 @@ function get_traceback_table(thread, start_level)
 	return levels;
 end
 
-function debug.traceback(thread, message, level)
+function debug.traceback(...)
+	local ok, ret = pcall(debug._traceback, ...);
+	if not ok then
+		return "Error in error handling: "..ret;
+	end
+	return ret;
+end
+
+function debug._traceback(thread, message, level)
 	if type(thread) ~= "thread" then
 		thread, message, level = coroutine.running(), thread, message;
 	end
