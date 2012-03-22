@@ -114,11 +114,14 @@ function debug._traceback(thread, message, level)
 	
 	local levels = get_traceback_table(thread, level+2);
 	
+	local last_source_desc;
+	
 	local lines = {};
 	for nlevel, level in ipairs(levels) do
 		local info = level.info;
 		local line = "...";
 		local func_type = info.namewhat.." ";
+		local source_desc = (info.short_src == "[C]" and "C code") or info.short_src or "Unknown";
 		if func_type == " " then func_type = ""; end;
 		if info.short_src == "[C]" then
 			line = "[ C ] "..func_type.."C function "..(info.name and ("%q"):format(info.name) or "(unknown name)")
@@ -134,6 +137,13 @@ function debug._traceback(thread, message, level)
 			end
 			line = "[Lua] "..info.short_src.." line "..info.currentline.." in "..func_type..name.." defined on line "..info.linedefined;
 		end
+		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
+			if last_source_desc then
+				local padding = string.rep("-", math.floor(((65 - 6) - #last_source_desc)/2));
+				table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
+			end
+			last_source_desc = source_desc;
+		end
 		nlevel = nlevel-1;
 		table.insert(lines, "\t"..(nlevel==0 and ">" or " ").."("..nlevel..") "..line);
 		local npadding = (" "):rep(#tostring(nlevel));
@@ -146,5 +156,9 @@ function debug._traceback(thread, message, level)
 			table.insert(lines, "\t    "..npadding.."Upvals: "..upvalues_str);
 		end
 	end
+
+	local padding = string.rep("-", math.floor(((65 - 6) - #last_source_desc) / 2));
+	table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
+
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
