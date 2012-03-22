@@ -7,6 +7,8 @@ local censored_names = {
 	pass = true;
 	pwd = true;
 };
+local optimal_line_length = 65;
+
 
 local function get_locals_table(level)
 	level = level + 1; -- Skip this function itself
@@ -139,7 +141,7 @@ function debug._traceback(thread, message, level)
 		end
 		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
 			if last_source_desc then
-				local padding = string.rep("-", math.floor(((65 - 6) - #last_source_desc)/2));
+				local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
 				table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
 			end
 			last_source_desc = source_desc;
@@ -147,17 +149,17 @@ function debug._traceback(thread, message, level)
 		nlevel = nlevel-1;
 		table.insert(lines, "\t"..(nlevel==0 and ">" or " ").."("..nlevel..") "..line);
 		local npadding = (" "):rep(#tostring(nlevel));
-		local locals_str = string_from_var_table(level.locals, 65, "\t            "..npadding);
+		local locals_str = string_from_var_table(level.locals, optimal_line_length, "\t            "..npadding);
 		if locals_str then
 			table.insert(lines, "\t    "..npadding.."Locals: "..locals_str);
 		end
-		local upvalues_str = string_from_var_table(level.upvalues, 65, "\t            "..npadding);
+		local upvalues_str = string_from_var_table(level.upvalues, optimal_line_length, "\t            "..npadding);
 		if upvalues_str then
 			table.insert(lines, "\t    "..npadding.."Upvals: "..upvalues_str);
 		end
 	end
 
-	local padding = string.rep("-", math.floor(((65 - 6) - #last_source_desc) / 2));
+	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc) / 2));
 	table.insert(lines, "\t ^"..padding.." "..last_source_desc.." "..padding..(#last_source_desc%2==0 and "-^" or "^ "));
 
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
