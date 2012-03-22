@@ -113,7 +113,7 @@ end
 
 local function build_source_boundary_marker(last_source_desc)
 	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
-	return getstring(styles.boundary_padding, "^"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-^" or "^ "));
+	return getstring(styles.boundary_padding, "v"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
 end
 
 function debug._traceback(thread, message, level)
@@ -158,10 +158,8 @@ function debug._traceback(thread, message, level)
 			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline).." in "..func_type..getstring(styles.funcname, name).." (defined on line "..info.linedefined..")";
 		end
 		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
-			if last_source_desc then
-				table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
-			end
 			last_source_desc = source_desc;
+			table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
 		end
 		nlevel = nlevel-1;
 		table.insert(lines, "\t"..(nlevel==0 and ">" or " ")..getstring(styles.level_num, "("..nlevel..") ")..line);
@@ -176,7 +174,7 @@ function debug._traceback(thread, message, level)
 		end
 	end
 
-	table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
+--	table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
 
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
