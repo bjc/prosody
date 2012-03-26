@@ -331,7 +331,7 @@ module:hook_global("service-added", function (event)
 			end
 		elseif source == "::" then
 			if not socket.local_addresses then
-				sources[#sources + 1] = new_ip("::", "IPv4");
+				sources[#sources + 1] = new_ip("::", "IPv6");
 			else
 				for _, addr in ipairs(socket.local_addresses("ipv6", true)) do
 					sources[#sources + 1] = new_ip(addr, "IPv6");
