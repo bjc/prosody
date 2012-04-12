@@ -25,6 +25,7 @@ function _M.new(name, node, handler, permission)
 end
 
 function _M.handle_cmd(command, origin, stanza)
+	local cmdtag, actions;
 	local sessionid = stanza.tags[1].attr.sessionid or uuid.generate();
 	local dataIn = {};
 	dataIn.to = stanza.attr.to;
@@ -58,7 +59,7 @@ function _M.handle_cmd(command, origin, stanza)
 		elseif name == "error" then
 			cmdtag:tag("note", {type="error"}):text(content.message):up();
 		elseif name =="actions" then
-			local actions = st.stanza("actions");
+			actions = st.stanza("actions");
 			for _, action in ipairs(content) do
 				if (action == "prev") or (action == "next") or (action == "complete") then
 					actions:tag(action):up();
@@ -67,7 +68,6 @@ function _M.handle_cmd(command, origin, stanza)
 						'" at node "'..command.node..'" provided an invalid action "'..action..'"');
 				end
 			end
-			cmdtag:add_child(actions);
 		elseif name == "form" then
 			cmdtag:add_child((content.layout or content):form(content.values));
 		elseif name == "result" then
@@ -76,6 +76,13 @@ function _M.handle_cmd(command, origin, stanza)
 			cmdtag:add_child(content);
 		end
 	end
+
+	if not actions then
+		actions = st.stanza("actions");
+		actions:tag("complete"):up();
+	end
+	cmdtag:add_child(actions);
+
 	stanza:add_child(cmdtag);
 	origin.send(stanza);
 
