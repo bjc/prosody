@@ -121,7 +121,10 @@ function handle_request(method, body, request)
 	local stream = new_xmpp_stream(request, stream_callbacks);
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
-	stream:feed(body);
+	local ok, err = stream:feed(body);
+	if not ok then
+		log("error", "Failed to parse BOSH payload: %s", err);
+	end
 	
 	local session = sessions[request.sid];
 	if session then
