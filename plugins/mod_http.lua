@@ -14,28 +14,44 @@ module:set_global();
 	sessions[conn] = session;
 end]]
 
-local handlers;
+local NULL = {};
+local handlers = {};
 
-function build_handlers()
-	handlers = {};
-	for _, item in ipairs(module:get_host_items("http-handler")) do
-		local previous = handlers[item.path];
-		if not previous and item.path then
-			handlers[item.path] = item;
+function build_handlers(host)
+	if not hosts[host] then return; end
+	local h = {};
+	handlers[host] = h;
+	
+	for mod_name, module in pairs(modulemanager.get_modules(host)) do
+		module = module.module;
+		if module.items then
+			for _, item in ipairs(module.items["http-handler"] or NULL) do
+				local previous = handlers[item.path];
+				if not previous and item.path then
+					h[item.path] = item;
+				end
+			end
 		end
 	end
+
+	return h;
 end
-function clear_handlers()
-	handlers = nil;
+function clear_handlers(event)
+	handlers[event.source.host] = nil;
+end
+function get_handler(host, path)
+	local h = handlers[host] or build_handlers(host);
+	if h then
+		local item = h[path];
+		return item and item.handler;
+	end
 end
 module:handle_items("http-handler", clear_handlers, clear_handlers, false);
 
 function http_handler(event)
 	local request, response = event.request, event.response;
 
-	if not handlers then build_handlers(); end
-	local item = handlers[request.path:match("[^?]*")];
-	local handler = item and item.handler;
+	local handler = get_handler(request.headers.host:match("[^:]*"):lower(), request.path:match("[^?]*"));
 	if handler then
 		handler(request, response);
 		return true;
