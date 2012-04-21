@@ -132,6 +132,21 @@ local function do_load_module(host, module_name)
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
 	elseif modulemap["*"][module_name] then
+		local mod = modulemap["*"][module_name];
+		if module_has_method(mod, "add_host") then
+			local _log = logger.init(host..":"..module_name);
+			local host_module_api = setmetatable({
+				host = host, event_handlers = {}, items = {};
+				_log = _log, log = function (self, ...) return _log(...); end;
+			},{
+				__index = modulemap["*"][module_name].module;
+			});
+			local ok, result, module_err = call_module_method(mod, "add_host", host_module_api);
+			if not ok or result == false then return nil, ok and module_err or result; end
+			local host_module = setmetatable({ module = host_module_api }, { __index = mod });
+			modulemap[host][module_name] = host_module;
+			return host_module;
+		end
 		return nil, "global-module-already-loaded";
 	end
 	
