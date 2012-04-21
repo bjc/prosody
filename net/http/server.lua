@@ -129,6 +129,7 @@ function handle_request(conn, request, finish_cb)
 			--log("debug", "Event: %s", event);
 			if events.fire_event(event, payload) ~= nil then return; end
 			-- TODO try adding/stripping / at the end, but this needs to work via an HTTP redirect
+			if events.fire_event("*", payload) ~= nil then return; end
 		end
 
 		-- if handler not called, fallback to legacy httpserver handlers
