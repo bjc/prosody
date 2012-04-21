@@ -261,12 +261,12 @@ function is_loaded(host, name)
 end
 
 function module_has_method(module, method)
-	return type(module.module[method]) == "function";
+	return type(rawget(module.module, method)) == "function";
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then
-		local f = module.module[method];
+	local f = rawget(module.module, method);
+	if type(f) == "function" then
 		return pcall(f, ...);
 	else
 		return false, "no-such-method";
