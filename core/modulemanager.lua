@@ -169,7 +169,7 @@ local function do_load_module(host, module_name)
 				api_instance:set_global();
 			end
 		else
-			hosts[host].modules[module_name] = pluginenv;
+			modulemap[host][module_name] = pluginenv;
 		end
 	end
 	if not ok then
