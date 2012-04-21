@@ -292,16 +292,22 @@ function def_env.module:load(name, hosts, config)
 	hosts = get_hosts_set(hosts);
 	
 	-- Load the module for each host
-	local ok, err, count = true, nil, 0;
+	local ok, err, count, mod = true, nil, 0, nil;
 	for host in hosts do
 		if (not mm.is_loaded(host, name)) then
-			ok, err = mm.load(host, name, config);
-			if not ok then
+			mod, err = mm.load(host, name, config);
+			if not mod then
 				ok = false;
+				if err == "global-module-already-loaded" then
+					if count > 0 then
+						ok, err, count = true, nil, 1;
+					end
+					break;
+				end
 				self.session.print(err or "Unknown error loading module");
 			else
 				count = count + 1;
-				self.session.print("Loaded for "..host);
+				self.session.print("Loaded for "..mod.module.host);
 			end
 		end
 	end
