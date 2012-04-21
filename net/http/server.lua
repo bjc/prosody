@@ -203,7 +203,7 @@ function _M.legacy_handler(request, response)
 		log("debug", "No handler found");
 		response.status_code = 404;
 		response.headers.content_type = "text/html";
-		response:send("<html><head>404 Not Found</head><body>404 Not Found: No such page.</body></html>");
+		response:send("<html><head><title>404 Not Found</title></head><body>404 Not Found: No such page.</body></html>");
 	end
 end
 
