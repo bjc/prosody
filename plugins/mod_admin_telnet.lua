@@ -334,11 +334,15 @@ end
 function def_env.module:reload(name, hosts)
 	local mm = require "modulemanager";
 
-	hosts = get_hosts_set(hosts, name);
-	
+	hosts = array.collect(get_hosts_set(hosts, name)):sort(function (a, b)
+		if a == "*" then return true
+		elseif b == "*" then return false
+		else return a < b; end
+	end);
+
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
-	for host in hosts do
+	for _, host in ipairs(hosts) do
 		if mm.is_loaded(host, name) then
 			ok, err = mm.reload(host, name);
 			if not ok then
