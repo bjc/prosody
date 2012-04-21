@@ -277,8 +277,12 @@ local function get_hosts_set(hosts, module)
 		return set.new { hosts };
 	elseif hosts == nil then
 		local mm = require "modulemanager";
-		return set.new(array.collect(keys(prosody.hosts)))
+		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
 			/ function (host) return prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module); end;
+		if module and mm.get_module("*", module) then
+			hosts_set:add("*");
+		end
+		return hosts_set;
 	end
 end
 
