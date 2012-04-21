@@ -135,6 +135,7 @@ end
 -- Intentionally does not allow the table at a path to be _set_, it
 -- is auto-created if it does not exist.
 function api:shared(...)
+	if not self.shared_data then self.shared_data = {}; end
 	local paths = { n = select("#", ...), ... };
 	local data_array = {};
 	local default_path_components = { self.host, self.name };
@@ -150,6 +151,7 @@ function api:shared(...)
 			shared_data[path] = shared;
 		end
 		t_insert(data_array, shared);
+		self.shared_data[path] = shared;
 	end
 	return unpack(data_array);
 end
