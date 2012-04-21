@@ -363,6 +363,7 @@ end
 function def_env.module:list(hosts)
 	if hosts == nil then
 		hosts = array.collect(keys(prosody.hosts));
+		table.insert(hosts, 1, "*");
 	end
 	if type(hosts) == "string" then
 		hosts = { hosts };
@@ -373,8 +374,8 @@ function def_env.module:list(hosts)
 	
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
-		print(host..":");
-		local modules = array.collect(keys(prosody.hosts[host] and prosody.hosts[host].modules or {})):sort();
+		print((host == "*" and "Global" or host)..":");
+		local modules = array.collect(keys(modulemanager.get_modules(host) or {})):sort();
 		if #modules == 0 then
 			if prosody.hosts[host] then
 				print("    No modules loaded");
