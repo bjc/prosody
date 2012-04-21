@@ -117,13 +117,15 @@ end
 local function do_load_module(host, module_name)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
-	elseif not hosts[host] then
+	elseif not hosts[host] and host ~= "*"then
 		return nil, "unknown-host";
 	end
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-		hosts[host].modules = modulemap[host];
+		if host ~= "*" then
+			hosts[host].modules = modulemap[host];
+		end
 	end
 	
 	if modulemap[host][module_name] then
