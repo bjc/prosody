@@ -183,8 +183,10 @@ local function do_load_module(host, module_name)
 				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
 				api_instance:set_global();
 			end
-		else
-			modulemap[host][module_name] = pluginenv;
+			if host ~= api_instance.host and module_has_method(pluginenv, "add_host") then
+				-- Now load the module again onto the host it was originally being loaded on
+				do_load_module(host, module_name);
+			end
 		end
 	end
 	if not ok then
