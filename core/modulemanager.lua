@@ -162,9 +162,9 @@ local function do_load_module(host, module_name)
 			end
 		end
 
-		modulemap[pluginenv.module.host][module_name] = pluginenv;
-		if pluginenv.module.host == "*" then
-			if not pluginenv.module.global then -- COMPAT w/pre-0.9
+		modulemap[api_instance.host][module_name] = pluginenv;
+		if api_instance.host == "*" then
+			if not api_instance.global then -- COMPAT w/pre-0.9
 				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
 				api_instance:set_global();
 			end
