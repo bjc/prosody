@@ -306,8 +306,6 @@ function load_secondary_libraries()
 	if remdebug then remdebug.engine.start() end
 	]]
 
-	require "net.httpserver";
-	
 	require "util.stanza"
 	require "util.jid"
 end
