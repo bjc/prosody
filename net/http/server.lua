@@ -13,6 +13,7 @@ local debug = debug;
 local tostring = tostring;
 local codes = require "net.http.codes";
 local _G = _G;
+local legacy_httpserver = require "net.httpserver";
 
 local _M = {};
 
@@ -159,9 +160,9 @@ end
 function _M.legacy_handler(request, response)
 	log("debug", "Invoking legacy handler");
 	local base = request.path:match("^/([^/?]+)");
-	local legacy_server = _G.httpserver and _G.httpserver.new.http_servers[5280];
+	local legacy_server = legacy_httpserver and legacy_httpserver.new.http_servers[5280];
 	local handler = legacy_server and legacy_server.handlers[base];
-	if not handler then handler = _G.httpserver and _G.httpserver.set_default_handler.default_handler; end
+	if not handler then handler = legacy_httpserver and legacy_httpserver.set_default_handler.default_handler; end
 	if handler then
 		-- add legacy properties to request object
 		request.url = { path = request.path };
