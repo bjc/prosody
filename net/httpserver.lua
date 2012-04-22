@@ -10,8 +10,8 @@
 local url_parse = require "socket.url".parse;
 local httpstream_new = require "util.httpstream".new;
 
-local connlisteners_start = require "net.connlisteners".start;
-local connlisteners_get = require "net.connlisteners".get;
+--local connlisteners_start = require "net.connlisteners".start;
+--local connlisteners_get = require "net.connlisteners".get;
 local listener;
 
 local t_insert, t_concat = table.insert, table.concat;
@@ -164,7 +164,7 @@ end
 
 function destroy_request(request)
 	log("debug", "Destroying request %s", request.id);
-	listener = listener or connlisteners_get("httpserver");
+	--listener = listener or connlisteners_get("httpserver");
 	if not request.destroyed then
 		request.destroyed = true;
 		if request.on_destroy then
@@ -186,7 +186,7 @@ function new(params)
 		http_server = { handlers = {} };
 		http_servers[params.port] = http_server;
 		-- We weren't already listening on this port, so start now
-		connlisteners_start("httpserver", params);
+		--connlisteners_start("httpserver", params);
 	end
 	if params.base then
 		http_server.handlers[params.base] = params.handler;
