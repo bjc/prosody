@@ -149,7 +149,7 @@ function stream_callbacks.error(session, error, data, data2)
 end
 
 function stream_callbacks.streamopened(session, attr)
-	if not hosts[attr.to].modules.component then
+	if not hosts[attr.to] or not hosts[attr.to].modules.component then
 		session:close{ condition = "host-unknown", text = tostring(attr.to).." does not match any configured external components" };
 		return;
 	end
