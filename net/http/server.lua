@@ -22,6 +22,57 @@ local handlers = {};
 
 local listener = {};
 
+local function is_wildcard_event(event)
+	return event:sub(-2, -1) == "/*";
+end
+local function is_wildcard_match(wildcard_event, event)
+	log("debug", "comparing %q with %q", wildcard_event:sub(1, -2), event:sub(1, #wildcard_event-1));
+	return wildcard_event:sub(1, -2) == event:sub(1, #wildcard_event-1);
+end
+
+local event_map = events._event_map;
+setmetatable(events._handlers, {
+	__index = function (handlers, curr_event)
+		if is_wildcard_event(curr_event) then return; end -- Wildcard events cannot be fired
+		-- Find all handlers that could match this event, sort them
+		-- and then put the array into handlers[event]
+		local matching_handlers_set = {};
+		local handlers_array = {};
+		for event, handlers_set in pairs(event_map) do
+			if event == curr_event or
+			is_wildcard_event(event) and is_wildcard_match(event, curr_event) then
+				for handler, priority in pairs(handlers_set) do
+					matching_handlers_set[handler] = { (select(2, event:gsub("/", "%1"))), priority };
+					table.insert(handlers_array, handler);
+				end
+			end
+		end
+		if #handlers_array == 0 then return; end
+		table.sort(handlers_array, function(b, a)
+			local a_score, b_score = matching_handlers_set[a], matching_handlers_set[b];
+			for i = 1, #a_score do
+				if a ~= b then -- If equal, compare next score value
+					return a_score[i] < b_score[i];
+				end
+			end
+			return false;
+		end);
+		handlers[curr_event] = handlers_array;
+		return handlers_array;
+	end;
+	__newindex = function (handlers, curr_event, handlers_array)
+		if handlers_array == nil
+		and is_wildcard_event(curr_event) then
+			-- Invalidate all matching
+			for event in pairs(handlers) do
+				if is_wildcard_match(curr_event, event) then
+					handlers[event] = nil;
+				end
+			end
+		end
+	end;
+});
+
 local handle_request;
 local _1, _2, _3;
 local function _handle_request() return handle_request(_1, _2, _3); end
