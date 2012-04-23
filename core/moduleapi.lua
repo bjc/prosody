@@ -316,4 +316,11 @@ function api:send(stanza)
 	return core_post_stanza(hosts[self.host], stanza);
 end
 
+function api:add_timer(delay, callback)
+	return timer.add_task(delay, function (t)
+		if self.loaded == false then return; end
+		return callback(t);
+	end);
+end
+
 return api;
