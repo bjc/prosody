@@ -186,7 +186,7 @@ local function do_load_module(host, module_name)
 			end
 			if host ~= api_instance.host and module_has_method(pluginenv, "add_host") then
 				-- Now load the module again onto the host it was originally being loaded on
-				do_load_module(host, module_name);
+				ok, err = do_load_module(host, module_name);
 			end
 		end
 	end
