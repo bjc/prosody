@@ -306,7 +306,7 @@ function api:provides(name, item)
 		end
 		item.name = item_name;
 	end
-	self:add_item(name, item);
+	self:add_item(name.."-provider", item);
 end
 
 function api:send(stanza)
