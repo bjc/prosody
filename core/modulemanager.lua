@@ -110,6 +110,7 @@ local function do_unload_module(host, name)
 			end
 		end
 	end
+	mod.module.loaded = false;
 	modulemap[host][name] = nil;
 	return true;
 end
