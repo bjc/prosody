@@ -6,19 +6,17 @@
 -- COPYING file in the source package for more information.
 --
 
-
-local httpserver = require "net.httpserver";
+module:depends("http");
 local lfs = require "lfs";
 
 local open = io.open;
-local t_concat = table.concat;
 local stat = lfs.attributes;
 
-local http_base = config.get("*", "core", "http_path") or "www_files";
+local http_base = module:get_option_string("http_path", "www_files");
 
-local response_400 = { status = "400 Bad Request", body = "<h1>Bad Request</h1>Sorry, we didn't understand your request :(" };
-local response_403 = { status = "403 Forbidden", body = "<h1>Forbidden</h1>You don't have permission to view the contents of this directory :(" };
-local response_404 = { status = "404 Not Found", body = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(" };
+local response_400 = "<h1>Bad Request</h1>Sorry, we didn't understand your request :(";
+local response_403 = "<h1>Forbidden</h1>You don't have permission to view the contents of this directory :(";
+local response_404 = "<h1>Page Not Found</h1>Sorry, we couldn't find what you were looking for :(";
 
 -- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
 local mime_map = {
@@ -49,49 +47,40 @@ local function preprocess_path(path)
 	return path;
 end
 
-function serve_file(path)
+function serve_file(request, path)
+	local response = request.response;
+	path = path and preprocess_path(path);
+	if not path then
+		response.status = 400;
+		return response:send(response_400);
+	end
 	local full_path = http_base..path;
 	if stat(full_path, "mode") == "directory" then
 		if stat(full_path.."/index.html", "mode") == "file" then
-			return serve_file(path.."/index.html");
+			return serve_file(request, path.."/index.html");
 		end
-		return response_403;
+		response.status = 403;
+		return response:send(response_403);
 	end
 	local f, err = open(full_path, "rb");
-	if not f then return response_404; end
+	if not f then
+		response.status = 404;
+		return response:send(response_404.."<br/>"..tostring(err));
+	end
 	local data = f:read("*a");
 	f:close();
 	if not data then
-		return response_403;
+		response.status = 403;
+		return response:send(response_403);
 	end
 	local ext = path:match("%.([^.]*)$");
-	local mime = mime_map[ext]; -- Content-Type should be nil when not known
-	return {
-		headers = { ["Content-Type"] = mime; };
-		body = data;
+	response.headers.content_type = mime_map[ext]; -- Content-Type should be nil when not known
+	return response:send(data);
+end
+
+module:provides("http", {
+	route = {
+		["/*"] = serve_file;
 	};
-end
+});
 
-local function handle_file_request(method, body, request)
-	local path = preprocess_path(request.url.path);
-	if not path then return response_400; end
-	path = path:gsub("^/[^/]+", ""); -- Strip /files/
-	return serve_file(path);
-end
-
-local function handle_default_request(method, body, request)
-	local path = preprocess_path(request.url.path);
-	if not path then return response_400; end
-	return serve_file(path);
-end
-
-local function setup()
-	local ports = config.get(module.host, "core", "http_ports") or { 5280 };
-	httpserver.set_default_handler(handle_default_request);
-	httpserver.new_from_config(ports, handle_file_request, { base = "files" });
-end
-if prosody.start_time then -- already started
-	setup();
-else
-	prosody.events.add_handler("server-started", setup);
-end
