@@ -298,7 +298,7 @@ end
 function api:provides(name, item)
 	if not item then item = self.environment; end
 	if not item.name then
-		local item_name = module.name;
+		local item_name = self.name;
 		-- Strip a provider prefix to find the item name
 		-- (e.g. "auth_foo" -> "foo" for an auth provider)
 		if item_name:find(name.."_", 1, true) == 1 then
