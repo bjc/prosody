@@ -47,8 +47,8 @@ local function preprocess_path(path)
 	return path;
 end
 
-function serve_file(request, path)
-	local response = request.response;
+function serve_file(event, path)
+	local response = event.response;
 	path = path and preprocess_path(path);
 	if not path then
 		response.status = 400;
@@ -57,7 +57,7 @@ function serve_file(request, path)
 	local full_path = http_base..path;
 	if stat(full_path, "mode") == "directory" then
 		if stat(full_path.."/index.html", "mode") == "file" then
-			return serve_file(request, path.."/index.html");
+			return serve_file(event, path.."/index.html");
 		end
 		response.status = 403;
 		return response:send(response_403);
