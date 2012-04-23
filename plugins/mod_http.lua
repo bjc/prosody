@@ -17,7 +17,7 @@ local function normalize_path(path)
 	return path;
 end
 
-local function get_http_event(http_module, app_name, key)
+local function get_http_event(host, app_path, key)
 	local method, path = key:match("^(%S+)%s+(.+)$");
 	if not method and key:sub(1,1) == "/" then
 		method, path = "GET", key;
@@ -25,15 +25,17 @@ local function get_http_event(http_module, app_name, key)
 		return nil;
 	end
 	path = normalize_path(path);
-	local app_path = normalize_path(http_module:get_option_string(app_name.."_http_path", "/"..app_name));
-	return method:upper().." "..http_module.host..app_path..path;
+	return method:upper().." "..host..app_path..path;
 end
 
 function module.add_host(module)
+	local host = module.host;
 	local apps = {};
 	module.environment.apps = apps;
 	local function http_app_added(event)
 		local app_name = event.item.name;
+		local default_app_path = event.item.default_path or "/"..app_name;
+		local app_path = normalize_path(module:get_option_string(app_name.."_http_path", default_app_path));
 		if not app_name then		
 			-- TODO: Link to docs
 			module:log("error", "HTTP app has no 'name', add one or use module:provides('http', app)");
@@ -42,7 +44,7 @@ function module.add_host(module)
 		apps[app_name] = apps[app_name] or {};
 		local app_handlers = apps[app_name];
 		for key, handler in pairs(event.item.route or {}) do
-			local event_name = get_http_event(module, app_name, key);
+			local event_name = get_http_event(host, app_path, key);
 			if event_name then
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = handler;
