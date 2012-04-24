@@ -8,7 +8,9 @@ local censored_names = {
 	pwd = true;
 };
 
-local function get_locals_table(level)
+module("debugx", package.seeall);
+
+function get_locals_table(level)
 	level = level + 1; -- Skip this function itself
 	local locals = {};
 	for local_num = 1, math.huge do
@@ -19,7 +21,7 @@ local function get_locals_table(level)
 	return locals;
 end
 
-local function get_upvalues_table(func)
+function get_upvalues_table(func)
 	local upvalues = {};
 	if func then
 		for upvalue_num = 1, math.huge do
@@ -31,7 +33,7 @@ local function get_upvalues_table(func)
 	return upvalues;
 end
 
-local function string_from_var_table(var_table, max_line_len, indent_str)
+function string_from_var_table(var_table, max_line_len, indent_str)
 	local var_string = {};
 	local col_pos = 0;
 	max_line_len = max_line_len or math.huge;
@@ -88,7 +90,7 @@ function get_traceback_table(thread, start_level)
 	return levels;
 end
 
-function debug.traceback(thread, message, level)
+function traceback(thread, message, level)
 	if type(thread) ~= "thread" then
 		thread, message, level = coroutine.running(), thread, message;
 	end
@@ -136,3 +138,9 @@ function debug.traceback(thread, message, level)
 	end
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
+
+function use()
+	debug.traceback = traceback;
+end
+
+return _M;
