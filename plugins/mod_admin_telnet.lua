@@ -759,6 +759,51 @@ function def_env.host:list()
 	return true, i.." hosts";
 end
 
+def_env.port = {};
+
+function def_env.port:list()
+	local print = self.session.print;
+	local services = portmanager.get_active_services().data;
+	local ordered_services, n_ports = {}, 0;
+	for service, interfaces in pairs(services) do
+		table.insert(ordered_services, service);
+	end
+	table.sort(ordered_services);
+	for _, service in ipairs(ordered_services) do
+		local ports_list = {};
+		for interface, ports in pairs(services[service]) do
+			for port in pairs(ports) do
+				table.insert(ports_list, "["..interface.."]:"..port);
+			end
+		end
+		n_ports = n_ports + #ports_list;
+		print(service..": "..table.concat(ports_list, ", "));
+	end
+	return true, #ordered_services.." services listening on "..n_ports.." ports";
+end
+
+function def_env.port:close(close_port, close_interface)
+	close_port = assert(tonumber(close_port), "Invalid port number");
+	local n_closed = 0;
+	local services = portmanager.get_active_services().data;
+	for service, interfaces in pairs(services) do
+		for interface, ports in pairs(interfaces) do
+			if not close_interface or close_interface == interface then
+				if ports[close_port] then
+					self.session.print("Closing ["..interface.."]:"..close_port.."...");
+					local ok, err = portmanager.close(interface, close_port)
+					if not ok then
+						self.session.print("Failed to close "..interface.." "..port..": "..err);
+					else
+						n_closed = n_closed + 1;
+					end
+				end
+			end
+		end
+	end
+	return true, "Closed "..n_closed.." ports";
+end
+
 -------------
 
 function printbanner(session)
@@ -789,7 +834,8 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 end
 end
 
-require "core.portmanager".register_service("console", {
+module:add_item("net-provider", {
+	name = "console";
 	listener = console_listener;
 	default_port = 5582;
 	private = true;
