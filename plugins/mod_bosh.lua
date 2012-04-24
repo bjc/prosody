@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-module.host = "*" -- Global module
+module:set_global(); -- Global module
 
 local hosts = _G.hosts;
 local new_xmpp_stream = require "util.xmppstream".new;

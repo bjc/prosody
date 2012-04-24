@@ -6,26 +6,24 @@
 -- COPYING file in the source package for more information.
 --
 
-module.host = "*";
+module:set_global();
 
 local _G = _G;
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
-local connlisteners_register = require "net.connlisteners".register;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; default_interface = "127.0.0.1" };
+local console_listener = { default_port = 5582; default_mode = "*l"; interface = "127.0.0.1" };
 
-require "util.iterators";
+local iterators = require "util.iterators";
+local keys, values = iterators.keys, iterators.values;
 local jid_bare = require "util.jid".bare;
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 
-local commands = {};
-local def_env = {};
+local commands = module:shared("commands")
+local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
-
-prosody.console = { commands = commands, env = def_env };
 
 local function redirect_output(_G, session)
 	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
@@ -148,8 +146,6 @@ function console_listener.ondisconnect(conn, err)
 		sessions[conn] = nil;
 	end
 end
-
-connlisteners_register('console', console_listener);
 
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
@@ -281,8 +277,12 @@ local function get_hosts_set(hosts, module)
 		return set.new { hosts };
 	elseif hosts == nil then
 		local mm = require "modulemanager";
-		return set.new(array.collect(keys(prosody.hosts)))
+		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
 			/ function (host) return prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module); end;
+		if module and mm.get_module("*", module) then
+			hosts_set:add("*");
+		end
+		return hosts_set;
 	end
 end
 
@@ -292,16 +292,22 @@ function def_env.module:load(name, hosts, config)
 	hosts = get_hosts_set(hosts);
 	
 	-- Load the module for each host
-	local ok, err, count = true, nil, 0;
+	local ok, err, count, mod = true, nil, 0, nil;
 	for host in hosts do
 		if (not mm.is_loaded(host, name)) then
-			ok, err = mm.load(host, name, config);
-			if not ok then
+			mod, err = mm.load(host, name, config);
+			if not mod then
 				ok = false;
+				if err == "global-module-already-loaded" then
+					if count > 0 then
+						ok, err, count = true, nil, 1;
+					end
+					break;
+				end
 				self.session.print(err or "Unknown error loading module");
 			else
 				count = count + 1;
-				self.session.print("Loaded for "..host);
+				self.session.print("Loaded for "..mod.module.host);
 			end
 		end
 	end
@@ -334,11 +340,15 @@ end
 function def_env.module:reload(name, hosts)
 	local mm = require "modulemanager";
 
-	hosts = get_hosts_set(hosts, name);
-	
+	hosts = array.collect(get_hosts_set(hosts, name)):sort(function (a, b)
+		if a == "*" then return true
+		elseif b == "*" then return false
+		else return a < b; end
+	end);
+
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
-	for host in hosts do
+	for _, host in ipairs(hosts) do
 		if mm.is_loaded(host, name) then
 			ok, err = mm.reload(host, name);
 			if not ok then
@@ -359,6 +369,7 @@ end
 function def_env.module:list(hosts)
 	if hosts == nil then
 		hosts = array.collect(keys(prosody.hosts));
+		table.insert(hosts, 1, "*");
 	end
 	if type(hosts) == "string" then
 		hosts = { hosts };
@@ -369,8 +380,8 @@ function def_env.module:list(hosts)
 	
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
-		print(host..":");
-		local modules = array.collect(keys(prosody.hosts[host] and prosody.hosts[host].modules or {})):sort();
+		print((host == "*" and "Global" or host)..":");
+		local modules = array.collect(keys(modulemanager.get_modules(host) or {})):sort();
 		if #modules == 0 then
 			if prosody.hosts[host] then
 				print("    No modules loaded");
@@ -766,6 +777,51 @@ function def_env.host:list()
 	return true, i.." hosts";
 end
 
+def_env.port = {};
+
+function def_env.port:list()
+	local print = self.session.print;
+	local services = portmanager.get_active_services().data;
+	local ordered_services, n_ports = {}, 0;
+	for service, interfaces in pairs(services) do
+		table.insert(ordered_services, service);
+	end
+	table.sort(ordered_services);
+	for _, service in ipairs(ordered_services) do
+		local ports_list = {};
+		for interface, ports in pairs(services[service]) do
+			for port in pairs(ports) do
+				table.insert(ports_list, "["..interface.."]:"..port);
+			end
+		end
+		n_ports = n_ports + #ports_list;
+		print(service..": "..table.concat(ports_list, ", "));
+	end
+	return true, #ordered_services.." services listening on "..n_ports.." ports";
+end
+
+function def_env.port:close(close_port, close_interface)
+	close_port = assert(tonumber(close_port), "Invalid port number");
+	local n_closed = 0;
+	local services = portmanager.get_active_services().data;
+	for service, interfaces in pairs(services) do
+		for interface, ports in pairs(interfaces) do
+			if not close_interface or close_interface == interface then
+				if ports[close_port] then
+					self.session.print("Closing ["..interface.."]:"..close_port.."...");
+					local ok, err = portmanager.close(interface, close_port)
+					if not ok then
+						self.session.print("Failed to close "..interface.." "..port..": "..err);
+					else
+						n_closed = n_closed + 1;
+					end
+				end
+			end
+		end
+	end
+	return true, "Closed "..n_closed.." ports";
+end
+
 -------------
 
 function printbanner(session)
@@ -796,4 +852,9 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 end
 end
 
-prosody.net_activate_ports("console", "console", {5582}, "tcp");
+module:add_item("net-provider", {
+	name = "console";
+	listener = console_listener;
+	default_port = 5582;
+	private = true;
+});

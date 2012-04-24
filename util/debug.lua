@@ -22,8 +22,9 @@ do
 		location         = _("yellow");
 	};
 end
+module("debugx", package.seeall);
 
-local function get_locals_table(level)
+function get_locals_table(level)
 	level = level + 1; -- Skip this function itself
 	local locals = {};
 	for local_num = 1, math.huge do
@@ -34,7 +35,7 @@ local function get_locals_table(level)
 	return locals;
 end
 
-local function get_upvalues_table(func)
+function get_upvalues_table(func)
 	local upvalues = {};
 	if func then
 		for upvalue_num = 1, math.huge do
@@ -46,7 +47,7 @@ local function get_upvalues_table(func)
 	return upvalues;
 end
 
-local function string_from_var_table(var_table, max_line_len, indent_str)
+function string_from_var_table(var_table, max_line_len, indent_str)
 	local var_string = {};
 	local col_pos = 0;
 	max_line_len = max_line_len or math.huge;
@@ -103,8 +104,8 @@ function get_traceback_table(thread, start_level)
 	return levels;
 end
 
-function debug.traceback(...)
-	local ok, ret = pcall(debug._traceback, ...);
+function traceback(...)
+	local ok, ret = pcall(_traceback, ...);
 	if not ok then
 		return "Error in error handling: "..ret;
 	end
@@ -116,7 +117,8 @@ local function build_source_boundary_marker(last_source_desc)
 	return getstring(styles.boundary_padding, "v"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
 end
 
-function debug._traceback(thread, message, level)
+function _traceback(thread, message, level)
+
 	if type(thread) ~= "thread" then
 		thread, message, level = coroutine.running(), thread, message;
 	end
@@ -178,3 +180,9 @@ function debug._traceback(thread, message, level)
 
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
+
+function use()
+	debug.traceback = traceback;
+end
+
+return _M;

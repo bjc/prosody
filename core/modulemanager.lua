@@ -9,13 +9,10 @@
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
-local multitable_new = require "util.multitable".new;
-local st = require "util.stanza";
 local pluginloader = require "util.pluginloader";
 
 local hosts = hosts;
 local prosody = prosody;
-local prosody_events = prosody.events;
 
 local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
 local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
@@ -37,7 +34,7 @@ end
 
 local array, set = require "util.array", require "util.set";
 
-local autoload_modules = {"presence", "message", "iq", "offline"};
+local autoload_modules = {"presence", "message", "iq", "offline", "c2s", "s2s"};
 local component_inheritable_modules = {"tls", "dialback", "iq"};
 
 -- We need this to let modules access the real global namespace
@@ -45,14 +42,10 @@ local _G = _G;
 
 module "modulemanager"
 
-api = {};
-local api = api; -- Module API container
+local api = _G.require "core.moduleapi"; -- Module API container
 
+-- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };
-
-local modulehelpers = setmetatable({}, { __index = _G });
-
-local hooks = multitable_new();
 
 local NULL = {};
 
@@ -88,24 +81,74 @@ function load_modules_for_host(host)
 		load(host, module);
 	end
 end
-prosody_events.add_handler("host-activated", load_modules_for_host);
---
+prosody.events.add_handler("host-activated", load_modules_for_host);
 
-function load(host, module_name, config)
+--- Private helpers ---
+
+local function do_unload_module(host, name)
+	local mod = get_module(host, name);
+	if not mod then return nil, "module-not-loaded"; end
+	
+	if module_has_method(mod, "unload") then
+		local ok, err = call_module_method(mod, "unload");
+		if (not ok) and err then
+			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
+		end
+	end
+	
+	for handler, event in pairs(mod.module.event_handlers) do
+		event.object.remove_handler(event.name, handler);
+	end
+	
+	if mod.module.items then -- remove items
+		local events = (host == "*" and prosody.events) or hosts[host].events;
+		for key,t in pairs(mod.module.items) do
+			for i = #t,1,-1 do
+				local value = t[i];
+				t[i] = nil;
+				events.fire_event("item-removed/"..key, {source = mod.module, item = value});
+			end
+		end
+	end
+	mod.module.loaded = false;
+	modulemap[host][name] = nil;
+	return true;
+end
+
+local function do_load_module(host, module_name)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
-	elseif not hosts[host] then
+	elseif not hosts[host] and host ~= "*"then
 		return nil, "unknown-host";
 	end
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
+		if host ~= "*" then
+			hosts[host].modules = modulemap[host];
+		end
 	end
 	
 	if modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
 	elseif modulemap["*"][module_name] then
+		local mod = modulemap["*"][module_name];
+		if module_has_method(mod, "add_host") then
+			local _log = logger.init(host..":"..module_name);
+			local host_module_api = setmetatable({
+				host = host, event_handlers = {}, items = {};
+				_log = _log, log = function (self, ...) return _log(...); end;
+			},{
+				__index = modulemap["*"][module_name].module;
+			});
+			local ok, result, module_err = call_module_method(mod, "add_host", host_module_api);
+			if not ok or result == false then return nil, ok and module_err or result; end
+			local host_module = setmetatable({ module = host_module_api }, { __index = mod });
+			host_module.module.environment = host_module;
+			modulemap[host][module_name] = host_module;
+			return host_module;
+		end
 		return nil, "global-module-already-loaded";
 	end
 	
@@ -117,88 +160,44 @@ function load(host, module_name, config)
 	end
 
 	local _log = logger.init(host..":"..module_name);
-	local api_instance = setmetatable({ name = module_name, host = host, path = err, _log = _log, log = function (self, ...) return _log(...); end }, { __index = api });
+	local api_instance = setmetatable({ name = module_name, host = host, path = err,
+		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = {} }
+		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
 	
 	setfenv(mod, pluginenv);
-	hosts[host].modules = modulemap[host];
-	modulemap[host][module_name] = pluginenv;
 	
-	local success, err = pcall(mod);
-	if success then
+	local ok, err = pcall(mod);
+	if ok then
+		-- Call module's "load"
 		if module_has_method(pluginenv, "load") then
-			success, err = call_module_method(pluginenv, "load");
-			if not success then
+			ok, err = call_module_method(pluginenv, "load");
+			if not ok then
 				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
 			end
 		end
 
-		-- Use modified host, if the module set one
-		if api_instance.host == "*" and host ~= "*" then
-			modulemap[host][module_name] = nil;
-			modulemap["*"][module_name] = pluginenv;
-			api_instance:set_global();
-		end
-	else
-		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
-	end
-	if success then
-		(hosts[api_instance.host] or prosody).events.fire_event("module-loaded", { module = module_name, host = host });
-		return true;
-	else -- load failed, unloading
-		unload(api_instance.host, module_name);
-		return nil, err;
-	end
-end
-
-function get_module(host, name)
-	return modulemap[host] and modulemap[host][name];
-end
-
-function is_loaded(host, name)
-	return modulemap[host] and modulemap[host][name] and true;
-end
-
-function unload(host, name, ...)
-	local mod = get_module(host, name);
-	if not mod then return nil, "module-not-loaded"; end
-	
-	if module_has_method(mod, "unload") then
-		local ok, err = call_module_method(mod, "unload");
-		if (not ok) and err then
-			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
-		end
-	end
-	-- unhook event handlers hooked by module:hook
-	for event, handlers in pairs(hooks:get(host, name) or NULL) do
-		for handler in pairs(handlers or NULL) do
-			(hosts[host] or prosody).events.remove_handler(event, handler);
-		end
-	end
-	-- unhook event handlers hooked by module:hook_global
-	for event, handlers in pairs(hooks:get("*", name) or NULL) do
-		for handler in pairs(handlers or NULL) do
-			prosody.events.remove_handler(event, handler);
-		end
-	end
-	hooks:remove(host, name);
-	if mod.module.items then -- remove items
-		for key,t in pairs(mod.module.items) do
-			for i = #t,1,-1 do
-				local value = t[i];
-				t[i] = nil;
-				hosts[host].events.fire_event("item-removed/"..key, {source = mod.module, item = value});
+		modulemap[api_instance.host][module_name] = pluginenv;
+		if api_instance.host == "*" then
+			if not api_instance.global then -- COMPAT w/pre-0.9
+				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+				api_instance:set_global();
+			end
+			if host ~= api_instance.host and module_has_method(pluginenv, "add_host") then
+				-- Now load the module again onto the host it was originally being loaded on
+				ok, err = do_load_module(host, module_name);
 			end
 		end
 	end
-	modulemap[host][name] = nil;
-	(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
-	return true;
+	if not ok then
+		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
+	end
+	return ok and pluginenv, err;
 end
 
-function reload(host, name, ...)
+local function do_reload_module(host, name)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 
@@ -209,7 +208,6 @@ function reload(host, name, ...)
 	end
 
 	local saved;
-
 	if module_has_method(mod, "save") then
 		local ok, ret, err = call_module_method(mod, "save");
 		if ok then
@@ -225,8 +223,8 @@ function reload(host, name, ...)
 		end
 	end
 
-	unload(host, name, ...);
-	local ok, err = load(host, name, ...);
+	do_unload_module(host, name);
+	local ok, err = do_load_module(host, name);
 	if ok then
 		mod = get_module(host, name);
 		if module_has_method(mod, "restore") then
@@ -235,231 +233,62 @@ function reload(host, name, ...)
 				log("warn", "Error restoring module '%s' from '%s': %s", name, host, err);
 			end
 		end
-		return true;
+	end
+	return ok and mod, err;
+end
+
+--- Public API ---
+
+-- Load a module and fire module-loaded event
+function load(host, name)
+	local mod, err = do_load_module(host, name);
+	if mod then
+		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = host });
+	end
+	return mod, err;
+end
+
+-- Unload a module and fire module-unloaded
+function unload(host, name)
+	local ok, err = do_unload_module(host, name);
+	if ok then
+		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	end
 	return ok, err;
 end
 
+function reload(host, name)
+	local ok, err = do_reload_module(host, name);
+	if ok then
+		(hosts[host] or prosody).events.fire_event("module-reloaded", { module = name, host = host });
+	elseif not is_loaded(host, name) then
+		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
+	end
+	return ok, err;
+end
+
+function get_module(host, name)
+	return modulemap[host] and modulemap[host][name];
+end
+
+function get_modules(host)
+	return modulemap[host];
+end
+
+function is_loaded(host, name)
+	return modulemap[host] and modulemap[host][name] and true;
+end
+
 function module_has_method(module, method)
-	return type(module.module[method]) == "function";
+	return type(rawget(module.module, method)) == "function";
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then
-		local f = module.module[method];
+	local f = rawget(module.module, method);
+	if type(f) == "function" then
 		return pcall(f, ...);
 	else
 		return false, "no-such-method";
-	end
-end
-
------ API functions exposed to modules -----------
--- Must all be in api.*
-
--- Returns the name of the current module
-function api:get_name()
-	return self.name;
-end
-
--- Returns the host that the current module is serving
-function api:get_host()
-	return self.host;
-end
-
-function api:get_host_type()
-	return hosts[self.host].type;
-end
-
-function api:set_global()
-	self.host = "*";
-	-- Update the logger
-	local _log = logger.init("mod_"..self.name);
-	self.log = function (self, ...) return _log(...); end;
-	self._log = _log;
-end
-
-function api:add_feature(xmlns)
-	self:add_item("feature", xmlns);
-end
-function api:add_identity(category, type, name)
-	self:add_item("identity", {category = category, type = type, name = name});
-end
-function api:add_extension(data)
-	self:add_item("extension", data);
-end
-
-function api:fire_event(...)
-	return (hosts[self.host] or prosody).events.fire_event(...);
-end
-
-function api:hook(event, handler, priority)
-	hooks:set(self.host, self.name, event, handler, true);
-	(hosts[self.host] or prosody).events.add_handler(event, handler, priority);
-end
-
-function api:hook_global(event, handler, priority)
-	hooks:set("*", self.name, event, handler, true);
-	prosody.events.add_handler(event, handler, priority);
-end
-
-function api:hook_stanza(xmlns, name, handler, priority)
-	if not handler and type(name) == "function" then
-		-- If only 2 options then they specified no xmlns
-		xmlns, name, handler, priority = nil, xmlns, name, handler;
-	elseif not (handler and name) then
-		self:log("warn", "Error: Insufficient parameters to module:hook_stanza()");
-		return;
-	end
-	return api.hook(self, "stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
-end
-
-function api:require(lib)
-	local f, n = pluginloader.load_code(self.name, lib..".lib.lua");
-	if not f then
-		f, n = pluginloader.load_code(lib, lib..".lib.lua");
-	end
-	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
-	setfenv(f, self.environment);
-	return f();
-end
-
-function api:get_option(name, default_value)
-	local value = config.get(self.host, self.name, name);
-	if value == nil then
-		value = config.get(self.host, "core", name);
-		if value == nil then
-			value = default_value;
-		end
-	end
-	return value;
-end
-
-function api:get_option_string(name, default_value)
-	local value = self:get_option(name, default_value);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	if value == nil then
-		return nil;
-	end
-	return tostring(value);
-end
-
-function api:get_option_number(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	local ret = tonumber(value);
-	if value ~= nil and ret == nil then
-		self:log("error", "Config option '%s' not understood, expecting a number", name);
-	end
-	return ret;
-end
-
-function api:get_option_boolean(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
-	if value == nil then
-		return nil;
-	end
-	local ret = value == true or value == "true" or value == 1 or nil;
-	if ret == nil then
-		ret = (value == false or value == "false" or value == 0);
-		if ret then
-			ret = false;
-		else
-			ret = nil;
-		end
-	end
-	if ret == nil then
-		self:log("error", "Config option '%s' not understood, expecting true/false", name);
-	end
-	return ret;
-end
-
-function api:get_option_array(name, ...)
-	local value = self:get_option(name, ...);
-
-	if value == nil then
-		return nil;
-	end
-	
-	if type(value) ~= "table" then
-		return array{ value }; -- Assume any non-list is a single-item list
-	end
-	
-	return array():append(value); -- Clone
-end
-
-function api:get_option_set(name, ...)
-	local value = self:get_option_array(name, ...);
-	
-	if value == nil then
-		return nil;
-	end
-	
-	return set.new(value);
-end
-
-local t_remove = _G.table.remove;
-local module_items = multitable_new();
-function api:add_item(key, value)
-	self.items = self.items or {};
-	self.items[key] = self.items[key] or {};
-	t_insert(self.items[key], value);
-	self:fire_event("item-added/"..key, {source = self, item = value});
-end
-function api:remove_item(key, value)
-	local t = self.items and self.items[key] or NULL;
-	for i = #t,1,-1 do
-		if t[i] == value then
-			t_remove(self.items[key], i);
-			self:fire_event("item-removed/"..key, {source = self, item = value});
-			return value;
-		end
-	end
-end
-
-function api:get_host_items(key)
-	local result = {};
-	for mod_name, module in pairs(modulemap[self.host]) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
-	for mod_name, module in pairs(modulemap["*"]) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
-	return result;
-end
-
-function api:handle_items(type, added_cb, removed_cb, existing)
-	self:hook("item-added/"..type, added_cb);
-	self:hook("item-removed/"..type, removed_cb);
-	if existing ~= false then
-		for _, item in ipairs(self:get_host_items(type)) do
-			added_cb({ item = item });
-		end
 	end
 end
 
