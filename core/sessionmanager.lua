@@ -6,11 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
 local ipairs, pairs, print, next= ipairs, pairs, print, next;
-local format = string.format;
 
 local hosts = hosts;
 local full_sessions = full_sessions;
@@ -19,12 +16,11 @@ local bare_sessions = bare_sessions;
 local logger = require "util.logger";
 local log = logger.init("sessionmanager");
 local error = error;
-local uuid_generate = require "util.uuid".generate;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
-local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
+local uuid_generate = require "util.uuid".generate;
 
 local initialize_filters = require "util.filters".initialize;
 local fire_event = prosody.events.fire_event;
@@ -32,8 +28,6 @@ local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
 
 local st = require "util.stanza";
-
-local c2s_timeout = config_get("*", "core", "c2s_timeout");
 
 local newproxy = newproxy;
 local getmetatable = getmetatable;
@@ -67,14 +61,6 @@ function new_session(conn)
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
-	
-	if c2s_timeout then
-		add_task(c2s_timeout, function ()
-			if session.type == "c2s_unauthed" then
-				session:close("connection-timeout");
-			end
-		end);
-	end
 		
 	return session;
 end
@@ -214,50 +200,6 @@ function bind_resource(session, resource)
 	hosts[session.host].events.fire_event("resource-bind", {session=session});
 	
 	return true;
-end
-
-function streamopened(session, attr)
-	local send = session.send;
-	session.host = attr.to;
-	if not session.host then
-		session:close{ condition = "improper-addressing",
-			text = "A 'to' attribute is required on stream headers" };
-		return;
-	end
-	session.host = nameprep(session.host);
-	session.version = tonumber(attr.version) or 0;
-	session.streamid = uuid_generate();
-	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
-
-	if not hosts[session.host] then
-		-- We don't serve this host...
-		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
-		return;
-	end
-
-	send("<?xml version='1.0'?>");
-	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
-
-	(session.log or log)("debug", "Sent reply <stream:stream> to client");
-	session.notopen = nil;
-
-	-- If session.secure is *false* (not nil) then it means we /were/ encrypting
-	-- since we now have a new stream header, session is secured
-	if session.secure == false then
-		session.secure = true;
-	end
-
-	local features = st.stanza("stream:features");
-	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-	fire_event("stream-features", session, features);
-
-	send(features);
-
-end
-
-function streamclosed(session)
-	session.log("debug", "Received </stream:stream>");
-	session:close();
 end
 
 function send_to_available_resources(user, host, stanza)

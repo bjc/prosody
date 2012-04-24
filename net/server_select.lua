@@ -202,6 +202,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		socket:close( )
 		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
+		_server[ip..":"..serverport] = nil;
 		_socketlist[ socket ] = nil
 		handler = nil
 		socket = nil

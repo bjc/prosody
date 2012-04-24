@@ -23,7 +23,7 @@ local prosody = _G.prosody;
 
 function new_default_provider(host)
 	local provider = { name = "internal_plain" };
-	log("debug", "initializing default authentication provider for host '%s'", host);
+	log("debug", "initializing internal_plain authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
 		log("debug", "test password '%s' for user %s at host %s", password, username, module.host);
