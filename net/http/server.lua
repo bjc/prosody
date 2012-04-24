@@ -26,7 +26,6 @@ local function is_wildcard_event(event)
 	return event:sub(-2, -1) == "/*";
 end
 local function is_wildcard_match(wildcard_event, event)
-	log("debug", "comparing %q with %q", wildcard_event:sub(1, -2), event:sub(1, #wildcard_event-1));
 	return wildcard_event:sub(1, -2) == event:sub(1, #wildcard_event-1);
 end
 
