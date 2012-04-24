@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local debug = require "util.debug";
+
 module("helpers", package.seeall);
 
 -- Helper functions for debugging
@@ -29,6 +31,33 @@ end
 
 function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
+end
+
+function show_events(events)
+	local event_handlers = events._handlers;
+	local events_array = {};
+	local event_handler_arrays = {};
+	for event in pairs(events._event_map) do
+		local handlers = event_handlers[event];
+		table.insert(events_array, event);
+		local handler_strings = {};
+		for i, handler in ipairs(handlers) do
+			local upvals = debug.string_from_var_table(debug.get_upvalues_table(handler));
+			handler_strings[i] = "  "..i..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
+		end
+		event_handler_arrays[event] = handler_strings;
+	end
+	table.sort(events_array);
+	local i = 1;
+	repeat
+		local handlers = event_handler_arrays[events_array[i]];
+		for j=#handlers, 1, -1 do
+			table.insert(events_array, i+1, handlers[j]);
+		end
+		if i > 1 then events_array[i] = "\n"..events_array[i]; end
+		i = i + #handlers + 1
+	until i == #events_array;
+	return table.concat(events_array, "\n");
 end
 
 function get_upvalue(f, get_name)
