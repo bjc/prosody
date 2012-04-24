@@ -126,9 +126,7 @@ function deactivate(service_name)
 	if not active then return; end
 	for interface, ports in pairs(active) do
 		for port, active_service in pairs(ports) do
-			active_service:close();
-			active_services:remove(service_name, interface, port, active_service);
-			log("debug", "Removed listening service %s from [%s]:%d", service_name, interface, port);
+			close(interface, port);
 		end
 	end
 	log("info", "Deactivated service '%s'", service_name);
@@ -163,6 +161,22 @@ function unregister_service(service_name, service_info)
 		end
 	end
 	fire_event("service-removed", { name = service_name, service = service_info });
+end
+
+function close(interface, port)
+	local service, server = get_service_at(interface, port);
+	if not service then
+		return false, "port-not-open";
+	end
+	server:close();
+	active_services:remove(service.name, interface, port);
+	log("debug", "Removed listening service %s from [%s]:%d", service.name, interface, port);
+	return true;
+end
+
+function get_service_at(interface, port)
+	local data = active_services:search(nil, interface, port)[1][1];
+	return data.service, data.server;
 end
 
 function get_service(service_name)
