@@ -168,19 +168,27 @@ function handle_request(conn, request, finish_cb)
 			host = host:match("[^:]*"):lower();
 			local event = request.method.." "..host..request.path:match("[^?]*");
 			local payload = { request = request, response = response };
-			--[[repeat
-				if events.fire_event(event, payload) ~= nil then return; end
-				event = (event:sub(-1) == "/") and event:sub(1, -1) or event:gsub("[^/]*$", "");
-				if event:sub(-1) == "/" then
-					event = event:sub(1, -1);
-				else
-					event = event:gsub("[^/]*$", "");
+			--log("debug", "Firing event: %s", event);
+			local result = events.fire_event(event, payload);
+			if result ~= nil then
+				if result ~= true then
+					local code, body = 200, "";
+					local result_type = type(result);
+					if result_type == "number" then
+						response.status_code = result;
+					elseif result_type == "string" then
+						body = result;
+					elseif result_type == "table" then
+						body = result.body;
+						result.body = nil;
+						for k, v in pairs(result) do
+							response[k] = v;
+						end
+					end
+					response:send(body);
 				end
-			until not event:find("/", 1, true);]]
-			--log("debug", "Event: %s", event);
-			if events.fire_event(event, payload) ~= nil then return; end
-			-- TODO try adding/stripping / at the end, but this needs to work via an HTTP redirect
-			if events.fire_event("*", payload) ~= nil then return; end
+				return;
+			end
 		end
 
 		-- if handler not called, fallback to legacy httpserver handlers
