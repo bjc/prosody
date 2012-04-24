@@ -19,10 +19,11 @@ end
 
 local function get_http_event(host, app_path, key)
 	local method, path = key:match("^(%S+)%s+(.+)$");
-	if not method and key:sub(1,1) == "/" then
+	if not method then
+		if key:sub(1,1) ~= "/" then
+			return nil;
+		end
 		method, path = "GET", key;
-	else
-		return nil;
 	end
 	path = normalize_path(path);
 	return method:upper().." "..host..app_path..path;
