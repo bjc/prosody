@@ -57,6 +57,7 @@ function handlers.get_items(origin, stanza, items)
 	for _, entry in pairs(results) do
 		data:add_child(entry);
 	end
+	local reply;
 	if data then
 		reply = st.reply(stanza)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
