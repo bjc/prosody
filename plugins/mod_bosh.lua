@@ -123,10 +123,10 @@ function handle_request(method, body, request)
 	
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
-	-- In particular, the streamopened() stream callback is where
-	-- much of the session logic happens, because it's where we first
-	-- get to see the 'sid' of this request.
-	stream:feed(body);
+	local ok, err = stream:feed(body);
+	if not ok then
+		log("error", "Failed to parse BOSH payload: %s", err);
+	end
 	
 	-- Stanzas (if any) in the request have now been processed, and
 	-- we take care of the high-level BOSH logic here, including

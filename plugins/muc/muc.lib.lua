@@ -138,7 +138,7 @@ function room_mt:broadcast_message(stanza, historic)
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 		local entry = { stanza = stanza, stamp = stamp };
 		t_insert(history, entry);
-		while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
+		while #history > self._data.history_length do t_remove(history, 1) end
 	end
 end
 function room_mt:broadcast_except_nick(stanza, nick)
@@ -339,6 +339,21 @@ end
 function room_mt:get_changesubject()
 	return self._data.changesubject;
 end
+function room_mt:get_historylength()
+	return self._data.history_length
+end
+function room_mt:set_historylength(length)
+	if tonumber(length) == nil then
+		return
+	end
+	length = tonumber(length);
+	log("debug", "max_history_length %s", self._data.max_history_length or "nil");
+	if self._data.max_history_length and length > self._data.max_history_length then
+		length = self._data.max_history_length
+	end
+	self._data.history_length = length;
+end
+
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -608,6 +623,12 @@ function room_mt:get_form_layout()
 			type = 'boolean',
 			label = 'Make Room Members-Only?',
 			value = self:is_members_only()
+		},
+		{
+			name = 'muc#roomconfig_historylength',
+			type = 'text-single',
+			label = 'Maximum Number of History Messages Returned by Room',
+			value = tostring(self:get_historylength())
 		}
 	});
 end
@@ -659,6 +680,11 @@ function room_mt:process_form(origin, stanza)
 	dirty = dirty or (self:get_changesubject() ~= (not changesubject and true or nil))
 	module:log('debug', 'changesubject=%s', changesubject and "true" or "false")
 
+	local historylength = fields['muc#roomconfig_historylength'];
+	dirty = dirty or (self:get_historylength() ~= (historylength and true or nil))
+	module:log('debug', 'historylength=%s', historylength)
+
+
 	local whois = fields['muc#roomconfig_whois'];
 	if not valid_whois[whois] then
 	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request', "Invalid value for 'whois'"));
@@ -677,6 +703,7 @@ function room_mt:process_form(origin, stanza)
 	self:set_persistent(persistent);
 	self:set_hidden(not public);
 	self:set_changesubject(changesubject);
+	self:set_historylength(historylength);
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
@@ -848,7 +875,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					origin.send(st.error_reply(stanza, "cancel", "forbidden"));
 				end
 			else
-				self:broadcast_message(stanza, true);
+				self:broadcast_message(stanza, self:get_historylength() > 0);
 			end
 			stanza.attr.from = from;
 		end
@@ -1102,7 +1129,8 @@ function _M.new_room(jid, config)
 		_occupants = {};
 		_data = {
 		    whois = 'moderators';
-		    history_length = (config and config.history_length);
+		    history_length = (config and config.max_history_length) or default_history_length;
+		    max_history_length = (config and config.max_history_length) or default_history_length;
 		};
 		_affiliations = {};
 	}, room_mt);

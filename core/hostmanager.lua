@@ -12,6 +12,7 @@ local events_new = require "util.events".new;
 local disco_items = require "util.multitable".new();
 local NULL = {};
 
+local jid_split = require "util.jid".split;
 local uuid_gen = require "util.uuid".generate;
 
 local log = require "util.logger".init("hostmanager");
@@ -23,7 +24,7 @@ if not _G.prosody.incoming_s2s then
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
-local pairs, setmetatable = pairs, setmetatable;
+local pairs, setmetatable, select = pairs, setmetatable, select;
 local tostring, type = tostring, type;
 
 module "hostmanager"

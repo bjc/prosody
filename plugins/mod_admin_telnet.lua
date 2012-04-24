@@ -498,6 +498,24 @@ function def_env.c2s:close(match_jid)
 	return true, "Total: "..count.." sessions closed";
 end
 
+local function session_flags(session, line)
+	if session.cert_identity_status == "valid" then
+		line[#line+1] = "(secure)";
+	elseif session.secure then
+		line[#line+1] = "(encrypted)";
+	end
+	if session.compressed then
+		line[#line+1] = "(compressed)";
+	end
+	if session.smacks then
+		line[#line+1] = "(sm)";
+	end
+	if session.conn and session.conn:ip():match(":") then
+		line[#line+1] = "(IPv6)";
+	end
+	return table.concat(line, " ");
+end
+
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
 	local _print = self.session.print;
@@ -510,7 +528,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print(session_flags(session, {"   ", host, "->", remotehost}));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -547,7 +565,7 @@ function def_env.s2s:show(match_jid)
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print(session_flags(session, {"   ", host, "<-", session.from_host or "(unknown)"}));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end

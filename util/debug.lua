@@ -7,7 +7,21 @@ local censored_names = {
 	pass = true;
 	pwd = true;
 };
+local optimal_line_length = 65;
 
+local termcolours = require "util.termcolours";
+local getstring = termcolours.getstring;
+local styles;
+do
+	_ = termcolours.getstyle;
+	styles = {
+		boundary_padding = _("bright", "white");
+		filename         = _("bright", "blue");
+		level_num        = _("green");
+		funcname         = _("yellow");
+		location         = _("yellow");
+	};
+end
 module("debugx", package.seeall);
 
 function get_locals_table(level)
@@ -90,30 +104,51 @@ function get_traceback_table(thread, start_level)
 	return levels;
 end
 
-function traceback(thread, message, level)
+function traceback(...)
+	local ok, ret = pcall(_traceback, ...);
+	if not ok then
+		return "Error in error handling: "..ret;
+	end
+	return ret;
+end
+
+local function build_source_boundary_marker(last_source_desc)
+	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
+	return getstring(styles.boundary_padding, "v"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
+end
+
+function _traceback(thread, message, level)
+
 	if type(thread) ~= "thread" then
 		thread, message, level = coroutine.running(), thread, message;
 	end
 	if level and type(message) ~= "string" then
 		return nil, "invalid message";
 	elseif not level then
-		level = message or 2;
+		if type(message) == "number" then
+			level, message = message, nil;
+		else
+			level = 2;
+		end
 	end
 	
 	message = message and (message.."\n") or "";
 	
 	local levels = get_traceback_table(thread, level+2);
 	
+	local last_source_desc;
+	
 	local lines = {};
 	for nlevel, level in ipairs(levels) do
 		local info = level.info;
 		local line = "...";
 		local func_type = info.namewhat.." ";
+		local source_desc = (info.short_src == "[C]" and "C code") or info.short_src or "Unknown";
 		if func_type == " " then func_type = ""; end;
 		if info.short_src == "[C]" then
-			line = "[ C ] "..func_type.."C function "..(info.name and ("%q"):format(info.name) or "(unknown name)")
+			line = "[ C ] "..func_type.."C function "..getstring(styles.location, (info.name and ("%q"):format(info.name) or "(unknown name)"));
 		elseif info.what == "main" then
-			line = "[Lua] "..info.short_src.." line "..info.currentline;
+			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline);
 		else
 			local name = info.name or " ";
 			if name ~= " " then
@@ -122,20 +157,27 @@ function traceback(thread, message, level)
 			if func_type == "global " or func_type == "local " then
 				func_type = func_type.."function ";
 			end
-			line = "[Lua] "..info.short_src.." line "..info.currentline.." in "..func_type..name.." defined on line "..info.linedefined;
+			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline).." in "..func_type..getstring(styles.funcname, name).." (defined on line "..info.linedefined..")";
+		end
+		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
+			last_source_desc = source_desc;
+			table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
 		end
 		nlevel = nlevel-1;
-		table.insert(lines, "\t"..(nlevel==0 and ">" or " ").."("..nlevel..") "..line);
+		table.insert(lines, "\t"..(nlevel==0 and ">" or " ")..getstring(styles.level_num, "("..nlevel..") ")..line);
 		local npadding = (" "):rep(#tostring(nlevel));
-		local locals_str = string_from_var_table(level.locals, 65, "\t            "..npadding);
+		local locals_str = string_from_var_table(level.locals, optimal_line_length, "\t            "..npadding);
 		if locals_str then
 			table.insert(lines, "\t    "..npadding.."Locals: "..locals_str);
 		end
-		local upvalues_str = string_from_var_table(level.upvalues, 65, "\t            "..npadding);
+		local upvalues_str = string_from_var_table(level.upvalues, optimal_line_length, "\t            "..npadding);
 		if upvalues_str then
 			table.insert(lines, "\t    "..npadding.."Upvals: "..upvalues_str);
 		end
 	end
+
+--	table.insert(lines, "\t "..build_source_boundary_marker(last_source_desc));
+
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
 
