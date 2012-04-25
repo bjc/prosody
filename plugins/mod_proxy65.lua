@@ -173,4 +173,7 @@ end
 module:provides("net", {
 	default_port = 5000;
 	listener = listener;
+	multiplex = {
+		pattern = "^\5";
+	};
 });
