@@ -88,9 +88,9 @@ function get_traceback_table(thread, start_level)
 	for level = start_level, math.huge do
 		local info;
 		if thread then
-			info = debug.getinfo(thread, level);
+			info = debug.getinfo(thread, level+1);
 		else
-			info = debug.getinfo(level);
+			info = debug.getinfo(level+1);
 		end
 		if not info then break; end
 		
@@ -128,13 +128,13 @@ function _traceback(thread, message, level)
 		if type(message) == "number" then
 			level, message = message, nil;
 		else
-			level = 2;
+			level = 1;
 		end
 	end
 	
 	message = message and (message.."\n") or "";
 	
-	local levels = get_traceback_table(thread, level+2);
+	local levels = get_traceback_table(thread, level+3);
 	
 	local last_source_desc;
 	
