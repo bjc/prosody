@@ -165,8 +165,7 @@ function handle_request(method, body, request)
 			-- We're keeping this request open, to respond later
 			log("debug", "Have nothing to say, so leaving request unanswered for now");
 			if session.bosh_wait then
-				request.reply_before = os_time() + session.bosh_wait;
-				waiting_requests[request] = true;
+				waiting_requests[request] = os_time() + session.bosh_wait;
 			end
 		end
 		
@@ -399,8 +398,8 @@ function on_timer()
 	-- log("debug", "Checking for requests soon to timeout...");
 	-- Identify requests timing out within the next few seconds
 	local now = os_time() + 3;
-	for request in pairs(waiting_requests) do
-		if request.reply_before <= now then
+	for request, reply_before in pairs(waiting_requests) do
+		if reply_before <= now then
 			log("debug", "%s was soon to timeout, sending empty response", request.id);
 			-- Send empty response to let the
 			-- client know we're still here
