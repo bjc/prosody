@@ -76,13 +76,14 @@ function activate_service(service_name)
 		config_prefix = "";
 	end
 
-	local bind_interfaces = set.new(config.get("*", config_prefix.."interfaces")
+	local bind_interfaces = config.get("*", config_prefix.."interfaces")
 		or config.get("*", config_prefix.."interface") -- COMPAT w/pre-0.9
 		or (service_info.private and default_local_interfaces)
 		or config.get("*", "interfaces")
 		or config.get("*", "interface") -- COMPAT w/pre-0.9
 		or listener.default_interface -- COMPAT w/pre0.9
-		or default_interfaces);
+		or default_interfaces
+	bind_interfaces = set.new(type(bind_interfaces)~="table" and {bind_interfaces} or bind_interfaces);
 	
 	local bind_ports = set.new(config.get("*", config_prefix.."ports")
 		or service_info.default_ports
