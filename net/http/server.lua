@@ -160,9 +160,6 @@ function handle_request(conn, request, finish_cb)
 		response.headers.content_type = "text/html";
 		response:send("<html><head>400 Bad Request</head><body>400 Bad Request: No Host header.</body></html>");
 	else
-		-- TODO call handler
-		--response.headers.content_type = "text/plain";
-		--response:send("host="..(request.headers.host or "").."\npath="..request.path.."\n"..(request.body or ""));
 		local host = request.headers.host;
 		if host then
 			host = host:match("[^:]*"):lower();
@@ -191,8 +188,10 @@ function handle_request(conn, request, finish_cb)
 			end
 		end
 
-		-- if handler not called, fallback to legacy httpserver handlers
-		_M.legacy_handler(request, response);
+		-- if handler not called, return 404
+		response.status_code = 404;
+		response.headers.content_type = "text/html";
+		response:send("<html><head><title>404 Not Found</title></head><body>404 Not Found: No such page.</body></html>");
 	end
 end
 function _M.send_response(response, body)
@@ -215,58 +214,6 @@ function _M.send_response(response, body)
 		response.conn:close();
 	end
 end
-function _M.legacy_handler(request, response)
-	log("debug", "Invoking legacy handler");
-	local base = request.path:match("^/([^/?]+)");
-	local legacy_server = legacy_httpserver and legacy_httpserver.new.http_servers[5280];
-	local handler = legacy_server and legacy_server.handlers[base];
-	if not handler then handler = legacy_httpserver and legacy_httpserver.set_default_handler.default_handler; end
-	if handler then
-		-- add legacy properties to request object
-		request.url = { path = request.path };
-		request.handler = response.conn;
-		request.id = tostring{}:match("%x+$");
-		local headers = {};
-		for k,v in pairs(request.headers) do
-			headers[k:gsub("_", "-")] = v;
-		end
-		request.headers = headers;
-		function request:send(resp)
-			if self.destroyed then return; end
-			if resp.body or resp.headers then
-				if resp.headers then
-					for k,v in pairs(resp.headers) do response.headers[k] = v; end
-				end
-				response:send(resp.body)
-			else
-				response:send(resp)
-			end
-			self.sent = true;
-			self:destroy();
-		end
-		function request:destroy()
-			if self.destroyed then return; end
-			if not self.sent then return self:send(""); end
-			self.destroyed = true;
-			if self.on_destroy then
-				log("debug", "Request has destroy callback");
-				self:on_destroy();
-			else
-				log("debug", "Request has no destroy callback");
-			end
-		end
-		local r = handler(request.method, request.body, request);
-		if r ~= true then
-			request:send(r);
-		end
-	else
-		log("debug", "No handler found");
-		response.status_code = 404;
-		response.headers.content_type = "text/html";
-		response:send("<html><head><title>404 Not Found</title></head><body>404 Not Found: No such page.</body></html>");
-	end
-end
-
 function _M.add_handler(event, handler, priority)
 	events.add_handler(event, handler, priority);
 end
