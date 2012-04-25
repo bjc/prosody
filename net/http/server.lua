@@ -34,7 +34,7 @@ setmetatable(events._handlers, {
 	__index = function (handlers, curr_event)
 		if is_wildcard_event(curr_event) then return; end -- Wildcard events cannot be fired
 		-- Find all handlers that could match this event, sort them
-		-- and then put the array into handlers[event]
+		-- and then put the array into handlers[curr_event] (and return it)
 		local matching_handlers_set = {};
 		local handlers_array = {};
 		for event, handlers_set in pairs(event_map) do
