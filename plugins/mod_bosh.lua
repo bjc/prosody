@@ -79,11 +79,12 @@ local inactive_sessions = {}; -- Sessions which have no open requests
 -- Used to respond to idle sessions (those with waiting requests)
 local waiting_requests = {};
 function on_destroy_request(request)
+	log("debug", "Request destroyed: %s", tostring(request));
 	waiting_requests[request] = nil;
-	local session = sessions[request.sid];
+	local session = sessions[request.context.sid];
 	if session then
 		local requests = session.requests;
-		for i,r in ipairs(requests) do
+		for i, r in ipairs(requests) do
 			if r == request then
 				t_remove(requests, i);
 				break;
@@ -99,39 +100,39 @@ function on_destroy_request(request)
 	end
 end
 
-function handle_request(method, body, request)
-	if (not body) or request.method ~= "POST" then
-		if request.method == "OPTIONS" then
-			local headers = {};
-			for k,v in pairs(default_headers) do headers[k] = v; end
-			headers["Content-Type"] = nil;
-			return { headers = headers, body = "" };
-		else
-			return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
-		end
-	end
-	if not method then
-		log("debug", "Request %s suffered error %s", tostring(request.id), body);
-		return;
-	end
-	--log("debug", "Handling new request %s: %s\n----------", request.id, tostring(body));
-	request.notopen = true;
-	request.log = log;
-	request.on_destroy = on_destroy_request;
-	
-	local stream = new_xmpp_stream(request, stream_callbacks);
+local function handle_GET(request)
+	return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
+end
+
+function handle_OPTIONS(request)
+	local headers = {};
+	for k,v in pairs(default_headers) do headers[k] = v; end
+	headers["Content-Type"] = nil;
+	return { headers = headers, body = "" };
+end
+
+function handle_POST(event)
+	log("debug", "Handling new request %s: %s\n----------", tostring(event.request), tostring(event.request.body));
+
+	local request, response = event.request, event.response;
+	response.on_destroy = on_destroy_request;
+	local body = request.body;
+
+	local context = { request = request, response = response, notopen = true };
+	local stream = new_xmpp_stream(context, stream_callbacks);
+	response.context = context;
 	
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
-	local ok, err = stream:feed(body);
-	if not ok then
-		log("error", "Failed to parse BOSH payload: %s", err);
-	end
+	-- In particular, the streamopened() stream callback is where
+	-- much of the session logic happens, because it's where we first
+	-- get to see the 'sid' of this request.
+	stream:feed(body);
 	
 	-- Stanzas (if any) in the request have now been processed, and
 	-- we take care of the high-level BOSH logic here, including
 	-- giving a response or putting the request "on hold".
-	local session = sessions[request.sid];
+	local session = sessions[context.sid];
 	if session then
 		-- Session was marked as inactive, since we have
 		-- a request open now, unmark it
@@ -140,8 +141,11 @@ function handle_request(method, body, request)
 		end
 
 		local r = session.requests;
-		log("debug", "Session %s has %d out of %d requests open", request.sid, #r, session.bosh_hold);
-		log("debug", "and there are %d things in the send_buffer", #session.send_buffer);
+		log("debug", "Session %s has %d out of %d requests open", context.sid, #r, session.bosh_hold);
+		log("debug", "and there are %d things in the send_buffer:", #session.send_buffer);
+		for i, thing in ipairs(session.send_buffer) do
+			log("debug", "    %s", tostring(thing));
+		end
 		if #r > session.bosh_hold then
 			-- We are holding too many requests, send what's in the buffer,
 			log("debug", "We are holding too many requests, so...");
@@ -161,11 +165,11 @@ function handle_request(method, body, request)
 			session.send(resp);
 		end
 		
-		if not request.destroyed then
+		if not response.finished then
 			-- We're keeping this request open, to respond later
 			log("debug", "Have nothing to say, so leaving request unanswered for now");
 			if session.bosh_wait then
-				waiting_requests[request] = os_time() + session.bosh_wait;
+				waiting_requests[response] = os_time() + session.bosh_wait;
 			end
 		end
 		
@@ -213,11 +217,10 @@ local function bosh_close_stream(session, reason)
 		log("info", "Disconnecting client, <stream:error> is: %s", tostring(close_reply));
 	end
 
-	local session_close_response = { headers = default_headers, body = tostring(close_reply) };
-
+	local response_body = tostring(close_reply);
 	for _, held_request in ipairs(session.requests) do
-		held_request:send(session_close_response);
-		held_request:destroy();
+		held_request.headers = default_headers;
+		held_request:send(response_body);
 	end
 	sessions[session.sid]  = nil;
 	inactive_sessions[session] = nil;
@@ -225,12 +228,13 @@ local function bosh_close_stream(session, reason)
 end
 
 -- Handle the <body> tag in the request payload.
-function stream_callbacks.streamopened(request, attr)
+function stream_callbacks.streamopened(context, attr)
+	local request, response = context.request, context.response;
 	local sid = attr.sid;
 	log("debug", "BOSH body open (sid: %s)", sid or "<none>");
 	if not sid then
 		-- New session request
-		request.notopen = nil; -- Signals that we accept this opening tag
+		context.notopen = nil; -- Signals that we accept this opening tag
 		
 		-- TODO: Sanity checks here (rid, to, known host, etc.)
 		if not hosts[attr.to] then
@@ -238,7 +242,7 @@ function stream_callbacks.streamopened(request, attr)
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "host-unknown" });
-			request:send(tostring(close_reply));
+			response:send(tostring(close_reply));
 			return;
 		end
 		
@@ -258,7 +262,6 @@ function stream_callbacks.streamopened(request, attr)
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 		local r, send_buffer = session.requests, session.send_buffer;
-		local response = { headers = default_headers }
 		function session.send(s)
 			-- We need to ensure that outgoing stanzas have the jabber:client xmlns
 			if s.attr and not s.attr.xmlns then
@@ -269,25 +272,14 @@ function stream_callbacks.streamopened(request, attr)
 			local oldest_request = r[1];
 			if oldest_request and (not(auto_cork) or waiting_requests[oldest_request]) then
 				log("debug", "We have an open request, so sending on that");
-				response.body = t_concat({
+				oldest_request.headers = default_headers;
+				oldest_request:send(t_concat({
 					"<body xmlns='http://jabber.org/protocol/httpbind' ",
 					session.bosh_terminate and "type='terminate' " or "",
 					"sid='", sid, "' xmlns:stream = 'http://etherx.jabber.org/streams'>",
 					tostring(s),
 					"</body>"
-				});
-				oldest_request:send(response);
-				--log("debug", "Sent");
-				if oldest_request.stayopen then
-					if #r>1 then
-						-- Move front request to back
-						t_insert(r, oldest_request);
-						t_remove(r, 1);
-					end
-				else
-					log("debug", "Destroying the request now...");
-					oldest_request:destroy();
-				end
+				}));
 			elseif s ~= "" then
 				log("debug", "Saved to send buffer because there are %d open requests", #r);
 				-- Hmm, no requests are open :(
@@ -303,7 +295,7 @@ function stream_callbacks.streamopened(request, attr)
 		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
 		--xmpp:version='1.0' xmlns:xmpp='urn:xmpp:xbosh'
-		local response = st.stanza("body", { xmlns = xmlns_bosh,
+		local body = st.stanza("body", { xmlns = xmlns_bosh,
 			wait = attr.wait,
 			inactivity = tostring(BOSH_DEFAULT_INACTIVITY),
 			polling = tostring(BOSH_DEFAULT_POLLING),
@@ -315,7 +307,8 @@ function stream_callbacks.streamopened(request, attr)
 			["xmlns:xmpp"] = "urn:xmpp:xbosh",
 			["xmlns:stream"] = "http://etherx.jabber.org/streams"
 		}):add_child(features);
-		request:send{ headers = default_headers, body = tostring(response) };
+		response.headers = default_headers;
+		response:send(tostring(body));
 		
 		request.sid = sid;
 		return;
@@ -325,8 +318,9 @@ function stream_callbacks.streamopened(request, attr)
 	if not session then
 		-- Unknown sid
 		log("info", "Client tried to use sid '%s' which we don't know about", sid);
-		request:send{ headers = default_headers, body = tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })) };
-		request.notopen = nil;
+		response.headers = default_headers;
+		response:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
+		context.notopen = nil;
 		return;
 	end
 	
@@ -338,10 +332,10 @@ function stream_callbacks.streamopened(request, attr)
 		elseif diff <= 0 then
 			-- Repeated, ignore
 			session.log("debug", "rid repeated (on request %s), ignoring: %s (diff %d)", request.id, session.rid, diff);
-			request.notopen = nil;
-			request.ignore = true;
-			request.sid = sid;
-			t_insert(session.requests, request);
+			context.notopen = nil;
+			context.ignore = true;
+			context.sid = sid;
+			t_insert(session.requests, response);
 			return;
 		end
 		session.rid = rid;
@@ -353,9 +347,9 @@ function stream_callbacks.streamopened(request, attr)
 		session.bosh_terminate = true;
 	end
 
-	request.notopen = nil; -- Signals that we accept this opening tag
-	t_insert(session.requests, request);
-	request.sid = sid;
+	context.notopen = nil; -- Signals that we accept this opening tag
+	t_insert(session.requests, response);
+	context.sid = sid;
 
 	if session.notopen then
 		local features = st.stanza("stream:features");
@@ -366,10 +360,10 @@ function stream_callbacks.streamopened(request, attr)
 	end
 end
 
-function stream_callbacks.handlestanza(request, stanza)
-	if request.ignore then return; end
+function stream_callbacks.handlestanza(context, stanza)
+	if context.ignore then return; end
 	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
-	local session = sessions[request.sid];
+	local session = sessions[context.sid];
 	if session then
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
@@ -378,14 +372,17 @@ function stream_callbacks.handlestanza(request, stanza)
 	end
 end
 
-function stream_callbacks.error(request, error)
+function stream_callbacks.error(context, error)
 	log("debug", "Error parsing BOSH request payload; %s", error);
-	if not request.sid then
-		request:send({ headers = default_headers, status = "400 Bad Request" });
+	if not context.sid then
+		local response = context.response;
+		response.headers = default_headers;
+		response.status_code = 400;
+		request:send();
 		return;
 	end
 	
-	local session = sessions[request.sid];
+	local session = sessions[context.sid];
 	if error == "stream-error" then -- Remote stream error, we close normally
 		session:close();
 	else
@@ -400,11 +397,11 @@ function on_timer()
 	local now = os_time() + 3;
 	for request, reply_before in pairs(waiting_requests) do
 		if reply_before <= now then
-			log("debug", "%s was soon to timeout, sending empty response", request.id);
+			log("debug", "%s was soon to timeout (at %d, now %d), sending empty response", tostring(request), reply_before, now);
 			-- Send empty response to let the
 			-- client know we're still here
 			if request.conn then
-				sessions[request.sid].send("");
+				sessions[request.context.sid].send("");
 			end
 		end
 	end
@@ -428,15 +425,16 @@ function on_timer()
 	end
 	return 1;
 end
+module:add_timer(1, on_timer);
 
-
-local function setup()
-	local ports = module:get_option_array("bosh_ports") or { 5280 };
-	httpserver.new_from_config(ports, handle_request, { base = "http-bind" });
-	timer.add_task(1, on_timer);
-end
-if prosody.start_time then -- already started
-	setup();
-else
-	prosody.events.add_handler("server-started", setup);
+function module.add_host(module)
+	module:depends("http");
+	module:provides("http", {
+		default_path = "/http-bind";
+		route = {
+			["GET /"] = handle_GET;
+			["OPTIONS /"] = handle_OPTIONS;
+			["POST /"] = handle_POST;
+		};
+	});
 end
