@@ -117,6 +117,11 @@ function listener.onconnect(conn)
 end
 
 function listener.ondisconnect(conn)
+	local open_response = conn._http_open_response;
+	if open_response and open_response.on_destroy then
+		open_response.finished = true;
+		open_response:on_destroy();
+	end
 	sessions[conn] = nil;
 end
 
@@ -154,6 +159,7 @@ function handle_request(conn, request, finish_cb)
 		send = _M.send_response;
 		finish_cb = finish_cb;
 	};
+	conn._http_open_response = response;
 
 	if not request.headers.host then
 		response.status_code = 400;
@@ -195,6 +201,10 @@ function handle_request(conn, request, finish_cb)
 	end
 end
 function _M.send_response(response, body)
+	if response.finished then return; end
+	response.finished = true;
+	response.conn._http_open_response = nil;
+	
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
 	body = body or "";
@@ -208,6 +218,10 @@ function _M.send_response(response, body)
 	t_insert(output, body);
 
 	response.conn:write(t_concat(output));
+	if response.on_destroy then
+		response:on_destroy();
+		response.on_destroy = nil;
+	end
 	if headers.connection == "Keep-Alive" then
 		response:finish_cb();
 	else
