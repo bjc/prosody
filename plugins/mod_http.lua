@@ -8,7 +8,6 @@
 
 module:set_global();
 
-local parse_url = require "socket.url".parse;
 local server = require "net.http.server";
 
 local function normalize_path(path)
