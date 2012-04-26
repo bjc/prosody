@@ -41,7 +41,7 @@ setmetatable(events._handlers, {
 			if event == curr_event or
 			is_wildcard_event(event) and is_wildcard_match(event, curr_event) then
 				for handler, priority in pairs(handlers_set) do
-					matching_handlers_set[handler] = { (select(2, event:gsub("/", "%1"))), priority };
+					matching_handlers_set[handler] = { (select(2, event:gsub("/", "%1"))), is_wildcard_event(event) and 0 or 1, priority };
 					table.insert(handlers_array, handler);
 				end
 			end
