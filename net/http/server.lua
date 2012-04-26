@@ -50,7 +50,7 @@ setmetatable(events._handlers, {
 		table.sort(handlers_array, function(b, a)
 			local a_score, b_score = matching_handlers_set[a], matching_handlers_set[b];
 			for i = 1, #a_score do
-				if a ~= b then -- If equal, compare next score value
+				if a_score[i] ~= b_score[i] then -- If equal, compare next score value
 					return a_score[i] < b_score[i];
 				end
 			end
