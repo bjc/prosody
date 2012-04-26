@@ -53,7 +53,6 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							else
 								method, path, httpversion = line:match("^(%w+) (%S+) HTTP/(1%.[01])$");
 								if not method then error = true; return error_cb("invalid-status-line"); end
-								path = path:gsub("^//+", "/"); -- TODO parse url more
 							end
 						end
 					end
@@ -71,6 +70,12 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							responseheaders = headers;
 						};
 					else
+						-- path normalization
+						if path:match("^https?://") then
+							headers.host, path = path:match("^https?://([^/]*)(.*)");
+						end
+						path = path:gsub("^//+", "/"); -- TODO parse url more
+
 						len = len or 0;
 						packet = {
 							method = method;
