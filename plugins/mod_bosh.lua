@@ -101,7 +101,10 @@ function on_destroy_request(request)
 end
 
 local function handle_GET(request)
-	return "<html><body>You really don't look like a BOSH client to me... what do you want?</body></html>";
+	return [[<html><body>
+	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
+	<p>For more information see <a href="http://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+</body></html>]];
 end
 
 function handle_OPTIONS(request)
