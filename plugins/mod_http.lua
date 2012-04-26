@@ -57,7 +57,7 @@ function module.add_host(module)
 				end
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = handler;
-					server.add_handler(event_name, handler);
+					module:hook_object_event(server, event_name, handler);
 				else
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
 				end
@@ -71,7 +71,7 @@ function module.add_host(module)
 		local app_handlers = apps[event.item.name];
 		apps[event.item.name] = nil;
 		for event, handler in pairs(app_handlers) do
-			server.remove_handler(event, handler);
+			module:unhook_object_event(server, event, handler);
 		end
 	end
 	
