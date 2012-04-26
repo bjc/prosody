@@ -241,4 +241,5 @@ end
 
 _M.listener = listener;
 _M.codes = codes;
+_M._events = events;
 return _M;
