@@ -58,6 +58,7 @@ function serve_file(event, path)
 	end
 	local f, err = open(full_path, "rb");
 	if not f then
+		module:log("warn", "Failed to open file: %s", err);
 		return 404;
 	end
 	local data = f:read("*a");
