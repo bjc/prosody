@@ -33,30 +33,32 @@ function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
 end
 
-function show_events(events)
+function show_events(events, specific_event)
 	local event_handlers = events._handlers;
 	local events_array = {};
 	local event_handler_arrays = {};
 	for event in pairs(events._event_map) do
 		local handlers = event_handlers[event];
-		table.insert(events_array, event);
-		local handler_strings = {};
-		for i, handler in ipairs(handlers) do
-			local upvals = debug.string_from_var_table(debug.get_upvalues_table(handler));
-			handler_strings[i] = "  "..i..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
+		if handlers and (event == specific_event or not specific_event) then
+			table.insert(events_array, event);
+			local handler_strings = {};
+			for i, handler in ipairs(handlers) do
+				local upvals = debug.string_from_var_table(debug.get_upvalues_table(handler));
+				handler_strings[i] = "  "..i..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
+			end
+			event_handler_arrays[event] = handler_strings;
 		end
-		event_handler_arrays[event] = handler_strings;
 	end
 	table.sort(events_array);
 	local i = 1;
-	repeat
+	while i <= #events_array do
 		local handlers = event_handler_arrays[events_array[i]];
 		for j=#handlers, 1, -1 do
 			table.insert(events_array, i+1, handlers[j]);
 		end
 		if i > 1 then events_array[i] = "\n"..events_array[i]; end
 		i = i + #handlers + 1
-	until i == #events_array;
+	end
 	return table.concat(events_array, "\n");
 end
 
