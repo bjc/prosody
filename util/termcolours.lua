@@ -9,6 +9,7 @@
 
 local t_concat, t_insert = table.concat, table.insert;
 local char, format = string.char, string.format;
+local tonumber = tonumber;
 local ipairs = ipairs;
 local io_write = io.write;
 
@@ -33,6 +34,15 @@ local winstylemap = {
 	["1;33"] = 2+4+8, -- bold yellow
 	["1;31"] = 4+8 -- bold red
 }
+
+local cssmap = {
+	[1] = "font-weight: bold", [2] = "opacity: 0.5", [4] = "text-decoration: underline", [8] = "visibility: hidden",
+	[30] = "color:black", [31] = "color:red", [32]="color:green", [33]="color:#FFD700",
+	[34] = "color:blue", [35] = "color: magenta", [36] = "color:cyan", [37] = "color: white",
+	[40] = "background-color:black", [41] = "background-color:red", [42]="background-color:green",
+	[43]="background-color:yellow",	[44] = "background-color:blue", [45] = "background-color: magenta",
+	[46] = "background-color:cyan", [47] = "background-color: white";
+};
 
 local fmt_string = char(0x1B).."[%sm%s"..char(0x1B).."[0m";
 function getstring(style, text)
@@ -74,6 +84,19 @@ if windows then
 	if not orig_color then
 		function setstyle(style) end
 	end
+end
+
+local function ansi2css(ansi_codes)
+	if ansi_codes == "0" then return "</span>"; end
+	local css = {};
+	for code in ansi_codes:gmatch("[^;]+") do
+		t_insert(css, cssmap[tonumber(code)]);
+	end
+	return "</span><span style='"..t_concat(css, ";").."'>";
+end
+
+function tohtml(input)
+	return input:gsub("\027%[(.-)m", ansi2css);
 end
 
 return _M;
