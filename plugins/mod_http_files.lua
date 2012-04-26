@@ -25,31 +25,9 @@ local mime_map = {
 	css = "text/css";
 };
 
-local function preprocess_path(path)
-	if path:sub(1,1) ~= "/" then
-		path = "/"..path;
-	end
-	local level = 0;
-	for component in path:gmatch("([^/]+)/") do
-		if component == ".." then
-			level = level - 1;
-		elseif component ~= "." then
-			level = level + 1;
-		end
-		if level < 0 then
-			return nil;
-		end
-	end
-	return path;
-end
-
 function serve_file(event, path)
 	local response = event.response;
-	path = path and preprocess_path(path);
-	if not path then
-		return 400;
-	end
-	local full_path = http_base..path;
+	local full_path = http_base.."/"..path;
 	if stat(full_path, "mode") == "directory" then
 		if stat(full_path.."/index.html", "mode") == "file" then
 			return serve_file(event, path.."/index.html");
