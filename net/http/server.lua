@@ -1,6 +1,7 @@
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local parser_new = require "net.http.parser".new;
+local url_parse = require "socket.url".parse;
 local events = require "util.events".new();
 local addserver = require "net.server".addserver;
 local log = require "util.logger".init("http.server");
@@ -101,6 +102,9 @@ function listener.onconnect(conn)
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
 		request.secure = secure;
+		local parsed_dest = url_parse(request.path);
+		request.url = parsed_dest;
+		request.path = parsed_dest.path;
 		t_insert(pending, request);
 		if not waiting then
 			process_next();
