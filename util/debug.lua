@@ -15,7 +15,7 @@ local styles;
 do
 	_ = termcolours.getstyle;
 	styles = {
-		boundary_padding = _("bright", "white");
+		boundary_padding = _("bright");
 		filename         = _("bright", "blue");
 		level_num        = _("green");
 		funcname         = _("yellow");
