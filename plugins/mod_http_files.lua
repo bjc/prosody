@@ -12,7 +12,7 @@ local lfs = require "lfs";
 local open = io.open;
 local stat = lfs.attributes;
 
-local http_base = module:get_option_string("http_path", "www_files");
+local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
 
 -- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
 local mime_map = {
