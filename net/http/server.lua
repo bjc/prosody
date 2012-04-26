@@ -170,10 +170,17 @@ function handle_request(conn, request, finish_cb)
 	};
 	conn._http_open_response = response;
 
+	local err;
 	if not request.headers.host then
+		err = "No 'Host' header";
+	elseif not request.path then
+		err = "Invalid path";
+	end
+	
+	if err then
 		response.status_code = 400;
 		response.headers.content_type = "text/html";
-		response:send(events.fire_event("http-error", { code = 400, message = "No 'Host' header" }));
+		response:send(events.fire_event("http-error", { code = 400, message = err }));
 	else
 		local host = request.headers.host;
 		if host then
