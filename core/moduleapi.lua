@@ -73,6 +73,10 @@ function api:hook_object_event(object, event, handler, priority)
 	return object.add_handler(event, handler, priority);
 end
 
+function api:unhook_object_event(event, handler)
+	return object.remove_handler(event, handler);
+end
+
 function api:hook(event, handler, priority)
 	return self:hook_object_event((hosts[self.host] or prosody).events, event, handler, priority);
 end
