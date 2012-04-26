@@ -76,7 +76,12 @@ setmetatable(events._handlers, {
 local handle_request;
 local _1, _2, _3;
 local function _handle_request() return handle_request(_1, _2, _3); end
-local function _traceback_handler(err) log("error", "Traceback[http]: %s: %s", tostring(err), debug.traceback()); end
+
+local last_err;
+local function _traceback_handler(err) last_err = err; log("error", "Traceback[http]: %s: %s", tostring(err), debug.traceback()); end
+events.add_handler("http-error", function (error)
+	return "Error processing request: "..codes[error.code]..". Check your error log for more information.";
+end, -1);
 
 function listener.onconnect(conn)
 	local secure = conn:ssl() and true or nil;
@@ -91,7 +96,7 @@ function listener.onconnect(conn)
 			--handle_request(conn, request, process_next);
 			_1, _2, _3 = conn, request, process_next;
 			if not xpcall(_handle_request, _traceback_handler) then
-				conn:write("HTTP/1.0 503 Internal Server Error\r\n\r\nAn error occured during the processing of this request.");
+				conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = last_err }));
 				conn:close();
 			end
 		else
@@ -168,7 +173,7 @@ function handle_request(conn, request, finish_cb)
 	if not request.headers.host then
 		response.status_code = 400;
 		response.headers.content_type = "text/html";
-		response:send("<html><head>400 Bad Request</head><body>400 Bad Request: No Host header.</body></html>");
+		response:send(events.fire_event("http-error", { code = 400, message = "No 'Host' header" }));
 	else
 		local host = request.headers.host;
 		if host then
@@ -183,6 +188,9 @@ function handle_request(conn, request, finish_cb)
 					local result_type = type(result);
 					if result_type == "number" then
 						response.status_code = result;
+						if result >= 400 then
+							body = events.fire_event("http-error", { code = result });
+						end
 					elseif result_type == "string" then
 						body = result;
 					elseif result_type == "table" then
@@ -201,7 +209,7 @@ function handle_request(conn, request, finish_cb)
 		-- if handler not called, return 404
 		response.status_code = 404;
 		response.headers.content_type = "text/html";
-		response:send("<html><head><title>404 Not Found</title></head><body>404 Not Found: No such page.</body></html>");
+		response:send(events.fire_event("http-error", { code = 404 }));
 	end
 end
 function _M.send_response(response, body)
