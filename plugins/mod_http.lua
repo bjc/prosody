@@ -29,6 +29,12 @@ local function get_http_event(host, app_path, key)
 	return method:upper().." "..host..app_path..path;
 end
 
+local function get_base_path(host_module, app_name, default_app_path)
+	return host_module:get_option("http_paths", {})[app_name] -- Host
+		or module:get_option("http_paths", {})[app_name] -- Global
+		or default_app_path; -- Default
+end
+
 function module.add_host(module)
 	local host = module.host;
 	local apps = {};
@@ -36,7 +42,7 @@ function module.add_host(module)
 	local function http_app_added(event)
 		local app_name = event.item.name;
 		local default_app_path = event.item.default_path or "/"..app_name;
-		local app_path = normalize_path(module:get_option_string(app_name.."_http_path", default_app_path));
+		local app_path = normalize_path(get_base_path(module, app_name, default_app_path));
 		if not app_name then		
 			-- TODO: Link to docs
 			module:log("error", "HTTP app has no 'name', add one or use module:provides('http', app)");
