@@ -67,7 +67,7 @@ function module.add_host(module)
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
 				end
 			else
-				module:log("error", "Invalid route in %s: %q", app_name, key);
+				module:log("error", "Invalid route in %s, %q. See http://prosody.im/doc/developers/http#routes", app_name, key);
 			end
 		end
 	end
