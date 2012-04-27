@@ -109,6 +109,7 @@ function deactivate(host, reason)
 	end
 	
 	-- Disconnect local users, s2s connections
+	-- TODO: These should move to mod_c2s and mod_s2s (how do they know they're being unloaded and not reloaded?)
 	if host_session.sessions then
 		for username, user in pairs(host_session.sessions) do
 			for resource, session in pairs(user.sessions) do
@@ -133,6 +134,7 @@ function deactivate(host, reason)
 		end
 	end
 
+	-- TODO: This should be done in modulemanager
 	if host_session.modules then
 		for module in pairs(host_session.modules) do
 			modulemanager.unload(host, module);
