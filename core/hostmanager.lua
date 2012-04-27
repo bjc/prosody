@@ -102,7 +102,7 @@ function deactivate(host, reason)
 	local host_session = hosts[host];
 	if not host_session then return nil, "The host "..tostring(host).." is not activated"; end
 	log("info", "Deactivating host: %s", host);
-	prosody_events.fire_event("host-deactivating", host, host_session);
+	prosody_events.fire_event("host-deactivating", { host = host, host_session = host_session, reason = reason });
 	
 	if type(reason) ~= "table" then
 		reason = { condition = "host-gone", text = tostring(reason or "This server has stopped serving "..host) };
