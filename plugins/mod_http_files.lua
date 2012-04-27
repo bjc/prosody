@@ -51,7 +51,7 @@ end
 
 module:provides("http", {
 	route = {
-		["/*"] = serve_file;
+		["GET /*"] = serve_file;
 	};
 });
 
