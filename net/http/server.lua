@@ -18,7 +18,6 @@ local legacy_httpserver = require "net.httpserver";
 local _M = {};
 
 local sessions = {};
-local handlers = {};
 
 local listener = {};
 
