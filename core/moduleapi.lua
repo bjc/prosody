@@ -42,7 +42,7 @@ function api:get_host()
 end
 
 function api:get_host_type()
-	return hosts[self.host].type;
+	return self.host ~= "*" and hosts[self.host].type or nil;
 end
 
 function api:set_global()
