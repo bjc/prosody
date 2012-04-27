@@ -46,17 +46,20 @@ setmetatable(events._handlers, {
 				end
 			end
 		end
-		if #handlers_array == 0 then return; end
-		table.sort(handlers_array, function(b, a)
-			local a_score, b_score = matching_handlers_set[a], matching_handlers_set[b];
-			for i = 1, #a_score do
-				if a_score[i] ~= b_score[i] then -- If equal, compare next score value
-					return a_score[i] < b_score[i];
+		if #handlers_array > 0 then
+			table.sort(handlers_array, function(b, a)
+				local a_score, b_score = matching_handlers_set[a], matching_handlers_set[b];
+				for i = 1, #a_score do
+					if a_score[i] ~= b_score[i] then -- If equal, compare next score value
+						return a_score[i] < b_score[i];
+					end
 				end
-			end
-			return false;
-		end);
-		handlers[curr_event] = handlers_array;
+				return false;
+			end);
+		else
+			handlers_array = false;
+		end
+		rawset(handlers, curr_event, handlers_array);
 		return handlers_array;
 	end;
 	__newindex = function (handlers, curr_event, handlers_array)
@@ -69,6 +72,7 @@ setmetatable(events._handlers, {
 				end
 			end
 		end
+		rawset(handlers, curr_event, handlers_array);
 	end;
 });
 
