@@ -10,6 +10,8 @@ module:set_global();
 
 local server = require "net.http.server";
 
+server.set_default_host(module:get_option_string("http_default_host"));
+
 local function normalize_path(path)
 	if path:sub(1,1) ~= "/" then path = "/"..path; end
 	if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
@@ -83,6 +85,11 @@ function module.add_host(module)
 	end
 	
 	module:handle_items("http-provider", http_app_added, http_app_removed);
+
+	server.add_host(host);
+	function module.unload()
+		server.remove_host(host);
+	end
 end
 
 module:add_item("net-provider", {
