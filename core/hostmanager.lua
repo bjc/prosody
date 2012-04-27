@@ -94,7 +94,7 @@ function activate(host, host_config)
 	end
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
-	prosody_events.fire_event("host-activated", host, host_config);
+	prosody_events.fire_event("host-activated", host);
 	return true;
 end
 
