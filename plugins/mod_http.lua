@@ -51,7 +51,10 @@ function module.add_host(module)
 		for key, handler in pairs(event.item.route or {}) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
-				if event_name:sub(-2, -1) == "/*" then
+				if type(handler) ~= "function" then
+					local data = handler;
+					handler = function () return data; end
+				elseif event_name:sub(-2, -1) == "/*" then
 					local base_path = event_name:match("/(.+)/*$");
 					local _handler = handler;
 					handler = function (event)
