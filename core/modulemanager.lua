@@ -82,6 +82,9 @@ function load_modules_for_host(host)
 	end
 end
 prosody.events.add_handler("host-activated", load_modules_for_host);
+prosody.events.add_handler("host-deactivated", function (host)
+	modulemap[host] = nil;
+end);
 
 --- Private helpers ---
 
