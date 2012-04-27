@@ -18,8 +18,9 @@ local legacy_httpserver = require "net.httpserver";
 local _M = {};
 
 local sessions = {};
-
 local listener = {};
+local hosts = {};
+local default_host;
 
 local function is_wildcard_event(event)
 	return event:sub(-2, -1) == "/*";
@@ -169,54 +170,59 @@ function handle_request(conn, request, finish_cb)
 	};
 	conn._http_open_response = response;
 
-	local err;
-	if not request.headers.host then
-		err = "No 'Host' header";
+	local host = (request.headers.host or ""):match("[^:]+");
+
+	-- Some sanity checking
+	local err_code, err;
+	if not host then
+		err_code, err = 400, "Missing or invalid 'Host' header";
 	elseif not request.path then
-		err = "Invalid path";
+		err_code, err = 400, "Invalid path";
+	end
+	if not hosts[host] then
+		if hosts[default_host] then
+			host = default_host;
+		else
+			err_code, err = 404, "Unknown host: "..host;
+		end
 	end
 	
 	if err then
-		response.status_code = 400;
-		response.headers.content_type = "text/html";
-		response:send(events.fire_event("http-error", { code = 400, message = err }));
-	else
-		local host = request.headers.host;
-		if host then
-			host = host:match("[^:]*"):lower();
-			local event = request.method.." "..host..request.path:match("[^?]*");
-			local payload = { request = request, response = response };
-			--log("debug", "Firing event: %s", event);
-			local result = events.fire_event(event, payload);
-			if result ~= nil then
-				if result ~= true then
-					local code, body = 200, "";
-					local result_type = type(result);
-					if result_type == "number" then
-						response.status_code = result;
-						if result >= 400 then
-							body = events.fire_event("http-error", { code = result });
-						end
-					elseif result_type == "string" then
-						body = result;
-					elseif result_type == "table" then
-						body = result.body;
-						result.body = nil;
-						for k, v in pairs(result) do
-							response[k] = v;
-						end
-					end
-					response:send(body);
-				end
-				return;
-			end
-		end
-
-		-- if handler not called, return 404
-		response.status_code = 404;
-		response.headers.content_type = "text/html";
-		response:send(events.fire_event("http-error", { code = 404 }));
+		response.status_code = err_code;
+		response:send(events.fire_event("http-error", { code = err_code, message = err }));
+		return;
 	end
+
+	local event = request.method.." "..host..request.path:match("[^?]*");
+	local payload = { request = request, response = response };
+	--log("debug", "Firing event: %s", event);
+	local result = events.fire_event(event, payload);
+	if result ~= nil then
+		if result ~= true then
+			local code, body = 200, "";
+			local result_type = type(result);
+			if result_type == "number" then
+				response.status_code = result;
+				if result >= 400 then
+					body = events.fire_event("http-error", { code = result });
+				end
+			elseif result_type == "string" then
+				body = result;
+			elseif result_type == "table" then
+				body = result.body;
+				result.body = nil;
+				for k, v in pairs(result) do
+					response[k] = v;
+				end
+			end
+			response:send(body);
+		end
+		return;
+	end
+
+	-- if handler not called, return 404
+	response.status_code = 404;
+	response:send(events.fire_event("http-error", { code = 404 }));
 end
 function _M.send_response(response, body)
 	if response.finished then return; end
@@ -255,6 +261,15 @@ end
 
 function _M.listen_on(port, interface, ssl)
 	addserver(interface or "*", port, listener, "*a", ssl);
+end
+function _M.add_host(host)
+	hosts[host] = true;
+end
+function _M.remove_host(host)
+	hosts[host] = nil;
+end
+function _M.set_default_host(host)
+	default_host = host;
 end
 
 _M.listener = listener;
