@@ -435,8 +435,11 @@ function module.add_host(module)
 	module:provides("http", {
 		default_path = "/http-bind";
 		route = {
+			["GET"] = handle_GET;
 			["GET /"] = handle_GET;
+			["OPTIONS"] = handle_OPTIONS;
 			["OPTIONS /"] = handle_OPTIONS;
+			["POST"] = handle_POST;
 			["POST /"] = handle_POST;
 		};
 	});
