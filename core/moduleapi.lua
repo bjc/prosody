@@ -85,7 +85,7 @@ function api:hook_global(event, handler, priority)
 	return self:hook_object_event(prosody.events, event, handler, priority);
 end
 
-function api:hook_stanza(xmlns, name, handler, priority)
+function api:hook_tag(xmlns, name, handler, priority)
 	if not handler and type(name) == "function" then
 		-- If only 2 options then they specified no xmlns
 		xmlns, name, handler, priority = nil, xmlns, name, handler;
@@ -95,6 +95,7 @@ function api:hook_stanza(xmlns, name, handler, priority)
 	end
 	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
 end
+api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
 
 function api:require(lib)
 	local f, n = pluginloader.load_code(self.name, lib..".lib.lua");
