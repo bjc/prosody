@@ -10,7 +10,6 @@ module:set_global(); -- Global module
 
 local hosts = _G.hosts;
 local new_xmpp_stream = require "util.xmppstream".new;
-local httpserver = require "net.httpserver";
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
 local new_uuid = require "util.uuid".generate;
@@ -181,7 +180,7 @@ function handle_POST(event)
 			session:close();
 			return nil;
 		else
-			return true; -- Inform httpserver we shall reply later
+			return true; -- Inform http server we shall reply later
 		end
 	end
 end
