@@ -69,6 +69,7 @@ function module.add_host(module)
 		if env.connected then
 			module:log("error", "Second component attempted to connect, denying connection");
 			session:close{ condition = "conflict", text = "Component already connected" };
+			return true;
 		end
 		
 		env.connected = true;
