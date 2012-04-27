@@ -6,7 +6,8 @@ local codes = require "net.http.codes";
 local termcolours = require "util.termcolours";
 
 local show_private = module:get_option_boolean("http_errors_detailed", false);
-
+local always_serve = module:get_option_boolean("http_errors_always_show", true);
+local default_message = { module:get_option_string("http_errors_default_message", "That's all I know.") };
 local default_messages = {
 	[400] = { "What kind of request do you call that??" };
 	[403] = { "You're not allowed to do that." };
@@ -59,7 +60,8 @@ end
 
 local function get_page(code, extra)
 	local message = messages[code];
-	if message then
+	if always_serve or message then
+		message = message or default_message;
 		return (html:gsub("$(%a+)", {
 			title = rawget(codes, code) or ("Code "..tostring(code));
 			message = message[1]:gsub("%%", function ()
