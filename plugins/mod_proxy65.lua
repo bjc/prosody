@@ -91,7 +91,7 @@ function module.add_host(module)
 	local host, name = module:get_host(), module:get_option_string("name", "SOCKS5 Bytestreams Service");
 	
 	local proxy_address = module:get_option("proxy65_address", host);
-	local proxy_port = module:get_option_number("proxy65_port", next(portmanager.get_active_services():search("proxy65", nil)[1]));
+	local proxy_port = module:get_option_number("proxy65_port", next(portmanager.get_active_services():search("proxy65", nil)[1] or {}));
 	local proxy_acl = module:get_option("proxy65_acl");
 
 	module:add_identity("proxy", "bytestreams", name);
