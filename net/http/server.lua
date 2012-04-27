@@ -64,7 +64,7 @@ setmetatable(events._handlers, {
 	__newindex = function (handlers, curr_event, handlers_array)
 		if handlers_array == nil
 		and is_wildcard_event(curr_event) then
-			-- Invalidate all matching
+			-- Invalidate the indexes of all matching events
 			for event in pairs(handlers) do
 				if is_wildcard_match(curr_event, event) then
 					handlers[event] = nil;
