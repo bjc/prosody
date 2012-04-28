@@ -15,8 +15,7 @@ local math_min = math.min
 local math_huge = math.huge
 local get_time = require "socket".gettime;
 local t_insert = table.insert;
-local t_remove = table.remove;
-local ipairs, pairs = ipairs, pairs;
+local pairs = pairs;
 local type = type;
 
 local data = {};
