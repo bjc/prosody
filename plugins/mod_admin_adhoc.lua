@@ -24,7 +24,7 @@ local dataforms_new = require "util.dataforms".new;
 local array = require "util.array";
 local modulemanager = require "modulemanager";
 
-module:depends"adhoc";
+module:depends("adhoc");
 local adhoc_new = module:require "adhoc".new;
 
 function add_user_command_handler(self, data, state)
