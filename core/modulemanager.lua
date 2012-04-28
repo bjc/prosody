@@ -47,8 +47,6 @@ local api = _G.require "core.moduleapi"; -- Module API container
 -- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };
 
-local NULL = {};
-
 -- Load modules when a host is activated
 function load_modules_for_host(host)
 	local component = config.get(host, "core", "component_module");
