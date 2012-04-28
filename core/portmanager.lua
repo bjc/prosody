@@ -1,5 +1,11 @@
+local config = require "core.configmanager";
+local server = require "net.server";
 
+local log = require "util.logger".init("portmanager");
 local multitable = require "util.multitable";
+local set = require "util.set";
+
+local prosody = prosody;
 local fire_event = prosody.events.fire_event;
 
 --- Config
