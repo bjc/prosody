@@ -7,6 +7,7 @@
 --
 
 module:set_global();
+module:depends("http_errors");
 
 local server = require "net.http.server";
 
