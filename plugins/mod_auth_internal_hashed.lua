@@ -9,18 +9,11 @@
 
 local datamanager = require "util.datamanager";
 local log = require "util.logger".init("auth_internal_hashed");
-local type = type;
-local error = error;
-local ipairs = ipairs;
-local hashes = require "util.hashes";
-local jid_bare = require "util.jid".bare;
 local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
-local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local hosts = hosts;
 
 -- COMPAT w/old trunk: remove these two lines before 0.8 release
 local hmac_sha1 = require "util.hmac".sha1;
@@ -46,8 +39,6 @@ do
 	end
 end
 
-
-local prosody = _G.prosody;
 
 -- Default; can be set per-user
 local iteration_count = 4096;
