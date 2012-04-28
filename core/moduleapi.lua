@@ -255,7 +255,6 @@ function api:get_option_set(name, ...)
 	return set.new(value);
 end
 
-local module_items = multitable_new();
 function api:add_item(key, value)
 	self.items = self.items or {};
 	self.items[key] = self.items[key] or {};
