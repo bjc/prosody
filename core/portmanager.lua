@@ -7,7 +7,7 @@ local set = require "util.set";
 
 local table, package = table, package;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
-local type = type;
+local type, tonumber = type, tonumber;
 
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
