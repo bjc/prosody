@@ -14,15 +14,9 @@ local pluginloader = require "util.pluginloader";
 local hosts = hosts;
 local prosody = prosody;
 
-local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
-local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
-local pairs, ipairs = pairs, ipairs;
-local t_insert, t_concat = table.insert, table.concat;
-local type = type;
-local next = next;
-local rawget = rawget;
-local error = error;
-local tostring, tonumber = tostring, tonumber;
+local pcall, xpcall = pcall, xpcall;
+local setmetatable, rawget, setfenv = setmetatable, rawget, setfenv;
+local pairs, type, tostring = pairs, type, tostring;
 
 local debug_traceback = debug.traceback;
 local unpack, select = unpack, select;
@@ -32,7 +26,7 @@ pcall = function(f, ...)
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
 
-local array, set = require "util.array", require "util.set";
+local set = require "util.set";
 
 local autoload_modules = {"presence", "message", "iq", "offline", "c2s", "s2s"};
 local component_inheritable_modules = {"tls", "dialback", "iq"};
