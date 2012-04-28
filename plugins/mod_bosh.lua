@@ -262,7 +262,7 @@ function stream_callbacks.streamopened(context, attr)
 		
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
-		local r, send_buffer = session.requests, session.send_buffer;
+		local r = session.requests;
 		function session.send(s)
 			-- We need to ensure that outgoing stanzas have the jabber:client xmlns
 			if s.attr and not s.attr.xmlns then
