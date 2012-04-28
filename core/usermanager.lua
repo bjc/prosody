@@ -41,7 +41,10 @@ function initialize_host(host)
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "core", "authentication") or default_provider;
-		if config.get(host, "core", "anonymous_login") then auth_provider = "anonymous"; end -- COMPAT 0.7
+		if config.get(host, "core", "anonymous_login") then
+			log("error", "Deprecated config option 'anonymous_login'. Use authentication = 'anonymous' instead.");
+			auth_provider = "anonymous";
+		end -- COMPAT 0.7
 		if provider.name == auth_provider then
 			host_session.users = setmetatable(provider, provider_mt);
 		end
