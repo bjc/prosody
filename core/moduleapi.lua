@@ -12,6 +12,7 @@ local array = require "util.array";
 local set = require "util.set";
 local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
+local timer = require "util.timer";
 
 local multitable_new = require "util.multitable".new;
 
