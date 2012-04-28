@@ -134,6 +134,9 @@ local function check_cert_status(session)
 		-- Is there any interest in printing out all/the number of errors here?
 		if not chain_valid then
 			(session.log or log)("debug", "certificate chain validation result: invalid");
+			for depth, t in ipairs(errors) do
+				(session.log or log)("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
+			end
 			session.cert_chain_status = "invalid";
 		else
 			(session.log or log)("debug", "certificate chain validation result: valid");
