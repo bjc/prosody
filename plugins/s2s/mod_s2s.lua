@@ -10,7 +10,7 @@ module:set_global();
 
 local prosody = prosody;
 local hosts = prosody.hosts;
-local core_process_stanza = prosody.core_process_stanza;
+local core_process_stanza = core_process_stanza;
 
 local tostring, type = tostring, type;
 local t_insert = table.insert;
