@@ -336,7 +336,7 @@ function room_mt:get_changesubject()
 	return self._data.changesubject;
 end
 function room_mt:get_historylength()
-	return self._data.history_length
+	return self._data.history_length or default_history_length;
 end
 function room_mt:set_historylength(length)
 	if tonumber(length) == nil then
