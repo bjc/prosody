@@ -8,6 +8,8 @@ local set = require "util.set";
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
 
+module "portmanager";
+
 --- Config
 
 local default_interfaces = { "*" };
