@@ -14,7 +14,6 @@ local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local user_exists = require "core.usermanager".user_exists;
-local t_insert = table.insert;
 
 local function process_to_bare(bare, origin, stanza)
 	local user = bare_sessions[bare];
