@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local log = require "util.logger".init("auth_anonymous");
 local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
 
