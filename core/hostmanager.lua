@@ -24,7 +24,7 @@ if not _G.prosody.incoming_s2s then
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
-local pairs, setmetatable, select = pairs, setmetatable, select;
+local pairs, select = pairs, select;
 local tostring, type = tostring, type;
 
 module "hostmanager"
