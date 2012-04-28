@@ -228,7 +228,7 @@ function _M.send_response(response, body)
 	
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
-	body = body or "";
+	body = body or response.body or "";
 	headers.content_length = #body;
 
 	local output = { status_line };
