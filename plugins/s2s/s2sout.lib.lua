@@ -271,6 +271,10 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	if connect_host.proto == "IPv4" then
 		conn, handler = socket.tcp();
 	else
+		if not socket.tcp6 then
+			log("warn", "Could not connect to "..to_host..". Your version of lua-socket does not support IPv6");
+			return false, "no-ipv6";
+		end
 		conn, handler = socket.tcp6();
 	end
 	
