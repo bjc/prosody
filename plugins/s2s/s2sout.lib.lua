@@ -12,15 +12,17 @@ local portmanager = require "core.portmanager";
 local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
-local add_task = require "util.timer".add_task;
 local new_ip = require "util.ip".new_ip;
 local rfc3484_dest = require "util.rfc3484".destination;
 local socket = require "socket";
+local adns = require "net.adns";
+local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
 local st = require "util.stanza";
 
-local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
+
+local log = module._log;
 
 local sources = {};
 
@@ -67,7 +69,7 @@ function s2sout.initiate_connection(host_session)
 				buffer = {};
 				host_session.send_buffer = buffer;
 			end
-			log("debug", "Buffering data on unconnected s2sout to %s", to_host);
+			log("debug", "Buffering data on unconnected s2sout to %s", tostring(host_session.to_host));
 			buffer[#buffer+1] = data;
 			log("debug", "Buffered item %d: %s", #buffer, tostring(data));
 		end
