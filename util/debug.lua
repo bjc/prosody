@@ -97,7 +97,7 @@ function get_traceback_table(thread, start_level)
 		levels[(level-start_level)+1] = {
 			level = level;
 			info = info;
-			locals = get_locals_table(level);
+			locals = get_locals_table(level+1);
 			upvalues = get_upvalues_table(info.func);
 		};
 	end	
@@ -119,21 +119,26 @@ end
 
 function _traceback(thread, message, level)
 
-	if type(thread) ~= "thread" then
+	-- Lua manual says: debug.traceback ([thread,] [message [, level]])
+	-- I fathom this to mean one of:
+	-- ()
+	-- (thread)
+	-- (message, level)
+	-- (thread, message, level)
+
+	if thread == nil then -- Defaults
+		thread, message, level = coroutine.running(), message, level;
+	elseif type(thread) == "string" then
 		thread, message, level = coroutine.running(), thread, message;
+	elseif type(thread) ~= "thread" then
+		return nil; -- debug.traceback() does this
 	end
-	if level and type(message) ~= "string" then
-		return nil, "invalid message";
-	elseif not level then
-		if type(message) == "number" then
-			level, message = message, nil;
-		else
-			level = 1;
-		end
-	end
-	
+
+	level = level or 1;
+
 	message = message and (message.."\n") or "";
 	
+	-- +3 counts for this function, and the pcall() and wrapper above us
 	local levels = get_traceback_table(thread, level+3);
 	
 	local last_source_desc;
