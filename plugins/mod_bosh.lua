@@ -379,7 +379,7 @@ function stream_callbacks.error(context, error)
 		local response = context.response;
 		response.headers = default_headers;
 		response.status_code = 400;
-		request:send();
+		response:send();
 		return;
 	end
 	
