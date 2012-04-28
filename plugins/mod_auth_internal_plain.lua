@@ -7,19 +7,11 @@
 --
 
 local datamanager = require "util.datamanager";
-local log = require "util.logger".init("auth_internal_plain");
-local type = type;
-local error = error;
-local ipairs = ipairs;
-local hashes = require "util.hashes";
-local jid_bare = require "util.jid".bare;
-local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local hosts = hosts;
 
-local prosody = _G.prosody;
+local log = module._log;
 
 function new_default_provider(host)
 	local provider = { name = "internal_plain" };
