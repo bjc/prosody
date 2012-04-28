@@ -11,7 +11,6 @@ module:set_global();
 local add_task = require "util.timer".add_task;
 local new_xmpp_stream = require "util.xmppstream".new;
 local nameprep = require "util.encodings".stringprep.nameprep;
-local portmanager = require "core.portmanager";
 local sessionmanager = require "core.sessionmanager";
 local st = require "util.stanza";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
