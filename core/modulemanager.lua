@@ -139,9 +139,12 @@ local function do_load_module(host, module_name)
 			});
 			local host_module = setmetatable({ module = host_module_api }, { __index = mod });
 			host_module_api.environment = host_module;
-			local ok, result, module_err = call_module_method(mod, "add_host", host_module_api);
-			if not ok or result == false then return nil, ok and module_err or result; end
 			modulemap[host][module_name] = host_module;
+			local ok, result, module_err = call_module_method(mod, "add_host", host_module_api);
+			if not ok or result == false then
+				modulemap[host][module_name] = nil;
+				return nil, ok and module_err or result;
+			end
 			return host_module;
 		end
 		return nil, "global-module-already-loaded";
@@ -164,6 +167,7 @@ local function do_load_module(host, module_name)
 	
 	setfenv(mod, pluginenv);
 	
+	modulemap[host][module_name] = pluginenv;
 	local ok, err = pcall(mod);
 	if ok then
 		-- Call module's "load"
@@ -174,12 +178,13 @@ local function do_load_module(host, module_name)
 			end
 		end
 
-		modulemap[api_instance.host][module_name] = pluginenv;
 		if api_instance.host == "*" then
 			if not api_instance.global then -- COMPAT w/pre-0.9
 				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
 				api_instance:set_global();
 			end
+			modulemap[host][module_name] = nil;
+			modulemap[api_instance.host][module_name] = pluginenv;
 			if host ~= api_instance.host and module_has_method(pluginenv, "add_host") then
 				-- Now load the module again onto the host it was originally being loaded on
 				ok, err = do_load_module(host, module_name);
@@ -187,6 +192,7 @@ local function do_load_module(host, module_name)
 		end
 	end
 	if not ok then
+		modulemap[api_instance.host][module_name] = nil;
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	return ok and pluginenv, err;
