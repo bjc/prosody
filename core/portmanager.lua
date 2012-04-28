@@ -5,6 +5,10 @@ local log = require "util.logger".init("portmanager");
 local multitable = require "util.multitable";
 local set = require "util.set";
 
+local table, package = table, package;
+local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
+local type = type;
+
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
 
@@ -57,8 +61,6 @@ local function error_to_friendly_message(service_name, port, err)
 	end
 	return friendly_message;
 end
-
-module("portmanager", package.seeall);
 
 prosody.events.add_handler("item-added/net-provider", function (event)
 	local item = event.item;
