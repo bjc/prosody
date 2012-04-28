@@ -71,7 +71,7 @@ end);
 
 --- Public API
 
-function activate_service(service_name)
+function activate(service_name)
 	local service_info = services[service_name][1];
 	if not service_info then
 		return nil, "Unknown service: "..service_name;
@@ -146,7 +146,7 @@ function register_service(service_name, service_info)
 
 	if not active_services:get(service_name) then
 		log("debug", "No active service for %s, activating...", service_name);
-		local ok, err = activate_service(service_name);
+		local ok, err = activate(service_name);
 		if not ok then
 			log("error", "Failed to activate service '%s': %s", service_name, err or "unknown error");
 		end
