@@ -196,7 +196,7 @@ function handle_request(conn, request, finish_cb)
 	local result = events.fire_event(event, payload);
 	if result ~= nil then
 		if result ~= true then
-			local body = "";
+			local body;
 			local result_type = type(result);
 			if result_type == "number" then
 				response.status_code = result;
@@ -206,8 +206,6 @@ function handle_request(conn, request, finish_cb)
 			elseif result_type == "string" then
 				body = result;
 			elseif result_type == "table" then
-				body = result.body;
-				result.body = nil;
 				for k, v in pairs(result) do
 					response[k] = v;
 				end
