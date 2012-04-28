@@ -17,7 +17,6 @@ local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
-local xmlns_dialback = "jabber:server:dialback";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
