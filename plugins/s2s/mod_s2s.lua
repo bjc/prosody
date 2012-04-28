@@ -29,6 +29,8 @@ local connect_timeout = module:get_option_number("s2s_timeout", 60);
 
 local sessions = module:shared("sessions");
 
+local log = module._log;
+
 --- Handle stanzas to remote domains
 
 local bouncy_stanzas = { message = true, presence = true, iq = true };
