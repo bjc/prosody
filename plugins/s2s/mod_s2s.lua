@@ -8,6 +8,10 @@
 
 module:set_global();
 
+local prosody = prosody;
+local hosts = prosody.hosts;
+local core_process_stanza = prosody.core_process_stanza;
+
 local tostring, type = tostring, type;
 local t_insert = table.insert;
 local xpcall, traceback = xpcall, debug.traceback;
@@ -20,6 +24,7 @@ local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
+local s2s_mark_connected = require "core.s2smanager".mark_connected;
 local uuid_gen = require "util.uuid".generate;
 local cert_verify_identity = require "util.x509".verify_identity;
 
@@ -41,7 +46,7 @@ local function bounce_sendq(session, reason)
 	local dummy = {
 		type = "s2sin";
 		send = function(s)
-			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", get_traceback());
+			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", traceback());
 		end;
 		dummy = true;
 	};
@@ -81,7 +86,7 @@ module:hook("route/remote", function (event)
 			return true;
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
-			log("error", "Traceback: %s", get_traceback());
+			log("error", "Traceback: %s", traceback());
 			log("error", "Stanza: %s", tostring(stanza));
 			return false;
 		else
@@ -442,7 +447,6 @@ function listener.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
-			local to_host, from_host = session.to_host, session.from_host;
 			session.log("debug", "Sending stream header...");
 			session:open_stream(session.from_host, session.to_host);
 		end
