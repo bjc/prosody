@@ -12,8 +12,6 @@ local xpcall = xpcall;
 local debug = debug;
 local tostring = tostring;
 local codes = require "net.http.codes";
-local _G = _G;
-local legacy_httpserver = require "net.httpserver";
 
 local _M = {};
 
@@ -90,7 +88,7 @@ function listener.onconnect(conn)
 	local secure = conn:ssl() and true or nil;
 	local pending = {};
 	local waiting = false;
-	local function process_next(last_response)
+	local function process_next()
 		--if waiting then log("debug", "can't process_next, waiting"); return; end
 		if sessions[conn] and #pending > 0 then
 			local request = t_remove(pending);
@@ -198,7 +196,7 @@ function handle_request(conn, request, finish_cb)
 	local result = events.fire_event(event, payload);
 	if result ~= nil then
 		if result ~= true then
-			local code, body = 200, "";
+			local body = "";
 			local result_type = type(result);
 			if result_type == "number" then
 				response.status_code = result;
