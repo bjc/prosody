@@ -26,7 +26,6 @@ local log = module._log;
 
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
-local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
