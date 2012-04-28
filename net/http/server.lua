@@ -174,15 +174,15 @@ function handle_request(conn, request, finish_cb)
 
 	-- Some sanity checking
 	local err_code, err;
-	if not host then
-		err_code, err = 400, "Missing or invalid 'Host' header";
-	elseif not request.path then
+	if not request.path then
 		err_code, err = 400, "Invalid path";
 	elseif not hosts[host] then
 		if hosts[default_host] then
 			host = default_host;
-		else
+		elseif host then
 			err_code, err = 404, "Unknown host: "..host;
+		else
+			err_code, err = 400, "Missing or invalid 'Host' header";
 		end
 	end
 	
