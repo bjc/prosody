@@ -329,4 +329,14 @@ function api:add_timer(delay, callback)
 	end);
 end
 
+local path_sep = package.config:sub(1,1);
+function api:get_directory()
+	return self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;
+end
+
+function api:load_resource(path, mode)
+	path = config.resolve_relative_path(self:get_directory(), path);
+	return io.open(path, mode);
+end
+
 return api;
