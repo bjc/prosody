@@ -9,7 +9,6 @@
 local select = select;
 local pairs, ipairs = pairs, ipairs;
 
-local datamanager = require "util.datamanager";
 local datetime = require "util.datetime";
 
 local dataform = require "util.dataforms";
@@ -19,7 +18,6 @@ local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
-local multitable_new = require "util.multitable".new;
 local t_insert, t_remove = table.insert, table.remove;
 local setmetatable = setmetatable;
 local base64 = require "util.encodings".base64;
@@ -133,7 +131,6 @@ function room_mt:broadcast_message(stanza, historic)
 		stanza = st.clone(stanza);
 		stanza.attr.to = "";
 		local stamp = datetime.datetime();
-		local chars = #tostring(stanza);
 		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 		local entry = { stanza = stanza, stamp = stamp };
@@ -185,7 +182,6 @@ function room_mt:send_history(to, stanza)
 
 		local n = 0;
 		local charcount = 0;
-		local stanzacount = 0;
 		
 		for i=#history,1,-1 do
 			local entry = history[i];
@@ -855,7 +851,6 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		end
 	elseif stanza.name == "message" and type == "groupchat" then
 		local from, to = stanza.attr.from, stanza.attr.to;
-		local room = jid_bare(to);
 		local current_nick = self._jid_nick[from];
 		local occupant = self._occupants[current_nick];
 		if not occupant then -- not in room
