@@ -280,7 +280,7 @@ function stream_callbacks.streamclosed(session)
 end
 
 function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" then
+	if err and err ~= "closed" and session.direction == "outgoing" then
 		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 		if s2sout.attempt_connection(session, err) then
 			(session.log or log)("debug", "...so we're going to try another target");
