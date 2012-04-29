@@ -246,7 +246,7 @@ end
 function load(host, name)
 	local mod, err = do_load_module(host, name);
 	if mod then
-		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = host });
+		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = mod.module.host });
 	end
 	return mod, err;
 end
