@@ -180,7 +180,9 @@ local function do_load_module(host, module_name)
 
 		if api_instance.host == "*" then
 			if not api_instance.global then -- COMPAT w/pre-0.9
-				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+				if host ~= "*" then
+					log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+				end
 				api_instance:set_global();
 			end
 			modulemap[host][module_name] = nil;
