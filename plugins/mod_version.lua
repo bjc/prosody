@@ -21,7 +21,7 @@ if not module:get_option("hide_os_type") then
 		version = "Windows";
 	else
 		local os_version_command = module:get_option("os_version_command");
-		local ok pposix = pcall(require, "pposix");
+		local ok, pposix = pcall(require, "util.pposix");
 		if not os_version_command and (ok and pposix and pposix.uname) then
 			version = pposix.uname().sysname;
 		end
