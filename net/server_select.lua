@@ -202,6 +202,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		socket:close( )
 		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
+		_server[ip..":"..serverport] = nil;
 		_socketlist[ socket ] = nil
 		handler = nil
 		socket = nil
@@ -596,25 +597,23 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			handler.sendbuffer = handshake
 			handshake( socket ) -- do handshake
 		end
-		handler.readbuffer = _readbuffer
-		handler.sendbuffer = _sendbuffer
-		
-		if sslctx then
-			out_put "server.lua: auto-starting ssl negotiation..."
-			handler.autostart_ssl = true;
-			handler:starttls(sslctx);
-		end
-
-	else
-		handler.readbuffer = _readbuffer
-		handler.sendbuffer = _sendbuffer
 	end
+
+	handler.readbuffer = _readbuffer
+	handler.sendbuffer = _sendbuffer
 	send = socket.send
 	receive = socket.receive
 	shutdown = ( ssl and id ) or socket.shutdown
 
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
+
+	if sslctx and luasec then
+		out_put "server.lua: auto-starting ssl negotiation..."
+		handler.autostart_ssl = true;
+		handler:starttls(sslctx);
+	end
+
 	return handler, socket
 end
 

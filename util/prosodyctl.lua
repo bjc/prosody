@@ -16,6 +16,7 @@ local signal = require "util.signal";
 local set = require "util.set";
 local lfs = require "lfs";
 local pcall = pcall;
+local type = type;
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
@@ -60,6 +61,13 @@ function getchar(n)
 	end
 	if ok then
 		return char;
+	end
+end
+
+function getline()
+	local ok, line = pcall(io.read, "*l");
+	if ok then
+		return line;
 	end
 end
 
@@ -110,6 +118,13 @@ function read_password()
 		end
 	end
 	return password;
+end
+
+function show_prompt(prompt)
+	io.write(prompt, " ");
+	local line = getline();
+	line = line and line:gsub("\n$","");
+	return (line and #line > 0) and line or nil;
 end
 
 -- Server control

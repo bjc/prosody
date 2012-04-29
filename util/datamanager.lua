@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -20,7 +20,7 @@ local error = error;
 local next = next;
 local t_insert = table.insert;
 local append = require "util.serialization".append;
-local path_separator = "/"; if os.getenv("WINDIR") then path_separator = "\\" end
+local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
 local prosody = prosody;
 local raw_mkdir;
@@ -72,7 +72,7 @@ local function callback(username, host, datastore, data)
 		username, host, datastore, data = f(username, host, datastore, data);
 		if username == false then break; end
 	end
-	
+
 	return username, host, datastore, data;
 end
 function add_callback(func)

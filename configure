@@ -112,7 +112,7 @@ do
         CFLAGS="-Wall -fPIC"
         LDFLAGS="-shared"
         fi
-        if [ "$OSTYPE" = "freebsd" ]
+        if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]
         then LUA_INCDIR="/usr/local/include/lua51"
         LUA_INCDIR_SET=yes
         CFLAGS="-Wall -fPIC -I/usr/local/include"
@@ -121,6 +121,9 @@ do
         LUA_SUFFIX_SET=yes
         LUA_DIR=/usr/local
         LUA_DIR_SET=yes
+        fi
+        if [ "$OSTYPE" = "openbsd" ]
+        then LUA_INCDIR="/usr/local/include";
         fi
       ;;
    --datadir=*)

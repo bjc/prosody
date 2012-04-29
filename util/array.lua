@@ -9,6 +9,11 @@
 local t_insert, t_sort, t_remove, t_concat
     = table.insert, table.sort, table.remove, table.concat;
 
+local setmetatable = setmetatable;
+local math_random = math.random;
+local pairs, ipairs = pairs, ipairs;
+local tostring = tostring;
+
 local array = {};
 local array_base = {};
 local array_methods = {};
@@ -25,6 +30,15 @@ end
 
 setmetatable(array, { __call = new_array });
 
+-- Read-only methods
+function array_methods:random()
+	return self[math_random(1,#self)];
+end
+
+-- These methods can be called two ways:
+--   array.method(existing_array, [params [, ...]]) -- Create new array for result
+--   existing_array:method([params, ...]) -- Transform existing array into result
+--
 function array_base.map(outa, ina, func)
 	for k,v in ipairs(ina) do
 		outa[k] = func(v);
@@ -60,15 +74,18 @@ function array_base.sort(outa, ina, ...)
 	return outa;
 end
 
---- These methods only mutate
-function array_methods:random()
-	return self[math.random(1,#self)];
+function array_base.pluck(outa, ina, key)
+	for i=1,#ina do
+		outa[i] = ina[i][key];
+	end
+	return outa;
 end
 
+--- These methods only mutate the array
 function array_methods:shuffle(outa, ina)
 	local len = #self;
 	for i=1,#self do
-		local r = math.random(i,len);
+		local r = math_random(i,len);
 		self[i], self[r] = self[r], self[i];
 	end
 	return self;
@@ -91,10 +108,24 @@ function array_methods:append(array)
 	return self;
 end
 
-array_methods.push = table.insert;
-array_methods.pop = table.remove;
-array_methods.concat = table.concat;
-array_methods.length = function (t) return #t; end
+function array_methods:push(x)
+	t_insert(self, x);
+	return self;
+end
+
+function array_methods:pop(x)
+	local v = self[x];
+	t_remove(self, x);
+	return v;
+end
+
+function array_methods:concat(sep)
+	return t_concat(array.map(self, tostring), sep);
+end
+
+function array_methods:length()
+	return #self;
+end
 
 --- These methods always create a new array
 function array.collect(f, s, var)
@@ -102,7 +133,7 @@ function array.collect(f, s, var)
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
-		table.insert(t, var);
+		t_insert(t, var);
 	end
 	return setmetatable(t, array_mt);
 end

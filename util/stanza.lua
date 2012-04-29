@@ -8,22 +8,16 @@
 
 
 local t_insert      =  table.insert;
-local t_concat      =  table.concat;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
 local s_format      = string.format;
 local s_match       =  string.match;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
-local getmetatable  =  getmetatable;
 local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
-local next          =          next;
-local print         =         print;
-local unpack        =        unpack;
 local s_gsub        =   string.gsub;
-local s_char        =   string.char;
 local s_find        =   string.find;
 local os            =            os;
 
@@ -257,11 +251,6 @@ function stanza_mt.get_error(stanza)
 	end
 	return type, condition or "undefined-condition", text;
 end
-
-function stanza_mt.__add(s1, s2)
-	return s1:add_direct_child(s2);
-end
-
 
 do
 	local id = 0;
