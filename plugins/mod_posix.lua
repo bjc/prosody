@@ -22,7 +22,7 @@ local stat = lfs.attributes;
 
 local prosody = _G.prosody;
 
-module:set_global(); -- we're a global module
+module.host = "*"; -- we're a global module
 
 local umask = module:get_option("umask") or "027";
 pposix.umask(umask);
@@ -112,7 +112,7 @@ end
 local syslog_opened;
 function syslog_sink_maker(config)
 	if not syslog_opened then
-		pposix.syslog_open("prosody");
+		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
 		syslog_opened = true;
 	end
 	local syslog, format = pposix.syslog_log, string.format;
