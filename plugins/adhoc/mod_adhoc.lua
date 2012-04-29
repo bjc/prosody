@@ -90,19 +90,13 @@ module:hook("iq/host/"..xmlns_cmd..":command", function (event)
 	end
 end, 500);
 
-local function handle_item_added(item)
+local function adhoc_added(event)
+	local item = event.item;
 	commands[item.node] = item;
 end
 
-module:hook("item-added/adhoc", function (event)
-	return handle_item_added(event.item);
-end, 500);
-
-module:hook("item-removed/adhoc", function (event)
+local function adhoc_removed(event)
 	commands[event.item.node] = nil;
-end, 500);
-
--- Pick up any items that are already added
-for _, item in ipairs(module:get_host_items("adhoc")) do
-	handle_item_added(item);
 end
+
+module:handle_items("adhoc", adhoc_added, adhoc_removed);

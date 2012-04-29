@@ -75,7 +75,7 @@ end);
 module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	module:log("debug", "Received features element");
 	if can_do_tls(session) and stanza:child_with_ns(xmlns_starttls) then
-		module:log("%s is offering TLS, taking up the offer...", session.to_host);
+		module:log("debug", "%s is offering TLS, taking up the offer...", session.to_host);
 		session.sends2s("<starttls xmlns='"..xmlns_starttls.."'/>");
 		return true;
 	end

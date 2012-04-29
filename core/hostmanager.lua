@@ -24,7 +24,7 @@ if not _G.prosody.incoming_s2s then
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
 
-local pairs, setmetatable, select = pairs, setmetatable, select;
+local pairs, select = pairs, select;
 local tostring, type = tostring, type;
 
 module "hostmanager"
@@ -94,7 +94,7 @@ function activate(host, host_config)
 	end
 	
 	log((hosts_loaded_once and "info") or "debug", "Activated host: %s", host);
-	prosody_events.fire_event("host-activated", host, host_config);
+	prosody_events.fire_event("host-activated", host);
 	return true;
 end
 
@@ -102,13 +102,14 @@ function deactivate(host, reason)
 	local host_session = hosts[host];
 	if not host_session then return nil, "The host "..tostring(host).." is not activated"; end
 	log("info", "Deactivating host: %s", host);
-	prosody_events.fire_event("host-deactivating", host, host_session);
+	prosody_events.fire_event("host-deactivating", { host = host, host_session = host_session, reason = reason });
 	
 	if type(reason) ~= "table" then
 		reason = { condition = "host-gone", text = tostring(reason or "This server has stopped serving "..host) };
 	end
 	
 	-- Disconnect local users, s2s connections
+	-- TODO: These should move to mod_c2s and mod_s2s (how do they know they're being unloaded and not reloaded?)
 	if host_session.sessions then
 		for username, user in pairs(host_session.sessions) do
 			for resource, session in pairs(user.sessions) do
@@ -133,6 +134,7 @@ function deactivate(host, reason)
 		end
 	end
 
+	-- TODO: This should be done in modulemanager
 	if host_session.modules then
 		for module in pairs(host_session.modules) do
 			modulemanager.unload(host, module);

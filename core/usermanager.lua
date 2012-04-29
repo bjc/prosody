@@ -11,6 +11,7 @@ local log = require "util.logger".init("usermanager");
 local type = type;
 local ipairs = ipairs;
 local jid_bare = require "util.jid".bare;
+local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local hosts = hosts;
 local sasl_new = require "util.sasl".new;
@@ -40,7 +41,10 @@ function initialize_host(host)
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "core", "authentication") or default_provider;
-		if config.get(host, "core", "anonymous_login") then auth_provider = "anonymous"; end -- COMPAT 0.7
+		if config.get(host, "core", "anonymous_login") then
+			log("error", "Deprecated config option 'anonymous_login'. Use authentication = 'anonymous' instead.");
+			auth_provider = "anonymous";
+		end -- COMPAT 0.7
 		if provider.name == auth_provider then
 			host_session.users = setmetatable(provider, provider_mt);
 		end
@@ -97,6 +101,7 @@ end
 
 function is_admin(jid, host)
 	if host and not hosts[host] then return false; end
+	if type(jid) ~= "string" then return false; end
 
 	local is_admin;
 	jid = jid_bare(jid);
@@ -108,7 +113,7 @@ function is_admin(jid, host)
 	if host_admins and host_admins ~= global_admins then
 		if type(host_admins) == "table" then
 			for _,admin in ipairs(host_admins) do
-				if admin == jid then
+				if jid_prep(admin) == jid then
 					is_admin = true;
 					break;
 				end
@@ -121,7 +126,7 @@ function is_admin(jid, host)
 	if not is_admin and global_admins then
 		if type(global_admins) == "table" then
 			for _,admin in ipairs(global_admins) do
-				if admin == jid then
+				if jid_prep(admin) == jid then
 					is_admin = true;
 					break;
 				end
