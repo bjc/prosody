@@ -43,7 +43,7 @@ function module.add_host(module)
 	local function handle_component_auth(event)
 		local session, stanza = event.origin, event.stanza;
 		
-		if session.type ~= "component" then return; end
+		if session.type ~= "component_unauthed" then return; end
 	
 		if (not session.host) or #stanza.tags > 0 then
 			(session.log or log)("warn", "Invalid component handshake for host: %s", session.host);
