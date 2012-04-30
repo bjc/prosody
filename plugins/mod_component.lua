@@ -76,6 +76,7 @@ function module.add_host(module)
 		send = session.send;
 		session.on_destroy = on_destroy;
 		session.component_validate_from = module:get_option_boolean("validate_from_addresses", true);
+		session.type = "component";
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
 	
@@ -244,7 +245,7 @@ end
 
 function listener.onconnect(conn)
 	local _send = conn.write;
-	local session = { type = "component", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
+	local session = { type = "component_unauthed", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
 
 	-- Logging functions --
 	local conn_name = "jcp"..tostring(conn):match("[a-f0-9]+$");
