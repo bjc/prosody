@@ -17,7 +17,8 @@ local console_listener = { default_port = 5582; default_mode = "*l"; interface =
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare = require "util.jid".bare;
+local jid = require "util.jid";
+local jid_bare, jid_split = jid.bare, jid.split;
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 
@@ -830,6 +831,29 @@ function def_env.port:close(close_port, close_interface)
 		end
 	end
 	return true, "Closed "..n_closed.." ports";
+end
+
+def_env.muc = {};
+
+local console_room_mt = {
+	__index = function (self, k) return self.room[k]; end;
+	__tostring = function (self)
+		return "MUC room <"..self.room.jid..">";
+	end;
+};
+
+function def_env.muc:room(room_jid)
+	local room_name, host = jid_split(room_jid);
+	if not hosts[host] then
+		return nil, "No such host: "..host;
+	elseif not hosts[host].modules.muc then
+		return nil, "Host '"..host.."' is not a MUC service";
+	end
+	local room_obj = hosts[host].modules.muc.rooms[room_jid];
+	if not room_obj then
+		return nil, "No such room: "..room_jid;
+	end
+	return setmetatable({ room = room_obj }, console_room_mt);
 end
 
 -------------
