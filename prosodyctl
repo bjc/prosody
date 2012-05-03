@@ -493,7 +493,7 @@ function commands.about(arg)
 	end
 	
 	require "util.array";
-	require "util.iterators";
+	local keys = require "util.iterators".keys;
 	
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
