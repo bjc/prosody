@@ -18,7 +18,7 @@ end
 local server;
 
 if use_luaevent then
-	server = require "net.server_select";
+	server = require "net.server_event";
 
 	-- Overwrite signal.signal() because we need to ask libevent to
 	-- handle them instead
