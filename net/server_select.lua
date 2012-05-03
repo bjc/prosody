@@ -75,7 +75,6 @@ local id
 local loop
 local stats
 local idfalse
-local addtimer
 local closeall
 local addsocket
 local addserver
@@ -921,6 +920,7 @@ end
 ----------------------------------// PUBLIC INTERFACE //--
 
 return {
+	_addtimer = addtimer,
 
 	addclient = addclient,
 	wrapclient = wrapclient,
@@ -930,7 +930,6 @@ return {
 	step = step,
 	stats = stats,
 	closeall = closeall,
-	addtimer = addtimer,
 	addserver = addserver,
 	getserver = getserver,
 	setlogger = setlogger,
