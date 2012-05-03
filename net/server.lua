@@ -18,19 +18,8 @@ end
 local server;
 
 if use_luaevent then
-	server = require "net.server_event";
-	-- util.timer requires "net.server", so instead of having
-	-- Lua look for, and load us again (causing a loop) - set this here
-	-- (usually it isn't set until we return, look down there...)
-	package.loaded["net.server"] = server;
-	
-	-- Backwards compatibility for timers, addtimer
-	-- called a function roughly every second
-	local add_task = require "util.timer".add_task;
-	function server.addtimer(f)
-		return add_task(1, function (...) f(...); return 1; end);
-	end
-	
+	server = require "net.server_select";
+
 	-- Overwrite signal.signal() because we need to ask libevent to
 	-- handle them instead
 	local ok, signal = pcall(require, "util.signal");
@@ -48,7 +37,6 @@ if use_luaevent then
 	end
 else
 	server = require "net.server_select";
-	package.loaded["net.server"] = server;
 end
 
 -- require "net.server" shall now forever return this,
