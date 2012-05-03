@@ -60,8 +60,8 @@ if not server.event then
 		return next_time;
 	end);
 else
-	local event = require "net.server".event;
-	local event_base = require "net.server".event_base;
+	local event = server.event;
+	local event_base = server.event_base;
 	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
 
 	function _add_task(delay, callback)
