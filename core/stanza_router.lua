@@ -192,7 +192,7 @@ function core_route_stanza(origin, stanza)
 			stanza.attr.xmlns = nil;
 			local routed = prosody.events.fire_event("route/remote", { origin = origin, stanza = stanza, from_host = from_host, to_host = host }); --FIXME: Should be per-host (shared modules!)
 			stanza.attr.xmlns = xmlns; -- reset
-			if routed == nil then
+			if not routed then
 				core_route_stanza(hosts[from_host], st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
 			end
 		end
