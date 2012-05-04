@@ -213,17 +213,20 @@ function stream_callbacks.streamopened(session, attr)
 			return;
 		end
 		
+		-- For convenience we'll put the sanitised values into these variables
+		to, from = session.to_host, session.from_host;
+		
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "Incoming s2s received %s", st.stanza("stream:stream", attr):top_tag());
-		if session.to_host then
-			if not hosts[session.to_host] then
+		if to then
+			if not hosts[to] then
 				-- Attempting to connect to a host we don't serve
 				session:close({
 					condition = "host-unknown";
-					text = "This host does not serve "..session.to_host
+					text = "This host does not serve "..to
 				});
 				return;
-			elseif hosts[session.to_host].disallow_s2s then
+			elseif hosts[to].disallow_s2s then
 				-- Attempting to connect to a host that disallows s2s
 				session:close({
 					condition = "policy-violation";
@@ -237,23 +240,23 @@ function stream_callbacks.streamopened(session, attr)
 
 		send("<?xml version='1.0'?>");
 		send(st.stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=to, to=from, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
-			if session.to_host then
-				hosts[session.to_host].events.fire_event("s2s-stream-features", { origin = session, features = features });
+			if to then
+				hosts[to].events.fire_event("s2s-stream-features", { origin = session, features = features });
 			else
-				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or "unknown host");
 			end
 			
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);
 		end
 		
-		local host_session = hosts[session.to_host];
+		local host_session = hosts[to];
 		session.send = function(stanza)
-			host_session.events.fire_event("route/remote", { from_host = session.to_host, to_host = session.from_host, stanza = stanza})
+			host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza})
 		end;
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
