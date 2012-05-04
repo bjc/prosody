@@ -67,7 +67,8 @@ local function bounce_sendq(session, reason)
 	session.sendq = nil;
 end
 
-module:hook("route/remote", function (event)
+-- Handles stanzas to existing s2s sessions
+function route_to_existing_session(event)
 	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	if not hosts[from_host] then
 		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
@@ -101,9 +102,10 @@ module:hook("route/remote", function (event)
 			return true;
 		end
 	end
-end, 200);
+end
 
-module:hook("route/remote", function (event)
+-- Create a new outgoing session for a stanza
+function route_to_new_session(event)
 	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	log("debug", "opening a new outgoing connection for this stanza");
 	local host_session = s2s_new_outgoing(from_host, to_host);
@@ -119,7 +121,15 @@ module:hook("route/remote", function (event)
 		return false;
 	end
 	return true;
-end, 100);
+end
+
+function module.add_host(module)
+	if module:get_option_boolean("disallow_s2s", false) then
+		return nil, "This host has disallow_s2s set";
+	end
+	module:hook("route/remote", route_to_existing_session, 200);
+	module:hook("route/remote", route_to_new_session, 100);
+end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
