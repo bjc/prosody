@@ -50,15 +50,17 @@ local function dm_callback(username, host, datastore, data)
 	end
 	return username, host, datastore, data;
 end
-local host = hosts[module.host];
-local _saved_disallow_s2s = host.disallow_s2s;
+
+if module:get_option_boolean("disallow_s2s", true) then
+	module:hook("route/remote", function (event)
+		return false; -- Block outgoing s2s from anonymous users
+	end, 300);
+end
+
 function module.load()
-	_saved_disallow_s2s = host.disallow_s2s;
-	host.disallow_s2s = module:get_option("disallow_s2s") ~= false;
 	datamanager.add_callback(dm_callback);
 end
 function module.unload()
-	host.disallow_s2s = _saved_disallow_s2s;
 	datamanager.remove_callback(dm_callback);
 end
 
