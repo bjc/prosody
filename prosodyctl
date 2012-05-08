@@ -205,6 +205,7 @@ local error_messages = setmetatable({
 		["invalid-hostname"] = "The given hostname is invalid";
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
+		["no-such-host"] = "The given hostname does not exist in the config";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see http://prosody.im/doc/prosodyctl for more info";
@@ -648,7 +649,7 @@ function cert_commands.config(arg)
 		show_message("Config written to " .. conf_filename);
 		return nil, conf_filename;
 	else
-		show_usage("cert config HOSTNAME", "generates config for OpenSSL")
+		show_usage("cert config HOSTNAME", "builds a config for OpenSSL")
 	end
 end
 
@@ -714,6 +715,10 @@ function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
+			if not hosts[arg[1]] then
+				show_message(error_messages["no-such-host"]);
+				return
+			end
 			return cert_commands[subcmd](arg);
 		end
 	end
