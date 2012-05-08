@@ -614,14 +614,18 @@ function commands.unregister(arg)
 end
 
 local openssl = require "util.openssl";
+local lfs = require "lfs";
 
 local cert_commands = {};
+
+local function ask_overwrite(filename)
+	return lfs.attributes(filename) and not show_yesno("Overwrite "..filename .. "?");
+end
 
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local conf_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cnf";
-		if os.execute("test -f "..conf_filename) == 0
-			and not show_yesno("Overwrite "..conf_filename .. "?") then
+		if ask_overwrite(conf_filename) then
 			return nil, conf_filename;
 		end
 		local conf = openssl.config.new();
@@ -651,12 +655,10 @@ end
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local key_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".key";
-		if os.execute("test -f "..key_filename) == 0 then
-			if not show_yesno("Overwrite "..key_filename .. "?") then
-				return nil, key_filename;
-			end
-			os.remove(key_filename); -- We chmod this file to not have write permissions
+		if ask_overwrite(key_filename) then
+			return nil, key_filename;
 		end
+		os.remove(key_filename); -- We chmod this file to not have write permissions
 		local key_size = tonumber(arg[2] or show_prompt("Choose key size (2048):") or 2048);
 		if openssl.genrsa{out=key_filename, key_size} then
 			os.execute(("chmod 400 '%s'"):format(key_filename));
@@ -672,8 +674,7 @@ end
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local req_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".req";
-		if os.execute("test -f "..req_filename) == 0
-			and not show_yesno("Overwrite "..req_filename .. "?") then
+		if ask_overwrite(req_filename) then
 			return nil, req_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
@@ -691,9 +692,8 @@ end
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
-		if os.execute("test -f "..cert_filename) == 0
-			and not show_yesno("Overwrite "..cert_filename .. "?") then
-			return nil, cert_filename;
+		if ask_overwrite(cert_filename) then
+			return nil, conf_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config({arg[1]});
