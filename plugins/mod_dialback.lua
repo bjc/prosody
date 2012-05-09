@@ -76,21 +76,27 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		
 		dialback_requests[attr.from.."/"..origin.streamid] = origin;
 		
+		local compat_check;
 		if not origin.from_host then
 			-- Just used for friendlier logging
 			origin.from_host = nameprep(attr.from);
-			-- COMPAT: Fix ejabberd chopness by resetting the send function
-			if not origin.from_host then
-				origin.log("debug", "We need to know where to connect but remote server blindly refuses to tell us and to comply to specs, closing connection.");
-				origin:close("invalid-from");
-			else
-				origin.log("debug", "Remote server didn't specify a from attr, resetting session.send now that we know where to knock to.");
-				origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
-			end
+			-- COMPAT: Fix server's chopness by not including from
+			compat_check = true;
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
-			origin.to_host = attr.to;
+			origin.to_host = nameprep(attr.to);
+			-- COMPAT: Fix server's chopness by not including to
+			compat_check = true;
+		end
+
+		if not origin.from_host and not origin.to_host then
+			origin.log("debug", "Improper addressing supplied, no to or from?");
+			origin:close("improper-addressing");
+		end
+		-- COMPAT: reset session.send
+		if compat_check then
+			origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
 		end
 		
 		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
