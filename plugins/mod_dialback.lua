@@ -78,6 +78,9 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		if not origin.from_host then
 			-- Just used for friendlier logging
 			origin.from_host = attr.from;
+			-- COMPAT: Fix ejabberd chopness by resetting the send function
+			origin.log("debug", "Remote server didn't specify a from attr, resetting session.send now that we know where to knock to.");
+			origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
