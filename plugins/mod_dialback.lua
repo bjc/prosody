@@ -15,6 +15,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 
@@ -77,10 +78,15 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		
 		if not origin.from_host then
 			-- Just used for friendlier logging
-			origin.from_host = attr.from;
+			origin.from_host = nameprep(attr.from);
 			-- COMPAT: Fix ejabberd chopness by resetting the send function
-			origin.log("debug", "Remote server didn't specify a from attr, resetting session.send now that we know where to knock to.");
-			origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
+			if not origin.from_host then
+				origin.log("debug", "We need to know where to connect but remote server blindly refuses to tell us and to comply to specs, closing connection.");
+				origin:close("invalid-from");
+			else
+				origin.log("debug", "Remote server didn't specify a from attr, resetting session.send now that we know where to knock to.");
+				origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
+			end
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
