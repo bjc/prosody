@@ -205,6 +205,7 @@ local error_messages = setmetatable({
 		["invalid-hostname"] = "The given hostname is invalid";
 		["no-password"] = "No password was supplied";
 		["no-such-user"] = "The given user does not exist on the server";
+		["no-such-host"] = "The given hostname does not exist in the config";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see http://prosody.im/doc/prosodyctl for more info";
@@ -613,23 +614,23 @@ function commands.unregister(arg)
 	return 1;
 end
 
-local x509 = require "util.x509";
-local genx509san = x509.genx509san;
-local opensslbaseconf = x509.baseconf;
-local seralizeopensslbaseconf = x509.serialize_conf;
+local openssl = require "util.openssl";
+local lfs = require "lfs";
 
 local cert_commands = {};
 
--- TODO Should this be moved to util.prosodyctl or x509?
+local function ask_overwrite(filename)
+	return lfs.attributes(filename) and not show_yesno("Overwrite "..filename .. "?");
+end
+
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local conf_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cnf";
-		if os.execute("test -f "..conf_filename) == 0
-			and not show_yesno("Overwrite "..conf_filename .. "?") then
+		if ask_overwrite(conf_filename) then
 			return nil, conf_filename;
 		end
-		local conf = opensslbaseconf();
-		conf.subject_alternative_name = genx509san(hosts, config, arg, true)
+		local conf = openssl.config.new();
+		conf:from_prosody(hosts, config, arg);
 		for k, v in pairs(conf.distinguished_name) do
 			local nv;
 			if k == "commonName" then 
@@ -642,28 +643,30 @@ function cert_commands.config(arg)
 			conf.distinguished_name[k] = nv ~= "." and nv or nil;
 		end
 		local conf_file = io.open(conf_filename, "w");
-		conf_file:write(seralizeopensslbaseconf(conf));
+		conf_file:write(conf:serialize());
 		conf_file:close();
 		print("");
 		show_message("Config written to " .. conf_filename);
 		return nil, conf_filename;
 	else
-		show_usage("cert config HOSTNAME", "generates config for OpenSSL")
+		show_usage("cert config HOSTNAME", "builds a config for OpenSSL")
 	end
 end
 
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local key_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".key";
-		if os.execute("test -f "..key_filename) == 0
-			and not show_yesno("Overwrite "..key_filename .. "?") then
+		if ask_overwrite(key_filename) then
 			return nil, key_filename;
 		end
+		os.remove(key_filename); -- We chmod this file to not have write permissions
 		local key_size = tonumber(arg[2] or show_prompt("Choose key size (2048):") or 2048);
-		os.execute(("openssl genrsa -out %s %d"):format(key_filename, tonumber(key_size)));
-		os.execute(("chmod 400 %s"):format(key_filename));
-		show_message("Key written to ".. key_filename);
-		return nil, key_filename;
+		if openssl.genrsa{out=key_filename, key_size} then
+			os.execute(("chmod 400 '%s'"):format(key_filename));
+			show_message("Key written to ".. key_filename);
+			return nil, key_filename;
+		end
+		show_message("There was a problem, see OpenSSL output");
 	else
 		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key")
 	end
@@ -672,15 +675,16 @@ end
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local req_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".req";
-		if os.execute("test -f "..req_filename) == 0
-			and not show_yesno("Overwrite "..req_filename .. "?") then
+		if ask_overwrite(req_filename) then
 			return nil, req_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config({arg[1]});
-		os.execute(("openssl req -new -key %s -utf8 -config %s -out %s")
-			:format(key_filename, conf_filename, req_filename));
-		show_message("Certificate request written to ".. req_filename);
+		if openssl.req{new=true, key=key_filename, utf8=true, config=conf_filename, out=req_filename} then
+			show_message("Certificate request written to ".. req_filename);
+		else
+			show_message("There was a problem, see OpenSSL output");
+		end
 	else
 		show_usage("cert request HOSTNAME", "Generates a certificate request")
 	end
@@ -689,15 +693,19 @@ end
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
-		if os.execute("test -f "..cert_filename) == 0
-			and not show_yesno("Overwrite "..cert_filename .. "?") then
-			return nil, cert_filename;
+		if ask_overwrite(cert_filename) then
+			return nil, conf_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config({arg[1]});
-		os.execute(("openssl req -new -x509 -nodes -key %s -days 365 -sha1 -utf8 -config %s -out %s")
-			:format(key_filename, conf_filename, cert_filename));
-		show_message("Certificate written to ".. cert_filename);
+		local ret;
+		if key_filename and conf_filename and cert_filename
+			and openssl.req{new=true, x509=true, nodes=true, key=key_filename,
+				days=365, sha1=true, utf8=true, config=conf_filename, out=cert_filename} then
+			show_message("Certificate written to ".. cert_filename);
+		else
+			show_message("There was a problem, see OpenSSL output");
+		end
 	else
 		show_usage("cert generate HOSTNAME", "Generates a self-signed certificate")
 	end
@@ -707,6 +715,10 @@ function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
+			if not hosts[arg[1]] then
+				show_message(error_messages["no-such-host"]);
+				return
+			end
 			return cert_commands[subcmd](arg);
 		end
 	end
