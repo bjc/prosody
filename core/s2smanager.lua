@@ -17,12 +17,7 @@ local logger_init = require "util.logger".init;
 
 local log = logger_init("s2smanager");
 
-local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
-local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
-
---FIXME: s2sout should create its own resolver w/ timeout
-dns.settimeout(dns_timeout);
 
 local prosody = _G.prosody;
 incoming_s2s = {};
