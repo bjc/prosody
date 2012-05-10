@@ -52,6 +52,7 @@ local function dm_callback(username, host, datastore, data)
 end
 
 if module:get_option_boolean("disallow_s2s", true) then
+	hosts[module.host].disallow_s2s = true;
 	module:hook("route/remote", function (event)
 		return false; -- Block outgoing s2s from anonymous users
 	end, 300);
