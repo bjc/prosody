@@ -19,7 +19,7 @@ local function t_sort(t, comp)
 	end
 end
 
-function source(dest, candidates)
+local function source(dest, candidates)
 	local function comp(ipA, ipB)
 		-- Rule 1: Prefer same address
 		if dest == ipA then
@@ -70,7 +70,7 @@ function source(dest, candidates)
 	return candidates[1];
 end
 
-function destination(candidates, sources)
+local function destination(candidates, sources)
 	local sourceAddrs = {};
 	local function comp(ipA, ipB)
 		local ipAsource = sourceAddrs[ipA];
