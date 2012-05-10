@@ -117,10 +117,15 @@ function mark_connected(session)
 	local event_data = { session = session };
 	if session.type == "s2sout" then
 		prosody.events.fire_event("s2sout-established", event_data);
-		hosts[session.from_host].events.fire_event("s2sout-established", event_data);
+		hosts[from].events.fire_event("s2sout-established", event_data);
 	else
+		local host_session = hosts[to];
+		session.send = function(stanza)
+			host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
+		end;
+
 		prosody.events.fire_event("s2sin-established", event_data);
-		hosts[session.to_host].events.fire_event("s2sin-established", event_data);
+		hosts[to].events.fire_event("s2sin-established", event_data);
 	end
 	
 	if session.direction == "outgoing" then
