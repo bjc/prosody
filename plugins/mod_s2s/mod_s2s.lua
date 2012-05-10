@@ -253,11 +253,6 @@ function stream_callbacks.streamopened(session, attr)
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);
 		end
-		
-		local host_session = hosts[to];
-		session.send = function(stanza)
-			host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza})
-		end;
 	elseif session.direction == "outgoing" then
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
