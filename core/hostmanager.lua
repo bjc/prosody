@@ -74,7 +74,6 @@ function activate(host, host_config)
 		s2sout = {};
 		events = events_new();
 		dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
-		disallow_s2s = configmanager.get(host, "core", "disallow_s2s");
 		send = host_send;
 	};
 	if not host_config.core.component_module then -- host

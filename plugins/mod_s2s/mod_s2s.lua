@@ -125,6 +125,7 @@ end
 
 function module.add_host(module)
 	if module:get_option_boolean("disallow_s2s", false) then
+		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see http://prosody.im/doc/s2s#disabling");
 		return nil, "This host has disallow_s2s set";
 	end
 	module:hook("route/remote", route_to_existing_session, 200);
@@ -226,11 +227,11 @@ function stream_callbacks.streamopened(session, attr)
 					text = "This host does not serve "..to
 				});
 				return;
-			elseif hosts[to].disallow_s2s then
+			elseif not hosts[to].modules.s2s then
 				-- Attempting to connect to a host that disallows s2s
 				session:close({
 					condition = "policy-violation";
-					text = "Server-to-server communication is not allowed to this host";
+					text = "Server-to-server communication is disabled for this host";
 				});
 				return;
 			end
