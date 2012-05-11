@@ -15,6 +15,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 
@@ -79,8 +80,21 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		
 		-- COMPAT: ejabberd, gmail and perhaps others do not always set 'to' and 'from'
 		-- on streams. We fill in the session's to/from here instead.
-		if not origin.from_host then origin.from_host = from; end
-		if not origin.to_host then origin.to_host = to;	end
+		if not origin.from_host then
+			origin.from_host = nameprep(attr.from);
+			if not origin.from_host then
+				origin.log("debug", "We need to know where to connect but remote server blindly refuses to tell us and to comply to specs, closing connection.");
+				origin:close("invalid-from");
+			end
+		end
+		if not origin.to_host then
+			origin.to_host = nameprep(attr.to);
+		end
+
+		if not origin.from_host and not origin.to_host then
+			origin.log("debug", "Improper addressing supplied, no to or from?");
+			origin:close("improper-addressing");
+		end
 		
 		origin.log("debug", "asking %s if key %s belongs to them", from, stanza[1]);
 		module:fire_event("route/remote", {
