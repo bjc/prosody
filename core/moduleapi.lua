@@ -112,7 +112,7 @@ function api:depends(name)
 	if not self.dependencies then
 		self.dependencies = {};
 		self:hook("module-reloaded", function (event)
-			if self.dependencies[event.module] then
+			if self.dependencies[event.module] and not self.reloading then
 				self:log("info", "Auto-reloading due to reload of %s:%s", event.host, event.module);
 				modulemanager.reload(self.host, self.name);
 				return;
