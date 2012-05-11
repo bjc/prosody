@@ -79,7 +79,11 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		local compat_check;
 		if not origin.from_host then
 			-- Just used for friendlier logging
-			origin.from_host = attr.from;
+			origin.from_host = nameprep(attr.from);
+			if not origin.from_host then
+				origin.log("debug", "We need to know where to connect but remote server blindly refuses to tell us and to comply to specs, closing connection.");
+				origin:close("invalid-from");
+			end
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
