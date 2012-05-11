@@ -91,7 +91,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			origin.to_host = nameprep(attr.to);
 		end
 
-		if not origin.from_host and not origin.to_host then
+		if not origin.from_host or not origin.to_host then
 			origin.log("debug", "Improper addressing supplied, no to or from?");
 			origin:close("improper-addressing");
 		end
