@@ -6,7 +6,7 @@ local log = require "util.logger".init("portmanager");
 local multitable = require "util.multitable";
 local set = require "util.set";
 
-local table, package = table, package;
+local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
 local type, tonumber, ipairs, pairs = type, tonumber, ipairs, pairs;
 
