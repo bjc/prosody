@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local format = string.format;
-
 local hosts = _G.hosts;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 
@@ -28,7 +26,7 @@ end
 function initiate_dialback(session)
 	-- generate dialback key
 	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
-	session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
+	session.sends2s(st.stanza("db:result", { from = session.from_host, to = session.to_host }):text(session.dialback_key));
 	session.log("info", "sent dialback key on outgoing s2s stream");
 end
 
