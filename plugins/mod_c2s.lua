@@ -17,7 +17,6 @@ local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionma
 local uuid_generate = require "util.uuid".generate;
 
 local xpcall, tostring, type = xpcall, tostring, type;
-local format = string.format;
 local traceback = debug.traceback;
 
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -54,8 +53,9 @@ function stream_callbacks.streamopened(session, attr)
 		return;
 	end
 
-	send("<?xml version='1.0'?>");
-	send(format("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='%s' from='%s' version='1.0' xml:lang='en'>", session.streamid, session.host));
+	send("<?xml version='1.0'?>"..st.stanza("stream:stream", {
+		xmlns = 'jabber:client', ["xmlns:stream"] = 'http://etherx.jabber.org/streams';
+		id = session.streamid, from = session.host, version = '1.0', ["xml:lang"] = 'en' }):top_tag());
 
 	(session.log or log)("debug", "Sent reply <stream:stream> to client");
 	session.notopen = nil;
