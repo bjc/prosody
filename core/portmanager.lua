@@ -1,4 +1,5 @@
 local config = require "core.configmanager";
+local certmanager = require "core.certmanager";
 local server = require "net.server";
 
 local log = require "util.logger".init("portmanager");
@@ -102,13 +103,6 @@ function activate(service_name)
 		   });
 
 	local mode = listener.default_mode or "*a";
-	local ssl;
-	if service_info.encryption == "ssl" then
-		ssl = prosody.global_ssl_ctx;
-		if not ssl then
-			return nil, "global-ssl-context-required";
-		end
-	end
 	
 	for interface in bind_interfaces do
 		for port in bind_ports do
@@ -116,6 +110,13 @@ function activate(service_name)
 			if #active_services:search(nil, interface, port) > 0 then
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port, active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
+				-- Create SSL context for this service/port
+				if service_info.encryption == "ssl" then
+					local ssl_config = config.get("*", config_prefix.."ssl");
+					ssl = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config and (ssl_config[port]
+						or (ssl_config.certificate and ssl_config)));
+				end
+				-- Start listening on interface+port
 				local handler, err = server.addserver(interface, port, listener, mode, ssl);
 				if not handler then
 					log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, port, err));
