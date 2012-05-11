@@ -65,20 +65,22 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		-- he wants to be identified through dialback
 		-- We need to check the key with the Authoritative server
 		local attr = stanza.attr;
-		origin.hosts[attr.from] = { dialback_key = stanza[1] };
+		local to, from = attr.to, attr.from;
 		
-		if not hosts[attr.to] then
+		origin.hosts[from] = { dialback_key = stanza[1] };
+		
+		if not hosts[to] then
 			-- Not a host that we serve
-			origin.log("info", "%s tried to connect to %s, which we don't serve", attr.from, attr.to);
+			origin.log("info", "%s tried to connect to %s, which we don't serve", from, to);
 			origin:close("host-unknown");
 			return true;
 		end
 		
-		dialback_requests[attr.from.."/"..origin.streamid] = origin;
+		dialback_requests[from.."/"..origin.streamid] = origin;
 		
-		local compat_check;
+		-- COMPAT: ejabberd, gmail and perhaps others do not always set 'to' and 'from'
+		-- on streams. We fill in the session's to/from here instead.
 		if not origin.from_host then
-			-- Just used for friendlier logging
 			origin.from_host = nameprep(attr.from);
 			if not origin.from_host then
 				origin.log("debug", "We need to know where to connect but remote server blindly refuses to tell us and to comply to specs, closing connection.");
@@ -86,23 +88,19 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			end
 		end
 		if not origin.to_host then
-			-- Just used for friendlier logging
 			origin.to_host = nameprep(attr.to);
-			-- COMPAT: Fix server's chopness by not including to
-			compat_check = true;
 		end
 
 		if not origin.from_host and not origin.to_host then
 			origin.log("debug", "Improper addressing supplied, no to or from?");
 			origin:close("improper-addressing");
 		end
-		-- COMPAT: reset session.send
-		if compat_check then
-			origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
-		end
 		
-		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
-		origin.send(st.stanza("db:verify", { from = attr.to, to = attr.from, id = origin.streamid }):text(stanza[1]));
+		origin.log("debug", "asking %s if key %s belongs to them", from, stanza[1]);
+		module:fire_event("route/remote", {
+			from_host = to, to_host = from;
+			stanza = st.stanza("db:verify", { from = to, to = from, id = origin.streamid }):text(stanza[1]);
+		});
 		return true;
 	end
 end);
