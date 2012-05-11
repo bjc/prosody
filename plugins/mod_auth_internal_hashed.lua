@@ -9,22 +9,11 @@
 
 local datamanager = require "util.datamanager";
 local log = require "util.logger".init("auth_internal_hashed");
-local type = type;
-local error = error;
-local ipairs = ipairs;
-local hashes = require "util.hashes";
-local jid_bare = require "util.jid".bare;
 local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
-local config = require "core.configmanager";
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local hosts = hosts;
-
--- COMPAT w/old trunk: remove these two lines before 0.8 release
-local hmac_sha1 = require "util.hmac".sha1;
-local sha1 = require "util.hashes".sha1;
 
 local to_hex;
 do
@@ -46,8 +35,6 @@ do
 	end
 end
 
-
-local prosody = _G.prosody;
 
 -- Default; can be set per-user
 local iteration_count = 4096;
@@ -73,16 +60,6 @@ function new_hashpass_provider(host)
 
 		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
-		end
-		
-		-- convert hexpass to stored_key and server_key
-		-- COMPAT w/old trunk: remove before 0.8 release
-		if credentials.hashpass then
-			local salted_password = from_hex(credentials.hashpass);
-			credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
-			credentials.server_key = to_hex(hmac_sha1(salted_password, "Server Key"));
-			credentials.hashpass = nil
-			datamanager.store(username, host, "accounts", credentials);
 		end
 		
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
@@ -158,16 +135,6 @@ function new_hashpass_provider(host)
 					if not credentials then return; end
 				end
 				
-				-- convert hexpass to stored_key and server_key
-				-- COMPAT w/old trunk: remove before 0.8 release
-				if credentials.hashpass then
-					local salted_password = from_hex(credentials.hashpass);
-					credentials.stored_key = sha1(hmac_sha1(salted_password, "Client Key"), true);
-					credentials.server_key = to_hex(hmac_sha1(salted_password, "Server Key"));
-					credentials.hashpass = nil
-					datamanager.store(username, host, "accounts", credentials);
-				end
-			
 				local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
 				stored_key = stored_key and from_hex(stored_key);
 				server_key = server_key and from_hex(server_key);

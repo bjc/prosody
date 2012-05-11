@@ -107,9 +107,6 @@ local function parser(success_cb, parser_type, options_cb)
 				httpversion = httpversion;
 				headers = headers;
 				body = body;
-				-- COMPAT the properties below are deprecated
-				responseversion = httpversion;
-				responseheaders = headers;
 			});
 		end
 	else coroutine.yield("unknown-parser-type"); end

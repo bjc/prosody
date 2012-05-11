@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local format = string.format;
-
 local hosts = _G.hosts;
 local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 
@@ -15,9 +13,9 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
-local xmlns_dialback = "jabber:server:dialback";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
@@ -28,7 +26,7 @@ end
 function initiate_dialback(session)
 	-- generate dialback key
 	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
-	session.sends2s(format("<db:result from='%s' to='%s'>%s</db:result>", session.from_host, session.to_host, session.dialback_key));
+	session.sends2s(st.stanza("db:result", { from = session.from_host, to = session.to_host }):text(session.dialback_key));
 	session.log("info", "sent dialback key on outgoing s2s stream");
 end
 
@@ -65,28 +63,35 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		-- he wants to be identified through dialback
 		-- We need to check the key with the Authoritative server
 		local attr = stanza.attr;
-		origin.hosts[attr.from] = { dialback_key = stanza[1] };
+		local to, from = nameprep(attr.to), nameprep(attr.from);
 		
-		if not hosts[attr.to] then
+		if not hosts[to] then
 			-- Not a host that we serve
-			origin.log("info", "%s tried to connect to %s, which we don't serve", attr.from, attr.to);
+			origin.log("info", "%s tried to connect to %s, which we don't serve", from, to);
 			origin:close("host-unknown");
 			return true;
+		elseif not from then
+			origin:close("improper-addressing");
 		end
 		
-		dialback_requests[attr.from.."/"..origin.streamid] = origin;
+		origin.hosts[from] = { dialback_key = stanza[1] };
 		
+		dialback_requests[from.."/"..origin.streamid] = origin;
+		
+		-- COMPAT: ejabberd, gmail and perhaps others do not always set 'to' and 'from'
+		-- on streams. We fill in the session's to/from here instead.
 		if not origin.from_host then
-			-- Just used for friendlier logging
-			origin.from_host = attr.from;
+			origin.from_host = from;
 		end
 		if not origin.to_host then
-			-- Just used for friendlier logging
-			origin.to_host = attr.to;
+			origin.to_host = nameprep(attr.to);
 		end
-		
-		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
-		origin.send(st.stanza("db:verify", { from = attr.to, to = attr.from, id = origin.streamid }):text(stanza[1]));
+
+		origin.log("debug", "asking %s if key %s belongs to them", from, stanza[1]);
+		module:fire_event("route/remote", {
+			from_host = to, to_host = from;
+			stanza = st.stanza("db:verify", { from = to, to = from, id = origin.streamid }):text(stanza[1]);
+		});
 		return true;
 	end
 end);

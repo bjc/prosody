@@ -8,6 +8,10 @@
 
 module:set_global();
 
+local prosody = prosody;
+local hosts = prosody.hosts;
+local core_process_stanza = core_process_stanza;
+
 local tostring, type = tostring, type;
 local t_insert = table.insert;
 local xpcall, traceback = xpcall, debug.traceback;
@@ -20,6 +24,7 @@ local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
+local s2s_mark_connected = require "core.s2smanager".mark_connected;
 local uuid_gen = require "util.uuid".generate;
 local cert_verify_identity = require "util.x509".verify_identity;
 
@@ -28,6 +33,8 @@ local s2sout = module:require("s2sout");
 local connect_timeout = module:get_option_number("s2s_timeout", 60);
 
 local sessions = module:shared("sessions");
+
+local log = module._log;
 
 --- Handle stanzas to remote domains
 
@@ -39,7 +46,7 @@ local function bounce_sendq(session, reason)
 	local dummy = {
 		type = "s2sin";
 		send = function(s)
-			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", get_traceback());
+			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", traceback());
 		end;
 		dummy = true;
 	};
@@ -60,7 +67,8 @@ local function bounce_sendq(session, reason)
 	session.sendq = nil;
 end
 
-module:hook("route/remote", function (event)
+-- Handles stanzas to existing s2s sessions
+function route_to_existing_session(event)
 	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	if not hosts[from_host] then
 		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
@@ -79,7 +87,7 @@ module:hook("route/remote", function (event)
 			return true;
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
-			log("error", "Traceback: %s", get_traceback());
+			log("error", "Traceback: %s", traceback());
 			log("error", "Stanza: %s", tostring(stanza));
 			return false;
 		else
@@ -94,9 +102,10 @@ module:hook("route/remote", function (event)
 			return true;
 		end
 	end
-end, 200);
+end
 
-module:hook("route/remote", function (event)
+-- Create a new outgoing session for a stanza
+function route_to_new_session(event)
 	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	log("debug", "opening a new outgoing connection for this stanza");
 	local host_session = s2s_new_outgoing(from_host, to_host);
@@ -112,7 +121,16 @@ module:hook("route/remote", function (event)
 		return false;
 	end
 	return true;
-end, 100);
+end
+
+function module.add_host(module)
+	if module:get_option_boolean("disallow_s2s", false) then
+		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see http://prosody.im/doc/s2s#disabling");
+		return nil, "This host has disallow_s2s set";
+	end
+	module:hook("route/remote", route_to_existing_session, 200);
+	module:hook("route/remote", route_to_new_session, 100);
+end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
@@ -127,6 +145,9 @@ local function check_cert_status(session)
 		-- Is there any interest in printing out all/the number of errors here?
 		if not chain_valid then
 			(session.log or log)("debug", "certificate chain validation result: invalid");
+			for depth, t in ipairs(errors) do
+				(session.log or log)("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
+			end
 			session.cert_chain_status = "invalid";
 		else
 			(session.log or log)("debug", "certificate chain validation result: valid");
@@ -156,7 +177,6 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 function stream_callbacks.streamopened(session, attr)
 	local send = session.sends2s;
 	
-	-- TODO: #29: SASL/TLS on s2s streams
 	session.version = tonumber(attr.version) or 0;
 	
 	-- TODO: Rename session.secure to session.encrypted
@@ -193,21 +213,24 @@ function stream_callbacks.streamopened(session, attr)
 			return;
 		end
 		
+		-- For convenience we'll put the sanitised values into these variables
+		to, from = session.to_host, session.from_host;
+		
 		session.streamid = uuid_gen();
 		(session.log or log)("debug", "Incoming s2s received %s", st.stanza("stream:stream", attr):top_tag());
-		if session.to_host then
-			if not hosts[session.to_host] then
+		if to then
+			if not hosts[to] then
 				-- Attempting to connect to a host we don't serve
 				session:close({
 					condition = "host-unknown";
-					text = "This host does not serve "..session.to_host
+					text = "This host does not serve "..to
 				});
 				return;
-			elseif hosts[session.to_host].disallow_s2s then
+			elseif not hosts[to].modules.s2s then
 				-- Attempting to connect to a host that disallows s2s
 				session:close({
 					condition = "policy-violation";
-					text = "Server-to-server communication is not allowed to this host";
+					text = "Server-to-server communication is disabled for this host";
 				});
 				return;
 			end
@@ -217,14 +240,14 @@ function stream_callbacks.streamopened(session, attr)
 
 		send("<?xml version='1.0'?>");
 		send(st.stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.to_host, to=session.from_host, version=(session.version > 0 and "1.0" or nil) }):top_tag());
+				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=to, to=from, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
-			if session.to_host then
-				hosts[session.to_host].events.fire_event("s2s-stream-features", { origin = session, features = features });
+			if to then
+				hosts[to].events.fire_event("s2s-stream-features", { origin = session, features = features });
 			else
-				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", session.from_host or "unknown host");
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or "unknown host");
 			end
 			
 			log("debug", "Sending stream features: %s", tostring(features));
@@ -261,7 +284,6 @@ function stream_callbacks.streamopened(session, attr)
 		end
 	end
 	session.notopen = nil;
-	session.send = function(stanza) prosody.events.fire_event("route/remote", { from_host = session.to_host, to_host = session.from_host, stanza = stanza}) end;
 end
 
 function stream_callbacks.streamclosed(session)
@@ -270,7 +292,7 @@ function stream_callbacks.streamclosed(session)
 end
 
 function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" then
+	if err and err ~= "closed" and session.direction == "outgoing" then
 		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 		if s2sout.attempt_connection(session, err) then
 			(session.log or log)("debug", "...so we're going to try another target");
@@ -440,7 +462,6 @@ function listener.onstatus(conn, status)
 	if status == "ssl-handshake-complete" then
 		local session = sessions[conn];
 		if session and session.direction == "outgoing" then
-			local to_host, from_host = session.to_host, session.from_host;
 			session.log("debug", "Sending stream header...");
 			session:open_stream(session.from_host, session.to_host);
 		end

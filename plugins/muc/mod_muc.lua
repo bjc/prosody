@@ -69,10 +69,10 @@ for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
 	local data = datamanager.load(node, muc_host, "config") or {};
 	local room = muc_new_room(jid, {
-		history_length = max_history_messages;
+		max_history_length = max_history_messages;
 	});
 	room._data = data._data;
-	room._data.history_length = max_history_messages; --TODO: Need to allow per-room with a global limit
+	room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
 	room._affiliations = data._affiliations;
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
@@ -80,7 +80,7 @@ for jid in pairs(persistent_rooms) do
 end
 
 local host_room = muc_new_room(muc_host, {
-	history_length = max_history_messages;
+	max_history_length = max_history_messages;
 });
 host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
@@ -131,7 +131,7 @@ function stanza_handler(event)
 		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
 			room = muc_new_room(bare, {
-				history_length = max_history_messages;
+				max_history_length = max_history_messages;
 			});
 			room.route_stanza = room_route_stanza;
 			room.save = room_save;

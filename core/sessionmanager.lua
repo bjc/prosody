@@ -143,10 +143,6 @@ function bind_resource(session, resource)
 		bare_sessions[session.username..'@'..session.host] = sessions;
 	else
 		local sessions = hosts[session.host].sessions[session.username].sessions;
-		local limit = config_get(session.host, "core", "max_resources") or 10;
-		if #sessions >= limit then
-			return nil, "cancel", "resource-constraint", "Resource limit reached; only "..limit.." resources allowed";
-		end
 		if sessions[resource] then
 			-- Resource conflict
 			local policy = config_get(session.host, "core", "conflict_resolve");

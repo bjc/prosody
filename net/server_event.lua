@@ -343,24 +343,11 @@ do
 				return nil, "writebuffer not empty, waiting"
 			end
 		else
-			debug( "try to close server with id:", self.id, "args:", now )
+			debug( "try to close server with id:", tostring(self.id), "args:", tostring(now) )
 			self.fatalerror = "server to close"
 			self:_lock( true )
-			local count = 0
-			for _, item in ipairs( interfacelist( ) ) do
-				if ( item.type ~= "server" ) and ( item._server == self ) then  -- client/server match
-					if item:close( now ) then  -- writebuffer was empty
-						count = count + 1
-					end
-				end
-			end
-			local timeout = 0  -- dont wait for unfinished writebuffers of clients...
-			if not now then
-				timeout = cfg.WRITE_TIMEOUT  -- ...or wait for it
-			end
-			self:_close( timeout )  -- add new event to remove the server interface
-			debug( "seconds remained until server is closed:", timeout )
-			return count  -- returns finished clients with empty writebuffer
+			self:_close( 0 )  -- add new event to remove the server interface
+			return true
 		end
 	end
 	

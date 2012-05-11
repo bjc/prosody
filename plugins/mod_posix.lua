@@ -112,7 +112,7 @@ end
 local syslog_opened;
 function syslog_sink_maker(config)
 	if not syslog_opened then
-		pposix.syslog_open("prosody");
+		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
 		syslog_opened = true;
 	end
 	local syslog, format = pposix.syslog_log, string.format;

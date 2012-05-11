@@ -12,6 +12,7 @@ local array = require "util.array";
 local set = require "util.set";
 local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
+local timer = require "util.timer";
 
 local multitable_new = require "util.multitable".new;
 
@@ -42,7 +43,7 @@ function api:get_host()
 end
 
 function api:get_host_type()
-	return hosts[self.host].type;
+	return self.host ~= "*" and hosts[self.host].type or nil;
 end
 
 function api:set_global()
@@ -73,6 +74,10 @@ function api:hook_object_event(object, event, handler, priority)
 	return object.add_handler(event, handler, priority);
 end
 
+function api:unhook_object_event(object, event, handler)
+	return object.remove_handler(event, handler);
+end
+
 function api:hook(event, handler, priority)
 	return self:hook_object_event((hosts[self.host] or prosody).events, event, handler, priority);
 end
@@ -81,7 +86,7 @@ function api:hook_global(event, handler, priority)
 	return self:hook_object_event(prosody.events, event, handler, priority);
 end
 
-function api:hook_stanza(xmlns, name, handler, priority)
+function api:hook_tag(xmlns, name, handler, priority)
 	if not handler and type(name) == "function" then
 		-- If only 2 options then they specified no xmlns
 		xmlns, name, handler, priority = nil, xmlns, name, handler;
@@ -91,6 +96,7 @@ function api:hook_stanza(xmlns, name, handler, priority)
 	end
 	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
 end
+api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
 
 function api:require(lib)
 	local f, n = pluginloader.load_code(self.name, lib..".lib.lua");
@@ -106,7 +112,7 @@ function api:depends(name)
 	if not self.dependencies then
 		self.dependencies = {};
 		self:hook("module-reloaded", function (event)
-			if self.dependencies[event.module] then
+			if self.dependencies[event.module] and not self.reloading then
 				self:log("info", "Auto-reloading due to reload of %s:%s", event.host, event.module);
 				modulemanager.reload(self.host, self.name);
 				return;
@@ -120,6 +126,10 @@ function api:depends(name)
 		end);
 	end
 	local mod = modulemanager.get_module(self.host, name) or modulemanager.get_module("*", name);
+	if mod and mod.module.host == "*" and self.host ~= "*"
+	and modulemanager.module_has_method(mod, "add_host") then
+		mod = nil; -- This is a shared module, so we still want to load it on our host
+	end
 	if not mod then
 		local err;
 		mod, err = modulemanager.load(self.host, name);
@@ -135,6 +145,7 @@ end
 -- Intentionally does not allow the table at a path to be _set_, it
 -- is auto-created if it does not exist.
 function api:shared(...)
+	if not self.shared_data then self.shared_data = {}; end
 	local paths = { n = select("#", ...), ... };
 	local data_array = {};
 	local default_path_components = { self.host, self.name };
@@ -150,6 +161,7 @@ function api:shared(...)
 			shared_data[path] = shared;
 		end
 		t_insert(data_array, shared);
+		self.shared_data[path] = shared;
 	end
 	return unpack(data_array);
 end
@@ -244,7 +256,6 @@ function api:get_option_set(name, ...)
 	return set.new(value);
 end
 
-local module_items = multitable_new();
 function api:add_item(key, value)
 	self.items = self.items or {};
 	self.items[key] = self.items[key] or {};
@@ -296,7 +307,7 @@ end
 function api:provides(name, item)
 	if not item then item = self.environment; end
 	if not item.name then
-		local item_name = module.name;
+		local item_name = self.name;
 		-- Strip a provider prefix to find the item name
 		-- (e.g. "auth_foo" -> "foo" for an auth provider)
 		if item_name:find(name.."_", 1, true) == 1 then
@@ -304,11 +315,28 @@ function api:provides(name, item)
 		end
 		item.name = item_name;
 	end
-	self:add_item(name, item);
+	self:add_item(name.."-provider", item);
 end
 
 function api:send(stanza)
 	return core_post_stanza(hosts[self.host], stanza);
+end
+
+function api:add_timer(delay, callback)
+	return timer.add_task(delay, function (t)
+		if self.loaded == false then return; end
+		return callback(t);
+	end);
+end
+
+local path_sep = package.config:sub(1,1);
+function api:get_directory()
+	return self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;
+end
+
+function api:load_resource(path, mode)
+	path = config.resolve_relative_path(self:get_directory(), path);
+	return io.open(path, mode);
 end
 
 return api;

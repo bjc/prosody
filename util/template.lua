@@ -7,6 +7,7 @@ local ipairs = ipairs;
 local error = error;
 local loadstring = loadstring;
 local debug = debug;
+local t_remove = table.remove;
 
 module("template")
 
@@ -42,7 +43,6 @@ local parse_xml = (function()
 			stanza:tag(name, attr);
 		end
 		function handler:CharacterData(data)
-			data = data:gsub("^%s*", ""):gsub("%s*$", "");
 			stanza:text(data);
 		end
 		function handler:EndElement(tagname)
@@ -59,6 +59,19 @@ local parse_xml = (function()
 		end
 	end;
 end)();
+
+local function trim_xml(stanza)
+	for i=#stanza,1,-1 do
+		local child = stanza[i];
+		if child.name then
+			trim_xml(child);
+		else
+			child = child:gsub("^%s*", ""):gsub("%s*$", "");
+			stanza[i] = child;
+			if child == "" then t_remove(stanza, i); end
+		end
+	end
+end
 
 local function create_string_string(str)
 	str = ("%q"):format(str);
@@ -118,6 +131,7 @@ local template_mt = { __tostring = function(t) return t.name end };
 local function create_template(templates, text)
 	local stanza, err = parse_xml(text);
 	if not stanza then error(err); end
+	trim_xml(stanza);
 
 	local info = debug.getinfo(3, "Sl");
 	info = info and ("template(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.currentline) or "template(unknown)";

@@ -21,6 +21,10 @@
 local nameprep = require "util.encodings".stringprep.nameprep;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local log = require "util.logger".init("x509");
+local pairs, ipairs = pairs, ipairs;
+local s_format = string.format;
+local t_insert = table.insert;
+local t_concat = table.concat;
 
 module "x509"
 

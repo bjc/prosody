@@ -17,7 +17,8 @@ local console_listener = { default_port = 5582; default_mode = "*l"; interface =
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare = require "util.jid".bare;
+local jid = require "util.jid";
+local jid_bare, jid_split = jid.bare, jid.split;
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 
@@ -277,8 +278,12 @@ local function get_hosts_set(hosts, module)
 		return set.new { hosts };
 	elseif hosts == nil then
 		local mm = require "modulemanager";
-		return set.new(array.collect(keys(prosody.hosts)))
+		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
 			/ function (host) return prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module); end;
+		if module and mm.get_module("*", module) then
+			hosts_set:add("*");
+		end
+		return hosts_set;
 	end
 end
 
@@ -288,16 +293,22 @@ function def_env.module:load(name, hosts, config)
 	hosts = get_hosts_set(hosts);
 	
 	-- Load the module for each host
-	local ok, err, count = true, nil, 0;
+	local ok, err, count, mod = true, nil, 0, nil;
 	for host in hosts do
 		if (not mm.is_loaded(host, name)) then
-			ok, err = mm.load(host, name, config);
-			if not ok then
+			mod, err = mm.load(host, name, config);
+			if not mod then
 				ok = false;
+				if err == "global-module-already-loaded" then
+					if count > 0 then
+						ok, err, count = true, nil, 1;
+					end
+					break;
+				end
 				self.session.print(err or "Unknown error loading module");
 			else
 				count = count + 1;
-				self.session.print("Loaded for "..host);
+				self.session.print("Loaded for "..mod.module.host);
 			end
 		end
 	end
@@ -330,11 +341,15 @@ end
 function def_env.module:reload(name, hosts)
 	local mm = require "modulemanager";
 
-	hosts = get_hosts_set(hosts, name);
-	
+	hosts = array.collect(get_hosts_set(hosts, name)):sort(function (a, b)
+		if a == "*" then return true
+		elseif b == "*" then return false
+		else return a < b; end
+	end);
+
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
-	for host in hosts do
+	for _, host in ipairs(hosts) do
 		if mm.is_loaded(host, name) then
 			ok, err = mm.reload(host, name);
 			if not ok then
@@ -355,6 +370,7 @@ end
 function def_env.module:list(hosts)
 	if hosts == nil then
 		hosts = array.collect(keys(prosody.hosts));
+		table.insert(hosts, 1, "*");
 	end
 	if type(hosts) == "string" then
 		hosts = { hosts };
@@ -365,8 +381,8 @@ function def_env.module:list(hosts)
 	
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
-		print(host..":");
-		local modules = array.collect(keys(prosody.hosts[host] and prosody.hosts[host].modules or {})):sort();
+		print((host == "*" and "Global" or host)..":");
+		local modules = array.collect(keys(modulemanager.get_modules(host) or {})):sort();
 		if #modules == 0 then
 			if prosody.hosts[host] then
 				print("    No modules loaded");
@@ -423,6 +439,16 @@ local function show_c2s(callback)
 			end
 		end
 	end
+end
+
+function def_env.c2s:count(match_jid)
+	local count = 0;
+	show_c2s(function (jid, session)
+		if (not match_jid) or jid:match(match_jid) then
+			count = count + 1;
+		end		
+	end);
+	return true, "Total: "..count.." clients";
 end
 
 function def_env.c2s:show(match_jid)
@@ -483,6 +509,24 @@ function def_env.c2s:close(match_jid)
 	return true, "Total: "..count.." sessions closed";
 end
 
+local function session_flags(session, line)
+	if session.cert_identity_status == "valid" then
+		line[#line+1] = "(secure)";
+	elseif session.secure then
+		line[#line+1] = "(encrypted)";
+	end
+	if session.compressed then
+		line[#line+1] = "(compressed)";
+	end
+	if session.smacks then
+		line[#line+1] = "(sm)";
+	end
+	if session.conn and session.conn:ip():match(":") then
+		line[#line+1] = "(IPv6)";
+	end
+	return table.concat(line, " ");
+end
+
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
 	local _print = self.session.print;
@@ -495,7 +539,7 @@ function def_env.s2s:show(match_jid)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
 				count_out = count_out + 1;
-				print("    "..host.." -> "..remotehost..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print(session_flags(session, {"   ", host, "->", remotehost}));
 				if session.sendq then
 					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
 				end
@@ -532,7 +576,7 @@ function def_env.s2s:show(match_jid)
 				-- Pft! is what I say to list comprehensions
 				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
 				count_in = count_in + 1;
-				print("    "..host.." <- "..(session.from_host or "(unknown)")..(session.cert_identity_status == "valid" and " (secure)" or "")..(session.secure and " (encrypted)" or "")..(session.compressed and " (compressed)" or ""));
+				print(session_flags(session, {"   ", host, "<-", session.from_host or "(unknown)"}));
 				if session.type == "s2sin_unauthed" then
 						print("        Connection not yet authenticated");
 				end
@@ -744,6 +788,74 @@ function def_env.host:list()
 	return true, i.." hosts";
 end
 
+def_env.port = {};
+
+function def_env.port:list()
+	local print = self.session.print;
+	local services = portmanager.get_active_services().data;
+	local ordered_services, n_ports = {}, 0;
+	for service, interfaces in pairs(services) do
+		table.insert(ordered_services, service);
+	end
+	table.sort(ordered_services);
+	for _, service in ipairs(ordered_services) do
+		local ports_list = {};
+		for interface, ports in pairs(services[service]) do
+			for port in pairs(ports) do
+				table.insert(ports_list, "["..interface.."]:"..port);
+			end
+		end
+		n_ports = n_ports + #ports_list;
+		print(service..": "..table.concat(ports_list, ", "));
+	end
+	return true, #ordered_services.." services listening on "..n_ports.." ports";
+end
+
+function def_env.port:close(close_port, close_interface)
+	close_port = assert(tonumber(close_port), "Invalid port number");
+	local n_closed = 0;
+	local services = portmanager.get_active_services().data;
+	for service, interfaces in pairs(services) do
+		for interface, ports in pairs(interfaces) do
+			if not close_interface or close_interface == interface then
+				if ports[close_port] then
+					self.session.print("Closing ["..interface.."]:"..close_port.."...");
+					local ok, err = portmanager.close(interface, close_port)
+					if not ok then
+						self.session.print("Failed to close "..interface.." "..port..": "..err);
+					else
+						n_closed = n_closed + 1;
+					end
+				end
+			end
+		end
+	end
+	return true, "Closed "..n_closed.." ports";
+end
+
+def_env.muc = {};
+
+local console_room_mt = {
+	__index = function (self, k) return self.room[k]; end;
+	__tostring = function (self)
+		return "MUC room <"..self.room.jid..">";
+	end;
+};
+
+function def_env.muc:room(room_jid)
+	local room_name, host = jid_split(room_jid);
+	if not hosts[host] then
+		return nil, "No such host: "..host;
+	elseif not hosts[host].modules.muc then
+		return nil, "Host '"..host.."' is not a MUC service";
+	end
+	local room_obj = hosts[host].modules.muc.rooms[room_jid];
+	if not room_obj then
+		return nil, "No such room: "..room_jid;
+	end
+	return setmetatable({ room = room_obj }, console_room_mt);
+end
+
 -------------
 
 function printbanner(session)
@@ -774,7 +886,8 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 end
 end
 
-require "core.portmanager".register_service("console", {
+module:add_item("net-provider", {
+	name = "console";
 	listener = console_listener;
 	default_port = 5582;
 	private = true;

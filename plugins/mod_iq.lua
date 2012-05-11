@@ -8,10 +8,8 @@
 
 
 local st = require "util.stanza";
-local jid_split = require "util.jid".split;
 
 local full_sessions = full_sessions;
-local bare_sessions = bare_sessions;
 
 if module:get_host_type() == "local" then
 	module:hook("iq/full", function(data)
@@ -33,7 +31,7 @@ end
 
 module:hook("iq/bare", function(data)
 	-- IQ to bare JID recieved
-	local origin, stanza = data.origin, data.stanza;
+	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
 	-- TODO fire post processing events
@@ -49,7 +47,7 @@ end);
 
 module:hook("iq/self", function(data)
 	-- IQ to self JID recieved
-	local origin, stanza = data.origin, data.stanza;
+	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
 	if type == "get" or type == "set" then
@@ -64,7 +62,7 @@ end);
 
 module:hook("iq/host", function(data)
 	-- IQ to a local host recieved
-	local origin, stanza = data.origin, data.stanza;
+	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
 	if type == "get" or type == "set" then

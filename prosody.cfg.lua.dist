@@ -45,7 +45,6 @@ modules_enabled = {
 		--"compression"; -- Stream compression
 
 	-- Nice to have
-		"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 		"version"; -- Replies to server version requests
 		"uptime"; -- Report how long server has been running
 		"time"; -- Let others know the time here on this server
@@ -57,16 +56,19 @@ modules_enabled = {
 	-- Admin interfaces
 		"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
 		--"admin_telnet"; -- Opens telnet console interface on localhost port 5582
+	
+	-- HTTP modules
+		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+		--"http_files"; -- Serve static files from a directory over HTTP
 
 	-- Other specific functionality
 		--"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
-		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
-		--"httpserver"; -- Serve static files from a directory over HTTP
 		--"groups"; -- Shared roster support
 		--"announce"; -- Send announcement to all online users
 		--"welcome"; -- Welcome users who register accounts
 		--"watchregistrations"; -- Alert admins of registrations
 		--"motd"; -- Send a message to users when they log in
+		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 };
 
 -- These modules are auto-loaded, should you

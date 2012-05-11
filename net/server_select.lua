@@ -75,7 +75,6 @@ local id
 local loop
 local stats
 local idfalse
-local addtimer
 local closeall
 local addsocket
 local addserver
@@ -202,6 +201,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		socket:close( )
 		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
+		_server[ip..":"..serverport] = nil;
 		_socketlist[ socket ] = nil
 		handler = nil
 		socket = nil
@@ -920,6 +920,7 @@ end
 ----------------------------------// PUBLIC INTERFACE //--
 
 return {
+	_addtimer = addtimer,
 
 	addclient = addclient,
 	wrapclient = wrapclient,
@@ -929,7 +930,6 @@ return {
 	step = step,
 	stats = stats,
 	closeall = closeall,
-	addtimer = addtimer,
 	addserver = addserver,
 	getserver = getserver,
 	setlogger = setlogger,

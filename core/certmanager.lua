@@ -35,7 +35,7 @@ function create_context(host, mode, user_ssl_config)
 		mode = mode;
 		protocol = user_ssl_config.protocol or "sslv23";
 		key = resolve_path(config_path, user_ssl_config.key);
-		password = user_ssl_config.password;
+		password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 		certificate = resolve_path(config_path, user_ssl_config.certificate);
 		capath = resolve_path(config_path, user_ssl_config.capath or default_capath);
 		cafile = resolve_path(config_path, user_ssl_config.cafile);
@@ -75,9 +75,9 @@ function create_context(host, mode, user_ssl_config)
 			else
 				reason = "Reason: "..tostring(reason):lower();
 			end
-			log("error", "SSL/TLS: Failed to load %s: %s (host: %s)", file, reason, host);
+			log("error", "SSL/TLS: Failed to load %s: %s (for %s)", file, reason, host);
 		else
-			log("error", "SSL/TLS: Error initialising for host %s: %s (host: %s)", host, err, host);
+			log("error", "SSL/TLS: Error initialising for %s: %s", host, err);
 		end
 	end
 	return ctx, err;

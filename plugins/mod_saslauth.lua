@@ -16,7 +16,6 @@ local base64 = require "util.encodings".base64;
 
 local cert_verify_identity = require "util.x509".verify_identity;
 
-local nodeprep = require "util.encodings".stringprep.nodeprep;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local tostring = tostring;
 
@@ -27,7 +26,6 @@ local log = module._log;
 
 local xmlns_sasl ='urn:ietf:params:xml:ns:xmpp-sasl';
 local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
-local xmlns_stanzas ='urn:ietf:params:xml:ns:xmpp-stanzas';
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
@@ -51,15 +49,14 @@ local function handle_status(session, status, ret, err_msg)
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
-		module:fire_event("authentication-success", { session = session });
-		local username = nodeprep(session.sasl_handler.username);
-
 		local ok, err = sm_make_authenticated(session, session.sasl_handler.username);
 		if ok then
+			module:fire_event("authentication-success", { session = session });
 			session.sasl_handler = nil;
 			session:reset_stream();
 		else
 			module:log("warn", "SASL succeeded but username was invalid");
+			module:fire_event("authentication-failure", { session = session, condition = "not-authorized", text = err });
 			session.sasl_handler = session.sasl_handler:clean_clone();
 			return "failure", "not-authorized", "User authenticated successfully, but username was invalid";
 		end
@@ -191,8 +188,10 @@ local function s2s_external_auth(session, stanza)
 		session.from_host = text;
 	end
 	session.sends2s(build_reply("success"))
-	module:log("info", "Accepting SASL EXTERNAL identity from %s", text or session.from_host);
-	s2s_make_authenticated(session, text or session.from_host)
+
+	local domain = text ~= "" and text or session.from_host;
+	module:log("info", "Accepting SASL EXTERNAL identity from %s", domain);
+	s2s_make_authenticated(session, domain);
 	session:reset_stream();
 	return true
 end

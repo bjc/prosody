@@ -14,15 +14,9 @@ local pluginloader = require "util.pluginloader";
 local hosts = hosts;
 local prosody = prosody;
 
-local loadfile, pcall, xpcall = loadfile, pcall, xpcall;
-local setmetatable, setfenv, getfenv = setmetatable, setfenv, getfenv;
-local pairs, ipairs = pairs, ipairs;
-local t_insert, t_concat = table.insert, table.concat;
-local type = type;
-local next = next;
-local rawget = rawget;
-local error = error;
-local tostring, tonumber = tostring, tonumber;
+local pcall, xpcall = pcall, xpcall;
+local setmetatable, rawget, setfenv = setmetatable, rawget, setfenv;
+local pairs, type, tostring = pairs, type, tostring;
 
 local debug_traceback = debug.traceback;
 local unpack, select = unpack, select;
@@ -32,7 +26,7 @@ pcall = function(f, ...)
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
 
-local array, set = require "util.array", require "util.set";
+local set = require "util.set";
 
 local autoload_modules = {"presence", "message", "iq", "offline", "c2s", "s2s"};
 local component_inheritable_modules = {"tls", "dialback", "iq"};
@@ -46,8 +40,6 @@ local api = _G.require "core.moduleapi"; -- Module API container
 
 -- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };
-
-local NULL = {};
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
@@ -82,6 +74,9 @@ function load_modules_for_host(host)
 	end
 end
 prosody.events.add_handler("host-activated", load_modules_for_host);
+prosody.events.add_handler("host-deactivated", function (host)
+	modulemap[host] = nil;
+end);
 
 --- Private helpers ---
 
@@ -110,6 +105,7 @@ local function do_unload_module(host, name)
 			end
 		end
 	end
+	mod.module.loaded = false;
 	modulemap[host][name] = nil;
 	return true;
 end
@@ -117,19 +113,40 @@ end
 local function do_load_module(host, module_name)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
-	elseif not hosts[host] then
+	elseif not hosts[host] and host ~= "*"then
 		return nil, "unknown-host";
 	end
 	
 	if not modulemap[host] then
 		modulemap[host] = {};
-		hosts[host].modules = modulemap[host];
+		if host ~= "*" then
+			hosts[host].modules = modulemap[host];
+		end
 	end
 	
 	if modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
 	elseif modulemap["*"][module_name] then
+		local mod = modulemap["*"][module_name];
+		if module_has_method(mod, "add_host") then
+			local _log = logger.init(host..":"..module_name);
+			local host_module_api = setmetatable({
+				host = host, event_handlers = {}, items = {};
+				_log = _log, log = function (self, ...) return _log(...); end;
+			},{
+				__index = modulemap["*"][module_name].module;
+			});
+			local host_module = setmetatable({ module = host_module_api }, { __index = mod });
+			host_module_api.environment = host_module;
+			modulemap[host][module_name] = host_module;
+			local ok, result, module_err = call_module_method(mod, "add_host", host_module_api);
+			if not ok or result == false then
+				modulemap[host][module_name] = nil;
+				return nil, ok and module_err or result;
+			end
+			return host_module;
+		end
 		return nil, "global-module-already-loaded";
 	end
 	
@@ -150,6 +167,7 @@ local function do_load_module(host, module_name)
 	
 	setfenv(mod, pluginenv);
 	
+	modulemap[host][module_name] = pluginenv;
 	local ok, err = pcall(mod);
 	if ok then
 		-- Call module's "load"
@@ -160,17 +178,23 @@ local function do_load_module(host, module_name)
 			end
 		end
 
-		modulemap[pluginenv.module.host][module_name] = pluginenv;
-		if pluginenv.module.host == "*" then
-			if not pluginenv.module.global then -- COMPAT w/pre-0.9
-				log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+		if api_instance.host == "*" then
+			if not api_instance.global then -- COMPAT w/pre-0.9
+				if host ~= "*" then
+					log("warn", "mod_%s: Setting module.host = '*' deprecated, call module:set_global() instead", module_name);
+				end
 				api_instance:set_global();
 			end
-		else
-			hosts[host].modules[module_name] = pluginenv;
+			modulemap[host][module_name] = nil;
+			modulemap[api_instance.host][module_name] = pluginenv;
+			if host ~= api_instance.host and module_has_method(pluginenv, "add_host") then
+				-- Now load the module again onto the host it was originally being loaded on
+				ok, err = do_load_module(host, module_name);
+			end
 		end
 	end
 	if not ok then
+		modulemap[api_instance.host][module_name] = nil;
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
 	end
 	return ok and pluginenv, err;
@@ -222,7 +246,7 @@ end
 function load(host, name)
 	local mod, err = do_load_module(host, name);
 	if mod then
-		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = host });
+		(hosts[mod.module.host] or prosody).events.fire_event("module-loaded", { module = name, host = mod.module.host });
 	end
 	return mod, err;
 end
@@ -237,13 +261,15 @@ function unload(host, name)
 end
 
 function reload(host, name)
-	local ok, err = do_reload_module(host, name);
-	if ok then
+	local mod, err = do_reload_module(host, name);
+	if mod then
+		modulemap[host][name].module.reloading = true;
 		(hosts[host] or prosody).events.fire_event("module-reloaded", { module = name, host = host });
+		mod.module.reloading = nil;
 	elseif not is_loaded(host, name) then
 		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	end
-	return ok, err;
+	return mod, err;
 end
 
 function get_module(host, name)
@@ -259,12 +285,12 @@ function is_loaded(host, name)
 end
 
 function module_has_method(module, method)
-	return type(module.module[method]) == "function";
+	return type(rawget(module.module, method)) == "function";
 end
 
 function call_module_method(module, method, ...)
-	if module_has_method(module, method) then
-		local f = module.module[method];
+	local f = rawget(module.module, method);
+	if type(f) == "function" then
 		return pcall(f, ...);
 	else
 		return false, "no-such-method";

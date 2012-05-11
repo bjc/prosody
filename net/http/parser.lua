@@ -2,6 +2,24 @@
 local tonumber = tonumber;
 local assert = assert;
 
+local function preprocess_path(path)
+	if path:sub(1,1) ~= "/" then
+		path = "/"..path;
+	end
+	local level = 0;
+	for component in path:gmatch("([^/]+)/") do
+		if component == ".." then
+			level = level - 1;
+		elseif component ~= "." then
+			level = level + 1;
+		end
+		if level < 0 then
+			return nil;
+		end
+	end
+	return path;
+end
+
 local httpstream = {};
 
 function httpstream.new(success_cb, error_cb, parser_type, options_cb)
@@ -53,7 +71,6 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							else
 								method, path, httpversion = line:match("^(%w+) (%S+) HTTP/(1%.[01])$");
 								if not method then error = true; return error_cb("invalid-status-line"); end
-								path = path:gsub("^//+", "/"); -- TODO parse url more
 							end
 						end
 					end
@@ -71,6 +88,12 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							responseheaders = headers;
 						};
 					else
+						-- path normalization
+						if path:match("^https?://") then
+							headers.host, path = path:match("^https?://([^/]*)(.*)");
+						end
+						path = preprocess_path(path);
+
 						len = len or 0;
 						packet = {
 							method = method;

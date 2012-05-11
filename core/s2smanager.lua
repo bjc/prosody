@@ -9,40 +9,15 @@
 
 
 local hosts = hosts;
-local core_process_stanza = function(a, b) core_process_stanza(a, b); end
-local format = string.format;
-local t_insert, t_sort = table.insert, table.sort;
-local get_traceback = debug.traceback;
-local tostring, pairs, ipairs, getmetatable, newproxy, type, error, tonumber, setmetatable
-    = tostring, pairs, ipairs, getmetatable, newproxy, type, error, tonumber, setmetatable;
-
-local initialize_filters = require "util.filters".initialize;
-local wrapclient = require "net.server".wrapclient;
-local st = require "stanza";
-local stanza = st.stanza;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local cert_verify_identity = require "util.x509".verify_identity;
-local new_ip = require "util.ip".new_ip;
-local rfc3484_dest = require "util.rfc3484".destination;
+local tostring, pairs, ipairs, getmetatable, newproxy, setmetatable
+    = tostring, pairs, ipairs, getmetatable, newproxy, setmetatable;
 
 local fire_event = prosody.events.fire_event;
-local uuid_gen = require "util.uuid".generate;
-
 local logger_init = require "util.logger".init;
 
 local log = logger_init("s2smanager");
 
-local sha256_hash = require "util.hashes".sha256;
-
-local adns, dns = require "net.adns", require "net.dns";
 local config = require "core.configmanager";
-local dns_timeout = config.get("*", "core", "dns_timeout") or 15;
-local cfg_sources = config.get("*", "core", "s2s_interface")
-	or config.get("*", "core", "interface");
-local sources;
-
---FIXME: s2sout should create its own resolver w/ timeout
-dns.settimeout(dns_timeout);
 
 local prosody = _G.prosody;
 incoming_s2s = {};
@@ -99,7 +74,7 @@ function make_authenticated(session, host)
 	else
 		return false;
 	end
-	session.log("debug", "connection %s->%s is now authenticated", session.from_host or "(unknown)", session.to_host or "(unknown)");
+	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host or "(unknown)", session.to_host or "(unknown)", host);
 	
 	mark_connected(session);
 	
@@ -117,10 +92,15 @@ function mark_connected(session)
 	local event_data = { session = session };
 	if session.type == "s2sout" then
 		prosody.events.fire_event("s2sout-established", event_data);
-		hosts[session.from_host].events.fire_event("s2sout-established", event_data);
+		hosts[from].events.fire_event("s2sout-established", event_data);
 	else
+		local host_session = hosts[to];
+		session.send = function(stanza)
+			host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
+		end;
+
 		prosody.events.fire_event("s2sin-established", event_data);
-		hosts[session.to_host].events.fire_event("s2sin-established", event_data);
+		hosts[to].events.fire_event("s2sin-established", event_data);
 	end
 	
 	if session.direction == "outgoing" then
