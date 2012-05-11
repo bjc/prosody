@@ -261,13 +261,15 @@ function unload(host, name)
 end
 
 function reload(host, name)
-	local ok, err = do_reload_module(host, name);
-	if ok then
+	local mod, err = do_reload_module(host, name);
+	if mod then
+		modulemap[host][name].module.reloading = true;
 		(hosts[host] or prosody).events.fire_event("module-reloaded", { module = name, host = host });
+		mod.module.reloading = nil;
 	elseif not is_loaded(host, name) then
 		(hosts[host] or prosody).events.fire_event("module-unloaded", { module = name, host = host });
 	end
-	return ok, err;
+	return mod, err;
 end
 
 function get_module(host, name)
