@@ -15,6 +15,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 
@@ -75,13 +76,25 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		
 		dialback_requests[attr.from.."/"..origin.streamid] = origin;
 		
+		local compat_check;
 		if not origin.from_host then
 			-- Just used for friendlier logging
 			origin.from_host = attr.from;
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
-			origin.to_host = attr.to;
+			origin.to_host = nameprep(attr.to);
+			-- COMPAT: Fix server's chopness by not including to
+			compat_check = true;
+		end
+
+		if not origin.from_host and not origin.to_host then
+			origin.log("debug", "Improper addressing supplied, no to or from?");
+			origin:close("improper-addressing");
+		end
+		-- COMPAT: reset session.send
+		if compat_check then
+			origin.send = function(stanza) hosts[attr.to].events.fire_event("route/remote", { from_host = origin.to_host, to_host = origin.from_host, stanza = stanza}); end
 		end
 		
 		origin.log("debug", "asking %s if key %s belongs to them", attr.from, stanza[1]);
