@@ -79,9 +79,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		local compat_check;
 		if not origin.from_host then
 			-- Just used for friendlier logging
-			origin.from_host = nameprep(attr.from);
-			-- COMPAT: Fix server's chopness by not including from
-			compat_check = true;
+			origin.from_host = attr.from;
 		end
 		if not origin.to_host then
 			-- Just used for friendlier logging
