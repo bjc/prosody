@@ -177,7 +177,6 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 function stream_callbacks.streamopened(session, attr)
 	local send = session.sends2s;
 	
-	-- TODO: #29: SASL/TLS on s2s streams
 	session.version = tonumber(attr.version) or 0;
 	
 	-- TODO: Rename session.secure to session.encrypted
