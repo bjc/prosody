@@ -102,7 +102,7 @@ function activate(service_name)
 		    or listener.default_port -- COMPAT w/pre-0.9
 		   });
 
-	local mode = listener.default_mode or "*a";
+	local mode, ssl = listener.default_mode or "*a";
 	
 	for interface in bind_interfaces do
 		for port in bind_ports do
