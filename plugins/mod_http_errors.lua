@@ -1,5 +1,4 @@
 module:set_global();
-module:depends("http");
 
 local server = require "net.http.server";
 local codes = require "net.http.codes";
