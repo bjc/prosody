@@ -109,7 +109,8 @@ function core_process_stanza(origin, stanza)
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
 				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
-				return; -- FIXME what should we do here? does this work with subdomains?
+				origin:close("not-authorized");
+				return;
 			elseif not hosts[to_host] then
 				log("warn", "Remote server %s sent us a stanza for %s, closing stream", origin.from_host, to_host);
 				origin:close("host-unknown");
