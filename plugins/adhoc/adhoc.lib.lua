@@ -48,6 +48,7 @@ function _M.handle_cmd(command, origin, stanza)
 		return true;
 	else
 		cmdtag = command:cmdtag("executing", sessionid);
+		data.actions = data.actions or { "complete" };
 	end
 
 	for name, content in pairs(data) do
