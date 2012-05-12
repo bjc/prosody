@@ -27,7 +27,7 @@ if not server.event then
 		if delay >= current_time then
 			t_insert(new_data, {delay, callback});
 		else
-			local r = callback();
+			local r = callback(current_time);
 			if r and type(r) == "number" then
 				return _add_task(r, callback);
 			end
@@ -67,7 +67,7 @@ else
 	function _add_task(delay, callback)
 		local event_handle;
 		event_handle = event_base:addevent(nil, 0, function ()
-			local ret = callback();
+			local ret = callback(get_time());
 			if ret then
 				return 0, ret;
 			elseif event_handle then
