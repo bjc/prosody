@@ -37,9 +37,10 @@ module:hook("iq/bare", function(data)
 	-- TODO fire post processing events
 	if type == "get" or type == "set" then
 		local child = stanza.tags[1];
-		local ret = module:fire_event("iq/bare/"..child.attr.xmlns..":"..child.name, data);
+		local xmlns = child.attr.xmlns or "jabber:client";
+		local ret = module:fire_event("iq/bare/"..xmlns..":"..child.name, data);
 		if ret ~= nil then return ret; end
-		return module:fire_event("iq-"..type.."/bare/"..child.attr.xmlns..":"..child.name, data);
+		return module:fire_event("iq-"..type.."/bare/"..xmlns..":"..child.name, data);
 	else
 		return module:fire_event("iq-"..type.."/bare/"..stanza.attr.id, data);
 	end
@@ -52,9 +53,10 @@ module:hook("iq/self", function(data)
 
 	if type == "get" or type == "set" then
 		local child = stanza.tags[1];
-		local ret = module:fire_event("iq/self/"..child.attr.xmlns..":"..child.name, data);
+		local xmlns = child.attr.xmlns or "jabber:client";
+		local ret = module:fire_event("iq/self/"..xmlns..":"..child.name, data);
 		if ret ~= nil then return ret; end
-		return module:fire_event("iq-"..type.."/self/"..child.attr.xmlns..":"..child.name, data);
+		return module:fire_event("iq-"..type.."/self/"..xmlns..":"..child.name, data);
 	else
 		return module:fire_event("iq-"..type.."/self/"..stanza.attr.id, data);
 	end
@@ -67,9 +69,10 @@ module:hook("iq/host", function(data)
 
 	if type == "get" or type == "set" then
 		local child = stanza.tags[1];
-		local ret = module:fire_event("iq/host/"..child.attr.xmlns..":"..child.name, data);
+		local xmlns = child.attr.xmlns or "jabber:client";
+		local ret = module:fire_event("iq/host/"..xmlns..":"..child.name, data);
 		if ret ~= nil then return ret; end
-		return module:fire_event("iq-"..type.."/host/"..child.attr.xmlns..":"..child.name, data);
+		return module:fire_event("iq-"..type.."/host/"..xmlns..":"..child.name, data);
 	else
 		return module:fire_event("iq-"..type.."/host/"..stanza.attr.id, data);
 	end
