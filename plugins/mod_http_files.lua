@@ -27,11 +27,18 @@ local mime_map = {
 
 function serve_file(event, path)
 	local response = event.response;
+	local orig_path = event.request.path;
 	local full_path = http_base.."/"..path;
 	if stat(full_path, "mode") == "directory" then
-		if stat(full_path.."/index.html", "mode") == "file" then
-			return serve_file(event, path.."/index.html");
+		if full_path:sub(-1) ~= "/" then
+			response.headers.location = orig_path.."/";
+			return 301;
 		end
+		if stat(full_path.."index.html", "mode") == "file" then
+			return serve_file(event, path.."index.html");
+		end
+
+		-- TODO File listing
 		return 403;
 	end
 	local f, err = open(full_path, "rb");
