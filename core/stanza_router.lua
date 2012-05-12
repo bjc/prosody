@@ -111,8 +111,8 @@ function core_process_stanza(origin, stanza)
 				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
 				origin:close("not-authorized");
 				return;
-			elseif not hosts[to_host] then
-				log("warn", "Remote server %s sent us a stanza for %s, closing stream", origin.from_host, to_host);
+			elseif not hosts[host] then
+				log("warn", "Remote server %s sent us a stanza for %s, closing stream", origin.from_host, host);
 				origin:close("host-unknown");
 				return;
 			end
