@@ -68,7 +68,7 @@ function listener.ondisconnect(conn, err)
 	requests[conn] = nil;
 end
 
-function urlencode(s) return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end)); end
+function urlencode(s) return s and (s:gsub("[^a-zA-Z0-9.~_-]", function (c) return format("%%%02x", c:byte()); end)); end
 function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end)); end
 
 local function _formencodepart(s)
