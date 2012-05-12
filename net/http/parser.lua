@@ -1,8 +1,11 @@
 
 local tonumber = tonumber;
 local assert = assert;
+local url_parse = require "socket.url".parse;
+local urldecode = require "net.http".urldecode;
 
 local function preprocess_path(path)
+	path = urldecode(path);
 	if path:sub(1,1) ~= "/" then
 		path = "/"..path;
 	end
@@ -88,15 +91,14 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							responseheaders = headers;
 						};
 					else
-						-- path normalization
-						if path:match("^https?://") then
-							headers.host, path = path:match("^https?://([^/]*)(.*)");
-						end
-						path = preprocess_path(path);
+						local parsed_url = url_parse(path);
+						path = preprocess_path(parsed_url.path);
+						headers.host = parsed_url.host;
 
 						len = len or 0;
 						packet = {
 							method = method;
+							url = parsed_url;
 							path = path;
 							httpversion = httpversion;
 							headers = headers;
