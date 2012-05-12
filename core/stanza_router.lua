@@ -28,13 +28,13 @@ local function handle_unhandled_stanza(host, origin, stanza)
 			return true;
 		end
 	end
-	if stanza.attr.xmlns == nil then
+	if stanza.attr.xmlns == nil and origin.send then
 		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
 		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
-		log("warn", "Unhandled %s stream element: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
+		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
 		origin:close("unsupported-stanza-type");
 	end
 end
