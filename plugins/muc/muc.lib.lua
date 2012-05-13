@@ -339,13 +339,9 @@ function room_mt:get_historylength()
 	return self._data.history_length or default_history_length;
 end
 function room_mt:set_historylength(length)
-	if tonumber(length) == nil then
-		return
-	end
-	length = tonumber(length);
-	log("debug", "max_history_length %s", self._data.max_history_length or "nil");
-	if self._data.max_history_length and length > self._data.max_history_length then
-		length = self._data.max_history_length
+	length = math.min(tonumber(length) or default_history_length, self._data_max_history_length or math.huge);
+	if length == default_history_length then
+		length = nil;
 	end
 	self._data.history_length = length;
 end
