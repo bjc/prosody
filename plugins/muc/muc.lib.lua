@@ -135,7 +135,7 @@ function room_mt:broadcast_message(stanza, historic)
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 		local entry = { stanza = stanza, stamp = stamp };
 		t_insert(history, entry);
-		while #history > self._data.history_length do t_remove(history, 1) end
+		while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
 	end
 end
 function room_mt:broadcast_except_nick(stanza, nick)
