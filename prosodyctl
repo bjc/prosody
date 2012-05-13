@@ -649,7 +649,7 @@ function cert_commands.config(arg)
 		show_message("Config written to " .. conf_filename);
 		return nil, conf_filename;
 	else
-		show_usage("cert config HOSTNAME", "builds a config for OpenSSL")
+		show_usage("cert config HOSTNAME [HOSTNAME+]", "Builds a certificate config file covering the supplied hostname(s)")
 	end
 end
 
@@ -668,7 +668,8 @@ function cert_commands.key(arg)
 		end
 		show_message("There was a problem, see OpenSSL output");
 	else
-		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key")
+		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key named HOSTNAME.key\n "
+		.."Promps for a key size if none given")
 	end
 end
 
@@ -679,14 +680,14 @@ function cert_commands.request(arg)
 			return nil, req_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
-		local _, conf_filename = cert_commands.config({arg[1]});
+		local _, conf_filename = cert_commands.config(arg);
 		if openssl.req{new=true, key=key_filename, utf8=true, config=conf_filename, out=req_filename} then
 			show_message("Certificate request written to ".. req_filename);
 		else
 			show_message("There was a problem, see OpenSSL output");
 		end
 	else
-		show_usage("cert request HOSTNAME", "Generates a certificate request")
+		show_usage("cert request HOSTNAME [HOSTNAME+]", "Generates a certificate request for the supplied hostname(s)")
 	end
 end
 
@@ -697,7 +698,7 @@ function cert_commands.generate(arg)
 			return nil, conf_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
-		local _, conf_filename = cert_commands.config({arg[1]});
+		local _, conf_filename = cert_commands.config(arg);
 		local ret;
 		if key_filename and conf_filename and cert_filename
 			and openssl.req{new=true, x509=true, nodes=true, key=key_filename,
@@ -707,7 +708,7 @@ function cert_commands.generate(arg)
 			show_message("There was a problem, see OpenSSL output");
 		end
 	else
-		show_usage("cert generate HOSTNAME", "Generates a self-signed certificate")
+		show_usage("cert generate HOSTNAME [HOSTNAME+]", "Generates a self-signed certificate for the current hostname(s)")
 	end
 end
 
@@ -715,14 +716,18 @@ function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
-			if not hosts[arg[1]] then
+			if not arg[1] then
+				show_message"You need to supply at least one hostname"
+				arg = { "--help" };
+			end
+			if arg[1] ~= "--help" and not hosts[arg[1]] then
 				show_message(error_messages["no-such-host"]);
 				return
 			end
 			return cert_commands[subcmd](arg);
 		end
 	end
-	show_usage("cert config|request|generate|key", "Helpers for X.509 certificates.")
+	show_usage("cert config|request|generate|key", "Helpers for generating X.509 certificates and keys.")
 end
 
 ---------------------
