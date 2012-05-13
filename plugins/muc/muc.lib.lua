@@ -676,8 +676,8 @@ function room_mt:process_form(origin, stanza)
 	dirty = dirty or (self:get_changesubject() ~= (not changesubject and true or nil))
 	module:log('debug', 'changesubject=%s', changesubject and "true" or "false")
 
-	local historylength = fields['muc#roomconfig_historylength'];
-	dirty = dirty or (self:get_historylength() ~= (historylength and true or nil))
+	local historylength = tonumber(fields['muc#roomconfig_historylength']);
+	dirty = dirty or (historylength and (self:get_historylength() ~= historylength));
 	module:log('debug', 'historylength=%s', historylength)
 
 
