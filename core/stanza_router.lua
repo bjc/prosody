@@ -204,3 +204,6 @@ function core_route_stanza(origin, stanza)
 		end
 	end
 end
+prosody.core_process_stanza = core_process_stanza;
+prosody.core_post_stanza = core_post_stanza;
+prosody.core_route_stanza = core_route_stanza;
