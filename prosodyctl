@@ -640,6 +640,9 @@ function cert_commands.config(arg)
 			end
 			nv = show_prompt(("%s (%s):"):format(k, nv or v));
 			nv = (not nv or nv == "") and v or nv;
+			if nv:find"[\192-\252][\128-\191]+" then
+				conf.req.string_mask = "utf8only"
+			end
 			conf.distinguished_name[k] = nv ~= "." and nv or nil;
 		end
 		local conf_file = io.open(conf_filename, "w");
