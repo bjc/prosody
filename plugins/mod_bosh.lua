@@ -98,13 +98,6 @@ function on_destroy_request(request)
 	end
 end
 
-local function handle_GET(request)
-	return [[<html><body>
-	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
-	<p>For more information see <a href="http://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
-</body></html>]];
-end
-
 function handle_OPTIONS(request)
 	local headers = {};
 	for k,v in pairs(default_headers) do headers[k] = v; end
@@ -428,13 +421,24 @@ function on_timer()
 end
 module:add_timer(1, on_timer);
 
+
+local GET_response = {
+	headers = {
+		content_type = "text/html";
+	};
+	body = [[<html><body>
+	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
+	<p>For more information see <a href="http://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+	</body></html>]];
+};
+
 function module.add_host(module)
 	module:depends("http");
 	module:provides("http", {
 		default_path = "/http-bind";
 		route = {
-			["GET"] = handle_GET;
-			["GET /"] = handle_GET;
+			["GET"] = GET_response;
+			["GET /"] = GET_response;
 			["OPTIONS"] = handle_OPTIONS;
 			["OPTIONS /"] = handle_OPTIONS;
 			["POST"] = handle_POST;
