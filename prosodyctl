@@ -233,6 +233,21 @@ require "util.prosodyctl"
 require "socket"
 -----------------------
 
+ -- FIXME: Duplicate code waiting for util.startup
+function read_version()
+	-- Try to determine version
+	local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
+	if version_file then
+		prosody.version = version_file:read("*a"):gsub("%s*$", "");
+		version_file:close();
+		if #prosody.version == 12 and prosody.version:match("^[a-f0-9]+$") then
+			prosody.version = "hg:"..prosody.version;
+		end
+	else
+		prosody.version = "unknown";
+	end
+end
+
 local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
 local show_usage = prosodyctl.show_usage;
 local getchar, getpass = prosodyctl.getchar, prosodyctl.getpass;
@@ -488,6 +503,7 @@ function commands.restart(arg)
 end
 
 function commands.about(arg)
+	read_version();
 	if arg[1] == "--help" then
 		show_usage([[about]], [[Show information about this Prosody installation]]);
 		return 1;
