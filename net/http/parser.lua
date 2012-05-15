@@ -93,7 +93,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					else
 						local parsed_url = url_parse(path);
 						path = preprocess_path(parsed_url.path);
-						headers.host = parsed_url.host;
+						headers.host = parsed_url.host or headers.host;
 
 						len = len or 0;
 						packet = {
