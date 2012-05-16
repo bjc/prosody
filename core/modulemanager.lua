@@ -29,7 +29,7 @@ end
 local set = require "util.set";
 
 local autoload_modules = {"presence", "message", "iq", "offline", "c2s", "s2s"};
-local component_inheritable_modules = {"tls", "dialback", "iq"};
+local component_inheritable_modules = {"tls", "dialback", "iq", "s2s"};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
