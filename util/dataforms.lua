@@ -156,7 +156,7 @@ field_readers["jid-single"] =
 		if data and #data > 0 then
 			return data
 		elseif raw_data then
-			return raw_data, "Invalid JID";
+			return nil, "Invalid JID: " .. raw_data;
 		elseif required then
 			return nil, "Required value missing";
 		end
