@@ -22,7 +22,7 @@ module "certmanager"
 -- Global SSL options if not overridden per-host
 local default_ssl_config = configmanager.get("*", "core", "ssl");
 local default_capath = "/etc/ssl/certs";
-local default_verify = (ssl and ssl.x509 and { "peer", "client_once", "continue", "ignore_purpose" }) or "none";
+local default_verify = (ssl and ssl.x509 and { "peer", "client_once", "continue", "ignore_purpose", "no_ticket" }) or "no_ticket";
 local default_options = { "no_sslv2" };
 
 function create_context(host, mode, user_ssl_config)
