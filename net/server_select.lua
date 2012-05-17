@@ -550,7 +550,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
 				disconnect( handler, "ssl handshake failed" )
 				_ = handler and handler:close( true )	 -- forced disconnect
-				return false	-- handshake failed
+                               return false, err -- handshake failed
 			end
 		)
 	end
@@ -594,7 +594,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 			handler.readbuffer = handshake
 			handler.sendbuffer = handshake
-			handshake( socket ) -- do handshake
+                       return handshake( socket ) -- do handshake
 		end
 	end
 
@@ -610,7 +610,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	if sslctx and luasec then
 		out_put "server.lua: auto-starting ssl negotiation..."
 		handler.autostart_ssl = true;
-		handler:starttls(sslctx);
+               local ok, err = handler:starttls(sslctx);
+               if ok == false then
+                       return nil, nil, err
+               end
 	end
 
 	return handler, socket
