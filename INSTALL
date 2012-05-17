@@ -1,17 +1,20 @@
 (This file was created from 
-http://prosody.im/doc/installing_from_source on 2009-05-22)
+http://prosody.im/doc/installing_from_source on 2012-05-12)
 
 ===== Building =====
 ==== Dependencies ====
 There are a couple of libraries which Prosody needs installed before 
 you can build it. These are:
 
+  * lua5.1: The interpreter
   * liblua5.1: Lua 5.1 library
   * libssl 0.9.8: OpenSSL
   * libidn11: GNU libidn library, version 1.1
 
-Both of these can be installed on Debian/Ubuntu with the packages: 
-liblua5.1-dev libidn11-dev libssl-dev
+These can be installed on Debian/Ubuntu with the packages: 
+lua5.1 liblua5.1-dev libidn11-dev libssl-dev
+
+On Mandriva try: urpmi lua liblua-devel libidn-devel libopenssl-devel
 
 On other systems... good luck, but please let me know of the best way 
 of getting the dependencies for your system and I can add it here.
@@ -30,7 +33,7 @@ accepts. You can load a preset using:
 
    ./configure --ostype=PRESET
 
-Where PRESET can currently be one of: debian, macosx
+Where PRESET can currently be one of: debian, macosx or freebsd
 
 ==== make ====
 Once you have run configure successfully, then you can simply run:
