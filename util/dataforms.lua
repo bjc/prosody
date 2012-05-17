@@ -214,7 +214,7 @@ field_readers["boolean"] =
 		if value ~= nil then
 			return value;
 		elseif raw_value then
-			return "Invalid boolean representation";
+			return nil, "Invalid boolean representation";
 		elseif required then
 			return nil, "Required value missing";
 		end
