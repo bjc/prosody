@@ -105,7 +105,6 @@ function form_t.form(layout, data, formtype)
 end
 
 local field_readers = {};
-local field_verifiers = {};
 
 function form_t.data(layout, stanza)
 	local data = {};
@@ -126,12 +125,8 @@ function form_t.data(layout, stanza)
 			end
 		else
 			local reader = field_readers[field.type];
-			local verifier = field.verifier or field_verifiers[field.type];
 			if reader then
-				data[field.name] = reader(tag);
-				if verifier then
-					errors[field.name] = verifier(data[field.name], tag, field.required);
-				end
+				data[field.name], errors[field.name] = reader(tag, field.required);
 			end
 		end
 	end
@@ -142,137 +137,94 @@ function form_t.data(layout, stanza)
 end
 
 field_readers["text-single"] =
-	function (field_tag)
-		local value = field_tag:child_with_name("value");
-		if value then
-			return value[1];
-		end
-	end
-
-field_verifiers["text-single"] =
-	function (data, field_tag, required)
-		if ((not data) or (#data == 0)) and required then
-			return "Required value missing";
+	function (field_tag, required)
+		local data = field_tag:get_child_text("value");
+		if data and #data > 0 then
+			return data
+		elseif required then
+			return nil, "Required value missing";
 		end
 	end
 
 field_readers["text-private"] =
 	field_readers["text-single"];
 
-field_verifiers["text-private"] =
-	field_verifiers["text-single"];
-
 field_readers["jid-single"] =
-	field_readers["text-single"];
-
-field_verifiers["jid-single"] =
-	function (data, field_tag, required)
-		if ((not data) or (#data == 0)) and required then
-			return "Required value missing";
-		end
-		if not jid_prep(data) then
-			return "Invalid JID";
+	function (field_tag, required)
+		local raw_data = field_tag:get_child_text("value")
+		local data = jid_prep(raw_data);
+		if data and #data > 0 then
+			return data
+		elseif raw_data then
+			return raw_data, "Invalid JID";
+		elseif required then
+			return nil, "Required value missing";
 		end
 	end
 
 field_readers["jid-multi"] =
-	function (field_tag)
+	function (field_tag, required)
 		local result = {};
-		for value_tag in field_tag:childtags() do
-			if value_tag.name == "value" then
-				result[#result+1] = value_tag[1];
+		local err = {};
+		for value_tag in field_tag:childtags("value") do
+			local raw_value = value_tag:get_text();
+			local value = jid_prep(raw_value);
+			result[#result+1] = value;
+			if raw_value and not value then
+				err[#err+1] = ("Invalid JID: " .. raw_value);
 			end
 		end
-		return result;
+		if #result > 0 then
+			return result, (#err > 0 and t_concat(err, "\n") or nil);
+		elseif required then
+			return nil, "Required value missing";
+		end
 	end
 
-field_verifiers["jid-multi"] =
-	function (data, field_tag, required)
-		if #data == 0 and required then
-			return "Required value missing";
+field_readers["list-multi"] =
+	function (field_tag, required)
+		local result = {};
+		for value in field_tag:childtags("value") do
+			result[#result+1] = value;
 		end
-
-		for _, jid in ipairs(data) do
-			if not jid_prep(jid) then
-				return "Invalid JID";
-			end
-		end
+		return result, (required and #result == 0 and "Required value missing" or nil);
 	end
 
 field_readers["text-multi"] =
-	function (field_tag)
-		local result = {};
-		for value_tag in field_tag:childtags() do
-			if value_tag.name == "value" then
-				result[#result+1] = value_tag[1];
-			end
+	function (field_tag, required)
+		local data, err = field_readers["list-multi"](field_tag, required);
+		if data then
+			data = t_concat(data, "\n");
 		end
-		return t_concat(result, "\n");
+		return data, err;
 	end
-
-field_verifiers["text-multi"] =
-	field_verifiers["text-single"];
 
 field_readers["list-single"] =
 	field_readers["text-single"];
 
-field_verifiers["list-single"] =
-	field_verifiers["text-single"];
-
-field_readers["list-multi"] =
-	function (field_tag)
-		local result = {};
-		for value_tag in field_tag:childtags() do
-			if value_tag.name == "value" then
-				result[#result+1] = value_tag[1];
-			end
-		end
-		return result;
-	end
-
-field_verifiers["list-multi"] =
-	function (data, field_tag, required)
-		if #data == 0 and required then
-			return "Required value missing";
-		end
-	end
+	local boolean_values = {
+		["1"] = true, ["true"] = true,
+		["0"] = false, ["false"] = false,
+	};
 
 field_readers["boolean"] =
-	function (field_tag)
-		local value = field_tag:child_with_name("value");
-		if value then
-			if value[1] == "1" or value[1] == "true" then
-				return true;
-			else
-				return false;
-			end
-		end
-	end
-
-field_verifiers["boolean"] =
-	function (data, field_tag, required)
-		data = field_readers["text-single"](field_tag);
-		if ((not data) or (#data == 0)) and required then
-			return "Required value missing";
-		end
-		if data ~= "1" and data ~= "true" and data ~= "0" and data ~= "false" then
+	function (field_tag, required)
+		local raw_value = field_tag:get_child_text("value");
+		local value = boolean_values[raw_value ~= nil and raw_value];
+		if value ~= nil then
+			return value;
+		elseif raw_value then
 			return "Invalid boolean representation";
+		elseif required then
+			return nil, "Required value missing";
 		end
 	end
 
 field_readers["hidden"] =
 	function (field_tag)
-		local value = field_tag:child_with_name("value");
-		if value then
-			return value[1];
-		end
+		return field_tag:get_child_text("value");
 	end
 
-field_verifiers["hidden"] =
-	function (data, field_tag, required)
-		return nil;
-	end
-	
 return _M;
 
 
