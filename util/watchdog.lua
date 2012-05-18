@@ -16,7 +16,7 @@ function new(timeout, callback)
 		end
 		local time_left = (last_reset + timeout) - current_time;
 		if time_left < 0 then
-			return watchdog.callback();
+			return watchdog:callback();
 		end
 		return time_left + 1;
 	end);
