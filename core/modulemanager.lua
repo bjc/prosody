@@ -91,8 +91,8 @@ local function do_unload_module(host, name)
 		end
 	end
 	
-	for handler, event in pairs(mod.module.event_handlers) do
-		event.object.remove_handler(event.name, handler);
+	for event, data in pairs(mod.module.event_handlers) do
+		data.object.remove_handler(event, data.handler);
 	end
 	
 	if mod.module.items then -- remove items
