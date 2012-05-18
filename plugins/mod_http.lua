@@ -9,6 +9,9 @@
 module:set_global();
 module:depends("http_errors");
 
+local moduleapi = require "core.moduleapi";
+local url_parse = require "socket.url".parse;
+
 local server = require "net.http.server";
 
 server.set_default_host(module:get_option_string("http_default_host"));
@@ -31,9 +34,27 @@ local function get_http_event(host, app_path, key)
 end
 
 local function get_base_path(host_module, app_name, default_app_path)
-	return host_module:get_option("http_paths", {})[app_name] -- Host
+	return normalize_path(host_module:get_option("http_paths", {})[app_name] -- Host
 		or module:get_option("http_paths", {})[app_name] -- Global
-		or default_app_path; -- Default
+		or default_app_path); -- Default
+end
+
+-- Helper to deduce a module's external URL
+function moduleapi.http_url(module, app_name, default_path)
+	app_name = app_name or (module.name:gsub("^http_", ""));
+	local ext = url_parse(module:get_option_string("http_external_url")) or {};
+	local services = portmanager.get_active_services();
+	local http_services = services:get("https") or services:get("http");
+	for interface, ports in pairs(http_services) do
+		for port, services in pairs(ports) do
+			local path = get_base_path(module, app_name, default_path or "/"..app_name);
+			port = tonumber(ext.port) or port or 80;
+			if port == 80 then port = ""; else port = ":"..port; end
+			return (ext.scheme or services[1].service.name).."://"
+				..(ext.host or module.host)..port
+				..normalize_path(ext.path or "/")..(path:sub(2));
+		end
+	end
 end
 
 function module.add_host(module)
@@ -43,8 +64,8 @@ function module.add_host(module)
 	local function http_app_added(event)
 		local app_name = event.item.name;
 		local default_app_path = event.item.default_path or "/"..app_name;
-		local app_path = normalize_path(get_base_path(module, app_name, default_app_path));
-		if not app_name then		
+		local app_path = get_base_path(module, app_name, default_app_path);
+		if not app_name then
 			-- TODO: Link to docs
 			module:log("error", "HTTP app has no 'name', add one or use module:provides('http', app)");
 			return;
