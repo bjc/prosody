@@ -18,7 +18,7 @@ local resolve_path = configmanager.resolve_relative_path;
 local config_path = prosody.paths.config;
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-local luasec_has_noticket = luasec_major>0 or luasec_minor>=4;
+local luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
 
 module "certmanager"
 
