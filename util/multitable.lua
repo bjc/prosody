@@ -6,12 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-
-
 local select = select;
-local t_insert = table.insert;
-local pairs = pairs;
-local next = next;
+local t_insert, t_remove = table.insert, table.remove;
+local unpack, pairs, next, type = unpack, pairs, next, type;
 
 module "multitable"
 
@@ -129,6 +126,41 @@ local function search_add(self, results, ...)
 	return results;
 end
 
+function iter(self, ...)
+	local query = { ... };
+	local maxdepth = select("#", ...);
+	local stack = { self.data };
+	local keys = { };
+	local function it(self)
+		local depth = #stack;
+		local key = next(stack[depth], keys[depth]);
+		if key == nil then -- Go up the stack
+			t_remove(stack);
+			t_remove(keys);
+			if depth > 1 then
+				return it(self);
+			end
+			return; -- The end
+		else
+			keys[depth] = key;
+		end
+		local value = stack[depth][key];
+		if depth == maxdepth then -- Result
+			local result = {}; -- Collect keys forming path to result
+			for i = 1, depth do
+				result[i] = keys[i];
+			end
+			return unpack(result, 1, depth);
+		else
+			if (query[depth] == nil or key == query[depth]) and type(value) == "table" then -- Descend
+				t_insert(stack, value);
+			end
+			return it(self);
+		end
+	end;
+	return it, self;
+end
+
 function new()
 	return {
 		data = {};
@@ -138,6 +170,7 @@ function new()
 		remove = remove;
 		search = search;
 		search_add = search_add;
+		iter = iter;
 	};
 end
 
