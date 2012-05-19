@@ -7,7 +7,7 @@
 --
 
 local select = select;
-local t_insert, t_remove = table.insert, table.remove;
+local t_insert = table.insert;
 local unpack, pairs, next, type = unpack, pairs, next, type;
 
 module "multitable"
@@ -135,8 +135,7 @@ function iter(self, ...)
 		local depth = #stack;
 		local key = next(stack[depth], keys[depth]);
 		if key == nil then -- Go up the stack
-			t_remove(stack);
-			t_remove(keys);
+			stack[depth], keys[depth] = nil, nil;
 			if depth > 1 then
 				return it(self);
 			end
