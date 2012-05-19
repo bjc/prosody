@@ -70,12 +70,7 @@ function api:fire_event(...)
 end
 
 function api:hook_object_event(object, event, handler, priority)
-	local handlers = self.event_handlers[event];
-	if not handlers then
-		handlers = {};
-		self.event_handlers[event] = handlers;
-	end
-	handlers[event] = { handler = handler, priority = priority, object = object };
+	self.event_handlers:set(object, event, handler, true);
 	return object.add_handler(event, handler, priority);
 end
 

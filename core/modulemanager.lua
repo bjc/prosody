@@ -10,6 +10,9 @@ local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
 local pluginloader = require "util.pluginloader";
+local set = require "util.set";
+
+local new_multitable = require "util.multitable".new;
 
 local hosts = hosts;
 local prosody = prosody;
@@ -25,8 +28,6 @@ pcall = function(f, ...)
 	local params = {...};
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
-
-local set = require "util.set";
 
 local autoload_modules = {"presence", "message", "iq", "offline", "c2s", "s2s"};
 local component_inheritable_modules = {"tls", "dialback", "iq", "s2s"};
@@ -91,8 +92,8 @@ local function do_unload_module(host, name)
 		end
 	end
 	
-	for event, data in pairs(mod.module.event_handlers) do
-		data.object.remove_handler(event, data.handler);
+	for object, event, handler in mod.module.event_handlers:iter(nil, nil, nil) do
+		object.remove_handler(event, handler);
 	end
 	
 	if mod.module.items then -- remove items
@@ -132,7 +133,7 @@ local function do_load_module(host, module_name)
 		if module_has_method(mod, "add_host") then
 			local _log = logger.init(host..":"..module_name);
 			local host_module_api = setmetatable({
-				host = host, event_handlers = {}, items = {};
+				host = host, event_handlers = new_multitable(), items = {};
 				_log = _log, log = function (self, ...) return _log(...); end;
 			},{
 				__index = modulemap["*"][module_name].module;
@@ -159,7 +160,7 @@ local function do_load_module(host, module_name)
 
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host, path = err,
-		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = {} }
+		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable() }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
