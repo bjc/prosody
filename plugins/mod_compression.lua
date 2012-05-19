@@ -1,5 +1,5 @@
 -- Prosody IM
--- Copyright (C) 2009 Tobias Markmann
+-- Copyright (C) 2009-2012 Tobias Markmann
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -26,7 +26,7 @@ end
 
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if not origin.compressed then
+	if not origin.compressed and (origin.type == "c2s" or origin.type == "s2sin" or origin.type == "s2sout") then
 		-- FIXME only advertise compression support when TLS layer has no compression enabled
 		features:add_child(compression_stream_feature);
 	end
@@ -35,7 +35,7 @@ end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	-- FIXME only advertise compression support when TLS layer has no compression enabled
-	if not origin.compressed then
+	if not origin.compressed and (origin.type == "c2s" or origin.type == "s2sin" or origin.type == "s2sout") then
 		features:add_child(compression_stream_feature);
 	end
 end);
@@ -43,7 +43,7 @@ end);
 -- Hook to activate compression if remote server supports it.
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
-			if not session.compressed then
+			if not session.compressed and (session.type == "c2s" or session.type == "s2sin" or session.type == "s2sout") then
 				-- does remote server support compression?
 				local comp_st = stanza:child_with_name("compression");
 				if comp_st then
