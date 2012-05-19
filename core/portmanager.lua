@@ -134,15 +134,11 @@ function activate(service_name)
 	return true;
 end
 
-function deactivate(service_name)
-	local active = active_services:search(service_name)[1];
-	if not active then return; end
-	for interface, ports in pairs(active) do
-		for port, active_service in pairs(ports) do
-			close(interface, port);
-		end
+function deactivate(service_name, service_info)
+	for name, interface, port, active_service in active_services:iter(service_name, nil, nil, service_info) do
+		close(interface, port);
 	end
-	log("info", "Deactivated service '%s'", service_name);
+	log("info", "Deactivated service '%s'", service_name or service_info.name);
 end
 
 function register_service(service_name, service_info)
@@ -161,17 +157,16 @@ function register_service(service_name, service_info)
 end
 
 function unregister_service(service_name, service_info)
+	log("debug", "Unregistering service: %s", service_name);
 	local service_info_list = services[service_name];
 	for i, service in ipairs(service_info_list) do
 		if service == service_info then
 			table.remove(service_info_list, i);
 		end
 	end
-	if active_services[service_name] == service_info then
-		deactivate(service_name);
-		if #service_info_list > 0 then -- Other services registered with this name
-			activate(service_name); -- Re-activate with the next available one
-		end
+	deactivate(nil, service_info);
+	if #service_info_list > 0 then -- Other services registered with this name
+		activate(service_name); -- Re-activate with the next available one
 	end
 	fire_event("service-removed", { name = service_name, service = service_info });
 end
