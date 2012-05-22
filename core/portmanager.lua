@@ -135,8 +135,11 @@ function activate(service_name)
 end
 
 function deactivate(service_name, service_info)
-	for name, interface, port, active_service in active_services:iter(service_name, nil, nil, service_info) do
-		close(interface, port);
+	for name, interface, port, n, active_service
+		in active_services:iter(service_name or service_info and service_info.name, nil, nil, nil) do
+		if service_info == nil or active_service.service == service_info then
+			close(interface, port);
+		end
 	end
 	log("info", "Deactivated service '%s'", service_name or service_info.name);
 end
