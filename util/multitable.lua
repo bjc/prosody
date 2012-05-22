@@ -144,18 +144,19 @@ function iter(self, ...)
 			keys[depth] = key;
 		end
 		local value = stack[depth][key];
-		if depth == maxdepth then -- Result
-			local result = {}; -- Collect keys forming path to result
-			for i = 1, depth do
-				result[i] = keys[i];
+		if query[depth] == nil or key == query[depth] then
+			if depth == maxdepth then -- Result
+				local result = {}; -- Collect keys forming path to result
+				for i = 1, depth do
+					result[i] = keys[i];
+				end
+				result[depth+1] = value;
+				return unpack(result, 1, depth+1);
+			elseif type(value) == "table" then
+				t_insert(stack, value); -- Descend
 			end
-			return unpack(result, 1, depth);
-		else
-			if (query[depth] == nil or key == query[depth]) and type(value) == "table" then -- Descend
-				t_insert(stack, value);
-			end
-			return it(self);
 		end
+		return it(self);
 	end;
 	return it, self;
 end
