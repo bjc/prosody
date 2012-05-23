@@ -350,7 +350,11 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		if handler then
 			_writetimes[ handler ] = nil
 			_closelist[ handler ] = nil
+			local _handler = handler;
 			handler = nil
+			if disconnect then
+				disconnect(_handler, "closed");
+			end
 		end
 		if server then
 			server.remove( )
