@@ -191,13 +191,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 	handler.remove = function( )
 		connections = connections - 1
 	end
-	handler.close = function( )
-		for _, handler in pairs( _socketlist ) do
-			if handler.serverport == serverport then
-				handler.disconnect( handler, "server closed" )
-				handler:close( true )
-			end
-		end
+	handler.close = function()
 		socket:close( )
 		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
