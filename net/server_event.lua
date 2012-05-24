@@ -143,7 +143,7 @@ do
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
 					if plainssl and ssl then  -- start ssl session
-						self:starttls(nil, true)
+						self:starttls(self._sslctx, true)
 					else  -- normal connection
 						self:_start_session(true)
 					end
@@ -473,7 +473,7 @@ do
 	local coroutine_wrap = coroutine.wrap
 	local socket_gettime = socket.gettime
 	local coroutine_yield = coroutine.yield
-	function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
+	function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
 		--vdebug("creating client interfacce...")
 		local interface = {
 			type = "client";
@@ -692,7 +692,7 @@ do
 				end
 				local client_ip, client_port = client:getpeername( )
 				interface._connections = interface._connections + 1  -- increase connection count
-				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, nil, sslctx )
+				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
 				if ssl and sslctx then
 					clientinterface:starttls(sslctx, true)
