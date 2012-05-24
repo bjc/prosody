@@ -8,8 +8,9 @@
 
 
 local host = module:get_host();
+local jid_prep = require "util.jid".prep;
 
-local registration_watchers = module:get_option("registration_watchers", module:get_option("admins", {}));
+local registration_watchers = module:get_option_set("registration_watchers", module:get_option("admins", {})) / jid_prep;
 local registration_notification = module:get_option("registration_notification", "User $username just registered on $host from $ip");
 
 local st = require "util.stanza";
@@ -21,7 +22,7 @@ module:hook("user-registered", function (user)
 			:text(registration_notification:gsub("%$(%w+)", function (v)
 				return user[v] or user.session and user.session[v] or nil;
 			end));
-	for _, jid in ipairs(registration_watchers) do
+	for jid in registration_watchers do
 		module:log("debug", "Notifying %s", jid);
 		message.attr.to = jid;
 		core_route_stanza(hosts[host], message);
