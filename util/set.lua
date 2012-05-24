@@ -26,8 +26,9 @@ function set_mt.__div(set, func)
 	local new_set, new_items = _M.new();
 	local items, new_items = set._items, new_set._items;
 	for item in pairs(items) do
-		if func(item) then
-			new_items[item] = true;
+		local new_item = func(item);
+		if new_item ~= nil then
+			new_items[new_item] = true;
 		end
 	end
 	return new_set;
