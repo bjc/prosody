@@ -744,7 +744,7 @@ local addclient, wrapclient
 do
 	function wrapclient( client, ip, port, listeners, pattern, sslctx, startssl )
 		local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
-		interface:_start_session()
+		interface:_start_connection(sslctx)
 		return interface, client
 		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
