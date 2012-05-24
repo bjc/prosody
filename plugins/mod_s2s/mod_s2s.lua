@@ -427,8 +427,9 @@ local function initialize_session(session)
 end
 
 function listener.onconnect(conn)
-	if not sessions[conn] then -- May be an existing outgoing session
-		local session = s2s_new_incoming(conn);
+	local session = sessions[conn];
+	if not session then -- New incoming connection
+		session = s2s_new_incoming(conn);
 		sessions[conn] = session;
 		session.log("debug", "Incoming s2s connection");
 
@@ -448,6 +449,8 @@ function listener.onconnect(conn)
 		end
 	
 		initialize_session(session);
+	else -- Outgoing session connected
+		session:open_stream(session.from_host, session.to_host);
 	end
 end
 

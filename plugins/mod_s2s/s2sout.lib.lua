@@ -314,8 +314,6 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	-- otherwise it will assume it is a new incoming connection
 	s2s_listener.register_outgoing(conn, host_session);
 	
-	host_session:open_stream(from_host, to_host);
-	
 	log("debug", "Connection attempt in progress...");
 	return true;
 end
