@@ -279,7 +279,7 @@ local function get_hosts_set(hosts, module)
 	elseif hosts == nil then
 		local mm = require "modulemanager";
 		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
-			/ function (host) return prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module); end;
+			/ function (host) return (prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module)) and host or nil; end;
 		if module and mm.get_module("*", module) then
 			hosts_set:add("*");
 		end
