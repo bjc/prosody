@@ -17,8 +17,8 @@ local server = require "net.http.server";
 server.set_default_host(module:get_option_string("http_default_host"));
 
 local function normalize_path(path)
-	if path:sub(1,1) ~= "/" then path = "/"..path; end
 	if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
+	if path:sub(1,1) ~= "/" then path = "/"..path; end
 	return path;
 end
 
