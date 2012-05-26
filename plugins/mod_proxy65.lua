@@ -14,6 +14,7 @@ local st = require "util.stanza";
 local sha1 = require "util.hashes".sha1;
 local b64 = require "util.encodings".base64.encode;
 local server = require "net.server";
+local portmanager = require "core.portmanager";
 
 local sessions, transfers = module:shared("sessions", "transfers");
 local max_buffer_size = 4096;
