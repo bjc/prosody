@@ -44,7 +44,7 @@ function moduleapi.http_url(module, app_name, default_path)
 	app_name = app_name or (module.name:gsub("^http_", ""));
 	local ext = url_parse(module:get_option_string("http_external_url")) or {};
 	local services = portmanager.get_active_services();
-	local http_services = services:get("https") or services:get("http");
+	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do
 		for port, services in pairs(ports) do
 			local path = get_base_path(module, app_name, default_path or "/"..app_name);
