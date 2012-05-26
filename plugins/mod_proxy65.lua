@@ -91,8 +91,14 @@ function module.add_host(module)
 	local host, name = module:get_host(), module:get_option_string("name", "SOCKS5 Bytestreams Service");
 	
 	local proxy_address = module:get_option("proxy65_address", host);
-	local proxy_port = module:get_option_number("proxy65_port", next(portmanager.get_active_services():search("proxy65", nil)[1] or {}));
+	local proxy_port = next(portmanager.get_active_services():search("proxy65", nil)[1] or {});
 	local proxy_acl = module:get_option("proxy65_acl");
+
+	-- COMPAT w/pre-0.9 where proxy65_port was specified the components section of the config
+	local legacy_config = module:get_option_number("proxy65_port");
+	if legacy_config then
+		module:log("warn", "proxy65_port is deprecated, please put proxy65_ports = { %d } into the global section instead", legacy_config);
+	end
 
 	module:add_identity("proxy", "bytestreams", name);
 	module:add_feature("http://jabber.org/protocol/bytestreams");
