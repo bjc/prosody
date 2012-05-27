@@ -199,6 +199,8 @@ function core_route_stanza(origin, stanza)
 			local routed = host_session.events.fire_event("route/remote", { origin = origin, stanza = stanza, from_host = from_host, to_host = host });
 			stanza.attr.xmlns = xmlns; -- reset
 			if not routed then
+				log("debug", "... no, just kidding.");
+				if stanza.attr.type == "error" then return end
 				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
 			end
 		end
