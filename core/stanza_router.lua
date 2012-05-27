@@ -200,7 +200,7 @@ function core_route_stanza(origin, stanza)
 			stanza.attr.xmlns = xmlns; -- reset
 			if not routed then
 				log("debug", "... no, just kidding.");
-				if stanza.attr.type == "error" then return end
+				if stanza.attr.type == "error" or (stanza.name == "iq" and stanza.attr.type == "result") then return; end
 				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
 			end
 		end
