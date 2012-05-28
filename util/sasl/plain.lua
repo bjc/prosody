@@ -64,8 +64,10 @@ local function plain(self, message)
 	end
 
 	self.username = authentication
-	if not state then
+	if state == false then
 		return "failure", "account-disabled";
+	elseif state == nil then
+		return "failure", "not-authorized", "Unable to authorize you with the authentication credentials you've sent.";
 	end
 
 	if correct then
