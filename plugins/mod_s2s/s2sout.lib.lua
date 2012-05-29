@@ -25,6 +25,7 @@ local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local log = module._log;
 
 local sources = {};
+local has_ipv4, has_ipv6;
 
 local dns_timeout = module:get_option_number("dns_timeout", 15);
 dns.settimeout(dns_timeout);
@@ -114,7 +115,7 @@ function s2sout.attempt_connection(host_session, err)
 					log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
 				end
 			else
-				log("debug", to_host.." has no SRV records, falling back to A");
+				log("debug", to_host.." has no SRV records, falling back to A/AAAA");
 			end
 			-- Try with SRV, or just the plain hostname if no SRV
 			local ok, err = s2sout.try_connect(host_session, connect_host, connect_port);
@@ -171,6 +172,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local handle4, handle6;
 		local has_other = false;
 
+		if has_ipv4 then
 		handle4 = adns.lookup(function (reply, err)
 			handle4 = nil;
 
@@ -214,7 +216,11 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 				has_other = true;
 			end
 		end, connect_host, "A", "IN");
+		else
+			has_other = true;
+		end
 
+		if has_ipv6 then
 		handle6 = adns.lookup(function (reply, err)
 			handle6 = nil;
 
@@ -246,6 +252,9 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 				has_other = true;
 			end
 		end, connect_host, "AAAA", "IN");
+		else
+			has_other = true;
+		end
 
 		return true;
 	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
@@ -345,6 +354,13 @@ module:hook_global("service-added", function (event)
 			end
 		else
 			sources[#sources + 1] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
+		end
+	end
+	for i = 1,#sources do
+		if sources[i].proto == "IPv6" then
+			has_ipv6 = true;
+		elseif sources[i].proto == "IPv4" then
+			has_ipv4 = true;
 		end
 	end
 end);
