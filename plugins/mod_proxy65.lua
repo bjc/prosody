@@ -124,9 +124,11 @@ function module.add_host(module)
 		-- check ACL
 		while proxy_acl and #proxy_acl > 0 do -- using 'while' instead of 'if' so we can break out of it
 			local jid = stanza.attr.from;
+			local allow;
 			for _, acl in ipairs(proxy_acl) do
-				if jid_compare(jid, acl) then break; end
+				if jid_compare(jid, acl) then allow = true; break; end
 			end
+			if allow then break; end
 			module:log("warn", "Denying use of proxy for %s", tostring(stanza.attr.from));
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
