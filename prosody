@@ -145,9 +145,13 @@ function sandbox_require()
 	-- for neat sandboxing of modules
 	local _realG = _G;
 	local _real_require = require;
+	if not getfenv then
+		-- FIXME: This is a hack to replace getfenv() in Lua 5.2
+		function getfenv(f) return debug.getupvalue(debug.getinfo(f or 1).func, 1); end
+	end
 	function require(...)
 		local curr_env = getfenv(2);
-		local curr_env_mt = getmetatable(getfenv(2));
+		local curr_env_mt = getmetatable(curr_env);
 		local _realG_mt = getmetatable(_realG);
 		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
 			local old_newindex, old_index;
