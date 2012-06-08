@@ -13,6 +13,7 @@ local format, math_max = string.format, math.max;
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
 
+local envload = require"util.envload".envload;
 local lfs = require "lfs";
 local path_sep = package.config:sub(1,1);
 
@@ -164,8 +165,8 @@ end
 
 -- Built-in Lua parser
 do
-	local loadstring, pcall, setmetatable = _G.loadstring, _G.pcall, _G.setmetatable;
-	local setfenv, rawget, tostring = _G.setfenv, _G.rawget, _G.tostring;
+	local pcall, setmetatable = _G.pcall, _G.setmetatable;
+	local rawget, tostring = _G.rawget, _G.tostring;
 	parsers.lua = {};
 	function parsers.lua.load(data, config_file, config)
 		local env;
@@ -263,13 +264,11 @@ do
 			return dofile(resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file));
 		end
 		
-		local chunk, err = loadstring(data, "@"..config_file);
+		local chunk, err = envload(data, "@"..config_file, env);
 		
 		if not chunk then
 			return nil, err;
 		end
-		
-		setfenv(chunk, env);
 		
 		local ok, err = pcall(chunk);
 		

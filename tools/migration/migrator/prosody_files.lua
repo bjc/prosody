@@ -7,7 +7,6 @@ local char = string.char;
 local coroutine = coroutine;
 local lfs = require "lfs";
 local loadfile = loadfile;
-local setfenv = setfenv;
 local pcall = pcall;
 local mtools = require "migrator.mtools";
 local next = next;

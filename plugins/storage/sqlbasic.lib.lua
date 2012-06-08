@@ -3,12 +3,12 @@
 -- This driver stores data as simple key-values
 
 local ser = require "util.serialization".serialize;
+local envload = require "util.envload".envload;
 local deser = function(data)
 	module:log("debug", "deser: %s", tostring(data));
 	if not data then return nil; end
-	local f = loadstring("return "..data);
+	local f = envload("return "..data, nil, {});
 	if not f then return nil; end
-	setfenv(f, {});
 	local s, d = pcall(f);
 	if not s then return nil; end
 	return d;
