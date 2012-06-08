@@ -11,7 +11,7 @@ local format = string.format;
 local setmetatable, type = setmetatable, type;
 local pairs, ipairs = pairs, ipairs;
 local char = string.char;
-local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
+local pcall = pcall;
 local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
@@ -20,6 +20,7 @@ local error = error;
 local next = next;
 local t_insert = table.insert;
 local append = require "util.serialization".append;
+local envloadfile = require"util.envload".envloadfile;
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
 local prosody = prosody;
@@ -111,7 +112,7 @@ function getpath(username, host, datastore, ext, create)
 end
 
 function load(username, host, datastore)
-	local data, ret = loadfile(getpath(username, host, datastore));
+	local data, ret = envloadfile(getpath(username, host, datastore), {});
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
@@ -123,7 +124,7 @@ function load(username, host, datastore)
 			return nil, "Error reading storage";
 		end
 	end
-	setfenv(data, {});
+
 	local success, ret = pcall(data);
 	if not success then
 		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
@@ -203,7 +204,8 @@ function list_store(username, host, datastore, data)
 end
 
 function list_load(username, host, datastore)
-	local data, ret = loadfile(getpath(username, host, datastore, "list"));
+	local items = {};
+	local data, ret = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
 		if not mode then
@@ -215,8 +217,7 @@ function list_load(username, host, datastore)
 			return nil, "Error reading storage";
 		end
 	end
-	local items = {};
-	setfenv(data, {item = function(i) t_insert(items, i); end});
+
 	local success, ret = pcall(data);
 	if not success then
 		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));

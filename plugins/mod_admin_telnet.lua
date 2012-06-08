@@ -21,6 +21,8 @@ local jid = require "util.jid";
 local jid_bare, jid_split = jid.bare, jid.split;
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
+local envload = require "util.envload".envload;
+local envloadfile = require "util.envload".envloadfile;
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -29,9 +31,9 @@ local default_env_mt = { __index = def_env };
 local function redirect_output(_G, session)
 	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
 	env.dofile = function(name)
-		local f, err = loadfile(name);
+		local f, err = envloadfile(name, env);
 		if not f then return f, err; end
-		return setfenv(f, env)();
+		return f();
 	end;
 	return env;
 end
@@ -98,9 +100,10 @@ function console_listener.onincoming(conn, data)
 		session.env._ = data;
 		
 		local chunkname = "=console";
-		local chunk, err = loadstring("return "..data, chunkname);
+		local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
+		local chunk, err = envload("return "..data, chunkname, env);
 		if not chunk then
-			chunk, err = loadstring(data, chunkname);
+			chunk, err = envload(data, chunkname, env);
 			if not chunk then
 				err = err:gsub("^%[string .-%]:%d+: ", "");
 				err = err:gsub("^:%d+: ", "");
@@ -109,8 +112,6 @@ function console_listener.onincoming(conn, data)
 				return;
 			end
 		end
-		
-		setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
 		
 		local ranok, taskok, message = pcall(chunk);
 		
@@ -880,8 +881,7 @@ if option and option ~= "short" and option ~= "full" and option ~= "graphic" the
 	if type(option) == "string" then
 		session.print(option)
 	elseif type(option) == "function" then
-		setfenv(option, redirect_output(_G, session));
-		pcall(option, session);
+		module:log("warn", "Using functions as value for the console_banner option is no longer supported");
 	end
 end
 end
