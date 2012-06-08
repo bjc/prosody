@@ -18,7 +18,7 @@ local hosts = hosts;
 local prosody = prosody;
 
 local pcall, xpcall = pcall, xpcall;
-local setmetatable, rawget, setfenv = setmetatable, rawget, setfenv;
+local setmetatable, rawget = setmetatable, rawget;
 local pairs, type, tostring = pairs, type, tostring;
 
 local debug_traceback = debug.traceback;
@@ -152,22 +152,23 @@ local function do_load_module(host, module_name)
 	end
 	
 
-	local mod, err = pluginloader.load_code(module_name);
-	if not mod then
-		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
-		return nil, err;
-	end
 
 	local _log = logger.init(host..":"..module_name);
-	local api_instance = setmetatable({ name = module_name, host = host, path = err,
+	local api_instance = setmetatable({ name = module_name, host = host,
 		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable() }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
 	
-	setfenv(mod, pluginenv);
-	
+	local mod, err = pluginloader.load_code(module_name, nil, pluginenv);
+	if not mod then
+		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		return nil, err;
+	end
+
+	api_instance.path = err;
+
 	modulemap[host][module_name] = pluginenv;
 	local ok, err = pcall(mod);
 	if ok then

@@ -13,7 +13,7 @@ local log = require "util.logger".init("rostermanager");
 
 local setmetatable = setmetatable;
 local format = string.format;
-local loadfile, setfenv, pcall = loadfile, setfenv, pcall;
+local pcall = pcall;
 local pairs, ipairs = pairs, ipairs;
 local tostring = tostring;
 

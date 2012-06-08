@@ -30,16 +30,22 @@ for i = 1, #arg do
 end
 table.remove(arg, handled_opts);
 
+if CFG_SOURCEDIR then
+	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
+	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
+else
+	package.path = "../../?.lua;"..package.path
+	package.cpath = "../../?.so;"..package.cpath
+end
+
+local envloadfile = require "util.envload".envloadfile;
+
 -- Load config file
 local function loadfilein(file, env)
 	if loadin then
 		return loadin(env, io.open(file):read("*a"));
 	else
-		local chunk, err = loadfile(file);
-		if chunk then
-			setfenv(chunk, env);
-		end
-		return chunk, err;
+		return envloadfile(file, env);
 	end
 end
 
@@ -58,14 +64,6 @@ if not config_chunk then
 end
 
 config_chunk();
-
-if CFG_SOURCEDIR then
-	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
-	package.cpath = CFG_SOURCEDIR.."/?.so;"..package.cpath;
-elseif not package.loaded["util.json"] then
-	package.path = "../../?.lua;"..package.path
-	package.cpath = "../../?.so;"..package.cpath
-end
 
 local have_err;
 if #arg > 0 and #arg ~= 2 then

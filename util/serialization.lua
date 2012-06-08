@@ -16,11 +16,12 @@ local pairs = pairs;
 local next = next;
 
 local loadstring = loadstring;
-local setfenv = setfenv;
 local pcall = pcall;
 
 local debug_traceback = debug.traceback;
 local log = require "util.logger".init("serialization");
+local envload = require"util.envload".envload;
+
 module "serialization"
 
 local indent = function(i)
@@ -84,9 +85,8 @@ end
 function deserialize(str)
 	if type(str) ~= "string" then return nil; end
 	str = "return "..str;
-	local f, err = loadstring(str, "@data");
+	local f, err = envload(str, "@data", {});
 	if not f then return nil, err; end
-	setfenv(f, {});
 	local success, ret = pcall(f);
 	if not success then return nil, ret; end
 	return ret;

@@ -16,6 +16,7 @@ end
 
 local io_open, os_time = io.open, os.time;
 local loadstring, pairs = loadstring, pairs;
+local envload = require "util.envload".envload;
 
 module "pluginloader"
 
@@ -48,11 +49,11 @@ function load_resource(plugin, resource)
 	return load_file(names);
 end
 
-function load_code(plugin, resource)
+function load_code(plugin, resource, env)
 	local content, err = load_resource(plugin, resource);
 	if not content then return content, err; end
 	local path = err;
-	local f, err = loadstring(content, "@"..path);
+	local f, err = envload(content, "@"..path, env);
 	if not f then return f, err; end
 	return f, path;
 end

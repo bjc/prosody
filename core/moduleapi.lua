@@ -17,7 +17,7 @@ local timer = require "util.timer";
 local multitable_new = require "util.multitable".new;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
-local error, setmetatable, setfenv, type = error, setmetatable, setfenv, type;
+local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select, unpack = ipairs, pairs, select, unpack;
 local tonumber, tostring = tonumber, tostring;
 
@@ -99,12 +99,11 @@ end
 api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
 
 function api:require(lib)
-	local f, n = pluginloader.load_code(self.name, lib..".lib.lua");
+	local f, n = pluginloader.load_code(self.name, lib..".lib.lua", self.environment);
 	if not f then
-		f, n = pluginloader.load_code(lib, lib..".lib.lua");
+		f, n = pluginloader.load_code(lib, lib..".lib.lua", self.environment);
 	end
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
-	setfenv(f, self.environment);
 	return f();
 end
 
