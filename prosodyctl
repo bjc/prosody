@@ -227,9 +227,9 @@ for hostname, config in pairs(config.getconfig()) do
 	hosts[hostname] = make_host(hostname);
 end
 	
-require "core.modulemanager"
+local modulemanager = require "core.modulemanager"
 
-require "util.prosodyctl"
+local prosodyctl = require "util.prosodyctl"
 require "socket"
 -----------------------
 
@@ -509,7 +509,7 @@ function commands.about(arg)
 		return 1;
 	end
 	
-	require "util.array";
+	local array = require "util.array";
 	local keys = require "util.iterators".keys;
 	
 	print("Prosody "..(prosody.version or "(unknown version)"));
@@ -688,7 +688,7 @@ function cert_commands.key(arg)
 		show_message("There was a problem, see OpenSSL output");
 	else
 		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key named HOSTNAME.key\n "
-		.."Prompts for a key size if none given")
+		.."Promps for a key size if none given")
 	end
 end
 

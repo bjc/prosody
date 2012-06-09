@@ -15,7 +15,7 @@ if arg[0]:match("^./") then
 	package.path = package.path .. ";"..arg[0]:gsub("/ejabberd2prosody.lua$", "/?.lua");
 end
 
-require "erlparse";
+local erlparse = require "erlparse";
 
 prosody = {};
 
