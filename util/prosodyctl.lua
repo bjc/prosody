@@ -273,3 +273,5 @@ function reload()
 	signal.kill(pid, signal.SIGHUP);
 	return true;
 end
+
+return _M;

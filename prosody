@@ -128,7 +128,7 @@ function log_dependency_warnings()
 end
 
 function sanity_check()
-	for host, host_config in pairs(configmanager.getconfig()) do
+	for host, host_config in pairs(config.getconfig()) do
 		if host ~= "*"
 		and host_config.core.enabled ~= false
 		and not host_config.core.component_module then
