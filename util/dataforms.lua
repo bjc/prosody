@@ -185,7 +185,7 @@ field_readers["list-multi"] =
 	function (field_tag, required)
 		local result = {};
 		for value in field_tag:childtags("value") do
-			result[#result+1] = value;
+			result[#result+1] = value:get_text();
 		end
 		return result, (required and #result == 0 and "Required value missing" or nil);
 	end
@@ -202,10 +202,10 @@ field_readers["text-multi"] =
 field_readers["list-single"] =
 	field_readers["text-single"];
 
-	local boolean_values = {
-		["1"] = true, ["true"] = true,
-		["0"] = false, ["false"] = false,
-	};
+local boolean_values = {
+	["1"] = true, ["true"] = true,
+	["0"] = false, ["false"] = false,
+};
 
 field_readers["boolean"] =
 	function (field_tag, required)
