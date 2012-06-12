@@ -65,19 +65,27 @@ local function room_save(room, forced)
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
 
+local persistent_errors = false;
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
-	local data = datamanager.load(node, muc_host, "config") or {};
-	local room = muc_new_room(jid, {
-		max_history_length = max_history_messages;
-	});
-	room._data = data._data;
-	room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
-	room._affiliations = data._affiliations;
-	room.route_stanza = room_route_stanza;
-	room.save = room_save;
-	rooms[jid] = room;
+	local data = datamanager.load(node, muc_host, "config");
+	if data then
+		local room = muc_new_room(jid, {
+			max_history_length = max_history_messages;
+		});
+		room._data = data._data;
+		room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
+		room._affiliations = data._affiliations;
+		room.route_stanza = room_route_stanza;
+		room.save = room_save;
+		rooms[jid] = room;
+	else -- missing room data
+		persistent_rooms[jid] = nil;
+		module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
+		persistent_errors = true;
+	end
 end
+if persistent_errors then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 
 local host_room = muc_new_room(muc_host, {
 	max_history_length = max_history_messages;
