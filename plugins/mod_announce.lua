@@ -96,5 +96,5 @@ end
 
 local adhoc_new = module:require "adhoc".new;
 local announce_desc = adhoc_new("Send Announcement to Online Users", "http://jabber.org/protocol/admin#announce", announce_handler, "admin");
-module:add_item("adhoc", announce_desc);
+module:provides("adhoc", announce_desc);
 

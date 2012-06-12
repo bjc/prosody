@@ -100,3 +100,4 @@ local function adhoc_removed(event)
 end
 
 module:handle_items("adhoc", adhoc_added, adhoc_removed);
+module:handle_items("adhoc-provider", adhoc_added, adhoc_removed);
