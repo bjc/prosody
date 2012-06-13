@@ -133,7 +133,7 @@ local resting_session = { -- Resting, not dead
 function retire_session(session, reason)
 	local log = session.log or log;
 	for k in pairs(session) do
-		if k ~= "trace" and k ~= "log" and k ~= "id" then
+		if k ~= "trace" and k ~= "log" and k ~= "id" and k ~= "conn" then
 			session[k] = nil;
 		end
 	end
