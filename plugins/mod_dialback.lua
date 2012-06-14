@@ -84,7 +84,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			origin.from_host = from;
 		end
 		if not origin.to_host then
-			origin.to_host = nameprep(attr.to);
+			origin.to_host = to;
 		end
 
 		origin.log("debug", "asking %s if key %s belongs to them", from, stanza[1]);
