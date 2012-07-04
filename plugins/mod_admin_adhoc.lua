@@ -27,6 +27,14 @@ local modulemanager = require "modulemanager";
 module:depends("adhoc");
 local adhoc_new = module:require "adhoc".new;
 
+local function generate_error_message(errors)
+	local errmsg = {};
+	for name, err in pairs(errors) do
+		errmsg[#errmsg + 1] = name .. ": " .. err;
+	end
+	return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
+end
+
 function add_user_command_handler(self, data, state)
 	local add_user_layout = dataforms_new{
 		title = "Adding a User";
@@ -42,9 +50,9 @@ function add_user_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = add_user_layout:data(data.form);
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "You need to specify a JID." } };
+		local fields, err = add_user_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local username, host, resource = jid.split(fields.accountjid);
 		if data.to ~= host then
@@ -85,9 +93,9 @@ function change_user_password_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = change_user_password_layout:data(data.form);
-		if not fields.accountjid or fields.accountjid == "" or not fields.password then
-			return { status = "completed", error = { message = "Please specify username and password" } };
+		local fields, err = change_user_password_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local username, host, resource = jid.split(fields.accountjid);
 		if data.to ~= host then
@@ -126,7 +134,10 @@ function delete_user_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = delete_user_layout:data(data.form);
+		local fields, err = delete_user_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
 		local failed = {};
 		local succeeded = {};
 		for _, aJID in ipairs(fields.accountjids) do
@@ -175,7 +186,10 @@ function end_user_session_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = end_user_session_layout:data(data.form);
+		local fields, err = end_user_session_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
 		local failed = {};
 		local succeeded = {};
 		for _, aJID in ipairs(fields.accountjids) do
@@ -223,9 +237,9 @@ function get_user_password_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = get_user_password_layout:data(data.form);
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID." } };
+		local fields, err = get_user_password_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local user, host, resource = jid.split(fields.accountjid);
 		local accountjid = "";
@@ -261,10 +275,10 @@ function get_user_roster_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_user_roster_layout:data(data.form);
+		local fields, err = get_user_roster_layout:data(data.form);
 
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID" } };
+		if err then
+			return generate_error_message(err);
 		end
 
 		local user, host, resource = jid.split(fields.accountjid);
@@ -323,10 +337,10 @@ function get_user_stats_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_user_stats_layout:data(data.form);
+		local fields, err = get_user_stats_layout:data(data.form);
 
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID." } };
+		if err then
+			return generate_error_message(err);
 		end
 
 		local user, host, resource = jid.split(fields.accountjid);
@@ -376,7 +390,11 @@ function get_online_users_command_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_online_users_layout:data(data.form);
+		local fields, err = get_online_users_layout:data(data.form);
+
+		if err then
+			return generate_error_message(err);
+		end
 
 		local max_items = nil
 		if fields.max_items ~= "all" then
@@ -436,11 +454,9 @@ function load_module_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if (not fields.module) or (fields.module == "") then
-			return { status = "completed", error = {
-				message = "Please specify a module."
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		if modulemanager.is_loaded(data.to, fields.module) then
 			return { status = "completed", info = "Module already loaded" };
@@ -470,11 +486,9 @@ function reload_modules_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if #fields.modules == 0 then
-			return { status = "completed", error = {
-				message = "Please specify a module. (This means your client misbehaved, as this field is required)"
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local ok_list, err_list = {}, {};
 		for _, module in ipairs(fields.modules) do
@@ -538,7 +552,11 @@ function shut_down_service_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = shut_down_service_layout:data(data.form);
+		local fields, err = shut_down_service_layout:data(data.form);
+
+		if err then
+			return generate_error_message(err);
+		end
 
 		if fields.announcement and #fields.announcement > 0 then
 			local message = st.message({type = "headline"}, fields.announcement):up()
@@ -566,11 +584,9 @@ function unload_modules_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if #fields.modules == 0 then
-			return { status = "completed", error = {
-				message = "Please specify a module. (This means your client misbehaved, as this field is required)"
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local ok_list, err_list = {}, {};
 		for _, module in ipairs(fields.modules) do
