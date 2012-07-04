@@ -208,7 +208,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 		session.sasl_handler = nil; -- allow starting a new SASL negotiation before completing an old one
 	end
 	if not session.sasl_handler then
-		session.sasl_handler = usermanager_get_sasl_handler(module.host);
+		session.sasl_handler = usermanager_get_sasl_handler(module.host, session);
 	end
 	local mechanism = stanza.attr.mechanism;
 	if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
@@ -246,7 +246,7 @@ module:hook("stream-features", function(event)
 		if secure_auth_only and not origin.secure then
 			return;
 		end
-		origin.sasl_handler = usermanager_get_sasl_handler(module.host);
+		origin.sasl_handler = usermanager_get_sasl_handler(module.host, origin);
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
 		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
 			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
