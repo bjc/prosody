@@ -35,7 +35,7 @@ local mechanisms = {};
 local backend_mechanism = {};
 
 -- register a new SASL mechanims
-local function registerMechanism(name, backends, f)
+function registerMechanism(name, backends, f)
 	assert(type(name) == "string", "Parameter name MUST be a string.");
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
 	assert(type(f) == "function", "Parameter f MUST be a function.");

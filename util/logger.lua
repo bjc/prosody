@@ -23,8 +23,6 @@ function init(name)
 	local log_warn = make_logger(name, "warn");
 	local log_error = make_logger(name, "error");
 
-	--name = nil; -- While this line is not commented, will automatically fill in file/line number info
-	local namelen = #name;
 	return function (level, message, ...)
 			if level == "debug" then
 				return log_debug(message, ...);
