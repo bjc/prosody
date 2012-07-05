@@ -133,14 +133,14 @@ function stanza_mt:children()
 end
 
 function stanza_mt:childtags(name, xmlns)
-	xmlns = xmlns or self.attr.xmlns;
 	local tags = self.tags;
 	local start_i, max_i = 1, #tags;
 	return function ()
 		for i = start_i, max_i do
 			local v = tags[i];
 			if (not name or v.name == name)
-			and (not xmlns or xmlns == v.attr.xmlns) then
+			and ((not xmlns and self.attr.xmlns == v.attr.xmlns)
+				or v.attr.xmlns == xmlns) then
 				start_i = i+1;
 				return v;
 			end
