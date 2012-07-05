@@ -581,6 +581,37 @@ int lc_uname(lua_State* L)
 	return 1;
 }
 
+int lc_setenv(lua_State* L)
+{
+	const char *var = luaL_checkstring(L, 1);
+	const char *value;
+
+	/* If the second argument is nil or nothing, unset the var */
+	if(lua_isnoneornil(L, 2))
+	{
+		if(unsetenv(var) != 0)
+		{
+			lua_pushnil(L);
+			lua_pushstring(L, strerror(errno));
+			return 2;
+		}
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+
+	value = luaL_checkstring(L, 2);
+
+	if(setenv(var, value, 1) != 0)
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -611,6 +642,8 @@ int luaopen_util_pposix(lua_State *L)
 		{ "getrlimit", lc_getrlimit },
 
 		{ "uname", lc_uname },
+
+		{ "setenv", lc_setenv },
 
 		{ NULL, NULL }
 	};
