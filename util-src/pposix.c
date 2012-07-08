@@ -34,6 +34,11 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#if (defined(_SVID_SOURCE) && !defined(WITHOUT_MALLINFO))
+	#include <malloc.h>
+	#define WITH_MALLINFO
+#endif
+
 /* Daemonization support */
 
 static int lc_daemonize(lua_State *L)
@@ -612,6 +617,25 @@ int lc_setenv(lua_State* L)
 	return 1;
 }
 
+#ifdef WITH_MALLINFO
+int lc_meminfo(lua_State* L)
+{
+	struct mallinfo info = mallinfo();
+	lua_newtable(L);
+	lua_pushinteger(L, info.arena);
+	lua_setfield(L, -2, "allocated");
+	lua_pushinteger(L, info.hblkhd);
+	lua_setfield(L, -2, "allocated_mmap");
+	lua_pushinteger(L, info.uordblks);
+	lua_setfield(L, -2, "used");
+	lua_pushinteger(L, info.fordblks);
+	lua_setfield(L, -2, "unused");
+	lua_pushinteger(L, info.keepcost);
+	lua_setfield(L, -2, "returnable");
+	return 1;
+}
+#endif
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -644,6 +668,10 @@ int luaopen_util_pposix(lua_State *L)
 		{ "uname", lc_uname },
 
 		{ "setenv", lc_setenv },
+
+#ifdef WITH_MALLINFO
+		{ "meminfo", lc_meminfo },
+#endif
 
 		{ NULL, NULL }
 	};
