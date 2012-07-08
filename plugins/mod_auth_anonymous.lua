@@ -32,10 +32,9 @@ function new_default_provider(host)
 		return nil, "Account creation/modification not supported.";
 	end
 
-	function provider.get_sasl_handler(session)
+	function provider.get_sasl_handler()
 		local anonymous_authentication_profile = {
 			anonymous = function(sasl, username, realm)
-				session.roster = {}; -- so that the null storage backend doesn't upset rostermanager
 				return true; -- for normal usage you should always return true here
 			end
 		};
