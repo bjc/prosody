@@ -198,6 +198,7 @@ function commands.help(session, data)
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
 		print [[s2s:close(from, to) - Close a connection from one domain to another]]
+		print [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
 	elseif section == "module" then
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
@@ -767,6 +768,40 @@ function def_env.s2s:close(from, to)
 	end
 	
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
+end
+
+function def_env.s2s:closeall(host)
+        local count = 0;
+
+        if not host or type(host) ~= "string" then return false, "wrong syntax: please use s2s:closeall('hostname.tld')"; end
+        if hosts[host] then
+                for session in pairs(incoming_s2s) do
+                        if session.to_host == host then
+                                (session.close or s2smanager.destroy_session)(session);
+                                count = count + 1;
+                        end
+                end
+                for _, session in pairs(hosts[host].s2sout) do
+                        (session.close or s2smanager.destroy_session)(session);
+                        count = count + 1;
+                end
+        else
+                for session in pairs(incoming_s2s) do
+			if session.from_host == host then
+				(session.close or s2smanager.destroy_session)(session);
+				count = count + 1;
+			end
+		end
+		for _, h in pairs(hosts) do
+			if h.s2sout[host] then
+				(h.s2sout[host].close or s2smanager.destroy_session)(h.s2sout[host]);
+				count = count + 1;
+			end
+		end
+        end
+
+	if count == 0 then return false, "No sessions to close.";
+	else return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s"); end
 end
 
 def_env.host = {}; def_env.hosts = def_env.host;
