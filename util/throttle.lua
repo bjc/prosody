@@ -1,6 +1,7 @@
 
 local gettime = require "socket".gettime;
 local setmetatable = setmetatable;
+local floor = math.floor;
 
 module "throttle"
 
@@ -11,7 +12,7 @@ function throttle:update()
 	local newt = gettime();
 	local elapsed = newt - self.t;
 	self.t = newt;
-	local balance = self.rate * elapsed + self.balance;
+	local balance = floor(self.rate * elapsed) + self.balance;
 	if balance > self.max then
 		self.balance = self.max;
 	else
