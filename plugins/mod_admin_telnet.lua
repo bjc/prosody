@@ -856,6 +856,37 @@ function def_env.muc:room(room_jid)
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
 
+def_env.user = {};
+function def_env.user:create(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.create_user(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not create user: "..err;
+	end
+end
+
+function def_env.user:delete(jid)
+	local username, host = jid_split(jid);
+	local ok, err = um.delete_user(username, host);
+	if ok then
+		return true, "User deleted";
+	else
+		return nil, "Could not delete user: "..err;
+	end
+end
+
+function def_env.user:passwd(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.set_password(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not change password for user: "..err;
+	end
+end
+
 -------------
 
 function printbanner(session)
