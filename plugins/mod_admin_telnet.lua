@@ -187,6 +187,7 @@ function commands.help(session, data)
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
+		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
@@ -207,6 +208,10 @@ function commands.help(session, data)
 		print [[host:activate(hostname) - Activates the specified host]]
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
+	elseif section == "user" then
+		print [[user:create(jid, password) - Create the specified user account]]
+		print [[user:password(jid, password) - Set the password for the specified user account]]
+		print [[user:delete(jid, password) - Permanently remove the specified user account]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
