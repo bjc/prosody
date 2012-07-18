@@ -12,7 +12,7 @@ local states = {}
 
 local _M = {};
 
-function _cmdtag(desc, status, sessionid, action)
+local function _cmdtag(desc, status, sessionid, action)
 	local cmd = st.stanza("command", { xmlns = xmlns_cmd, node = desc.node, status = status });
 	if sessionid then cmd.attr.sessionid = sessionid; end
 	if action then cmd.attr.action = action; end
@@ -35,6 +35,7 @@ function _M.handle_cmd(command, origin, stanza)
 	local data, state = command:handler(dataIn, states[sessionid]);
 	states[sessionid] = state;
 	local stanza = st.reply(stanza);
+	local cmdtag;
 	if data.status == "completed" then
 		states[sessionid] = nil;
 		cmdtag = command:cmdtag("completed", sessionid);
