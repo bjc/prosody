@@ -14,8 +14,6 @@ local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 
-local multitable_new = require "util.multitable".new;
-
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, setfenv, type = error, setmetatable, setfenv, type;
 local ipairs, pairs, select, unpack = ipairs, pairs, select, unpack;
