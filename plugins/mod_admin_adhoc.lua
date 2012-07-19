@@ -453,7 +453,6 @@ function load_module_handler(self, data, state)
 			'". Error was: "'..tostring(err or "<unspecified>")..'"' } };
 		end
 	else
-		local modules = array.collect(keys(hosts[data.to].modules)):sort();
 		return { status = "executing", form = layout }, "executing";
 	end
 end
