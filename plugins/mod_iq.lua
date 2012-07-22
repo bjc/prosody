@@ -17,10 +17,7 @@ if module:get_host_type() == "local" then
 		local origin, stanza = data.origin, data.stanza;
 
 		local session = full_sessions[stanza.attr.to];
-		if session then
-			-- TODO fire post processing event
-			session.send(stanza);
-		else -- resource not online
+		if not (session and session.send(stanza)) then
 			if stanza.attr.type == "get" or stanza.attr.type == "set" then
 				origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 			end
