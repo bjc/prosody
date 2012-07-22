@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
-local ipairs, pairs, print, next= ipairs, pairs, print, next;
+local tostring, setmetatable = tostring, setmetatable;
+local pairs, next= pairs, next;
 
 local hosts = hosts;
 local full_sessions = full_sessions;
@@ -15,7 +15,6 @@ local bare_sessions = bare_sessions;
 
 local logger = require "util.logger";
 local log = logger.init("sessionmanager");
-local error = error;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
@@ -23,11 +22,7 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local uuid_generate = require "util.uuid".generate;
 
 local initialize_filters = require "util.filters".initialize;
-local fire_event = prosody.events.fire_event;
-local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
-
-local st = require "util.stanza";
 
 local newproxy = newproxy;
 local getmetatable = getmetatable;
