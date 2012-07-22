@@ -7,7 +7,7 @@
 --
 
 local socket = require "socket"
-local mime = require "mime"
+local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "util.httpstream".new;
 
@@ -154,7 +154,7 @@ function request(u, ex, callback)
 	};
 	
 	if req.userinfo then
-		headers["Authorization"] = "Basic "..mime.b64(req.userinfo);
+		headers["Authorization"] = "Basic "..b64(req.userinfo);
 	end
 
 	if ex then
