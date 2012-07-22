@@ -76,22 +76,22 @@ end
 function console_listener.onincoming(conn, data)
 	local session = sessions[conn];
 
-	-- Handle data
-	(function(session, data)
+	-- Handle data (loop allows us to break to add \0 after response)
+	repeat
 		local useglobalenv;
-		
+
 		if data:match("^>") then
 			data = data:gsub("^>", "");
 			useglobalenv = true;
 		elseif data == "\004" then
 			commands["bye"](session, data);
-			return;
+			break;
 		else
 			local command = data:lower();
 			command = data:match("^%w+") or data:match("%p");
 			if commands[command] then
 				commands[command](session, data);
-				return;
+				break;
 			end
 		end
 
@@ -106,7 +106,7 @@ function console_listener.onincoming(conn, data)
 				err = err:gsub("^:%d+: ", "");
 				err = err:gsub("'<eof>'", "the end of the line");
 				session.print("Sorry, I couldn't understand that... "..err);
-				return;
+				break;
 			end
 		end
 		
@@ -116,26 +116,26 @@ function console_listener.onincoming(conn, data)
 		
 		if not (ranok or message or useglobalenv) and commands[data:lower()] then
 			commands[data:lower()](session, data);
-			return;
+			break;
 		end
 		
 		if not ranok then
 			session.print("Fatal error while running command, it did not complete");
 			session.print("Error: "..taskok);
-			return;
+			break;
 		end
 		
 		if not message then
 			session.print("Result: "..tostring(taskok));
-			return;
+			break;
 		elseif (not taskok) and message then
 			session.print("Command completed with a problem");
 			session.print("Message: "..tostring(message));
-			return;
+			break;
 		end
 		
 		session.print("OK: "..tostring(message));
-	end)(session, data);
+	until true
 	
 	session.send(string.char(0));
 end
