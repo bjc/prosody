@@ -33,8 +33,6 @@ local cfg = {
 }
 
 local function use(x) return rawget(_G, x); end
-local print = use "print"
-local pcall = use "pcall"
 local ipairs = use "ipairs"
 local string = use "string"
 local select = use "select"
@@ -212,7 +210,6 @@ do
 								self:_lock( false, false, false )  -- unlock the interface; sending, closing etc allowed
 								self.send = self.conn.send  -- caching table lookups with new client object
 								self.receive = self.conn.receive
-								local onsomething
 								if not call_onconnect then  -- trigger listener
 									self:onstatus("ssl-handshake-complete");
 								end
@@ -470,9 +467,7 @@ do
 	local string_sub = string.sub  -- caching table lookups
 	local string_len = string.len
 	local addevent = base.addevent
-	local coroutine_wrap = coroutine.wrap
 	local socket_gettime = socket.gettime
-	local coroutine_yield = coroutine.yield
 	function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
 		--vdebug("creating client interfacce...")
 		local interface = {
@@ -742,7 +737,7 @@ end )( )
 
 local addclient, wrapclient
 do
-	function wrapclient( client, ip, port, listeners, pattern, sslctx, startssl )
+	function wrapclient( client, ip, port, listeners, pattern, sslctx )
 		local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
 		interface:_start_connection(sslctx)
 		return interface, client
@@ -778,9 +773,6 @@ do
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" ) then
 			local ip, port = client:getsockname( )
-			local server = function( )
-				return nil, "this is a dummy server interface"
-			end
 			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
 			debug( "new connection id:", interface.id )
