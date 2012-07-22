@@ -249,7 +249,7 @@ do
 			return true
 	end
 	function interface_mt:_destroy()  -- close this interface + events and call last listener
-			debug( "closing client with id:", self.id )
+			debug( "closing client with id:", self.id, self.fatalerror )
 			self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
 			local _
 			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
@@ -328,22 +328,22 @@ do
 		end
 		return true
 	end
-	function interface_mt:close(now)
+	function interface_mt:close()
 		if self.nointerface then return nil, "locked"; end
 		debug( "try to close client connection with id:", self.id )
 		if self.type == "client" then
 			self.fatalerror = "client to close"
-			if ( not self.eventwrite ) or now then  -- try to close immediately
-				self:_lock( true, true, true )
-				self:_close()
-				return true
-			else  -- wait for incomplete write request
+			if self.eventwrite then -- wait for incomplete write request
 				self:_lock( true, true, false )
 				debug "closing delayed until writebuffer is empty"
 				return nil, "writebuffer not empty, waiting"
+			else -- close now
+				self:_lock( true, true, true )
+				self:_close()
+				return true
 			end
 		else
-			debug( "try to close server with id:", tostring(self.id), "args:", tostring(now) )
+			debug( "try to close server with id:", tostring(self.id))
 			self.fatalerror = "server to close"
 			self:_lock( true )
 			self:_close( 0 )  -- add new event to remove the server interface

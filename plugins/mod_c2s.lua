@@ -24,6 +24,7 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 local log = module._log;
 
 local c2s_timeout = module:get_option_number("c2s_timeout");
+local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
 
 local sessions = module:shared("sessions");
@@ -143,8 +144,27 @@ local function session_close(session, reason)
 			end
 		end
 		session.send("</stream:stream>");
-		session.conn:close();
-		listener.ondisconnect(session.conn, (reason and (reason.text or reason.condition)) or reason or "session closed");
+		
+		function session.send() return false; end
+		
+		local reason = (reason and (reason.text or reason.condition)) or reason or "session closed";
+		session.log("info", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason);
+
+		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
+		local conn = session.conn;
+		if reason == "session closed" and not session.notopen and session.type == "c2s" then
+			-- Grace time to process data from authenticated cleanly-closed stream
+			add_task(stream_close_timeout, function ()
+				if not session.destroyed then
+					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
+					sm_destroy_session(session, reason);
+					conn:close();
+				end
+			end);
+		else
+			sm_destroy_session(session, reason);
+			conn:close();
+		end
 	end
 end
 
@@ -208,10 +228,9 @@ end
 function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		(session.log or log)("info", "Client disconnected: %s", err);
+		(session.log or log)("info", "Client disconnected: %s", err or "connection closed");
 		sm_destroy_session(session, err);
 		sessions[conn]  = nil;
-		session = nil;
 	end
 end
 

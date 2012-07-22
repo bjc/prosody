@@ -352,13 +352,15 @@ module:hook("resource-unbind", function(event)
 	-- Send unavailable presence
 	if session.presence then
 		local pres = st.presence{ type = "unavailable" };
-		if not(err) or err == "closed" then err = "connection closed"; end
-		pres:tag("status"):text("Disconnected: "..err):up();
+		if err then
+			pres:tag("status"):text("Disconnected: "..err):up();
+		end
 		session:dispatch_stanza(pres);
 	elseif session.directed then
 		local pres = st.presence{ type = "unavailable", from = session.full_jid };
-		if not(err) or err == "closed" then err = "connection closed"; end
-		pres:tag("status"):text("Disconnected: "..err):up();
+		if err then
+			pres:tag("status"):text("Disconnected: "..err):up();
+		end
 		for jid in pairs(session.directed) do
 			pres.attr.to = jid;
 			core_post_stanza(session, pres, true);

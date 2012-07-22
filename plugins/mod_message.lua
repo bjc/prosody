@@ -35,10 +35,13 @@ local function process_to_bare(bare, origin, stanza)
 		if user then -- some resources are connected
 			local recipients = user.top_resources;
 			if recipients then
+				local sent;
 				for i=1,#recipients do
-					recipients[i].send(stanza);
+					sent = recipients[i].send(stanza) or sent;
 				end
-				return true;
+				if sent then
+					return true;
+				end
 			end
 		end
 		-- no resources are online
@@ -65,9 +68,7 @@ module:hook("message/full", function(data)
 	local origin, stanza = data.origin, data.stanza;
 	
 	local session = full_sessions[stanza.attr.to];
-	if session then
-		-- TODO fire post processing event
-		session.send(stanza);
+	if session and session.send(stanza) then
 		return true;
 	else -- resource not online
 		return process_to_bare(jid_bare(stanza.attr.to), origin, stanza);
