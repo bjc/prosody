@@ -475,7 +475,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	local _sendbuffer = function( ) -- this function sends data
 		local succ, err, byte, buffer, count;
-		local count;
 		if socket then
 			buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
 			succ, err, byte = send( socket, buffer, 1, bufferlen )
