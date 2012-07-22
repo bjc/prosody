@@ -413,11 +413,9 @@ local function initialize_session(session)
 		return handlestanza(session, stanza);
 	end
 
-	local conn = session.conn;
 	add_task(connect_timeout, function ()
-		if session.conn ~= conn or session.connecting
-		or session.type == "s2sin" or session.type == "s2sout" then
-			return; -- Ok, we're connect[ed|ing]
+		if session.type == "s2sin" or session.type == "s2sout" then
+			return; -- Ok, we're connected
 		end
 		-- Not connected, need to close session and clean up
 		(session.log or log)("debug", "Destroying incomplete session %s->%s due to inactivity",
