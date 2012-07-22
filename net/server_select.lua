@@ -314,17 +314,17 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		end
 		return false, "setoption not implemented";
 	end
-	handler.force_close = function ( self )
+	handler.force_close = function ( self, err )
 		if bufferqueuelen ~= 0 then
-			out_put("discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
+			out_put("server.lua: discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
 			for i = bufferqueuelen, 1, -1 do
 				bufferqueue[i] = nil;
 			end
 			bufferqueuelen = 0;
 		end
-		return self:close();
+		return self:close(err);
 	end
-	handler.close = function( self )
+	handler.close = function( self, err )
 		if not handler then return true; end
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
 		_readtimes[ handler ] = nil
@@ -353,7 +353,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			local _handler = handler;
 			handler = nil
 			if disconnect then
-				disconnect(_handler, false);
+				disconnect(_handler, err or false);
+				disconnect = nil
 			end
 		end
 		if server then
@@ -456,8 +457,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
-				disconnect( handler, "receive buffer exceeded" )
-				handler:close( true )
+				handler:close( "receive buffer exceeded" )
 				return false
 			end
 			local count = len * STAT_UNIT
@@ -469,8 +469,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		else	-- connections was closed or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
 			fatalerror = true
-			disconnect( handler, err )
-			_ = handler and handler:close( )
+			_ = handler and handler:force_close( err )
 			return false
 		end
 	end
@@ -509,8 +508,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		else	-- connection was closed during sending or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
 			fatalerror = true
-			disconnect( handler, err )
-			_ = handler and handler:force_close( )
+			_ = handler and handler:force_close( err )
 			return false
 		end
 	end
@@ -552,9 +550,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 					end
 				end
 				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
-				disconnect( handler, "ssl handshake failed" )
-				_ = handler and handler:force_close()
-                               return false, err -- handshake failed
+				_ = handler and handler:force_close("ssl handshake failed")
+               return false, err -- handshake failed
 			end
 		)
 	end
