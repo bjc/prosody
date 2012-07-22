@@ -314,22 +314,28 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		end
 		return false, "setoption not implemented";
 	end
-	handler.close = function( self, forced )
+	handler.force_close = function ( self )
+		if bufferqueuelen ~= 0 then
+			out_put("discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
+			for i = bufferqueuelen, 1, -1 do
+				bufferqueue[i] = nil;
+			end
+			bufferqueuelen = 0;
+		end
+		return self:close();
+	end
+	handler.close = function( self )
 		if not handler then return true; end
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
 		_readtimes[ handler ] = nil
 		if bufferqueuelen ~= 0 then
-			if not ( forced or fatalerror ) then
-				handler.sendbuffer( )
-				if bufferqueuelen ~= 0 then -- try again...
-					if handler then
-						handler.write = nil -- ... but no further writing allowed
-					end
-					toclose = true
-					return false
+			handler.sendbuffer() -- Try now to send any outstanding data
+			if bufferqueuelen ~= 0 then -- Still not empty, so we'll try again later
+				if handler then
+					handler.write = nil -- ... but no further writing allowed
 				end
-			else
-				send( socket, table_concat( bufferqueue, "", 1, bufferqueuelen ), 1, bufferlen )	-- forced send
+				toclose = true
+				return false
 			end
 		end
 		if socket then
@@ -347,7 +353,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			local _handler = handler;
 			handler = nil
 			if disconnect then
-				disconnect(_handler, "closed");
+				disconnect(_handler, false);
 			end
 		end
 		if server then
@@ -480,7 +486,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_ = _cleanqueue and clean( bufferqueue )
 			--out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
 		else
-			succ, err, count = false, "closed", 0;
+			succ, err, count = false, "unexpected close", 0;
 		end
 		if succ then	-- sending succesful
 			bufferqueuelen = 0
@@ -491,7 +497,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				drain(handler)
 			end
 			_ = needtls and handler:starttls(nil)
-			_ = toclose and handler:close( )
+			_ = toclose and handler:force_close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
 			buffer = string_sub( buffer, byte + 1, bufferlen ) -- new buffer
@@ -504,7 +510,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
 			fatalerror = true
 			disconnect( handler, err )
-			_ = handler and handler:close( )
+			_ = handler and handler:force_close( )
 			return false
 		end
 	end
@@ -547,7 +553,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				end
 				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
 				disconnect( handler, "ssl handshake failed" )
-				_ = handler and handler:close( true )	 -- forced disconnect
+				_ = handler and handler:force_close()
                                return false, err -- handshake failed
 			end
 		)
@@ -810,7 +816,7 @@ loop = function(once) -- this is the main loop of the program
 		end
 		for handler, err in pairs( _closelist ) do
 			handler.disconnect( )( handler, err )
-			handler:close( true )	 -- forced disconnect
+			handler:force_close()	 -- forced disconnect
 		end
 		clean( _closelist )
 		_currenttime = luasocket_gettime( )
@@ -896,7 +902,7 @@ addtimer( function( )
 				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
 					--_writetimes[ handler ] = nil
 					handler.disconnect( )( handler, "send timeout" )
-					handler:close( true )	 -- forced disconnect
+					handler:force_close()	 -- forced disconnect
 				end
 			end
 			for handler, timestamp in pairs( _readtimes ) do
