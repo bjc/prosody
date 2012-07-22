@@ -173,85 +173,85 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local have_other_result = not(has_ipv4) or not(has_ipv6) or false;
 
 		if has_ipv4 then
-		handle4 = adns.lookup(function (reply, err)
-			handle4 = nil;
+			handle4 = adns.lookup(function (reply, err)
+				handle4 = nil;
 
-			-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
-			if not (reply and reply[#reply] and reply[#reply].a) then
-				local count = max_dns_depth;
-				reply = dns.peek(connect_host, "CNAME", "IN");
-				while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
-					log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
-					reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
-					count = count - 1;
-				end
-			end
-			-- end of CNAME resolving
-
-			if reply and reply[#reply] and reply[#reply].a then
-				for _, ip in ipairs(reply) do
-					log("debug", "DNS reply for %s gives us %s", connect_host, ip.a);
-					IPs[#IPs+1] = new_ip(ip.a, "IPv4");
-				end
-			end
-
-			if have_other_result then
-				if #IPs > 0 then
-					rfc3484_dest(host_session.ip_hosts, sources);
-					for i = 1, #IPs do
-						IPs[i] = {ip = IPs[i], port = connect_port};
+				-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
+				if not (reply and reply[#reply] and reply[#reply].a) then
+					local count = max_dns_depth;
+					reply = dns.peek(connect_host, "CNAME", "IN");
+					while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
+						log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
+						reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
+						count = count - 1;
 					end
-					host_session.ip_choice = 0;
-					s2sout.try_next_ip(host_session);
+				end
+				-- end of CNAME resolving
+
+				if reply and reply[#reply] and reply[#reply].a then
+					for _, ip in ipairs(reply) do
+						log("debug", "DNS reply for %s gives us %s", connect_host, ip.a);
+						IPs[#IPs+1] = new_ip(ip.a, "IPv4");
+					end
+				end
+
+				if have_other_result then
+					if #IPs > 0 then
+						rfc3484_dest(host_session.ip_hosts, sources);
+						for i = 1, #IPs do
+							IPs[i] = {ip = IPs[i], port = connect_port};
+						end
+						host_session.ip_choice = 0;
+						s2sout.try_next_ip(host_session);
+					else
+						log("debug", "DNS lookup failed to get a response for %s", connect_host);
+						host_session.ip_hosts = nil;
+						if not s2sout.attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+							log("debug", "No other records to try for %s - destroying", host_session.to_host);
+							err = err and (": "..err) or "";
+							s2s_destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
+						end
+					end
 				else
-					log("debug", "DNS lookup failed to get a response for %s", connect_host);
-					host_session.ip_hosts = nil;
-					if not s2sout.attempt_connection(host_session, "name resolution failed") then -- Retry if we can
-						log("debug", "No other records to try for %s - destroying", host_session.to_host);
-						err = err and (": "..err) or "";
-						s2s_destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
-					end
+					have_other_result = true;
 				end
-			else
-				have_other_result = true;
-			end
-		end, connect_host, "A", "IN");
+			end, connect_host, "A", "IN");
 		else
 			have_other_result = true;
 		end
 
 		if has_ipv6 then
-		handle6 = adns.lookup(function (reply, err)
-			handle6 = nil;
+			handle6 = adns.lookup(function (reply, err)
+				handle6 = nil;
 
-			if reply and reply[#reply] and reply[#reply].aaaa then
-				for _, ip in ipairs(reply) do
-					log("debug", "DNS reply for %s gives us %s", connect_host, ip.aaaa);
-					IPs[#IPs+1] = new_ip(ip.aaaa, "IPv6");
-				end
-			end
-
-			if have_other_result then
-				if #IPs > 0 then
-					rfc3484_dest(host_session.ip_hosts, sources);
-					for i = 1, #IPs do
-						IPs[i] = {ip = IPs[i], port = connect_port};
+				if reply and reply[#reply] and reply[#reply].aaaa then
+					for _, ip in ipairs(reply) do
+						log("debug", "DNS reply for %s gives us %s", connect_host, ip.aaaa);
+						IPs[#IPs+1] = new_ip(ip.aaaa, "IPv6");
 					end
-					host_session.ip_choice = 0;
-					s2sout.try_next_ip(host_session);
+				end
+
+				if have_other_result then
+					if #IPs > 0 then
+						rfc3484_dest(host_session.ip_hosts, sources);
+						for i = 1, #IPs do
+							IPs[i] = {ip = IPs[i], port = connect_port};
+						end
+						host_session.ip_choice = 0;
+						s2sout.try_next_ip(host_session);
+					else
+						log("debug", "DNS lookup failed to get a response for %s", connect_host);
+						host_session.ip_hosts = nil;
+						if not s2sout.attempt_connection(host_session, "name resolution failed") then -- Retry if we can
+							log("debug", "No other records to try for %s - destroying", host_session.to_host);
+							err = err and (": "..err) or "";
+							s2s_destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
+						end
+					end
 				else
-					log("debug", "DNS lookup failed to get a response for %s", connect_host);
-					host_session.ip_hosts = nil;
-					if not s2sout.attempt_connection(host_session, "name resolution failed") then -- Retry if we can
-						log("debug", "No other records to try for %s - destroying", host_session.to_host);
-						err = err and (": "..err) or "";
-						s2s_destroy_session(host_session, "DNS resolution failed"..err); -- End of the line, we can't
-					end
+					have_other_result = true;
 				end
-			else
-				have_other_result = true;
-			end
-		end, connect_host, "AAAA", "IN");
+			end, connect_host, "AAAA", "IN");
 		else
 			have_other_result = true;
 		end
