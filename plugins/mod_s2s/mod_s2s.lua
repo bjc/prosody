@@ -31,6 +31,7 @@ local cert_verify_identity = require "util.x509".verify_identity;
 local s2sout = module:require("s2sout");
 
 local connect_timeout = module:get_option_number("s2s_timeout", 60);
+local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
 
 local sessions = module:shared("sessions");
 
@@ -292,18 +293,6 @@ function stream_callbacks.streamclosed(session)
 	session:close();
 end
 
-function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" and session.direction == "outgoing" and session.notopen then
-		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
-		if s2sout.attempt_connection(session, err) then
-			(session.log or log)("debug", "...so we're going to try another target");
-			return true; -- Session lives for now
-		end
-	end
-	(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
-	s2s_destroy_session(session, err);
-end
-
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
 		session:close("invalid-namespace");
@@ -375,11 +364,26 @@ local function session_close(session, reason, remote_reason)
 			end
 		end
 		session.sends2s("</stream:stream>");
-		if session.notopen or not session.conn:close() then
-			session.conn:close(true); -- Force FIXME: timer?
+
+		function session.sends2s() return false; end
+		
+		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed";
+		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction, session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason);
+		
+		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
+		local conn = session.conn;
+		if not session.notopen and session.type == "s2sin" then
+			add_task(stream_close_timeout, function ()
+				if not session.destroyed then
+					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
+					s2s_destroy_session(session, reason);
+					conn:close();
+				end
+			end);
+		else
+			s2s_destroy_session(session, reason);
+			conn:close(); -- Close immediately, as this is an outgoing connection or is not authed
 		end
-		session.conn:close();
-		listener.ondisconnect(session.conn, remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed");
 	end
 end
 
@@ -473,11 +477,17 @@ end
 function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if stream_callbacks.streamdisconnected(session, err) then
-			return; -- Connection lives, for now
+		if err and session.direction == "outgoing" and session.notopen then
+			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
+			if s2sout.attempt_connection(session, err) then
+				(session.log or log)("debug", "...so we're going to try another target");
+				return; -- Session lives for now
+			end
 		end
+		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
+		s2s_destroy_session(session, err);
+		sessions[conn] = nil;
 	end
-	sessions[conn] = nil;
 end
 
 function listener.register_outgoing(conn, session)
