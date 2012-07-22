@@ -19,7 +19,6 @@ end
 local log, table_concat = require ("util.logger").init("socket"), table.concat;
 local out_put = function (...) return log("debug", table_concat{...}); end
 local out_error = function (...) return log("warn", table_concat{...}); end
-local mem_free = collectgarbage
 
 ----------------------------------// DECLARATION //--
 
@@ -34,7 +33,6 @@ local pairs = use "pairs"
 local ipairs = use "ipairs"
 local tonumber = use "tonumber"
 local tostring = use "tostring"
-local collectgarbage = use "collectgarbage"
 
 --// lua libs //--
 
@@ -49,7 +47,6 @@ local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
-local table_remove = table.remove
 local string_len = string.len
 local string_sub = string.sub
 local coroutine_wrap = coroutine.wrap
@@ -67,7 +64,6 @@ local ssl_wrap = ( luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_sleep = luasocket.sleep
 local socket_select = luasocket.select
-local ssl_newcontext = ( luasec and luasec.newcontext )
 
 --// functions //--
 
@@ -84,7 +80,6 @@ local getsettings
 local closesocket
 local removesocket
 local removeserver
-local changetimeout
 local wrapconnection
 local changesettings
 
