@@ -187,6 +187,7 @@ function commands.help(session, data)
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
+		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
@@ -207,6 +208,10 @@ function commands.help(session, data)
 		print [[host:activate(hostname) - Activates the specified host]]
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
+	elseif section == "user" then
+		print [[user:create(jid, password) - Create the specified user account]]
+		print [[user:password(jid, password) - Set the password for the specified user account]]
+		print [[user:delete(jid, password) - Permanently remove the specified user account]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -854,6 +859,37 @@ function def_env.muc:room(room_jid)
 		return nil, "No such room: "..room_jid;
 	end
 	return setmetatable({ room = room_obj }, console_room_mt);
+end
+
+def_env.user = {};
+function def_env.user:create(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.create_user(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not create user: "..err;
+	end
+end
+
+function def_env.user:delete(jid)
+	local username, host = jid_split(jid);
+	local ok, err = um.delete_user(username, host);
+	if ok then
+		return true, "User deleted";
+	else
+		return nil, "Could not delete user: "..err;
+	end
+end
+
+function def_env.user:passwd(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.set_password(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not change password for user: "..err;
+	end
 end
 
 -------------
