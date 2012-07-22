@@ -203,7 +203,6 @@ function destroy_request(request)
 	if request.conn then
 		request.conn = nil;
 		request.handler:close()
-		listener.ondisconnect(request.handler, "closed");
 	end
 end
 
