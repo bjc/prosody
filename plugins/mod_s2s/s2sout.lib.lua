@@ -170,7 +170,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local IPs = {};
 		host_session.ip_hosts = IPs;
 		local handle4, handle6;
-		local has_other = false;
+		local have_other_result = not(has_ipv4) or not(has_ipv6) or false;
 
 		if has_ipv4 then
 		handle4 = adns.lookup(function (reply, err)
@@ -195,7 +195,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 				end
 			end
 
-			if has_other then
+			if have_other_result then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
 					for i = 1, #IPs do
@@ -213,11 +213,11 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 					end
 				end
 			else
-				has_other = true;
+				have_other_result = true;
 			end
 		end, connect_host, "A", "IN");
 		else
-			has_other = true;
+			have_other_result = true;
 		end
 
 		if has_ipv6 then
@@ -231,7 +231,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 				end
 			end
 
-			if has_other then
+			if have_other_result then
 				if #IPs > 0 then
 					rfc3484_dest(host_session.ip_hosts, sources);
 					for i = 1, #IPs do
@@ -249,13 +249,12 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 					end
 				end
 			else
-				has_other = true;
+				have_other_result = true;
 			end
 		end, connect_host, "AAAA", "IN");
 		else
-			has_other = true;
+			have_other_result = true;
 		end
-
 		return true;
 	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
 		s2sout.try_next_ip(host_session);
