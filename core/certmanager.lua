@@ -11,7 +11,7 @@ local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
-local setmetatable, tostring = setmetatable, tostring;
+local tostring = tostring;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
