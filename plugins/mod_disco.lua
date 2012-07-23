@@ -32,7 +32,7 @@ do -- validate disco_items
 	end
 end
 
-module:add_identity("server", "im", "Prosody"); -- FIXME should be in the non-existing mod_router
+module:add_identity("server", "im", module:get_option_string("name", "Prosody")); -- FIXME should be in the non-existing mod_router
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
 
