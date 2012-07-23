@@ -290,7 +290,7 @@ end
 
 function stream_callbacks.streamclosed(session)
 	(session.log or log)("debug", "Received </stream:stream>");
-	session:close();
+	session:close(false);
 end
 
 function stream_callbacks.error(session, error, data)
@@ -342,7 +342,7 @@ local function session_close(session, reason, remote_reason)
 			session.sends2s("<?xml version='1.0'?>");
 			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
 		end
-		if reason then
+		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
 				log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
 				session.sends2s(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
@@ -363,16 +363,16 @@ local function session_close(session, reason, remote_reason)
 				end
 			end
 		end
-		session.sends2s("</stream:stream>");
 
+		session.sends2s("</stream:stream>");
 		function session.sends2s() return false; end
 		
-		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed";
-		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction, session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason);
+		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
+		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction, session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
 		
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
-		if not session.notopen and session.type == "s2sin" then
+		if reason == nil and not session.notopen and session.type == "s2sin" then
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
