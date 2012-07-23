@@ -13,7 +13,7 @@ local _G = _G;
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; interface = "127.0.0.1" };
+local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
@@ -76,68 +76,76 @@ end
 function console_listener.onincoming(conn, data)
 	local session = sessions[conn];
 
-	-- Handle data (loop allows us to break to add \0 after response)
-	repeat
-		local useglobalenv;
+	local partial = session.partial_data;
+	if partial then
+		data = partial..data;
+	end
 
-		if data:match("^>") then
-			data = data:gsub("^>", "");
-			useglobalenv = true;
-		elseif data == "\004" then
-			commands["bye"](session, data);
-			break;
-		else
-			local command = data:lower();
-			command = data:match("^%w+") or data:match("%p");
-			if commands[command] then
-				commands[command](session, data);
+	for line in data:gmatch("[^\n]*[\n\004]") do
+		-- Handle data (loop allows us to break to add \0 after response)
+		repeat
+			local useglobalenv;
+
+			if line:match("^>") then
+				line = line:gsub("^>", "");
+				useglobalenv = true;
+			elseif line == "\004" then
+				commands["bye"](session, line);
 				break;
+			else
+				local command = line:lower();
+				command = line:match("^%w+") or line:match("%p");
+				if commands[command] then
+					commands[command](session, line);
+					break;
+				end
 			end
-		end
 
-		session.env._ = data;
-		
-		local chunkname = "=console";
-		local chunk, err = loadstring("return "..data, chunkname);
-		if not chunk then
-			chunk, err = loadstring(data, chunkname);
+			session.env._ = line;
+			
+			local chunkname = "=console";
+			local chunk, err = loadstring("return "..line, chunkname);
 			if not chunk then
-				err = err:gsub("^%[string .-%]:%d+: ", "");
-				err = err:gsub("^:%d+: ", "");
-				err = err:gsub("'<eof>'", "the end of the line");
-				session.print("Sorry, I couldn't understand that... "..err);
+				chunk, err = loadstring(line, chunkname);
+				if not chunk then
+					err = err:gsub("^%[string .-%]:%d+: ", "");
+					err = err:gsub("^:%d+: ", "");
+					err = err:gsub("'<eof>'", "the end of the line");
+					session.print("Sorry, I couldn't understand that... "..err);
+					break;
+				end
+			end
+			
+			setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
+			
+			local ranok, taskok, message = pcall(chunk);
+			
+			if not (ranok or message or useglobalenv) and commands[line:lower()] then
+				commands[line:lower()](session, line);
 				break;
 			end
-		end
+			
+			if not ranok then
+				session.print("Fatal error while running command, it did not complete");
+				session.print("Error: "..taskok);
+				break;
+			end
+			
+			if not message then
+				session.print("Result: "..tostring(taskok));
+				break;
+			elseif (not taskok) and message then
+				session.print("Command completed with a problem");
+				session.print("Message: "..tostring(message));
+				break;
+			end
+			
+			session.print("OK: "..tostring(message));
+		until true
 		
-		setfenv(chunk, (useglobalenv and redirect_output(_G, session)) or session.env or nil);
-		
-		local ranok, taskok, message = pcall(chunk);
-		
-		if not (ranok or message or useglobalenv) and commands[data:lower()] then
-			commands[data:lower()](session, data);
-			break;
-		end
-		
-		if not ranok then
-			session.print("Fatal error while running command, it did not complete");
-			session.print("Error: "..taskok);
-			break;
-		end
-		
-		if not message then
-			session.print("Result: "..tostring(taskok));
-			break;
-		elseif (not taskok) and message then
-			session.print("Command completed with a problem");
-			session.print("Message: "..tostring(message));
-			break;
-		end
-		
-		session.print("OK: "..tostring(message));
-	until true
-	
-	session.send(string.char(0));
+		session.send(string.char(0));
+	end
+	session.partial_data = data:match("[^\n]+$");
 end
 
 function console_listener.ondisconnect(conn, err)
