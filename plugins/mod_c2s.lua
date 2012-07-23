@@ -76,7 +76,7 @@ end
 
 function stream_callbacks.streamclosed(session)
 	session.log("debug", "Received </stream:stream>");
-	session:close();
+	session:close(false);
 end
 
 function stream_callbacks.error(session, error, data)
@@ -122,7 +122,7 @@ local function session_close(session, reason)
 			session.send("<?xml version='1.0'?>");
 			session.send(st.stanza("stream:stream", default_stream_attr):top_tag());
 		end
-		if reason then
+		if reason then -- nil == no err, initiated by us, false == initiated by client
 			if type(reason) == "string" then -- assume stream error
 				log("info", "Disconnecting client, <stream:error> is: %s", reason);
 				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
@@ -143,16 +143,16 @@ local function session_close(session, reason)
 				end
 			end
 		end
-		session.send("</stream:stream>");
 		
+		session.send("</stream:stream>");
 		function session.send() return false; end
 		
-		local reason = (reason and (reason.text or reason.condition)) or reason or "session closed";
-		session.log("info", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason);
+		local reason = (reason and (reason.text or reason.condition)) or reason;
+		session.log("info", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
-		if reason == "session closed" and not session.notopen and session.type == "c2s" then
+		if reason == nil and not session.notopen and session.type == "c2s" then
 			-- Grace time to process data from authenticated cleanly-closed stream
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
