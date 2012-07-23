@@ -30,7 +30,7 @@ local cert_verify_identity = require "util.x509".verify_identity;
 
 local s2sout = module:require("s2sout");
 
-local connect_timeout = module:get_option_number("s2s_timeout", 60);
+local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
 
 local sessions = module:shared("sessions");
