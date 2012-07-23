@@ -95,14 +95,14 @@ function s2sout.attempt_connection(host_session, err)
 			handle = nil;
 			host_session.connecting = nil;
 			if answer then
-				log("debug", to_host.." has SRV records, handling...");
+				log("debug", "%s has SRV records, handling...", to_host);
 				local srv_hosts = {};
 				host_session.srv_hosts = srv_hosts;
 				for _, record in ipairs(answer) do
 					t_insert(srv_hosts, record.srv);
 				end
 				if #srv_hosts == 1 and srv_hosts[1].target == "." then
-					log("debug", to_host.." does not provide a XMPP service");
+					log("debug", "%s does not provide a XMPP service", to_host);
 					s2s_destroy_session(host_session, err); -- Nothing to see here
 					return;
 				end
@@ -115,7 +115,7 @@ function s2sout.attempt_connection(host_session, err)
 					log("debug", "Best record found, will connect to %s:%d", connect_host, connect_port);
 				end
 			else
-				log("debug", to_host.." has no SRV records, falling back to A/AAAA");
+				log("debug", "%s has no SRV records, falling back to A/AAAA", to_host);
 			end
 			-- Try with SRV, or just the plain hostname if no SRV
 			local ok, err = s2sout.try_connect(host_session, connect_host, connect_port);
