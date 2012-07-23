@@ -63,15 +63,14 @@ function add_user_command_handler(self, data, state)
 				return { status = "completed", error = { message = "Account already exists" } };
 			else
 				if usermanager_create_user(username, fields.password, host) then
-					module:log("info", "Created new account " .. username.."@"..host);
+					module:log("info", "Created new account %s@%s", username, host);
 					return { status = "completed", info = "Account successfully created" };
 				else
 					return { status = "completed", error = { message = "Failed to write data to disk" } };
 				end
 			end
 		else
-			module:log("debug", (fields.accountjid or "<nil>") .. " " .. (fields.password or "<nil>") .. " "
-				.. (fields["password-verify"] or "<nil>"));
+			module:log("debug", "Invalid data, password mismatch or empty username while creating account for %s", fields.accountjid or "<nil>");
 			return { status = "completed", error = { message = "Invalid data.\nPassword mismatch, or empty username" } };
 		end
 	else
@@ -143,10 +142,10 @@ function delete_user_command_handler(self, data, state)
 		for _, aJID in ipairs(fields.accountjids) do
 			local username, host, resource = jid.split(aJID);
 			if (host == data.to) and  usermanager_user_exists(username, host) and disconnect_user(aJID) and usermanager_create_user(username, nil, host) then
-				module:log("debug", "User " .. aJID .. " has been deleted");
+				module:log("debug", "User %s has been deleted", aJID);
 				succeeded[#succeeded+1] = aJID;
 			else
-				module:log("debug", "Tried to delete non-existant user "..aJID);
+				module:log("debug", "Tried to delete non-existant user %s", aJID);
 				failed[#failed+1] = aJID;
 			end
 		end
@@ -165,7 +164,7 @@ function disconnect_user(match_jid)
 	local sessions = host.sessions[node] and host.sessions[node].sessions;
 	for resource, session in pairs(sessions or {}) do
 		if not givenResource or (resource == givenResource) then
-			module:log("debug", "Disconnecting "..node.."@"..hostname.."/"..resource);
+			module:log("debug", "Disconnecting %s@%s/%s", node, hostname, resource);
 			session:close();
 		end
 	end

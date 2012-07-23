@@ -160,7 +160,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 			end
 		end
 	end
-	log("debug", "broadcasted presence of "..count.." resources from "..user.."@"..host.." to "..jid);
+	log("debug", "broadcasted presence of %d resources from %s@%s to %s", count, user, host, jid);
 	return count;
 end
 
@@ -169,7 +169,7 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 	if to_bare == from_bare then return; end -- No self contacts
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
-	log("debug", "outbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
+	log("debug", "outbound presence %s from %s for %s", stanza.attr.type, from_bare, to_bare);
 	if stanza.attr.type == "probe" then
 		stanza.attr.from, stanza.attr.to = st_from, st_to;
 		return;
@@ -214,7 +214,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	local node, host = jid_split(to_bare);
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
-	log("debug", "inbound presence "..stanza.attr.type.." from "..from_bare.." for "..to_bare);
+	log("debug", "inbound presence %s from %s for %s", stanza.attr.type, from_bare, to_bare);
 	
 	if stanza.attr.type == "probe" then
 		local result, err = rostermanager.is_contact_subscribed(node, host, from_bare);
