@@ -65,8 +65,8 @@ function _M.handle_cmd(command, origin, stanza)
 				if (action == "prev") or (action == "next") or (action == "complete") then
 					actions:tag(action):up();
 				else
-					module:log("error", 'Command "'..command.name..
-						'" at node "'..command.node..'" provided an invalid action "'..action..'"');
+					module:log("error", "Command %q at node %q provided an invalid action %q",
+						command.name, command.node, action);
 				end
 			end
 			cmdtag:add_child(actions);
