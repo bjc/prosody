@@ -124,7 +124,7 @@ local function session_close(session, reason)
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by client
 			if type(reason) == "string" then -- assume stream error
-				log("info", "Disconnecting client, <stream:error> is: %s", reason);
+				log("debug", "Disconnecting client, <stream:error> is: %s", reason);
 				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
 			elseif type(reason) == "table" then
 				if reason.condition then
@@ -135,10 +135,10 @@ local function session_close(session, reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					log("info", "Disconnecting client, <stream:error> is: %s", tostring(stanza));
+					log("debug", "Disconnecting client, <stream:error> is: %s", tostring(stanza));
 					session.send(stanza);
 				elseif reason.name then -- a stanza
-					log("info", "Disconnecting client, <stream:error> is: %s", tostring(reason));
+					log("debug", "Disconnecting client, <stream:error> is: %s", tostring(reason));
 					session.send(reason);
 				end
 			end
