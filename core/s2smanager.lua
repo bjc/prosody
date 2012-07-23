@@ -74,7 +74,7 @@ function make_authenticated(session, host)
 	else
 		return false;
 	end
-	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host or "(unknown)", session.to_host or "(unknown)", host);
+	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
 	
 	mark_connected(session);
 	
