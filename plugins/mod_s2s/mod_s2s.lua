@@ -99,7 +99,7 @@ function route_to_existing_session(event)
 				log("error", "We are going to send from %s instead of %s", tostring(host.from_host), tostring(from_host));
 			end
 			if host.sends2s(stanza) then
-				host.log("debug", "stanza sent over "..host.type);
+				host.log("debug", "stanza sent over %s", host.type);
 				return true;
 			end
 		end

@@ -38,7 +38,7 @@ function new_session(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
-	log("debug", "open sessions now: ".. open_sessions);
+	log("debug", "open sessions now: %d", open_sessions);
 	
 	local filter = initialize_filters(session);
 	local w = conn.write;

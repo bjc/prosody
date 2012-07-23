@@ -102,7 +102,6 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 	if origin.type == "s2sout_unauthed" or origin.type == "s2sout" then
 		local attr = stanza.attr;
 		local dialback_verifying = dialback_requests[attr.from.."/"..(attr.id or "")];
-		module:log("debug", tostring(dialback_verifying).." "..attr.from.." "..origin.to_host);
 		if dialback_verifying and attr.from == origin.to_host then
 			local valid;
 			if attr.type == "valid" then
@@ -110,7 +109,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 				valid = "valid";
 			else
 				-- Warn the original connection that is was not verified successfully
-				log("warn", "authoritative server for "..(attr.from or "(unknown)").." denied the key");
+				log("warn", "authoritative server for %s denied the key", attr.from or "(unknown)");
 				valid = "invalid";
 			end
 			if not dialback_verifying.sends2s then

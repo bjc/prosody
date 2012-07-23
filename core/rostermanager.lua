@@ -83,15 +83,15 @@ end
 
 function load_roster(username, host)
 	local jid = username.."@"..host;
-	log("debug", "load_roster: asked for: "..jid);
+	log("debug", "load_roster: asked for: %s", jid);
 	local user = bare_sessions[jid];
 	local roster;
 	if user then
 		roster = user.roster;
 		if roster then return roster; end
-		log("debug", "load_roster: loading for new user: "..username.."@"..host);
+		log("debug", "load_roster: loading for new user: %s@%s", username, host);
 	else -- Attempt to load roster for non-loaded user
-		log("debug", "load_roster: loading for offline user: "..username.."@"..host);
+		log("debug", "load_roster: loading for offline user: %s@%s", username, host);
 	end
 	local data, err = datamanager.load(username, host, "roster");
 	roster = data or {};
@@ -99,7 +99,7 @@ function load_roster(username, host)
 	if not roster[false] then roster[false] = { broken = err or nil }; end
 	if roster[jid] then
 		roster[jid] = nil;
-		log("warn", "roster for "..jid.." has a self-contact");
+		log("warn", "roster for %s has a self-contact", jid);
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", username, host, roster);
@@ -108,7 +108,7 @@ function load_roster(username, host)
 end
 
 function save_roster(username, host, roster)
-	log("debug", "save_roster: saving roster for "..username.."@"..host);
+	log("debug", "save_roster: saving roster for %s@%s", username, host);
 	if not roster then
 		roster = hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster;
 		--if not roster then
@@ -238,7 +238,7 @@ function set_contact_pending_out(username, host, jid) -- subscribe
 		roster[jid] = item;
 	end
 	item.ask = "subscribe";
-	log("debug", "set_contact_pending_out: saving roster; set "..username.."@"..host..".roster["..jid.."].ask=subscribe");
+	log("debug", "set_contact_pending_out: saving roster; set %s@%s.roster[%q].ask=subscribe", username, host, jid);
 	return save_roster(username, host, roster);
 end
 function unsubscribe(username, host, jid)
