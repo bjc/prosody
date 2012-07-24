@@ -93,8 +93,7 @@ function console_listener.onincoming(conn, data)
 				commands["bye"](session, line);
 				break;
 			else
-				local command = line:lower();
-				command = line:match("^%w+") or line:match("%p");
+				local command = line:match("^%w+") or line:match("%p");
 				if commands[command] then
 					commands[command](session, line);
 					break;
