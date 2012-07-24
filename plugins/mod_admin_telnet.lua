@@ -642,7 +642,6 @@ local function print_errors(print, errors)
 end
 
 function def_env.s2s:showcert(domain)
-	local ser = require "util.serialization".serialize;
 	local print = self.session.print;
 	local domain_sessions = set.new(array.collect(keys(incoming_s2s)))
 		/function(session) return session.from_host == domain and session or nil; end;
@@ -689,7 +688,6 @@ function def_env.s2s:showcert(domain)
 	end
 	local domain_certs = array.collect(values(cert_set));
 	-- Phew. We now have a array of unique certificates presented by domain.
-	local print = self.session.print;
 	local n_certs = #domain_certs;
 	
 	if n_certs == 0 then
