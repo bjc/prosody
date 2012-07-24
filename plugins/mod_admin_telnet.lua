@@ -902,6 +902,8 @@ function def_env.muc:room(room_jid)
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
 
+local um = require"core.usermanager";
+
 def_env.user = {};
 function def_env.user:create(jid, password)
 	local username, host = jid_split(jid);
