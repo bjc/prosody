@@ -597,16 +597,14 @@ do
 				end
 				local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
 				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
-				buffer = buffer or part or ""
-				local len = string_len( buffer )
-				if len > cfg.MAX_READ_LENGTH then  -- check buffer length
+				buffer = buffer or part
+				if buffer and #buffer > cfg.MAX_READ_LENGTH then  -- check buffer length
 					interface.fatalerror = "receive buffer exceeded"
 					debug( "fatal error:", interface.fatalerror )
 					interface:_close()
 					interface.eventread = nil
 					return -1
 				end
-				interface.onincoming( interface, buffer, err )  -- send new data to listener
 				if err and ( err ~= "timeout" and err ~= "wantread" ) then
 					if "wantwrite" == err then -- need to read on write event
 						if not interface.eventwrite then  -- register new write event if needed
@@ -626,6 +624,8 @@ do
 						interface.eventread = nil
 						return -1
 					end
+				else
+					interface.onincoming( interface, buffer, err )  -- send new data to listener
 				end
 				if interface.noreading then
 					interface.eventread = nil;
