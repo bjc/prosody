@@ -7,14 +7,12 @@
 --
 
 
-local format, rep = string.format, string.rep;
-local pcall = pcall;
-local debug = debug;
-local tostring, setmetatable, rawset, pairs, ipairs, type =
-	tostring, setmetatable, rawset, pairs, ipairs, type;
+local format = string.format;
+local setmetatable, rawset, pairs, ipairs, type =
+	setmetatable, rawset, pairs, ipairs, type;
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
-local os_date, os_getenv = os.date, os.getenv;
+local os_date = os.date;
 local getstyle, setstyle = require "util.termcolours".getstyle, require "util.termcolours".setstyle;
 
 if os.getenv("__FLUSH_LOG") then
