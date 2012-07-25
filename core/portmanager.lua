@@ -52,13 +52,6 @@ local function error_to_friendly_message(service_name, port, err)
 		end
 	elseif err:match("permission") then
 		friendly_message = "Prosody does not have sufficient privileges to use this port";
-	elseif err == "no ssl context" then
-		if not config.get("*", "core", "ssl") then
-			friendly_message = "there is no 'ssl' config under Host \"*\" which is "
-				.."require for legacy SSL ports";
-		else
-			friendly_message = "initializing SSL support failed, see previous log entries";
-		end
 	end
 	return friendly_message;
 end
@@ -110,22 +103,28 @@ function activate(service_name)
 			if #active_services:search(nil, interface, port) > 0 then
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port, active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
+				local err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
 					local ssl_config = config.get("*", config_prefix.."ssl");
-					ssl = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config and (ssl_config[port]
+					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config and (ssl_config[port]
 						or (ssl_config.certificate and ssl_config)));
+					if not ssl then
+						log("error", "Error binding encrypted port for %s: %s", service_info.name, error_to_friendly_message(service_name, port, err) or "unknown error");
+					end
 				end
-				-- Start listening on interface+port
-				local handler, err = server.addserver(interface, port, listener, mode, ssl);
-				if not handler then
-					log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, port, err));
-				else
-					log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port);
-					active_services:add(service_name, interface, port, {
-						server = handler;
-						service = service_info;
-					});
+				if not err then
+					-- Start listening on interface+port
+					local handler, err = server.addserver(interface, port, listener, mode, ssl);
+					if not handler then
+						log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, port, err));
+					else
+						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port);
+						active_services:add(service_name, interface, port, {
+							server = handler;
+							service = service_info;
+						});
+					end
 				end
 			end
 		end
