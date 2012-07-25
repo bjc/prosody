@@ -93,8 +93,7 @@ function console_listener.onincoming(conn, data)
 				commands["bye"](session, line);
 				break;
 			else
-				local command = line:lower();
-				command = line:match("^%w+") or line:match("%p");
+				local command = line:match("^%w+") or line:match("%p");
 				if commands[command] then
 					commands[command](session, line);
 					break;
@@ -642,7 +641,6 @@ local function print_errors(print, errors)
 end
 
 function def_env.s2s:showcert(domain)
-	local ser = require "util.serialization".serialize;
 	local print = self.session.print;
 	local domain_sessions = set.new(array.collect(keys(incoming_s2s)))
 		/function(session) return session.from_host == domain and session or nil; end;
@@ -689,7 +687,6 @@ function def_env.s2s:showcert(domain)
 	end
 	local domain_certs = array.collect(values(cert_set));
 	-- Phew. We now have a array of unique certificates presented by domain.
-	local print = self.session.print;
 	local n_certs = #domain_certs;
 	
 	if n_certs == 0 then
@@ -903,6 +900,8 @@ function def_env.muc:room(room_jid)
 	end
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
+
+local um = require"core.usermanager";
 
 def_env.user = {};
 function def_env.user:create(jid, password)
