@@ -29,11 +29,11 @@ local st = require "util.stanza";
 local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
+local hosts = hosts;
 
 rooms = {};
 local rooms = rooms;
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
-local component = hosts[module.host];
 
 -- Configurable options
 local max_history_messages = module:get_option_number("max_history_messages");
@@ -172,7 +172,7 @@ hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	else error("component.send only supports result and error stanzas at the moment"); end
 end
 
-prosody.hosts[module:get_host()].muc = { rooms = rooms };
+hosts[module:get_host()].muc = { rooms = rooms };
 
 module.save = function()
 	return {rooms = rooms};
@@ -188,5 +188,5 @@ module.restore = function(data)
 		room.save = room_save;
 		rooms[jid] = room;
 	end
-	prosody.hosts[module:get_host()].muc = { rooms = rooms };
+	hosts[module:get_host()].muc = { rooms = rooms };
 end
