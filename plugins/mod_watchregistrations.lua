@@ -25,6 +25,6 @@ module:hook("user-registered", function (user)
 	for jid in registration_watchers do
 		module:log("debug", "Notifying %s", jid);
 		message.attr.to = jid;
-		core_route_stanza(hosts[host], message);
+		module:send(message);
 	end
 end);
