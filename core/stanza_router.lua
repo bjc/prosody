@@ -17,6 +17,18 @@ local jid_prepped_split = require "util.jid".prepped_split;
 local full_sessions = _G.prosody.full_sessions;
 local bare_sessions = _G.prosody.bare_sessions;
 
+local core_post_stanza, core_process_stanza, core_route_stanza;
+
+function deprecated_warning(f)
+	_G[f] = function(...)
+		log("warn", "Using the global %s() is deprecated, use module:send() or prosody.%s(). %s", f, f, debug.traceback());
+		return prosody[f](...);
+	end
+end
+deprecated_warning"core_post_stanza";
+deprecated_warning"core_process_stanza";
+deprecated_warning"core_route_stanza";
+
 local function handle_unhandled_stanza(host, origin, stanza)
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
 	if name == "iq" and xmlns == "jabber:client" then
