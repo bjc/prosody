@@ -24,7 +24,7 @@ module:hook("presence/bare", function (event)
 			local motd_stanza =
 				st.message({ to = session.full_jid, from = motd_jid })
 					:tag("body"):text(motd_text);
-			core_route_stanza(hosts[host], motd_stanza);
+			module:send(motd_stanza);
 			module:log("debug", "MOTD send to user %s", session.full_jid);
 		end
 end, 1);
