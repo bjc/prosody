@@ -25,7 +25,7 @@ function send_to_online(message, host)
 			for username in pairs(host_session.sessions) do
 				c = c + 1;
 				message.attr.to = username.."@"..hostname;
-				core_post_stanza(host_session, message);
+				module:send(message);
 			end
 		end
 	end

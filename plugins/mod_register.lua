@@ -120,10 +120,10 @@ local function handle_registration_stanza(event)
 			for jid, item in pairs(roster) do
 				if jid and jid ~= "pending" then
 					if item.subscription == "both" or item.subscription == "from" or (roster.pending and roster.pending[jid]) then
-						core_post_stanza(hosts[host], st.presence({type="unsubscribed", from=bare, to=jid}));
+						module:send(st.presence({type="unsubscribed", from=bare, to=jid}));
 					end
 					if item.subscription == "both" or item.subscription == "to" or item.ask then
-						core_post_stanza(hosts[host], st.presence({type="unsubscribe", from=bare, to=jid}));
+						module:send(st.presence({type="unsubscribe", from=bare, to=jid}));
 					end
 				end
 			end
