@@ -42,7 +42,7 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-local function room_route_stanza(room, stanza) core_post_stanza(component, stanza); end
+local function room_route_stanza(room, stanza) module:send(stanza); end
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	persistent_rooms[room.jid] = room._data.persistent;
@@ -168,7 +168,7 @@ module:hook("presence/host", handle_to_domain, -1);
 
 hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
-		core_post_stanza(component, stanza);
+		module:send(stanza);
 	else error("component.send only supports result and error stanzas at the moment"); end
 end
 
