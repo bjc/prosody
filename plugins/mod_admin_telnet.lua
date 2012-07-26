@@ -934,6 +934,20 @@ function def_env.user:passwd(jid, password)
 	end
 end
 
+def_env.xmpp = {};
+
+local st = require "util.stanza";
+function def_env.xmpp:ping(localhost, remotehost)
+	if hosts[localhost] then
+		core_post_stanza(hosts[localhost],
+			st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
+				:tag("ping", {xmlns="urn:xmpp:ping"}));
+		return true, "Sent ping";
+	else
+		return nil, "No such host";
+	end
+end
+
 -------------
 
 function printbanner(session)
