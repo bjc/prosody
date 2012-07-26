@@ -115,7 +115,6 @@ do
 	
 	local addevent = base.addevent
 	local coroutine_wrap, coroutine_yield = coroutine.wrap,coroutine.yield
-	local string_len = string.len
 	
 	-- Private methods
 	function interface_mt:_position(new_position)
@@ -310,7 +309,7 @@ do
 		if self.nowriting then return nil, "locked" end
 		--vdebug( "try to send data to client, id/data:", self.id, data )
 		data = tostring( data )
-		local len = string_len( data )
+		local len = #data
 		local total = len + self.writebufferlen
 		if total > cfg.MAX_SEND_LENGTH then  -- check buffer length
 			local err = "send buffer exceeded"
