@@ -46,13 +46,8 @@ end
 module:hook("iq/bare/vcard-temp:vCard", handle_vcard);
 module:hook("iq/host/vcard-temp:vCard", handle_vcard);
 
--- COMPAT: https://support.process-one.net/browse/EJAB-1045
-if module:get_option("vcard_compatibility") then
-	module:hook("iq/full", function(data)
-		local stanza = data.stanza;
-		local payload = stanza.tags[1];
-		if stanza.attr.type == "get" and payload.name == "vCard" and payload.attr.xmlns == "vcard-temp" then
-			return handle_vcard(data);
-		end
-	end, 1);
+-- COMPAT w/0.8
+if module:get_option("vcard_compatibility") ~= nil then
+	module:log("error", "The vcard_compatibility option has been removed, see"..
+		"mod_compat_vcard in prosody-modules if you still need this.");
 end
