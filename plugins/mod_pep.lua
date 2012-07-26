@@ -17,6 +17,7 @@ local pairs, ipairs = pairs, ipairs;
 local next = next;
 local type = type;
 local calculate_hash = require "util.caps".calculate_hash;
+local core_post_stanza = prosody.core_post_stanza;
 
 local NULL = {};
 local data = {};

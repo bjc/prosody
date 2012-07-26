@@ -23,6 +23,7 @@ local timer_add_task = require "util.timer".add_task;
 local dataforms_new = require "util.dataforms".new;
 local array = require "util.array";
 local modulemanager = require "modulemanager";
+local core_post_stanza = prosody.core_post_stanza;
 
 module:depends("adhoc");
 local adhoc_new = module:require "adhoc".new;
