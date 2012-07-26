@@ -14,6 +14,7 @@ local t_concat, t_insert = table.concat, table.insert;
 local s_find = string.find;
 local tonumber = tonumber;
 
+local core_post_stanza = prosody.core_post_stanza;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;

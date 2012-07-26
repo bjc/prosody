@@ -18,7 +18,7 @@ local pairs, ipairs = pairs, ipairs;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
-local core_post_stanza = core_post_stanza;
+local core_post_stanza = prosody.core_post_stanza;
 
 module:add_feature("jabber:iq:roster");
 
