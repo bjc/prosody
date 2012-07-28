@@ -370,4 +370,12 @@ function driver:list_stores(username) -- Not to be confused with the list store 
 	return stores;
 end
 
+function driver:purge(username)
+	local stmt, err = dosql("DELETE FROM `prosody` WHERE `host`=? AND `user`=?", host, username);
+	if not stmt then return stmt, err; end
+	local changed, err = stmt:affected();
+	if not changed then return changed, err; end
+	return true, changed;
+end
+
 module:add_item("data-driver", driver);
