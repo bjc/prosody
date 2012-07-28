@@ -17,6 +17,8 @@ local console_listener = { default_port = 5582; default_mode = "*a"; interface =
 
 local hostmanager = require "core.hostmanager";
 local modulemanager = require "core.modulemanager";
+local s2smanager = require "core.s2smanager";
+local portmanager = require "core.portmanager";
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
