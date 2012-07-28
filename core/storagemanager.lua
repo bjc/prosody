@@ -103,5 +103,8 @@ end
 function datamanager.list_stores(username, host)
 	return get_driver(host):list_stores(username, host);
 end
+function datamanager.purge(username, host)
+	return get_driver(host):purge(username, host);
+end
 
 return _M;
