@@ -20,4 +20,8 @@ function driver:list_stores(username)
 	return datamanager.list_stores(username, host);
 end
 
+function driver:purge(user)
+	return datamanager.purge(user, host);
+end
+
 module:add_item("data-driver", driver);
