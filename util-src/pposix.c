@@ -32,7 +32,13 @@
 #include <string.h>
 #include <errno.h>
 #include "lua.h"
+#include "lualib.h"
 #include "lauxlib.h"
+
+#include <fcntl.h>
+#if defined(_GNU_SOURCE)
+#include <linux/falloc.h>
+#endif
 
 #if (defined(_SVID_SOURCE) && !defined(WITHOUT_MALLINFO))
 	#include <malloc.h>
@@ -642,6 +648,39 @@ int lc_meminfo(lua_State* L)
 }
 #endif
 
+/* File handle extraction blatantly stolen from
+ * https://github.com/rrthomas/luaposix/blob/master/lposix.c#L631
+ * */
+
+#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
+int lc_fallocate(lua_State* L)
+{
+	off_t offset, len;
+	FILE *f = *(FILE**) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+
+	offset = luaL_checkinteger(L, 2);
+	len = luaL_checkinteger(L, 3);
+
+#if defined(_GNU_SOURCE)
+	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) != 0)
+#elif _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L
+	if(posix_fallocate(fileno(f), offset, len) != 0)
+#endif
+	{
+#if ! defined(_GNU_SOURCE)
+		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
+		 * this assumes that offset == length of the file */
+		ftruncate(fileno(f), offset);
+#endif
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	lua_pushboolean(L, 1);
+	return 1;
+}
+#endif
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -677,6 +716,10 @@ int luaopen_util_pposix(lua_State *L)
 
 #ifdef WITH_MALLINFO
 		{ "meminfo", lc_meminfo },
+#endif
+
+#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
+		{ "fallocate", lc_fallocate },
 #endif
 
 		{ NULL, NULL }
