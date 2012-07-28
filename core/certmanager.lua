@@ -11,14 +11,17 @@ local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
-local setmetatable, tostring = setmetatable, tostring;
+local tostring = tostring;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
 local config_path = prosody.paths.config;
 
-local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-local luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
+local luasec_has_noticket;
+if ssl then
+	local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
+	luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
+end
 
 module "certmanager"
 
@@ -78,7 +81,7 @@ function create_context(host, mode, user_ssl_config)
 			else
 				reason = "Reason: "..tostring(reason):lower();
 			end
-			log("error", "SSL/TLS: Failed to load %s: %s (for %s)", file, reason, host);
+			log("error", "SSL/TLS: Failed to load '%s': %s (for %s)", file, reason, host);
 		else
 			log("error", "SSL/TLS: Error initialising for %s: %s", host, err);
 		end

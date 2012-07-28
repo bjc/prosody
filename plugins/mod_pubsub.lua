@@ -201,7 +201,7 @@ function simple_broadcast(node, jids, item)
 	for jid in pairs(jids) do
 		module:log("debug", "Sending notification to %s", jid);
 		message.attr.to = jid;
-		core_post_stanza(hosts[module.host], message);
+		module:send(message);
 	end
 end
 

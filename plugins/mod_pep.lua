@@ -17,6 +17,7 @@ local pairs, ipairs = pairs, ipairs;
 local next = next;
 local type = type;
 local calculate_hash = require "util.caps".calculate_hash;
+local core_post_stanza = prosody.core_post_stanza;
 
 local NULL = {};
 local data = {};
@@ -32,7 +33,7 @@ module.restore = function(state)
 	hash_map = state.hash_map or {};
 end
 
-module:add_identity("pubsub", "pep", "Prosody");
+module:add_identity("pubsub", "pep", module:get_option_string("name", "Prosody"));
 module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function subscription_presence(user_bare, recipient)

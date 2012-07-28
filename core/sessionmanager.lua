@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local tonumber, tostring, setmetatable = tonumber, tostring, setmetatable;
-local ipairs, pairs, print, next= ipairs, pairs, print, next;
+local tostring, setmetatable = tostring, setmetatable;
+local pairs, next= pairs, next;
 
 local hosts = hosts;
 local full_sessions = full_sessions;
@@ -15,7 +15,6 @@ local bare_sessions = bare_sessions;
 
 local logger = require "util.logger";
 local log = logger.init("sessionmanager");
-local error = error;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
@@ -23,11 +22,7 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local uuid_generate = require "util.uuid".generate;
 
 local initialize_filters = require "util.filters".initialize;
-local fire_event = prosody.events.fire_event;
-local add_task = require "util.timer".add_task;
 local gettime = require "socket".gettime;
-
-local st = require "util.stanza";
 
 local newproxy = newproxy;
 local getmetatable = getmetatable;
@@ -43,7 +38,7 @@ function new_session(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
-	log("debug", "open sessions now: ".. open_sessions);
+	log("debug", "open sessions now: %d", open_sessions);
 	
 	local filter = initialize_filters(session);
 	local w = conn.write;
@@ -82,13 +77,13 @@ function retire_session(session)
 		end
 	end
 
-	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); return false; end
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
 	return setmetatable(session, resting_session);
 end
 
 function destroy_session(session, err)
-	(session.log or log)("info", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
+	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
 	if session.destroyed then return; end
 	
 	-- Remove session/resource from user's session list

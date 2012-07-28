@@ -19,7 +19,6 @@ end
 local log, table_concat = require ("util.logger").init("socket"), table.concat;
 local out_put = function (...) return log("debug", table_concat{...}); end
 local out_error = function (...) return log("warn", table_concat{...}); end
-local mem_free = collectgarbage
 
 ----------------------------------// DECLARATION //--
 
@@ -34,7 +33,6 @@ local pairs = use "pairs"
 local ipairs = use "ipairs"
 local tonumber = use "tonumber"
 local tostring = use "tostring"
-local collectgarbage = use "collectgarbage"
 
 --// lua libs //--
 
@@ -49,7 +47,6 @@ local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
-local table_remove = table.remove
 local string_len = string.len
 local string_sub = string.sub
 local coroutine_wrap = coroutine.wrap
@@ -67,7 +64,6 @@ local ssl_wrap = ( luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_sleep = luasocket.sleep
 local socket_select = luasocket.select
-local ssl_newcontext = ( luasec and luasec.newcontext )
 
 --// functions //--
 
@@ -84,7 +80,6 @@ local getsettings
 local closesocket
 local removesocket
 local removeserver
-local changetimeout
 local wrapconnection
 local changesettings
 
@@ -314,22 +309,28 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		end
 		return false, "setoption not implemented";
 	end
-	handler.close = function( self, forced )
+	handler.force_close = function ( self, err )
+		if bufferqueuelen ~= 0 then
+			out_put("server.lua: discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
+			for i = bufferqueuelen, 1, -1 do
+				bufferqueue[i] = nil;
+			end
+			bufferqueuelen = 0;
+		end
+		return self:close(err);
+	end
+	handler.close = function( self, err )
 		if not handler then return true; end
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
 		_readtimes[ handler ] = nil
 		if bufferqueuelen ~= 0 then
-			if not ( forced or fatalerror ) then
-				handler.sendbuffer( )
-				if bufferqueuelen ~= 0 then -- try again...
-					if handler then
-						handler.write = nil -- ... but no further writing allowed
-					end
-					toclose = true
-					return false
+			handler.sendbuffer() -- Try now to send any outstanding data
+			if bufferqueuelen ~= 0 then -- Still not empty, so we'll try again later
+				if handler then
+					handler.write = nil -- ... but no further writing allowed
 				end
-			else
-				send( socket, table_concat( bufferqueue, "", 1, bufferqueuelen ), 1, bufferlen )	-- forced send
+				toclose = true
+				return false
 			end
 		end
 		if socket then
@@ -347,7 +348,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			local _handler = handler;
 			handler = nil
 			if disconnect then
-				disconnect(_handler, "closed");
+				disconnect(_handler, err or false);
+				disconnect = nil
 			end
 		end
 		if server then
@@ -450,8 +452,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			local buffer = buffer or part or ""
 			local len = string_len( buffer )
 			if len > maxreadlen then
-				disconnect( handler, "receive buffer exceeded" )
-				handler:close( true )
+				handler:close( "receive buffer exceeded" )
 				return false
 			end
 			local count = len * STAT_UNIT
@@ -463,14 +464,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		else	-- connections was closed or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
 			fatalerror = true
-			disconnect( handler, err )
-			_ = handler and handler:close( )
+			_ = handler and handler:force_close( err )
 			return false
 		end
 	end
 	local _sendbuffer = function( ) -- this function sends data
 		local succ, err, byte, buffer, count;
-		local count;
 		if socket then
 			buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
 			succ, err, byte = send( socket, buffer, 1, bufferlen )
@@ -480,7 +479,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_ = _cleanqueue and clean( bufferqueue )
 			--out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
 		else
-			succ, err, count = false, "closed", 0;
+			succ, err, count = false, "unexpected close", 0;
 		end
 		if succ then	-- sending succesful
 			bufferqueuelen = 0
@@ -491,7 +490,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				drain(handler)
 			end
 			_ = needtls and handler:starttls(nil)
-			_ = toclose and handler:close( )
+			_ = toclose and handler:force_close( )
 			return true
 		elseif byte and ( err == "timeout" or err == "wantwrite" ) then -- want write
 			buffer = string_sub( buffer, byte + 1, bufferlen ) -- new buffer
@@ -503,8 +502,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		else	-- connection was closed during sending or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
 			fatalerror = true
-			disconnect( handler, err )
-			_ = handler and handler:close( )
+			_ = handler and handler:force_close( err )
 			return false
 		end
 	end
@@ -546,9 +544,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 					end
 				end
 				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
-				disconnect( handler, "ssl handshake failed" )
-				_ = handler and handler:close( true )	 -- forced disconnect
-                               return false, err -- handshake failed
+				_ = handler and handler:force_close("ssl handshake failed")
+               return false, err -- handshake failed
 			end
 		)
 	end
@@ -810,7 +807,7 @@ loop = function(once) -- this is the main loop of the program
 		end
 		for handler, err in pairs( _closelist ) do
 			handler.disconnect( )( handler, err )
-			handler:close( true )	 -- forced disconnect
+			handler:force_close()	 -- forced disconnect
 		end
 		clean( _closelist )
 		_currenttime = luasocket_gettime( )
@@ -896,7 +893,7 @@ addtimer( function( )
 				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
 					--_writetimes[ handler ] = nil
 					handler.disconnect( )( handler, "send timeout" )
-					handler:close( true )	 -- forced disconnect
+					handler:force_close()	 -- forced disconnect
 				end
 			end
 			for handler, timestamp in pairs( _readtimes ) do

@@ -33,8 +33,6 @@ local cfg = {
 }
 
 local function use(x) return rawget(_G, x); end
-local print = use "print"
-local pcall = use "pcall"
 local ipairs = use "ipairs"
 local string = use "string"
 local select = use "select"
@@ -117,7 +115,6 @@ do
 	
 	local addevent = base.addevent
 	local coroutine_wrap, coroutine_yield = coroutine.wrap,coroutine.yield
-	local string_len = string.len
 	
 	-- Private methods
 	function interface_mt:_position(new_position)
@@ -212,7 +209,6 @@ do
 								self:_lock( false, false, false )  -- unlock the interface; sending, closing etc allowed
 								self.send = self.conn.send  -- caching table lookups with new client object
 								self.receive = self.conn.receive
-								local onsomething
 								if not call_onconnect then  -- trigger listener
 									self:onstatus("ssl-handshake-complete");
 								end
@@ -249,7 +245,7 @@ do
 			return true
 	end
 	function interface_mt:_destroy()  -- close this interface + events and call last listener
-			debug( "closing client with id:", self.id )
+			debug( "closing client with id:", self.id, self.fatalerror )
 			self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
 			local _
 			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
@@ -313,7 +309,7 @@ do
 		if self.nowriting then return nil, "locked" end
 		--vdebug( "try to send data to client, id/data:", self.id, data )
 		data = tostring( data )
-		local len = string_len( data )
+		local len = #data
 		local total = len + self.writebufferlen
 		if total > cfg.MAX_SEND_LENGTH then  -- check buffer length
 			local err = "send buffer exceeded"
@@ -328,22 +324,22 @@ do
 		end
 		return true
 	end
-	function interface_mt:close(now)
+	function interface_mt:close()
 		if self.nointerface then return nil, "locked"; end
 		debug( "try to close client connection with id:", self.id )
 		if self.type == "client" then
 			self.fatalerror = "client to close"
-			if ( not self.eventwrite ) or now then  -- try to close immediately
-				self:_lock( true, true, true )
-				self:_close()
-				return true
-			else  -- wait for incomplete write request
+			if self.eventwrite then -- wait for incomplete write request
 				self:_lock( true, true, false )
 				debug "closing delayed until writebuffer is empty"
 				return nil, "writebuffer not empty, waiting"
+			else -- close now
+				self:_lock( true, true, true )
+				self:_close()
+				return true
 			end
 		else
-			debug( "try to close server with id:", tostring(self.id), "args:", tostring(now) )
+			debug( "try to close server with id:", tostring(self.id))
 			self.fatalerror = "server to close"
 			self:_lock( true )
 			self:_close( 0 )  -- add new event to remove the server interface
@@ -470,9 +466,7 @@ do
 	local string_sub = string.sub  -- caching table lookups
 	local string_len = string.len
 	local addevent = base.addevent
-	local coroutine_wrap = coroutine.wrap
 	local socket_gettime = socket.gettime
-	local coroutine_yield = coroutine.yield
 	function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
 		--vdebug("creating client interfacce...")
 		local interface = {
@@ -602,16 +596,14 @@ do
 				end
 				local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
 				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
-				buffer = buffer or part or ""
-				local len = string_len( buffer )
-				if len > cfg.MAX_READ_LENGTH then  -- check buffer length
+				buffer = buffer or part
+				if buffer and #buffer > cfg.MAX_READ_LENGTH then  -- check buffer length
 					interface.fatalerror = "receive buffer exceeded"
 					debug( "fatal error:", interface.fatalerror )
 					interface:_close()
 					interface.eventread = nil
 					return -1
 				end
-				interface.onincoming( interface, buffer, err )  -- send new data to listener
 				if err and ( err ~= "timeout" and err ~= "wantread" ) then
 					if "wantwrite" == err then -- need to read on write event
 						if not interface.eventwrite then  -- register new write event if needed
@@ -631,6 +623,8 @@ do
 						interface.eventread = nil
 						return -1
 					end
+				else
+					interface.onincoming( interface, buffer, err )  -- send new data to listener
 				end
 				if interface.noreading then
 					interface.eventread = nil;
@@ -742,7 +736,7 @@ end )( )
 
 local addclient, wrapclient
 do
-	function wrapclient( client, ip, port, listeners, pattern, sslctx, startssl )
+	function wrapclient( client, ip, port, listeners, pattern, sslctx )
 		local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
 		interface:_start_connection(sslctx)
 		return interface, client
@@ -778,9 +772,6 @@ do
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" ) then
 			local ip, port = client:getsockname( )
-			local server = function( )
-				return nil, "this is a dummy server interface"
-			end
 			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
 			interface:_start_connection( startssl )
 			debug( "new connection id:", interface.id )

@@ -688,7 +688,7 @@ function cert_commands.key(arg)
 		show_message("There was a problem, see OpenSSL output");
 	else
 		show_usage("cert key HOSTNAME <bits>", "Generates a RSA key named HOSTNAME.key\n "
-		.."Promps for a key size if none given")
+		.."Prompts for a key size if none given")
 	end
 end
 

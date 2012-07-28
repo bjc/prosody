@@ -23,9 +23,18 @@ local timer_add_task = require "util.timer".add_task;
 local dataforms_new = require "util.dataforms".new;
 local array = require "util.array";
 local modulemanager = require "modulemanager";
+local core_post_stanza = prosody.core_post_stanza;
 
 module:depends("adhoc");
 local adhoc_new = module:require "adhoc".new;
+
+local function generate_error_message(errors)
+	local errmsg = {};
+	for name, err in pairs(errors) do
+		errmsg[#errmsg + 1] = name .. ": " .. err;
+	end
+	return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
+end
 
 function add_user_command_handler(self, data, state)
 	local add_user_layout = dataforms_new{
@@ -42,9 +51,9 @@ function add_user_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = add_user_layout:data(data.form);
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "You need to specify a JID." } };
+		local fields, err = add_user_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local username, host, resource = jid.split(fields.accountjid);
 		if data.to ~= host then
@@ -55,15 +64,14 @@ function add_user_command_handler(self, data, state)
 				return { status = "completed", error = { message = "Account already exists" } };
 			else
 				if usermanager_create_user(username, fields.password, host) then
-					module:log("info", "Created new account " .. username.."@"..host);
+					module:log("info", "Created new account %s@%s", username, host);
 					return { status = "completed", info = "Account successfully created" };
 				else
 					return { status = "completed", error = { message = "Failed to write data to disk" } };
 				end
 			end
 		else
-			module:log("debug", (fields.accountjid or "<nil>") .. " " .. (fields.password or "<nil>") .. " "
-				.. (fields["password-verify"] or "<nil>"));
+			module:log("debug", "Invalid data, password mismatch or empty username while creating account for %s", fields.accountjid or "<nil>");
 			return { status = "completed", error = { message = "Invalid data.\nPassword mismatch, or empty username" } };
 		end
 	else
@@ -85,9 +93,9 @@ function change_user_password_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = change_user_password_layout:data(data.form);
-		if not fields.accountjid or fields.accountjid == "" or not fields.password then
-			return { status = "completed", error = { message = "Please specify username and password" } };
+		local fields, err = change_user_password_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local username, host, resource = jid.split(fields.accountjid);
 		if data.to ~= host then
@@ -126,16 +134,19 @@ function delete_user_command_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = delete_user_layout:data(data.form);
+		local fields, err = delete_user_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
 		local failed = {};
 		local succeeded = {};
 		for _, aJID in ipairs(fields.accountjids) do
 			local username, host, resource = jid.split(aJID);
 			if (host == data.to) and  usermanager_user_exists(username, host) and disconnect_user(aJID) and usermanager_create_user(username, nil, host) then
-				module:log("debug", "User " .. aJID .. " has been deleted");
+				module:log("debug", "User %s has been deleted", aJID);
 				succeeded[#succeeded+1] = aJID;
 			else
-				module:log("debug", "Tried to delete non-existant user "..aJID);
+				module:log("debug", "Tried to delete non-existant user %s", aJID);
 				failed[#failed+1] = aJID;
 			end
 		end
@@ -154,7 +165,7 @@ function disconnect_user(match_jid)
 	local sessions = host.sessions[node] and host.sessions[node].sessions;
 	for resource, session in pairs(sessions or {}) do
 		if not givenResource or (resource == givenResource) then
-			module:log("debug", "Disconnecting "..node.."@"..hostname.."/"..resource);
+			module:log("debug", "Disconnecting %s@%s/%s", node, hostname, resource);
 			session:close();
 		end
 	end
@@ -175,7 +186,10 @@ function end_user_session_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = end_user_session_layout:data(data.form);
+		local fields, err = end_user_session_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
 		local failed = {};
 		local succeeded = {};
 		for _, aJID in ipairs(fields.accountjids) do
@@ -223,9 +237,9 @@ function get_user_password_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = get_user_password_layout:data(data.form);
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID." } };
+		local fields, err = get_user_password_layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local user, host, resource = jid.split(fields.accountjid);
 		local accountjid = "";
@@ -261,10 +275,10 @@ function get_user_roster_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_user_roster_layout:data(data.form);
+		local fields, err = get_user_roster_layout:data(data.form);
 
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID" } };
+		if err then
+			return generate_error_message(err);
 		end
 
 		local user, host, resource = jid.split(fields.accountjid);
@@ -323,10 +337,10 @@ function get_user_stats_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_user_stats_layout:data(data.form);
+		local fields, err = get_user_stats_layout:data(data.form);
 
-		if not fields.accountjid then
-			return { status = "completed", error = { message = "Please specify a JID." } };
+		if err then
+			return generate_error_message(err);
 		end
 
 		local user, host, resource = jid.split(fields.accountjid);
@@ -376,7 +390,11 @@ function get_online_users_command_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = get_online_users_layout:data(data.form);
+		local fields, err = get_online_users_layout:data(data.form);
+
+		if err then
+			return generate_error_message(err);
+		end
 
 		local max_items = nil
 		if fields.max_items ~= "all" then
@@ -436,11 +454,9 @@ function load_module_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if (not fields.module) or (fields.module == "") then
-			return { status = "completed", error = {
-				message = "Please specify a module."
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		if modulemanager.is_loaded(data.to, fields.module) then
 			return { status = "completed", info = "Module already loaded" };
@@ -453,7 +469,6 @@ function load_module_handler(self, data, state)
 			'". Error was: "'..tostring(err or "<unspecified>")..'"' } };
 		end
 	else
-		local modules = array.collect(keys(hosts[data.to].modules)):sort();
 		return { status = "executing", form = layout }, "executing";
 	end
 end
@@ -470,11 +485,9 @@ function reload_modules_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if #fields.modules == 0 then
-			return { status = "completed", error = {
-				message = "Please specify a module. (This means your client misbehaved, as this field is required)"
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local ok_list, err_list = {}, {};
 		for _, module in ipairs(fields.modules) do
@@ -538,7 +551,11 @@ function shut_down_service_handler(self, data, state)
 			return { status = "canceled" };
 		end
 
-		local fields = shut_down_service_layout:data(data.form);
+		local fields, err = shut_down_service_layout:data(data.form);
+
+		if err then
+			return generate_error_message(err);
+		end
 
 		if fields.announcement and #fields.announcement > 0 then
 			local message = st.message({type = "headline"}, fields.announcement):up()
@@ -566,11 +583,9 @@ function unload_modules_handler(self, data, state)
 		if data.action == "cancel" then
 			return { status = "canceled" };
 		end
-		local fields = layout:data(data.form);
-		if #fields.modules == 0 then
-			return { status = "completed", error = {
-				message = "Please specify a module. (This means your client misbehaved, as this field is required)"
-			} };
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
 		end
 		local ok_list, err_list = {}, {};
 		for _, module in ipairs(fields.modules) do
@@ -605,17 +620,17 @@ local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/proto
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
 
-module:add_item("adhoc", add_user_desc);
-module:add_item("adhoc", change_user_password_desc);
-module:add_item("adhoc", config_reload_desc);
-module:add_item("adhoc", delete_user_desc);
-module:add_item("adhoc", end_user_session_desc);
-module:add_item("adhoc", get_user_password_desc);
-module:add_item("adhoc", get_user_roster_desc);
-module:add_item("adhoc", get_user_stats_desc);
-module:add_item("adhoc", get_online_users_desc);
-module:add_item("adhoc", list_modules_desc);
-module:add_item("adhoc", load_module_desc);
-module:add_item("adhoc", reload_modules_desc);
-module:add_item("adhoc", shut_down_service_desc);
-module:add_item("adhoc", unload_modules_desc);
+module:provides("adhoc", add_user_desc);
+module:provides("adhoc", change_user_password_desc);
+module:provides("adhoc", config_reload_desc);
+module:provides("adhoc", delete_user_desc);
+module:provides("adhoc", end_user_session_desc);
+module:provides("adhoc", get_user_password_desc);
+module:provides("adhoc", get_user_roster_desc);
+module:provides("adhoc", get_user_stats_desc);
+module:provides("adhoc", get_online_users_desc);
+module:provides("adhoc", list_modules_desc);
+module:provides("adhoc", load_module_desc);
+module:provides("adhoc", reload_modules_desc);
+module:provides("adhoc", shut_down_service_desc);
+module:provides("adhoc", unload_modules_desc);

@@ -25,7 +25,7 @@ function send_to_online(message, host)
 			for username in pairs(host_session.sessions) do
 				c = c + 1;
 				message.attr.to = username.."@"..hostname;
-				core_post_stanza(host_session, message);
+				module:send(message);
 			end
 		end
 	end
@@ -96,5 +96,5 @@ end
 
 local adhoc_new = module:require "adhoc".new;
 local announce_desc = adhoc_new("Send Announcement to Online Users", "http://jabber.org/protocol/admin#announce", announce_handler, "admin");
-module:add_item("adhoc", announce_desc);
+module:provides("adhoc", announce_desc);
 

@@ -10,7 +10,7 @@ module:set_global();
 
 local prosody = prosody;
 local hosts = prosody.hosts;
-local core_process_stanza = core_process_stanza;
+local core_process_stanza = prosody.core_process_stanza;
 
 local tostring, type = tostring, type;
 local t_insert = table.insert;
@@ -30,7 +30,8 @@ local cert_verify_identity = require "util.x509".verify_identity;
 
 local s2sout = module:require("s2sout");
 
-local connect_timeout = module:get_option_number("s2s_timeout", 60);
+local connect_timeout = module:get_option_number("s2s_timeout", 90);
+local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
 
 local sessions = module:shared("sessions");
 
@@ -97,9 +98,10 @@ function route_to_existing_session(event)
 				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
 				log("error", "We are going to send from %s instead of %s", tostring(host.from_host), tostring(from_host));
 			end
-			host.sends2s(stanza);
-			host.log("debug", "stanza sent over "..host.type);
-			return true;
+			if host.sends2s(stanza) then
+				host.log("debug", "stanza sent over %s", host.type);
+				return true;
+			end
 		end
 	end
 end
@@ -288,19 +290,7 @@ end
 
 function stream_callbacks.streamclosed(session)
 	(session.log or log)("debug", "Received </stream:stream>");
-	session:close();
-end
-
-function stream_callbacks.streamdisconnected(session, err)
-	if err and err ~= "closed" and session.direction == "outgoing" and session.notopen then
-		(session.log or log)("debug", "s2s connection attempt failed: %s", err);
-		if s2sout.attempt_connection(session, err) then
-			(session.log or log)("debug", "...so we're going to try another target");
-			return true; -- Session lives for now
-		end
-	end
-	(session.log or log)("info", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "closed"));
-	s2s_destroy_session(session, err);
+	session:close(false);
 end
 
 function stream_callbacks.error(session, error, data)
@@ -352,9 +342,9 @@ local function session_close(session, reason, remote_reason)
 			session.sends2s("<?xml version='1.0'?>");
 			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
 		end
-		if reason then
+		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
-				log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
+				log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
 				session.sends2s(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
 			elseif type(reason) == "table" then
 				if reason.condition then
@@ -365,20 +355,35 @@ local function session_close(session, reason, remote_reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					log("info", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(stanza));
+					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(stanza));
 					session.sends2s(stanza);
 				elseif reason.name then -- a stanza
-					log("info", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, tostring(reason));
+					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, tostring(reason));
 					session.sends2s(reason);
 				end
 			end
 		end
+
 		session.sends2s("</stream:stream>");
-		if session.notopen or not session.conn:close() then
-			session.conn:close(true); -- Force FIXME: timer?
+		function session.sends2s() return false; end
+		
+		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
+		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction, session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
+		
+		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
+		local conn = session.conn;
+		if reason == nil and not session.notopen and session.type == "s2sin" then
+			add_task(stream_close_timeout, function ()
+				if not session.destroyed then
+					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
+					s2s_destroy_session(session, reason);
+					conn:close();
+				end
+			end);
+		else
+			s2s_destroy_session(session, reason);
+			conn:close(); -- Close immediately, as this is an outgoing connection or is not authed
 		end
-		session.conn:close();
-		listener.ondisconnect(session.conn, remote_reason or (reason and (reason.text or reason.condition)) or reason or "stream closed");
 	end
 end
 
@@ -413,11 +418,9 @@ local function initialize_session(session)
 		return handlestanza(session, stanza);
 	end
 
-	local conn = session.conn;
 	add_task(connect_timeout, function ()
-		if session.conn ~= conn or session.connecting
-		or session.type == "s2sin" or session.type == "s2sout" then
-			return; -- Ok, we're connect[ed|ing]
+		if session.type == "s2sin" or session.type == "s2sout" then
+			return; -- Ok, we're connected
 		end
 		-- Not connected, need to close session and clean up
 		(session.log or log)("debug", "Destroying incomplete session %s->%s due to inactivity",
@@ -474,11 +477,17 @@ end
 function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		if stream_callbacks.streamdisconnected(session, err) then
-			return; -- Connection lives, for now
+		if err and session.direction == "outgoing" and session.notopen then
+			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
+			if s2sout.attempt_connection(session, err) then
+				(session.log or log)("debug", "...so we're going to try another target");
+				return; -- Session lives for now
+			end
 		end
+		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
+		s2s_destroy_session(session, err);
+		sessions[conn] = nil;
 	end
-	sessions[conn] = nil;
 end
 
 function listener.register_outgoing(conn, session)

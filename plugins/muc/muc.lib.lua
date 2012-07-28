@@ -856,7 +856,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		if not occupant then -- not in room
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 		elseif occupant.role == "visitor" then
-			origin.send(st.error_reply(stanza, "cancel", "forbidden"));
+			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		else
 			local from = stanza.attr.from;
 			stanza.attr.from = current_nick;
@@ -867,7 +867,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					self:set_subject(current_nick, subject); -- TODO use broadcast_message_stanza
 				else
 					stanza.attr.from = from;
-					origin.send(st.error_reply(stanza, "cancel", "forbidden"));
+					origin.send(st.error_reply(stanza, "auth", "forbidden"));
 				end
 			else
 				self:broadcast_message(stanza, self:get_historylength() > 0);
