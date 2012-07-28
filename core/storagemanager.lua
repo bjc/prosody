@@ -58,7 +58,7 @@ function load_driver(host, driver_name)
 	return stores_available:get(host, driver_name);
 end
 
-function open(host, store, typ)
+function get_driver(host, store)
 	local storage = config.get(host, "core", "storage");
 	local driver_name;
 	local option_type = type(storage);
@@ -77,7 +77,11 @@ function open(host, store, typ)
 		driver_name = "null";
 		driver = null_storage_driver;
 	end
+	return driver, driver_name;
+	end
 	
+function open(host, store, typ)
+	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
 	if not ret then
 		if err == "unsupported-store" then
@@ -95,6 +99,12 @@ function datamanager.load(username, host, datastore)
 end
 function datamanager.store(username, host, datastore, data)
 	return open(host, datastore):set(username, data);
+end
+function datamanager.list_stores(username, host)
+	return get_driver(host):list_stores(username, host);
+end
+function datamanager.purge(username, host)
+	return get_driver(host):purge(username, host);
 end
 
 return _M;
