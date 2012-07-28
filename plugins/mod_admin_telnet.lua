@@ -519,7 +519,7 @@ function def_env.c2s:show_secure(match_jid)
 end
 
 function def_env.c2s:close(match_jid)
-	local print, count = self.session.print, 0;
+	local count = 0;
 	show_c2s(function (jid, session)
 		if jid == match_jid or jid_bare(jid) == match_jid then
 			count = count + 1;
