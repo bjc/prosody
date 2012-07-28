@@ -175,7 +175,7 @@ local function deserialize(t, value)
 	end
 end
 
-local function getsql(sql, ...)
+local function dosql(sql, ...)
 	if params.driver == "PostgreSQL" then
 		sql = sql:gsub("`", "\"");
 	end
@@ -184,11 +184,14 @@ local function getsql(sql, ...)
 	if not stmt and not test_connection() then error("connection failed"); end
 	if not stmt then module:log("error", "QUERY FAILED: %s %s", err, debug.traceback()); return nil, err; end
 	-- run query
-	local ok, err = stmt:execute(host or "", user or "", store or "", ...);
+	local ok, err = stmt:execute(...);
 	if not ok and not test_connection() then error("connection failed"); end
 	if not ok then return nil, err; end
 	
 	return stmt;
+end
+local function getsql(sql, ...)
+	return dosql(sql, host or "", user or "", store or "", ...);
 end
 local function setsql(sql, ...)
 	local stmt, err = getsql(sql, ...);
