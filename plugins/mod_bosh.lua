@@ -14,7 +14,7 @@ local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
 local new_uuid = require "util.uuid".generate;
 local fire_event = prosody.events.fire_event;
-local core_process_stanza = core_process_stanza;
+local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
@@ -56,7 +56,7 @@ local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"}).
 
 local function get_ip_from_request(request)
 	local ip = request.conn:ip();
-	local forwarded_for = request.headers["x-forwarded-for"];
+	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for then
 		forwarded_for = forwarded_for..", "..ip;
 		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do

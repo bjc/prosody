@@ -29,11 +29,11 @@ local st = require "util.stanza";
 local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
+local hosts = hosts;
 
 rooms = {};
 local rooms = rooms;
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
-local component = hosts[module.host];
 
 -- Configurable options
 local max_history_messages = module:get_option_number("max_history_messages");
@@ -42,7 +42,7 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-local function room_route_stanza(room, stanza) core_post_stanza(component, stanza); end
+local function room_route_stanza(room, stanza) module:send(stanza); end
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	persistent_rooms[room.jid] = room._data.persistent;
@@ -65,19 +65,27 @@ local function room_save(room, forced)
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
 
+local persistent_errors = false;
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
-	local data = datamanager.load(node, muc_host, "config") or {};
-	local room = muc_new_room(jid, {
-		max_history_length = max_history_messages;
-	});
-	room._data = data._data;
-	room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
-	room._affiliations = data._affiliations;
-	room.route_stanza = room_route_stanza;
-	room.save = room_save;
-	rooms[jid] = room;
+	local data = datamanager.load(node, muc_host, "config");
+	if data then
+		local room = muc_new_room(jid, {
+			max_history_length = max_history_messages;
+		});
+		room._data = data._data;
+		room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
+		room._affiliations = data._affiliations;
+		room.route_stanza = room_route_stanza;
+		room.save = room_save;
+		rooms[jid] = room;
+	else -- missing room data
+		persistent_rooms[jid] = nil;
+		module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
+		persistent_errors = true;
+	end
 end
+if persistent_errors then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 
 local host_room = muc_new_room(muc_host, {
 	max_history_length = max_history_messages;
@@ -160,11 +168,11 @@ module:hook("presence/host", handle_to_domain, -1);
 
 hosts[module.host].send = function(stanza) -- FIXME do a generic fix
 	if stanza.attr.type == "result" or stanza.attr.type == "error" then
-		core_post_stanza(component, stanza);
+		module:send(stanza);
 	else error("component.send only supports result and error stanzas at the moment"); end
 end
 
-prosody.hosts[module:get_host()].muc = { rooms = rooms };
+hosts[module:get_host()].muc = { rooms = rooms };
 
 module.save = function()
 	return {rooms = rooms};
@@ -180,5 +188,5 @@ module.restore = function(data)
 		room.save = room_save;
 		rooms[jid] = room;
 	end
-	prosody.hosts[module:get_host()].muc = { rooms = rooms };
+	hosts[module:get_host()].muc = { rooms = rooms };
 end

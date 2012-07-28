@@ -74,7 +74,7 @@ function make_authenticated(session, host)
 	else
 		return false;
 	end
-	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host or "(unknown)", session.to_host or "(unknown)", host);
+	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
 	
 	mark_connected(session);
 	
@@ -87,7 +87,7 @@ function mark_connected(session)
 	
 	local from, to = session.from_host, session.to_host;
 	
-	session.log("info", session.direction.." s2s connection "..from.."->"..to.." complete");
+	session.log("info", "%s s2s connection %s->%s complete", session.direction, from, to);
 
 	local event_data = { session = session };
 	if session.type == "s2sout" then
@@ -105,7 +105,7 @@ function mark_connected(session)
 	
 	if session.direction == "outgoing" then
 		if sendq then
-			session.log("debug", "sending "..#sendq.." queued stanzas across new outgoing connection to "..session.to_host);
+			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", #sendq, session.to_host);
 			for i, data in ipairs(sendq) do
 				send(data[1]);
 				sendq[i] = nil;
@@ -133,7 +133,7 @@ local resting_session = { -- Resting, not dead
 function retire_session(session, reason)
 	local log = session.log or log;
 	for k in pairs(session) do
-		if k ~= "trace" and k ~= "log" and k ~= "id" then
+		if k ~= "trace" and k ~= "log" and k ~= "id" and k ~= "conn" then
 			session[k] = nil;
 		end
 	end

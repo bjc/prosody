@@ -34,19 +34,19 @@ module:hook("server-started", function ()
 		if gid then
 			local success, msg = pposix.setgid(gid);
 			if success then
-				module:log("debug", "Changed group to "..gid.." successfully.");
+				module:log("debug", "Changed group to %s successfully.", gid);
 			else
-				module:log("error", "Failed to change group to "..gid..". Error: "..msg);
-				prosody.shutdown("Failed to change group to "..gid);
+				module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
+				prosody.shutdown("Failed to change group to %s", gid);
 			end
 		end
 		if uid then
 			local success, msg = pposix.setuid(uid);
 			if success then
-				module:log("debug", "Changed user to "..uid.." successfully.");
+				module:log("debug", "Changed user to %s successfully.", uid);
 			else
-				module:log("error", "Failed to change user to "..uid..". Error: "..msg);
-				prosody.shutdown("Failed to change user to "..uid);
+				module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
+				prosody.shutdown("Failed to change user to %s", uid);
 			end
 		end
 	end);

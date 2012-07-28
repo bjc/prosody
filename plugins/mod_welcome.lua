@@ -16,6 +16,6 @@ module:hook("user-registered",
 		local welcome_stanza =
 			st.message({ to = user.username.."@"..user.host, from = host })
 				:tag("body"):text(welcome_text:gsub("$(%w+)", user));
-		core_route_stanza(hosts[host], welcome_stanza);
+		module:send(welcome_stanza);
 		module:log("debug", "Welcomed user %s@%s", user.username, user.host);
 	end);

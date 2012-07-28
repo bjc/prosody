@@ -91,8 +91,8 @@ function delete_user(username, host)
 	return hosts[host].users.delete_user(username);
 end
 
-function get_sasl_handler(host)
-	return hosts[host].users.get_sasl_handler();
+function get_sasl_handler(host, session)
+	return hosts[host].users.get_sasl_handler(session);
 end
 
 function get_provider(host)

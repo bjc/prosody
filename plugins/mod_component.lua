@@ -18,6 +18,8 @@ local jid_split = require "util.jid".split;
 local new_xmpp_stream = require "util.xmppstream".new;
 local uuid_gen = require "util.uuid".generate;
 
+local core_process_stanza = prosody.core_process_stanza;
+
 
 local log = module._log;
 
@@ -124,7 +126,7 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.error(session, error, data, data2)
 	if session.destroyed then return; end
-	module:log("warn", "Error processing component stream: "..tostring(error));
+	module:log("warn", "Error processing component stream: %s", tostring(error));
 	if error == "no-stream" then
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
@@ -168,8 +170,6 @@ function stream_callbacks.streamclosed(session)
 	session.log("debug", "Received </stream:stream>");
 	session:close();
 end
-
-local core_process_stanza = core_process_stanza;
 
 function stream_callbacks.handlestanza(session, stanza)
 	-- Namespaces are icky.

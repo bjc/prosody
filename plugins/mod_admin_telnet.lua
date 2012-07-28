@@ -13,7 +13,7 @@ local _G = _G;
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
 
-local console_listener = { default_port = 5582; default_mode = "*l"; interface = "127.0.0.1" };
+local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
 local hostmanager = require "core.hostmanager";
 local modulemanager = require "core.modulemanager";
@@ -30,6 +30,7 @@ local envloadfile = require "util.envload".envloadfile;
 local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
+local core_post_stanza = prosody.core_post_stanza;
 
 local function redirect_output(_G, session)
 	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
@@ -81,67 +82,74 @@ end
 function console_listener.onincoming(conn, data)
 	local session = sessions[conn];
 
-	-- Handle data
-	(function(session, data)
-		local useglobalenv;
-		
-		if data:match("^>") then
-			data = data:gsub("^>", "");
-			useglobalenv = true;
-		elseif data == "\004" then
-			commands["bye"](session, data);
-			return;
-		else
-			local command = data:lower();
-			command = data:match("^%w+") or data:match("%p");
-			if commands[command] then
-				commands[command](session, data);
-				return;
-			end
-		end
+	local partial = session.partial_data;
+	if partial then
+		data = partial..data;
+	end
 
-		session.env._ = data;
-		
-		local chunkname = "=console";
-		local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
-		local chunk, err = envload("return "..data, chunkname, env);
-		if not chunk then
-			chunk, err = envload(data, chunkname, env);
-			if not chunk then
-				err = err:gsub("^%[string .-%]:%d+: ", "");
-				err = err:gsub("^:%d+: ", "");
-				err = err:gsub("'<eof>'", "the end of the line");
-				session.print("Sorry, I couldn't understand that... "..err);
-				return;
+	for line in data:gmatch("[^\n]*[\n\004]") do
+		-- Handle data (loop allows us to break to add \0 after response)
+		repeat
+			local useglobalenv;
+
+			if line:match("^>") then
+				line = line:gsub("^>", "");
+				useglobalenv = true;
+			elseif line == "\004" then
+				commands["bye"](session, line);
+				break;
+			else
+				local command = line:match("^%w+") or line:match("%p");
+				if commands[command] then
+					commands[command](session, line);
+					break;
+				end
 			end
-		end
+
+			session.env._ = line;
+			
+			local chunkname = "=console";
+			local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
+			local chunk, err = envload("return "..line, chunkname, env);
+			if not chunk then
+				chunk, err = envload(line, chunkname, env);
+				if not chunk then
+					err = err:gsub("^%[string .-%]:%d+: ", "");
+					err = err:gsub("^:%d+: ", "");
+					err = err:gsub("'<eof>'", "the end of the line");
+					session.print("Sorry, I couldn't understand that... "..err);
+					break;
+				end
+			end
 		
-		local ranok, taskok, message = pcall(chunk);
+			local ranok, taskok, message = pcall(chunk);
+			
+			if not (ranok or message or useglobalenv) and commands[line:lower()] then
+				commands[line:lower()](session, line);
+				break;
+			end
+			
+			if not ranok then
+				session.print("Fatal error while running command, it did not complete");
+				session.print("Error: "..taskok);
+				break;
+			end
+			
+			if not message then
+				session.print("Result: "..tostring(taskok));
+				break;
+			elseif (not taskok) and message then
+				session.print("Command completed with a problem");
+				session.print("Message: "..tostring(message));
+				break;
+			end
+			
+			session.print("OK: "..tostring(message));
+		until true
 		
-		if not (ranok or message or useglobalenv) and commands[data:lower()] then
-			commands[data:lower()](session, data);
-			return;
-		end
-		
-		if not ranok then
-			session.print("Fatal error while running command, it did not complete");
-			session.print("Error: "..taskok);
-			return;
-		end
-		
-		if not message then
-			session.print("Result: "..tostring(taskok));
-			return;
-		elseif (not taskok) and message then
-			session.print("Command completed with a problem");
-			session.print("Message: "..tostring(message));
-			return;
-		end
-		
-		session.print("OK: "..tostring(message));
-	end)(session, data);
-	
-	session.send(string.char(0));
+		session.send(string.char(0));
+	end
+	session.partial_data = data:match("[^\n]+$");
 end
 
 function console_listener.ondisconnect(conn, err)
@@ -191,6 +199,7 @@ function commands.help(session, data)
 		print [[s2s - Commands to manage sessions between this server and others]]
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
+		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
@@ -202,6 +211,7 @@ function commands.help(session, data)
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
 		print [[s2s:close(from, to) - Close a connection from one domain to another]]
+		print [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
 	elseif section == "module" then
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
@@ -211,6 +221,10 @@ function commands.help(session, data)
 		print [[host:activate(hostname) - Activates the specified host]]
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
+	elseif section == "user" then
+		print [[user:create(jid, password) - Create the specified user account]]
+		print [[user:password(jid, password) - Set the password for the specified user account]]
+		print [[user:delete(jid, password) - Permanently remove the specified user account]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -679,7 +693,6 @@ function def_env.s2s:showcert(domain)
 	end
 	local domain_certs = array.collect(values(cert_set));
 	-- Phew. We now have a array of unique certificates presented by domain.
-	local print = self.session.print;
 	local n_certs = #domain_certs;
 	
 	if n_certs == 0 then
@@ -773,6 +786,40 @@ function def_env.s2s:close(from, to)
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
 end
 
+function def_env.s2s:closeall(host)
+        local count = 0;
+
+        if not host or type(host) ~= "string" then return false, "wrong syntax: please use s2s:closeall('hostname.tld')"; end
+        if hosts[host] then
+                for session in pairs(incoming_s2s) do
+                        if session.to_host == host then
+                                (session.close or s2smanager.destroy_session)(session);
+                                count = count + 1;
+                        end
+                end
+                for _, session in pairs(hosts[host].s2sout) do
+                        (session.close or s2smanager.destroy_session)(session);
+                        count = count + 1;
+                end
+        else
+                for session in pairs(incoming_s2s) do
+			if session.from_host == host then
+				(session.close or s2smanager.destroy_session)(session);
+				count = count + 1;
+			end
+		end
+		for _, h in pairs(hosts) do
+			if h.s2sout[host] then
+				(h.s2sout[host].close or s2smanager.destroy_session)(h.s2sout[host]);
+				count = count + 1;
+			end
+		end
+        end
+
+	if count == 0 then return false, "No sessions to close.";
+	else return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s"); end
+end
+
 def_env.host = {}; def_env.hosts = def_env.host;
 
 function def_env.host:activate(hostname, config)
@@ -858,6 +905,53 @@ function def_env.muc:room(room_jid)
 		return nil, "No such room: "..room_jid;
 	end
 	return setmetatable({ room = room_obj }, console_room_mt);
+end
+
+local um = require"core.usermanager";
+
+def_env.user = {};
+function def_env.user:create(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.create_user(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not create user: "..err;
+	end
+end
+
+function def_env.user:delete(jid)
+	local username, host = jid_split(jid);
+	local ok, err = um.delete_user(username, host);
+	if ok then
+		return true, "User deleted";
+	else
+		return nil, "Could not delete user: "..err;
+	end
+end
+
+function def_env.user:passwd(jid, password)
+	local username, host = jid_split(jid);
+	local ok, err = um.set_password(username, password, host);
+	if ok then
+		return true, "User created";
+	else
+		return nil, "Could not change password for user: "..err;
+	end
+end
+
+def_env.xmpp = {};
+
+local st = require "util.stanza";
+function def_env.xmpp:ping(localhost, remotehost)
+	if hosts[localhost] then
+		core_post_stanza(hosts[localhost],
+			st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
+				:tag("ping", {xmlns="urn:xmpp:ping"}));
+		return true, "Sent ping";
+	else
+		return nil, "No such host";
+	end
 end
 
 -------------

@@ -34,6 +34,11 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#if (defined(_SVID_SOURCE) && !defined(WITHOUT_MALLINFO))
+	#include <malloc.h>
+	#define WITH_MALLINFO
+#endif
+
 /* Daemonization support */
 
 static int lc_daemonize(lua_State *L)
@@ -581,6 +586,62 @@ int lc_uname(lua_State* L)
 	return 1;
 }
 
+int lc_setenv(lua_State* L)
+{
+	const char *var = luaL_checkstring(L, 1);
+	const char *value;
+
+	/* If the second argument is nil or nothing, unset the var */
+	if(lua_isnoneornil(L, 2))
+	{
+		if(unsetenv(var) != 0)
+		{
+			lua_pushnil(L);
+			lua_pushstring(L, strerror(errno));
+			return 2;
+		}
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+
+	value = luaL_checkstring(L, 2);
+
+	if(setenv(var, value, 1) != 0)
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+#ifdef WITH_MALLINFO
+int lc_meminfo(lua_State* L)
+{
+	struct mallinfo info = mallinfo();
+	lua_newtable(L);
+	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
+	lua_pushinteger(L, info.arena);
+	lua_setfield(L, -2, "allocated");
+	/* This is the total size of memory allocated with mmap, in bytes. */
+	lua_pushinteger(L, info.hblkhd);
+	lua_setfield(L, -2, "allocated_mmap");
+	/* This is the total size of memory occupied by chunks handed out by malloc. */
+	lua_pushinteger(L, info.uordblks);
+	lua_setfield(L, -2, "used");
+	/* This is the total size of memory occupied by free (not in use) chunks. */
+	lua_pushinteger(L, info.fordblks);
+	lua_setfield(L, -2, "unused");
+	/* This is the size of the top-most releasable chunk that normally borders the
+	   end of the heap (i.e., the high end of the virtual address space's data segment). */
+	lua_pushinteger(L, info.keepcost);
+	lua_setfield(L, -2, "returnable");
+	return 1;
+}
+#endif
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L)
@@ -611,6 +672,12 @@ int luaopen_util_pposix(lua_State *L)
 		{ "getrlimit", lc_getrlimit },
 
 		{ "uname", lc_uname },
+
+		{ "setenv", lc_setenv },
+
+#ifdef WITH_MALLINFO
+		{ "meminfo", lc_meminfo },
+#endif
 
 		{ NULL, NULL }
 	};

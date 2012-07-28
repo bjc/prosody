@@ -14,6 +14,7 @@ local cyrus_service_realm = module:get_option("cyrus_service_realm");
 local cyrus_service_name = module:get_option("cyrus_service_name");
 local cyrus_application_name = module:get_option("cyrus_application_name");
 local require_provisioning = module:get_option("cyrus_require_provisioning") or false;
+local host_fqdn = module:get_option("cyrus_server_fqdn");
 
 prosody.unlock_globals(); --FIXME: Figure out why this is needed and
 						  -- why cyrussasl isn't caught by the sandbox
@@ -23,7 +24,8 @@ local new_sasl = function(realm)
 	return cyrus_new(
 		cyrus_service_realm or realm,
 		cyrus_service_name or "xmpp",
-		cyrus_application_name or "prosody"
+		cyrus_application_name or "prosody",
+		host_fqdn
 	);
 end
 
