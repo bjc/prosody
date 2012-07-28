@@ -100,5 +100,8 @@ end
 function datamanager.store(username, host, datastore, data)
 	return open(host, datastore):set(username, data);
 end
+function datamanager.list_stores(username, host)
+	return get_driver(host):list_stores(username, host);
+end
 
 return _M;
