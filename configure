@@ -96,6 +96,7 @@ do
 	LUA_SUFFIX_SET=yes
 	LUA_INCDIR=/usr/include/lua5.1;
 	LUA_INCDIR_SET=yes
+	CFLAGS="$CFLAGS -D_GNU_SOURCE"
 	fi
 	if [ "$OSTYPE" = "macosx" ]
 	then LUA_INCDIR=/usr/local/include;
@@ -110,6 +111,7 @@ do
         LUA_LIBDIR=/usr/local/lib
         LUA_LIBDIR_SET=yes
         CFLAGS="-Wall -fPIC"
+        CFLAGS="$CFLAGS -D_GNU_SOURCE"
         LDFLAGS="-shared"
         fi
         if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]
