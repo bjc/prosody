@@ -352,4 +352,22 @@ function driver:open(store, typ)
 	return nil, "unsupported-store";
 end
 
+function driver:list_stores(username) -- Not to be confused with the list store type
+	local sql = (username == true
+		and "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`!=?"
+		or  "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`=?");
+	if username == true or not username then
+		username = "";
+	end
+	local stmt, err = dosql(sql, host, username);
+	if not stmt then
+		return nil, err;
+	end
+	local stores = {};
+	for row in stmt:rows() do
+		stores[#stores+1] = row[1];
+	end
+	return stores;
+end
+
 module:add_item("data-driver", driver);
