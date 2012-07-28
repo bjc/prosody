@@ -875,7 +875,7 @@ function def_env.port:close(close_port, close_interface)
 					self.session.print("Closing ["..interface.."]:"..close_port.."...");
 					local ok, err = portmanager.close(interface, close_port)
 					if not ok then
-						self.session.print("Failed to close "..interface.." "..port..": "..err);
+						self.session.print("Failed to close "..interface.." "..close_port..": "..err);
 					else
 						n_closed = n_closed + 1;
 					end
