@@ -226,4 +226,31 @@ function list_load(username, host, datastore)
 	return items;
 end
 
+function list_stores(username, host)
+	if not host then
+		return nil, "bad argument #2 to 'list_stores' (string expected, got nothing)";
+	end
+	local list = {};
+	local host_dir = format("%s/%s/", data_path, encode(host));
+	for node in lfs.dir(host_dir) do
+		if not node:match"^%." then -- dots should be encoded, this is probably . or ..
+			local store = decode(node);
+			local path = host_dir..node;
+			if username == true then
+				if lfs.attributes(path, "mode") == "directory" then
+					list[#list+1] = store;
+				end
+			elseif username then
+				if lfs.attributes(getpath(username, host, store), "mode")
+					or lfs.attributes(getpath(username, host, store, "list"), "mode") then
+					list[#list+1] = store;
+				end
+			elseif lfs.attributes(path, "mode") == "file" then
+				list[#list+1] = store:gsub("%.[dalist]+$","");
+			end
+		end
+	end
+	return list;
+end
+
 return _M;
