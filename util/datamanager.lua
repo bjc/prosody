@@ -116,18 +116,18 @@ function load(username, host, datastore)
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
-			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 			return nil, "Error reading storage";
 		end
 	end
 
 	local success, ret = pcall(data);
 	if not success then
-		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("error", "Unable to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 		return nil, "Error reading storage";
 	end
 	return ret;
@@ -146,7 +146,7 @@ function store(username, host, datastore, data)
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, nil, true), "w+");
 	if not f then
-		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return nil, "Error saving to storage";
 	end
 	f:write("return ");
@@ -167,7 +167,7 @@ function list_append(username, host, datastore, data)
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a+");
 	if not f then
-		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return;
 	end
 	f:write("item(");
@@ -185,7 +185,7 @@ function list_store(username, host, datastore, data)
 	-- save the datastore
 	local f, msg = io_open(getpath(username, host, datastore, "list", true), "w+");
 	if not f then
-		log("error", "Unable to write to "..datastore.." storage ('"..msg.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return;
 	end
 	for _, d in ipairs(data) do
@@ -209,18 +209,18 @@ function list_load(username, host, datastore)
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
 		if not mode then
-			log("debug", "Assuming empty "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 			return nil, "Error reading storage";
 		end
 	end
 
 	local success, ret = pcall(data);
 	if not success then
-		log("error", "Unable to load "..datastore.." storage ('"..ret.."') for user: "..(username or "nil").."@"..(host or "nil"));
+		log("error", "Unable to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
 		return nil, "Error reading storage";
 	end
 	return items;
