@@ -957,7 +957,7 @@ end
 -------------
 
 function printbanner(session)
-	local option = config.get("*", "core", "console_banner");
+	local option = module:get_option("console_banner");
 if option == nil or option == "full" or option == "graphic" then
 session.print [[
                    ____                \   /     _       
