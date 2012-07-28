@@ -8,17 +8,18 @@
 
 module:set_global();
 
-local _G = _G;
-
-local prosody = _G.prosody;
-local hosts = prosody.hosts;
-
-local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
-
 local hostmanager = require "core.hostmanager";
 local modulemanager = require "core.modulemanager";
 local s2smanager = require "core.s2smanager";
 local portmanager = require "core.portmanager";
+
+local _G = _G;
+
+local prosody = _G.prosody;
+local hosts = prosody.hosts;
+local incoming_s2s = prosody.incoming_s2s;
+
+local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
