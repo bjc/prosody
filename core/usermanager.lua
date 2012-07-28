@@ -10,11 +10,13 @@ local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local ipairs = ipairs;
+local pairs = pairs;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local hosts = hosts;
 local sasl_new = require "util.sasl".new;
+local storagemanager = require "core.storagemanager";
 
 local prosody = _G.prosody;
 
@@ -88,7 +90,15 @@ function create_user(username, password, host)
 end
 
 function delete_user(username, host)
-	return hosts[host].users.delete_user(username);
+	local user = hosts[host].sessions[username];
+	if user and user.sessions then
+		for jid, session in pairs(user.sessions) do
+			session:close{ condition = "not-authorized", text = "Account deleted" };
+		end
+	end
+	local ok, err = hosts[host].users.delete_user(username);
+	if not ok then return nil, err; end
+	return storagemanager.get_driver(host):purge(username);
 end
 
 function get_sasl_handler(host, session)
