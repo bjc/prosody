@@ -21,15 +21,31 @@ local next = next;
 local t_insert = table.insert;
 local append = require "util.serialization".append;
 local envloadfile = require"util.envload".envloadfile;
+local serialize = require "util.serialization".serialize;
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
 local prosody = prosody;
 local raw_mkdir;
+local fallocate;
 
 if prosody.platform == "posix" then
 	raw_mkdir = require "util.pposix".mkdir; -- Doesn't trample on umask
+	fallocate = require "util.pposix".fallocate;
 else
 	raw_mkdir = lfs.mkdir;
+end
+
+if not fallocate then -- Fallback
+	function fallocate(f, offset, len)
+		-- This assumes that current position == offset
+		local fake_data = (" "):rep(len);
+		local ok, msg = f:write(fake_data);
+		if not ok then
+			return ok, msg;
+		end
+		f:seek(offset);
+		return true;
+	end
 end
 
 module "datamanager"
@@ -165,14 +181,21 @@ function list_append(username, host, datastore, data)
 	if not data then return; end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a+");
+	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a");
 	if not f then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return;
 	end
-	f:write("item(");
-	append(f, data);
-	f:write(");\n");
+	local data = "item(" ..  serialize(data) .. ");\n";
+	local pos = f:seek("end");
+	local ok, msg = fallocate(f, pos, #data);
+	f:seek("set", pos);
+	if ok then
+		f:write(data);
+	else
+		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
+		return ok, msg;
+	end
 	f:close();
 	return true;
 end
