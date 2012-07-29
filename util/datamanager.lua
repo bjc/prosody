@@ -8,16 +8,15 @@
 
 
 local format = string.format;
-local setmetatable, type = setmetatable, type;
-local pairs, ipairs = pairs, ipairs;
+local setmetatable = setmetatable;
+local ipairs = ipairs;
 local char = string.char;
 local pcall = pcall;
 local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
 local os_rename = os.rename;
-local tostring, tonumber = tostring, tonumber;
-local error = error;
+local tonumber = tonumber;
 local next = next;
 local t_insert = table.insert;
 local t_concat = table.concat;
