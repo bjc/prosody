@@ -155,6 +155,9 @@ function api:shared(...)
 		local shared = shared_data[path];
 		if not shared then
 			shared = {};
+			if path:match("%-cache$") then
+				setmetatable(shared, { __mode = "kv" });
+			end
 			shared_data[path] = shared;
 		end
 		t_insert(data_array, shared);
