@@ -664,6 +664,7 @@ int lc_fallocate(lua_State* L)
 #if defined(_GNU_SOURCE)
 	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) != 0)
 #elif _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L
+#warning Using posix_fallocate() fallback. Linux fallocate() is strongly recommended if available: recompile with -D_GNU_SOURCE
 	if(posix_fallocate(fileno(f), offset, len) != 0)
 #endif
 	{
