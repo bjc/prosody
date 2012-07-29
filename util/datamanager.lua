@@ -15,11 +15,12 @@ local pcall = pcall;
 local log = require "util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
+local os_rename = os.rename;
 local tostring, tonumber = tostring, tonumber;
 local error = error;
 local next = next;
 local t_insert = table.insert;
-local append = require "util.serialization".append;
+local t_concat = table.concat;
 local envloadfile = require"util.envload".envloadfile;
 local serialize = require "util.serialization".serialize;
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
@@ -149,6 +150,28 @@ function load(username, host, datastore)
 	return ret;
 end
 
+local function atomic_store(filename, data)
+	local scratch = filename.."~";
+	local f, ok, msg;
+	repeat
+		f, msg = io_open(scratch, "w");
+		if not f then break end
+
+		ok, msg = f:write(data);
+		if not ok then break end
+
+		ok, msg = f:close();
+		if not ok then break end
+
+		return os_rename(scratch, filename);
+	until false;
+
+	-- Cleanup
+	if f then f:close(); end
+	os_remove(scratch);
+	return nil, msg;
+end
+
 function store(username, host, datastore, data)
 	if not data then
 		data = {};
@@ -160,14 +183,12 @@ function store(username, host, datastore, data)
 	end
 
 	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, nil, true), "w+");
-	if not f then
+	local d = "return " .. serialize(data) .. ";\n";
+	local ok, msg = atomic_store(getpath(username, host, datastore, nil, true), d);
+	if not ok then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return nil, "Error saving to storage";
 	end
-	f:write("return ");
-	append(f, data);
-	f:close();
 	if next(data) == nil then -- try to delete empty datastore
 		log("debug", "Removing empty %s datastore for user %s@%s", datastore, username or "nil", host or "nil");
 		os_remove(getpath(username, host, datastore));
@@ -206,17 +227,15 @@ function list_store(username, host, datastore, data)
 	end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, "list", true), "w+");
-	if not f then
+	local d = {};
+	for _, item in ipairs(data) do
+		d[#d+1] = "item(" .. serialize(item) .. ");\n";
+	end
+	local ok, msg = atomic_store(getpath(username, host, datastore, "list", true), t_concat(d));
+	if not ok then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return;
 	end
-	for _, d in ipairs(data) do
-		f:write("item(");
-		append(f, d);
-		f:write(");\n");
-	end
-	f:close();
 	if next(data) == nil then -- try to delete empty datastore
 		log("debug", "Removing empty %s datastore for user %s@%s", datastore, username or "nil", host or "nil");
 		os_remove(getpath(username, host, datastore, "list"));
