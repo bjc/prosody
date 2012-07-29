@@ -27,11 +27,27 @@ local next = next;
 local setmetatable = setmetatable;
 local xpcall = xpcall;
 local json = require "util.json";
+local build_url = require"socket.url".build;
 
 local DBI;
 local connection;
 local host,user,store = module.host;
 local params = module:get_option("sql");
+
+local dburi;
+local connections = module:shared "/*/sql/connection-cache";
+
+local function db2uri(params)
+	return build_url{
+		scheme = params.driver,
+		user = params.username,
+		password = params.password,
+		host = params.host,
+		port = params.port,
+		path = params.database,
+	};
+end
+
 
 local resolve_relative_path = require "core.configmanager".resolve_relative_path;
 
@@ -42,6 +58,7 @@ local function test_connection()
 	else
 		module:log("debug", "Database connection closed");
 		connection = nil;
+		connections[dburi] = nil;
 	end
 end
 local function connect()
@@ -60,6 +77,8 @@ local function connect()
 		module:log("debug", "Successfully connected to database");
 		dbh:autocommit(false); -- don't commit automatically
 		connection = dbh;
+
+		connections[dburi] = dbh;
 		return connection;
 	end
 end
@@ -146,6 +165,9 @@ do -- process options to get a db connection
 	end
 	
 	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
+
+	dburi = db2uri(params);
+	connection = connections[dburi];
 	
 	assert(connect());
 	
