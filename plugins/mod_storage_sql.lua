@@ -79,8 +79,8 @@ local function connect()
 		connection = dbh;
 
 		connections[dburi] = dbh;
-		return connection;
 	end
+	return connection;
 end
 
 local function create_table()
