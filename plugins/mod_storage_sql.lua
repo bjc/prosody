@@ -383,21 +383,21 @@ function driver:list_stores(username) -- Not to be confused with the list store 
 	end
 	local stmt, err = dosql(sql, host, username);
 	if not stmt then
-		return nil, err;
+		return rollback(nil, err);
 	end
 	local stores = {};
 	for row in stmt:rows() do
 		stores[#stores+1] = row[1];
 	end
-	return stores;
+	return commit(stores);
 end
 
 function driver:purge(username)
 	local stmt, err = dosql("DELETE FROM `prosody` WHERE `host`=? AND `user`=?", host, username);
-	if not stmt then return stmt, err; end
+	if not stmt then return rollback(stmt, err); end
 	local changed, err = stmt:affected();
-	if not changed then return changed, err; end
-	return true, changed;
+	if not changed then return rollback(changed, err); end
+	return commit(true, changed);
 end
 
 module:add_item("data-driver", driver);
