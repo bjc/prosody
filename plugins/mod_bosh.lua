@@ -299,7 +299,6 @@ function stream_callbacks.streamopened(context, attr)
 			return true;
 		end
 		request.sid = sid;
-		return;
 	end
 	
 	local session = sessions[sid];
