@@ -93,6 +93,18 @@ function module.add_host(module)
 			stanza.attr.xmlns = nil;
 			send(stanza);
 		else
+			if stanza.name == "iq" and stanza.attr.type == "get" and stanza.attr.to == module.host then
+				local query = stanza.tags[1];
+				local node = query.attr.node;
+				if query.name == "query" and query.attr.xmlns == "http://jabber.org/protocol/disco#info" and (not node or node == "") then
+					local name = module:get_option_string("name");
+					if name then
+						event.origin.send(st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info" })
+							:tag("identity", { category = "component", type = "generic", name = module:get_option_string("name", "Prosody") }))
+						return true;
+					end
+				end
+			end
 			module:log("warn", "Component not connected, bouncing error for: %s", stanza:top_tag());
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 				event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));

@@ -22,7 +22,8 @@ if restrict_room_creation then
 		restrict_room_creation = nil;
 	end
 end
-local muc_new_room = module:require "muc".new_room;
+local muclib = module:require "muc";
+local muc_new_room = muclib.new_room;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -40,6 +41,17 @@ local max_history_messages = module:get_option_number("max_history_messages");
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
+end
+
+local _set_affiliation = muc_new_room.room_mt.set_affiliation;
+local _get_affiliation = muc_new_room.room_mt.get_affiliation;
+function muclib.room_mt:get_affiliation(jid)
+	if is_admin(jid) then return "owner"; end
+	return _get_affiliation(self, jid);
+end
+function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
+	if is_admin(jid) then return nil, "modify", "not-acceptable";; end
+	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
 end
 
 local function room_route_stanza(room, stanza) module:send(stanza); end
@@ -135,6 +147,10 @@ function stanza_handler(event)
 	local bare = jid_bare(stanza.attr.to);
 	local room = rooms[bare];
 	if not room then
+		if stanza.name ~= "presence" then
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+			return true;
+		end
 		if not(restrict_room_creation) or
 		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
@@ -174,7 +190,9 @@ end
 
 hosts[module:get_host()].muc = { rooms = rooms };
 
+local saved = false;
 module.save = function()
+	saved = true;
 	return {rooms = rooms};
 end
 module.restore = function(data)
@@ -190,3 +208,28 @@ module.restore = function(data)
 	end
 	hosts[module:get_host()].muc = { rooms = rooms };
 end
+
+function shutdown_room(room, stanza)
+	for nick, occupant in pairs(room._occupants) do
+		stanza.attr.from = nick;
+		for jid in pairs(occupant.sessions) do
+			stanza.attr.to = jid;
+			room:_route_stanza(stanza);
+			room._jid_nick[jid] = nil;
+		end
+		room._occupants[nick] = nil;
+	end
+end
+function shutdown_component()
+	if not saved then
+		local stanza = st.presence({type = "unavailable"})
+			:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+				:tag("item", { affiliation='none', role='none' }):up();
+		for roomjid, room in pairs(rooms) do
+			shutdown_room(room, stanza);
+		end
+		shutdown_room(host_room, stanza);
+	end
+end
+module.unload = shutdown_component;
+module:hook_global("server-stopping", shutdown_component);
