@@ -198,12 +198,19 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		core_post_stanza(origin, stanza);
 		send_presence_of_available_resources(node, host, to_bare, origin);
 	elseif stanza.attr.type == "unsubscribed" then
-		-- 1. route stanza
-		-- 2. roster push (subscription = none or to)
-		if rostermanager.unsubscribed(node, host, to_bare) then
-			rostermanager.roster_push(node, host, to_bare);
+		-- 1. send unavailable
+		-- 2. route stanza
+		-- 3. roster push (subscription = from or both)
+		local success, pending_in, subscribed = rostermanager.unsubscribed(node, host, to_bare);
+		if success then
+			if subscribed then
+				rostermanager.roster_push(node, host, to_bare);
+			end
+			core_post_stanza(origin, stanza);
+			if subscribed then
+				send_presence_of_available_resources(node, host, to_bare, origin, st.presence({ type = "unavailable" }));
+			end
 		end
-		core_post_stanza(origin, stanza);
 	else
 		origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid presence type"));
 	end
