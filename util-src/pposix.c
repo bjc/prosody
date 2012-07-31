@@ -662,23 +662,34 @@ int lc_fallocate(lua_State* L)
 	len = luaL_checkinteger(L, 3);
 
 #if defined(_GNU_SOURCE)
-	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) != 0)
-#elif _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L
-#warning Using posix_fallocate() fallback. Linux fallocate() is strongly recommended if available: recompile with -D_GNU_SOURCE
-	if(posix_fallocate(fileno(f), offset, len) != 0)
-#endif
+	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) == 0)
 	{
-#if ! defined(_GNU_SOURCE)
-		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
-		 * this assumes that offset == length of the file */
-		ftruncate(fileno(f), offset);
-#endif
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+
+	if(errno != ENOSYS && errno != EOPNOTSUPP)
+	{
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
-	lua_pushboolean(L, 1);
-	return 1;
+#endif
+
+	if(posix_fallocate(fileno(f), offset, len) == 0)
+	{
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+	else
+	{
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
+		 * this assumes that offset == length of the file */
+		ftruncate(fileno(f), offset);
+		return 2;
+	}
 }
 #endif
 
