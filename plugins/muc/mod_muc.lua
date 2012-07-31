@@ -178,7 +178,9 @@ end
 
 hosts[module:get_host()].muc = { rooms = rooms };
 
+local saved = false;
 module.save = function()
+	saved = true;
 	return {rooms = rooms};
 end
 module.restore = function(data)
@@ -194,3 +196,28 @@ module.restore = function(data)
 	end
 	hosts[module:get_host()].muc = { rooms = rooms };
 end
+
+function shutdown_room(room, stanza)
+	for nick, occupant in pairs(room._occupants) do
+		stanza.attr.from = nick;
+		for jid in pairs(occupant.sessions) do
+			stanza.attr.to = jid;
+			room:_route_stanza(stanza);
+			room._jid_nick[jid] = nil;
+		end
+		room._occupants[nick] = nil;
+	end
+end
+function shutdown_component()
+	if not saved then
+		local stanza = st.presence({type = "unavailable"})
+			:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+				:tag("item", { affiliation='none', role='none' }):up();
+		for roomjid, room in pairs(rooms) do
+			shutdown_room(room, stanza);
+		end
+		shutdown_room(host_room, stanza);
+	end
+end
+module.unload = shutdown_component;
+module:hook_global("server-stopping", shutdown_component);
