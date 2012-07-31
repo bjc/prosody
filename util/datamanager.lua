@@ -43,7 +43,7 @@ if not fallocate then -- Fallback
 		if not ok then
 			return ok, msg;
 		end
-		f:seek(offset);
+		f:seek("set", offset);
 		return true;
 	end
 end
