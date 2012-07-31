@@ -278,23 +278,21 @@ function unsubscribed(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	local pending = is_contact_pending_in(username, host, jid);
-	local changed = nil;
-	if is_contact_pending_in(username, host, jid) then
+	if pending then
 		roster.pending[jid] = nil; -- TODO maybe delete roster.pending if empty?
-		changed = true;
 	end
+	local subscribed;
 	if item then
 		if item.subscription == "from" then
 			item.subscription = "none";
-			changed = true;
+			subscribed = true;
 		elseif item.subscription == "both" then
 			item.subscription = "to";
-			changed = true;
+			subscribed = true;
 		end
 	end
-	if changed then
-		return save_roster(username, host, roster);
-	end
+	local success = (pending or subscribed) and save_roster(username, host, roster);
+	return success, pending, subscribed;
 end
 
 function process_outbound_subscription_request(username, host, jid)
