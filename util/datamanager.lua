@@ -213,7 +213,10 @@ function list_append(username, host, datastore, data)
 	if not data then return; end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, "list", true), "a");
+	local f, msg = io_open(getpath(username, host, datastore, "list", true), "r+");
+	if not f then
+		f, msg = io_open(getpath(username, host, datastore, "list", true), "w");
+	end
 	if not f then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return;
