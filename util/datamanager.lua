@@ -171,6 +171,18 @@ local function atomic_store(filename, data)
 	return nil, msg;
 end
 
+if prosody.platform ~= "posix" then
+	-- os.rename does not overwrite existing files on Windows
+	-- TODO We could use Transactional NTFS on Vista and above
+	function atomic_store(filename, data)
+		local f, err = io_open(filename, "w");
+		if not f then return f, err; end
+		local ok, msg = f:write(data);
+		if not ok then f:close(); return ok, msg; end
+		return f:close();
+	end
+end
+
 function store(username, host, datastore, data)
 	if not data then
 		data = {};
