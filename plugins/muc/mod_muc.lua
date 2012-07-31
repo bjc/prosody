@@ -135,6 +135,10 @@ function stanza_handler(event)
 	local bare = jid_bare(stanza.attr.to);
 	local room = rooms[bare];
 	if not room then
+		if stanza.name ~= "presence" then
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+			return true;
+		end
 		if not(restrict_room_creation) or
 		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
