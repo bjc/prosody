@@ -1149,4 +1149,6 @@ function _M.new_room(jid, config)
 	}, room_mt);
 end
 
+_M.room_mt = room_mt;
+
 return _M;
