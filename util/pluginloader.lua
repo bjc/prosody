@@ -20,7 +20,7 @@ local envload = require "util.envload".envload;
 
 module "pluginloader"
 
-local function load_file(names)
+function load_file(names)
 	local file, err, path;
 	for i=1,#plugin_dir do
 		for j=1,#names do
