@@ -14,8 +14,7 @@ for path in (CFG_PLUGINDIR or "./plugins/"):gsub("[/\\]", dir_sep):gmatch("[^"..
 	plugin_dir[#plugin_dir + 1] = path;
 end
 
-local io_open, os_time = io.open, os.time;
-local loadstring, pairs = loadstring, pairs;
+local io_open = io.open;
 local envload = require "util.envload".envload;
 
 module "pluginloader"
