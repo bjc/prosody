@@ -246,7 +246,7 @@ function stream_callbacks.streamopened(context, attr)
 			bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid,
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
-			close = bosh_close_stream, dispatch_stanza = core_process_stanza,
+			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
 			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
 			ip = get_ip_from_request(request);
 		};
@@ -257,10 +257,6 @@ function stream_callbacks.streamopened(context, attr)
 
 		-- Send creation response
 		local creating_session = true;
-		local features = st.stanza("stream:features");
-		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-		fire_event("stream-features", session, features);
-		table.insert(session.send_buffer, tostring(features));
 
 		local r = session.requests;
 		function session.send(s)
