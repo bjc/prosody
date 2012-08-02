@@ -75,7 +75,7 @@ function add_user_command_handler(self, data, state)
 			return { status = "completed", error = { message = "Invalid data.\nPassword mismatch, or empty username" } };
 		end
 	else
-		return { status = "executing", form = add_user_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = add_user_layout }, "executing";
 	end
 end
 
@@ -107,7 +107,7 @@ function change_user_password_command_handler(self, data, state)
 			return { status = "completed", error = { message = "User does not exist" } };
 		end
 	else
-		return { status = "executing", form = change_user_password_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = change_user_password_layout }, "executing";
 	end
 end
 
@@ -155,7 +155,7 @@ function delete_user_command_handler(self, data, state)
 				(#failed ~= 0 and
 				"The following accounts could not be deleted:\n"..t_concat(failed, "\n") or "") };
 	else
-		return { status = "executing", form = delete_user_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = delete_user_layout }, "executing";
 	end
 end
 
@@ -205,7 +205,7 @@ function end_user_session_handler(self, data, state)
 				(#failed ~= 0 and
 				"The following accounts could not be disconnected:\n"..t_concat(failed, "\n") or "") };
 	else
-		return { status = "executing", form = end_user_session_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = end_user_session_layout }, "executing";
 	end
 end
 
@@ -254,7 +254,7 @@ function get_user_password_handler(self, data, state)
 		end
 		return { status = "completed", result = { layout = get_user_password_result_layout, values = {accountjid = accountjid, password = password} } };
 	else
-		return { status = "executing", form = get_user_password_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = get_user_password_layout }, "executing";
 	end
 end
 
@@ -312,7 +312,7 @@ function get_user_roster_handler(self, data, state)
 		result:add_child(query);
 		return { status = "completed", other = result };
 	else
-		return { status = "executing", form = get_user_roster_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = get_user_roster_layout }, "executing";
 	end
 end
 
@@ -365,7 +365,7 @@ function get_user_stats_handler(self, data, state)
 		return { status = "completed", result = {layout = get_user_stats_result_layout, values = {ipaddresses = IPs, rostersize = tostring(rostersize),
 			onlineresources = resources}} };
 	else
-		return { status = "executing", form = get_user_stats_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = get_user_stats_layout }, "executing";
 	end
 end
 
@@ -425,7 +425,7 @@ function get_online_users_command_handler(self, data, state)
 		end
 		return { status = "completed", result = {layout = get_online_users_result_layout, values = {onlineuserjids=t_concat(users, "\n")}} };
 	else
-		return { status = "executing", form = get_online_users_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = get_online_users_layout }, "executing";
 	end
 end
 
@@ -469,7 +469,7 @@ function load_module_handler(self, data, state)
 			'". Error was: "'..tostring(err or "<unspecified>")..'"' } };
 		end
 	else
-		return { status = "executing", form = layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = layout }, "executing";
 	end
 end
 
@@ -503,7 +503,7 @@ function reload_modules_handler(self, data, state)
 		return { status = "completed", info = info };
 	else
 		local modules = array.collect(keys(hosts[data.to].modules)):sort();
-		return { status = "executing", form = { layout = layout; values = { modules = modules } } }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout; values = { modules = modules } } }, "executing";
 	end
 end
 
@@ -567,7 +567,7 @@ function shut_down_service_handler(self, data, state)
 
 		return { status = "completed", info = "Server is about to shut down" };
 	else
-		return { status = "executing", form = shut_down_service_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = shut_down_service_layout }, "executing";
 	end
 end
 
@@ -601,7 +601,7 @@ function unload_modules_handler(self, data, state)
 		return { status = "completed", info = info };
 	else
 		local modules = array.collect(keys(hosts[data.to].modules)):sort();
-		return { status = "executing", form = { layout = layout; values = { modules = modules } } }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout; values = { modules = modules } } }, "executing";
 	end
 end
 

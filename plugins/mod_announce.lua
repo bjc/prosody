@@ -88,7 +88,7 @@ function announce_handler(self, data, state)
 		module:log("info", "Announcement sent to %d online users", count);
 		return { status = "completed", info = ("Announcement sent to %d online users"):format(count) };
 	else
-		return { status = "executing", form = announce_layout }, "executing";
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = announce_layout }, "executing";
 	end
 
 	return true;
