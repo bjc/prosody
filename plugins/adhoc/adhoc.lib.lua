@@ -59,8 +59,8 @@ function _M.handle_cmd(command, origin, stanza)
 			cmdtag:tag("note", {type="warn"}):text(content):up();
 		elseif name == "error" then
 			cmdtag:tag("note", {type="error"}):text(content.message):up();
-		elseif name =="actions" then
-			local actions = st.stanza("actions");
+		elseif name == "actions" then
+			local actions = st.stanza("actions", { execute = content.default });
 			for _, action in ipairs(content) do
 				if (action == "prev") or (action == "next") or (action == "complete") then
 					actions:tag(action):up();
