@@ -125,7 +125,7 @@ function api:depends(name)
 	local mod = modulemanager.get_module(self.host, name) or modulemanager.get_module("*", name);
 	if mod and mod.module.host == "*" and self.host ~= "*"
 	and modulemanager.module_has_method(mod, "add_host") then
-		mod = nil; -- This is a shared module, so we still want to load it on our host
+		mod = nil; -- Target is a shared module, so we still want to load it on our host
 	end
 	if not mod then
 		local err;
