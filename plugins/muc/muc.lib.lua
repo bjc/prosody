@@ -541,7 +541,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
 			if stanza.name == "iq" then
 				local id = stanza.attr.id;
-				stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
+				if stanza.attr.type == "get" or stanza.attr.type == "set" then
+					stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
+				else
+					stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
+				end
 				if type == 'get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then
 					stanza.attr.to = jid_bare(stanza.attr.to);
 				end
