@@ -95,6 +95,12 @@ local function readNumber()
 	while isNumeric(peek()) do
 		num[#num+1] = read();
 	end
+	if peek() == "." then
+		num[#num+1] = read();
+		while isNumeric(peek()) do
+			num[#num+1] = read();
+		end
+	end
 	return tonumber(t_concat(num));
 end
 local readItem = nil;
