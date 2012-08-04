@@ -51,7 +51,7 @@ local function isSpace(ch)
 	return ch <= _space;
 end
 
-local escapes = {["\\b"]="\b", ["\\d"]="\d", ["\\e"]="\e", ["\\f"]="\f", ["\\n"]="\n", ["\\r"]="\r", ["\\s"]="\s", ["\\t"]="\t", ["\\v"]="\v", ["\\\""]="\"", ["\\'"]="'", ["\\\\"]="\\"};
+local escapes = {["\\b"]="\b", ["\\d"]="\127", ["\\e"]="\27", ["\\f"]="\f", ["\\n"]="\n", ["\\r"]="\r", ["\\s"]=" ", ["\\t"]="\t", ["\\v"]="\v", ["\\\""]="\"", ["\\'"]="'", ["\\\\"]="\\"};
 local function readString()
 	read("\""); -- skip quote
 	local slash = nil;
