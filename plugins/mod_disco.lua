@@ -111,8 +111,8 @@ module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(eve
 	if node and node ~= "" then return; end -- TODO fire event?
 
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
-	for jid in pairs(get_children(module.host)) do
-		reply:tag("item", {jid = jid}):up();
+	for jid, name in pairs(get_children(module.host)) do
+		reply:tag("item", {jid = jid, name = name~=true and name or nil}):up();
 	end
 	for _, item in ipairs(disco_items) do
 		reply:tag("item", {jid=item[1], name=item[2]}):up();
