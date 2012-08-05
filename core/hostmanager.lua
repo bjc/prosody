@@ -84,7 +84,7 @@ function activate(host, host_config)
 	end
 	hosts[host] = host_session;
 	if not host:match("[@/]") then
-		disco_items:set(host:match("%.(.*)") or "*", host, true);
+		disco_items:set(host:match("%.(.*)") or "*", host, host_config.core.name or true);
 	end
 	for option_name in pairs(host_config.core) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
