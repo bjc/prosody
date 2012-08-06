@@ -7,6 +7,7 @@ TRUNK
 -   CSI improvements
 -   mod\_limits: Exempted JIDs
 -   Archive quotas
+-   mod\_mimicking
 
 0.11.0
 ======
