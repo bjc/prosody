@@ -57,7 +57,6 @@ module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 		username, password, resource = t_concat(username), t_concat(password), t_concat(resource);
 		username = nodeprep(username);
 		resource = resourceprep(resource)
-		local reply = st.reply(stanza);
 		if not (username and resource) then
 			session.send(st.error_reply(stanza, "modify", "bad-request"));
 			return true;
