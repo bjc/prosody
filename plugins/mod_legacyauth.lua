@@ -58,6 +58,10 @@ module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 		username = nodeprep(username);
 		resource = resourceprep(resource)
 		local reply = st.reply(stanza);
+		if not (username and resource) then
+			session.send(st.error_reply(stanza, "modify", "bad-request"));
+			return true;
+		end
 		if usermanager.test_password(username, session.host, password) then
 			-- Authentication successful!
 			local success, err = sessionmanager.make_authenticated(session, username);
