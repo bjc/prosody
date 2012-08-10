@@ -82,7 +82,7 @@ function activate(service_name)
 
 	local bind_interfaces = config.get("*", config_prefix.."interfaces")
 		or config.get("*", config_prefix.."interface") -- COMPAT w/pre-0.9
-		or (service_info.private and default_local_interfaces)
+		or (service_info.private and (config.get("*", "local_interfaces") or default_local_interfaces))
 		or config.get("*", "interfaces")
 		or config.get("*", "interface") -- COMPAT w/pre-0.9
 		or listener.default_interface -- COMPAT w/pre0.9
