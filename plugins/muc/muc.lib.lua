@@ -525,7 +525,9 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 		if type == "error" or type == "result" and stanza.name == "iq" then
 			local id = stanza.attr.id;
 			stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-			self:_route_stanza(stanza);
+			if stanza.attr.id then
+				self:_route_stanza(stanza);
+			end
 			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		else
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
@@ -549,7 +551,9 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				if type == 'get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then
 					stanza.attr.to = jid_bare(stanza.attr.to);
 				end
-				self:_route_stanza(stanza);
+				if stanza.attr.id then
+					self:_route_stanza(stanza);
+				end
 				stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 			else -- message
 				stanza.attr.from = current_nick;
