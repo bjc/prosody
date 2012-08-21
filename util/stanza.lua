@@ -237,7 +237,7 @@ function stanza_mt.get_error(stanza)
 	end
 	type = error_tag.attr.type;
 	
-	for child in error_tag:childtags() do
+	for _, child in ipairs(error_tag.tags) do
 		if child.attr.xmlns == xmlns_stanzas then
 			if not text and child.name == "text" then
 				text = child:get_text();
