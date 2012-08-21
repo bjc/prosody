@@ -11,6 +11,7 @@ module:depends("http_errors");
 
 local moduleapi = require "core.moduleapi";
 local url_parse = require "socket.url".parse;
+local url_build = require "socket.url".build;
 
 local server = require "net.http.server";
 
@@ -42,6 +43,8 @@ local function get_base_path(host_module, app_name, default_app_path)
 		or default_app_path); -- Default
 end
 
+local ports_by_scheme = { http = 80, https = 443, };
+
 -- Helper to deduce a module's external URL
 function moduleapi.http_url(module, app_name, default_path)
 	app_name = app_name or (module.name:gsub("^http_", ""));
@@ -50,12 +53,15 @@ function moduleapi.http_url(module, app_name, default_path)
 	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do
 		for port, services in pairs(ports) do
-			local path = get_base_path(module, app_name, default_path or "/"..app_name);
-			port = tonumber(ext.port) or port or 80;
-			if port == 80 then port = ""; else port = ":"..port; end
-			return (ext.scheme or services[1].service.name).."://"
-				..(ext.host or module.host)..port
-				..normalize_path(ext.path or "/")..(path:sub(2));
+			local url = {
+				scheme = (ext.scheme or services[1].service.name);
+				host = (ext.host or module.host);
+				port = tonumber(ext.port) or port or 80;
+				path = normalize_path(ext.path or "/")..
+					(get_base_path(module, app_name, default_path or "/"..app_name):sub(2));
+			}
+			if ports_by_scheme[url.scheme] == url.port then url.port = nil end
+			return url_build(url);
 		end
 	end
 end
