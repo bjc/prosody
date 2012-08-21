@@ -64,11 +64,11 @@ function store_roster(username, host, roster_items)
 	-- fetch current roster-table for username@host if he already has one
 	local roster = dm.load(username, host, "roster") or {};
 	-- merge imported roster-items with loaded roster
-	for item_tag in roster_items:childtags() do
+	for item_tag in roster_items:childtags("item") do
 		-- jid for this roster-item
 		local item_jid = item_tag.attr.jid
 		-- validate item stanzas
-		if (item_tag.name == "item") and (item_jid ~= "") then
+		if (item_jid ~= "") then
 			-- prepare roster item
 			-- TODO: is the subscription attribute optional?
 			local item = {subscription = item_tag.attr.subscription, groups = {}};
@@ -77,9 +77,9 @@ function store_roster(username, host, roster_items)
 				item.name = item_tag.attr.name;
 			end
 			-- optional: iterate over group stanzas inside item stanza
-			for group_tag in item_tag:childtags() do
+			for group_tag in item_tag:childtags("group") do
 				local group_name = group_tag:get_text();
-				if (group_tag.name == "group") and (group_name ~= "") then
+				if (group_name ~= "") then
 					item.groups[group_name] = true;
 				else
 					print("[error] invalid group stanza: "..group_tag:pretty_print());
@@ -100,7 +100,7 @@ end
 
 function store_private(username, host, private_items)
 	local private = dm.load(username, host, "private") or {};
-	for ch in private_items:childtags() do
+	for _, ch in ipairs(private_items.tags) do
 		--print("private :"..ch:pretty_print());
 		private[ch.name..":"..ch.attr.xmlns] = st.preserialize(ch);
 		print("[success] private item: " ..username.."@"..host.." - "..ch.name);
@@ -112,7 +112,7 @@ end
 function store_offline_messages(username, host, offline_messages)
 	-- TODO: maybe use list_load(), append and list_store() instead
 	--       of constantly reopening the file with list_append()?
-	for ch in offline_messages:childtags() do
+	for ch in offline_messages:childtags("message", "jabber:client") do
 		--print("message :"..ch:pretty_print());
 		local ret, err = dm.list_append(username, host, "offline", st.preserialize(ch));
 		print("["..(err or "success").."] stored offline message: " ..username.."@"..host.." - "..ch.attr.from);
