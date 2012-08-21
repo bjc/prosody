@@ -30,6 +30,9 @@ local function get_http_event(host, app_path, key)
 	if method:sub(1,1) == "/" then
 		return nil;
 	end
+	if app_path == "/" and path:sub(1,1) == "/" then
+		app_path = "";
+	end
 	return method:upper().." "..host..app_path..path;
 end
 
