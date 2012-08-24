@@ -96,16 +96,22 @@ local function handle_registration_stanza(event)
 	else -- stanza.attr.type == "set"
 		if query.tags[1] and query.tags[1].name == "remove" then
 			local username, host = session.username, session.host;
+
+			local old_session_close = session.close;
+			session.close = function(session, ...)
+				session.send(st.reply(stanza));
+				return old_session_close(session, ...);
+			end
 			
 			local ok, err = usermanager_delete_user(username, host);
 			
 			if not ok then
 				module:log("debug", "Removing user account %s@%s failed: %s", username, host, err);
+				session.close = old_session_close;
 				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
 				return true;
 			end
 			
-			session.send(st.reply(stanza));
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
