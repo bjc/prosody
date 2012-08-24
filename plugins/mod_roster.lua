@@ -15,6 +15,7 @@ local t_concat = table.concat;
 local tonumber = tonumber;
 local pairs, ipairs = pairs, ipairs;
 
+local rm_load_roster = require "core.rostermanager".load_roster;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
@@ -137,3 +138,20 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 	end
 	return true;
 end);
+
+module:hook_global("user-deleted", function(event)
+	local username, host = event.username, event.host;
+	if host ~= module.host then return end
+	local bare = username .. "@" .. host;
+	local roster = rm_load_roster(username, host);
+	for jid, item in pairs(roster) do
+		if jid and jid ~= "pending" then
+			if item.subscription == "both" or item.subscription == "from" or (roster.pending and roster.pending[jid]) then
+				module:send(st.presence({type="unsubscribed", from=bare, to=jid}));
+			end
+			if item.subscription == "both" or item.subscription == "to" or item.ask then
+				module:send(st.presence({type="unsubscribe", from=bare, to=jid}));
+			end
+		end
+	end
+end, 300);
