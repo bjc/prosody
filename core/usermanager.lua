@@ -90,14 +90,9 @@ function create_user(username, password, host)
 end
 
 function delete_user(username, host)
-	local user = hosts[host].sessions[username];
-	if user and user.sessions then
-		for jid, session in pairs(user.sessions) do
-			session:close{ condition = "not-authorized", text = "Account deleted" };
-		end
-	end
 	local ok, err = hosts[host].users.delete_user(username);
 	if not ok then return nil, err; end
+	prosody.events.fire_event("user-deleted", { username = username, host = host });
 	return storagemanager.get_driver(host):purge(username);
 end
 
