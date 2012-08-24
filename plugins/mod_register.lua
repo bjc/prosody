@@ -95,7 +95,6 @@ local function handle_registration_stanza(event)
 		session.send(reply);
 	else -- stanza.attr.type == "set"
 		if query.tags[1] and query.tags[1].name == "remove" then
-			-- TODO delete user auth data, send iq response, kick all user resources with a <not-authorized/>, delete all user data
 			local username, host = session.username, session.host;
 			
 			local ok, err = usermanager_delete_user(username, host);
@@ -107,28 +106,6 @@ local function handle_registration_stanza(event)
 			end
 			
 			session.send(st.reply(stanza));
-			local roster = session.roster;
-			for _, session in pairs(hosts[host].sessions[username].sessions) do -- disconnect all resources
-				session:close({condition = "not-authorized", text = "Account deleted"});
-			end
-			-- TODO datamanager should be able to delete all user data itself
-			datamanager.store(username, host, "vcard", nil);
-			datamanager.store(username, host, "private", nil);
-			datamanager.store(username, host, "account_details", nil);
-			datamanager.list_store(username, host, "offline", nil);
-			local bare = username.."@"..host;
-			for jid, item in pairs(roster) do
-				if jid and jid ~= "pending" then
-					if item.subscription == "both" or item.subscription == "from" or (roster.pending and roster.pending[jid]) then
-						module:send(st.presence({type="unsubscribed", from=bare, to=jid}));
-					end
-					if item.subscription == "both" or item.subscription == "to" or item.ask then
-						module:send(st.presence({type="unsubscribe", from=bare, to=jid}));
-					end
-				end
-			end
-			datamanager.store(username, host, "roster", nil);
-			datamanager.store(username, host, "privacy", nil);
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
