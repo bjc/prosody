@@ -96,7 +96,7 @@ function mark_connected(session)
 	else
 		local host_session = hosts[to];
 		session.send = function(stanza)
-			host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
+			return host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
 		end;
 
 		prosody.events.fire_event("s2sin-established", event_data);
