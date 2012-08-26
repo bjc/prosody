@@ -309,18 +309,29 @@ function list_stores(username, host)
 	return list;
 end
 
+local function do_remove(path)
+	local ok, err = os_remove(path);
+	if not ok and lfs.attributes(path, "mode") then
+		return ok, err;
+	end
+	return true
+end
+
 function purge(username, host)
 	local host_dir = format("%s/%s/", data_path, encode(host));
 	local deleted = 0;
+	local errs = {};
 	for file in lfs.dir(host_dir) do
 		if lfs.attributes(host_dir..file, "mode") == "directory" then
 			local store = decode(file);
-			deleted = deleted + (os_remove(getpath(username, host, store)) and 1 or 0);
-			deleted = deleted + (os_remove(getpath(username, host, store, "list")) and 1 or 0);
-			-- We this will generate loads of "No such file or directory", but do we care?
+			local ok, err = do_remove(getpath(username, host, store));
+			if not ok then errs[#errs+1] = err; end
+
+			local ok, err = do_remove(getpath(username, host, store, "list"));
+			if not ok then errs[#errs+1] = err; end
 		end
 	end
-	return deleted > 0, deleted;
+	return #errs == 0, t_concat(errs, ", ");
 end
 
 return _M;

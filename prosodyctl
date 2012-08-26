@@ -366,7 +366,7 @@ function commands.deluser(arg)
 		return 1;
 	end
 	
-	local ok, msg = prosodyctl.passwd { user = user, host = host };
+	local ok, msg = prosodyctl.deluser { user = user, host = host };
 	
 	if ok then return 0; end
 	

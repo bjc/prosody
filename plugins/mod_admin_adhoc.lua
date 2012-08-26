@@ -14,6 +14,7 @@ local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
+local usermanager_delete_user = require "core.usermanager".delete_user;
 local usermanager_get_password = require "core.usermanager".get_password;
 local usermanager_set_password = require "core.usermanager".set_password;
 local is_admin = require "core.usermanager".is_admin;
@@ -142,7 +143,7 @@ function delete_user_command_handler(self, data, state)
 		local succeeded = {};
 		for _, aJID in ipairs(fields.accountjids) do
 			local username, host, resource = jid.split(aJID);
-			if (host == data.to) and  usermanager_user_exists(username, host) and disconnect_user(aJID) and usermanager_create_user(username, nil, host) then
+			if (host == data.to) and  usermanager_user_exists(username, host) and usermanager_delete_user(username, host) then
 				module:log("debug", "User %s has been deleted", aJID);
 				succeeded[#succeeded+1] = aJID;
 			else

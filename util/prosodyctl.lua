@@ -176,9 +176,9 @@ function deluser(params)
 	if not _M.user_exists(params) then
 		return false, "no-such-user";
 	end
-	params.password = nil;
+	local user, host = nodeprep(params.user), nameprep(params.host);
 	
-	return _M.adduser(params);
+	return usermanager.delete_user(user, host);
 end
 
 function getpid()
