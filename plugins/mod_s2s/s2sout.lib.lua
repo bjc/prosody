@@ -94,7 +94,7 @@ function s2sout.attempt_connection(host_session, err)
 		handle = adns.lookup(function (answer)
 			handle = nil;
 			host_session.connecting = nil;
-			if answer then
+			if answer and #answer > 0 then
 				log("debug", "%s has SRV records, handling...", to_host);
 				local srv_hosts = {};
 				host_session.srv_hosts = srv_hosts;
