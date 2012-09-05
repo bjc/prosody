@@ -117,7 +117,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 				log("warn", "authoritative server for %s denied the key", attr.from or "(unknown)");
 				valid = "invalid";
 			end
-			if not dialback_verifying.sends2s then
+			if dialback_verifying.destroyed then
 				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result", tostring(dialback_verifying):match("%w+$"));
 			else
 				dialback_verifying.sends2s(
