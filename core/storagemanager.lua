@@ -78,8 +78,8 @@ function get_driver(host, store)
 		driver = null_storage_driver;
 	end
 	return driver, driver_name;
-	end
-	
+end
+
 function open(host, store, typ)
 	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
@@ -101,10 +101,10 @@ function datamanager.store(username, host, datastore, data)
 	return open(host, datastore):set(username, data);
 end
 function datamanager.list_stores(username, host)
-	return get_driver(host):list_stores(username, host);
+	return get_driver(host):list_stores(username);
 end
 function datamanager.purge(username, host)
-	return get_driver(host):purge(username, host);
+	return get_driver(host):purge(username);
 end
 
 return _M;
