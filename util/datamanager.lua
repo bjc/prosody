@@ -25,28 +25,23 @@ local serialize = require "util.serialization".serialize;
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
 local prosody = prosody;
-local raw_mkdir;
-local fallocate;
 
-if prosody.platform == "posix" then
-	raw_mkdir = require "util.pposix".mkdir; -- Doesn't trample on umask
-	fallocate = require "util.pposix".fallocate;
-else
-	raw_mkdir = lfs.mkdir;
-end
-
-if not fallocate then -- Fallback
-	function fallocate(f, offset, len)
-		-- This assumes that current position == offset
-		local fake_data = (" "):rep(len);
-		local ok, msg = f:write(fake_data);
-		if not ok then
-			return ok, msg;
-		end
-		f:seek("set", offset);
-		return true;
+local raw_mkdir = lfs.mkdir;
+local function fallocate(f, offset, len)
+	-- This assumes that current position == offset
+	local fake_data = (" "):rep(len);
+	local ok, msg = f:write(fake_data);
+	if not ok then
+		return ok, msg;
 	end
-end
+	f:seek("set", offset);
+	return true;
+end;
+pcall(function()
+	local pposix = require "util.pposix";
+	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
+	fallocate = pposix.fallocate or fallocate;
+end);
 
 module "datamanager"
 
