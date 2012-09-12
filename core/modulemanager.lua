@@ -119,10 +119,7 @@ local function do_load_module(host, module_name)
 	end
 	
 	if not modulemap[host] then
-		modulemap[host] = {};
-		if host ~= "*" then
-			hosts[host].modules = modulemap[host];
-		end
+		modulemap[host] = hosts[host].modules;
 	end
 	
 	if modulemap[host][module_name] then
