@@ -15,7 +15,7 @@ local log = module._log;
 local host = module.host;
 
 -- define auth provider
-local provider = { name = "internal_plain" };
+local provider = {};
 log("debug", "initializing internal_plain authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
@@ -78,5 +78,5 @@ function provider.get_sasl_handler()
 	return new_sasl(host, getpass_authentication_profile);
 end
 	
-module:add_item("auth-provider", provider);
+module:provides("auth", provider);
 
