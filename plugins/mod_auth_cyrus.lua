@@ -41,45 +41,44 @@ do -- diagnostic
 	end
 end
 
-function new_default_provider(host)
-	local provider = { name = "cyrus" };
-	log("debug", "initializing default authentication provider for host '%s'", host);
+local host = module.host;
 
-	function provider.test_password(username, password)
-		return nil, "Legacy auth not supported with Cyrus SASL.";
-	end
+-- define auth provider
+local provider = {};
+log("debug", "initializing default authentication provider for host '%s'", host);
 
-	function provider.get_password(username)
-		return nil, "Passwords unavailable for Cyrus SASL.";
-	end
-	
-	function provider.set_password(username, password)
-		return nil, "Passwords unavailable for Cyrus SASL.";
-	end
-
-	function provider.user_exists(username)
-		if require_provisioning then
-			return usermanager_user_exists(username, module.host);
-		end
-		return true;
-	end
-
-	function provider.create_user(username, password)
-		return nil, "Account creation/modification not available with Cyrus SASL.";
-	end
-
-	function provider.get_sasl_handler()
-		local handler = new_sasl(module.host);
-		if require_provisioning then
-			function handler.require_provisioning(username)
-				return usermanager_user_exists(username, module.host);
-			end
-		end
-		return handler;
-	end
-
-	return provider;
+function provider.test_password(username, password)
+	return nil, "Legacy auth not supported with Cyrus SASL.";
 end
 
-module:add_item("auth-provider", new_default_provider(module.host));
+function provider.get_password(username)
+	return nil, "Passwords unavailable for Cyrus SASL.";
+end
+
+function provider.set_password(username, password)
+	return nil, "Passwords unavailable for Cyrus SASL.";
+end
+
+function provider.user_exists(username)
+	if require_provisioning then
+		return usermanager_user_exists(username, host);
+	end
+	return true;
+end
+
+function provider.create_user(username, password)
+	return nil, "Account creation/modification not available with Cyrus SASL.";
+end
+
+function provider.get_sasl_handler()
+	local handler = new_sasl(host);
+	if require_provisioning then
+		function handler.require_provisioning(username)
+			return usermanager_user_exists(username, host);
+		end
+	end
+	return handler;
+end
+
+module:provides("auth", provider);
 
