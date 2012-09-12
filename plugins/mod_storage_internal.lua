@@ -24,4 +24,4 @@ function driver:purge(user)
 	return datamanager.purge(user, host);
 end
 
-module:add_item("data-driver", driver);
+module:provides("storage", driver);
