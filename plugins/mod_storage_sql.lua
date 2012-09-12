@@ -400,4 +400,4 @@ function driver:purge(username)
 	return commit(true, changed);
 end
 
-module:add_item("data-driver", driver);
+module:provides("storage", driver);
