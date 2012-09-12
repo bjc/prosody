@@ -10,7 +10,7 @@ local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
 
 -- define auth provider
-local provider = { name = "anonymous" };
+local provider = {};
 
 function provider.test_password(username, password)
 	return nil, "Password based auth not supported.";
@@ -62,5 +62,5 @@ function module.unload()
 	datamanager.remove_callback(dm_callback);
 end
 
-module:add_item("auth-provider", provider);
+module:provides("auth", provider);
 
