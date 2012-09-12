@@ -75,6 +75,7 @@ function activate(host, host_config)
 		events = events_new();
 		dialback_secret = configmanager.get(host, "core", "dialback_secret") or uuid_gen();
 		send = host_send;
+		modules = {};
 	};
 	if not host_config.core.component_module then -- host
 		host_session.type = "local";
