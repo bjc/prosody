@@ -307,7 +307,7 @@ function listener.ondisconnect(conn, err)
 	end
 end
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "component";
 	listener = listener;
 	default_port = 5347;
