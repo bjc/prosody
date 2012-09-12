@@ -249,7 +249,7 @@ function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "c2s";
 	listener = listener;
 	default_port = 5222;
@@ -259,7 +259,7 @@ module:add_item("net-provider", {
 	};
 });
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "legacy_ssl";
 	listener = listener;
 	encryption = "ssl";

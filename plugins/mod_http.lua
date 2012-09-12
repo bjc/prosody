@@ -123,7 +123,7 @@ function module.add_host(module)
 	end
 end
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "http";
 	listener = server.listener;
 	default_port = 5280;
@@ -132,7 +132,7 @@ module:add_item("net-provider", {
 	};
 });
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "https";
 	listener = server.listener;
 	default_port = 5281;

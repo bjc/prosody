@@ -986,7 +986,7 @@ function printbanner(session)
 	end
 end
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "console";
 	listener = console_listener;
 	default_port = 5582;

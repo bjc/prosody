@@ -498,7 +498,7 @@ end
 
 s2sout.set_listener(listener);
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "s2s";
 	listener = listener;
 	default_port = 5269;
