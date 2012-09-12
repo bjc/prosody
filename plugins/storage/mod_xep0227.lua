@@ -160,4 +160,4 @@ function driver:open(host, datastore, typ)
 	return instance;
 end
 
-module:add_item("data-driver", driver);
+module:provides("storage", driver);
