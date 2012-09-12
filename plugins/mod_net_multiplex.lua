@@ -57,7 +57,7 @@ function listener.ondisconnect(conn, err)
 	buffers[conn] = nil; -- warn if no buffer?
 end
 
-module:add_item("net-provider", {
+module:provides("net", {
 	name = "multiplex";
 	config_prefix = "";
 	listener = listener;
