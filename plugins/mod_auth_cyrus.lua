@@ -44,7 +44,7 @@ end
 local host = module.host;
 
 -- define auth provider
-local provider = { name = "cyrus" };
+local provider = {};
 log("debug", "initializing default authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
@@ -80,5 +80,5 @@ function provider.get_sasl_handler()
 	return handler;
 end
 
-module:add_item("auth-provider", provider);
+module:provides("auth", provider);
 
