@@ -247,11 +247,10 @@ do
 					end
 				end
 			else
+				local file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
 				local f, err = io.open(file);
 				if f then
-					local data = f:read("*a");
-					local file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
-					local ret, err = parsers.lua.load(data, file, config);
+					local ret, err = parsers.lua.load(f:read("*a"), file, config);
 					if not ret then error(err:gsub("%[string.-%]", file), 0); end
 				end
 				if not f then error("Error loading included "..file..": "..err, 0); end
