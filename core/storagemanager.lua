@@ -33,12 +33,12 @@ local stores_available = multitable.new();
 
 function initialize_host(host)
 	local host_session = hosts[host];
-	host_session.events.add_handler("item-added/storage-provider", function (event)
+	host_session.events.add_handler("item-added/data-driver", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
 	end);
 	
-	host_session.events.add_handler("item-removed/storage-provider", function (event)
+	host_session.events.add_handler("item-removed/data-driver", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, nil);
 	end);
@@ -94,6 +94,25 @@ function open(host, store, typ)
 	return ret, err;
 end
 
+function purge(user, host)
+	local storage = config.get(host, "core", "storage");
+	local driver_name;
+	if type(storage) == "table" then
+		-- multiple storage backends in use that we need to purge
+		local purged = {};
+		for store, driver in pairs(storage) do
+			if not purged[driver] then
+				purged[driver] = get_driver(host, store):purge(user);
+			end
+		end
+	end
+	get_driver(host):purge(user); -- and the default driver
+
+	olddm.purge(user, host); -- COMPAT list stores, like offline messages end up in the old datamanager
+
+	return true;
+end
+
 function datamanager.load(username, host, datastore)
 	return open(host, datastore):get(username);
 end
@@ -104,7 +123,7 @@ function datamanager.list_stores(username, host)
 	return get_driver(host):list_stores(username);
 end
 function datamanager.purge(username, host)
-	return get_driver(host):purge(username);
+	return purge(username);
 end
 
 return _M;
