@@ -93,7 +93,7 @@ function delete_user(username, host)
 	local ok, err = hosts[host].users.delete_user(username);
 	if not ok then return nil, err; end
 	prosody.events.fire_event("user-deleted", { username = username, host = host });
-	return storagemanager.get_driver(host):purge(username);
+	return storagemanager.purge(username, host);
 end
 
 function get_sasl_handler(host, session)

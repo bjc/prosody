@@ -94,6 +94,25 @@ function open(host, store, typ)
 	return ret, err;
 end
 
+function purge(user, host)
+	local storage = config.get(host, "core", "storage");
+	local driver_name;
+	if type(storage) == "table" then
+		-- multiple storage backends in use that we need to purge
+		local purged = {};
+		for store, driver in pairs(storage) do
+			if not purged[driver] then
+				purged[driver] = get_driver(host, store):purge(user);
+			end
+		end
+	end
+	get_driver(host):purge(user); -- and the default driver
+
+	olddm.purge(user, host); -- COMPAT list stores, like offline messages end up in the old datamanager
+
+	return true;
+end
+
 function datamanager.load(username, host, datastore)
 	return open(host, datastore):get(username);
 end
@@ -104,7 +123,7 @@ function datamanager.list_stores(username, host)
 	return get_driver(host):list_stores(username);
 end
 function datamanager.purge(username, host)
-	return get_driver(host):purge(username);
+	return purge(username);
 end
 
 return _M;
