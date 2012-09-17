@@ -277,31 +277,41 @@ function list_load(username, host, datastore)
 	return items;
 end
 
-function list_stores(username, host)
-	if not host then
-		return nil, "bad argument #2 to 'list_stores' (string expected, got nothing)";
+local type_map = {
+	keyval = "dat";
+	list = "list";
+}
+
+function stores(username, host, typ)
+	typ = type_map[typ or "keyval"];
+	local store_dir = format("%s/%s/", data_path, encode(host));
+
+	local mode, err = lfs.attributes(store_dir, "mode");
+	if not mode then
+		return function() log("debug", err or (store_dir .. " does not exist")) end
 	end
-	local list = {};
-	local host_dir = format("%s/%s/", data_path, encode(host));
-	for node in lfs.dir(host_dir) do
-		if not node:match"^%." then -- dots should be encoded, this is probably . or ..
-			local store = decode(node);
-			local path = host_dir..node;
-			if username == true then
-				if lfs.attributes(path, "mode") == "directory" then
-					list[#list+1] = store;
+	local next, state = lfs.dir(store_dir);
+	return function(state)
+		for node in next, state do
+			if not node:match"^%." then
+				if username == true then
+					if lfs.attributes(store_dir..node, "mode") == "directory" then
+						return decode(node);
+					end
+				elseif username then
+					local store = decode(node)
+					if lfs.attributes(getpath(username, host, store, typ), "mode") then
+						return store;
+					end
+				elseif lfs.attributes(node, "mode") == "file" then
+					local file, ext = node:match("^(.*)%.([dalist]+)$");
+					if ext == typ then
+						return decode(file)
+					end
 				end
-			elseif username then
-				if lfs.attributes(getpath(username, host, store), "mode")
-					or lfs.attributes(getpath(username, host, store, "list"), "mode") then
-					list[#list+1] = store;
-				end
-			elseif lfs.attributes(path, "mode") == "file" then
-				list[#list+1] = store:gsub("%.[dalist]+$","");
 			end
 		end
-	end
-	return list;
+	end, state;
 end
 
 local function do_remove(path)

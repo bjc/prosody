@@ -16,8 +16,8 @@ function driver:set(user, data)
 	return datamanager.store(user, host, self.store, data);
 end
 
-function driver:list_stores(username)
-	return datamanager.list_stores(username, host);
+function driver:stores(username)
+	return datamanager.stores(username, host);
 end
 
 function driver:purge(user)
