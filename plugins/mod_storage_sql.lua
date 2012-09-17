@@ -365,7 +365,7 @@ function list_store:scan(username, from, to, jid, typ)
 	return nil, "not-implemented"
 end
 
-local driver = {};
+local driver = { name = "sql" };
 
 function driver:open(store, typ)
 	if not typ then -- default key-value store
@@ -374,10 +374,9 @@ function driver:open(store, typ)
 	return nil, "unsupported-store";
 end
 
-function driver:list_stores(username) -- Not to be confused with the list store type
-	local sql = (username == true
-		and "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`!=?"
-		or  "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`=?");
+function driver:stores(username) -- Not to be confused with the list store type
+	local sql = "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`" ..
+		(username == true and "!=?" or "=?");
 	if username == true or not username then
 		username = "";
 	end
@@ -385,11 +384,11 @@ function driver:list_stores(username) -- Not to be confused with the list store 
 	if not stmt then
 		return rollback(nil, err);
 	end
-	local stores = {};
-	for row in stmt:rows() do
-		stores[#stores+1] = row[1];
-	end
-	return commit(stores);
+	local next = stmt:rows();
+	return commit(function()
+		local row = next();
+		return row and row[1];
+	end);
 end
 
 function driver:purge(username)
@@ -400,4 +399,4 @@ function driver:purge(username)
 	return commit(true, changed);
 end
 
-module:provides("storage", driver);
+module:add_item("data-driver", driver);

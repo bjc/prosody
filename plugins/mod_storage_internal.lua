@@ -2,7 +2,7 @@ local datamanager = require "core.storagemanager".olddm;
 
 local host = module.host;
 
-local driver = {};
+local driver = { name = "internal" };
 local driver_mt = { __index = driver };
 
 function driver:open(store)
@@ -16,12 +16,12 @@ function driver:set(user, data)
 	return datamanager.store(user, host, self.store, data);
 end
 
-function driver:list_stores(username)
-	return datamanager.list_stores(username, host);
+function driver:stores(username)
+	return datamanager.stores(username, host);
 end
 
 function driver:purge(user)
 	return datamanager.purge(user, host);
 end
 
-module:provides("storage", driver);
+module:add_item("data-driver", driver);
