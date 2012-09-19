@@ -374,7 +374,7 @@ function driver:open(store, typ)
 	return nil, "unsupported-store";
 end
 
-function driver:stores(username) -- Not to be confused with the list store type
+function driver:stores(username)
 	local sql = "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`" ..
 		(username == true and "!=?" or "=?");
 	if username == true or not username then
