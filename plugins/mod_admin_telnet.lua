@@ -227,7 +227,7 @@ function commands.help(session, data)
 	elseif section == "user" then
 		print [[user:create(jid, password) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
-		print [[user:delete(jid, password) - Permanently remove the specified user account]]
+		print [[user:delete(jid) - Permanently remove the specified user account]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -915,6 +915,9 @@ local um = require"core.usermanager";
 def_env.user = {};
 function def_env.user:create(jid, password)
 	local username, host = jid_split(jid);
+	if um.user_exists(username, host) then
+		return nil, "User exists";
+	end
 	local ok, err = um.create_user(username, password, host);
 	if ok then
 		return true, "User created";
@@ -925,6 +928,9 @@ end
 
 function def_env.user:delete(jid)
 	local username, host = jid_split(jid);
+	if not um.user_exists(username, host) then
+		return nil, "No such user";
+	end
 	local ok, err = um.delete_user(username, host);
 	if ok then
 		return true, "User deleted";
@@ -933,11 +939,14 @@ function def_env.user:delete(jid)
 	end
 end
 
-function def_env.user:passwd(jid, password)
+function def_env.user:password(jid, password)
 	local username, host = jid_split(jid);
+	if not um.user_exists(username, host) then
+		return nil, "No such user";
+	end
 	local ok, err = um.set_password(username, password, host);
 	if ok then
-		return true, "User created";
+		return true, "User password changed";
 	else
 		return nil, "Could not change password for user: "..err;
 	end
