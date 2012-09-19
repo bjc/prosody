@@ -161,6 +161,7 @@ if ok and pposix then
 	
 	-- Set our umask to protect data files
 	pposix.umask(config.get("*", "core", "umask") or "027");
+	pposix.setenv("HOME", data_path);
 else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 	print("For more help send the below error to us through http://prosody.im/discuss");
