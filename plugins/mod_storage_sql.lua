@@ -365,7 +365,7 @@ function list_store:scan(username, from, to, jid, typ)
 	return nil, "not-implemented"
 end
 
-local driver = { name = "sql" };
+local driver = {};
 
 function driver:open(store, typ)
 	if not typ then -- default key-value store
@@ -399,4 +399,4 @@ function driver:purge(username)
 	return commit(true, changed);
 end
 
-module:add_item("data-driver", driver);
+module:provides("storage", driver);

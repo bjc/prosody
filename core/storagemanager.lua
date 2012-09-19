@@ -33,12 +33,12 @@ local stores_available = multitable.new();
 
 function initialize_host(host)
 	local host_session = hosts[host];
-	host_session.events.add_handler("item-added/data-driver", function (event)
+	host_session.events.add_handler("item-added/storage-provider", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
 	end);
 	
-	host_session.events.add_handler("item-removed/data-driver", function (event)
+	host_session.events.add_handler("item-removed/storage-provider", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, nil);
 	end);
