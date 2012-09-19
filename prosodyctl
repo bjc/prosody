@@ -687,11 +687,13 @@ function cert_commands.key(arg)
 		if ask_overwrite(key_filename) then
 			return nil, key_filename;
 		end
-		os.remove(key_filename); -- We chmod this file to not have write permissions
+		os.remove(key_filename); -- This file, if it exists is unlikely to have write permissions
 		local key_size = tonumber(arg[2] or show_prompt("Choose key size (2048):") or 2048);
+		local old_umask = pposix.umask("0377");
 		if openssl.genrsa{out=key_filename, key_size} then
 			os.execute(("chmod 400 '%s'"):format(key_filename));
 			show_message("Key written to ".. key_filename);
+			pposix.umask(old_umask);
 			return nil, key_filename;
 		end
 		show_message("There was a problem, see OpenSSL output");
