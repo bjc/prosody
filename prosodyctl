@@ -50,6 +50,7 @@ local prosody = {
 	platform = "posix";
 	lock_globals = function () end;
 	unlock_globals = function () end;
+	installed = CFG_SOURCEDIR ~= nil;
 };
 _G.prosody = prosody;
 
@@ -118,6 +119,11 @@ if custom_plugin_paths then
 end
 prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
 	          plugins = CFG_PLUGINDIR or "plugins", data = data_path };
+
+if prosody.installed then
+	-- Change working directory to data path.
+	require "lfs".chdir(data_path);
+end
 
 require "core.loggingmanager"
 
