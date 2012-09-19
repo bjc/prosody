@@ -725,7 +725,7 @@ function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
 		if ask_overwrite(cert_filename) then
-			return nil, conf_filename;
+			return nil, cert_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config(arg);
