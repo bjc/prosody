@@ -17,6 +17,8 @@ local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_delete_user = require "core.usermanager".delete_user;
 local usermanager_get_password = require "core.usermanager".get_password;
 local usermanager_set_password = require "core.usermanager".set_password;
+local hostmanager_activate = require "core.hostmanager".activate;
+local hostmanager_deactivate = require "core.hostmanager".deactivate;
 local is_admin = require "core.usermanager".is_admin;
 local rm_load_roster = require "core.rostermanager".load_roster;
 local st, jid, uuid = require "util.stanza", require "util.jid", require "util.uuid";
@@ -606,6 +608,63 @@ function unload_modules_handler(self, data, state)
 	end
 end
 
+function activate_host_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Activate host";
+		instructions = "";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/hosts#activate" };
+		{ name = "host", type = "text-single", required = true, label = "Host:"};
+	};
+	if state then
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+		local ok, err = hostmanager_activate(fields.host);
+
+		if ok then
+			return { status = "completed", info = fields.host .. " activated" };
+		else
+			return { status = "canceled", error = err }
+		end
+	else
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout } }, "executing";
+	end
+end
+
+function deactivate_host_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Deactivate host";
+		instructions = "";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/hosts#activate" };
+		{ name = "host", type = "text-single", required = true, label = "Host:"};
+	};
+	if state then
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+		local ok, err = hostmanager_deactivate(fields.host);
+
+		if ok then
+			return { status = "completed", info = fields.host .. " deactivated" };
+		else
+			return { status = "canceled", error = err }
+		end
+	else
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout } }, "executing";
+	end
+end
+
+
 local add_user_desc = adhoc_new("Add User", "http://jabber.org/protocol/admin#add-user", add_user_command_handler, "admin");
 local change_user_password_desc = adhoc_new("Change User Password", "http://jabber.org/protocol/admin#change-user-password", change_user_password_command_handler, "admin");
 local config_reload_desc = adhoc_new("Reload configuration", "http://prosody.im/protocol/config#reload", config_reload_handler, "global_admin");
@@ -620,6 +679,8 @@ local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/mo
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
+local activate_host_desc = adhoc_new("Activate host", "http://prosody.im/protocol/hosts#activate", activate_host_handler, "global_admin");
+local deactivate_host_desc = adhoc_new("Deactivate host", "http://prosody.im/protocol/hosts#deactivate", deactivate_host_handler, "global_admin");
 
 module:provides("adhoc", add_user_desc);
 module:provides("adhoc", change_user_password_desc);
@@ -635,3 +696,5 @@ module:provides("adhoc", load_module_desc);
 module:provides("adhoc", reload_modules_desc);
 module:provides("adhoc", shut_down_service_desc);
 module:provides("adhoc", unload_modules_desc);
+module:provides("adhoc", activate_host_desc);
+module:provides("adhoc", deactivate_host_desc);
