@@ -228,6 +228,11 @@ function init_global_state()
 		prosody.installed = true;
 	end
 	
+	if prosody.installed then
+		-- Change working directory to data path.
+		require "lfs".chdir(data_path);
+	end
+
 	-- Function to reload the config file
 	function prosody.reload_config()
 		log("info", "Reloading configuration file");
