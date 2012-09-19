@@ -166,7 +166,6 @@ else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 	print("For more help send the below error to us through http://prosody.im/discuss");
 	print(tostring(pposix))
-	os.exit(1);
 end
 
 local function test_writeable(filename)
@@ -687,13 +686,11 @@ function cert_commands.key(arg)
 		if ask_overwrite(key_filename) then
 			return nil, key_filename;
 		end
-		os.remove(key_filename); -- This file, if it exists is unlikely to have write permissions
+		os.remove(key_filename); -- We chmod this file to not have write permissions
 		local key_size = tonumber(arg[2] or show_prompt("Choose key size (2048):") or 2048);
-		local old_umask = pposix.umask("0377");
 		if openssl.genrsa{out=key_filename, key_size} then
 			os.execute(("chmod 400 '%s'"):format(key_filename));
 			show_message("Key written to ".. key_filename);
-			pposix.umask(old_umask);
 			return nil, key_filename;
 		end
 		show_message("There was a problem, see OpenSSL output");
@@ -725,7 +722,7 @@ function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
 		if ask_overwrite(cert_filename) then
-			return nil, cert_filename;
+			return nil, conf_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config(arg);
