@@ -166,6 +166,7 @@ else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 	print("For more help send the below error to us through http://prosody.im/discuss");
 	print(tostring(pposix))
+	os.exit(1);
 end
 
 local function test_writeable(filename)
