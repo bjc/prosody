@@ -96,6 +96,7 @@ end
 
 function purge(user, host)
 	local storage = config.get(host, "storage");
+	local driver_name;
 	if type(storage) == "table" then
 		-- multiple storage backends in use that we need to purge
 		local purged = {};
