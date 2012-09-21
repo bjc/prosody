@@ -282,6 +282,25 @@ local type_map = {
 	list = "list";
 }
 
+function users(host, store, typ)
+	typ = type_map[typ or "keyval"];
+	local store_dir = format("%s/%s/%s", data_path, encode(host), encode(store));
+
+	local mode, err = lfs.attributes(store_dir, "mode");
+	if not mode then
+		return function() log("debug", err or (store_dir .. " does not exist")) end
+	end
+	local next, state = lfs.dir(store_dir);
+	return function(state)
+		for node in next, state do
+			local file, ext = node:match("^(.*)%.([dalist]+)$");
+			if file and ext == typ then
+				return decode(file);
+			end
+		end
+	end, state;
+end
+
 function stores(username, host, typ)
 	typ = type_map[typ or "keyval"];
 	local store_dir = format("%s/%s/", data_path, encode(host));
