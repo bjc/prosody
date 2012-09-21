@@ -52,6 +52,10 @@ function provider.user_exists(username)
 	return true;
 end
 
+function provider.users()
+	return datamanager.users(host, "accounts");
+end
+
 function provider.create_user(username, password)
 	return datamanager.store(username, host, "accounts", {password = password});
 end
