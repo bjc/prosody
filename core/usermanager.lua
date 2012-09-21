@@ -96,6 +96,10 @@ function delete_user(username, host)
 	return storagemanager.purge(username, host);
 end
 
+function users(host)
+	return hosts[host].users.users();
+end
+
 function get_sasl_handler(host, session)
 	return hosts[host].users.get_sasl_handler(session);
 end
