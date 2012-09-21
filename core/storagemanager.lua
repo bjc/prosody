@@ -118,6 +118,13 @@ end
 function datamanager.store(username, host, datastore, data)
 	return open(host, datastore):set(username, data);
 end
+function datamanager.users(host, datastore, typ)
+	local driver = open(host, datastore, typ);
+	if not driver.users then
+		return function() log("warn", "storage driver %s does not support listing users", driver.name) end
+	end
+	return driver:users();
+end
 function datamanager.stores(username, host, typ)
 	return get_driver(host):stores(username, typ);
 end
