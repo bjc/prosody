@@ -298,6 +298,17 @@ function keyval_store:set(username, data)
 	end
 	if success then return ret, err; else return rollback(nil, ret); end
 end
+function keyval_store:users()
+	local stmt, err = dosql("SELECT DISTINCT `user` FROM `prosody` WHERE `host`=? AND `store`=?", host, self.store);
+	if not stmt then
+		return rollback(nil, err);
+	end
+	local next = stmt:rows();
+	return commit(function()
+		local row = next();
+		return row and row[1];
+	end);
+end
 
 local function map_store_get(key)
 	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");

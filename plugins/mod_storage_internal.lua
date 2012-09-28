@@ -5,8 +5,8 @@ local host = module.host;
 local driver = {};
 local driver_mt = { __index = driver };
 
-function driver:open(store)
-	return setmetatable({ store = store }, driver_mt);
+function driver:open(store, typ)
+	return setmetatable({ store = store, type = typ }, driver_mt);
 end
 function driver:get(user)
 	return datamanager.load(user, host, self.store);
@@ -18,6 +18,10 @@ end
 
 function driver:stores(username)
 	return datamanager.stores(username, host);
+end
+
+function driver:users()
+	return datamanager.users(host, self.store, self.type);
 end
 
 function driver:purge(user)

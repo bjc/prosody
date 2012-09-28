@@ -522,7 +522,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			end
 		end
 	elseif not current_nick then -- not in room
-		if type == "error" or type == "result" and stanza.name == "iq" then
+		if (type == "error" or type == "result") and stanza.name == "iq" then
 			local id = stanza.attr.id;
 			stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
 			if stanza.attr.id then
