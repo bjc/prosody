@@ -16,6 +16,7 @@ OPENSSL_LIB=crypto
 CC=gcc
 CXX=g++
 LD=gcc
+RUNWITH=lua
 
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
@@ -170,6 +171,9 @@ do
       ;;
    --linker=*)
       LD="$value"
+      ;;
+   --runwith=*)
+      RUNWITH="$value"
       ;;
    *)
       echo "Error: Unknown flag: $1"
@@ -341,6 +345,7 @@ LDFLAGS=$LDFLAGS
 CC=$CC
 CXX=$CXX
 LD=$LD
+RUNWITH=$RUNWITH
 
 EOF
 
