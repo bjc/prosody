@@ -7,7 +7,7 @@
 --
 
 local config = require "core.configmanager";
-local modulemanager = require "modulemanager";
+local modulemanager = require "core.modulemanager";
 local array = require "util.array";
 local set = require "util.set";
 local logger = require "util.logger";
