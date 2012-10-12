@@ -228,7 +228,7 @@ function commands.help(session, data)
 		print [[user:create(jid, password) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
-		print [[user:list(hostname) - List users on the specified host]]
+		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -953,17 +953,21 @@ function def_env.user:password(jid, password)
 	end
 end
 
-function def_env.user:list(host)
+function def_env.user:list(host, pat)
 	if not host then
 		return nil, "No host given";
 	elseif not hosts[host] then
 		return nil, "No such host";
 	end
 	local print = self.session.print;
+	local count = 0;
 	for user in um.users(host) do
-		print(user.."@"..host);
+		if not pat or user:match(pat) then
+			print(user.."@"..host);
+		end
+		count = count + 1;
 	end
-	return true;
+	return true, count .. " users total";
 end
 
 def_env.xmpp = {};
