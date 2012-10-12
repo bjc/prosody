@@ -956,6 +956,8 @@ end
 function def_env.user:list(host)
 	if not host then
 		return nil, "No host given";
+	elseif not hosts[host] then
+		return nil, "No such host";
 	end
 	local print = self.session.print;
 	for user in um.users(host) do
