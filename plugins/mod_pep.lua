@@ -10,10 +10,8 @@
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local st = require "util.stanza";
-local hosts = hosts;
-local user_exists = require "core.usermanager".user_exists;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
-local pairs, ipairs = pairs, ipairs;
+local pairs = pairs;
 local next = next;
 local type = type;
 local calculate_hash = require "util.caps".calculate_hash;
