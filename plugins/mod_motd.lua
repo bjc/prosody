@@ -20,7 +20,8 @@ motd_text = motd_text:gsub("^%s*(.-)%s*$", "%1"):gsub("\n%s+", "\n"); -- Strip i
 
 module:hook("presence/bare", function (event)
 		local session, stanza = event.origin, event.stanza;
-		if not session.presence and not stanza.attr.type then
+		if session.username and not session.presence
+		and not stanza.attr.type and not stanza.attr.to then
 			local motd_stanza =
 				st.message({ to = session.full_jid, from = motd_jid })
 					:tag("body"):text(motd_text);
