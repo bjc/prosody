@@ -184,6 +184,14 @@ function stream_callbacks.streamopened(session, attr)
 	-- TODO: Rename session.secure to session.encrypted
 	if session.secure == false then
 		session.secure = true;
+
+		-- Check if TLS compression is used
+		local sock = session.conn:socket();
+		if sock.info then
+			session.compressed = sock:info"compression";
+		elseif sock.compression then
+			session.compressed = sock:compression(); --COMPAT mw/luasec-hg
+		end
 	end
 
 	if session.direction == "incoming" then
