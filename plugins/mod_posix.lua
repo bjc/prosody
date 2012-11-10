@@ -136,8 +136,16 @@ if daemonize == nil then
 	end
 end
 
+local function remove_log_sinks()
+	local lm = require "core.loggingmanager";
+	lm.register_sink_type("console", nil);
+	lm.register_sink_type("stdout", nil);
+	lm.reload_logging();
+end
+
 if daemonize then
 	local function daemonize_server()
+		remove_log_sinks();
 		local ok, ret = pposix.daemonize();
 		if not ok then
 			module:log("error", "Failed to daemonize: %s", ret);
