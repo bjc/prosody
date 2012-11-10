@@ -89,6 +89,10 @@ static int lc_daemonize(lua_State *L)
 	close(0);
 	close(1);
 	close(2);
+	/* Make sure accidental use of FDs 0, 1, 2 don't cause weirdness */
+	open("/dev/null", O_RDONLY);
+	open("/dev/null", O_WRONLY);
+	open("/dev/null", O_WRONLY);
 
 	/* Final fork, use it wisely */
 	if(fork())
