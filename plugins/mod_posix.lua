@@ -145,6 +145,7 @@ end
 
 if daemonize then
 	local function daemonize_server()
+		module:log("info", "Prosody is about to detach from the console, disabling further console output");
 		remove_log_sinks();
 		local ok, ret = pposix.daemonize();
 		if not ok then
