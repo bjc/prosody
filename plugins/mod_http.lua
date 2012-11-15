@@ -67,7 +67,7 @@ function moduleapi.http_url(module, app_name, default_path)
 end
 
 function module.add_host(module)
-	local host = module.host;
+	local host = module:get_option_string("http_host", module.host);
 	local apps = {};
 	module.environment.apps = apps;
 	local function http_app_added(event)
