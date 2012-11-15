@@ -70,8 +70,8 @@ end
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
 
-local sessions = {};
-local inactive_sessions = {}; -- Sessions which have no open requests
+-- All sessions, and sessions that have no requests open
+local sessions, inactive_sessions = module:shared("sessions", "inactive_sessions");
 
 -- Used to respond to idle sessions (those with waiting requests)
 local waiting_requests = {};
