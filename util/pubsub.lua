@@ -244,6 +244,7 @@ function service:publish(node, actor, id, item)
 		node_obj = self.nodes[node];
 	end
 	node_obj.data[id] = item;
+	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster(node, node_obj.subscribers, item);
 	return true;
 end
