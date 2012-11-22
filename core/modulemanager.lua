@@ -111,7 +111,7 @@ local function do_unload_module(host, name)
 	return true;
 end
 
-local function do_load_module(host, module_name)
+local function do_load_module(host, module_name, state)
 	if not (host and module_name) then
 		return nil, "insufficient-parameters";
 	elseif not hosts[host] and host ~= "*"then
@@ -152,7 +152,8 @@ local function do_load_module(host, module_name)
 
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host,
-		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable() }
+		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable(),
+		reloading = not not state, saved_state = state~=true and state or nil }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
@@ -176,6 +177,7 @@ local function do_load_module(host, module_name)
 				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
 			end
 		end
+		api_instance.reloading, api_instance.saved_state = nil, nil;
 
 		if api_instance.host == "*" then
 			if not api_instance.global then -- COMPAT w/pre-0.9
@@ -225,8 +227,9 @@ local function do_reload_module(host, name)
 		end
 	end
 
+	mod.module.reloading = true;
 	do_unload_module(host, name);
-	local ok, err = do_load_module(host, name);
+	local ok, err = do_load_module(host, name, saved or true);
 	if ok then
 		mod = get_module(host, name);
 		if module_has_method(mod, "restore") then
