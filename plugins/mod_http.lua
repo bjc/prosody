@@ -55,7 +55,7 @@ function moduleapi.http_url(module, app_name, default_path)
 		for port, services in pairs(ports) do
 			local url = {
 				scheme = (external_url.scheme or services[1].service.name);
-				host = (external_url.host or module.host);
+				host = (external_url.host or module:get_option_string("http_host", module.host));
 				port = tonumber(external_url.port) or port or 80;
 				path = normalize_path(external_url.path or "/")..
 					(get_base_path(module, app_name, default_path or "/"..app_name):sub(2));
