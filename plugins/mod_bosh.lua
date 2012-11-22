@@ -18,6 +18,7 @@ local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
+local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
@@ -254,6 +255,8 @@ function stream_callbacks.streamopened(context, attr)
 		};
 		sessions[sid] = session;
 		
+		local filter = initialize_filters(session);
+		
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 
@@ -267,6 +270,7 @@ function stream_callbacks.streamopened(context, attr)
 				s = st.clone(s);
 				s.attr.xmlns = "jabber:client";
 			end
+			s = filter("stanzas/out", s);
 			--log("debug", "Sending BOSH data: %s", tostring(s));
 			t_insert(session.send_buffer, tostring(s));
 
@@ -354,6 +358,7 @@ function stream_callbacks.handlestanza(context, stanza)
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
 		end
+		stanza = session.filter("stanzas/in", stanza);
 		core_process_stanza(session, stanza);
 	end
 end
