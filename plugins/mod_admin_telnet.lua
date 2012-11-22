@@ -72,6 +72,64 @@ function console:new_session(conn)
 	return session;
 end
 
+function console:process_line(session, line)
+	local useglobalenv;
+	
+	if line:match("^>") then
+		line = line:gsub("^>", "");
+		useglobalenv = true;
+	elseif line == "\004" then
+		commands["bye"](session, line);
+		return;
+	else
+		local command = line:match("^%w+") or line:match("%p");
+		if commands[command] then
+			commands[command](session, line);
+			return;
+		end
+	end
+	
+	session.env._ = line;
+	
+	local chunkname = "=console";
+	local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
+	local chunk, err = envload("return "..line, chunkname, env);
+	if not chunk then
+		chunk, err = envload(line, chunkname, env);
+		if not chunk then
+			err = err:gsub("^%[string .-%]:%d+: ", "");
+			err = err:gsub("^:%d+: ", "");
+			err = err:gsub("'<eof>'", "the end of the line");
+			session.print("Sorry, I couldn't understand that... "..err);
+			return;
+		end
+	end
+	
+	local ranok, taskok, message = pcall(chunk);
+	
+	if not (ranok or message or useglobalenv) and commands[line:lower()] then
+		commands[line:lower()](session, line);
+		return;
+	end
+	
+	if not ranok then
+		session.print("Fatal error while running command, it did not complete");
+		session.print("Error: "..taskok);
+		return;
+	end
+	
+	if not message then
+		session.print("Result: "..tostring(taskok));
+		return;
+	elseif (not taskok) and message then
+		session.print("Command completed with a problem");
+		session.print("Message: "..tostring(message));
+		return;
+	end
+	
+	session.print("OK: "..tostring(message));
+end
+
 local sessions = {};
 
 function console_listener.onconnect(conn)
@@ -91,65 +149,7 @@ function console_listener.onincoming(conn, data)
 	end
 
 	for line in data:gmatch("[^\n]*[\n\004]") do
-		-- Handle data (loop allows us to break to add \0 after response)
-		repeat
-			local useglobalenv;
-
-			if line:match("^>") then
-				line = line:gsub("^>", "");
-				useglobalenv = true;
-			elseif line == "\004" then
-				commands["bye"](session, line);
-				break;
-			else
-				local command = line:match("^%w+") or line:match("%p");
-				if commands[command] then
-					commands[command](session, line);
-					break;
-				end
-			end
-
-			session.env._ = line;
-			
-			local chunkname = "=console";
-			local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
-			local chunk, err = envload("return "..line, chunkname, env);
-			if not chunk then
-				chunk, err = envload(line, chunkname, env);
-				if not chunk then
-					err = err:gsub("^%[string .-%]:%d+: ", "");
-					err = err:gsub("^:%d+: ", "");
-					err = err:gsub("'<eof>'", "the end of the line");
-					session.print("Sorry, I couldn't understand that... "..err);
-					break;
-				end
-			end
-		
-			local ranok, taskok, message = pcall(chunk);
-			
-			if not (ranok or message or useglobalenv) and commands[line:lower()] then
-				commands[line:lower()](session, line);
-				break;
-			end
-			
-			if not ranok then
-				session.print("Fatal error while running command, it did not complete");
-				session.print("Error: "..taskok);
-				break;
-			end
-			
-			if not message then
-				session.print("Result: "..tostring(taskok));
-				break;
-			elseif (not taskok) and message then
-				session.print("Command completed with a problem");
-				session.print("Message: "..tostring(message));
-				break;
-			end
-			
-			session.print("OK: "..tostring(message));
-		until true
-		
+		console:process_line(session, line);
 		session.send(string.char(0));
 	end
 	session.partial_data = data:match("[^\n]+$");
