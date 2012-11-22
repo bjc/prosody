@@ -24,7 +24,7 @@ local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
 local muc_domain = nil; --module:get_host();
-local default_history_length = 20;
+local default_history_length, max_history_length = 20, math.huge;
 
 ------------
 local function filter_xmlns_from_array(array, filters)
@@ -339,7 +339,7 @@ function room_mt:get_historylength()
 	return self._data.history_length or default_history_length;
 end
 function room_mt:set_historylength(length)
-	length = math.min(tonumber(length) or default_history_length, self._data_max_history_length or math.huge);
+	length = math.min(tonumber(length) or default_history_length, max_history_length or math.huge);
 	if length == default_history_length then
 		length = nil;
 	end
@@ -1150,11 +1150,15 @@ function _M.new_room(jid, config)
 		_occupants = {};
 		_data = {
 		    whois = 'moderators';
-		    history_length = (config and config.max_history_length) or default_history_length;
-		    max_history_length = (config and config.max_history_length) or default_history_length;
+		    history_length = math.min((config and config.history_length)
+		    	or default_history_length, max_history_length);
 		};
 		_affiliations = {};
 	}, room_mt);
+end
+
+function _M.set_max_history_length(_max_history_length)
+	max_history_length = _max_history_length or math.huge;
 end
 
 _M.room_mt = room_mt;
