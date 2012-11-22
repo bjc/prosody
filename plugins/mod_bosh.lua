@@ -18,6 +18,7 @@ local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
 local log = logger.init("mod_bosh");
+local math_min = math.min;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -30,6 +31,7 @@ local BOSH_DEFAULT_HOLD = module:get_option_number("bosh_default_hold", 1);
 local BOSH_DEFAULT_INACTIVITY = module:get_option_number("bosh_max_inactivity", 60);
 local BOSH_DEFAULT_POLLING = module:get_option_number("bosh_max_polling", 5);
 local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
+local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
@@ -243,7 +245,7 @@ function stream_callbacks.streamopened(context, attr)
 		sid = new_uuid();
 		local session = {
 			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
-			bosh_version = attr.ver, bosh_wait = attr.wait, streamid = sid,
+			bosh_version = attr.ver, bosh_wait = math_min(attr.wait, bosh_max_wait), streamid = sid,
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
@@ -278,10 +280,10 @@ function stream_callbacks.streamopened(context, attr)
 					sid = sid;
 				};
 				if creating_session then
-					body_attr.wait = attr.wait;
 					body_attr.inactivity = tostring(BOSH_DEFAULT_INACTIVITY);
 					body_attr.polling = tostring(BOSH_DEFAULT_POLLING);
 					body_attr.requests = tostring(BOSH_DEFAULT_REQUESTS);
+					body_attr.wait = tostring(session.bosh_wait);
 					body_attr.hold = tostring(session.bosh_hold);
 					body_attr.authid = sid;
 					body_attr.secure = "true";
