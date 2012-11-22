@@ -37,7 +37,7 @@ local rooms = rooms;
 local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
 
 -- Configurable options
-local max_history_messages = module:get_option_number("max_history_messages");
+muclib.set_max_history_length(module:get_option_number("max_history_messages"));
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
@@ -82,11 +82,8 @@ for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
 	local data = datamanager.load(node, muc_host, "config");
 	if data then
-		local room = muc_new_room(jid, {
-			max_history_length = max_history_messages;
-		});
+		local room = muc_new_room(jid);
 		room._data = data._data;
-		room._data.max_history_length = max_history_messages; -- Overwrite old max_history_length in data with current settings
 		room._affiliations = data._affiliations;
 		room.route_stanza = room_route_stanza;
 		room.save = room_save;
@@ -99,9 +96,7 @@ for jid in pairs(persistent_rooms) do
 end
 if persistent_errors then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 
-local host_room = muc_new_room(muc_host, {
-	max_history_length = max_history_messages;
-});
+local host_room = muc_new_room(muc_host);
 host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
 
@@ -154,9 +149,7 @@ function stanza_handler(event)
 		if not(restrict_room_creation) or
 		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-			room = muc_new_room(bare, {
-				max_history_length = max_history_messages;
-			});
+			room = muc_new_room(bare);
 			room.route_stanza = room_route_stanza;
 			room.save = room_save;
 			rooms[bare] = room;
