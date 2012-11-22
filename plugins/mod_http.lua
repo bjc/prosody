@@ -48,16 +48,16 @@ local ports_by_scheme = { http = 80, https = 443, };
 -- Helper to deduce a module's external URL
 function moduleapi.http_url(module, app_name, default_path)
 	app_name = app_name or (module.name:gsub("^http_", ""));
-	local ext = url_parse(module:get_option_string("http_external_url")) or {};
+	local external_url = url_parse(module:get_option_string("http_external_url")) or {};
 	local services = portmanager.get_active_services();
 	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do
 		for port, services in pairs(ports) do
 			local url = {
-				scheme = (ext.scheme or services[1].service.name);
-				host = (ext.host or module.host);
-				port = tonumber(ext.port) or port or 80;
-				path = normalize_path(ext.path or "/")..
+				scheme = (external_url.scheme or services[1].service.name);
+				host = (external_url.host or module.host);
+				port = tonumber(external_url.port) or port or 80;
+				path = normalize_path(external_url.path or "/")..
 					(get_base_path(module, app_name, default_path or "/"..app_name):sub(2));
 			}
 			if ports_by_scheme[url.scheme] == url.port then url.port = nil end
