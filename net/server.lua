@@ -43,7 +43,7 @@ end
 if prosody then
 	local config_get = require "core.configmanager".get;
 	local function load_config()
-		local settings = config_get("*", "core", "network_settings");
+		local settings = config_get("*", "core", "network_settings") or {};
 		if use_luaevent then
 			local event_settings = {
 				ACCEPT_DELAY = settings.event_accept_retry_interval;
