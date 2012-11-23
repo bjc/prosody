@@ -36,7 +36,39 @@ if use_luaevent then
 		end
 	end
 else
+	use_luaevent = false;
 	server = require "net.server_select";
+end
+
+if prosody then
+	local config_get = require "core.configmanager".get;
+	local function load_config()
+		local settings = config_get("*", "core", "network_settings");
+		if use_luaevent then
+			local event_settings = {
+				ACCEPT_DELAY = settings.event_accept_retry_interval;
+				CLEAR_DELAY = settings.event_clear_interval;
+				CONNECT_TIMEOUT = settings.connect_timeout;
+				DEBUG = settings.debug;
+				HANDSHAKE_TIMEOUT = settings.ssl_handshake_timeout;
+				MAX_CONNECTIONS = settings.max_connections;
+				MAX_HANDSHAKE_ATTEMPTS = settings.max_ssl_handshake_roundtrips;
+				MAX_READ_LENGTH = settings.max_receive_buffer_size;
+				MAX_SEND_LENGTH = settings.max_send_buffer_size;
+				READ_TIMEOUT = settings.read_timeout;
+				WRITE_TIMEOUT = settings.send_timeout;
+			};
+
+			for k, v in pairs(event_settings) do
+				server.cfg[k] = v;
+			end
+			return true;
+		else
+			return server.changesettings(settings);
+		end
+	end
+	load_config();
+	prosody.events.add_handler("config-reloaded", load_config);
 end
 
 -- require "net.server" shall now forever return this,
