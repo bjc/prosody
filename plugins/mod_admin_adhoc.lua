@@ -212,15 +212,6 @@ function end_user_session_handler(self, data, state)
 	end
 end
 
-local end_user_session_layout = dataforms_new{
-	title = "Ending a User Session";
-	instructions = "Fill out this form to end a user's session.";
-
-	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) for which to end sessions" };
-};
-
-
 function get_user_password_handler(self, data, state)
 	local get_user_password_layout = dataforms_new{
 		title = "Getting User's Password";
