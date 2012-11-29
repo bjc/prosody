@@ -88,10 +88,10 @@ function module.add_host(module)
 					local data = handler;
 					handler = function () return data; end
 				elseif event_name:sub(-2, -1) == "/*" then
-					local base_path = event_name:match("/(.+)/*$");
+					local base_path_len = #event_name:match("(/.+/)%*$")+1;
 					local _handler = handler;
 					handler = function (event)
-						local path = event.request.path:sub(#base_path+1);
+						local path = event.request.path:sub(base_path_len);
 						return _handler(event, path);
 					end;
 				end
