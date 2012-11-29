@@ -749,16 +749,16 @@ changesettings = function( new )
 	if type( new ) ~= "table" then
 		return nil, "invalid settings table"
 	end
-	_selecttimeout = tonumber( new.timeout ) or _selecttimeout
-	_sleeptime = tonumber( new.sleeptime ) or _sleeptime
-	_maxsendlen = tonumber( new.maxsendlen ) or _maxsendlen
-	_maxreadlen = tonumber( new.maxreadlen ) or _maxreadlen
-	_checkinterval = tonumber( new.checkinterval ) or _checkinterval
-	_sendtimeout = tonumber( new.sendtimeout ) or _sendtimeout
-	_readtimeout = tonumber( new.readtimeout ) or _readtimeout
-	_cleanqueue = new.cleanqueue
-	_maxclientsperserver = new._maxclientsperserver or _maxclientsperserver
-	_maxsslhandshake = new._maxsslhandshake or _maxsslhandshake
+	_selecttimeout = tonumber( new.select_timeout ) or _selecttimeout
+	_sleeptime = tonumber( new.select_sleep_time ) or _sleeptime
+	_maxsendlen = tonumber( new.max_send_buffer_size ) or _maxsendlen
+	_maxreadlen = tonumber( new.max_receive_buffer_size ) or _maxreadlen
+	_checkinterval = tonumber( new.select_idle_check_interval ) or _checkinterval
+	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
+	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
+	_cleanqueue = new.select_clean_queue
+	_maxclientsperserver = new.max_connections or _maxclientsperserver
+	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
 	return true
 end
 
