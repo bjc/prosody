@@ -228,7 +228,8 @@ local function rollback(...)
 	return ...;
 end
 local function commit(...)
-	if not connection:commit() then return nil, "SQL commit failed"; end
+	local success,err = connection:commit();
+	if not success then return nil, "SQL commit failed: "..tostring(err); end
 	return ...;
 end
 

@@ -185,6 +185,7 @@ function bind_resource(session, resource)
 			bare_sessions[session.username..'@'..session.host] = nil;
 			hosts[session.host].sessions[session.username] = nil;
 		end
+		session.log("error", "Roster loading failed: %s", err);
 		return nil, "cancel", "internal-server-error", "Error loading roster";
 	end
 	
