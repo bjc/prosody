@@ -77,17 +77,22 @@ local function room_save(room, forced)
 	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
 end
 
+function create_room(jid)
+	local room = muc_new_room(jid);
+	room.route_stanza = room_route_stanza;
+	room.save = room_save;
+	rooms[jid] = room;
+	return room;
+end
+
 local persistent_errors = false;
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
 	local data = datamanager.load(node, muc_host, "config");
 	if data then
-		local room = muc_new_room(jid);
+		local room = create_room(jid);
 		room._data = data._data;
 		room._affiliations = data._affiliations;
-		room.route_stanza = room_route_stanza;
-		room.save = room_save;
-		rooms[jid] = room;
 	else -- missing room data
 		persistent_rooms[jid] = nil;
 		module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
@@ -149,10 +154,7 @@ function stanza_handler(event)
 		if not(restrict_room_creation) or
 		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-			room = muc_new_room(bare);
-			room.route_stanza = room_route_stanza;
-			room.save = room_save;
-			rooms[bare] = room;
+			room = create_room(bare);
 		end
 	end
 	if room then
@@ -190,14 +192,11 @@ module.save = function()
 end
 module.restore = function(data)
 	for jid, oldroom in pairs(data.rooms or {}) do
-		local room = muc_new_room(jid);
+		local room = create_room(jid);
 		room._jid_nick = oldroom._jid_nick;
 		room._occupants = oldroom._occupants;
 		room._data = oldroom._data;
 		room._affiliations = oldroom._affiliations;
-		room.route_stanza = room_route_stanza;
-		room.save = room_save;
-		rooms[jid] = room;
 	end
 	hosts[module:get_host()].muc = { rooms = rooms };
 end
