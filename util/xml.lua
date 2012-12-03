@@ -2,7 +2,7 @@
 local st = require "util.stanza";
 local lxp = require "lxp";
 
-module("template")
+module("xml")
 
 local parse_xml = (function()
 	local ns_prefixes = {
