@@ -5,7 +5,7 @@ local url_parse = require "socket.url".parse;
 local urldecode = require "net.http".urldecode;
 
 local function preprocess_path(path)
-	path = urldecode((path:gsub("//+". "/")));
+	path = urldecode((path:gsub("//+", "/")));
 	if path:sub(1,1) ~= "/" then
 		path = "/"..path;
 	end
