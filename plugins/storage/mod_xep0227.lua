@@ -8,7 +8,7 @@ local os_remove = os.remove;
 local io_open = io.open;
 
 local st = require "util.stanza";
-local parse_xml_real = module:require("xmlparse");
+local parse_xml_real = require "util.xml".parse;
 
 local function getXml(user, host)
 	local jid = user.."@"..host;
