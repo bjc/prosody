@@ -190,7 +190,7 @@ function get_service_at(interface, port)
 end
 
 function get_service(service_name)
-	return services[service_name];
+	return (services[service_name] or {})[1];
 end
 
 function get_active_services(...)
