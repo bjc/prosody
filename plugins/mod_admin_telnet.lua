@@ -960,14 +960,15 @@ function def_env.user:list(host, pat)
 		return nil, "No such host";
 	end
 	local print = self.session.print;
-	local count = 0;
+	local total, matches = 0, 0;
 	for user in um.users(host) do
 		if not pat or user:match(pat) then
 			print(user.."@"..host);
+			matches = matches + 1;
 		end
-		count = count + 1;
+		total = total + 1;
 	end
-	return true, count .. " users total";
+	return true, "Showing "..(pat and (matches.." of ") or "all " )..total.." users";
 end
 
 def_env.xmpp = {};
