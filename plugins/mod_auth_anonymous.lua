@@ -41,6 +41,10 @@ function provider.get_sasl_handler()
 	return new_sasl(module.host, anonymous_authentication_profile);
 end
 
+function provider.users()
+	return next, hosts[host].sessions, nil;
+end
+
 -- datamanager callback to disable writes
 local function dm_callback(username, host, datastore, data)
 	if host == module.host then

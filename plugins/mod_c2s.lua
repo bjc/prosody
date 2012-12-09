@@ -66,6 +66,14 @@ function stream_callbacks.streamopened(session, attr)
 	-- since we now have a new stream header, session is secured
 	if session.secure == false then
 		session.secure = true;
+
+		-- Check if TLS compression is used
+		local sock = session.conn:socket();
+		if sock.info then
+			session.compressed = sock:info"compression";
+		elseif sock.compression then
+			session.compressed = sock:compression(); --COMPAT mw/luasec-hg
+		end
 	end
 
 	local features = st.stanza("stream:features");
@@ -189,6 +197,14 @@ function listener.onconnect(conn)
 	-- Client is using legacy SSL (otherwise mod_tls sets this flag)
 	if conn:ssl() then
 		session.secure = true;
+
+		-- Check if TLS compression is used
+		local sock = conn:socket();
+		if sock.info then
+			session.compressed = sock:info"compression";
+		elseif sock.compression then
+			session.compressed = sock:compression(); --COMPAT mw/luasec-hg
+		end
 	end
 	
 	if opt_keepalives then
