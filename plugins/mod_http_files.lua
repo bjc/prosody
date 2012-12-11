@@ -9,6 +9,7 @@
 module:depends("http");
 local lfs = require "lfs";
 
+local os_date = os.date;
 local open = io.open;
 local stat = lfs.attributes;
 
@@ -35,6 +36,7 @@ function serve_file(event, path)
 		return 404;
 	end
 
+	response.headers.last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
 
 	local tag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
 	response.headers.etag = tag;
