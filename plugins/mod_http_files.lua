@@ -35,6 +35,13 @@ function serve_file(event, path)
 		return 404;
 	end
 
+
+	local tag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
+	response.headers.etag = tag;
+	if tag == request.headers.if_none_match then
+		return 304;
+	end
+
 	if attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
 			response.headers.location = orig_path.."/";
