@@ -9,50 +9,112 @@
 module:depends("http");
 local lfs = require "lfs";
 
+local os_date = os.date;
 local open = io.open;
 local stat = lfs.attributes;
 
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
+local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
+local show_file_list = module:get_option_boolean("http_files_show_list");
 
--- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
-local mime_map = {
-	html = "text/html";
-	htm = "text/html";
-	xml = "text/xml";
-	xsl = "text/xml";
-	txt = "text/plain; charset=utf-8";
-	js = "text/javascript";
-	css = "text/css";
-};
+local mime_map = module:shared("mime").types;
+if not mime_map then
+	mime_map = {
+		html = "text/html", htm = "text/html",
+		xml = "application/xml",
+		txt = "text/plain",
+		css = "text/css",
+		js = "application/javascript",
+		png = "image/png",
+		gif = "image/gif",
+		jpeg = "image/jpeg", jpg = "image/jpeg",
+		svg = "image/svg+xml",
+	};
+	module:shared("mime").types = mime_map;
+
+	local mime_types, err = open(module:get_option_string("mime_types_file", "/etc/mime.types"),"r");
+	if mime_types then
+		local mime_data = mime_types:read("*a");
+		mime_types:close();
+		setmetatable(mime_map, {
+			__index = function(t, ext)
+				local typ = mime_data:match("\n(%S+)[^\n]*%s"..(ext:lower()).."%s") or "application/octet-stream";
+				t[ext] = typ;
+				return typ;
+			end
+		});
+	end
+end
+
+local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
 
 function serve_file(event, path)
-	local response = event.response;
-	local orig_path = event.request.path;
+	local request, response = event.request, event.response;
+	local orig_path = request.path;
 	local full_path = http_base.."/"..path;
-	if stat(full_path, "mode") == "directory" then
+	local attr = stat(full_path);
+	if not attr then
+		return 404;
+	end
+
+	response.headers.last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
+
+	local tag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
+	response.headers.etag = tag;
+	if tag == request.headers.if_none_match then
+		return 304;
+	end
+
+	local data = cache[path];
+	if data then
+		response.headers.content_type = data.content_type;
+		data = data.data;
+	elseif attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
 			response.headers.location = orig_path.."/";
 			return 301;
 		end
-		if stat(full_path.."index.html", "mode") == "file" then
-			return serve_file(event, path.."index.html");
+		for i=1,#dir_indices do
+			if stat(full_path..dir_indices[i], "mode") == "file" then
+				return serve_file(event, path..dir_indices[i]);
+			end
 		end
 
-		-- TODO File listing
-		return 403;
+		if not show_file_list then
+			return 403;
+		else
+			local html = require"util.stanza".stanza("html")
+				:tag("head"):tag("title"):text(path):up()
+					:tag("meta", { charset="utf-8" }):up()
+				:up()
+				:tag("body"):tag("h1"):text(path):up()
+					:tag("ul");
+			for file in lfs.dir(full_path) do
+				if file:sub(1,1) ~= "." then
+					local attr = stat(full_path..file) or {};
+					html:tag("li", { class = attr.mode })
+						:tag("a", { href = file }):text(file)
+					:up():up();
+				end
+			end
+			data = "<!DOCTYPE html>\n"..tostring(html);
+			cache[path] = { data = html, content_type = mime_map.html; hits = 0 };
+			response.headers.content_type = mime_map.html;
+		end
+
+	else
+		local f = open(full_path, "rb");
+		data = f and f:read("*a");
+		f:close();
+		if not data then
+			return 403;
+		end
+		local ext = path:match("%.([^.]*)$");
+		local content_type = mime_map[ext];
+		cache[path] = { data = data; content_type = content_type; };
+		response.headers.content_type = content_type;
 	end
-	local f, err = open(full_path, "rb");
-	if not f then
-		module:log("warn", "Failed to open file: %s", err);
-		return 404;
-	end
-	local data = f:read("*a");
-	f:close();
-	if not data then
-		return 403;
-	end
-	local ext = path:match("%.([^.]*)$");
-	response.headers.content_type = mime_map[ext]; -- Content-Type should be nil when not known
+
 	return response:send(data);
 end
 
