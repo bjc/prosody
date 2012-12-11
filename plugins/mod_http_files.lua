@@ -27,10 +27,15 @@ local mime_map = {
 };
 
 function serve_file(event, path)
-	local response = event.response;
-	local orig_path = event.request.path;
+	local request, response = event.request, event.response;
+	local orig_path = request.path;
 	local full_path = http_base.."/"..path;
-	if stat(full_path, "mode") == "directory" then
+	local attr = stat(full_path);
+	if not attr then
+		return 404;
+	end
+
+	if attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
 			response.headers.location = orig_path.."/";
 			return 301;
@@ -44,6 +49,7 @@ function serve_file(event, path)
 		-- TODO File listing
 		return 403;
 	end
+
 	local f, err = open(full_path, "rb");
 	if not f then
 		module:log("warn", "Failed to open file: %s", err);
