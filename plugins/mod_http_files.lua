@@ -16,16 +16,34 @@ local stat = lfs.attributes;
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
 local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
 
--- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
-local mime_map = {
-	html = "text/html";
-	htm = "text/html";
-	xml = "text/xml";
-	xsl = "text/xml";
-	txt = "text/plain; charset=utf-8";
-	js = "text/javascript";
-	css = "text/css";
-};
+local mime_map = module:shared("mime").types;
+if not mime_map then
+	mime_map = {
+		html = "text/html", htm = "text/html",
+		xml = "application/xml",
+		txt = "text/plain",
+		css = "text/css",
+		js = "application/javascript",
+		png = "image/png",
+		gif = "image/gif",
+		jpeg = "image/jpeg", jpg = "image/jpeg",
+		svg = "image/svg+xml",
+	};
+	module:shared("mime").types = mime_map;
+
+	local mime_types, err = open(module:get_option_string("mime_types_file", "/etc/mime.types"),"r");
+	if mime_types then
+		local mime_data = mime_types:read("*a");
+		mime_types:close();
+		setmetatable(mime_map, {
+			__index = function(t, ext)
+				local typ = mime_data:match("\n(%S+)[^\n]*%s"..(ext:lower()).."%s") or "application/octet-stream";
+				t[ext] = typ;
+				return typ;
+			end
+		});
+	end
+end
 
 local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
 
