@@ -27,6 +27,8 @@ local mime_map = {
 	css = "text/css";
 };
 
+local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
+
 function serve_file(event, path)
 	local request, response = event.request, event.response;
 	local orig_path = request.path;
@@ -44,7 +46,11 @@ function serve_file(event, path)
 		return 304;
 	end
 
-	if attr.mode == "directory" then
+	local data = cache[path];
+	if data then
+		response.headers.content_type = data.content_type;
+		data = data.data;
+	elseif attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
 			response.headers.location = orig_path.."/";
 			return 301;
@@ -57,20 +63,19 @@ function serve_file(event, path)
 
 		-- TODO File listing
 		return 403;
+	else
+		local f = open(full_path, "rb");
+		data = f and f:read("*a");
+		f:close();
+		if not data then
+			return 403;
+		end
+		local ext = path:match("%.([^.]*)$");
+		local content_type = mime_map[ext];
+		cache[path] = { data = data; content_type = content_type; };
+		response.headers.content_type = content_type;
 	end
 
-	local f, err = open(full_path, "rb");
-	if not f then
-		module:log("warn", "Failed to open file: %s", err);
-		return 404;
-	end
-	local data = f:read("*a");
-	f:close();
-	if not data then
-		return 403;
-	end
-	local ext = path:match("%.([^.]*)$");
-	response.headers.content_type = mime_map[ext]; -- Content-Type should be nil when not known
 	return response:send(data);
 end
 
