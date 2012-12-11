@@ -13,6 +13,7 @@ local open = io.open;
 local stat = lfs.attributes;
 
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
+local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
 
 -- TODO: Should we read this from /etc/mime.types if it exists? (startup time...?)
 local mime_map = {
@@ -34,8 +35,10 @@ function serve_file(event, path)
 			response.headers.location = orig_path.."/";
 			return 301;
 		end
-		if stat(full_path.."index.html", "mode") == "file" then
-			return serve_file(event, path.."index.html");
+		for i=1,#dir_indices do
+			if stat(full_path..dir_indices[i], "mode") == "file" then
+				return serve_file(event, path..dir_indices[i]);
+			end
 		end
 
 		-- TODO File listing
