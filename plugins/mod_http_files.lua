@@ -15,6 +15,7 @@ local stat = lfs.attributes;
 
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
 local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
+local show_file_list = module:get_option_boolean("http_files_show_list");
 
 local mime_map = module:shared("mime").types;
 if not mime_map then
@@ -79,8 +80,28 @@ function serve_file(event, path)
 			end
 		end
 
-		-- TODO File listing
-		return 403;
+		if not show_file_list then
+			return 403;
+		else
+			local html = require"util.stanza".stanza("html")
+				:tag("head"):tag("title"):text(path):up()
+					:tag("meta", { charset="utf-8" }):up()
+				:up()
+				:tag("body"):tag("h1"):text(path):up()
+					:tag("ul");
+			for file in lfs.dir(full_path) do
+				if file:sub(1,1) ~= "." then
+					local attr = stat(full_path..file) or {};
+					html:tag("li", { class = attr.mode })
+						:tag("a", { href = file }):text(file)
+					:up():up();
+				end
+			end
+			data = "<!DOCTYPE html>\n"..tostring(html);
+			cache[path] = { data = html, content_type = mime_map.html; hits = 0 };
+			response.headers.content_type = mime_map.html;
+		end
+
 	else
 		local f = open(full_path, "rb");
 		data = f and f:read("*a");
