@@ -340,7 +340,6 @@ end
 
 function purge(username, host)
 	local host_dir = format("%s/%s/", data_path, encode(host));
-	local deleted = 0;
 	local errs = {};
 	for file in lfs.dir(host_dir) do
 		if lfs.attributes(host_dir..file, "mode") == "directory" then
