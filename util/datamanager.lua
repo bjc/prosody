@@ -113,12 +113,9 @@ function getpath(username, host, datastore, ext, create)
 	if username then
 		if create then mkdir(mkdir(mkdir(data_path).."/"..host).."/"..datastore); end
 		return format("%s/%s/%s/%s.%s", data_path, host, datastore, username, ext);
-	elseif host then
+	else
 		if create then mkdir(mkdir(data_path).."/"..host); end
 		return format("%s/%s/%s.%s", data_path, host, datastore, ext);
-	else
-		if create then mkdir(data_path); end
-		return format("%s/%s.%s", data_path, datastore, ext);
 	end
 end
 
