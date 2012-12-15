@@ -66,15 +66,11 @@ local function plain(self, message)
 	self.username = authentication
 	if state == false then
 		return "failure", "account-disabled";
-	elseif state == nil then
+	elseif state == nil or not correct then
 		return "failure", "not-authorized", "Unable to authorize you with the authentication credentials you've sent.";
 	end
 
-	if correct then
-		return "success";
-	else
-		return "failure", "not-authorized", "Unable to authorize you with the authentication credentials you've sent.";
-	end
+	return "success";
 end
 
 function init(registerMechanism)
