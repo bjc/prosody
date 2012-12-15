@@ -914,8 +914,8 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		elseif type ~= "error" and type ~= "result" then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
-	elseif stanza.name == "message" and not stanza.attr.type and #stanza.tags == 1 and self._jid_nick[stanza.attr.from]
-		and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" then
+	elseif stanza.name == "message" and not(type == "chat" or type == "error" or type == "groupchat" or type == "headline") and #stanza.tags == 1
+		and self._jid_nick[stanza.attr.from] and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" then
 		local x = stanza.tags[1];
 		local payload = (#x.tags == 1 and x.tags[1]);
 		if payload and payload.name == "invite" and payload.attr.to then
