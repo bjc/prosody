@@ -281,7 +281,7 @@ local type_map = {
 
 function users(host, store, typ)
 	typ = type_map[typ or "keyval"];
-	local store_dir = format("%s/%s/%s", data_path, encode(host), encode(store));
+	local store_dir = format("%s/%s/%s", data_path, encode(host), store);
 
 	local mode, err = lfs.attributes(store_dir, "mode");
 	if not mode then
