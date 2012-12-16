@@ -57,11 +57,14 @@ function serve_file(event, path)
 		return 404;
 	end
 
-	response.headers.last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
+	local last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
+	response.headers.last_modified = last_modified;
 
-	local tag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
-	response.headers.etag = tag;
-	if tag == request.headers.if_none_match then
+	local etag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
+	response.headers.etag = etag;
+
+	if etag == request.headers.if_none_match
+	or last_modified == request.headers.if_modified_since then
 		return 304;
 	end
 
@@ -98,7 +101,7 @@ function serve_file(event, path)
 				end
 			end
 			data = "<!DOCTYPE html>\n"..tostring(html);
-			cache[path] = { data = html, content_type = mime_map.html; hits = 0 };
+			cache[path] = { data = data, content_type = mime_map.html; hits = 0 };
 			response.headers.content_type = mime_map.html;
 		end
 
