@@ -98,7 +98,7 @@ function serve_file(event, path)
 				end
 			end
 			data = "<!DOCTYPE html>\n"..tostring(html);
-			cache[path] = { data = html, content_type = mime_map.html; hits = 0 };
+			cache[path] = { data = data, content_type = mime_map.html; hits = 0 };
 			response.headers.content_type = mime_map.html;
 		end
 
