@@ -7,6 +7,7 @@
 --
 
 module:depends("http");
+local server = require"net.http.server";
 local lfs = require "lfs";
 
 local os_date = os.date;
@@ -94,27 +95,14 @@ function serve(opts)
 				end
 			end
 
-			if not directory_index then
-				return 403;
-			else
-				local html = require"util.stanza".stanza("html")
-					:tag("head"):tag("title"):text(path):up()
-						:tag("meta", { charset="utf-8" }):up()
-					:up()
-					:tag("body"):tag("h1"):text(path):up()
-						:tag("ul");
-				for file in lfs.dir(full_path) do
-					if file:sub(1,1) ~= "." then
-						local attr = stat(full_path..file) or {};
-						html:tag("li", { class = attr.mode })
-							:tag("a", { href = file }):text(file)
-						:up():up();
-					end
-				end
-				data = "<!DOCTYPE html>\n"..tostring(html);
-				cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
-				response_headers.content_type = mime_map.html;
+			if directory_index then
+				data = server._events.fire_event("directory-index", { path = request.path, full_path = full_path });
 			end
+			if not data then
+				return 403;
+			end
+			cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
+			response_headers.content_type = mime_map.html;
 
 		else
 			local f, err = open(full_path, "rb");
