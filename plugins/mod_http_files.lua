@@ -126,6 +126,14 @@ function serve(opts)
 	return serve_file;
 end
 
+function wrap_route(routes)
+	for route,handler in pairs(routes) do
+		if type(handler) == "table" and handler.path then
+			routes[route] = serve(handler);
+		end
+	end
+	return routes;
+end
 
 if base_path then
 	module:provides("http", {
