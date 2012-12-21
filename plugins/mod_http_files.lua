@@ -78,11 +78,11 @@ function serve(opts)
 			return 304;
 		end
 
-		local data = cache[path];
+		local data = cache[orig_path];
 		if data and data.etag == etag then
 			response_headers.content_type = data.content_type;
 			data = data.data;
-		elseif attr.mode == "directory" then
+		elseif attr.mode == "directory" and path then
 			if full_path:sub(-1) ~= "/" then
 				local path = { is_absolute = true, is_directory = true };
 				for dir in orig_path:gmatch("[^/]+") do path[#path+1]=dir; end
@@ -101,7 +101,7 @@ function serve(opts)
 			if not data then
 				return 403;
 			end
-			cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
+			cache[orig_path] = { data = data, content_type = mime_map.html; etag = etag; };
 			response_headers.content_type = mime_map.html;
 
 		else
@@ -114,9 +114,9 @@ function serve(opts)
 				module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
 				return 403;
 			end
-			local ext = path:match("%.([^./]+)$");
+			local ext = orig_path:match("%.([^./]+)$");
 			local content_type = ext and mime_map[ext];
-			cache[path] = { data = data; content_type = content_type; etag = etag };
+			cache[orig_path] = { data = data; content_type = content_type; etag = etag };
 			response_headers.content_type = content_type;
 		end
 
