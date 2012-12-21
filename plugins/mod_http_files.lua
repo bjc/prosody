@@ -106,9 +106,11 @@ function serve_file(event, path)
 		end
 
 	else
-		local f = open(full_path, "rb");
-		data = f and f:read("*a");
-		f:close();
+		local f, err = open(full_path, "rb");
+		if f then
+			data = f:read("*a");
+			f:close();
+		end
 		if not data then
 			return 403;
 		end
