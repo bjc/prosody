@@ -91,7 +91,14 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							responseheaders = headers;
 						};
 					else
-						local parsed_url = url_parse(path);
+						local parsed_url;
+						if path:byte() == 47 then -- starts with /
+							local _path, _query = path:match("([^?]*).?(.*)");
+							if _query == "" then _query = nil; end
+							parsed_url = { path = _path, query = _query };
+						else
+							parsed_url = url_parse(path);
+						end
 						path = preprocess_path(parsed_url.path);
 						headers.host = parsed_url.host or headers.host;
 
