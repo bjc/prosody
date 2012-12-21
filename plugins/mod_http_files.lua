@@ -73,7 +73,7 @@ function serve_file(event, path)
 	end
 
 	local data = cache[path];
-	if data then
+	if data and data.etag == etag then
 		response_headers.content_type = data.content_type;
 		data = data.data;
 	elseif attr.mode == "directory" then
@@ -105,7 +105,7 @@ function serve_file(event, path)
 				end
 			end
 			data = "<!DOCTYPE html>\n"..tostring(html);
-			cache[path] = { data = data, content_type = mime_map.html; hits = 0 };
+			cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
 			response_headers.content_type = mime_map.html;
 		end
 
@@ -120,7 +120,7 @@ function serve_file(event, path)
 		end
 		local ext = path:match("%.([^./]+)$");
 		local content_type = ext and mime_map[ext];
-		cache[path] = { data = data; content_type = content_type; };
+		cache[path] = { data = data; content_type = content_type; etag = etag };
 		response_headers.content_type = content_type;
 	end
 
