@@ -115,10 +115,11 @@ function serve_file(event, path)
 	else
 		local f, err = open(full_path, "rb");
 		if f then
-			data = f:read("*a");
+			data, err = f:read("*a");
 			f:close();
 		end
 		if not data then
+			module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
 			return 403;
 		end
 		local ext = path:match("%.([^./]+)$");
