@@ -12,6 +12,7 @@ local lfs = require "lfs";
 local os_date = os.date;
 local open = io.open;
 local stat = lfs.attributes;
+local build_path = require"socket.url".build_path;
 
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
 local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
@@ -78,7 +79,9 @@ function serve_file(event, path)
 		data = data.data;
 	elseif attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
-			response_headers.location = orig_path.."/";
+			local path = { is_absolute = true, is_directory = true };
+			for dir in orig_path:gmatch("[^/]+") do path[#path+1]=dir; end
+			response_headers.location = build_path(path);
 			return 301;
 		end
 		for i=1,#dir_indices do
