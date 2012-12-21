@@ -12,6 +12,7 @@ local lfs = require "lfs";
 local os_date = os.date;
 local open = io.open;
 local stat = lfs.attributes;
+local build_path = require"socket.url".build_path;
 
 local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
 local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
@@ -57,24 +58,30 @@ function serve_file(event, path)
 		return 404;
 	end
 
+	local request_headers, response_headers = request.headers, response.headers;
+
 	local last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
-	response.headers.last_modified = last_modified;
+	response_headers.last_modified = last_modified;
 
 	local etag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
-	response.headers.etag = etag;
+	response_headers.etag = etag;
 
-	if etag == request.headers.if_none_match
-	or last_modified == request.headers.if_modified_since then
+	local if_none_match = request_headers.if_none_match
+	local if_modified_since = request_headers.if_modified_since;
+	if etag == if_none_match
+	or (not if_none_match and last_modified == if_modified_since) then
 		return 304;
 	end
 
 	local data = cache[path];
-	if data then
-		response.headers.content_type = data.content_type;
+	if data and data.etag == etag then
+		response_headers.content_type = data.content_type;
 		data = data.data;
 	elseif attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
-			response.headers.location = orig_path.."/";
+			local path = { is_absolute = true, is_directory = true };
+			for dir in orig_path:gmatch("[^/]+") do path[#path+1]=dir; end
+			response_headers.location = build_path(path);
 			return 301;
 		end
 		for i=1,#dir_indices do
@@ -101,21 +108,23 @@ function serve_file(event, path)
 				end
 			end
 			data = "<!DOCTYPE html>\n"..tostring(html);
-			cache[path] = { data = data, content_type = mime_map.html; hits = 0 };
-			response.headers.content_type = mime_map.html;
+			cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
+			response_headers.content_type = mime_map.html;
 		end
 
 	else
-		local f = open(full_path, "rb");
-		data = f and f:read("*a");
-		f:close();
+		local f, err = open(full_path, "rb");
+		if f then
+			data = f:read("*a");
+			f:close();
+		end
 		if not data then
 			return 403;
 		end
-		local ext = path:match("%.([^.]*)$");
-		local content_type = mime_map[ext];
-		cache[path] = { data = data; content_type = content_type; };
-		response.headers.content_type = content_type;
+		local ext = path:match("%.([^./]+)$");
+		local content_type = ext and mime_map[ext];
+		cache[path] = { data = data; content_type = content_type; etag = etag };
+		response_headers.content_type = content_type;
 	end
 
 	return response:send(data);
