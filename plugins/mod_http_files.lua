@@ -118,8 +118,8 @@ function serve_file(event, path)
 		if not data then
 			return 403;
 		end
-		local ext = path:match("%.([^.]*)$");
-		local content_type = mime_map[ext];
+		local ext = path:match("%.([^./]+)$");
+		local content_type = ext and mime_map[ext];
 		cache[path] = { data = data; content_type = content_type; };
 		response_headers.content_type = content_type;
 	end
