@@ -57,24 +57,28 @@ function serve_file(event, path)
 		return 404;
 	end
 
+	local request_headers, response_headers = request.headers, response.headers;
+
 	local last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
-	response.headers.last_modified = last_modified;
+	response_headers.last_modified = last_modified;
 
 	local etag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
-	response.headers.etag = etag;
+	response_headers.etag = etag;
 
-	if etag == request.headers.if_none_match
-	or last_modified == request.headers.if_modified_since then
+	local if_none_match = request_headers.if_none_match
+	local if_modified_since = request_headers.if_modified_since;
+	if etag == if_none_match
+	or last_modified == if_modified_since then
 		return 304;
 	end
 
 	local data = cache[path];
 	if data then
-		response.headers.content_type = data.content_type;
+		response_headers.content_type = data.content_type;
 		data = data.data;
 	elseif attr.mode == "directory" then
 		if full_path:sub(-1) ~= "/" then
-			response.headers.location = orig_path.."/";
+			response_headers.location = orig_path.."/";
 			return 301;
 		end
 		for i=1,#dir_indices do
@@ -102,7 +106,7 @@ function serve_file(event, path)
 			end
 			data = "<!DOCTYPE html>\n"..tostring(html);
 			cache[path] = { data = data, content_type = mime_map.html; hits = 0 };
-			response.headers.content_type = mime_map.html;
+			response_headers.content_type = mime_map.html;
 		end
 
 	else
@@ -117,7 +121,7 @@ function serve_file(event, path)
 		local ext = path:match("%.([^.]*)$");
 		local content_type = mime_map[ext];
 		cache[path] = { data = data; content_type = content_type; };
-		response.headers.content_type = content_type;
+		response_headers.content_type = content_type;
 	end
 
 	return response:send(data);
