@@ -14,9 +14,9 @@ local open = io.open;
 local stat = lfs.attributes;
 local build_path = require"socket.url".build_path;
 
-local http_base = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
-local dir_indices = module:get_option("http_files_index", { "index.html", "index.htm" });
-local show_file_list = module:get_option_boolean("http_files_show_list");
+local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
+local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
+local directory_index = module:get_option_boolean("http_dir_listing");
 
 local mime_map = module:shared("mime").types;
 if not mime_map then
@@ -52,7 +52,7 @@ local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector 
 function serve_file(event, path)
 	local request, response = event.request, event.response;
 	local orig_path = request.path;
-	local full_path = http_base.."/"..path;
+	local full_path = base_path.."/"..path;
 	local attr = stat(full_path);
 	if not attr then
 		return 404;
@@ -90,7 +90,7 @@ function serve_file(event, path)
 			end
 		end
 
-		if not show_file_list then
+		if not directory_index then
 			return 403;
 		else
 			local html = require"util.stanza".stanza("html")
