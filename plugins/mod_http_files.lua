@@ -68,7 +68,7 @@ function serve_file(event, path)
 	local if_none_match = request_headers.if_none_match
 	local if_modified_since = request_headers.if_modified_since;
 	if etag == if_none_match
-	or last_modified == if_modified_since then
+	or (not if_none_match and last_modified == if_modified_since) then
 		return 304;
 	end
 
