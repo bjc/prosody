@@ -14,7 +14,7 @@ local open = io.open;
 local stat = lfs.attributes;
 local build_path = require"socket.url".build_path;
 
-local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path", "www_files"));
+local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path"));
 local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
 local directory_index = module:get_option_boolean("http_dir_listing");
 
@@ -49,91 +49,106 @@ end
 
 local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
 
-function serve_file(event, path)
-	local request, response = event.request, event.response;
-	local orig_path = request.path;
-	local full_path = base_path.."/"..path;
-	local attr = stat(full_path);
-	if not attr then
-		return 404;
-	end
-
-	local request_headers, response_headers = request.headers, response.headers;
-
-	local last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
-	response_headers.last_modified = last_modified;
-
-	local etag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
-	response_headers.etag = etag;
-
-	local if_none_match = request_headers.if_none_match
-	local if_modified_since = request_headers.if_modified_since;
-	if etag == if_none_match
-	or (not if_none_match and last_modified == if_modified_since) then
-		return 304;
-	end
-
-	local data = cache[path];
-	if data and data.etag == etag then
-		response_headers.content_type = data.content_type;
-		data = data.data;
-	elseif attr.mode == "directory" then
-		if full_path:sub(-1) ~= "/" then
-			local path = { is_absolute = true, is_directory = true };
-			for dir in orig_path:gmatch("[^/]+") do path[#path+1]=dir; end
-			response_headers.location = build_path(path);
-			return 301;
+function serve(opts)
+	local base_path = opts.path;
+	local dir_indices = opts.index_files or dir_indices;
+	local directory_index = opts.directory_index;
+	local function serve_file(event, path)
+		local request, response = event.request, event.response;
+		local orig_path = request.path;
+		local full_path = base_path .. (path and "/"..path or "");
+		local attr = stat(full_path);
+		if not attr then
+			return 404;
 		end
-		for i=1,#dir_indices do
-			if stat(full_path..dir_indices[i], "mode") == "file" then
-				return serve_file(event, path..dir_indices[i]);
+
+		local request_headers, response_headers = request.headers, response.headers;
+
+		local last_modified = os_date('!%a, %d %b %Y %H:%M:%S GMT', attr.modification);
+		response_headers.last_modified = last_modified;
+
+		local etag = ("%02x-%x-%x-%x"):format(attr.dev or 0, attr.ino or 0, attr.size or 0, attr.modification or 0);
+		response_headers.etag = etag;
+
+		local if_none_match = request_headers.if_none_match
+		local if_modified_since = request_headers.if_modified_since;
+		if etag == if_none_match
+		or (not if_none_match and last_modified == if_modified_since) then
+			return 304;
+		end
+
+		local data = cache[path];
+		if data and data.etag == etag then
+			response_headers.content_type = data.content_type;
+			data = data.data;
+		elseif attr.mode == "directory" then
+			if full_path:sub(-1) ~= "/" then
+				local path = { is_absolute = true, is_directory = true };
+				for dir in orig_path:gmatch("[^/]+") do path[#path+1]=dir; end
+				response_headers.location = build_path(path);
+				return 301;
 			end
-		end
-
-		if not directory_index then
-			return 403;
-		else
-			local html = require"util.stanza".stanza("html")
-				:tag("head"):tag("title"):text(path):up()
-					:tag("meta", { charset="utf-8" }):up()
-				:up()
-				:tag("body"):tag("h1"):text(path):up()
-					:tag("ul");
-			for file in lfs.dir(full_path) do
-				if file:sub(1,1) ~= "." then
-					local attr = stat(full_path..file) or {};
-					html:tag("li", { class = attr.mode })
-						:tag("a", { href = file }):text(file)
-					:up():up();
+			for i=1,#dir_indices do
+				if stat(full_path..dir_indices[i], "mode") == "file" then
+					return serve_file(event, path..dir_indices[i]);
 				end
 			end
-			data = "<!DOCTYPE html>\n"..tostring(html);
-			cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
-			response_headers.content_type = mime_map.html;
+
+			if not directory_index then
+				return 403;
+			else
+				local html = require"util.stanza".stanza("html")
+					:tag("head"):tag("title"):text(path):up()
+						:tag("meta", { charset="utf-8" }):up()
+					:up()
+					:tag("body"):tag("h1"):text(path):up()
+						:tag("ul");
+				for file in lfs.dir(full_path) do
+					if file:sub(1,1) ~= "." then
+						local attr = stat(full_path..file) or {};
+						html:tag("li", { class = attr.mode })
+							:tag("a", { href = file }):text(file)
+						:up():up();
+					end
+				end
+				data = "<!DOCTYPE html>\n"..tostring(html);
+				cache[path] = { data = data, content_type = mime_map.html; etag = etag; };
+				response_headers.content_type = mime_map.html;
+			end
+
+		else
+			local f, err = open(full_path, "rb");
+			if f then
+				data, err = f:read("*a");
+				f:close();
+			end
+			if not data then
+				module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
+				return 403;
+			end
+			local ext = path:match("%.([^./]+)$");
+			local content_type = ext and mime_map[ext];
+			cache[path] = { data = data; content_type = content_type; etag = etag };
+			response_headers.content_type = content_type;
 		end
 
-	else
-		local f, err = open(full_path, "rb");
-		if f then
-			data, err = f:read("*a");
-			f:close();
-		end
-		if not data then
-			module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
-			return 403;
-		end
-		local ext = path:match("%.([^./]+)$");
-		local content_type = ext and mime_map[ext];
-		cache[path] = { data = data; content_type = content_type; etag = etag };
-		response_headers.content_type = content_type;
+		return response:send(data);
 	end
 
-	return response:send(data);
+	return serve_file;
 end
 
-module:provides("http", {
-	route = {
-		["GET /*"] = serve_file;
-	};
-});
+
+if base_path then
+	module:provides("http", {
+		route = {
+			["GET /*"] = serve {
+				path = base_path;
+				directory_index = directory_index;
+			}
+		};
+	});
+else
+	module:log("debug", "http_files_dir not set, assuming use by some other module");
+end
 
