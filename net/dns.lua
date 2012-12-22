@@ -643,6 +643,7 @@ function resolver:voidsocket(sock)
 		self.socket[self.socketset[sock]] = nil;
 		self.socketset[sock] = nil;
 	end
+	sock:close();
 end
 
 function resolver:socket_wrapper_set(func)  -- - - - - - - socket_wrapper_set
