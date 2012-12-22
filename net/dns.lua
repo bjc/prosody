@@ -549,6 +549,7 @@ function resolver:decode(packet, force)    -- - - - - - - - - - - - - - decode
 
 	if not force then
 		if not self.active[response.header.id] or not self.active[response.header.id][response.question.raw] then
+			self.active[response.header.id] = nil;
 			return nil;
 		end
 	end
@@ -796,6 +797,9 @@ function resolver:servfail(sock)
 				end
 			end
 		end
+		if next(queries) == nil then
+			self.active[id] = nil;
+		end
 	end
 
 	if num == self.best_server then
@@ -852,6 +856,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 						set(self.wanted, q.class, q.type, q.name, nil);
 					end
 				end
+				
 			end
 		end
 	end
