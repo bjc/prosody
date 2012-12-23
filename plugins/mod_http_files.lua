@@ -117,7 +117,7 @@ function serve(opts)
 				module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
 				return 403;
 			end
-			local ext = orig_path:match("%.([^./]+)$");
+			local ext = full_path:match("%.([^./]+)$");
 			local content_type = ext and mime_map[ext];
 			cache[orig_path] = { data = data; content_type = content_type; etag = etag };
 			response_headers.content_type = content_type;
