@@ -51,6 +51,9 @@ end
 local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
 
 function serve(opts)
+	if type(opts) ~= "table" then -- assume path string
+		opts = { path = opts };
+	end
 	local base_path = opts.path;
 	local dir_indices = opts.index_files or dir_indices;
 	local directory_index = opts.directory_index;
@@ -128,7 +131,7 @@ end
 
 function wrap_route(routes)
 	for route,handler in pairs(routes) do
-		if type(handler) == "table" and handler.path then
+		if type(handler) ~= "function" then
 			routes[route] = serve(handler);
 		end
 	end
