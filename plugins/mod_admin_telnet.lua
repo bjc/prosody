@@ -204,6 +204,7 @@ function commands.help(session, data)
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[server - Uptime, version, shutting down, etc.]]
+		print [[port - Commands to manage ports the server is listening on]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
@@ -233,6 +234,9 @@ function commands.help(session, data)
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
 		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
+	elseif section == "port" then
+		print [[port:list() - Lists all network ports prosody currently listens on]]
+		print [[port:close(port, interface) - Close a port]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
