@@ -67,7 +67,7 @@ function apply_sink_rules(sink_type)
 		for _, level in ipairs(logging_levels) do
 			if type(logging_config[level]) == "string" then
 				local value = logging_config[level];
-				if sink_type == "file" then
+				if sink_type == "file" and not value:match("^%*") then
 					add_rule({
 						to = sink_type;
 						filename = value;
