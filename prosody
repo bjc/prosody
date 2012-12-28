@@ -374,43 +374,6 @@ end
 function cleanup()
 	log("info", "Shutdown status: Cleaning up");
 	prosody.events.fire_event("server-cleanup");
-	
-	-- Ok, we're quitting I know, but we
-	-- need to do some tidying before we go :)
-	server.setquitting(false);
-	
-	log("info", "Shutdown status: Closing all active sessions");
-	for hostname, host in pairs(hosts) do
-		log("debug", "Shutdown status: Closing client connections for %s", hostname)
-		if host.sessions then
-			local reason = { condition = "system-shutdown", text = "Server is shutting down" };
-			if prosody.shutdown_reason then
-				reason.text = reason.text..": "..prosody.shutdown_reason;
-			end
-			for username, user in pairs(host.sessions) do
-				for resource, session in pairs(user.sessions) do
-					log("debug", "Closing connection for %s@%s/%s", username, hostname, resource);
-					session:close(reason);
-				end
-			end
-		end
-	
-		log("debug", "Shutdown status: Closing outgoing s2s connections from %s", hostname);
-		if host.s2sout then
-			for remotehost, session in pairs(host.s2sout) do
-				if session.close then
-					session:close("system-shutdown");
-				else
-					log("warn", "Unable to close outgoing s2s session to %s, no session:close()?!", remotehost);
-				end
-			end
-		end
-	end
-
-	log("info", "Shutdown status: Closing all server connections");
-	server.closeall();
-	
-	server.setquitting(true);
 end
 
 -- Are you ready? :)

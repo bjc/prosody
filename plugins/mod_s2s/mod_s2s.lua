@@ -506,6 +506,15 @@ end
 
 s2sout.set_listener(listener);
 
+module:hook("server-stopping", function(event)
+	local reason = event.reason;
+	for _, session in pairs(sessions) do
+		session:close{ condition = "system-shutdown", text = reason };
+	end
+end,500);
+
+
+
 module:provides("net", {
 	name = "s2s";
 	listener = listener;
