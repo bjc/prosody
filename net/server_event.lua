@@ -120,14 +120,8 @@ do
 			self.position = new_position or self.position
 			return self.position;
 	end
-	function interface_mt:_close() -- regs event to start self:_destroy()
-			local callback = function( )
-				self:_destroy();
-				self.eventclose = nil
-				return -1
-			end
-			self.eventclose = addevent( base, nil, EV_TIMEOUT, callback, 0 )
-			return true
+	function interface_mt:_close()
+		return self:_destroy();
 	end
 	
 	function interface_mt:_start_connection(plainssl) -- should be called from addclient
