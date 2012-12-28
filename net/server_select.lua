@@ -185,6 +185,9 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 	end
 	handler.remove = function( )
 		connections = connections - 1
+		if handler then
+			handler.resume( )
+		end
 	end
 	handler.close = function()
 		socket:close( )
@@ -197,6 +200,25 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		--mem_free( )
 		out_put "server.lua: closed server handler and removed sockets from list"
 	end
+	handler.pause = function()
+		if not handler.paused then
+			socket:close( )
+			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+			_readlistlen = removesocket( _readlist, socket, _readlistlen )
+			_socketlist[ socket ] = nil
+			socket = nil;
+			handler.paused = true;
+		end
+	end
+	handler.resume = function()
+		if handler.paused then
+			socket = socket_bind( ip, serverport );
+			socket:settimeout( 0 )
+			_readlistlen = addsocket(_readlist, socket, _readlistlen)
+			_socketlist[ socket ] = handler
+			handler.paused = false;
+		end
+	end
 	handler.ip = function( )
 		return ip
 	end
@@ -208,6 +230,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 	end
 	handler.readbuffer = function( )
 		if connections > maxconnections then
+			handler.pause( )
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
 		end
