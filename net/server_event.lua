@@ -6,7 +6,6 @@
 			notes:
 			-- when using luaevent, never register 2 or more EV_READ at one socket, same for EV_WRITE
 			-- you cant even register a new EV_READ/EV_WRITE callback inside another one
-			-- never call eventcallback:close( ) from inside eventcallback
 			-- to do some of the above, use timeout events or something what will called from outside
 			-- dont let garbagecollect eventcallbacks, as long they are running
 			-- when using luasec, there are 4 cases of timeout errors: wantread or wantwrite during reading or writing
@@ -248,7 +247,7 @@ do
 			debug( "closing client with id:", self.id, self.fatalerror )
 			self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
 			local _
-			_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
+			_ = self.eventread and self.eventread:close( )
 			if self.type == "client" then
 				_ = self.eventwrite and self.eventwrite:close( )
 				_ = self.eventhandshake and self.eventhandshake:close( )
@@ -258,7 +257,7 @@ do
 				_ = self.eventwritetimeout and self.eventwritetimeout:close( )
 				_ = self.eventreadtimeout and self.eventreadtimeout:close( )
 				_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)  -- call ondisconnect listener (wont be the case if handshake failed on connect)
-				_ = self.conn and self.conn:close( ) -- close connection, must also be called outside of any socket registered events!
+				_ = self.conn and self.conn:close( ) -- close connection
 				_ = self._server and self._server:counter(-1);
 				self.eventread, self.eventwrite = nil, nil
 				self.eventstarthandshake, self.eventhandshake, self.eventclose = nil, nil, nil
@@ -342,7 +341,7 @@ do
 			debug( "try to close server with id:", tostring(self.id))
 			self.fatalerror = "server to close"
 			self:_lock( true )
-			self:_close( 0 )  -- add new event to remove the server interface
+			self:_close( 0 )
 			return true
 		end
 	end
