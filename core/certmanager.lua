@@ -17,10 +17,11 @@ local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
 local config_path = prosody.paths.config;
 
-local luasec_has_noticket;
+local luasec_has_noticket, luasec_has_verifyext;
 if ssl then
 	local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 	luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
+	luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
 end
 
 module "certmanager"
@@ -28,8 +29,16 @@ module "certmanager"
 -- Global SSL options if not overridden per-host
 local default_ssl_config = configmanager.get("*", "core", "ssl");
 local default_capath = "/etc/ssl/certs";
-local default_verify = (ssl and ssl.x509 and { "peer", "client_once", "continue", "ignore_purpose" }) or "none";
+local default_verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
 local default_options = { "no_sslv2", luasec_has_noticket and "no_ticket" or nil };
+local default_verifyext = { "lsec_continue", "lsec_ignore_purpose" };
+
+if not luasec_has_verifyext and ssl.x509 then
+	-- COMPAT mw/luasec-hg
+	for i=1,#default_verifyext do -- Remove lsec_ prefix
+		default_verify[#default_verify+1] = default_verifyext[i]:sub(6);
+	end
+end
 
 function create_context(host, mode, user_ssl_config)
 	user_ssl_config = user_ssl_config or default_ssl_config;
@@ -46,6 +55,7 @@ function create_context(host, mode, user_ssl_config)
 		capath = resolve_path(config_path, user_ssl_config.capath or default_capath);
 		cafile = resolve_path(config_path, user_ssl_config.cafile);
 		verify = user_ssl_config.verify or default_verify;
+		verifyext = user_ssl_config.verifyext or default_verifyext;
 		options = user_ssl_config.options or default_options;
 		depth = user_ssl_config.depth;
 	};
