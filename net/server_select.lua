@@ -185,6 +185,9 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 	end
 	handler.remove = function( )
 		connections = connections - 1
+		if handler then
+			handler.resume( )
+		end
 	end
 	handler.close = function()
 		socket:close( )
@@ -227,6 +230,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 	end
 	handler.readbuffer = function( )
 		if connections > maxconnections then
+			handler.pause( )
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
 		end
