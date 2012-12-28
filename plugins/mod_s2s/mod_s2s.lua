@@ -485,6 +485,7 @@ end
 function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
+		sessions[conn] = nil;
 		if err and session.direction == "outgoing" and session.notopen then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2sout.attempt_connection(session, err) then
@@ -494,7 +495,6 @@ function listener.ondisconnect(conn, err)
 		end
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
 		s2s_destroy_session(session, err);
-		sessions[conn] = nil;
 	end
 end
 
