@@ -265,6 +265,15 @@ function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
+module:hook("server-stopping", function(event)
+	local reason = event.reason;
+	for _, session in pairs(sessions) do
+		session:close{ condition = "system-shutdown", text = reason };
+	end
+end, 1000);
+
+
+
 module:provides("net", {
 	name = "c2s";
 	listener = listener;

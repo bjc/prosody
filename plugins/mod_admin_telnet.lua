@@ -149,6 +149,7 @@ function console_listener.onincoming(conn, data)
 	end
 
 	for line in data:gmatch("[^\n]*[\n\004]") do
+		if session.closed then return end
 		console:process_line(session, line);
 		session.send(string.char(0));
 	end
@@ -168,6 +169,7 @@ end
 
 function commands.bye(session)
 	session.print("See you! :)");
+	session.closed = true;
 	session.disconnect();
 end
 commands.quit, commands.exit = commands.bye, commands.bye;
