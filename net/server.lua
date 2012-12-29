@@ -62,9 +62,8 @@ if prosody then
 			for k, v in pairs(event_settings) do
 				server.cfg[k] = v;
 			end
-			return true;
 		else
-			return server.changesettings(settings);
+			server.changesettings(settings);
 		end
 	end
 	load_config();
