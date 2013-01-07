@@ -72,14 +72,10 @@ local function ia5string(s)
 	return s_format("IA5STRING:%s", s);
 end
 
-local util = {};
 _M.util = {
 	utf8string = utf8string,
 	ia5string = ia5string,
 };
-
-local function xmppAddr(t, host)
-end
 
 function ssl_config:add_dNSName(host)
 	t_insert(self.subject_alternative_name.DNS, idna_to_ascii(host));
@@ -95,12 +91,12 @@ function ssl_config:add_xmppAddr(host)
 		s_format("%s;%s", oid_xmppaddr, utf8string(host)));
 end
 
-function ssl_config:from_prosody(hosts, config, certhosts, raw)
+function ssl_config:from_prosody(hosts, config, certhosts)
 	-- TODO Decide if this should go elsewhere
 	local found_matching_hosts = false;
 	for i = 1,#certhosts do
 		local certhost = certhosts[i];
-		for name, host in pairs(hosts) do
+		for name in pairs(hosts) do
 			if name == certhost or name:sub(-1-#certhost) == "."..certhost then
 				found_matching_hosts = true;
 				self:add_dNSName(name);
@@ -137,7 +133,7 @@ do -- Lua to shell calls.
 				end
 			end
 		end
-		for k,v in ipairs(o) do
+		for _,v in ipairs(o) do
 			t_insert(r, ("'%s'"):format(shell_escape(tostring(v))));
 		end
 		return t_concat(r, " ");
@@ -145,7 +141,7 @@ do -- Lua to shell calls.
 
 	local os_execute = os.execute;
 	setmetatable(_M, {
-		__index=function(self,f)
+		__index=function(_,f)
 			return function(opts)
 				return 0 == os_execute(serialize(f, type(opts) == "table" and opts or {}));
 			end;
