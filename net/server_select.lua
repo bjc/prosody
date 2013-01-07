@@ -238,7 +238,6 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		local client, err = accept( socket )	-- try to accept
 		if client then
 			local ip, clientport = client:getpeername( )
-			client:settimeout( 0 )
 			local handler, client, err = wrapconnection( handler, listeners, client, ip, serverport, clientport, pattern, sslctx ) -- wrap new client socket
 			if err then -- error while wrapping ssl socket
 				return false
