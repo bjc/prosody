@@ -74,6 +74,7 @@ local idfalse
 local closeall
 local addsocket
 local addserver
+local addtimer
 local getserver
 local wrapserver
 local getsettings
