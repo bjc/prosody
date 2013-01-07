@@ -33,7 +33,7 @@ local default_verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "non
 local default_options = { "no_sslv2", luasec_has_noticket and "no_ticket" or nil };
 local default_verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 
-if not luasec_has_verifyext and ssl.x509 then
+if ssl and not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
 	for i=1,#default_verifyext do -- Remove lsec_ prefix
 		default_verify[#default_verify+1] = default_verifyext[i]:sub(6);
