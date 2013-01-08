@@ -1,4 +1,4 @@
-.DEFAULT: localhost.cert
+.DEFAULT: localhost.crt
 keysize=2048
 
 # How to:
@@ -8,7 +8,7 @@ keysize=2048
 # Then `make yourhost.key` to create your private key, you can
 # include keysize=number to change the size of the key.
 # Then you can either `make yourhost.csr` to generate a certificate
-# signing request that you can submit to a CA, or `make yourhost.cert`
+# signing request that you can submit to a CA, or `make yourhost.crt`
 # to generate a self signed certificate.
 
 .PRECIOUS: %.cnf %.key
@@ -18,7 +18,7 @@ keysize=2048
 	openssl req -new -key $(lastword $^) -out $@ -utf8 -config $(firstword $^)
 
 # Self signed
-%.cert: %.cnf %.key
+%.crt: %.cnf %.key
 	openssl req -new -x509 -nodes -key $(lastword $^) -days 365 \
 		-sha1 -out $@ -utf8 -config $(firstword $^)
 
