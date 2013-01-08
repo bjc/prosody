@@ -77,6 +77,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							end
 						end
 					end
+					if not first_line then error = true; return error_cb("invalid-status-line"); end
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
