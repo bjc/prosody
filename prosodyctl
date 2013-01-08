@@ -639,8 +639,8 @@ function commands.unregister(arg)
 	return 1;
 end
 
-local openssl = require "util.openssl";
-local lfs = require "lfs";
+local openssl;
+local lfs;
 
 local cert_commands = {};
 
@@ -744,6 +744,8 @@ end
 
 function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
+		openssl = require "util.openssl";
+		lfs = require "lfs";
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
 			if not arg[1] then
