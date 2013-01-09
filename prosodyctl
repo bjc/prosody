@@ -67,10 +67,10 @@ do
 	local filename;
 	if arg[1] == "--config" and arg[2] then
 		table.insert(filenames, arg[2]);
-		table.remove(arg, 1); table.remove(arg, 1);
 		if CFG_CONFIGDIR then
 			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
 		end
+		table.remove(arg, 1); table.remove(arg, 1);
 	else
 		for _, format in ipairs(config.parsers()) do
 			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
