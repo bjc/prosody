@@ -70,6 +70,8 @@ function read_config()
 		if CFG_CONFIGDIR then
 			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
 		end
+	elseif os.getenv("PROSODY_CONFIG") then -- Passed by prosodyctl
+			table.insert(filenames, os.getenv("PROSODY_CONFIG"));
 	else
 		for _, format in ipairs(config.parsers()) do
 			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
