@@ -529,7 +529,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				self:_route_stanza(stanza);
 			end
 			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
-		else
+		elseif type ~= "error" then
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 		end
 	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
