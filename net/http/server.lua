@@ -156,12 +156,23 @@ function handle_request(conn, request, finish_cb)
 
 	local date_header = os_date('!%a, %d %b %Y %H:%M:%S GMT'); -- FIXME use
 	local conn_header = request.headers.connection;
-	local keep_alive = conn_header == "Keep-Alive" or (request.httpversion == "1.1" and conn_header ~= "close");
+	conn_header = conn_header and ","..conn_header:gsub("[ \t]", ""):lower().."," or ""
+	local httpversion = request.httpversion
+	local persistent = conn_header:find(",keep-alive,", 1, true)
+		or (httpversion == "1.1" and not conn_header:find(",close,", 1, true));
+
+	local response_conn_header;
+	if persistent then
+		response_conn_header = "Keep-Alive";
+	else
+		response_conn_header = httpversion == "1.1" and "close" or nil
+	end
 
 	local response = {
 		request = request;
 		status_code = 200;
-		headers = { date = date_header, connection = (keep_alive and "Keep-Alive" or "close") };
+		headers = { date = date_header, connection = response_conn_header };
+		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
 		finish_cb = finish_cb;
@@ -241,7 +252,7 @@ function _M.send_response(response, body)
 		response:on_destroy();
 		response.on_destroy = nil;
 	end
-	if headers.connection == "Keep-Alive" then
+	if response.persistent then
 		response:finish_cb();
 	else
 		response.conn:close();
