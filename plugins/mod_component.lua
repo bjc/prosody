@@ -309,6 +309,7 @@ end
 
 module:provides("net", {
 	name = "component";
+	private = true;
 	listener = listener;
 	default_port = 5347;
 	multiplex = {
