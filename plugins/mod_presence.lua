@@ -18,6 +18,7 @@ local core_post_stanza = prosody.core_post_stanza;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
+local datetime = require "util.datetime";
 local hosts = hosts;
 local NULL = {};
 
@@ -135,6 +136,7 @@ function handle_normal_presence(origin, stanza)
 		end
 	else
 		origin.presence = stanza;
+		stanza:tag("delay", { xmlns = "urn:xmpp:delay", from = host, stamp = datetime.datetime() }):up();
 		if origin.priority ~= priority then
 			origin.priority = priority;
 			recalc_resource_map(user);

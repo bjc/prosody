@@ -61,16 +61,17 @@ end
 
 config = require "core.configmanager"
 
+local ENV_CONFIG;
 do
 	local filenames = {};
 	
 	local filename;
 	if arg[1] == "--config" and arg[2] then
 		table.insert(filenames, arg[2]);
-		table.remove(arg, 1); table.remove(arg, 1);
 		if CFG_CONFIGDIR then
 			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
 		end
+		table.remove(arg, 1); table.remove(arg, 1);
 	else
 		for _, format in ipairs(config.parsers()) do
 			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
@@ -81,6 +82,7 @@ do
 		local file = io.open(filename);
 		if file then
 			file:close();
+			ENV_CONFIG = filename;
 			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
 			break;
 		end
@@ -162,6 +164,7 @@ if ok and pposix then
 	-- Set our umask to protect data files
 	pposix.umask(config.get("*", "core", "umask") or "027");
 	pposix.setenv("HOME", data_path);
+	pposix.setenv("PROSODY_CONFIG", ENV_CONFIG);
 else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 	print("For more help send the below error to us through http://prosody.im/discuss");
@@ -639,8 +642,8 @@ function commands.unregister(arg)
 	return 1;
 end
 
-local openssl = require "util.openssl";
-local lfs = require "lfs";
+local openssl;
+local lfs;
 
 local cert_commands = {};
 
@@ -723,7 +726,7 @@ end
 
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cert";
+		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".crt";
 		if ask_overwrite(cert_filename) then
 			return nil, cert_filename;
 		end
@@ -744,6 +747,8 @@ end
 
 function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
+		openssl = require "util.openssl";
+		lfs = require "lfs";
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
 			if not arg[1] then
