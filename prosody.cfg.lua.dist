@@ -89,7 +89,7 @@ allow_registration = false;
 -- to use SSL/TLS, you may comment or remove this
 ssl = {
 	key = "certs/localhost.key";
-	certificate = "certs/localhost.cert";
+	certificate = "certs/localhost.crt";
 }
 
 -- Only allow encrypted streams? Encryption is already used when

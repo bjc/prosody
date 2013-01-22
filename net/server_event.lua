@@ -40,6 +40,9 @@ local tostring = use "tostring"
 local coroutine = use "coroutine"
 local setmetatable = use "setmetatable"
 
+local t_insert = table.insert
+local t_concat = table.concat
+
 local ssl = use "ssl"
 local socket = use "socket" or require "socket"
 
@@ -309,7 +312,7 @@ do
 			debug( "error:", err )  -- to much, check your app
 			return nil, err
 		end
-		self.writebuffer = self.writebuffer .. data -- new buffer
+		t_insert(self.writebuffer, data) -- new buffer
 		self.writebufferlen = total
 		if not self.eventwrite then  -- register new write event
 			--vdebug( "register new write event" )
@@ -466,7 +469,7 @@ do
 			type = "client";
 			conn = client;
 			currenttime = socket_gettime( );  -- safe the origin
-			writebuffer = "";  -- writebuffer
+			writebuffer = {};  -- writebuffer
 			writebufferlen = 0;  -- length of writebuffer
 			send = client.send;  -- caching table lookups
 			receive = client.receive;
@@ -520,10 +523,11 @@ do
 						interface.eventwritetimeout = false
 					end
 				end
-				local succ, err, byte = interface.conn:send( interface.writebuffer, 1, interface.writebufferlen )
+				interface.writebuffer = { t_concat(interface.writebuffer) }
+				local succ, err, byte = interface.conn:send( interface.writebuffer[1], 1, interface.writebufferlen )
 				--vdebug( "write data:", interface.writebuffer, "error:", err, "part:", byte )
 				if succ then  -- writing succesful
-					interface.writebuffer = ""
+					interface.writebuffer[1] = nil
 					interface.writebufferlen = 0
 					interface:ondrain();
 					if interface.fatalerror then
@@ -539,7 +543,7 @@ do
 					return -1
 				elseif byte and (err == "timeout" or err == "wantwrite") then  -- want write again
 					--vdebug( "writebuffer is not empty:", err )
-					interface.writebuffer = string_sub( interface.writebuffer, byte + 1, interface.writebufferlen )  -- new buffer
+					interface.writebuffer[1] = string_sub( interface.writebuffer[1], byte + 1, interface.writebufferlen )  -- new buffer
 					interface.writebufferlen = interface.writebufferlen - byte
 					if "wantread" == err then  -- happens only with luasec
 						local callback = function( )

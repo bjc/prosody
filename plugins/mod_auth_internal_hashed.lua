@@ -13,7 +13,6 @@ local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticatio
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local to_hex;
 do
@@ -124,12 +123,7 @@ end
 function provider.get_sasl_handler()
 	local testpass_authentication_profile = {
 		plain_test = function(sasl, username, password, realm)
-			local prepped_username = nodeprep(username);
-			if not prepped_username then
-				log("debug", "NODEprep failed on username: %s", username);
-				return "", nil;
-			end
-			return usermanager.test_password(prepped_username, realm, password), true;
+			return usermanager.test_password(username, realm, password), true;
 		end,
 		scram_sha_1 = function(sasl, username, realm)
 			local credentials = datamanager.load(username, host, "accounts");
