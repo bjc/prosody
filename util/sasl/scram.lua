@@ -19,6 +19,7 @@ local hmac_sha1 = require "util.hmac".sha1;
 local sha1 = require "util.hashes".sha1;
 local generate_uuid = require "util.uuid".generate;
 local saslprep = require "util.encodings".stringprep.saslprep;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local log = require "util.logger".init("sasl");
 local t_concat = table.concat;
 local char = string.char;
@@ -76,7 +77,7 @@ function Hi(hmac, str, salt, i)
 	return res
 end
 
-local function validate_username(username)
+local function validate_username(username, _nodeprep)
 	-- check for forbidden char sequences
 	for eq in username:gmatch("=(.?.?)") do
 		if eq ~= "2C" and eq ~= "3D" then
@@ -90,6 +91,11 @@ local function validate_username(username)
 	
 	-- apply SASLprep
 	username = saslprep(username);
+
+	if username and _nodeprep ~= false then
+		username = (_nodeprep or nodeprep)(username);
+	end
+
 	return username and #username>0 and username;
 end
 
@@ -133,7 +139,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				return "failure", "malformed-request", "Channel binding isn't support at this time.";
 			end
 		
-			self.state.name = validate_username(self.state.name);
+			self.state.name = validate_username(self.state.name, self.profile.nodeprep);
 			if not self.state.name then
 				log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
 				return "failure", "malformed-request", "Invalid username.";

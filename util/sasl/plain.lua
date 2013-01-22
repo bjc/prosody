@@ -13,6 +13,7 @@
 
 local s_match = string.match;
 local saslprep = require "util.encodings".stringprep.saslprep;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 local log = require "util.logger".init("sasl");
 
 module "sasl.plain"
@@ -52,6 +53,14 @@ local function plain(self, message)
 	if (not password) or (password == "") or (not authentication) or (authentication == "") then
 		log("debug", "Username or password violates SASLprep.");
 		return "failure", "malformed-request", "Invalid username or password.";
+	end
+
+	local _nodeprep = self.profile.nodeprep;
+	if _nodeprep ~= false then
+		authentication = (_nodeprep or nodeprep)(authentication);
+		if not authentication or authentication == "" then
+			return "failure", "malformed-request", "Invalid username or password."
+		end
 	end
 
 	local correct, state = false, false;

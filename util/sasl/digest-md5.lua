@@ -23,6 +23,7 @@ local to_byte, to_char = string.byte, string.char;
 local md5 = require "util.hashes".md5;
 local log = require "util.logger".init("sasl");
 local generate_uuid = require "util.uuid".generate;
+local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 module "sasl.digest-md5"
 
@@ -139,10 +140,15 @@ local function digest(self, message)
 		end
 
 		-- check for username, it's REQUIRED by RFC 2831
-		if not response["username"] then
+		local username = response["username"];
+		local _nodeprep = self.profile.nodeprep;
+		if username and _nodeprep ~= false then
+			username = (_nodeprep or nodeprep)(username); -- FIXME charset
+		end
+		if not username or username == "" then
 			return "failure", "malformed-request";
 		end
-		self["username"] = response["username"];
+		self.username = username;
 
 		-- check for nonce, ...
 		if not response["nonce"] then
@@ -178,7 +184,6 @@ local function digest(self, message)
 		end
 
 		--TODO maybe realm support
-		self.username = response["username"];
 		local Y, state;
 		if self.profile.plain then
 			local password, state = self.profile.plain(self, response["username"], self.realm)
