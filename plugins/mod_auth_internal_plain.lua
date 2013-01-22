@@ -9,7 +9,6 @@
 local datamanager = require "util.datamanager";
 local usermanager = require "core.usermanager";
 local new_sasl = require "util.sasl".new;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local log = module._log;
 local host = module.host;
@@ -67,12 +66,7 @@ end
 function provider.get_sasl_handler()
 	local getpass_authentication_profile = {
 		plain = function(sasl, username, realm)
-			local prepped_username = nodeprep(username);
-			if not prepped_username then
-				log("debug", "NODEprep failed on username: %s", username);
-				return "", nil;
-			end
-			local password = usermanager.get_password(prepped_username, realm);
+			local password = usermanager.get_password(username, realm);
 			if not password then
 				return "", nil;
 			end
