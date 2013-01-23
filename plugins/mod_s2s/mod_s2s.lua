@@ -429,6 +429,8 @@ local function initialize_session(session)
 	add_task(connect_timeout, function ()
 		if session.type == "s2sin" or session.type == "s2sout" then
 			return; -- Ok, we're connected
+		elseif session.type == "s2s_destroyed" then
+			return; -- Session already destroyed
 		end
 		-- Not connected, need to close session and clean up
 		(session.log or log)("debug", "Destroying incomplete session %s->%s due to inactivity",
