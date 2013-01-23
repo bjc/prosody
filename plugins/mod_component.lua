@@ -260,7 +260,7 @@ function listener.onconnect(conn)
 	local session = { type = "component_unauthed", conn = conn, send = function (data) return _send(conn, tostring(data)); end };
 
 	-- Logging functions --
-	local conn_name = "jcp"..tostring(conn):match("[a-f0-9]+$");
+	local conn_name = "jcp"..tostring(session):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 	session.close = session_close;
 	
