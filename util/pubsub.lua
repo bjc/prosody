@@ -259,11 +259,19 @@ function service:retract(node, actor, id, retract)
 	if (not node_obj) or (not node_obj.data[id]) then
 		return false, "item-not-found";
 	end
-	node_obj.data[id] = nil;
+	if id then
+		node_obj.data[id] = nil;
+	else
+		node_obj.data = {}; -- Purge
+	end
 	if retract then
 		self.config.broadcaster(node, node_obj.subscribers, retract);
 	end
 	return true
+end
+
+function service:purge(node, actor, purge)
+	return self:retract(node, actor, nil, purge);
 end
 
 function service:get_items(node, actor, id)
