@@ -178,11 +178,35 @@ function handlers.set_retract(origin, stanza, retract)
 	notify = (notify == "1") or (notify == "true");
 	local item = retract:get_child("item");
 	local id = item and item.attr.id
+	if not (node and id) then
+		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		return true;
+	end
 	local reply, notifier;
 	if notify then
 		notifier = st.stanza("retract", { id = id });
 	end
 	local ok, ret = service:retract(node, stanza.attr.from, id, notifier);
+	if ok then
+		reply = st.reply(stanza);
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
+function handlers.set_purge(origin, stanza, purge)
+	local node, notify = purge.attr.node, purge.attr.notify;
+	notify = (notify == "1") or (notify == "true");
+	local reply, notifier;
+	if not node then
+		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		return true;
+	end
+	if notify then
+		notifier = st.stanza("purge");
+	end
+	local ok, ret = service:purge(node, stanza.attr.from, notifier);
 	if ok then
 		reply = st.reply(stanza);
 	else
@@ -212,6 +236,7 @@ local disco_info;
 local feature_map = {
 	create = { "create-nodes", "instant-nodes", "item-ids" };
 	retract = { "delete-items", "retract-items" };
+	purge = { "purge-nodes" };
 	publish = { "publish", autocreate_on_publish and "auto-create" };
 	get_items = { "retrieve-items" };
 	add_subscription = { "subscribe" };
