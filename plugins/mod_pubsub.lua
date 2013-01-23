@@ -210,9 +210,9 @@ module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq
 local disco_info;
 
 local feature_map = {
-	create = { "create-nodes", autocreate_on_publish and "instant-nodes", "item-ids" };
+	create = { "create-nodes", "instant-nodes", "item-ids" };
 	retract = { "delete-items", "retract-items" };
-	publish = { "publish" };
+	publish = { "publish", autocreate_on_publish and "auto-create" };
 	get_items = { "retrieve-items" };
 	add_subscription = { "subscribe" };
 	get_subscriptions = { "retrieve-subscriptions" };
