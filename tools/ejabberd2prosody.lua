@@ -19,9 +19,9 @@ local erlparse = require "erlparse";
 
 prosody = {};
 
+package.loaded["util.logger"] = {init = function() return function() end; end}
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
-package.loaded["util.logger"] = {init = function() return function() end; end}
 local dm = require "util.datamanager"
 dm.set_data_path("data");
 
