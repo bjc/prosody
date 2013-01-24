@@ -11,8 +11,8 @@
 
 package.path = package.path ..";../?.lua";
 
-if arg[0]:match("^./") then
-	package.path = package.path .. ";"..arg[0]:gsub("/ejabberd2prosody.lua$", "/?.lua");
+if arg[0]:match("[/\\]") then
+	package.path = package.path .. ";"..arg[0]:gsub("[^/\\]*$", "?.lua");
 end
 
 local erlparse = require "erlparse";
