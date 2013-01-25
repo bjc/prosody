@@ -318,7 +318,7 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function
 	end
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
-		event.origin.send(pubsub_error_reply(stanza, ret));
+		event.origin.send(pubsub_error_reply(event.stanza, ret));
 	else
 		local reply = st.reply(event.stanza)
 			:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
