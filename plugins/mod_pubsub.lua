@@ -6,6 +6,7 @@ local uuid_generate = require "util.uuid".generate;
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
+local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
@@ -201,15 +202,12 @@ end
 function handlers.set_purge(origin, stanza, purge)
 	local node, notify = purge.attr.node, purge.attr.notify;
 	notify = (notify == "1") or (notify == "true");
-	local reply, notifier;
+	local reply;
 	if not node then
 		origin.send(st.error_reply(stanza, "modify", "bad-request"));
 		return true;
 	end
-	if notify then
-		notifier = st.stanza("purge");
-	end
-	local ok, ret = service:purge(node, stanza.attr.from, notifier);
+	local ok, ret = service:purge(node, stanza.attr.from, notify);
 	if ok then
 		reply = st.reply(stanza);
 	else
@@ -218,12 +216,14 @@ function handlers.set_purge(origin, stanza, purge)
 	return origin.send(reply);
 end
 
-function simple_broadcast(node, jids, item)
-	item = st.clone(item);
-	item.attr.xmlns = nil; -- Clear the pubsub namespace
+function simple_broadcast(kind, node, jids, item)
+	if item then
+		item = st.clone(item);
+		item.attr.xmlns = nil; -- Clear the pubsub namespace
+	end
 	local message = st.message({ from = module.host, type = "headline" })
 		:tag("event", { xmlns = xmlns_pubsub_event })
-			:tag("items", { node = node })
+			:tag(kind, { node = node })
 				:add_child(item);
 	for jid in pairs(jids) do
 		module:log("debug", "Sending notification to %s", jid);
@@ -232,7 +232,8 @@ function simple_broadcast(node, jids, item)
 	end
 end
 
-module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq);
+module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
+module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
 local disco_info;
 
