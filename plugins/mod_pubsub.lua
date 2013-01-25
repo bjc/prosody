@@ -2,6 +2,7 @@ local pubsub = require "util.pubsub";
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local uuid_generate = require "util.uuid".generate;
+local usermanager = require "core.usermanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
