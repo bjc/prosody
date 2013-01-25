@@ -45,7 +45,7 @@ function new_sax_handlers(session, stream_callbacks)
 	
 	local cb_streamopened = stream_callbacks.streamopened;
 	local cb_streamclosed = stream_callbacks.streamclosed;
-	local cb_error = stream_callbacks.error or function(session, e) error("XML stream error: "..tostring(e)); end;
+	local cb_error = stream_callbacks.error or function(session, e, stanza) error("XML stream error: "..tostring(e)..(stanza and ": "..tostring(stanza) or ""),2); end;
 	local cb_handlestanza = stream_callbacks.handlestanza;
 	
 	local stream_ns = stream_callbacks.stream_ns or xmlns_streams;
