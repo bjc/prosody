@@ -313,6 +313,6 @@ module:provides("net", {
 	listener = listener;
 	default_port = 5347;
 	multiplex = {
-		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:component%1.*>";
+		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:component:accept%1.*>";
 	};
 });
