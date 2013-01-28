@@ -143,7 +143,7 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 		if items then
 			local jids = { [jid] = options or true };
 			for id, item in pairs(items) do
-				service.config.broadcaster(node, jids, item);
+				service.config.broadcaster("items", node, jids, item);
 			end
 		end
 	end
