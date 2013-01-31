@@ -32,6 +32,8 @@ end
 local pubsub_errors = {
 	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
+	["jid-required"] = { "modify", "bad-request", nil, "jid-required" };
+	["nodeid-required"] = { "modify", "bad-request", nil, "nodeid-required" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 	["forbidden"] = { "cancel", "forbidden" };
@@ -50,6 +52,9 @@ function handlers.get_items(origin, stanza, items)
 	local item = items:get_child("item");
 	local id = item and item.attr.id;
 	
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local ok, results = service:get_items(node, stanza.attr.from, id);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, results));
@@ -72,6 +77,9 @@ end
 
 function handlers.get_subscriptions(origin, stanza, subscriptions)
 	local node = subscriptions.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local ok, ret = service:get_subscriptions(node, stanza.attr.from, stanza.attr.from);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, ret));
@@ -113,6 +121,9 @@ end
 
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
+	if not (node and jid) then
+		return origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
+	end
 	--[[
 	local options_tag, options = stanza.tags[1]:get_child("options"), nil;
 	if options_tag then
@@ -151,6 +162,9 @@ end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe)
 	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
+	if not (node and jid) then
+		return origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
+	end
 	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
 	local reply;
 	if ok then
@@ -163,6 +177,9 @@ end
 
 function handlers.set_publish(origin, stanza, publish)
 	local node = publish.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id) or uuid_generate();
 	local ok, ret = service:publish(node, stanza.attr.from, id, item);
@@ -184,8 +201,7 @@ function handlers.set_retract(origin, stanza, retract)
 	local item = retract:get_child("item");
 	local id = item and item.attr.id
 	if not (node and id) then
-		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-		return true;
+		return origin.send(pubsub_error_reply(stanza, node and "item-not-found" or "nodeid-required"));
 	end
 	local reply, notifier;
 	if notify then
@@ -205,8 +221,7 @@ function handlers.set_purge(origin, stanza, purge)
 	notify = (notify == "1") or (notify == "true");
 	local reply;
 	if not node then
-		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-		return true;
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 	end
 	local ok, ret = service:purge(node, stanza.attr.from, notify);
 	if ok then
