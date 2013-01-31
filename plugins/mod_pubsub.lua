@@ -119,6 +119,22 @@ function handlers.set_create(origin, stanza, create)
 	return origin.send(reply);
 end
 
+function handlers.set_delete(origin, stanza, delete)
+	local node = delete.attr.node;
+
+	local reply, notifier;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
+	local ok, ret = service:delete(node, stanza.attr.from);
+	if ok then
+		reply = st.reply(stanza);
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
 	if not (node and jid) then
@@ -258,6 +274,7 @@ local feature_map = {
 	retract = { "delete-items", "retract-items" };
 	purge = { "purge-nodes" };
 	publish = { "publish", autocreate_on_publish and "auto-create" };
+	delete = { "delete-nodes" };
 	get_items = { "retrieve-items" };
 	add_subscription = { "subscribe" };
 	get_subscriptions = { "retrieve-subscriptions" };
@@ -418,6 +435,7 @@ set_service(pubsub.new({
 			create = true;
 			publish = true;
 			retract = true;
+			delete = true;
 			get_nodes = true;
 			
 			subscribe = true;

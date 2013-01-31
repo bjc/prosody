@@ -226,6 +226,18 @@ function service:create(node, actor)
 	return ok, err;
 end
 
+function service:delete(node, actor)
+	-- Access checking
+	if not self:may(node, actor, "delete") then
+		return false, "forbidden";
+	end
+	--
+	local node_obj = self.nodes[node];
+	self.nodes[node] = nil;
+	self.config.broadcaster("delete", node, node_obj.subscribers);
+	return true;
+end
+
 function service:publish(node, actor, id, item)
 	-- Access checking
 	if not self:may(node, actor, "publish") then
