@@ -54,7 +54,7 @@ function new_session(conn)
 		end
 	end
 	session.ip = conn:ip();
-	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
+	local conn_name = "c2s"..tostring(session):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 		
 	return session;
