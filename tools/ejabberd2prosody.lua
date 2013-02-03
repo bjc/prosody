@@ -11,17 +11,17 @@
 
 package.path = package.path ..";../?.lua";
 
-if arg[0]:match("^./") then
-	package.path = package.path .. ";"..arg[0]:gsub("/ejabberd2prosody.lua$", "/?.lua");
+if arg[0]:match("[/\\]") then
+	package.path = package.path .. ";"..arg[0]:gsub("[^/\\]*$", "?.lua");
 end
 
 local erlparse = require "erlparse";
 
 prosody = {};
 
+package.loaded["util.logger"] = {init = function() return function() end; end}
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
-package.loaded["util.logger"] = {init = function() return function() end; end}
 local dm = require "util.datamanager"
 dm.set_data_path("data");
 

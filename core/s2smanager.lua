@@ -35,7 +35,7 @@ function new_incoming(conn)
 		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
 	end
 	open_sessions = open_sessions + 1;
-	session.log = logger_init("s2sin"..tostring(conn):match("[a-f0-9]+$"));
+	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
 	incoming_s2s[session] = true;
 	return session;
 end

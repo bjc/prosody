@@ -89,11 +89,12 @@ function activate(service_name)
 		or default_interfaces
 	bind_interfaces = set.new(type(bind_interfaces)~="table" and {bind_interfaces} or bind_interfaces);
 	
-	local bind_ports = set.new(config.get("*", config_prefix.."ports")
+	local bind_ports = config.get("*", config_prefix.."ports")
 		or service_info.default_ports
 		or {service_info.default_port
 		    or listener.default_port -- COMPAT w/pre-0.9
-		   });
+		   }
+	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
 	local mode, ssl = listener.default_mode or "*a";
 	

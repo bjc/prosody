@@ -226,6 +226,18 @@ function service:create(node, actor)
 	return ok, err;
 end
 
+function service:delete(node, actor)
+	-- Access checking
+	if not self:may(node, actor, "delete") then
+		return false, "forbidden";
+	end
+	--
+	local node_obj = self.nodes[node];
+	self.nodes[node] = nil;
+	self.config.broadcaster("delete", node, node_obj.subscribers);
+	return true;
+end
+
 function service:publish(node, actor, id, item)
 	-- Access checking
 	if not self:may(node, actor, "publish") then
@@ -245,7 +257,7 @@ function service:publish(node, actor, id, item)
 	end
 	node_obj.data[id] = item;
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
-	self.config.broadcaster(node, node_obj.subscribers, item);
+	self.config.broadcaster("items", node, node_obj.subscribers, item);
 	return true;
 end
 
@@ -261,7 +273,24 @@ function service:retract(node, actor, id, retract)
 	end
 	node_obj.data[id] = nil;
 	if retract then
-		self.config.broadcaster(node, node_obj.subscribers, retract);
+		self.config.broadcaster("items", node, node_obj.subscribers, retract);
+	end
+	return true
+end
+
+function service:purge(node, actor, notify)
+	-- Access checking
+	if not self:may(node, actor, "retract") then
+		return false, "forbidden";
+	end
+	--
+	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
+	node_obj.data = {}; -- Purge
+	if notify then
+		self.config.broadcaster("purge", node, node_obj.subscribers);
 	end
 	return true
 end
@@ -321,7 +350,7 @@ function service:get_subscriptions(node, actor, jid)
 			if node then -- Return only subscriptions to this node
 				if subscribed_nodes[node] then
 					ret[#ret+1] = {
-						node = subscribed_node;
+						node = subscribed_nodes[node];
 						jid = jid;
 						subscription = node_obj.subscribers[jid];
 					};

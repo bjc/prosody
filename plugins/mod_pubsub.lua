@@ -2,10 +2,12 @@ local pubsub = require "util.pubsub";
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local uuid_generate = require "util.uuid".generate;
+local usermanager = require "core.usermanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
+local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
@@ -30,6 +32,8 @@ end
 local pubsub_errors = {
 	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
+	["jid-required"] = { "modify", "bad-request", nil, "jid-required" };
+	["nodeid-required"] = { "modify", "bad-request", nil, "nodeid-required" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 	["forbidden"] = { "cancel", "forbidden" };
@@ -48,6 +52,9 @@ function handlers.get_items(origin, stanza, items)
 	local item = items:get_child("item");
 	local id = item and item.attr.id;
 	
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local ok, results = service:get_items(node, stanza.attr.from, id);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, results));
@@ -70,6 +77,9 @@ end
 
 function handlers.get_subscriptions(origin, stanza, subscriptions)
 	local node = subscriptions.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local ok, ret = service:get_subscriptions(node, stanza.attr.from, stanza.attr.from);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, ret));
@@ -109,12 +119,34 @@ function handlers.set_create(origin, stanza, create)
 	return origin.send(reply);
 end
 
+function handlers.set_delete(origin, stanza, delete)
+	local node = delete.attr.node;
+
+	local reply, notifier;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
+	local ok, ret = service:delete(node, stanza.attr.from);
+	if ok then
+		reply = st.reply(stanza);
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
 function handlers.set_subscribe(origin, stanza, subscribe)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
+	if not (node and jid) then
+		return origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
+	end
+	--[[
 	local options_tag, options = stanza.tags[1]:get_child("options"), nil;
 	if options_tag then
 		options = options_form:data(options_tag.tags[1]);
 	end
+	--]]
+	local options_tag, options; -- FIXME
 	local ok, ret = service:add_subscription(node, stanza.attr.from, jid, options);
 	local reply;
 	if ok then
@@ -138,7 +170,7 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 		if items then
 			local jids = { [jid] = options or true };
 			for id, item in pairs(items) do
-				service.config.broadcaster(node, jids, item);
+				service.config.broadcaster("items", node, jids, item);
 			end
 		end
 	end
@@ -146,6 +178,9 @@ end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe)
 	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
+	if not (node and jid) then
+		return origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
+	end
 	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
 	local reply;
 	if ok then
@@ -158,6 +193,9 @@ end
 
 function handlers.set_publish(origin, stanza, publish)
 	local node = publish.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id) or uuid_generate();
 	local ok, ret = service:publish(node, stanza.attr.from, id, item);
@@ -178,6 +216,9 @@ function handlers.set_retract(origin, stanza, retract)
 	notify = (notify == "1") or (notify == "true");
 	local item = retract:get_child("item");
 	local id = item and item.attr.id
+	if not (node and id) then
+		return origin.send(pubsub_error_reply(stanza, node and "item-not-found" or "nodeid-required"));
+	end
 	local reply, notifier;
 	if notify then
 		notifier = st.stanza("retract", { id = id });
@@ -191,12 +232,30 @@ function handlers.set_retract(origin, stanza, retract)
 	return origin.send(reply);
 end
 
-function simple_broadcast(node, jids, item)
-	item = st.clone(item);
-	item.attr.xmlns = nil; -- Clear the pubsub namespace
+function handlers.set_purge(origin, stanza, purge)
+	local node, notify = purge.attr.node, purge.attr.notify;
+	notify = (notify == "1") or (notify == "true");
+	local reply;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
+	local ok, ret = service:purge(node, stanza.attr.from, notify);
+	if ok then
+		reply = st.reply(stanza);
+	else
+		reply = pubsub_error_reply(stanza, ret);
+	end
+	return origin.send(reply);
+end
+
+function simple_broadcast(kind, node, jids, item)
+	if item then
+		item = st.clone(item);
+		item.attr.xmlns = nil; -- Clear the pubsub namespace
+	end
 	local message = st.message({ from = module.host, type = "headline" })
 		:tag("event", { xmlns = xmlns_pubsub_event })
-			:tag("items", { node = node })
+			:tag(kind, { node = node })
 				:add_child(item);
 	for jid in pairs(jids) do
 		module:log("debug", "Sending notification to %s", jid);
@@ -205,14 +264,17 @@ function simple_broadcast(node, jids, item)
 	end
 end
 
-module:hook("iq/host/http://jabber.org/protocol/pubsub:pubsub", handle_pubsub_iq);
+module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
+module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
 local disco_info;
 
 local feature_map = {
-	create = { "create-nodes", autocreate_on_publish and "instant-nodes", "item-ids" };
+	create = { "create-nodes", "instant-nodes", "item-ids" };
 	retract = { "delete-items", "retract-items" };
-	publish = { "publish" };
+	purge = { "purge-nodes" };
+	publish = { "publish", autocreate_on_publish and "auto-create" };
+	delete = { "delete-nodes" };
 	get_items = { "retrieve-items" };
 	add_subscription = { "subscribe" };
 	get_subscriptions = { "retrieve-subscriptions" };
@@ -289,7 +351,7 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function
 	end
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
-		event.origin.send(pubsub_error_reply(stanza, ret));
+		event.origin.send(pubsub_error_reply(event.stanza, ret));
 	else
 		local reply = st.reply(event.stanza)
 			:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
@@ -373,6 +435,7 @@ set_service(pubsub.new({
 			create = true;
 			publish = true;
 			retract = true;
+			delete = true;
 			get_nodes = true;
 			
 			subscribe = true;
