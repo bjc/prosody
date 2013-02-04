@@ -299,8 +299,7 @@ function get_user_roster_handler(self, data, state)
 			end
 		end
 
-		local query_text = query:__tostring(); -- TODO: Use upcoming pretty_print() function
-		query_text = query_text:gsub("><", ">\n<");
+		local query_text = tostring(query):gsub("><", ">\n<");
 
 		local result = get_user_roster_result_layout:form({ accountjid = user.."@"..host, roster = query_text }, "result");
 		result:add_child(query);
