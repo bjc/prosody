@@ -544,7 +544,8 @@ function reload_modules_handler(self, data, state)
 				err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 			end
 		end
-		local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")..
+		local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 			(#err_list > 0 and ("Failed to reload the following modules on host "..data.to..":\n"..t_concat(err_list, "\n")) or "");
 		return { status = "completed", info = info };
 	else
@@ -642,7 +643,8 @@ function unload_modules_handler(self, data, state)
 				err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 			end
 		end
-		local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")..
+		local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 			(#err_list > 0 and ("Failed to unload the following modules on host "..data.to..":\n"..t_concat(err_list, "\n")) or "");
 		return { status = "completed", info = info };
 	else
