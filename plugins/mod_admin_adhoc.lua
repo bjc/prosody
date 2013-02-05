@@ -466,6 +466,59 @@ function load_module_handler(self, data, state)
 	end
 end
 
+local function globally_load_module_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Globally load module";
+		instructions = "Specify the module to be loaded on all hosts";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#global-load" };
+		{ name = "module", type = "text-single", required = true, label = "Module to globally load:"};
+	};
+	if state then
+		local ok_list, err_list = {}, {};
+
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+
+		local ok, err = modulemanager.load(data.to, fields.module);
+		if ok then
+			ok_list[#ok_list + 1] = data.to;
+		else
+			err_list[#err_list + 1] = data.to .. " (Error: " .. tostring(err) .. ")";
+		end
+
+		-- Is this a global module?
+		if modulemanager.is_loaded("*", fields.module) and not modulemanager.is_loaded(data.to, fields.module) then
+			return { status = "completed", info = 'Global module '..fields.module..' loaded.' };
+		end
+
+		-- This is either a shared or "normal" module, load it on all other hosts
+		for host_name, host in pairs(hosts) do
+			if host_name ~= data.to and host.type == "local" then
+				local ok, err = modulemanager.load(host_name, fields.module);
+				if ok then
+					ok_list[#ok_list + 1] = host_name;
+				else
+					err_list[#err_list + 1] = host_name .. " (Error: " .. tostring(err) .. ")";
+				end
+			end
+		end
+
+		local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully loaded onto the hosts:\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
+			(#err_list > 0 and ("Failed to load the module "..fields.module.." onto the hosts:\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
+	else
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = layout }, "executing";
+	end
+end
+
 function reload_modules_handler(self, data, state)
 	local layout = dataforms_new {
 		title = "Reload modules";
@@ -666,6 +719,7 @@ local get_user_stats_desc = adhoc_new("Get User Statistics","http://jabber.org/p
 local get_online_users_desc = adhoc_new("Get List of Online Users", "http://jabber.org/protocol/admin#get-online-users", get_online_users_command_handler, "admin");
 local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/protocol/modules#list", list_modules_handler, "admin");
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
+local globally_load_module_desc = adhoc_new("Globally load module", "http://prosody.im/protocol/modules#global-load", globally_load_module_handler, "global_admin");
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
@@ -683,6 +737,7 @@ module:provides("adhoc", get_user_stats_desc);
 module:provides("adhoc", get_online_users_desc);
 module:provides("adhoc", list_modules_desc);
 module:provides("adhoc", load_module_desc);
+module:provides("adhoc", globally_load_module_desc);
 module:provides("adhoc", reload_modules_desc);
 module:provides("adhoc", shut_down_service_desc);
 module:provides("adhoc", unload_modules_desc);
