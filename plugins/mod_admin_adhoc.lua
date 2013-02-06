@@ -554,6 +554,67 @@ function reload_modules_handler(self, data, state)
 	end
 end
 
+local function globally_reload_module_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Globally reload module";
+		instructions = "Specify the module to reload on all hosts";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#global-reload" };
+		{ name = "module", type = "list-single", required = true, label = "Module to globally reload:"};
+	};
+	if state then
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+
+		local is_global = false;
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+
+		if modulemanager.is_loaded("*", fields.module) then
+			local ok, err = modulemanager.reload("*", fields.module);
+			if not ok then
+				return { status = "completed", info = 'Global module '..fields.module..' failed to reload: '..err };
+			end
+			is_global = true;
+		end
+
+		local ok_list, err_list = {}, {};
+		for host_name, host in pairs(hosts) do
+			if modulemanager.is_loaded(host_name, fields.module)  then
+				local ok, err = modulemanager.reload(host_name, fields.module);
+				if ok then
+					ok_list[#ok_list + 1] = host_name;
+				else
+					err_list[#err_list + 1] = host_name .. " (Error: " .. tostring(err) .. ")";
+				end
+			end
+		end
+
+		if #ok_list == 0 and #err_list == 0 then
+			if is_global then
+				return { status = "completed", info = 'Successfully reloaded global module '..fields.module };
+			else
+				return { status = "completed", info = 'Module '..fields.module..' not loaded on any host.' };
+			end
+		end
+
+		local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully reloaded on the hosts:\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
+			(#err_list > 0 and ("Failed to reload the module "..fields.module.." on the hosts:\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
+	else
+		local loaded_modules = array(keys(modulemanager.get_modules("*")));
+		for _, host in pairs(hosts) do
+			loaded_modules:append(array(keys(host.modules)));
+		end
+		loaded_modules = array(keys(set.new(loaded_modules):items())):sort();
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout, values = { module = loaded_modules } } }, "executing";
+	end
+end
+
 function send_to_online(message, server)
 	if server then
 		sessions = { [server] = hosts[server] };
@@ -723,6 +784,7 @@ local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/pr
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
 local globally_load_module_desc = adhoc_new("Globally load module", "http://prosody.im/protocol/modules#global-load", globally_load_module_handler, "global_admin");
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
+local globally_reload_module_desc = adhoc_new("Globally reload module", "http://prosody.im/protocol/modules#global-reload", globally_reload_module_handler, "global_admin");
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
 local activate_host_desc = adhoc_new("Activate host", "http://prosody.im/protocol/hosts#activate", activate_host_handler, "global_admin");
@@ -741,6 +803,7 @@ module:provides("adhoc", list_modules_desc);
 module:provides("adhoc", load_module_desc);
 module:provides("adhoc", globally_load_module_desc);
 module:provides("adhoc", reload_modules_desc);
+module:provides("adhoc", globally_reload_module_desc);
 module:provides("adhoc", shut_down_service_desc);
 module:provides("adhoc", unload_modules_desc);
 module:provides("adhoc", activate_host_desc);
