@@ -671,7 +671,7 @@ function shut_down_service_handler(self, data, state)
 			send_to_online(message);
 		end
 
-		timer_add_task(tonumber(fields.delay or "5"), prosody.shutdown);
+		timer_add_task(tonumber(fields.delay or "5"), function(time) prosody.shutdown("Shutdown by adhoc command") end);
 
 		return { status = "completed", info = "Server is about to shut down" };
 	else
