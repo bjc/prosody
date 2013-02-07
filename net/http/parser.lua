@@ -99,6 +99,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							parsed_url = { path = _path, query = _query };
 						else
 							parsed_url = url_parse(path);
+							if not parsed_url then error = true; return error_cb("invalid-url"); end
 						end
 						path = preprocess_path(parsed_url.path);
 						headers.host = parsed_url.host or headers.host;
