@@ -53,7 +53,7 @@ function form_t.form(layout, data, formtype)
 			elseif field_type == "boolean" then
 				form:tag("value"):text((value and "1") or "0"):up();
 			elseif field_type == "fixed" then
-				
+				form:tag("value"):text(value):up();
 			elseif field_type == "jid-multi" then
 				for _, jid in ipairs(value) do
 					form:tag("value"):text(jid):up();
