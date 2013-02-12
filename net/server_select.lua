@@ -201,20 +201,23 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		--mem_free( )
 		out_put "server.lua: closed server handler and removed sockets from list"
 	end
-	handler.pause = function()
+	handler.pause = function( hard )
 		if not handler.paused then
-			socket:close( )
-			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 			_readlistlen = removesocket( _readlist, socket, _readlistlen )
-			_socketlist[ socket ] = nil
-			socket = nil;
+			if hard then
+				_socketlist[ socket ] = nil
+				socket:close( )
+				socket = nil;
+			end
 			handler.paused = true;
 		end
 	end
-	handler.resume = function()
+	handler.resume = function( )
 		if handler.paused then
-			socket = socket_bind( ip, serverport );
-			socket:settimeout( 0 )
+			if not socket then
+				socket = socket_bind( ip, serverport );
+				socket:settimeout( 0 )
+			end
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
 			_socketlist[ socket ] = handler
 			handler.paused = false;
