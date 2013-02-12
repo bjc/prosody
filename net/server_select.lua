@@ -122,7 +122,8 @@ local _cleanqueue
 
 local _timer
 
-local _maxclientsperserver
+local _maxselectlen
+local _maxfd
 
 local _maxsslhandshake
 
@@ -156,15 +157,20 @@ _readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
 
 _cleanqueue = false -- clean bufferqueue after using
 
-_maxclientsperserver = 1000
+_maxfd = luasocket._SETSIZE or 1024 -- We should ignore this on Windows.  Perhaps by simply setting it to math.huge or something.
+_maxselectlen = luasocket._SETSIZE or 1024 -- But this still applies on Windows
 
 _maxsslhandshake = 30 -- max handshake round-trips
 
 ----------------------------------// PRIVATE //--
 
-wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxconnections ) -- this function wraps a server
+wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- this function wraps a server -- FIXME Make sure FD < _maxfd
 
-	maxconnections = maxconnections or _maxclientsperserver
+	if socket:getfd() >= _maxfd then
+		out_error("server.lua: Disallowed FD number: "..socket:getfd())
+		socket:close()
+		return nil, "fd-too-large"
+	end
 
 	local connections = 0
 
@@ -233,7 +239,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		return socket
 	end
 	handler.readbuffer = function( )
-		if connections > maxconnections then
+		if _readlistlen >= _maxselectlen or _sendlistlen >= _maxselectlen then
 			handler.pause( )
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
@@ -261,6 +267,12 @@ end
 
 wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx ) -- this function wraps a client to a handler object
 
+	if socket:getfd() >= _maxfd then
+		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
+		socket:close( ) -- Should we send some kind of error here?
+		server.pause( )
+		return nil, nil, "fd-too-large"
+	end
 	socket:settimeout( 0 )
 
 	--// local import of socket methods //--
@@ -724,7 +736,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
-	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, _maxclientsperserver ) -- wrap new server socket
+	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx ) -- wrap new server socket
 	if not handler then
 		server:close( )
 		return nil, err
@@ -768,7 +780,7 @@ closeall = function( )
 end
 
 getsettings = function( )
-	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver, _maxsslhandshake
+	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxselectlen, _maxsslhandshake, _maxfd
 end
 
 changesettings = function( new )
@@ -783,8 +795,9 @@ changesettings = function( new )
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
 	_cleanqueue = new.select_clean_queue
-	_maxclientsperserver = new.max_connections or _maxclientsperserver
+	_maxselectlen = new.max_connections or _maxselectlen
 	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
+	_maxfd = new.highest_allowed_fd or _maxfd
 	return true
 end
 
@@ -865,7 +878,8 @@ end
 --// EXPERIMENTAL //--
 
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx )
-	local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
 		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
