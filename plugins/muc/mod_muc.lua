@@ -126,9 +126,10 @@ local function handle_to_domain(event)
 	if type == "error" or type == "result" then return; end
 	if stanza.name == "iq" and type == "get" then
 		local xmlns = stanza.tags[1].attr.xmlns;
-		if xmlns == "http://jabber.org/protocol/disco#info" then
+		local node = stanza.tags[1].attr.node;
+		if xmlns == "http://jabber.org/protocol/disco#info" and not node then
 			origin.send(get_disco_info(stanza));
-		elseif xmlns == "http://jabber.org/protocol/disco#items" then
+		elseif xmlns == "http://jabber.org/protocol/disco#items" and not node then
 			origin.send(get_disco_items(stanza));
 		elseif xmlns == "http://jabber.org/protocol/muc#unique" then
 			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions
