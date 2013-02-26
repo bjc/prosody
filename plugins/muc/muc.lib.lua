@@ -987,7 +987,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			return true;
 		end
 		if actor_affiliation ~= "owner" then
-			if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+			if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
 				return nil, "cancel", "not-allowed";
 			end
 		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
