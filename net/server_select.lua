@@ -47,7 +47,6 @@ local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
-local string_len = string.len
 local string_sub = string.sub
 local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
@@ -406,7 +405,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		return clientport
 	end
 	local write = function( self, data )
-		bufferlen = bufferlen + string_len( data )
+		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
 			_closelist[ handler ] = "send buffer exceeded"	 -- cannot close the client at the moment, have to wait to the end of the cycle
 			handler.write = idfalse -- dont write anymore
@@ -488,7 +487,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
 		if not err or (err == "wantread" or err == "timeout") then -- received something
 			local buffer = buffer or part or ""
-			local len = string_len( buffer )
+			local len = #buffer
 			if len > maxreadlen then
 				handler:close( "receive buffer exceeded" )
 				return false
