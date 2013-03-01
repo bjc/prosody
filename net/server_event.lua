@@ -460,7 +460,6 @@ end
 local handleclient;
 do
 	local string_sub = string.sub  -- caching table lookups
-	local string_len = string.len
 	local addevent = base.addevent
 	local socket_gettime = socket.gettime
 	function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
