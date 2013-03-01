@@ -10,11 +10,6 @@
 local use = function( what )
 	return _G[ what ]
 end
-local clean = function( tbl )
-	for i, k in pairs( tbl ) do
-		tbl[ i ] = nil
-	end
-end
 
 local log, table_concat = require ("util.logger").init("socket"), table.concat;
 local out_put = function (...) return log("debug", table_concat{...}); end
@@ -117,8 +112,6 @@ local _checkinterval
 local _sendtimeout
 local _readtimeout
 
-local _cleanqueue
-
 local _timer
 
 local _maxselectlen
@@ -153,8 +146,6 @@ _maxreadlen = 25000 * 1024 -- max len of read buffer
 _checkinterval = 1200000 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
 _readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
-
-_cleanqueue = false -- clean bufferqueue after using
 
 _maxfd = luasocket._SETSIZE or 1024 -- We should ignore this on Windows.  Perhaps by simply setting it to math.huge or something.
 _maxselectlen = luasocket._SETSIZE or 1024 -- But this still applies on Windows
@@ -349,9 +340,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.force_close = function ( self, err )
 		if bufferqueuelen ~= 0 then
 			out_put("server.lua: discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
-			for i = bufferqueuelen, 1, -1 do
-				bufferqueue[i] = nil;
-			end
 			bufferqueuelen = 0;
 		end
 		return self:close(err);
@@ -513,7 +501,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			count = ( succ or byte or 0 ) * STAT_UNIT
 			sendtraffic = sendtraffic + count
 			_sendtraffic = _sendtraffic + count
-			_ = _cleanqueue and clean( bufferqueue )
+			for i = bufferqueuelen,1,-1 do
+				bufferqueue[ i ] = nil
+			end
 			--out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
 		else
 			succ, err, count = false, "unexpected close", 0;
@@ -779,7 +769,7 @@ closeall = function( )
 end
 
 getsettings = function( )
-	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxselectlen, _maxsslhandshake, _maxfd
+	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, nil, _maxselectlen, _maxsslhandshake, _maxfd
 end
 
 changesettings = function( new )
@@ -793,7 +783,6 @@ changesettings = function( new )
 	_checkinterval = tonumber( new.select_idle_check_interval ) or _checkinterval
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
-	_cleanqueue = new.select_clean_queue
 	_maxselectlen = new.max_connections or _maxselectlen
 	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
 	_maxfd = new.highest_allowed_fd or _maxfd
@@ -846,8 +835,8 @@ loop = function(once) -- this is the main loop of the program
 		for handler, err in pairs( _closelist ) do
 			handler.disconnect( )( handler, err )
 			handler:force_close()	 -- forced disconnect
+			_closelist[ handler ] = nil;
 		end
-		clean( _closelist )
 		_currenttime = luasocket_gettime( )
 		if _currenttime - _timer >= math_min(next_timer_time, 1) then
 			next_timer_time = math_huge;
