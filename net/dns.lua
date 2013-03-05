@@ -223,7 +223,7 @@ end
 
 
 function dns.random(...)    -- - - - - - - - - - - - - - - - - - -  dns.random
-	math.randomseed(math.floor(10000*socket.gettime()));
+	math.randomseed(math.floor(10000*socket.gettime()) % 0x100000000);
 	dns.random = math.random;
 	return dns.random(...);
 end
