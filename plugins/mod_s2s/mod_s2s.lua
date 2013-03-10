@@ -168,6 +168,7 @@ local function check_cert_status(session)
 			end
 		end
 	end
+	module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
 end
 
 --- XMPP stream event handlers
