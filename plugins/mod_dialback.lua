@@ -170,7 +170,7 @@ module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	end
 end, 100);
 
-module:hook("s2s-authenticate-legacy", function (event)
+module:hook("s2sout-authenticate-legacy", function (event)
 	module:log("debug", "Initiating dialback...");
 	initiate_dialback(event.origin);
 	return true;
