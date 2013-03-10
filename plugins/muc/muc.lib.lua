@@ -765,13 +765,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 	local type = stanza.attr.type;
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
 	if stanza.name == "iq" then
-		if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" then
-			if stanza.tags[1].attr.node then
-				origin.send(st.error_reply(stanza, "cancel", "feature-not-implemented"));
-			else
-				origin.send(self:get_disco_info(stanza));
-			end
-		elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" then
+		if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" and not stanza.tags[1].attr.node then
+			origin.send(self:get_disco_info(stanza));
+		elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" and not stanza.tags[1].attr.node then
 			origin.send(self:get_disco_items(stanza));
 		elseif xmlns == "http://jabber.org/protocol/muc#admin" then
 			local actor = stanza.attr.from;
@@ -987,7 +983,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			return true;
 		end
 		if actor_affiliation ~= "owner" then
-			if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+			if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
 				return nil, "cancel", "not-allowed";
 			end
 		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change

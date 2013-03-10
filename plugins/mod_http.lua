@@ -38,9 +38,10 @@ local function get_http_event(host, app_path, key)
 end
 
 local function get_base_path(host_module, app_name, default_app_path)
-	return normalize_path(host_module:get_option("http_paths", {})[app_name] -- Host
+	return (normalize_path(host_module:get_option("http_paths", {})[app_name] -- Host
 		or module:get_option("http_paths", {})[app_name] -- Global
-		or default_app_path); -- Default
+		or default_app_path)) -- Default
+		:gsub("%$(%w+)", { host = module.host });
 end
 
 local ports_by_scheme = { http = 80, https = 443, };
