@@ -299,8 +299,7 @@ function get_user_roster_handler(self, data, state)
 			end
 		end
 
-		local query_text = query:__tostring(); -- TODO: Use upcoming pretty_print() function
-		query_text = query_text:gsub("><", ">\n<");
+		local query_text = tostring(query):gsub("><", ">\n<");
 
 		local result = get_user_roster_result_layout:form({ accountjid = user.."@"..host, roster = query_text }, "result");
 		result:add_child(query);
@@ -467,6 +466,59 @@ function load_module_handler(self, data, state)
 	end
 end
 
+local function globally_load_module_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Globally load module";
+		instructions = "Specify the module to be loaded on all hosts";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#global-load" };
+		{ name = "module", type = "text-single", required = true, label = "Module to globally load:"};
+	};
+	if state then
+		local ok_list, err_list = {}, {};
+
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+
+		local ok, err = modulemanager.load(data.to, fields.module);
+		if ok then
+			ok_list[#ok_list + 1] = data.to;
+		else
+			err_list[#err_list + 1] = data.to .. " (Error: " .. tostring(err) .. ")";
+		end
+
+		-- Is this a global module?
+		if modulemanager.is_loaded("*", fields.module) and not modulemanager.is_loaded(data.to, fields.module) then
+			return { status = "completed", info = 'Global module '..fields.module..' loaded.' };
+		end
+
+		-- This is either a shared or "normal" module, load it on all other hosts
+		for host_name, host in pairs(hosts) do
+			if host_name ~= data.to and host.type == "local" then
+				local ok, err = modulemanager.load(host_name, fields.module);
+				if ok then
+					ok_list[#ok_list + 1] = host_name;
+				else
+					err_list[#err_list + 1] = host_name .. " (Error: " .. tostring(err) .. ")";
+				end
+			end
+		end
+
+		local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully loaded onto the hosts:\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
+			(#err_list > 0 and ("Failed to load the module "..fields.module.." onto the hosts:\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
+	else
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = layout }, "executing";
+	end
+end
+
 function reload_modules_handler(self, data, state)
 	local layout = dataforms_new {
 		title = "Reload modules";
@@ -492,12 +544,74 @@ function reload_modules_handler(self, data, state)
 				err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 			end
 		end
-		local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")..
+		local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 			(#err_list > 0 and ("Failed to reload the following modules on host "..data.to..":\n"..t_concat(err_list, "\n")) or "");
 		return { status = "completed", info = info };
 	else
 		local modules = array.collect(keys(hosts[data.to].modules)):sort();
 		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout; values = { modules = modules } } }, "executing";
+	end
+end
+
+local function globally_reload_module_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Globally reload module";
+		instructions = "Specify the module to reload on all hosts";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#global-reload" };
+		{ name = "module", type = "list-single", required = true, label = "Module to globally reload:"};
+	};
+	if state then
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+
+		local is_global = false;
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+
+		if modulemanager.is_loaded("*", fields.module) then
+			local ok, err = modulemanager.reload("*", fields.module);
+			if not ok then
+				return { status = "completed", info = 'Global module '..fields.module..' failed to reload: '..err };
+			end
+			is_global = true;
+		end
+
+		local ok_list, err_list = {}, {};
+		for host_name, host in pairs(hosts) do
+			if modulemanager.is_loaded(host_name, fields.module)  then
+				local ok, err = modulemanager.reload(host_name, fields.module);
+				if ok then
+					ok_list[#ok_list + 1] = host_name;
+				else
+					err_list[#err_list + 1] = host_name .. " (Error: " .. tostring(err) .. ")";
+				end
+			end
+		end
+
+		if #ok_list == 0 and #err_list == 0 then
+			if is_global then
+				return { status = "completed", info = 'Successfully reloaded global module '..fields.module };
+			else
+				return { status = "completed", info = 'Module '..fields.module..' not loaded on any host.' };
+			end
+		end
+
+		local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully reloaded on the hosts:\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
+			(#err_list > 0 and ("Failed to reload the module "..fields.module.." on the hosts:\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
+	else
+		local loaded_modules = array(keys(modulemanager.get_modules("*")));
+		for _, host in pairs(hosts) do
+			loaded_modules:append(array(keys(host.modules)));
+		end
+		loaded_modules = array(keys(set.new(loaded_modules):items())):sort();
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout, values = { module = loaded_modules } } }, "executing";
 	end
 end
 
@@ -557,7 +671,7 @@ function shut_down_service_handler(self, data, state)
 			send_to_online(message);
 		end
 
-		timer_add_task(tonumber(fields.delay or "5"), prosody.shutdown);
+		timer_add_task(tonumber(fields.delay or "5"), function(time) prosody.shutdown("Shutdown by adhoc command") end);
 
 		return { status = "completed", info = "Server is about to shut down" };
 	else
@@ -590,7 +704,8 @@ function unload_modules_handler(self, data, state)
 				err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 			end
 		end
-		local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")..
+		local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..data.to..":\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 			(#err_list > 0 and ("Failed to unload the following modules on host "..data.to..":\n"..t_concat(err_list, "\n")) or "");
 		return { status = "completed", info = info };
 	else
@@ -598,6 +713,68 @@ function unload_modules_handler(self, data, state)
 		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout; values = { modules = modules } } }, "executing";
 	end
 end
+
+local function globally_unload_module_handler(self, data, state)
+	local layout = dataforms_new {
+		title = "Globally unload module";
+		instructions = "Specify a module to unload on all hosts";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/modules#global-unload" };
+		{ name = "module", type = "list-single", required = true, label = "Module to globally unload:"};
+	};
+	if state then
+		if data.action == "cancel" then
+			return { status = "canceled" };
+		end
+
+		local is_global = false;
+		local fields, err = layout:data(data.form);
+		if err then
+			return generate_error_message(err);
+		end
+
+		if modulemanager.is_loaded("*", fields.module) then
+			local ok, err = modulemanager.unload("*", fields.module);
+			if not ok then
+				return { status = "completed", info = 'Global module '..fields.module..' failed to unload: '..err };
+			end
+			is_global = true;
+		end
+
+		local ok_list, err_list = {}, {};
+		for host_name, host in pairs(hosts) do
+			if modulemanager.is_loaded(host_name, fields.module)  then
+				local ok, err = modulemanager.unload(host_name, fields.module);
+				if ok then
+					ok_list[#ok_list + 1] = host_name;
+				else
+					err_list[#err_list + 1] = host_name .. " (Error: " .. tostring(err) .. ")";
+				end
+			end
+		end
+
+		if #ok_list == 0 and #err_list == 0 then
+			if is_global then
+				return { status = "completed", info = 'Successfully unloaded global module '..fields.module };
+			else
+				return { status = "completed", info = 'Module '..fields.module..' not loaded on any host.' };
+			end
+		end
+
+		local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully unloaded on the hosts:\n"..t_concat(ok_list, "\n")) or "")
+			.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
+			(#err_list > 0 and ("Failed to unload the module "..fields.module.." on the hosts:\n"..t_concat(err_list, "\n")) or "");
+		return { status = "completed", info = info };
+	else
+		local loaded_modules = array(keys(modulemanager.get_modules("*")));
+		for _, host in pairs(hosts) do
+			loaded_modules:append(array(keys(host.modules)));
+		end
+		loaded_modules = array(keys(set.new(loaded_modules):items())):sort();
+		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = { layout = layout, values = { module = loaded_modules } } }, "executing";
+	end
+end
+
 
 function activate_host_handler(self, data, state)
 	local layout = dataforms_new {
@@ -667,9 +844,12 @@ local get_user_stats_desc = adhoc_new("Get User Statistics","http://jabber.org/p
 local get_online_users_desc = adhoc_new("Get List of Online Users", "http://jabber.org/protocol/admin#get-online-users", get_online_users_command_handler, "admin");
 local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/protocol/modules#list", list_modules_handler, "admin");
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
+local globally_load_module_desc = adhoc_new("Globally load module", "http://prosody.im/protocol/modules#global-load", globally_load_module_handler, "global_admin");
 local reload_modules_desc = adhoc_new("Reload modules", "http://prosody.im/protocol/modules#reload", reload_modules_handler, "admin");
+local globally_reload_module_desc = adhoc_new("Globally reload module", "http://prosody.im/protocol/modules#global-reload", globally_reload_module_handler, "global_admin");
 local shut_down_service_desc = adhoc_new("Shut Down Service", "http://jabber.org/protocol/admin#shutdown", shut_down_service_handler, "global_admin");
 local unload_modules_desc = adhoc_new("Unload modules", "http://prosody.im/protocol/modules#unload", unload_modules_handler, "admin");
+local globally_unload_module_desc = adhoc_new("Globally unload module", "http://prosody.im/protocol/modules#global-unload", globally_unload_module_handler, "global_admin");
 local activate_host_desc = adhoc_new("Activate host", "http://prosody.im/protocol/hosts#activate", activate_host_handler, "global_admin");
 local deactivate_host_desc = adhoc_new("Deactivate host", "http://prosody.im/protocol/hosts#deactivate", deactivate_host_handler, "global_admin");
 
@@ -684,8 +864,11 @@ module:provides("adhoc", get_user_stats_desc);
 module:provides("adhoc", get_online_users_desc);
 module:provides("adhoc", list_modules_desc);
 module:provides("adhoc", load_module_desc);
+module:provides("adhoc", globally_load_module_desc);
 module:provides("adhoc", reload_modules_desc);
+module:provides("adhoc", globally_reload_module_desc);
 module:provides("adhoc", shut_down_service_desc);
 module:provides("adhoc", unload_modules_desc);
+module:provides("adhoc", globally_unload_module_desc);
 module:provides("adhoc", activate_host_desc);
 module:provides("adhoc", deactivate_host_desc);

@@ -89,29 +89,30 @@ function listener.onconnect(conn)
 	local pending = {};
 	local waiting = false;
 	local function process_next()
-		--if waiting then log("debug", "can't process_next, waiting"); return; end
-		if sessions[conn] and #pending > 0 then
+		if waiting then log("debug", "can't process_next, waiting"); return; end
+		waiting = true;
+		while sessions[conn] and #pending > 0 do
 			local request = t_remove(pending);
 			--log("debug", "process_next: %s", request.path);
-			waiting = true;
 			--handle_request(conn, request, process_next);
 			_1, _2, _3 = conn, request, process_next;
 			if not xpcall(_handle_request, _traceback_handler) then
 				conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = last_err }));
 				conn:close();
 			end
-		else
-			--log("debug", "ready for more");
-			waiting = false;
 		end
+		--log("debug", "ready for more");
+		waiting = false;
 	end
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
+		if waiting then
+			log("error", "http connection handler is not reentrant: %s", request.path);
+			assert(false, "http connection handler is not reentrant");
+		end
 		request.secure = secure;
 		t_insert(pending, request);
-		if not waiting then
-			process_next();
-		end
+		process_next();
 	end
 	local function error_cb(err)
 		log("debug", "error_cb: %s", err or "<nil>");

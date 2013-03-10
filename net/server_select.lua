@@ -10,11 +10,6 @@
 local use = function( what )
 	return _G[ what ]
 end
-local clean = function( tbl )
-	for i, k in pairs( tbl ) do
-		tbl[ i ] = nil
-	end
-end
 
 local log, table_concat = require ("util.logger").init("socket"), table.concat;
 local out_put = function (...) return log("debug", table_concat{...}); end
@@ -47,7 +42,6 @@ local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
-local string_len = string.len
 local string_sub = string.sub
 local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
@@ -118,11 +112,10 @@ local _checkinterval
 local _sendtimeout
 local _readtimeout
 
-local _cleanqueue
-
 local _timer
 
-local _maxclientsperserver
+local _maxselectlen
+local _maxfd
 
 local _maxsslhandshake
 
@@ -154,17 +147,20 @@ _checkinterval = 1200000 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
 _readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
 
-_cleanqueue = false -- clean bufferqueue after using
-
-_maxclientsperserver = 1000
+_maxfd = luasocket._SETSIZE or 1024 -- We should ignore this on Windows.  Perhaps by simply setting it to math.huge or something.
+_maxselectlen = luasocket._SETSIZE or 1024 -- But this still applies on Windows
 
 _maxsslhandshake = 30 -- max handshake round-trips
 
 ----------------------------------// PRIVATE //--
 
-wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxconnections ) -- this function wraps a server
+wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- this function wraps a server -- FIXME Make sure FD < _maxfd
 
-	maxconnections = maxconnections or _maxclientsperserver
+	if socket:getfd() >= _maxfd then
+		out_error("server.lua: Disallowed FD number: "..socket:getfd())
+		socket:close()
+		return nil, "fd-too-large"
+	end
 
 	local connections = 0
 
@@ -201,20 +197,23 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		--mem_free( )
 		out_put "server.lua: closed server handler and removed sockets from list"
 	end
-	handler.pause = function()
+	handler.pause = function( hard )
 		if not handler.paused then
-			socket:close( )
-			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 			_readlistlen = removesocket( _readlist, socket, _readlistlen )
-			_socketlist[ socket ] = nil
-			socket = nil;
+			if hard then
+				_socketlist[ socket ] = nil
+				socket:close( )
+				socket = nil;
+			end
 			handler.paused = true;
 		end
 	end
-	handler.resume = function()
+	handler.resume = function( )
 		if handler.paused then
-			socket = socket_bind( ip, serverport );
-			socket:settimeout( 0 )
+			if not socket then
+				socket = socket_bind( ip, serverport );
+				socket:settimeout( 0 )
+			end
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
 			_socketlist[ socket ] = handler
 			handler.paused = false;
@@ -230,7 +229,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, maxco
 		return socket
 	end
 	handler.readbuffer = function( )
-		if connections > maxconnections then
+		if _readlistlen >= _maxselectlen or _sendlistlen >= _maxselectlen then
 			handler.pause( )
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
@@ -258,6 +257,12 @@ end
 
 wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx ) -- this function wraps a client to a handler object
 
+	if socket:getfd() >= _maxfd then
+		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
+		socket:close( ) -- Should we send some kind of error here?
+		server.pause( )
+		return nil, nil, "fd-too-large"
+	end
 	socket:settimeout( 0 )
 
 	--// local import of socket methods //--
@@ -335,9 +340,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.force_close = function ( self, err )
 		if bufferqueuelen ~= 0 then
 			out_put("server.lua: discarding unwritten data for ", tostring(ip), ":", tostring(clientport))
-			for i = bufferqueuelen, 1, -1 do
-				bufferqueue[i] = nil;
-			end
 			bufferqueuelen = 0;
 		end
 		return self:close(err);
@@ -391,7 +393,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		return clientport
 	end
 	local write = function( self, data )
-		bufferlen = bufferlen + string_len( data )
+		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
 			_closelist[ handler ] = "send buffer exceeded"	 -- cannot close the client at the moment, have to wait to the end of the cycle
 			handler.write = idfalse -- dont write anymore
@@ -473,7 +475,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
 		if not err or (err == "wantread" or err == "timeout") then -- received something
 			local buffer = buffer or part or ""
-			local len = string_len( buffer )
+			local len = #buffer
 			if len > maxreadlen then
 				handler:close( "receive buffer exceeded" )
 				return false
@@ -499,7 +501,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			count = ( succ or byte or 0 ) * STAT_UNIT
 			sendtraffic = sendtraffic + count
 			_sendtraffic = _sendtraffic + count
-			_ = _cleanqueue and clean( bufferqueue )
+			for i = bufferqueuelen,1,-1 do
+				bufferqueue[ i ] = nil
+			end
 			--out_put( "server.lua: sended '", buffer, "', bytes: ", tostring(succ), ", error: ", tostring(err), ", part: ", tostring(byte), ", to: ", tostring(ip), ":", tostring(clientport) )
 		else
 			succ, err, count = false, "unexpected close", 0;
@@ -721,7 +725,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
-	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, _maxclientsperserver ) -- wrap new server socket
+	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx ) -- wrap new server socket
 	if not handler then
 		server:close( )
 		return nil, err
@@ -765,7 +769,7 @@ closeall = function( )
 end
 
 getsettings = function( )
-	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, _cleanqueue, _maxclientsperserver, _maxsslhandshake
+	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, nil, _maxselectlen, _maxsslhandshake, _maxfd
 end
 
 changesettings = function( new )
@@ -779,9 +783,9 @@ changesettings = function( new )
 	_checkinterval = tonumber( new.select_idle_check_interval ) or _checkinterval
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
-	_cleanqueue = new.select_clean_queue
-	_maxclientsperserver = new.max_connections or _maxclientsperserver
+	_maxselectlen = new.max_connections or _maxselectlen
 	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
+	_maxfd = new.highest_allowed_fd or _maxfd
 	return true
 end
 
@@ -831,8 +835,8 @@ loop = function(once) -- this is the main loop of the program
 		for handler, err in pairs( _closelist ) do
 			handler.disconnect( )( handler, err )
 			handler:force_close()	 -- forced disconnect
+			_closelist[ handler ] = nil;
 		end
-		clean( _closelist )
 		_currenttime = luasocket_gettime( )
 		if _currenttime - _timer >= math_min(next_timer_time, 1) then
 			next_timer_time = math_huge;
@@ -862,7 +866,8 @@ end
 --// EXPERIMENTAL //--
 
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx )
-	local handler = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
 		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
