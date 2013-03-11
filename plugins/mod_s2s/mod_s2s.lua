@@ -136,6 +136,7 @@ end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
+	local host = session.direction == "incoming" and session.from_host or session.to_host
 	local conn = session.conn:socket()
 	local cert
 	if conn.getpeercertificate then
@@ -154,8 +155,6 @@ local function check_cert_status(session)
 		else
 			(session.log or log)("debug", "certificate chain validation result: valid");
 			session.cert_chain_status = "valid";
-
-			local host = session.direction == "incoming" and session.from_host or session.to_host
 
 			-- We'll go ahead and verify the asserted identity if the
 			-- connecting server specified one.
