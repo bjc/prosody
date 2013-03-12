@@ -136,6 +136,7 @@ end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
+	local host = session.direction == "incoming" and session.from_host or session.to_host
 	local conn = session.conn:socket()
 	local cert
 	if conn.getpeercertificate then
@@ -155,8 +156,6 @@ local function check_cert_status(session)
 			(session.log or log)("debug", "certificate chain validation result: valid");
 			session.cert_chain_status = "valid";
 
-			local host = session.direction == "incoming" and session.from_host or session.to_host
-
 			-- We'll go ahead and verify the asserted identity if the
 			-- connecting server specified one.
 			if host then
@@ -168,6 +167,7 @@ local function check_cert_status(session)
 			end
 		end
 	end
+	module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
 end
 
 --- XMPP stream event handlers
@@ -249,7 +249,8 @@ function stream_callbacks.streamopened(session, attr)
 		if session.secure and not session.cert_chain_status then check_cert_status(session); end
 
 		send("<?xml version='1.0'?>");
-		send(st.stanza("stream:stream", { xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
+		send(st.stanza("stream:stream", { xmlns='jabber:server',
+				["xmlns:db"]= hosts[to].modules.dialback and 'jabber:server:dialback' or nil,
 				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=to, to=from, version=(session.version > 0 and "1.0" or nil) }):top_tag());
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
