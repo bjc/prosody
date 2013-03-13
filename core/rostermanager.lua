@@ -11,10 +11,7 @@
 
 local log = require "util.logger".init("rostermanager");
 
-local setmetatable = setmetatable;
-local format = string.format;
-local pcall = pcall;
-local pairs, ipairs = pairs, ipairs;
+local pairs = pairs;
 local tostring = tostring;
 
 local hosts = hosts;
