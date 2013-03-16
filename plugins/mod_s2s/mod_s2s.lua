@@ -248,10 +248,7 @@ function stream_callbacks.streamopened(session, attr)
 
 		if session.secure and not session.cert_chain_status then check_cert_status(session); end
 
-		send("<?xml version='1.0'?>");
-		send(st.stanza("stream:stream", { xmlns='jabber:server',
-				["xmlns:db"]= hosts[to].modules.dialback and 'jabber:server:dialback' or nil,
-				["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=to, to=from, version=(session.version > 0 and "1.0" or nil) }):top_tag());
+		session:open_stream()
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
@@ -348,8 +345,7 @@ local function session_close(session, reason, remote_reason)
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
-			session.sends2s("<?xml version='1.0'?>");
-			session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
+			session:open_stream()
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
@@ -396,6 +392,27 @@ local function session_close(session, reason, remote_reason)
 	end
 end
 
+function session_open_stream(session, from, to)
+	local from = from or session.from_host;
+	local to = to or session.to_host;
+	local attr = {
+		["xmlns:stream"] = 'http://etherx.jabber.org/streams',
+		xmlns = 'jabber:server',
+		version = session.version and (session.version > 0 and "1.0" or nil),
+		["xml:lang"] = 'en',
+		id = session.streamid,
+		from = from, to = to,
+	}
+	local local_host = session.direction == "outgoing" and from or to;
+	if not local_host or hosts[local_host].modules.dialback then
+		attr["xmlns:db"] = 'jabber:server:dialback';
+	end
+
+	session.sends2s("<?xml version='1.0'?>");
+	session.sends2s(st.stanza("stream:stream", attr):top_tag());
+	return true;
+end
+
 -- Session initialization logic shared by incoming and outgoing
 local function initialize_session(session)
 	local stream = new_xmpp_stream(session, stream_callbacks);
@@ -407,6 +424,8 @@ local function initialize_session(session)
 		session.notopen = true;
 		session.stream:reset();
 	end
+
+	session.open_stream = session_open_stream;
 	
 	local filter = session.filter;
 	function session.data(data)
