@@ -88,11 +88,7 @@ module:hook_stanza(xmlns_sasl, "success", function (session, stanza)
 	module:log("debug", "SASL EXTERNAL with %s succeeded", session.to_host);
 	session.external_auth = "succeeded"
 	session:reset_stream();
-
-	local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
-	                            ["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
-	session.sends2s("<?xml version='1.0'?>");
-	session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
+	session:open_stream();
 
 	s2s_make_authenticated(session, session.to_host);
 	return true;
