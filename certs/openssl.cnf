@@ -2,7 +2,7 @@ oid_section = new_oids
 
 [ new_oids ]
 
-# RFC 3920 section 5.1.1 defines this OID
+# RFC 6120 section 13.7.1.4. defines this OID
 xmppAddr = 1.3.6.1.5.5.7.8.5
 
 # RFC 4985 defines this OID
@@ -40,7 +40,7 @@ subjectAltName   = @subject_alternative_name
 
 [ subject_alternative_name ]
 
-# See http://tools.ietf.org/html/draft-ietf-xmpp-3920bis#section-13.7.1.2 for more info.
+# See http://tools.ietf.org/html/rfc6120#section-13.7.1.2 for more info.
 
 DNS.0       =                                           example.com
 otherName.0 =                 xmppAddr;FORMAT:UTF8,UTF8:example.com
