@@ -190,7 +190,7 @@ function request(u, ex, callback)
 	
 	local sslctx = false;
 	if using_https then
-		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23" };
+		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
 	end
 
 	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", sslctx);
