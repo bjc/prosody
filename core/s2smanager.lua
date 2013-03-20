@@ -12,7 +12,6 @@ local hosts = hosts;
 local tostring, pairs, ipairs, getmetatable, newproxy, setmetatable
     = tostring, pairs, ipairs, getmetatable, newproxy, setmetatable;
 
-local fire_event = prosody.events.fire_event;
 local logger_init = require "util.logger".init;
 
 local log = logger_init("s2smanager");
@@ -23,6 +22,7 @@ local prosody = _G.prosody;
 incoming_s2s = {};
 prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
+local fire_event = prosody.events.fire_event;
 
 module "s2smanager"
 
@@ -91,7 +91,7 @@ function mark_connected(session)
 
 	local event_data = { session = session };
 	if session.type == "s2sout" then
-		prosody.events.fire_event("s2sout-established", event_data);
+		fire_event("s2sout-established", event_data);
 		hosts[from].events.fire_event("s2sout-established", event_data);
 	else
 		local host_session = hosts[to];
@@ -99,7 +99,7 @@ function mark_connected(session)
 			return host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
 		end;
 
-		prosody.events.fire_event("s2sin-established", event_data);
+		fire_event("s2sin-established", event_data);
 		hosts[to].events.fire_event("s2sin-established", event_data);
 	end
 	
@@ -158,12 +158,12 @@ function destroy_session(session, reason)
 	
 	local event_data = { session = session, reason = reason };
 	if session.type == "s2sout" then
-		prosody.events.fire_event("s2sout-destroyed", event_data);
+		fire_event("s2sout-destroyed", event_data);
 		if hosts[session.from_host] then
 			hosts[session.from_host].events.fire_event("s2sout-destroyed", event_data);
 		end
 	elseif session.type == "s2sin" then
-		prosody.events.fire_event("s2sin-destroyed", event_data);
+		fire_event("s2sin-destroyed", event_data);
 		if hosts[session.to_host] then
 			hosts[session.to_host].events.fire_event("s2sin-destroyed", event_data);
 		end
