@@ -188,7 +188,12 @@ function request(u, ex, callback)
 		return nil, err;
 	end
 	
-	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", using_https and { mode = "client", protocol = "sslv23" });
+	local sslctx = false;
+	if using_https then
+		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23" };
+	end
+
+	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", sslctx);
 	req.write = function (...) return req.handler:write(...); end
 	
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
