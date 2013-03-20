@@ -23,6 +23,7 @@ if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
+local core_route_stanza = _G.prosody.core_route_stanza;
 
 local pairs, select = pairs, select;
 local tostring, type = tostring, type;
