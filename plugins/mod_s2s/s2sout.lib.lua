@@ -44,15 +44,9 @@ local function compare_srv_priorities(a,b)
 	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
 end
 
-local function session_open_stream(session, from, to)
-	session.sends2s(st.stanza("stream:stream", {
-		xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
-		["xmlns:stream"]='http://etherx.jabber.org/streams',
-		from=from, to=to, version='1.0', ["xml:lang"]='en'}):top_tag());
-end
-
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
+	host_session.version = 1;
 	host_session.open_stream = session_open_stream;
 	
 	-- Kick the connection attempting machine into life
