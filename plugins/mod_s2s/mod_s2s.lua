@@ -33,6 +33,9 @@ local s2sout = module:require("s2sout");
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
 
+local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
+local secure_domains, insecure_domains =
+	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
 local require_encryption = module:get_option_boolean("s2s_require_encryption", secure_auth);
 
 local sessions = module:shared("sessions");
@@ -239,7 +242,7 @@ local function check_cert_status(session)
 			end
 		end
 	end
-	module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
+	return module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
 end
 
 --- XMPP stream event handlers
@@ -318,7 +321,11 @@ function stream_callbacks.streamopened(session, attr)
 			end
 		end
 
-		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+		if session.secure and not session.cert_chain_status then
+			if check_cert_status(session) == false then
+				return;
+			end
+		end
 
 		session:open_stream()
 		if session.version >= 1.0 then
@@ -338,7 +345,11 @@ function stream_callbacks.streamopened(session, attr)
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
 
-		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+		if session.secure and not session.cert_chain_status then
+			if check_cert_status(session) == false then
+				return;
+			end
+		end
 
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
@@ -597,6 +608,24 @@ function listener.register_outgoing(conn, session)
 	sessions[conn] = session;
 	initialize_session(session);
 end
+
+function check_auth_policy(event)
+	local host, session = event.host, event.session;
+	
+	if not secure_auth and secure_domains[host] then
+		secure_auth = true;
+	elseif secure_auth and insecure_domains[host] then
+		secure_auth = false;
+	end
+	
+	if secure_auth and not session.cert_identity_status then
+		module:log("warn", "Forbidding insecure connection to/from %s", host);
+		session:close(false);
+		return false;
+	end
+end
+
+module:hook("s2s-check-certificate", check_auth_policy, -1);
 
 s2sout.set_listener(listener);
 
