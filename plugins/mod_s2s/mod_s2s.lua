@@ -610,14 +610,15 @@ end
 
 function check_auth_policy(event)
 	local host, session = event.host, event.session;
-	
-	if not secure_auth and secure_domains[host] then
-		secure_auth = true;
-	elseif secure_auth and insecure_domains[host] then
-		secure_auth = false;
+	local must_secure = secure_auth;
+
+	if not must_secure and secure_domains[host] then
+		must_secure = true;
+	elseif must_secure and insecure_domains[host] then
+		must_secure = false;
 	end
 	
-	if secure_auth and not session.cert_identity_status then
+	if must_secure and not session.cert_identity_status then
 		module:log("warn", "Forbidding insecure connection to/from %s", host);
 		session:close(false);
 		return false;
