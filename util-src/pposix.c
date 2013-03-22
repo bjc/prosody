@@ -484,6 +484,9 @@ int string2resource(const char *s) {
 	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
 	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
 #endif
+#ifdef RLIMIT_NICE
+	if (!strcmp(s, "NICE")) return RLIMIT_NICE;
+#endif
 	return -1;
 }
 
