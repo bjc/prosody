@@ -132,8 +132,8 @@ end
 function sanity_check()
 	for host, host_config in pairs(config.getconfig()) do
 		if host ~= "*"
-		and host_config.core.enabled ~= false
-		and not host_config.core.component_module then
+		and host_config.enabled ~= false
+		and not host_config.component_module then
 			return;
 		end
 	end
@@ -198,6 +198,7 @@ function set_function_metatable()
 end
 
 function init_global_state()
+	-- COMPAT: These globals are deprecated
 	bare_sessions = {};
 	full_sessions = {};
 	hosts = {};
