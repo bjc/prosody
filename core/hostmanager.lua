@@ -25,7 +25,7 @@ end
 local incoming_s2s = _G.prosody.incoming_s2s;
 local core_route_stanza = _G.prosody.core_route_stanza;
 
-local pairs, select = pairs, select;
+local pairs, select, rawget = pairs, select, rawget;
 local tostring, type = tostring, type;
 
 module "hostmanager"
@@ -67,7 +67,7 @@ local function host_send(stanza)
 end
 
 function activate(host, host_config)
-	if hosts[host] then return nil, "The host "..host.." is already activated"; end
+	if rawget(hosts, host) then return nil, "The host "..host.." is already activated"; end
 	host_config = host_config or configmanager.getconfig()[host];
 	if not host_config then return nil, "Couldn't find the host "..tostring(host).." defined in the current config"; end
 	local host_session = {
