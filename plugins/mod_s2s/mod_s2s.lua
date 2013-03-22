@@ -24,14 +24,19 @@ local new_xmpp_stream = require "util.xmppstream".new;
 local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
-local s2s_mark_connected = require "core.s2smanager".mark_connected;
 local uuid_gen = require "util.uuid".generate;
 local cert_verify_identity = require "util.x509".verify_identity;
+local fire_global_event = prosody.events.fire_event;
 
 local s2sout = module:require("s2sout");
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
+
+local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
+local secure_domains, insecure_domains =
+	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
+local require_encryption = module:get_option_boolean("s2s_require_encryption", secure_auth);
 
 local sessions = module:shared("sessions");
 
@@ -132,6 +137,76 @@ function module.add_host(module)
 	end
 	module:hook("route/remote", route_to_existing_session, 200);
 	module:hook("route/remote", route_to_new_session, 100);
+	module:hook("s2s-authenticated", make_authenticated, -1);
+end
+
+-- Stream is authorised, and ready for normal stanzas
+function mark_connected(session)
+	local sendq, send = session.sendq, session.sends2s;
+	
+	local from, to = session.from_host, session.to_host;
+	
+	session.log("info", "%s s2s connection %s->%s complete", session.direction, from, to);
+
+	local event_data = { session = session };
+	if session.type == "s2sout" then
+		fire_global_event("s2sout-established", event_data);
+		hosts[from].events.fire_event("s2sout-established", event_data);
+	else
+		local host_session = hosts[to];
+		session.send = function(stanza)
+			return host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
+		end;
+
+		fire_global_event("s2sin-established", event_data);
+		hosts[to].events.fire_event("s2sin-established", event_data);
+	end
+	
+	if session.direction == "outgoing" then
+		if sendq then
+			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", #sendq, session.to_host);
+			for i, data in ipairs(sendq) do
+				send(data[1]);
+				sendq[i] = nil;
+			end
+			session.sendq = nil;
+		end
+		
+		session.ip_hosts = nil;
+		session.srv_hosts = nil;
+	end
+end
+
+function make_authenticated(event)
+	local session, host = event.session, event.host;
+	if not session.secure then
+		if require_encryption or secure_auth or secure_domains[host] then
+			session:close({
+				condition = "policy-violation",
+				text = "Encrypted server-to-server communication is required but was not "
+				       ..((session.direction == "outgoing" and "offered") or "used")
+			});
+		end
+	end
+	if session.type == "s2sout_unauthed" then
+		session.type = "s2sout";
+	elseif session.type == "s2sin_unauthed" then
+		session.type = "s2sin";
+		if host then
+			if not session.hosts[host] then session.hosts[host] = {}; end
+			session.hosts[host].authed = true;
+		end
+	elseif session.type == "s2sin" and host then
+		if not session.hosts[host] then session.hosts[host] = {}; end
+		session.hosts[host].authed = true;
+	else
+		return false;
+	end
+	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
+	
+	mark_connected(session);
+	
+	return true;
 end
 
 --- Helper to check that a session peer's certificate is valid
@@ -167,7 +242,7 @@ local function check_cert_status(session)
 			end
 		end
 	end
-	module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
+	return module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
 end
 
 --- XMPP stream event handlers
@@ -246,7 +321,11 @@ function stream_callbacks.streamopened(session, attr)
 			end
 		end
 
-		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+		if session.secure and not session.cert_chain_status then
+			if check_cert_status(session) == false then
+				return;
+			end
+		end
 
 		session:open_stream()
 		if session.version >= 1.0 then
@@ -266,7 +345,11 @@ function stream_callbacks.streamopened(session, attr)
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
 
-		if session.secure and not session.cert_chain_status then check_cert_status(session); end
+		if session.secure and not session.cert_chain_status then
+			if check_cert_status(session) == false then
+				return;
+			end
+		end
 
 		-- Send unauthed buffer
 		-- (stanzas which are fine to send before dialback)
@@ -287,7 +370,7 @@ function stream_callbacks.streamopened(session, attr)
 			if not session.dialback_verifying then
 				hosts[session.from_host].events.fire_event("s2sout-authenticate-legacy", { origin = session });
 			else
-				s2s_mark_connected(session);
+				mark_connected(session);
 			end
 		end
 	end
@@ -525,6 +608,24 @@ function listener.register_outgoing(conn, session)
 	sessions[conn] = session;
 	initialize_session(session);
 end
+
+function check_auth_policy(event)
+	local host, session = event.host, event.session;
+	
+	if not secure_auth and secure_domains[host] then
+		secure_auth = true;
+	elseif secure_auth and insecure_domains[host] then
+		secure_auth = false;
+	end
+	
+	if secure_auth and not session.cert_identity_status then
+		module:log("warn", "Forbidding insecure connection to/from %s", host);
+		session:close(false);
+		return false;
+	end
+end
+
+module:hook("s2s-check-certificate", check_auth_policy, -1);
 
 s2sout.set_listener(listener);
 

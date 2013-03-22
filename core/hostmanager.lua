@@ -17,7 +17,7 @@ local uuid_gen = require "util.uuid".generate;
 
 local log = require "util.logger".init("hostmanager");
 
-local hosts = hosts;
+local hosts = prosody.hosts;
 local prosody_events = prosody.events;
 if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
@@ -25,7 +25,7 @@ end
 local incoming_s2s = _G.prosody.incoming_s2s;
 local core_route_stanza = _G.prosody.core_route_stanza;
 
-local pairs, select = pairs, select;
+local pairs, select, rawget = pairs, select, rawget;
 local tostring, type = tostring, type;
 
 module "hostmanager"
@@ -37,8 +37,8 @@ local function load_enabled_hosts(config)
 	local activated_any_host;
 	
 	for host, host_config in pairs(defined_hosts) do
-		if host ~= "*" and host_config.core.enabled ~= false then
-			if not host_config.core.component_module then
+		if host ~= "*" and host_config.enabled ~= false then
+			if not host_config.component_module then
 				activated_any_host = true;
 			end
 			activate(host, host_config);
@@ -67,7 +67,7 @@ local function host_send(stanza)
 end
 
 function activate(host, host_config)
-	if hosts[host] then return nil, "The host "..host.." is already activated"; end
+	if rawget(hosts, host) then return nil, "The host "..host.." is already activated"; end
 	host_config = host_config or configmanager.getconfig()[host];
 	if not host_config then return nil, "Couldn't find the host "..tostring(host).." defined in the current config"; end
 	local host_session = {
@@ -78,7 +78,7 @@ function activate(host, host_config)
 		send = host_send;
 		modules = {};
 	};
-	if not host_config.core.component_module then -- host
+	if not host_config.component_module then -- host
 		host_session.type = "local";
 		host_session.sessions = {};
 	else -- component
@@ -86,9 +86,9 @@ function activate(host, host_config)
 	end
 	hosts[host] = host_session;
 	if not host:match("[@/]") then
-		disco_items:set(host:match("%.(.*)") or "*", host, host_config.core.name or true);
+		disco_items:set(host:match("%.(.*)") or "*", host, host_config.name or true);
 	end
-	for option_name in pairs(host_config.core) do
+	for option_name in pairs(host_config) do
 		if option_name:match("_ports$") or option_name:match("_interface$") then
 			log("warn", "%s: Option '%s' has no effect for virtual hosts - put it in the server-wide section instead", host, option_name);
 		end
