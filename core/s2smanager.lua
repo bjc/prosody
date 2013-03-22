@@ -8,7 +8,7 @@
 
 
 
-local hosts = hosts;
+local hosts = prosody.hosts;
 local tostring, pairs, getmetatable, newproxy, setmetatable
     = tostring, pairs, getmetatable, newproxy, setmetatable;
 
