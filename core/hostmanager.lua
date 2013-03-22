@@ -17,7 +17,7 @@ local uuid_gen = require "util.uuid".generate;
 
 local log = require "util.logger".init("hostmanager");
 
-local hosts = hosts;
+local hosts = prosody.hosts;
 local prosody_events = prosody.events;
 if not _G.prosody.incoming_s2s then
 	require "core.s2smanager";
