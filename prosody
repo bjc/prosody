@@ -198,6 +198,7 @@ function set_function_metatable()
 end
 
 function init_global_state()
+	-- COMPAT: These globals are deprecated
 	bare_sessions = {};
 	full_sessions = {};
 	hosts = {};
