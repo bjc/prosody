@@ -9,7 +9,7 @@
 
 local st = require "util.stanza";
 
-local full_sessions = full_sessions;
+local full_sessions = prosody.full_sessions;
 
 if module:get_host_type() == "local" then
 	module:hook("iq/full", function(data)

@@ -19,7 +19,7 @@ local new_xmpp_stream = require "util.xmppstream".new;
 local uuid_gen = require "util.uuid".generate;
 
 local core_process_stanza = prosody.core_process_stanza;
-
+local hosts = prosody.hosts;
 
 local log = module._log;
 
