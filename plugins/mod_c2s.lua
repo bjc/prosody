@@ -29,6 +29,7 @@ local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
 
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
+local hosts = prosody.hosts;
 
 local stream_callbacks = { default_ns = "jabber:client", handlestanza = core_process_stanza };
 local listener = {};

@@ -25,6 +25,7 @@ if secure_s2s_only then s2s_feature:tag("required"):up(); end
 
 local global_ssl_ctx = prosody.global_ssl_ctx;
 
+local hosts = prosody.hosts;
 local host = hosts[module.host];
 
 local function can_do_tls(session)
