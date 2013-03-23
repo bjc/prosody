@@ -2,7 +2,6 @@ module:set_global();
 
 local server = require "net.http.server";
 local codes = require "net.http.codes";
-local termcolours = require "util.termcolours";
 
 local show_private = module:get_option_boolean("http_errors_detailed", false);
 local always_serve = module:get_option_boolean("http_errors_always_show", true);

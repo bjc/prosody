@@ -13,7 +13,6 @@ local motd_jid = module:get_option_string("motd_jid", host);
 
 if not motd_text then return; end
 
-local jid_join = require "util.jid".join;
 local st = require "util.stanza";
 
 motd_text = motd_text:gsub("^%s*(.-)%s*$", "%1"):gsub("\n%s+", "\n"); -- Strip indentation from the config

@@ -146,7 +146,7 @@ function reload_logging()
 	
 	logger.reset();
 
-	local debug_mode = config.get("*", "core", "debug");
+	local debug_mode = config.get("*", "debug");
 
 	default_logging = { { to = "console" , levels = { min = (debug_mode and "debug") or "info" } } };
 	default_file_logging = {
@@ -154,7 +154,7 @@ function reload_logging()
 	};
 	default_timestamp = "%b %d %H:%M:%S";
 
-	logging_config = config.get("*", "core", "log") or default_logging;
+	logging_config = config.get("*", "log") or default_logging;
 	
 	
 	for name, sink_maker in pairs(old_sink_types) do
