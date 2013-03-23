@@ -25,7 +25,7 @@ local config_mt = { __index = function (t, k) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
 
 -- When host not found, use global
-local host_mt = { };
+local host_mt = { __index = function(_, k) return config["*"][k] end }
 
 function getconfig()
 	return config;
