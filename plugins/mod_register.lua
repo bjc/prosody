@@ -7,7 +7,6 @@
 --
 
 
-local hosts = _G.hosts;
 local st = require "util.stanza";
 local datamanager = require "util.datamanager";
 local dataform_new = require "util.dataforms".new;
