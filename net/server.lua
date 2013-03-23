@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local use_luaevent = prosody and require "core.configmanager".get("*", "core", "use_libevent");
+local use_luaevent = prosody and require "core.configmanager".get("*", "use_libevent");
 
 if use_luaevent then
 	use_luaevent = pcall(require, "luaevent.core");
@@ -43,7 +43,7 @@ end
 if prosody then
 	local config_get = require "core.configmanager".get;
 	local function load_config()
-		local settings = config_get("*", "core", "network_settings") or {};
+		local settings = config_get("*", "network_settings") or {};
 		if use_luaevent then
 			local event_settings = {
 				ACCEPT_DELAY = settings.event_accept_retry_interval;
