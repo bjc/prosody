@@ -42,6 +42,10 @@ end
 
 if prosody then
 	local config_get = require "core.configmanager".get;
+	local defaults = {};
+	for k,v in pairs(server.cfg or server.getsettings()) do
+		defaults[k] = v;
+	end
 	local function load_config()
 		local settings = config_get("*", "network_settings") or {};
 		if use_luaevent then
@@ -59,11 +63,15 @@ if prosody then
 				WRITE_TIMEOUT = settings.send_timeout;
 			};
 
-			for k, v in pairs(event_settings) do
-				server.cfg[k] = v;
+			for k,default in pairs(defaults) do
+				server.cfg[k] = event_settings[k] or default;
 			end
 		else
-			server.changesettings(settings);
+			local select_settings = {};
+			for k,default in pairs(defaults) do
+				select_settings[k] = settings[k] or default;
+			end
+			server.changesettings(select_settings);
 		end
 	end
 	load_config();
