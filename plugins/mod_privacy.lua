@@ -9,10 +9,9 @@
 
 module:add_feature("jabber:iq:privacy");
 
-local prosody = prosody;
 local st = require "util.stanza";
 local datamanager = require "util.datamanager";
-local bare_sessions, full_sessions = bare_sessions, full_sessions;
+local bare_sessions, full_sessions = prosody.bare_sessions, prosody.full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
 local jid_split, jid_join = util_Jid.split, util_Jid.join;
