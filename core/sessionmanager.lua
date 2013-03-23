@@ -140,7 +140,7 @@ function bind_resource(session, resource)
 		local sessions = hosts[session.host].sessions[session.username].sessions;
 		if sessions[resource] then
 			-- Resource conflict
-			local policy = config_get(session.host, "core", "conflict_resolve");
+			local policy = config_get(session.host, "conflict_resolve");
 			local increment;
 			if policy == "random" then
 				resource = uuid_generate();
