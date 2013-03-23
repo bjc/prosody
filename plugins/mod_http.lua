@@ -9,6 +9,7 @@
 module:set_global();
 module:depends("http_errors");
 
+local portmanager = require "core.portmanager";
 local moduleapi = require "core.moduleapi";
 local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
