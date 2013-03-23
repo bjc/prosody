@@ -100,13 +100,13 @@ function ssl_config:from_prosody(hosts, config, certhosts)
 			if name == certhost or name:sub(-1-#certhost) == "."..certhost then
 				found_matching_hosts = true;
 				self:add_dNSName(name);
-				--print(name .. "#component_module: " .. (config.get(name, "core", "component_module") or "nil"));
-				if config.get(name, "core", "component_module") == nil then
+				--print(name .. "#component_module: " .. (config.get(name, "component_module") or "nil"));
+				if config.get(name, "component_module") == nil then
 					self:add_sRVName(name, "xmpp-client");
 				end
-				--print(name .. "#anonymous_login: " .. tostring(config.get(name, "core", "anonymous_login")));
-				if not (config.get(name, "core", "anonymous_login") or
-						config.get(name, "core", "authentication") == "anonymous") then
+				--print(name .. "#anonymous_login: " .. tostring(config.get(name, "anonymous_login")));
+				if not (config.get(name, "anonymous_login") or
+						config.get(name, "authentication") == "anonymous") then
 					self:add_sRVName(name, "xmpp-server");
 				end
 				self:add_xmppAddr(name);
