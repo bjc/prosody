@@ -9,7 +9,6 @@
 
 local st = require "util.stanza"
 
-local jid_split = require "util.jid".split;
 local datamanager = require "util.datamanager"
 
 module:add_feature("jabber:iq:private");
