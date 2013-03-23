@@ -182,12 +182,12 @@ function deluser(params)
 end
 
 function getpid()
-	local pidfile = config.get("*", "core", "pidfile");
+	local pidfile = config.get("*", "pidfile");
 	if not pidfile then
 		return false, "no-pidfile";
 	end
 	
-	local modules_enabled = set.new(config.get("*", "core", "modules_enabled"));
+	local modules_enabled = set.new(config.get("*", "modules_enabled"));
 	if not modules_enabled:contains("posix") then
 		return false, "no-posix";
 	end
