@@ -69,7 +69,6 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 				and query.tags[1].attr.jid ~= "pending" then
 			local item = query.tags[1];
 			local from_node, from_host = jid_split(stanza.attr.from);
-			local from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
 			local jid = jid_prep(item.attr.jid);
 			local node, host, resource = jid_split(jid);
 			if not resource and host then

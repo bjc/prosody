@@ -8,6 +8,7 @@
 
 local st, jid = require "util.stanza", require "util.jid";
 
+local hosts = prosody.hosts;
 local is_admin = require "core.usermanager".is_admin;
 
 function send_to_online(message, host)

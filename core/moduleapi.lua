@@ -167,12 +167,9 @@ function api:shared(...)
 end
 
 function api:get_option(name, default_value)
-	local value = config.get(self.host, self.name, name);
+	local value = config.get(self.host, name);
 	if value == nil then
-		value = config.get(self.host, "core", name);
-		if value == nil then
-			value = default_value;
-		end
+		value = default_value;
 	end
 	return value;
 end

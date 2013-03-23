@@ -19,7 +19,9 @@ local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local datetime = require "util.datetime";
-local hosts = hosts;
+local hosts = prosody.hosts;
+local bare_sessions = prosody.bare_sessions;
+local full_sessions = prosody.full_sessions;
 local NULL = {};
 
 local rostermanager = require "core.rostermanager";
