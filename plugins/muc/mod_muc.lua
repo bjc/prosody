@@ -30,7 +30,7 @@ local st = require "util.stanza";
 local uuid_gen = require "util.uuid".generate;
 local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
-local hosts = hosts;
+local hosts = prosody.hosts;
 
 rooms = {};
 local rooms = rooms;
