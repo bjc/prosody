@@ -271,6 +271,10 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
+	-- Reset secure flag in case this is another
+	-- connection attempt after a failed STARTTLS
+	host_session.secure = nil;
+
 	local conn, handler;
 	if connect_host.proto == "IPv4" then
 		conn, handler = socket.tcp();
