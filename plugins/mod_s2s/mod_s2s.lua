@@ -211,7 +211,7 @@ end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
-	local host = session.direction == "incoming" and session.from_host or session.to_host
+	local host = session.direction == "outgoing" and session.to_host or session.from_host
 	local conn = session.conn:socket()
 	local cert
 	if conn.getpeercertificate then
