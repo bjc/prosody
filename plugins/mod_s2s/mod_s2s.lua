@@ -486,7 +486,7 @@ function session_open_stream(session, from, to)
 		from = from, to = to,
 	}
 	local local_host = session.direction == "outgoing" and from or to;
-	if not local_host or hosts[local_host].modules.dialback then
+	if not local_host or (hosts[local_host] and hosts[local_host].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
 
