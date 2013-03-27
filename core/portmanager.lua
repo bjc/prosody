@@ -1,6 +1,7 @@
 local config = require "core.configmanager";
 local certmanager = require "core.certmanager";
 local server = require "net.server";
+local socket = require "socket";
 
 local log = require "util.logger".init("portmanager");
 local multitable = require "util.multitable";
@@ -19,7 +20,7 @@ module "portmanager";
 
 local default_interfaces = { "*" };
 local default_local_interfaces = { "127.0.0.1" };
-if config.get("*", "use_ipv6") then
+if socket.tcp6 and config.get("*", "use_ipv6") ~= false then
 	table.insert(default_interfaces, "::");
 	table.insert(default_local_interfaces, "::1");
 end
