@@ -80,6 +80,10 @@ function route_to_existing_session(event)
 		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
 		return false;
 	end
+	if hosts[to_host] then
+		log("warn", "Attempt to route stanza to a remote %s - a host we do serve?!", from_host);
+		return false;
+	end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
@@ -187,6 +191,9 @@ function make_authenticated(event)
 				       ..((session.direction == "outgoing" and "offered") or "used")
 			});
 		end
+	end
+	if hosts[host] then
+		session:close({ condition = "undefined-condition", text = "Attempt to authenticate as a host we serve" });
 	end
 	if session.type == "s2sout_unauthed" then
 		session.type = "s2sout";
@@ -319,6 +326,11 @@ function stream_callbacks.streamopened(session, attr)
 				});
 				return;
 			end
+		end
+
+		if hosts[from] then
+			session:close({ condition = "undefined-condition", text = "Attempt to connect from a host we serve" });
+			return;
 		end
 
 		if session.secure and not session.cert_chain_status then
