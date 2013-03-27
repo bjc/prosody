@@ -18,8 +18,12 @@ module "portmanager";
 
 --- Config
 
-local default_interfaces = { "*" };
-local default_local_interfaces = { "127.0.0.1" };
+local default_interfaces = { };
+local default_local_interfaces = { };
+if config.get("*", "use_ipv4") ~= false then
+	table.insert(default_interfaces, "*");
+	table.insert(default_local_interfaces, "127.0.0.1");
+end
 if socket.tcp6 and config.get("*", "use_ipv6") ~= false then
 	table.insert(default_interfaces, "::");
 	table.insert(default_local_interfaces, "::1");
