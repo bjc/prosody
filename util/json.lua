@@ -148,6 +148,11 @@ function json.encode_ordered(obj)
 	simplesave(obj, t);
 	return t_concat(t);
 end
+function json.encode_array(obj)
+	local t = {};
+	arraysave(obj, t);
+	return t_concat(t);
+end
 
 -----------------------------------
 
