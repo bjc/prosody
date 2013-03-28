@@ -90,7 +90,7 @@ function s2sout.attempt_connection(host_session, err)
 			host_session.connecting = nil;
 			if answer and #answer > 0 then
 				log("debug", "%s has SRV records, handling...", to_host);
-				local srv_hosts = {};
+				local srv_hosts = { answer = answer };
 				host_session.srv_hosts = srv_hosts;
 				for _, record in ipairs(answer) do
 					t_insert(srv_hosts, record.srv);
@@ -271,6 +271,10 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
+	-- Reset secure flag in case this is another
+	-- connection attempt after a failed STARTTLS
+	host_session.secure = nil;
+
 	local conn, handler;
 	if connect_host.proto == "IPv4" then
 		conn, handler = socket.tcp();
