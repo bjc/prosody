@@ -207,8 +207,8 @@ function init_global_state()
 	prosody.full_sessions = full_sessions;
 	prosody.hosts = hosts;
 	
-	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-	local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
+	local custom_plugin_paths = config.get("*", "plugin_paths");
 	if custom_plugin_paths then
 		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...

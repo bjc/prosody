@@ -769,7 +769,18 @@ closeall = function( )
 end
 
 getsettings = function( )
-	return	_selecttimeout, _sleeptime, _maxsendlen, _maxreadlen, _checkinterval, _sendtimeout, _readtimeout, nil, _maxselectlen, _maxsslhandshake, _maxfd
+	return {
+		select_timeout = _selecttimeout;
+		select_sleep_time = _sleeptime;
+		max_send_buffer_size = _maxsendlen;
+		max_receive_buffer_size = _maxreadlen;
+		select_idle_check_interval = _checkinterval;
+		send_timeout = _sendtimeout;
+		read_timeout = _readtimeout;
+		max_connections = _maxselectlen;
+		max_ssl_handshake_roundtrips = _maxsslhandshake;
+		highest_allowed_fd = _maxfd;
+	}
 end
 
 changesettings = function( new )

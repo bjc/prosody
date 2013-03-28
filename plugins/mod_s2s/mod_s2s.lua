@@ -80,6 +80,10 @@ function route_to_existing_session(event)
 		log("warn", "Attempt to send stanza from %s - a host we don't serve", from_host);
 		return false;
 	end
+	if hosts[to_host] then
+		log("warn", "Attempt to route stanza to a remote %s - a host we do serve?!", from_host);
+		return false;
+	end
 	local host = hosts[from_host].s2sout[to_host];
 	if host then
 		-- We have a connection to this host already
@@ -188,6 +192,9 @@ function make_authenticated(event)
 			});
 		end
 	end
+	if hosts[host] then
+		session:close({ condition = "undefined-condition", text = "Attempt to authenticate as a host we serve" });
+	end
 	if session.type == "s2sout_unauthed" then
 		session.type = "s2sout";
 	elseif session.type == "s2sin_unauthed" then
@@ -211,7 +218,7 @@ end
 
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
-	local host = session.direction == "incoming" and session.from_host or session.to_host
+	local host = session.direction == "outgoing" and session.to_host or session.from_host
 	local conn = session.conn:socket()
 	local cert
 	if conn.getpeercertificate then
@@ -319,6 +326,11 @@ function stream_callbacks.streamopened(session, attr)
 				});
 				return;
 			end
+		end
+
+		if hosts[from] then
+			session:close({ condition = "undefined-condition", text = "Attempt to connect from a host we serve" });
+			return;
 		end
 
 		if session.secure and not session.cert_chain_status then
@@ -486,7 +498,7 @@ function session_open_stream(session, from, to)
 		from = from, to = to,
 	}
 	local local_host = session.direction == "outgoing" and from or to;
-	if not local_host or hosts[local_host].modules.dialback then
+	if not local_host or (hosts[local_host] and hosts[local_host].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
 
