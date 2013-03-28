@@ -892,7 +892,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					origin.send(st.error_reply(stanza, "auth", "forbidden"));
 				end
 			else
-				self:broadcast_message(stanza, self:get_historylength() > 0);
+				self:broadcast_message(stanza, self:get_historylength() > 0 and stanza:get_child("body"));
 			end
 			stanza.attr.from = from;
 		end
