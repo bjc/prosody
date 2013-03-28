@@ -366,6 +366,10 @@ function checkIfNeedToBeBlocked(e, session)
 		end
 		if apply then
 			if block then
+				-- drop and not bounce groupchat messages, otherwise users will get kicked
+				if stanza.attr.type == "groupchat" then
+					return true;
+				end
 				module:log("debug", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 				if stanza.name == "message" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
