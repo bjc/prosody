@@ -1,9 +1,11 @@
-The easiest way to install dependencies is using the luarocks tool.
 
-Rocks:
-luaexpat
-luasocket
-luafilesystem
+For full information on our dependencies, version requirements, and
+where to find them, see http://prosody.im/doc/depends
 
-Non-rocks:
-LuaSec for SSL connections
+If you have luarocks available on your platform, install the following:
+
+  - luaexpat
+  - luasocket
+  - luafilesystem
+  - luasec
+
