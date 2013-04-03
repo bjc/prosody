@@ -14,6 +14,14 @@ module("helpers", package.seeall);
 
 local log = require "util.logger".init("util.debug");
 
+function log_host_events(host)
+	return log_events(prosody.hosts[host].events, host);
+end
+
+function revert_log_host_events(host)
+	return revert_log_events(prosody.hosts[host].events);
+end
+
 function log_events(events, name, logger)
 	local f = events.fire_event;
 	if not f then
