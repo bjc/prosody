@@ -95,6 +95,7 @@ do
       if [ "$OSTYPE" = "debian" ]
       then LUA_SUFFIX="5.1";
 	LUA_SUFFIX_SET=yes
+	RUNWITH="lua5.1"
 	LUA_INCDIR=/usr/include/lua5.1;
 	LUA_INCDIR_SET=yes
 	CFLAGS="$CFLAGS -D_GNU_SOURCE"

@@ -62,6 +62,20 @@ end
 function api:add_extension(data)
 	self:add_item("extension", data);
 end
+function api:has_feature(xmlns)
+	for _, feature in ipairs(self:get_host_items("feature")) do
+		if feature == xmlns then return true; end
+	end
+	return false;
+end
+function api:has_identity(category, type, name)
+	for _, id in ipairs(self:get_host_items("identity")) do
+		if id.category == category and id.type == type and id.name == name then
+			return true; 
+		end
+	end
+	return false;
+end
 
 function api:fire_event(...)
 	return (hosts[self.host] or prosody).events.fire_event(...);
@@ -271,23 +285,7 @@ function api:remove_item(key, value)
 end
 
 function api:get_host_items(key)
-	local result = {};
-	for mod_name, module in pairs(modulemanager.get_modules(self.host)) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
-	for mod_name, module in pairs(modulemanager.get_modules("*")) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
+	local result = modulemanager.get_items(key, self.host) or {};
 	return result;
 end
 

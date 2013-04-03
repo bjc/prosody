@@ -13,7 +13,7 @@ local members;
 local groups_file;
 
 local jid, datamanager = require "util.jid", require "util.datamanager";
-local jid_bare, jid_prep = jid.bare, jid.prep;
+local jid_prep = jid.prep;
 
 local module_host = module:get_host();
 
@@ -120,4 +120,9 @@ end
 
 function module.unload()
 	datamanager.remove_callback(remove_virtual_contacts);
+end
+
+-- Public for other modules to access
+function group_contains(group_name, jid)
+	return groups[group_name][jid];
 end
