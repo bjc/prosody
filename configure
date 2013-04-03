@@ -49,9 +49,9 @@ Configure Prosody prior to building.
                             Default is \$LUA_DIR/lib
 --with-idn=LIB              The name of the IDN library to link with.
                             Default is $IDN_LIB
---idn-library=(idn|icu)		 Select library to use for IDNA functionality.
-									 idn: use GNU libidn (default)
-									 icu: use ICU from IBM
+--idn-library=(idn|icu)     Select library to use for IDNA functionality.
+                            idn: use GNU libidn (default)
+                            icu: use ICU from IBM
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
