@@ -121,3 +121,8 @@ end
 function module.unload()
 	datamanager.remove_callback(remove_virtual_contacts);
 end
+
+-- Public for other modules to access
+function group_contains(group_name, jid)
+	return groups[group_name][jid];
+end
