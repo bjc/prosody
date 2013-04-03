@@ -41,6 +41,8 @@ Configure Prosody prior to building.
                             Default is "$LUA_SUFFIX" (lua$LUA_SUFFIX...)
 --with-lua=PREFIX           Use Lua from given prefix.
                             Default is $LUA_DIR
+--runwith=BINARY            What Lua binary to set as runtime environment.
+                            Default is $RUNWITH
 --with-lua-include=DIR      You can also specify Lua's includes dir.
                             Default is \$LUA_DIR/include
 --with-lua-lib=DIR          You can also specify Lua's libraries dir.
