@@ -219,7 +219,13 @@ function handle_request(conn, request, finish_cb)
 				body = result;
 			elseif result_type == "table" then
 				for k, v in pairs(result) do
-					response[k] = v;
+					if k ~= "headers" then
+						response[k] = v;
+					else
+						for header_name, header_value in pairs(v) do
+							response.headers[header_name] = header_value;
+						end
+					end
 				end
 			end
 			response:send(body);

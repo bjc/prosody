@@ -7,8 +7,8 @@
 --
 
 local _G = _G;
-local setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table =
-      setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table;
+local setmetatable, rawget, rawset, io, error, dofile, type, pairs, table =
+      setmetatable, rawget, rawset, io, error, dofile, type, pairs, table;
 local format, math_max = string.format, math.max;
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
@@ -68,7 +68,6 @@ end
 
 -- Helper function to resolve relative paths (needed by config)
 do
-	local rel_path_start = ".."..path_sep;
 	function resolve_relative_path(parent_path, path)
 		if path then
 			-- Some normalization
@@ -152,7 +151,7 @@ end
 -- Built-in Lua parser
 do
 	local pcall, setmetatable = _G.pcall, _G.setmetatable;
-	local rawget, tostring = _G.rawget, _G.tostring;
+	local rawget = _G.rawget;
 	parsers.lua = {};
 	function parsers.lua.load(data, config_file, config)
 		local env;
@@ -213,7 +212,7 @@ do
 		end
 		env.component = env.Component;
 		
-		function env.Include(file, wildcard)
+		function env.Include(file)
 			if file:match("[*?]") then
 				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
 				local path = file:sub(1, math_max(path_pos-2,0));
