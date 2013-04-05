@@ -21,7 +21,10 @@ local tonumber, tostring = tonumber, tostring;
 
 local prosody = prosody;
 local hosts = prosody.hosts;
-local core_post_stanza = prosody.core_post_stanza;
+
+-- FIXME: This assert() is to try and catch an obscure bug (2013-04-05)
+local core_post_stanza = assert(prosody.core_post_stanza,
+	"prosody.core_post_stanza is nil, please report this as a bug");
 
 -- Registry of shared module data
 local shared_data = setmetatable({}, { __mode = "v" });
