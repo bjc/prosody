@@ -166,7 +166,7 @@ function stanza_mt:maptags(callback)
 				curr_tag = curr_tag - 1;
 			else
 				self[i] = ret;
-				tags[i] = ret;
+				tags[curr_tag] = ret;
 			end
 			curr_tag = curr_tag + 1;
 		end
