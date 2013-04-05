@@ -18,6 +18,7 @@ local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
 local s_gsub        =   string.gsub;
+local s_sub         =    string.sub;
 local s_find        =   string.find;
 local os            =            os;
 
@@ -173,6 +174,31 @@ function stanza_mt:maptags(callback)
 	end
 	return self;
 end
+
+function stanza_mt:find(path)
+	local pos = 1;
+	local len = #path + 1;
+
+	repeat
+		local xmlns, name, text;
+		local char = s_sub(path, pos, pos);
+		if char == "@" then
+			return self.attr[s_sub(path, pos + 1)];
+		elseif char == "{" then
+			xmlns, pos = s_match(path, "^([^}]+)}()", pos + 1);
+		end
+		name, text, pos = s_match(path, "^([^@/#]*)([/#]?)()", pos);
+		name = name ~= "" and name or nil;
+		if pos == len then
+			if text == "#" then
+				return self:get_child_text(name, xmlns);
+			end
+			return self:get_child(name, xmlns);
+		end
+		self = self:get_child(name, xmlns);
+	until not self
+end
+
 
 local xml_escape
 do
