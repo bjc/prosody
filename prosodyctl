@@ -51,6 +51,7 @@ local prosody = {
 	lock_globals = function () end;
 	unlock_globals = function () end;
 	installed = CFG_SOURCEDIR ~= nil;
+	core_post_stanza = function () end; -- TODO: mod_router!
 };
 _G.prosody = prosody;
 
