@@ -354,4 +354,6 @@ function purge(username, host)
 	return #errs == 0, t_concat(errs, ", ");
 end
 
+_M.path_decode = decode;
+_M.path_encode = encode;
 return _M;
