@@ -284,6 +284,9 @@ end
 function _M.set_default_host(host)
 	default_host = host;
 end
+function _M.fire_event(event, ...)
+	return events.fire_event(event, ...);
+end
 
 _M.listener = listener;
 _M.codes = codes;
