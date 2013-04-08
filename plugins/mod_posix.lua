@@ -118,9 +118,9 @@ function syslog_sink_maker(config)
 	local syslog, format = pposix.syslog_log, string.format;
 	return function (name, level, message, ...)
 		if ... then
-			syslog(level, format(message, ...));
+			syslog(level, name, format(message, ...));
 		else
-			syslog(level, message);
+			syslog(level, name, message);
 		end
 	end;
 end
