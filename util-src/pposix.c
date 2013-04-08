@@ -204,12 +204,13 @@ int level_constants[] = 	{
 			};
 int lc_syslog_log(lua_State* L)
 {
-	int level = luaL_checkoption(L, 1, "notice", level_strings);
-	level = level_constants[level];
+	int level = level_constants[luaL_checkoption(L, 1, "notice", level_strings)];
 
-	luaL_checkstring(L, 2);
+	if(lua_gettop(L) == 3)
+		syslog(level, "%s: %s", luaL_checkstring(L, 2), luaL_checkstring(L, 3));
+	else
+		syslog(level, "%s", lua_tostring(L, 2));
 
-	syslog(level, "%s", lua_tostring(L, 2));
 	return 0;
 }
 
