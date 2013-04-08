@@ -29,17 +29,8 @@ local getmetatable = getmetatable;
 
 module "sessionmanager"
 
-local open_sessions = 0;
-
 function new_session(conn)
 	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
-	if true then
-		session.trace = newproxy(true);
-		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
-	end
-	open_sessions = open_sessions + 1;
-	log("debug", "open sessions now: %d", open_sessions);
-	
 	local filter = initialize_filters(session);
 	local w = conn.write;
 	session.send = function (t)
@@ -72,7 +63,7 @@ local resting_session = { -- Resting, not dead
 function retire_session(session)
 	local log = session.log or log;
 	for k in pairs(session) do
-		if k ~= "trace" and k ~= "log" and k ~= "id" then
+		if k ~= "log" and k ~= "id" then
 			session[k] = nil;
 		end
 	end
