@@ -187,17 +187,25 @@ function store(username, host, datastore, data)
 
 	-- save the datastore
 	local d = "return " .. serialize(data) .. ";\n";
-	local ok, msg = atomic_store(getpath(username, host, datastore, nil, true), d);
-	if not ok then
-		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
-		return nil, "Error saving to storage";
-	end
-	if next(data) == nil then -- try to delete empty datastore
-		log("debug", "Removing empty %s datastore for user %s@%s", datastore, username or "nil", host or "nil");
-		os_remove(getpath(username, host, datastore));
-	end
-	-- we write data even when we are deleting because lua doesn't have a
-	-- platform independent way of checking for non-exisitng files
+	local mkdir_cache_cleared;
+	repeat
+		local ok, msg = atomic_store(getpath(username, host, datastore, nil, true), d);
+		if not ok then
+			if not mkdir_cache_cleared then -- We may need to recreate a removed directory
+				_mkdir = {};
+				mkdir_cache_cleared = true;
+			else
+				log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
+				return nil, "Error saving to storage";
+			end
+		end
+		if next(data) == nil then -- try to delete empty datastore
+			log("debug", "Removing empty %s datastore for user %s@%s", datastore, username or "nil", host or "nil");
+			os_remove(getpath(username, host, datastore));
+		end
+		-- we write data even when we are deleting because lua doesn't have a
+		-- platform independent way of checking for non-exisitng files
+	until ok;
 	return true;
 end
 
@@ -354,4 +362,6 @@ function purge(username, host)
 	return #errs == 0, t_concat(errs, ", ");
 end
 
+_M.path_decode = decode;
+_M.path_encode = encode;
 return _M;
