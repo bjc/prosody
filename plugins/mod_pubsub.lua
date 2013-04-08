@@ -22,6 +22,7 @@ function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
 	local pubsub = stanza.tags[1];
 	local action = pubsub.tags[1];
+	if not action then return; end
 	local handler = handlers[stanza.attr.type.."_"..action.name];
 	if handler then
 		handler(origin, stanza, action);
