@@ -140,8 +140,8 @@ function module.add_host(module)
 		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see http://prosody.im/doc/s2s#disabling");
 		return nil, "This host has disallow_s2s set";
 	end
-	module:hook("route/remote", route_to_existing_session, 200);
-	module:hook("route/remote", route_to_new_session, 100);
+	module:hook("route/remote", route_to_existing_session, -1);
+	module:hook("route/remote", route_to_new_session, -10);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 end
 
