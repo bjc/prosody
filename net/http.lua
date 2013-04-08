@@ -11,6 +11,8 @@ local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "util.httpstream".new;
 
+local ssl_available = pcall(require, "ssl");
+
 local server = require "net.server"
 
 local t_insert, t_concat = table.insert, table.concat;
@@ -177,6 +179,9 @@ function request(u, ex, callback)
 	req.method, req.headers, req.body = method, headers, body;
 	
 	local using_https = req.scheme == "https";
+	if using_https and not ssl_available then
+		error("SSL not available, unable to contact https URL");
+	end
 	local port = tonumber(req.port) or (using_https and 443 or 80);
 	
 	-- Connect the socket, and wrap it with net.server

@@ -24,15 +24,8 @@ local fire_event = prosody.events.fire_event;
 
 module "s2smanager"
 
-local open_sessions = 0;
-
 function new_incoming(conn)
 	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
-	if true then
-		session.trace = newproxy(true);
-		getmetatable(session.trace).__gc = function () open_sessions = open_sessions - 1; end;
-	end
-	open_sessions = open_sessions + 1;
 	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
 	incoming_s2s[session] = true;
 	return session;
@@ -62,7 +55,7 @@ local resting_session = { -- Resting, not dead
 function retire_session(session, reason)
 	local log = session.log or log;
 	for k in pairs(session) do
-		if k ~= "trace" and k ~= "log" and k ~= "id" and k ~= "conn" then
+		if k ~= "log" and k ~= "id" and k ~= "conn" then
 			session[k] = nil;
 		end
 	end
