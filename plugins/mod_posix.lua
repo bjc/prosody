@@ -10,7 +10,9 @@
 local want_pposix_version = "0.3.6";
 
 local pposix = assert(require "util.pposix");
-if pposix._VERSION ~= want_pposix_version then module:log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
+if pposix._VERSION ~= want_pposix_version then
+	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
+end
 
 local signal = select(2, pcall(require, "util.signal"));
 if type(signal) == "string" then
