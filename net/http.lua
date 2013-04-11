@@ -10,6 +10,7 @@ local socket = require "socket"
 local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "util.httpstream".new;
+local util_http = require "util.http";
 
 local ssl_available = pcall(require, "ssl");
 
@@ -70,46 +71,7 @@ function listener.ondisconnect(conn, err)
 	requests[conn] = nil;
 end
 
-function urlencode(s) return s and (s:gsub("[^a-zA-Z0-9.~_-]", function (c) return format("%%%02x", c:byte()); end)); end
-function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end)); end
-
-local function _formencodepart(s)
-	return s and (s:gsub("%W", function (c)
-		if c ~= " " then
-			return format("%%%02x", c:byte());
-		else
-			return "+";
-		end
-	end));
-end
-
-function formencode(form)
-	local result = {};
-	if form[1] then -- Array of ordered { name, value }
-		for _, field in ipairs(form) do
-			t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
-		end
-	else -- Unordered map of name -> value
-		for name, value in pairs(form) do
-			t_insert(result, _formencodepart(name).."=".._formencodepart(value));
-		end
-	end
-	return t_concat(result, "&");
-end
-
-function formdecode(s)
-	if not s:match("=") then return urldecode(s); end
-	local r = {};
-	for k, v in s:gmatch("([^=&]*)=([^&]*)") do
-		k, v = k:gsub("%+", "%%20"), v:gsub("%+", "%%20");
-		k, v = urldecode(k), urldecode(v);
-		t_insert(r, { name = k, value = v });
-		r[k] = v;
-	end
-	return r;
-end
-
-local function request_reader(request, data, startpos)
+local function request_reader(request, data)
 	if not request.parser then
 		if not data then return; end
 		local function success_cb(r)
@@ -216,6 +178,10 @@ function destroy_request(request)
 	end
 end
 
-_M.urlencode = urlencode;
+local urlencode, urldecode = util_http.urlencode, util_http.urldecode;
+local formencode, formdecode = util_http.formencode, util_http.formdecode;
+
+_M.urlencode, _M.urldecode = urlencode, urldecode;
+_M.formencode, _M.formdecode = formencode, formdecode;
 
 return _M;
