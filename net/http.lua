@@ -9,7 +9,7 @@
 local socket = require "socket"
 local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
-local httpstream_new = require "util.httpstream".new;
+local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
 
 local ssl_available = pcall(require, "ssl");
