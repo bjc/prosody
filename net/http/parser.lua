@@ -136,6 +136,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 						elseif len and #buf >= len then
 							packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
 							state = nil; success_cb(packet);
+						else
+							break;
 						end
 					elseif #buf >= len then
 						packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
