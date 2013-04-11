@@ -122,6 +122,11 @@ function it.tail(n, f, s, var)
 	--return reverse(head(n, reverse(f, s, var)));
 end
 
+local function _ripairs_iter(t, key) if key > 1 then return key-1, t[key-1]; end end
+function it.ripairs(t)
+	return _ripairs_iter, t, #t+1;
+end
+
 local function _range_iter(max, curr) if curr < max then return curr + 1; end end
 function it.range(x, y)
 	if not y then x, y = 1, x; end -- Default to 1..x if y not given
