@@ -76,8 +76,7 @@ local function request_reader(request, data)
 		if not data then return; end
 		local function success_cb(r)
 			if request.callback then
-				for k,v in pairs(r) do request[k] = v; end
-				request.callback(r.body, r.code, request, r);
+				request.callback(r.body, r.code, r, request);
 				request.callback = nil;
 			end
 			destroy_request(request);
