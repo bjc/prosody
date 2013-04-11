@@ -65,6 +65,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							first_line = line;
 							if client then
 								httpversion, status_code, reason_phrase = line:match("^HTTP/(1%.[01]) (%d%d%d) (.*)$");
+								status_code = tonumber(status_code);
 								if not status_code then error = true; return error_cb("invalid-status-line"); end
 								have_body = not
 									 ( (options_cb and options_cb().method == "HEAD")
