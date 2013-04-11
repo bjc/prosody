@@ -9,8 +9,8 @@
 
 
 local hosts = prosody.hosts;
-local tostring, pairs, getmetatable, newproxy, setmetatable
-    = tostring, pairs, getmetatable, newproxy, setmetatable;
+local tostring, pairs, setmetatable
+    = tostring, pairs, setmetatable;
 
 local logger_init = require "util.logger".init;
 

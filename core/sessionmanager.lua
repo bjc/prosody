@@ -24,9 +24,6 @@ local uuid_generate = require "util.uuid".generate;
 local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
 
-local newproxy = newproxy;
-local getmetatable = getmetatable;
-
 module "sessionmanager"
 
 function new_session(conn)
