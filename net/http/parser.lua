@@ -2,7 +2,7 @@
 local tonumber = tonumber;
 local assert = assert;
 local url_parse = require "socket.url".parse;
-local urldecode = require "net.http".urldecode;
+local urldecode = require "util.http".urldecode;
 
 local function preprocess_path(path)
 	path = urldecode((path:gsub("//+", "/")));
