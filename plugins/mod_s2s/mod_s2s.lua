@@ -642,7 +642,7 @@ function check_auth_policy(event)
 	if must_secure and not session.cert_identity_status then
 		module:log("warn", "Forbidding insecure connection to/from %s", host);
 		if session.direction == "incoming" then
-			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by"..session.to_host });
+			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host });
 		else -- Close outgoing connections without warning
 			session:close(false);
 		end
