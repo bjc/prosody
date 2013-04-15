@@ -133,7 +133,6 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 								buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
 								success_cb(packet);
 							elseif #buf - chunk_start + 2 >= chunk_size then -- we have a chunk
-								print(chunk_start, chunk_size, ("%q"):format(buf))
 								packet.body = packet.body..buf:sub(chunk_start, chunk_start + (chunk_size-1));
 								buf = buf:sub(chunk_start + chunk_size + 2);
 								chunk_size, chunk_start = nil, nil;
