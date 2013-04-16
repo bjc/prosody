@@ -846,6 +846,26 @@ loop = function(once) -- this is the main loop of the program
 			_closelist[ handler ] = nil;
 		end
 		_currenttime = luasocket_gettime( )
+
+		local difftime = os_difftime( _currenttime - _starttime )
+		if difftime > _checkinterval then
+			_starttime = _currenttime
+			for handler, timestamp in pairs( _writetimes ) do
+				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
+					--_writetimes[ handler ] = nil
+					handler.disconnect( )( handler, "send timeout" )
+					handler:force_close()	 -- forced disconnect
+				end
+			end
+			for handler, timestamp in pairs( _readtimes ) do
+				if os_difftime( _currenttime - timestamp ) > _readtimeout then
+					--_readtimes[ handler ] = nil
+					handler.disconnect( )( handler, "read timeout" )
+					handler:close( )	-- forced disconnect?
+				end
+			end
+		end
+
 		if _currenttime - _timer >= math_min(next_timer_time, 1) then
 			next_timer_time = math_huge;
 			for i = 1, _timerlistlen do
@@ -920,28 +940,6 @@ use "setmetatable" ( _writetimes, { __mode = "k" } )
 
 _timer = luasocket_gettime( )
 _starttime = luasocket_gettime( )
-
-addtimer( function( )
-		local difftime = os_difftime( _currenttime - _starttime )
-		if difftime > _checkinterval then
-			_starttime = _currenttime
-			for handler, timestamp in pairs( _writetimes ) do
-				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
-					--_writetimes[ handler ] = nil
-					handler.disconnect( )( handler, "send timeout" )
-					handler:force_close()	 -- forced disconnect
-				end
-			end
-			for handler, timestamp in pairs( _readtimes ) do
-				if os_difftime( _currenttime - timestamp ) > _readtimeout then
-					--_readtimes[ handler ] = nil
-					handler.disconnect( )( handler, "read timeout" )
-					handler:close( )	-- forced disconnect?
-				end
-			end
-		end
-	end
-)
 
 local function setlogger(new_logger)
 	local old_logger = log;
