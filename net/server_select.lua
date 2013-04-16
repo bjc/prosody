@@ -847,6 +847,7 @@ loop = function(once) -- this is the main loop of the program
 		end
 		_currenttime = luasocket_gettime( )
 
+		-- Check for socket timeouts
 		local difftime = os_difftime( _currenttime - _starttime )
 		if difftime > _checkinterval then
 			_starttime = _currenttime
@@ -866,6 +867,7 @@ loop = function(once) -- this is the main loop of the program
 			end
 		end
 
+		-- Fire timers
 		if _currenttime - _timer >= math_min(next_timer_time, 1) then
 			next_timer_time = math_huge;
 			for i = 1, _timerlistlen do
@@ -876,8 +878,9 @@ loop = function(once) -- this is the main loop of the program
 		else
 			next_timer_time = next_timer_time - (_currenttime - _timer);
 		end
-		socket_sleep( _sleeptime ) -- wait some time
-		--collectgarbage( )
+
+		-- wait some time (0 by default)
+		socket_sleep( _sleeptime )
 	until quitting;
 	if once and quitting == "once" then quitting = nil; return; end
 	return "quitting"
