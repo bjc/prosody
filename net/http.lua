@@ -66,24 +66,29 @@ end
 function listener.ondisconnect(conn, err)
 	local request = requests[conn];
 	if request and request.conn then
-		request:reader(nil);
+		request:reader(nil, err);
 	end
 	requests[conn] = nil;
 end
 
-local function request_reader(request, data)
+local function request_reader(request, data, err)
 	if not request.parser then
-		if not data then return; end
-		local function success_cb(r)
+		local function error_cb(reason)
 			if request.callback then
-				request.callback(r.body, r.code, r, request);
+				request.callback(reason or "connection-closed", 0, request);
 				request.callback = nil;
 			end
 			destroy_request(request);
 		end
-		local function error_cb(r)
+		
+		if not data then
+			error_cb(err);
+			return;
+		end
+		
+		local function success_cb(r)
 			if request.callback then
-				request.callback(r or "connection-closed", 0, request);
+				request.callback(r.body, r.code, r, request);
 				request.callback = nil;
 			end
 			destroy_request(request);
