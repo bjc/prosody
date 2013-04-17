@@ -193,7 +193,9 @@ function handlers.set_publish(origin, stanza, publish)
 	local id = (item and item.attr.id);
 	if not id then
 		id = uuid_generate();
-		item.attr.id = id;
+		if item then
+			item.attr.id = id;
+		end
 	end
 	local ok, ret = service:publish(node, stanza.attr.from, id, item);
 	local reply;
