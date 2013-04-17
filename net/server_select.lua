@@ -569,7 +569,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				end
 				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
 				_ = handler and handler:force_close("ssl handshake failed")
-               return false, err -- handshake failed
+				return false, err -- handshake failed
 			end
 		)
 	end
@@ -613,7 +613,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 			handler.readbuffer = handshake
 			handler.sendbuffer = handshake
-                       return handshake( socket ) -- do handshake
+			return handshake( socket ) -- do handshake
 		end
 	end
 
@@ -629,10 +629,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	if sslctx and luasec then
 		out_put "server.lua: auto-starting ssl negotiation..."
 		handler.autostart_ssl = true;
-               local ok, err = handler:starttls(sslctx);
-               if ok == false then
-                       return nil, nil, err
-               end
+		local ok, err = handler:starttls(sslctx);
+		if ok == false then
+			return nil, nil, err
+		end
 	end
 
 	return handler, socket
@@ -846,6 +846,28 @@ loop = function(once) -- this is the main loop of the program
 			_closelist[ handler ] = nil;
 		end
 		_currenttime = luasocket_gettime( )
+
+		-- Check for socket timeouts
+		local difftime = os_difftime( _currenttime - _starttime )
+		if difftime > _checkinterval then
+			_starttime = _currenttime
+			for handler, timestamp in pairs( _writetimes ) do
+				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
+					--_writetimes[ handler ] = nil
+					handler.disconnect( )( handler, "send timeout" )
+					handler:force_close()	 -- forced disconnect
+				end
+			end
+			for handler, timestamp in pairs( _readtimes ) do
+				if os_difftime( _currenttime - timestamp ) > _readtimeout then
+					--_readtimes[ handler ] = nil
+					handler.disconnect( )( handler, "read timeout" )
+					handler:close( )	-- forced disconnect?
+				end
+			end
+		end
+
+		-- Fire timers
 		if _currenttime - _timer >= math_min(next_timer_time, 1) then
 			next_timer_time = math_huge;
 			for i = 1, _timerlistlen do
@@ -856,8 +878,9 @@ loop = function(once) -- this is the main loop of the program
 		else
 			next_timer_time = next_timer_time - (_currenttime - _timer);
 		end
-		socket_sleep( _sleeptime ) -- wait some time
-		--collectgarbage( )
+
+		-- wait some time (0 by default)
+		socket_sleep( _sleeptime )
 	until quitting;
 	if once and quitting == "once" then quitting = nil; return; end
 	return "quitting"
@@ -920,28 +943,6 @@ use "setmetatable" ( _writetimes, { __mode = "k" } )
 
 _timer = luasocket_gettime( )
 _starttime = luasocket_gettime( )
-
-addtimer( function( )
-		local difftime = os_difftime( _currenttime - _starttime )
-		if difftime > _checkinterval then
-			_starttime = _currenttime
-			for handler, timestamp in pairs( _writetimes ) do
-				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
-					--_writetimes[ handler ] = nil
-					handler.disconnect( )( handler, "send timeout" )
-					handler:force_close()	 -- forced disconnect
-				end
-			end
-			for handler, timestamp in pairs( _readtimes ) do
-				if os_difftime( _currenttime - timestamp ) > _readtimeout then
-					--_readtimes[ handler ] = nil
-					handler.disconnect( )( handler, "read timeout" )
-					handler:close( )	-- forced disconnect?
-				end
-			end
-		end
-	end
-)
 
 local function setlogger(new_logger)
 	local old_logger = log;
