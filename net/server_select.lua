@@ -243,7 +243,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			end
 			connections = connections + 1
 			out_put( "server.lua: accepted new client connection from ", tostring(ip), ":", tostring(clientport), " to ", tostring(serverport))
-			if dispatch then
+			if dispatch and not sslctx then -- SSL connections will notify onconnect when handshake completes
 				return dispatch( handler );
 			end
 			return;
