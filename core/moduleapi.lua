@@ -338,7 +338,7 @@ function api:load_resource(path, mode)
 end
 
 function api:open_store(name, type)
-	return storagemanager.open(self.host, name, type);
+	return storagemanager.open(self.host, name or self.name, type);
 end
 
 return api;
