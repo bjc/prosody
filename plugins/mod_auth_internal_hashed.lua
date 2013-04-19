@@ -7,12 +7,13 @@
 -- COPYING file in the source package for more information.
 --
 
-local datamanager = require "util.datamanager";
 local log = require "util.logger".init("auth_internal_hashed");
 local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
+
+local accounts = module:open_store("accounts");
 
 local to_hex;
 do
@@ -44,7 +45,7 @@ local provider = {};
 log("debug", "initializing internal_hashed authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
-	local credentials = datamanager.load(username, host, "accounts") or {};
+	local credentials = accounts:get(username) or {};
 
 	if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
 		if credentials.password ~= password then
@@ -75,7 +76,7 @@ function provider.test_password(username, password)
 end
 
 function provider.set_password(username, password)
-	local account = datamanager.load(username, host, "accounts");
+	local account = accounts:get(username);
 	if account then
 		account.salt = account.salt or generate_uuid();
 		account.iteration_count = account.iteration_count or iteration_count;
@@ -87,13 +88,13 @@ function provider.set_password(username, password)
 		account.server_key = server_key_hex
 
 		account.password = nil;
-		return datamanager.store(username, host, "accounts", account);
+		return accounts:set(username, account);
 	end
 	return nil, "Account not available.";
 end
 
 function provider.user_exists(username)
-	local account = datamanager.load(username, host, "accounts");
+	local account = accounts:get(username);
 	if not account then
 		log("debug", "account not found for username '%s' at host '%s'", username, host);
 		return nil, "Auth failed. Invalid username";
@@ -102,22 +103,22 @@ function provider.user_exists(username)
 end
 
 function provider.users()
-	return datamanager.users(host, "accounts");
+	return accounts:users();
 end
 
 function provider.create_user(username, password)
 	if password == nil then
-		return datamanager.store(username, host, "accounts", {});
+		return accounts:set(username, {});
 	end
 	local salt = generate_uuid();
 	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
-	return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
+	return accounts:set(username, {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
 end
 
 function provider.delete_user(username)
-	return datamanager.store(username, host, "accounts", nil);
+	return accounts:set(username, nil);
 end
 
 function provider.get_sasl_handler()
@@ -126,11 +127,11 @@ function provider.get_sasl_handler()
 			return usermanager.test_password(username, realm, password), true;
 		end,
 		scram_sha_1 = function(sasl, username, realm)
-			local credentials = datamanager.load(username, host, "accounts");
+			local credentials = accounts:get(username);
 			if not credentials then return; end
 			if credentials.password then
 				usermanager.set_password(username, credentials.password, host);
-				credentials = datamanager.load(username, host, "accounts");
+				credentials = accounts:get(username);
 				if not credentials then return; end
 			end
 			
