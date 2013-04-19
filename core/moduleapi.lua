@@ -337,4 +337,8 @@ function api:load_resource(path, mode)
 	return io.open(path, mode);
 end
 
+function api:open_store(name, type)
+	return storagemanager.open(self.host, name, type);
+end
+
 return api;
