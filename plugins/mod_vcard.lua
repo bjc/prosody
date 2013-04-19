@@ -8,7 +8,8 @@
 
 local st = require "util.stanza"
 local jid_split = require "util.jid".split;
-local datamanager = require "util.datamanager"
+
+local vcards = module:open_store();
 
 module:add_feature("vcard-temp");
 
@@ -19,9 +20,9 @@ local function handle_vcard(event)
 		local vCard;
 		if to then
 			local node, host = jid_split(to);
-			vCard = st.deserialize(datamanager.load(node, host, "vcard")); -- load vCard for user or server
+			vCard = st.deserialize(vcards:get(node)); -- load vCard for user or server
 		else
-			vCard = st.deserialize(datamanager.load(session.username, session.host, "vcard"));-- load user's own vCard
+			vCard = st.deserialize(vcards:get(session.username));-- load user's own vCard
 		end
 		if vCard then
 			session.send(st.reply(stanza):add_child(vCard)); -- send vCard!
@@ -30,7 +31,7 @@ local function handle_vcard(event)
 		end
 	else
 		if not to then
-			if datamanager.store(session.username, session.host, "vcard", st.preserialize(stanza.tags[1])) then
+			if vcards:set(session.username, st.preserialize(stanza.tags[1])) then
 				session.send(st.reply(stanza));
 			else
 				-- TODO unable to write file, file may be locked, etc, what's the correct error?
