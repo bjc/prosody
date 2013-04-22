@@ -9,7 +9,7 @@ local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
 local xpcall = xpcall;
-local debug = debug;
+local traceback = debug.traceback;
 local tostring = tostring;
 local codes = require "net.http.codes";
 
@@ -88,7 +88,7 @@ local _1, _2, _3;
 local function _handle_request() return handle_request(_1, _2, _3); end
 
 local last_err;
-local function _traceback_handler(err) last_err = err; log("error", "Traceback[http]: %s: %s", tostring(err), debug.traceback()); end
+local function _traceback_handler(err) last_err = err; log("error", "Traceback[httpserver]: %s", traceback(tostring(err), 2)); end
 events.add_handler("http-error", function (error)
 	return "Error processing request: "..codes[error.code]..". Check your error log for more information.";
 end, -1);
