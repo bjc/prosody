@@ -429,7 +429,7 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[s2s]: %s: %s", tostring(err), traceback()); end
+local function handleerr(err) log("error", "Traceback[s2s]: %s", traceback(tostring(err), 2)); end
 function stream_callbacks.handlestanza(session, stanza)
 	if stanza.attr.xmlns == "jabber:client" then --COMPAT: Prosody pre-0.6.2 may send jabber:client
 		stanza.attr.xmlns = nil;
