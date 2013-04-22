@@ -27,6 +27,8 @@ local function is_wildcard_match(wildcard_event, event)
 	return wildcard_event:sub(1, -2) == event:sub(1, #wildcard_event-1);
 end
 
+local recent_wildcard_events, max_cached_wildcard_events = {}, 10000;
+
 local event_map = events._event_map;
 setmetatable(events._handlers, {
 	__index = function (handlers, curr_event)
@@ -58,6 +60,12 @@ setmetatable(events._handlers, {
 			handlers_array = false;
 		end
 		rawset(handlers, curr_event, handlers_array);
+		if not event_map[curr_event] then -- Only wildcard handlers match, if any
+			table.insert(recent_wildcard_events, curr_event);
+			if #recent_wildcard_events > max_cached_wildcard_events then
+				rawset(handlers, table.remove(recent_wildcard_events, 1), nil);
+			end
+		end
 		return handlers_array;
 	end;
 	__newindex = function (handlers, curr_event, handlers_array)
