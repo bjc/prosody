@@ -31,6 +31,7 @@ local recent_wildcard_events, max_cached_wildcard_events = {}, 10000;
 
 local event_map = events._event_map;
 setmetatable(events._handlers, {
+	-- Called when firing an event that doesn't exist (but may match a wildcard handler)
 	__index = function (handlers, curr_event)
 		if is_wildcard_event(curr_event) then return; end -- Wildcard events cannot be fired
 		-- Find all handlers that could match this event, sort them
