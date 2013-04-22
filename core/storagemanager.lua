@@ -86,7 +86,7 @@ function open(host, store, typ)
 	if not ret then
 		if err == "unsupported-store" then
 			log("debug", "Storage driver %s does not support store %s (%s), falling back to null driver",
-				driver_name, store, typ);
+				driver_name, store, typ or "<nil>");
 			ret = null_storage_driver;
 			err = nil;
 		end
