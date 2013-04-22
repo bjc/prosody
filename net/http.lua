@@ -17,9 +17,9 @@ local ssl_available = pcall(require, "ssl");
 local server = require "net.server"
 
 local t_insert, t_concat = table.insert, table.concat;
-local pairs, ipairs = pairs, ipairs;
-local tonumber, tostring, xpcall, select, debug_traceback, char, format =
-      tonumber, tostring, xpcall, select, debug.traceback, string.char, string.format;
+local pairs = pairs;
+local tonumber, tostring, xpcall, select, traceback =
+      tonumber, tostring, xpcall, select, debug.traceback;
 
 local log = require "util.logger".init("http");
 
@@ -101,7 +101,7 @@ local function request_reader(request, data, err)
 	request.parser:feed(data);
 end
 
-local function handleerr(err) log("error", "Traceback[http]: %s: %s", tostring(err), debug_traceback()); end
+local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
 function request(u, ex, callback)
 	local req = url.parse(u);
 	
