@@ -19,7 +19,7 @@ local provider = {};
 log("debug", "initializing internal_plain authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
-	log("debug", "test password '%s' for user %s at host %s", password, username, host);
+	log("debug", "test password for user %s at host %s", username, host);
 	local credentials = accounts:get(username) or {};
 
 	if password == credentials.password then
