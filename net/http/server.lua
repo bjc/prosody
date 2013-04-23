@@ -9,7 +9,7 @@ local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
 local xpcall = xpcall;
-local debug = debug;
+local traceback = debug.traceback;
 local tostring = tostring;
 local codes = require "net.http.codes";
 
@@ -27,8 +27,11 @@ local function is_wildcard_match(wildcard_event, event)
 	return wildcard_event:sub(1, -2) == event:sub(1, #wildcard_event-1);
 end
 
+local recent_wildcard_events, max_cached_wildcard_events = {}, 10000;
+
 local event_map = events._event_map;
 setmetatable(events._handlers, {
+	-- Called when firing an event that doesn't exist (but may match a wildcard handler)
 	__index = function (handlers, curr_event)
 		if is_wildcard_event(curr_event) then return; end -- Wildcard events cannot be fired
 		-- Find all handlers that could match this event, sort them
@@ -58,6 +61,12 @@ setmetatable(events._handlers, {
 			handlers_array = false;
 		end
 		rawset(handlers, curr_event, handlers_array);
+		if not event_map[curr_event] then -- Only wildcard handlers match, if any
+			table.insert(recent_wildcard_events, curr_event);
+			if #recent_wildcard_events > max_cached_wildcard_events then
+				rawset(handlers, table.remove(recent_wildcard_events, 1), nil);
+			end
+		end
 		return handlers_array;
 	end;
 	__newindex = function (handlers, curr_event, handlers_array)
@@ -79,7 +88,7 @@ local _1, _2, _3;
 local function _handle_request() return handle_request(_1, _2, _3); end
 
 local last_err;
-local function _traceback_handler(err) last_err = err; log("error", "Traceback[http]: %s: %s", tostring(err), debug.traceback()); end
+local function _traceback_handler(err) last_err = err; log("error", "Traceback[httpserver]: %s", traceback(tostring(err), 2)); end
 events.add_handler("http-error", function (error)
 	return "Error processing request: "..codes[error.code]..". Check your error log for more information.";
 end, -1);
