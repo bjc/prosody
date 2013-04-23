@@ -18,6 +18,9 @@ local error = error;
 local newproxy, getmetatable = newproxy, getmetatable;
 local print = print;
 
+local has_array, array = pcall(require, "util.array");
+local array_mt = hasarray and getmetatable(array()) or {};
+
 --module("json")
 local json = {};
 
@@ -165,7 +168,12 @@ function simplesave(o, buffer)
 	elseif t == "string" then
 		stringsave(o, buffer);
 	elseif t == "table" then
-		tablesave(o, buffer);
+		local mt = getmetatable(o);
+		if mt == array_mt then
+			arraysave(o, buffer);
+		else
+			tablesave(o, buffer);
+		end
 	elseif t == "boolean" then
 		t_insert(buffer, (o and "true" or "false"));
 	else
@@ -237,7 +245,7 @@ function json.decode(json)
 	
 	local readvalue;
 	local function readarray()
-		local t = {};
+		local t = setmetatable({}, array_mt);
 		next(); -- skip '['
 		skipstuff();
 		if ch == "]" then next(); return t; end
