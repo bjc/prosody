@@ -903,13 +903,23 @@ local console_room_mt = {
 	end;
 };
 
-function def_env.muc:room(room_jid)
-	local room_name, host = jid_split(room_jid);
+local function check_muc(jid)
+	local room_name, host = jid_split(jid);
 	if not hosts[host] then
 		return nil, "No such host: "..host;
 	elseif not hosts[host].modules.muc then
 		return nil, "Host '"..host.."' is not a MUC service";
 	end
+	return room_name, host;
+end
+
+function def_env.muc:create(room_jid)
+	local room, host = check_muc(room_jid);
+	return hosts[host].modules.muc.create_room(room_jid);
+end
+
+function def_env.muc:room(room_jid)
+	local room_name, host = check_muc(room_jid);
 	local room_obj = hosts[host].modules.muc.rooms[room_jid];
 	if not room_obj then
 		return nil, "No such room: "..room_jid;
