@@ -2,8 +2,6 @@
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
 --
--- utf8char copyright (C) 2007 Rici Lake
---
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -17,6 +15,9 @@ local next = next;
 local error = error;
 local newproxy, getmetatable = newproxy, getmetatable;
 local print = print;
+
+local has_array, array = pcall(require, "util.array");
+local array_mt = hasarray and getmetatable(array()) or {};
 
 --module("json")
 local json = {};
@@ -38,31 +39,18 @@ for i=0,31 do
 	if not escapes[ch] then escapes[ch] = ("\\u%.4X"):format(i); end
 end
 
-local function utf8char(i)
-	if i >= 0 then
-		i = i - i%1
-		if i < 128 then
-			return s_char(i)
-		else
-			local c1 = i % 64
-			i = (i - c1) / 64
-			if i < 32 then
-				return s_char(0xC0+i, 0x80+c1)
-			else
-        			local c2 = i % 64
-        			i = (i - c2) / 64
-        			if i < 16 and (i ~= 13 or c2 < 32) then
-        				return s_char(0xE0+i, 0x80+c2, 0x80+c1)
-        			elseif i >= 16 and i < 0x110 then
-        				local c3 = i % 64
-        				i = (i - c3) / 64
-        				return s_char(0xF0+i, 0x80+c3, 0x80+c2, 0x80+c1)
-        			end
-			end
-		end
+local function codepoint_to_utf8(code)
+	if code < 0x80 then return s_char(code); end
+	local bits0_6 = code % 64;
+	if code < 0x800 then
+		local bits6_5 = (code - bits0_6) / 64;
+		return s_char(0x80 + 0x40 + bits6_5, 0x80 + bits0_6);
 	end
+	local bits0_12 = code % 4096;
+	local bits6_6 = (bits0_12 - bits0_6) / 64;
+	local bits12_4 = (code - bits0_12) / 4096;
+	return s_char(0x80 + 0x40 + 0x20 + bits12_4, 0x80 + bits6_6, 0x80 + bits0_6);
 end
-
 
 local valid_types = {
 	number  = true,
@@ -165,7 +153,12 @@ function simplesave(o, buffer)
 	elseif t == "string" then
 		stringsave(o, buffer);
 	elseif t == "table" then
-		tablesave(o, buffer);
+		local mt = getmetatable(o);
+		if mt == array_mt then
+			arraysave(o, buffer);
+		else
+			tablesave(o, buffer);
+		end
 	elseif t == "boolean" then
 		t_insert(buffer, (o and "true" or "false"));
 	else
@@ -237,7 +230,7 @@ function json.decode(json)
 	
 	local readvalue;
 	local function readarray()
-		local t = {};
+		local t = setmetatable({}, array_mt);
 		next(); -- skip '['
 		skipstuff();
 		if ch == "]" then next(); return t; end
@@ -284,7 +277,7 @@ function json.decode(json)
 						if not ch:match("[0-9a-fA-F]") then error("invalid unicode escape sequence in string"); end
 						seq = seq..ch;
 					end
-					s = s..utf8char(tonumber(seq, 16));
+					s = s..codepoint_to_utf8(tonumber(seq, 16));
 					next();
 				else error("invalid escape sequence in string"); end
 			end
