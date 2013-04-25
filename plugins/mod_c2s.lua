@@ -133,25 +133,25 @@ local function session_close(session, reason)
 			session.send(st.stanza("stream:stream", default_stream_attr):top_tag());
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by client
+			local stream_error = st.stanza("stream:error");
 			if type(reason) == "string" then -- assume stream error
-				log("debug", "Disconnecting client, <stream:error> is: %s", reason);
-				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
+				stream_error:tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
 			elseif type(reason) == "table" then
 				if reason.condition then
-					local stanza = st.stanza("stream:error"):tag(reason.condition, stream_xmlns_attr):up();
+					stream_error:tag(reason.condition, stream_xmlns_attr):up();
 					if reason.text then
-						stanza:tag("text", stream_xmlns_attr):text(reason.text):up();
+						stream_error:tag("text", stream_xmlns_attr):text(reason.text):up();
 					end
 					if reason.extra then
-						stanza:add_child(reason.extra);
+						stream_error:add_child(reason.extra);
 					end
-					log("debug", "Disconnecting client, <stream:error> is: %s", tostring(stanza));
-					session.send(stanza);
 				elseif reason.name then -- a stanza
-					log("debug", "Disconnecting client, <stream:error> is: %s", tostring(reason));
-					session.send(reason);
+					stream_error = reason;
 				end
 			end
+			stream_error = tostring(stream_error);
+			log("debug", "Disconnecting client, <stream:error> is: %s", stream_error);
+			session.send(stream_error);
 		end
 		
 		session.send("</stream:stream>");
