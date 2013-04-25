@@ -88,6 +88,10 @@ local function getText(stanza, path) return getUsingPath(stanza, path, true); en
 local room_mt = {};
 room_mt.__index = room_mt;
 
+function room_mt:__tostring()
+	return "MUC room ("..self.jid..")";
+end
+
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
 		return "moderator";
