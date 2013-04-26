@@ -33,7 +33,7 @@ local s2sout = module:require("s2sout");
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
-
+local opt_keepalives = module:get_option_boolean("s2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
 local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
@@ -563,6 +563,7 @@ local function initialize_session(session)
 end
 
 function listener.onconnect(conn)
+	conn:setoption("keepalive", opt_keepalives);
 	local session = sessions[conn];
 	if not session then -- New incoming connection
 		session = s2s_new_incoming(conn);
