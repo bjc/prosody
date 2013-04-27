@@ -319,7 +319,13 @@ function api:handle_items(type, added_cb, removed_cb, existing)
 end
 
 function api:provides(name, item)
-	if not item then item = self.environment; end
+	-- if not item then item = setmetatable({}, { __index = function(t,k) return rawget(self.environment, k); end }); end
+	if not item then
+		item = {}
+		for k,v in pairs(self.environment) do
+			if k ~= "module" then item[k] = v; end
+		end
+	end
 	if not item.name then
 		local item_name = self.name;
 		-- Strip a provider prefix to find the item name
