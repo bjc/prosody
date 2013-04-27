@@ -140,11 +140,12 @@ function adduser(params)
 	if not host_session then
 		return false, "no-such-host";
 	end
+
+	storagemanager.initialize_host(host);
 	local provider = host_session.users;
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-	storagemanager.initialize_host(host);
 	
 	local ok, errmsg = usermanager.create_user(user, password, host);
 	if not ok then
@@ -155,11 +156,12 @@ end
 
 function user_exists(params)
 	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
+
+	storagemanager.initialize_host(host);
 	local provider = prosody.hosts[host].users;
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-	storagemanager.initialize_host(host);
 	
 	return usermanager.user_exists(user, host);
 end
