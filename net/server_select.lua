@@ -101,6 +101,7 @@ local _readtraffic
 
 local _selecttimeout
 local _sleeptime
+local _tcpbacklog
 
 local _starttime
 local _currenttime
@@ -139,6 +140,7 @@ _readtraffic = 0
 
 _selecttimeout = 1 -- timeout of socket.select
 _sleeptime = 0 -- time to wait at the end of every loop
+_tcpbacklog = 128 -- some kind of hint to the OS
 
 _maxsendlen = 51000 * 1024 -- max len of send buffer
 _maxreadlen = 25000 * 1024 -- max len of read buffer
@@ -211,7 +213,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 	handler.resume = function( )
 		if handler.paused then
 			if not socket then
-				socket = socket_bind( ip, serverport );
+				socket = socket_bind( ip, serverport, _tcpbacklog );
 				socket:settimeout( 0 )
 			end
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
@@ -720,7 +722,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		return nil, err
 	end
 	addr = addr or "*"
-	local server, err = socket_bind( addr, port )
+	local server, err = socket_bind( addr, port, _tcpbacklog )
 	if err then
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
@@ -772,6 +774,7 @@ getsettings = function( )
 	return {
 		select_timeout = _selecttimeout;
 		select_sleep_time = _sleeptime;
+		tcp_backlog = _tcpbacklog;
 		max_send_buffer_size = _maxsendlen;
 		max_receive_buffer_size = _maxreadlen;
 		select_idle_check_interval = _checkinterval;
@@ -792,6 +795,7 @@ changesettings = function( new )
 	_maxsendlen = tonumber( new.max_send_buffer_size ) or _maxsendlen
 	_maxreadlen = tonumber( new.max_receive_buffer_size ) or _maxreadlen
 	_checkinterval = tonumber( new.select_idle_check_interval ) or _checkinterval
+	_tcpbacklog = tonumber( new.tcp_backlog ) or _tcpbacklog
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
 	_maxselectlen = new.max_connections or _maxselectlen
