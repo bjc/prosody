@@ -270,6 +270,18 @@ function api:get_option_set(name, ...)
 	return set.new(value);
 end
 
+function api:get_option_inherited_set(name, ...)
+	local value = self:get_option_set(name, ...);
+	local global_value = self:context("*"):get_option_set(name, ...);
+	if not value then
+		return global_value;
+	elseif not global_value then
+		return value;
+	end
+	value:include(global_value);
+	return value;
+end
+
 function api:context(host)
 	return setmetatable({host=host or "*"}, {__index=self,__newindex=self});
 end
