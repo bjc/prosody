@@ -9,6 +9,7 @@ OPENSSL_LIB?=crypto
 CC?=gcc
 CXX?=g++
 LD?=gcc
+CFLAGS+=-ggdb
 
 .PHONY: all install clean
 .SUFFIXES: .c .o .so

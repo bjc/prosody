@@ -20,8 +20,11 @@
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 
-const char* hex_tab = "0123456789abcdef";
-void toHex(const char* in, int length, char* out) {
+#define HMAC_IPAD 0x36363636
+#define HMAC_OPAD 0x5c5c5c5c
+
+const char *hex_tab = "0123456789abcdef";
+void toHex(const unsigned char *in, int length, unsigned char *out) {
 	int i;
 	for (i = 0; i < length; i++) {
 		out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
@@ -34,14 +37,13 @@ static int myFunc(lua_State *L) { \
 	size_t len; \
 	const char *s = luaL_checklstring(L, 1, &len); \
 	int hex_out = lua_toboolean(L, 2); \
-	char hash[size]; \
-	char result[size*2]; \
-	func((const unsigned char*)s, len, (unsigned char*)hash);  \
+	unsigned char hash[size], result[size*2]; \
+	func((const unsigned char*)s, len, hash);  \
 	if (hex_out) { \
 		toHex(hash, size, result); \
-		lua_pushlstring(L, result, size*2); \
+		lua_pushlstring(L, (char*)result, size*2); \
 	} else { \
-		lua_pushlstring(L, hash, size);\
+		lua_pushlstring(L, (char*)hash, size);\
 	} \
 	return 1; \
 }
@@ -53,15 +55,96 @@ MAKE_HASH_FUNCTION(Lsha384, SHA384, SHA384_DIGEST_LENGTH)
 MAKE_HASH_FUNCTION(Lsha512, SHA512, SHA512_DIGEST_LENGTH)
 MAKE_HASH_FUNCTION(Lmd5, MD5, MD5_DIGEST_LENGTH)
 
+struct hash_desc {
+	int (*Init)(void*);
+	int (*Update)(void*, const void *, size_t);
+	int (*Final)(unsigned char*, void*);
+	size_t digestLength;
+	void *ctx, *ctxo;
+};
+
+static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
+    const char *msg, size_t msg_len, unsigned char *result)
+{
+	union xory {
+		unsigned char bytes[64];
+		uint32_t quadbytes[16];
+	};
+
+	int i;
+	char hashedKey[64]; /* Maximum used digest length */
+	union xory k_ipad, k_opad;
+
+	if (key_len > 64) {
+		desc->Init(desc->ctx);
+		desc->Update(desc->ctx, key, key_len);
+		desc->Final(desc->ctx, hashedKey);
+		key = (const char*)hashedKey;
+		key_len = desc->digestLength;
+	}
+
+	memcpy(k_ipad.bytes, key, key_len);
+	memset(k_ipad.bytes + key_len, 0, 64 - key_len);
+	memcpy(k_opad.bytes, k_ipad.bytes, 64);
+
+	for (i = 0; i < 16; i++) {
+		k_ipad.quadbytes[i] ^= HMAC_IPAD;
+		k_opad.quadbytes[i] ^= HMAC_OPAD;
+	}
+
+	desc->Init(desc->ctx);
+	desc->Update(desc->ctx, k_ipad.bytes, 64);
+	desc->Init(desc->ctxo);
+	desc->Update(desc->ctxo, k_opad.bytes, 64);
+	desc->Update(desc->ctx, msg, msg_len);
+	desc->Final(result, desc->ctx);
+	desc->Update(desc->ctxo, result, desc->digestLength);
+	desc->Final(result, desc->ctxo);
+}
+
+#define MAKE_HMAC_FUNCTION(myFunc, func, size, type) \
+static int myFunc(lua_State *L) { \
+	type ctx, ctxo; \
+	unsigned char hash[size], result[2*size]; \
+	size_t key_len, msg_len; \
+	const char *key = luaL_checklstring(L, 1, &key_len); \
+	const char *msg = luaL_checklstring(L, 2, &msg_len); \
+	const int hex_out = lua_toboolean(L, 3); \
+	struct hash_desc desc; \
+	desc.Init = (int (*)(void*))func##_Init; \
+	desc.Update = (int (*)(void*, const void *, size_t))func##_Update; \
+	desc.Final = (int (*)(unsigned char*, void*))func##_Final; \
+	desc.digestLength = size; \
+	desc.ctx = &ctx; \
+	desc.ctxo = &ctxo; \
+	hmac(&desc, key, key_len, msg, msg_len, hash); \
+	if (hex_out) { \
+		toHex(hash, size, result); \
+		lua_pushlstring(L, (char*)result, size*2); \
+	} else { \
+		lua_pushlstring(L, (char*)hash, size); \
+	} \
+	return 1; \
+}
+
+MAKE_HMAC_FUNCTION(Lhmac_sha1, SHA1, SHA_DIGEST_LENGTH, SHA_CTX)
+MAKE_HMAC_FUNCTION(Lhmac_sha256, SHA256, SHA256_DIGEST_LENGTH, SHA256_CTX)
+MAKE_HMAC_FUNCTION(Lhmac_sha512, SHA512, SHA512_DIGEST_LENGTH, SHA512_CTX)
+MAKE_HMAC_FUNCTION(Lhmac_md5, MD5, MD5_DIGEST_LENGTH, MD5_CTX)
+
 static const luaL_Reg Reg[] =
 {
-	{ "sha1",	Lsha1	},
-	{ "sha224",	Lsha224	},
-	{ "sha256",	Lsha256	},
-	{ "sha384",	Lsha384	},
-	{ "sha512",	Lsha512	},
-	{ "md5",	Lmd5	},
-	{ NULL,		NULL	}
+	{ "sha1",		Lsha1		},
+	{ "sha224",		Lsha224		},
+	{ "sha256",		Lsha256		},
+	{ "sha384",		Lsha384		},
+	{ "sha512",		Lsha512		},
+	{ "md5",		Lmd5		},
+	{ "hmac_sha1",		Lhmac_sha1	},
+	{ "hmac_sha256",	Lhmac_sha256	},
+	{ "hmac_sha512",	Lhmac_sha512	},
+	{ "hmac_md5",		Lhmac_md5	},
+	{ NULL,			NULL		}
 };
 
 LUALIB_API int luaopen_util_hashes(lua_State *L)
