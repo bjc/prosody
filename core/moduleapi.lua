@@ -335,6 +335,7 @@ function api:provides(name, item)
 		end
 		item.name = item_name;
 	end
+	item._provided_by = self.name;
 	self:add_item(name.."-provider", item);
 end
 
