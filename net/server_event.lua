@@ -23,6 +23,7 @@ local cfg = {
 	HANDSHAKE_TIMEOUT     = 60,  -- timeout in seconds per handshake attempt
 	MAX_READ_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes allowed to read from sockets
 	MAX_SEND_LENGTH       = 1024 * 1024 * 1024 * 1024,  -- max bytes size of write buffer (for writing on sockets)
+	ACCEPT_QUEUE          = 128,  -- might influence the length of the pending sockets queue
 	ACCEPT_DELAY          = 10,  -- seconds to wait until the next attempt of a full server to accept
 	READ_TIMEOUT          = 60 * 60 * 6,  -- timeout in seconds for read data from socket
 	WRITE_TIMEOUT         = 180,  -- timeout in seconds for write data on socket
