@@ -654,7 +654,7 @@ end
 
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local conf_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cnf";
+		local conf_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".cnf";
 		if ask_overwrite(conf_filename) then
 			return nil, conf_filename;
 		end
@@ -687,7 +687,7 @@ end
 
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local key_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".key";
+		local key_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".key";
 		if ask_overwrite(key_filename) then
 			return nil, key_filename;
 		end
@@ -709,7 +709,7 @@ end
 
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local req_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".req";
+		local req_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".req";
 		if ask_overwrite(req_filename) then
 			return nil, req_filename;
 		end
@@ -727,7 +727,7 @@ end
 
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".crt";
+		local cert_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".crt";
 		if ask_overwrite(cert_filename) then
 			return nil, cert_filename;
 		end

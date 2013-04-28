@@ -51,6 +51,7 @@ if prosody then
 		if use_luaevent then
 			local event_settings = {
 				ACCEPT_DELAY = settings.event_accept_retry_interval;
+				ACCEPT_QUEUE = settings.tcp_backlog;
 				CLEAR_DELAY = settings.event_clear_interval;
 				CONNECT_TIMEOUT = settings.connect_timeout;
 				DEBUG = settings.debug;
