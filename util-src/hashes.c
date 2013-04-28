@@ -14,6 +14,8 @@
 */
 
 #include <string.h>
+#include <stdlib.h>
+#include <inttypes.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -132,6 +134,52 @@ MAKE_HMAC_FUNCTION(Lhmac_sha256, SHA256, SHA256_DIGEST_LENGTH, SHA256_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_sha512, SHA512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, MD5, MD5_DIGEST_LENGTH, MD5_CTX)
 
+static int LscramHi(lua_State *L) {
+	union xory {
+		unsigned char bytes[SHA_DIGEST_LENGTH];
+		uint32_t quadbytes[SHA_DIGEST_LENGTH/4];
+	};
+	int i;
+	SHA_CTX ctx, ctxo;
+	unsigned char Ust[SHA_DIGEST_LENGTH];
+	union xory Und;
+	union xory res;
+	size_t str_len, salt_len;
+	struct hash_desc desc;
+	const char *str = luaL_checklstring(L, 1, &str_len);
+	const char *salt = luaL_checklstring(L, 2, &salt_len);
+	char *salt2;
+	const int iter = luaL_checkinteger(L, 3);
+
+	desc.Init = (int (*)(void*))SHA1_Init;
+	desc.Update = (int (*)(void*, const void *, size_t))SHA1_Update;
+	desc.Final = (int (*)(unsigned char*, void*))SHA1_Final;
+	desc.digestLength = SHA_DIGEST_LENGTH;
+	desc.ctx = &ctx;
+	desc.ctxo = &ctxo;
+
+	salt2 = malloc(salt_len + 4);
+	if (salt2 == NULL)
+		luaL_error(L, "Out of memory in scramHi");
+	memcpy(salt2, salt, salt_len);
+	memcpy(salt2 + salt_len, "\0\0\0\1", 4);
+	hmac(&desc, str, str_len, salt2, salt_len + 4, Ust);
+	free(salt2);
+
+	memcpy(res.bytes, Ust, sizeof(res));
+	for (i = 1; i < iter; i++) {
+		int j;
+		hmac(&desc, str, str_len, (char*)Ust, sizeof(Ust), Und.bytes);
+		for (j = 0; j < SHA_DIGEST_LENGTH/4; j++)
+			res.quadbytes[j] ^= Und.quadbytes[j];
+		memcpy(Ust, Und.bytes, sizeof(Ust));
+	}
+
+	lua_pushlstring(L, (char*)res.bytes, SHA_DIGEST_LENGTH);
+
+	return 1;
+}
+
 static const luaL_Reg Reg[] =
 {
 	{ "sha1",		Lsha1		},
@@ -144,6 +192,7 @@ static const luaL_Reg Reg[] =
 	{ "hmac_sha256",	Lhmac_sha256	},
 	{ "hmac_sha512",	Lhmac_sha512	},
 	{ "hmac_md5",		Lhmac_md5	},
+	{ "scram_Hi_sha1",	LscramHi	},
 	{ NULL,			NULL		}
 };
 
