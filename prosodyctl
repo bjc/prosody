@@ -670,6 +670,11 @@ function cert_commands.config(arg)
 					v = arg[1]
 				elseif k == "emailAddress" then
 					v = "xmpp@" .. arg[1];
+				elseif k == "countryName" then
+					local tld = arg[1]:match"%.([a-z]+)$";
+					if tld and #tld == 2 and tld ~= "uk" then
+						v = tld:upper();
+					end
 				end
 				nv = show_prompt(("%s (%s):"):format(k, nv or v));
 				nv = (not nv or nv == "") and v or nv;
