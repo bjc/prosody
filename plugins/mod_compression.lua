@@ -141,7 +141,7 @@ module:hook("stanza/http://jabber.org/protocol/compress:compressed", function(ev
 		-- setup decompression for session.data
 		setup_decompression(session, inflate_stream);
 		session:reset_stream();
-		session:open_stream();
+		session:open_stream(session.from_host, session.to_host);
 		session.compressed = true;
 		return true;
 	end
