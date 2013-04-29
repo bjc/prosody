@@ -580,10 +580,9 @@ function room_mt:send_form(origin, stanza)
 end
 
 function room_mt:get_form_layout()
-	local title = "Configuration for "..self.jid;
-	return dataform.new({
-		title = title,
-		instructions = title,
+	local form = dataform.new({
+		title = "Configuration for "..self.jid,
+		instructions = "Complete and submit this form to configure the room.",
 		{
 			name = 'FORM_TYPE',
 			type = 'hidden',
@@ -653,6 +652,7 @@ function room_mt:get_form_layout()
 			value = tostring(self:get_historylength())
 		}
 	});
+	return module:fire_event("muc-config-form", { room = self, form = form }) or form;
 end
 
 local valid_whois = {
@@ -672,6 +672,10 @@ function room_mt:process_form(origin, stanza)
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
 
 	local dirty = false
+
+	local event = { room = self, fields = fields, changed = dirty };
+	module:fire_event("muc-config-submitted", event);
+	dirty = event.changed or dirty;
 
 	local name = fields['muc#roomconfig_roomname'];
 	if name ~= self:get_name() then
