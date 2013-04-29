@@ -87,7 +87,7 @@ module:hook_stanza(xmlns_sasl, "success", function (session, stanza)
 	module:log("debug", "SASL EXTERNAL with %s succeeded", session.to_host);
 	session.external_auth = "succeeded"
 	session:reset_stream();
-	session:open_stream();
+	session:open_stream(session.from_host, session.to_host);
 
 	module:fire_event("s2s-authenticated", { session = session, host = session.to_host });
 	return true;
