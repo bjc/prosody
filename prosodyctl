@@ -660,6 +660,8 @@ function cert_commands.config(arg)
 		end
 		local conf = openssl.config.new();
 		conf:from_prosody(hosts, config, arg);
+		show_message("Please provide details to include in the certificate config file.");
+		show_message("Leave the field empty to use the default value or '.' to exclude the field.")
 		for k, v in pairs(conf.distinguished_name) do
 			local nv;
 			if k == "commonName" then 
