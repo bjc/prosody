@@ -153,7 +153,7 @@ function activate(service_name)
 					if not handler then
 						log("error", "Failed to open server port %d on %s, %s", port_number, interface, error_to_friendly_message(service_name, port_number, err));
 					else
-						table.insert(hooked_ports, port_number);
+						table.insert(hooked_ports, "["..interface.."]:"..port_number);
 						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port_number);
 						active_services:add(service_name, interface, port_number, {
 							server = handler;
