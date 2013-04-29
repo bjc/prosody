@@ -1053,11 +1053,12 @@ function room_mt:get_role(nick)
 	return session and session.role or nil;
 end
 function room_mt:can_set_role(actor_jid, occupant_jid, role)
-	local actor = self._occupants[self._jid_nick[actor_jid]];
 	local occupant = self._occupants[occupant_jid];
-	
 	if not occupant or not actor then return nil, "modify", "not-acceptable"; end
 
+	if actor_jid == true then return true; end
+
+	local actor = self._occupants[self._jid_nick[actor_jid]];
 	if actor.role == "moderator" then
 		if occupant.affiliation ~= "owner" and occupant.affiliation ~= "admin" then
 			if actor.affiliation == "owner" or actor.affiliation == "admin" then
