@@ -1,6 +1,6 @@
 
 
-local hmac_sha1 = require "util.hmac".sha1;
+local hmac_sha1 = require "util.hashes".hmac_sha1;
 local function toHex(s)
 	return s and (s:gsub(".", function (c) return ("%02x"):format(c:byte()); end));
 end
