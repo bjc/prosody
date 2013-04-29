@@ -348,7 +348,7 @@ function stream_callbacks.streamopened(session, attr)
 			end
 		end
 
-		session:open_stream()
+		session:open_stream(session.to_host, session.from_host)
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
@@ -448,7 +448,11 @@ local function session_close(session, reason, remote_reason)
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
-			session:open_stream()
+			if session.direction == "incoming" then
+				session:open_stream(session.to_host, session.from_host);
+			else
+				session:open_stream(session.from_host, session.to_host);
+			end
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
@@ -496,8 +500,6 @@ local function session_close(session, reason, remote_reason)
 end
 
 function session_open_stream(session, from, to)
-	local from = from or session.from_host;
-	local to = to or session.to_host;
 	local attr = {
 		["xmlns:stream"] = 'http://etherx.jabber.org/streams',
 		xmlns = 'jabber:server',
@@ -506,8 +508,7 @@ function session_open_stream(session, from, to)
 		id = session.streamid,
 		from = from, to = to,
 	}
-	local local_host = session.direction == "outgoing" and from or to;
-	if not local_host or (hosts[local_host] and hosts[local_host].modules.dialback) then
+	if not from or (hosts[from] and hosts[from].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
 
