@@ -149,7 +149,8 @@ _checkinterval = 1200000 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
 _readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
 
-_maxfd = luasocket._SETSIZE or 1024 -- We should ignore this on Windows.  Perhaps by simply setting it to math.huge or something.
+local is_windows = package.config:sub(1,1) == "\\" -- check the directory separator, to detemine whether this is Windows
+_maxfd = luasocket._SETSIZE or (is_windows and math.huge) or 1024 -- max fd number, limit to 1024 by default to prevent glibc buffer overflow, but not on Windows
 _maxselectlen = luasocket._SETSIZE or 1024 -- But this still applies on Windows
 
 _maxsslhandshake = 30 -- max handshake round-trips
