@@ -1,12 +1,21 @@
 -- Prosody IM
--- Copyright (C) 2008-2011 Florian Zeitz
+-- Copyright (C) 2011-2013 Florian Zeitz
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
 
-local commonPrefixLength = require"util.ip".commonPrefixLength
+-- This is used to sort destination addresses by preference
+-- during S2S connections.
+-- We can't hand this off to getaddrinfo, since it blocks
+
+local ip_commonPrefixLength = require"util.ip".commonPrefixLength
 local new_ip = require"util.ip".new_ip;
+
+local function commonPrefixLength(ipA, ipB)
+	local len = ip_commonPrefixLength(ipA, ipB);
+	return len < 64 and len or 64;
+end
 
 local function t_sort(t, comp)
 	for i = 1, (#t - 1) do
@@ -56,7 +65,7 @@ local function source(dest, candidates)
 			return false;
 		end
 
-		-- Rule 7: Prefer public addresses (over temporary ones)
+		-- Rule 7: Prefer temporary addresses (over public ones)
 		-- XXX: No way to determine this
 		-- Rule 8: Use longest matching prefix
 		if commonPrefixLength(ipA, dest) > commonPrefixLength(ipB, dest) then

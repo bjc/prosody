@@ -64,9 +64,6 @@ local function v4scope(ip)
 	-- Link-local unicast:
 	elseif fields[1] == 169 and fields[2] == 254 then
 		return 0x2;
-	-- Site-local unicast:
-	elseif (fields[1] == 10) or (fields[1] == 192 and fields[2] == 168) or (fields[1] == 172 and (fields[2] >= 16 and fields[2] < 32)) then
-		return 0x5;
 	-- Global unicast:
 	else
 		return 0xE;
@@ -97,6 +94,14 @@ local function label(ip)
 		return 0;
 	elseif commonPrefixLength(ip, new_ip("2002::", "IPv6")) >= 16 then
 		return 2;
+	elseif commonPrefixLength(ip, new_ip("2001::", "IPv6")) >= 32 then
+		return 5;
+	elseif commonPrefixLength(ip, new_ip("fc00::", "IPv6")) >= 7 then
+		return 13;
+	elseif commonPrefixLength(ip, new_ip("fec0::", "IPv6")) >= 10 then
+		return 11;
+	elseif commonPrefixLength(ip, new_ip("3ffe::", "IPv6")) >= 16 then
+		return 12;
 	elseif commonPrefixLength(ip, new_ip("::", "IPv6")) >= 96 then
 		return 3;
 	elseif commonPrefixLength(ip, new_ip("::ffff:0:0", "IPv6")) >= 96 then
@@ -111,10 +116,18 @@ local function precedence(ip)
 		return 50;
 	elseif commonPrefixLength(ip, new_ip("2002::", "IPv6")) >= 16 then
 		return 30;
+	elseif commonPrefixLength(ip, new_ip("2001::", "IPv6")) >= 32 then
+		return 5;
+	elseif commonPrefixLength(ip, new_ip("fc00::", "IPv6")) >= 7 then
+		return 3;
+	elseif commonPrefixLength(ip, new_ip("fec0::", "IPv6")) >= 10 then
+		return 1;
+	elseif commonPrefixLength(ip, new_ip("3ffe::", "IPv6")) >= 16 then
+		return 1;
 	elseif commonPrefixLength(ip, new_ip("::", "IPv6")) >= 96 then
-		return 20;
+		return 1;
 	elseif commonPrefixLength(ip, new_ip("::ffff:0:0", "IPv6")) >= 96 then
-		return 10;
+		return 35;
 	else
 		return 40;
 	end
