@@ -13,7 +13,7 @@ local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local new_ip = require "util.ip".new_ip;
-local rfc3484_dest = require "util.rfc3484".destination;
+local rfc6724_dest = require "util.rfc6724".destination;
 local socket = require "socket";
 local adns = require "net.adns";
 local dns = require "net.dns";
@@ -191,7 +191,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc3484_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, sources);
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
@@ -227,7 +227,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc3484_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, sources);
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
