@@ -23,11 +23,12 @@ function config.new()
 			prompt = "no",
 		},
 		distinguished_name = {
-			commonName = "example.com",
 			countryName = "GB",
+			-- stateOrProvinceName = "",
 			localityName = "The Internet",
 			organizationName = "Your Organisation",
 			organizationalUnitName = "XMPP Department",
+			commonName = "example.com",
 			emailAddress = "xmpp@example.com",
 		},
 		v3_extensions = {
@@ -43,6 +44,17 @@ function config.new()
 	}, ssl_config_mt);
 end
 
+local DN_order = {
+	"countryName";
+	"stateOrProvinceName";
+	"localityName";
+	"streetAddress";
+	"organizationName";
+	"organizationalUnitName";
+	"commonName";
+	"emailAddress";
+}
+_M._DN_order = DN_order;
 function ssl_config:serialize()
 	local s = "";
 	for k, t in pairs(self) do
@@ -51,6 +63,14 @@ function ssl_config:serialize()
 			for san, n in pairs(t) do
 				for i = 1,#n do
 					s = s .. s_format("%s.%d = %s\n", san, i -1, n[i]);
+				end
+			end
+		elseif k == "distinguished_name" then
+			for i=1,#DN_order do
+				local k = DN_order[i]
+				local v = t[k];
+				if v then
+					s = s .. ("%s = %s\n"):format(k, v);
 				end
 			end
 		else

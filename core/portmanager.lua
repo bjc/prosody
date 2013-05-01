@@ -112,6 +112,7 @@ function activate(service_name)
 	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
 	local mode, ssl = listener.default_mode or "*a";
+	local hooked_ports = {};
 	
 	for interface in bind_interfaces do
 		for port in bind_ports do
@@ -152,6 +153,7 @@ function activate(service_name)
 					if not handler then
 						log("error", "Failed to open server port %d on %s, %s", port_number, interface, error_to_friendly_message(service_name, port_number, err));
 					else
+						table.insert(hooked_ports, "["..interface.."]:"..port_number);
 						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port_number);
 						active_services:add(service_name, interface, port_number, {
 							server = handler;
@@ -162,7 +164,7 @@ function activate(service_name)
 			end
 		end
 	end
-	log("info", "Activated service '%s'", service_name);
+	log("info", "Activated service '%s' on %s", service_name, #hooked_ports == 0 and "no ports" or table.concat(hooked_ports, ", "));
 	return true;
 end
 
