@@ -15,8 +15,9 @@ local s_match = string.match;
 local type = type
 local string = string
 local base64 = require "util.encodings".base64;
-local hmac_sha1 = require "util.hmac".sha1;
+local hmac_sha1 = require "util.hashes".hmac_sha1;
 local sha1 = require "util.hashes".sha1;
+local Hi = require "util.hashes".scram_Hi_sha1;
 local generate_uuid = require "util.uuid".generate;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
@@ -65,18 +66,6 @@ local function binaryXOR( a, b )
 	return t_concat(result);
 end
 
--- hash algorithm independent Hi(PBKDF2) implementation
-function Hi(hmac, str, salt, i)
-	local Ust = hmac(str, salt.."\0\0\0\1");
-	local res = Ust;
-	for n=1,i-1 do
-		local Und = hmac(str, Ust)
-		res = binaryXOR(res, Und)
-		Ust = Und
-	end
-	return res
-end
-
 local function validate_username(username, _nodeprep)
 	-- check for forbidden char sequences
 	for eq in username:gmatch("=(.?.?)") do
@@ -110,7 +99,7 @@ function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	if iteration_count < 4096 then
 		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 	end
-	local salted_password = Hi(hmac_sha1, password, salt, iteration_count);
+	local salted_password = Hi(password, salt, iteration_count);
 	local stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
 	local server_key = hmac_sha1(salted_password, "Server Key");
 	return true, stored_key, server_key

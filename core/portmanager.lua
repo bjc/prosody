@@ -1,6 +1,7 @@
 local config = require "core.configmanager";
 local certmanager = require "core.certmanager";
 local server = require "net.server";
+local socket = require "socket";
 
 local log = require "util.logger".init("portmanager");
 local multitable = require "util.multitable";
@@ -8,7 +9,7 @@ local set = require "util.set";
 
 local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
-local type, tonumber, ipairs = type, tonumber, ipairs;
+local type, tonumber, tostring, ipairs, pairs = type, tonumber, tostring, ipairs, pairs;
 
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
@@ -17,9 +18,13 @@ module "portmanager";
 
 --- Config
 
-local default_interfaces = { "*" };
-local default_local_interfaces = { "127.0.0.1" };
-if config.get("*", "use_ipv6") then
+local default_interfaces = { };
+local default_local_interfaces = { };
+if config.get("*", "use_ipv4") ~= false then
+	table.insert(default_interfaces, "*");
+	table.insert(default_local_interfaces, "127.0.0.1");
+end
+if socket.tcp6 and config.get("*", "use_ipv6") ~= false then
 	table.insert(default_interfaces, "::");
 	table.insert(default_local_interfaces, "::1");
 end
@@ -65,6 +70,16 @@ prosody.events.add_handler("item-removed/net-provider", function (event)
 	unregister_service(item.name, item);
 end);
 
+local function duplicate_ssl_config(ssl_config)
+	local ssl_config = type(ssl_config) == "table" and ssl_config or {};
+
+	local _config = {};
+	for k, v in pairs(ssl_config) do
+		_config[k] = v;
+	end
+	return _config;
+end
+
 --- Public API
 
 function activate(service_name)
@@ -97,31 +112,50 @@ function activate(service_name)
 	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
 	local mode, ssl = listener.default_mode or "*a";
+	local hooked_ports = {};
 	
 	for interface in bind_interfaces do
 		for port in bind_ports do
-			port = tonumber(port);
-			if #active_services:search(nil, interface, port) > 0 then
+			local port_number = tonumber(port);
+			if not port_number then
+				log("error", "Invalid port number specified for service '%s': %s", service_info.name, tostring(port));
+			elseif #active_services:search(nil, interface, port_number) > 0 then
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port, active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
 				local err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
-					local ssl_config = config.get("*", config_prefix.."ssl");
-					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config and (ssl_config[port]
-						or (ssl_config.certificate and ssl_config)));
+					local ssl_config = duplicate_ssl_config((config.get("*", config_prefix.."ssl") and config.get("*", config_prefix.."ssl")[interface])
+								or (config.get("*", config_prefix.."ssl") and config.get("*", config_prefix.."ssl")[port])
+								or config.get("*", config_prefix.."ssl")
+								or (config.get("*", "ssl") and config.get("*", "ssl")[interface])
+								or (config.get("*", "ssl") and config.get("*", "ssl")[port])
+								or config.get("*", "ssl"));
+					-- add default entries for, or override ssl configuration
+					if ssl_config and service_info.ssl_config then
+						for key, value in pairs(service_info.ssl_config) do
+							if not service_info.ssl_config_override and not ssl_config[key] then
+								ssl_config[key] = value;
+							elseif service_info.ssl_config_override then
+								ssl_config[key] = value;
+							end
+						end
+					end
+
+					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config);
 					if not ssl then
-						log("error", "Error binding encrypted port for %s: %s", service_info.name, error_to_friendly_message(service_name, port, err) or "unknown error");
+						log("error", "Error binding encrypted port for %s: %s", service_info.name, error_to_friendly_message(service_name, port_number, err) or "unknown error");
 					end
 				end
 				if not err then
 					-- Start listening on interface+port
-					local handler, err = server.addserver(interface, port, listener, mode, ssl);
+					local handler, err = server.addserver(interface, port_number, listener, mode, ssl);
 					if not handler then
-						log("error", "Failed to open server port %d on %s, %s", port, interface, error_to_friendly_message(service_name, port, err));
+						log("error", "Failed to open server port %d on %s, %s", port_number, interface, error_to_friendly_message(service_name, port_number, err));
 					else
-						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port);
-						active_services:add(service_name, interface, port, {
+						table.insert(hooked_ports, "["..interface.."]:"..port_number);
+						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port_number);
+						active_services:add(service_name, interface, port_number, {
 							server = handler;
 							service = service_info;
 						});
@@ -130,7 +164,7 @@ function activate(service_name)
 			end
 		end
 	end
-	log("info", "Activated service '%s'", service_name);
+	log("info", "Activated service '%s' on %s", service_name, #hooked_ports == 0 and "no ports" or table.concat(hooked_ports, ", "));
 	return true;
 end
 

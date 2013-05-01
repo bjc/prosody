@@ -9,7 +9,7 @@ local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
 local xpcall = xpcall;
-local debug = debug;
+local traceback = debug.traceback;
 local tostring = tostring;
 local codes = require "net.http.codes";
 
@@ -27,8 +27,11 @@ local function is_wildcard_match(wildcard_event, event)
 	return wildcard_event:sub(1, -2) == event:sub(1, #wildcard_event-1);
 end
 
+local recent_wildcard_events, max_cached_wildcard_events = {}, 10000;
+
 local event_map = events._event_map;
 setmetatable(events._handlers, {
+	-- Called when firing an event that doesn't exist (but may match a wildcard handler)
 	__index = function (handlers, curr_event)
 		if is_wildcard_event(curr_event) then return; end -- Wildcard events cannot be fired
 		-- Find all handlers that could match this event, sort them
@@ -58,6 +61,12 @@ setmetatable(events._handlers, {
 			handlers_array = false;
 		end
 		rawset(handlers, curr_event, handlers_array);
+		if not event_map[curr_event] then -- Only wildcard handlers match, if any
+			table.insert(recent_wildcard_events, curr_event);
+			if #recent_wildcard_events > max_cached_wildcard_events then
+				rawset(handlers, table.remove(recent_wildcard_events, 1), nil);
+			end
+		end
 		return handlers_array;
 	end;
 	__newindex = function (handlers, curr_event, handlers_array)
@@ -79,7 +88,7 @@ local _1, _2, _3;
 local function _handle_request() return handle_request(_1, _2, _3); end
 
 local last_err;
-local function _traceback_handler(err) last_err = err; log("error", "Traceback[http]: %s: %s", tostring(err), debug.traceback()); end
+local function _traceback_handler(err) last_err = err; log("error", "Traceback[httpserver]: %s", traceback(tostring(err), 2)); end
 events.add_handler("http-error", function (error)
 	return "Error processing request: "..codes[error.code]..". Check your error log for more information.";
 end, -1);
@@ -89,29 +98,30 @@ function listener.onconnect(conn)
 	local pending = {};
 	local waiting = false;
 	local function process_next()
-		--if waiting then log("debug", "can't process_next, waiting"); return; end
-		if sessions[conn] and #pending > 0 then
+		if waiting then log("debug", "can't process_next, waiting"); return; end
+		waiting = true;
+		while sessions[conn] and #pending > 0 do
 			local request = t_remove(pending);
 			--log("debug", "process_next: %s", request.path);
-			waiting = true;
 			--handle_request(conn, request, process_next);
 			_1, _2, _3 = conn, request, process_next;
 			if not xpcall(_handle_request, _traceback_handler) then
 				conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = last_err }));
 				conn:close();
 			end
-		else
-			--log("debug", "ready for more");
-			waiting = false;
 		end
+		--log("debug", "ready for more");
+		waiting = false;
 	end
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
+		if waiting then
+			log("error", "http connection handler is not reentrant: %s", request.path);
+			assert(false, "http connection handler is not reentrant");
+		end
 		request.secure = secure;
 		t_insert(pending, request);
-		if not waiting then
-			process_next();
-		end
+		process_next();
 	end
 	local function error_cb(err)
 		log("debug", "error_cb: %s", err or "<nil>");
@@ -158,7 +168,7 @@ function handle_request(conn, request, finish_cb)
 	local conn_header = request.headers.connection;
 	conn_header = conn_header and ","..conn_header:gsub("[ \t]", ""):lower().."," or ""
 	local httpversion = request.httpversion
-	local persistent = conn_header:find(",keep-alive,", 1, true)
+	local persistent = conn_header:find(",Keep-Alive,", 1, true)
 		or (httpversion == "1.1" and not conn_header:find(",close,", 1, true));
 
 	local response_conn_header;
@@ -218,7 +228,13 @@ function handle_request(conn, request, finish_cb)
 				body = result;
 			elseif result_type == "table" then
 				for k, v in pairs(result) do
-					response[k] = v;
+					if k ~= "headers" then
+						response[k] = v;
+					else
+						for header_name, header_value in pairs(v) do
+							response.headers[header_name] = header_value;
+						end
+					end
 				end
 			end
 			response:send(body);
@@ -276,6 +292,9 @@ function _M.remove_host(host)
 end
 function _M.set_default_host(host)
 	default_host = host;
+end
+function _M.fire_event(event, ...)
+	return events.fire_event(event, ...);
 end
 
 _M.listener = listener;

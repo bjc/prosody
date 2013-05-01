@@ -51,6 +51,7 @@ local prosody = {
 	lock_globals = function () end;
 	unlock_globals = function () end;
 	installed = CFG_SOURCEDIR ~= nil;
+	core_post_stanza = function () end; -- TODO: mod_router!
 };
 _G.prosody = prosody;
 
@@ -109,11 +110,11 @@ do
 		os.exit(1);
 	end
 end
-local original_logging_config = config.get("*", "core", "log");
-config.set("*", "core", "log", { { levels = { min="info" }, to = "console" } });
+local original_logging_config = config.get("*", "log");
+config.set("*", "log", { { levels = { min="info" }, to = "console" } });
 
-local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
+local custom_plugin_paths = config.get("*", "plugin_paths");
 if custom_plugin_paths then
 	local path_sep = package.config:sub(3,3);
 	-- path1;path2;path3;defaultpath...
@@ -134,7 +135,7 @@ dependencies.log_warnings();
 -- Switch away from root and into the prosody user --
 local switched_user, current_uid;
 
-local want_pposix_version = "0.3.5";
+local want_pposix_version = "0.3.6";
 local ok, pposix = pcall(require, "util.pposix");
 
 if ok and pposix then
@@ -142,8 +143,8 @@ if ok and pposix then
 	current_uid = pposix.getuid();
 	if current_uid == 0 then
 		-- We haz root!
-		local desired_user = config.get("*", "core", "prosody_user") or "prosody";
-		local desired_group = config.get("*", "core", "prosody_group") or desired_user;
+		local desired_user = config.get("*", "prosody_user") or "prosody";
+		local desired_group = config.get("*", "prosody_group") or desired_user;
 		local ok, err = pposix.setgid(desired_group);
 		if ok then
 			ok, err = pposix.initgroups(desired_user);
@@ -162,7 +163,7 @@ if ok and pposix then
 	end
 	
 	-- Set our umask to protect data files
-	pposix.umask(config.get("*", "core", "umask") or "027");
+	pposix.umask(config.get("*", "umask") or "027");
 	pposix.setenv("HOME", data_path);
 	pposix.setenv("PROSODY_CONFIG", ENV_CONFIG);
 else
@@ -267,7 +268,7 @@ local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
 
-local prosodyctl_timeout = (config.get("*", "core", "prosodyctl_timeout") or 5) * 2;
+local prosodyctl_timeout = (config.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
 local command = arg[1];
@@ -410,7 +411,7 @@ function commands.start(arg)
 	
 	local ok, ret = prosodyctl.start();
 	if ok then
-		if config.get("*", "core", "daemonize") ~= false then
+		if config.get("*", "daemonize") ~= false then
 			local i=1;
 			while true do
 				local ok, running = prosodyctl.isrunning();
@@ -653,25 +654,35 @@ end
 
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local conf_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".cnf";
+		local conf_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".cnf";
 		if ask_overwrite(conf_filename) then
 			return nil, conf_filename;
 		end
 		local conf = openssl.config.new();
 		conf:from_prosody(hosts, config, arg);
-		for k, v in pairs(conf.distinguished_name) do
-			local nv;
-			if k == "commonName" then 
-				v = arg[1]
-			elseif k == "emailAddress" then
-				v = "xmpp@" .. arg[1];
+		show_message("Please provide details to include in the certificate config file.");
+		show_message("Leave the field empty to use the default value or '.' to exclude the field.")
+		for i, k in ipairs(openssl._DN_order) do
+			local v = conf.distinguished_name[k];
+			if v then
+				local nv;
+				if k == "commonName" then
+					v = arg[1]
+				elseif k == "emailAddress" then
+					v = "xmpp@" .. arg[1];
+				elseif k == "countryName" then
+					local tld = arg[1]:match"%.([a-z]+)$";
+					if tld and #tld == 2 and tld ~= "uk" then
+						v = tld:upper();
+					end
+				end
+				nv = show_prompt(("%s (%s):"):format(k, nv or v));
+				nv = (not nv or nv == "") and v or nv;
+				if nv:find"[\192-\252][\128-\191]+" then
+					conf.req.string_mask = "utf8only"
+				end
+				conf.distinguished_name[k] = nv ~= "." and nv or nil;
 			end
-			nv = show_prompt(("%s (%s):"):format(k, nv or v));
-			nv = (not nv or nv == "") and v or nv;
-			if nv:find"[\192-\252][\128-\191]+" then
-				conf.req.string_mask = "utf8only"
-			end
-			conf.distinguished_name[k] = nv ~= "." and nv or nil;
 		end
 		local conf_file = io.open(conf_filename, "w");
 		conf_file:write(conf:serialize());
@@ -686,7 +697,7 @@ end
 
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local key_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".key";
+		local key_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".key";
 		if ask_overwrite(key_filename) then
 			return nil, key_filename;
 		end
@@ -708,7 +719,7 @@ end
 
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local req_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".req";
+		local req_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".req";
 		if ask_overwrite(req_filename) then
 			return nil, req_filename;
 		end
@@ -726,7 +737,7 @@ end
 
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local cert_filename = (CFG_DATADIR or ".") .. "/" .. arg[1] .. ".crt";
+		local cert_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".crt";
 		if ask_overwrite(cert_filename) then
 			return nil, cert_filename;
 		end

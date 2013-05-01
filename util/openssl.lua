@@ -23,11 +23,12 @@ function config.new()
 			prompt = "no",
 		},
 		distinguished_name = {
-			commonName = "example.com",
 			countryName = "GB",
+			-- stateOrProvinceName = "",
 			localityName = "The Internet",
 			organizationName = "Your Organisation",
 			organizationalUnitName = "XMPP Department",
+			commonName = "example.com",
 			emailAddress = "xmpp@example.com",
 		},
 		v3_extensions = {
@@ -43,6 +44,17 @@ function config.new()
 	}, ssl_config_mt);
 end
 
+local DN_order = {
+	"countryName";
+	"stateOrProvinceName";
+	"localityName";
+	"streetAddress";
+	"organizationName";
+	"organizationalUnitName";
+	"commonName";
+	"emailAddress";
+}
+_M._DN_order = DN_order;
 function ssl_config:serialize()
 	local s = "";
 	for k, t in pairs(self) do
@@ -51,6 +63,14 @@ function ssl_config:serialize()
 			for san, n in pairs(t) do
 				for i = 1,#n do
 					s = s .. s_format("%s.%d = %s\n", san, i -1, n[i]);
+				end
+			end
+		elseif k == "distinguished_name" then
+			for i=1,#DN_order do
+				local k = DN_order[i]
+				local v = t[k];
+				if v then
+					s = s .. ("%s = %s\n"):format(k, v);
 				end
 			end
 		else
@@ -100,13 +120,13 @@ function ssl_config:from_prosody(hosts, config, certhosts)
 			if name == certhost or name:sub(-1-#certhost) == "."..certhost then
 				found_matching_hosts = true;
 				self:add_dNSName(name);
-				--print(name .. "#component_module: " .. (config.get(name, "core", "component_module") or "nil"));
-				if config.get(name, "core", "component_module") == nil then
+				--print(name .. "#component_module: " .. (config.get(name, "component_module") or "nil"));
+				if config.get(name, "component_module") == nil then
 					self:add_sRVName(name, "xmpp-client");
 				end
-				--print(name .. "#anonymous_login: " .. tostring(config.get(name, "core", "anonymous_login")));
-				if not (config.get(name, "core", "anonymous_login") or
-						config.get(name, "core", "authentication") == "anonymous") then
+				--print(name .. "#anonymous_login: " .. tostring(config.get(name, "anonymous_login")));
+				if not (config.get(name, "anonymous_login") or
+						config.get(name, "authentication") == "anonymous") then
 					self:add_sRVName(name, "xmpp-server");
 				end
 				self:add_xmppAddr(name);

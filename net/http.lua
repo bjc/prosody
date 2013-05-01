@@ -9,14 +9,17 @@
 local socket = require "socket"
 local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
-local httpstream_new = require "util.httpstream".new;
+local httpstream_new = require "net.http.parser".new;
+local util_http = require "util.http";
+
+local ssl_available = pcall(require, "ssl");
 
 local server = require "net.server"
 
 local t_insert, t_concat = table.insert, table.concat;
-local pairs, ipairs = pairs, ipairs;
-local tonumber, tostring, xpcall, select, debug_traceback, char, format =
-      tonumber, tostring, xpcall, select, debug.traceback, string.char, string.format;
+local pairs = pairs;
+local tonumber, tostring, xpcall, select, traceback =
+      tonumber, tostring, xpcall, select, debug.traceback;
 
 local log = require "util.logger".init("http");
 
@@ -63,64 +66,29 @@ end
 function listener.ondisconnect(conn, err)
 	local request = requests[conn];
 	if request and request.conn then
-		request:reader(nil);
+		request:reader(nil, err);
 	end
 	requests[conn] = nil;
 end
 
-function urlencode(s) return s and (s:gsub("[^a-zA-Z0-9.~_-]", function (c) return format("%%%02x", c:byte()); end)); end
-function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end)); end
-
-local function _formencodepart(s)
-	return s and (s:gsub("%W", function (c)
-		if c ~= " " then
-			return format("%%%02x", c:byte());
-		else
-			return "+";
-		end
-	end));
-end
-
-function formencode(form)
-	local result = {};
-	if form[1] then -- Array of ordered { name, value }
-		for _, field in ipairs(form) do
-			t_insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
-		end
-	else -- Unordered map of name -> value
-		for name, value in pairs(form) do
-			t_insert(result, _formencodepart(name).."=".._formencodepart(value));
-		end
-	end
-	return t_concat(result, "&");
-end
-
-function formdecode(s)
-	if not s:match("=") then return urldecode(s); end
-	local r = {};
-	for k, v in s:gmatch("([^=&]*)=([^&]*)") do
-		k, v = k:gsub("%+", "%%20"), v:gsub("%+", "%%20");
-		k, v = urldecode(k), urldecode(v);
-		t_insert(r, { name = k, value = v });
-		r[k] = v;
-	end
-	return r;
-end
-
-local function request_reader(request, data, startpos)
+local function request_reader(request, data, err)
 	if not request.parser then
-		if not data then return; end
-		local function success_cb(r)
+		local function error_cb(reason)
 			if request.callback then
-				for k,v in pairs(r) do request[k] = v; end
-				request.callback(r.body, r.code, request, r);
+				request.callback(reason or "connection-closed", 0, request);
 				request.callback = nil;
 			end
 			destroy_request(request);
 		end
-		local function error_cb(r)
+		
+		if not data then
+			error_cb(err);
+			return;
+		end
+		
+		local function success_cb(r)
 			if request.callback then
-				request.callback(r or "connection-closed", 0, request);
+				request.callback(r.body, r.code, r, request);
 				request.callback = nil;
 			end
 			destroy_request(request);
@@ -133,7 +101,7 @@ local function request_reader(request, data, startpos)
 	request.parser:feed(data);
 end
 
-local function handleerr(err) log("error", "Traceback[http]: %s: %s", tostring(err), debug_traceback()); end
+local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
 function request(u, ex, callback)
 	local req = url.parse(u);
 	
@@ -177,6 +145,9 @@ function request(u, ex, callback)
 	req.method, req.headers, req.body = method, headers, body;
 	
 	local using_https = req.scheme == "https";
+	if using_https and not ssl_available then
+		error("SSL not available, unable to contact https URL");
+	end
 	local port = tonumber(req.port) or (using_https and 443 or 80);
 	
 	-- Connect the socket, and wrap it with net.server
@@ -188,7 +159,12 @@ function request(u, ex, callback)
 		return nil, err;
 	end
 	
-	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", using_https and { mode = "client", protocol = "sslv23" });
+	local sslctx = false;
+	if using_https then
+		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
+	end
+
+	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", sslctx);
 	req.write = function (...) return req.handler:write(...); end
 	
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
@@ -206,6 +182,10 @@ function destroy_request(request)
 	end
 end
 
-_M.urlencode = urlencode;
+local urlencode, urldecode = util_http.urlencode, util_http.urldecode;
+local formencode, formdecode = util_http.formencode, util_http.formdecode;
+
+_M.urlencode, _M.urldecode = urlencode, urldecode;
+_M.formencode, _M.formdecode = formencode, formdecode;
 
 return _M;

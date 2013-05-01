@@ -1,3 +1,10 @@
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+--
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
 
 local type = type;
 local t_insert, t_concat, t_remove, t_sort = table.insert, table.concat, table.remove, table.sort;
@@ -8,6 +15,9 @@ local next = next;
 local error = error;
 local newproxy, getmetatable = newproxy, getmetatable;
 local print = print;
+
+local has_array, array = pcall(require, "util.array");
+local array_mt = hasarray and getmetatable(array()) or {};
 
 --module("json")
 local json = {};
@@ -27,6 +37,19 @@ local unescapes = {
 for i=0,31 do
 	local ch = s_char(i);
 	if not escapes[ch] then escapes[ch] = ("\\u%.4X"):format(i); end
+end
+
+local function codepoint_to_utf8(code)
+	if code < 0x80 then return s_char(code); end
+	local bits0_6 = code % 64;
+	if code < 0x800 then
+		local bits6_5 = (code - bits0_6) / 64;
+		return s_char(0x80 + 0x40 + bits6_5, 0x80 + bits0_6);
+	end
+	local bits0_12 = code % 4096;
+	local bits6_6 = (bits0_12 - bits0_6) / 64;
+	local bits12_4 = (code - bits0_12) / 4096;
+	return s_char(0x80 + 0x40 + 0x20 + bits12_4, 0x80 + bits6_6, 0x80 + bits0_6);
 end
 
 local valid_types = {
@@ -130,7 +153,12 @@ function simplesave(o, buffer)
 	elseif t == "string" then
 		stringsave(o, buffer);
 	elseif t == "table" then
-		tablesave(o, buffer);
+		local mt = getmetatable(o);
+		if mt == array_mt then
+			arraysave(o, buffer);
+		else
+			tablesave(o, buffer);
+		end
 	elseif t == "boolean" then
 		t_insert(buffer, (o and "true" or "false"));
 	else
@@ -146,6 +174,11 @@ end
 function json.encode_ordered(obj)
 	local t = { ordered = true };
 	simplesave(obj, t);
+	return t_concat(t);
+end
+function json.encode_array(obj)
+	local t = {};
+	arraysave(obj, t);
 	return t_concat(t);
 end
 
@@ -197,7 +230,7 @@ function json.decode(json)
 	
 	local readvalue;
 	local function readarray()
-		local t = {};
+		local t = setmetatable({}, array_mt);
 		next(); -- skip '['
 		skipstuff();
 		if ch == "]" then next(); return t; end
@@ -244,7 +277,7 @@ function json.decode(json)
 						if not ch:match("[0-9a-fA-F]") then error("invalid unicode escape sequence in string"); end
 						seq = seq..ch;
 					end
-					s = s..s.char(tonumber(seq, 16)); -- FIXME do proper utf-8
+					s = s..codepoint_to_utf8(tonumber(seq, 16));
 					next();
 				else error("invalid escape sequence in string"); end
 			end

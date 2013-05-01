@@ -7,9 +7,7 @@
 --
 
 
-local hosts = _G.hosts;
 local st = require "util.stanza";
-local datamanager = require "util.datamanager";
 local dataform_new = require "util.dataforms".new;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
@@ -22,6 +20,8 @@ local jid_bare = require "util.jid".bare;
 local compat = module:get_option_boolean("registration_compat", true);
 local allow_registration = module:get_option_boolean("allow_registration", false);
 local additional_fields = module:get_option("additional_registration_fields", {});
+
+local account_details = module:open_store("account_details");
 
 local field_map = {
 	username = { name = "username", type = "text-single", label = "Username", required = true };
@@ -235,7 +235,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?
 						local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
 						if usermanager_create_user(username, password, host) then
-							if next(data) and not datamanager.store(username, host, "account_details", data) then
+							if next(data) and not account_details:set(username, data) then
 								usermanager_delete_user(username, host);
 								session.send(error_reply);
 								return true;

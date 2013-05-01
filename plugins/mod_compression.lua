@@ -141,10 +141,7 @@ module:hook("stanza/http://jabber.org/protocol/compress:compressed", function(ev
 		-- setup decompression for session.data
 		setup_decompression(session, inflate_stream);
 		session:reset_stream();
-		local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
-									["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
-		session.sends2s("<?xml version='1.0'?>");
-		session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
+		session:open_stream(session.from_host, session.to_host);
 		session.compressed = true;
 		return true;
 	end

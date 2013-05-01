@@ -9,15 +9,15 @@
 
 module:add_feature("jabber:iq:privacy");
 
-local prosody = prosody;
 local st = require "util.stanza";
-local datamanager = require "util.datamanager";
-local bare_sessions, full_sessions = bare_sessions, full_sessions;
+local bare_sessions, full_sessions = prosody.bare_sessions, prosody.full_sessions;
 local util_Jid = require "util.jid";
 local jid_bare = util_Jid.bare;
 local jid_split, jid_join = util_Jid.split, util_Jid.join;
 local load_roster = require "core.rostermanager".load_roster;
 local to_number = tonumber;
+
+local privacy_storage = module:open_store();
 
 function isListUsed(origin, name, privacy_lists)
 	local user = bare_sessions[origin.username.."@"..origin.host];
@@ -218,7 +218,7 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 	if stanza.attr.to == nil then -- only service requests to own bare JID
 		local query = stanza.tags[1]; -- the query element
 		local valid = false;
-		local privacy_lists = datamanager.load(origin.username, origin.host, "privacy") or { lists = {} };
+		local privacy_lists = privacy_storage:get(origin.username) or { lists = {} };
 
 		if privacy_lists.lists[1] then -- Code to migrate from old privacy lists format, remove in 0.8
 			module:log("info", "Upgrading format of stored privacy lists for %s@%s", origin.username, origin.host);
@@ -273,7 +273,7 @@ module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 			end
 			origin.send(st.error_reply(stanza, valid[1], valid[2], valid[3]));
 		else
-			datamanager.store(origin.username, origin.host, "privacy", privacy_lists);
+			privacy_storage:set(origin.username, privacy_lists);
 		end
 		return true;
 	end
@@ -281,7 +281,7 @@ end);
 
 function checkIfNeedToBeBlocked(e, session)
 	local origin, stanza = e.origin, e.stanza;
-	local privacy_lists = datamanager.load(session.username, session.host, "privacy") or {};
+	local privacy_lists = privacy_storage:get(session.username) or {};
 	local bare_jid = session.username.."@"..session.host;
 	local to = stanza.attr.to or bare_jid;
 	local from = stanza.attr.from;
@@ -367,6 +367,10 @@ function checkIfNeedToBeBlocked(e, session)
 		end
 		if apply then
 			if block then
+				-- drop and not bounce groupchat messages, otherwise users will get kicked
+				if stanza.attr.type == "groupchat" then
+					return true;
+				end
 				module:log("debug", "stanza blocked: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
 				if stanza.name == "message" then
 					origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));

@@ -22,6 +22,9 @@ function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
 	local pubsub = stanza.tags[1];
 	local action = pubsub.tags[1];
+	if not action then
+		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+	end
 	local handler = handlers[stanza.attr.type.."_"..action.name];
 	if handler then
 		handler(origin, stanza, action);
@@ -164,16 +167,6 @@ function handlers.set_subscribe(origin, stanza, subscribe)
 		reply = pubsub_error_reply(stanza, ret);
 	end
 	origin.send(reply);
-	if ok then
-		-- Send all current items
-		local ok, items = service:get_items(node, stanza.attr.from);
-		if items then
-			local jids = { [jid] = options or true };
-			for id, item in pairs(items) do
-				service.config.broadcaster("items", node, jids, item);
-			end
-		end
-	end
 end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe)
@@ -197,7 +190,13 @@ function handlers.set_publish(origin, stanza, publish)
 		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 	end
 	local item = publish:get_child("item");
-	local id = (item and item.attr.id) or uuid_generate();
+	local id = (item and item.attr.id);
+	if not id then
+		id = uuid_generate();
+		if item then
+			item.attr.id = id;
+		end
+	end
 	local ok, ret = service:publish(node, stanza.attr.from, id, item);
 	local reply;
 	if ok then

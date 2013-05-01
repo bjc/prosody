@@ -9,7 +9,7 @@
 local log = module._log;
 
 local require = require;
-local pairs, ipairs = pairs, ipairs;
+local pairs = pairs;
 local t_concat, t_insert = table.concat, table.insert;
 local s_find = string.find;
 local tonumber = tonumber;
@@ -19,7 +19,9 @@ local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local datetime = require "util.datetime";
-local hosts = hosts;
+local hosts = prosody.hosts;
+local bare_sessions = prosody.bare_sessions;
+local full_sessions = prosody.full_sessions;
 local NULL = {};
 
 local rostermanager = require "core.rostermanager";
@@ -344,7 +346,7 @@ module:hook("presence/full", function(data)
 end);
 module:hook("presence/host", function(data)
 	-- inbound presence to the host
-	local origin, stanza = data.origin, data.stanza;
+	local stanza = data.stanza;
 	
 	local from_bare = jid_bare(stanza.attr.from);
 	local t = stanza.attr.type;

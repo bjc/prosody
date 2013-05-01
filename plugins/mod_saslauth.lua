@@ -11,7 +11,6 @@
 local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
-local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
 local cert_verify_identity = require "util.x509".verify_identity;
@@ -88,13 +87,9 @@ module:hook_stanza(xmlns_sasl, "success", function (session, stanza)
 	module:log("debug", "SASL EXTERNAL with %s succeeded", session.to_host);
 	session.external_auth = "succeeded"
 	session:reset_stream();
+	session:open_stream(session.from_host, session.to_host);
 
-	local default_stream_attr = {xmlns = "jabber:server", ["xmlns:stream"] = "http://etherx.jabber.org/streams",
-	                            ["xmlns:db"] = 'jabber:server:dialback', version = "1.0", to = session.to_host, from = session.from_host};
-	session.sends2s("<?xml version='1.0'?>");
-	session.sends2s(st.stanza("stream:stream", default_stream_attr):top_tag());
-
-	s2s_make_authenticated(session, session.to_host);
+	module:fire_event("s2s-authenticated", { session = session, host = session.to_host });
 	return true;
 end)
 
@@ -191,7 +186,7 @@ local function s2s_external_auth(session, stanza)
 
 	local domain = text ~= "" and text or session.from_host;
 	module:log("info", "Accepting SASL EXTERNAL identity from %s", domain);
-	s2s_make_authenticated(session, domain);
+	module:fire_event("s2s-authenticated", { session = session, host = domain });
 	session:reset_stream();
 	return true
 end

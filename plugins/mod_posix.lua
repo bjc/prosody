@@ -7,10 +7,12 @@
 --
 
 
-local want_pposix_version = "0.3.5";
+local want_pposix_version = "0.3.6";
 
 local pposix = assert(require "util.pposix");
-if pposix._VERSION ~= want_pposix_version then module:log("warn", "Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version); end
+if pposix._VERSION ~= want_pposix_version then
+	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
+end
 
 local signal = select(2, pcall(require, "util.signal"));
 if type(signal) == "string" then
@@ -118,9 +120,9 @@ function syslog_sink_maker(config)
 	local syslog, format = pposix.syslog_log, string.format;
 	return function (name, level, message, ...)
 		if ... then
-			syslog(level, format(message, ...));
+			syslog(level, name, format(message, ...));
 		else
-			syslog(level, message);
+			syslog(level, name, message);
 		end
 	end;
 end

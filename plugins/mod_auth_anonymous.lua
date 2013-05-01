@@ -8,6 +8,7 @@
 
 local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
+local hosts = prosody.hosts;
 
 -- define auth provider
 local provider = {};

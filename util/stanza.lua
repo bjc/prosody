@@ -18,6 +18,7 @@ local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
 local s_gsub        =   string.gsub;
+local s_sub         =    string.sub;
 local s_find        =   string.find;
 local os            =            os;
 
@@ -153,7 +154,7 @@ function stanza_mt:maptags(callback)
 	local n_children, n_tags = #self, #tags;
 	
 	local i = 1;
-	while curr_tag <= n_tags do
+	while curr_tag <= n_tags and n_tags > 0 do
 		if self[i] == tags[curr_tag] then
 			local ret = callback(self[i]);
 			if ret == nil then
@@ -161,16 +162,43 @@ function stanza_mt:maptags(callback)
 				t_remove(tags, curr_tag);
 				n_children = n_children - 1;
 				n_tags = n_tags - 1;
+				i = i - 1;
+				curr_tag = curr_tag - 1;
 			else
 				self[i] = ret;
-				tags[i] = ret;
+				tags[curr_tag] = ret;
 			end
-			i = i + 1;
 			curr_tag = curr_tag + 1;
 		end
+		i = i + 1;
 	end
 	return self;
 end
+
+function stanza_mt:find(path)
+	local pos = 1;
+	local len = #path + 1;
+
+	repeat
+		local xmlns, name, text;
+		local char = s_sub(path, pos, pos);
+		if char == "@" then
+			return self.attr[s_sub(path, pos + 1)];
+		elseif char == "{" then
+			xmlns, pos = s_match(path, "^([^}]+)}()", pos + 1);
+		end
+		name, text, pos = s_match(path, "^([^@/#]*)([/#]?)()", pos);
+		name = name ~= "" and name or nil;
+		if pos == len then
+			if text == "#" then
+				return self:get_child_text(name, xmlns);
+			end
+			return self:get_child(name, xmlns);
+		end
+		self = self:get_child(name, xmlns);
+	until not self
+end
+
 
 local xml_escape
 do

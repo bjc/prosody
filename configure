@@ -41,15 +41,17 @@ Configure Prosody prior to building.
                             Default is "$LUA_SUFFIX" (lua$LUA_SUFFIX...)
 --with-lua=PREFIX           Use Lua from given prefix.
                             Default is $LUA_DIR
+--runwith=BINARY            What Lua binary to set as runtime environment.
+                            Default is $RUNWITH
 --with-lua-include=DIR      You can also specify Lua's includes dir.
                             Default is \$LUA_DIR/include
 --with-lua-lib=DIR          You can also specify Lua's libraries dir.
                             Default is \$LUA_DIR/lib
 --with-idn=LIB              The name of the IDN library to link with.
                             Default is $IDN_LIB
---idn-library=(idn|icu)		 Select library to use for IDNA functionality.
-									 idn: use GNU libidn (default)
-									 icu: use ICU from IBM
+--idn-library=(idn|icu)     Select library to use for IDNA functionality.
+                            idn: use GNU libidn (default)
+                            icu: use ICU from IBM
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
 --cflags=FLAGS              Flags to pass to the compiler
@@ -95,6 +97,7 @@ do
       if [ "$OSTYPE" = "debian" ]
       then LUA_SUFFIX="5.1";
 	LUA_SUFFIX_SET=yes
+	RUNWITH="lua5.1"
 	LUA_INCDIR=/usr/include/lua5.1;
 	LUA_INCDIR_SET=yes
 	CFLAGS="$CFLAGS -D_GNU_SOURCE"

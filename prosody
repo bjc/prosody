@@ -132,8 +132,8 @@ end
 function sanity_check()
 	for host, host_config in pairs(config.getconfig()) do
 		if host ~= "*"
-		and host_config.core.enabled ~= false
-		and not host_config.core.component_module then
+		and host_config.enabled ~= false
+		and not host_config.component_module then
 			return;
 		end
 	end
@@ -198,6 +198,7 @@ function set_function_metatable()
 end
 
 function init_global_state()
+	-- COMPAT: These globals are deprecated
 	bare_sessions = {};
 	full_sessions = {};
 	hosts = {};
@@ -206,8 +207,8 @@ function init_global_state()
 	prosody.full_sessions = full_sessions;
 	prosody.hosts = hosts;
 	
-	local data_path = config.get("*", "core", "data_path") or CFG_DATADIR or "data";
-	local custom_plugin_paths = config.get("*", "core", "plugin_paths");
+	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
+	local custom_plugin_paths = config.get("*", "plugin_paths");
 	if custom_plugin_paths then
 		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
@@ -289,12 +290,12 @@ function load_secondary_libraries()
 	--- Load and initialise core modules
 	require "util.import"
 	require "util.xmppstream"
-	require "core.rostermanager"
 	require "core.stanza_router"
 	require "core.hostmanager"
 	require "core.portmanager"
 	require "core.modulemanager"
 	require "core.usermanager"
+	require "core.rostermanager"
 	require "core.sessionmanager"
 	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
 		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[ \t]*([^\n]*)"));

@@ -13,7 +13,7 @@ local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local new_ip = require "util.ip".new_ip;
-local rfc3484_dest = require "util.rfc3484".destination;
+local rfc6724_dest = require "util.rfc6724".destination;
 local socket = require "socket";
 local adns = require "net.adns";
 local dns = require "net.dns";
@@ -44,15 +44,9 @@ local function compare_srv_priorities(a,b)
 	return a.priority < b.priority or (a.priority == b.priority and a.weight > b.weight);
 end
 
-local function session_open_stream(session, from, to)
-	session.sends2s(st.stanza("stream:stream", {
-		xmlns='jabber:server', ["xmlns:db"]='jabber:server:dialback',
-		["xmlns:stream"]='http://etherx.jabber.org/streams',
-		from=from, to=to, version='1.0', ["xml:lang"]='en'}):top_tag());
-end
-
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
+	host_session.version = 1;
 	host_session.open_stream = session_open_stream;
 	
 	-- Kick the connection attempting machine into life
@@ -96,7 +90,7 @@ function s2sout.attempt_connection(host_session, err)
 			host_session.connecting = nil;
 			if answer and #answer > 0 then
 				log("debug", "%s has SRV records, handling...", to_host);
-				local srv_hosts = {};
+				local srv_hosts = { answer = answer };
 				host_session.srv_hosts = srv_hosts;
 				for _, record in ipairs(answer) do
 					t_insert(srv_hosts, record.srv);
@@ -197,7 +191,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc3484_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, sources);
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
@@ -233,7 +227,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc3484_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, sources);
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
@@ -277,6 +271,10 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	
 	local from_host, to_host = host_session.from_host, host_session.to_host;
 	
+	-- Reset secure flag in case this is another
+	-- connection attempt after a failed STARTTLS
+	host_session.secure = nil;
+
 	local conn, handler;
 	if connect_host.proto == "IPv4" then
 		conn, handler = socket.tcp();

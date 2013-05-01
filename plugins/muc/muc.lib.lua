@@ -88,6 +88,10 @@ local function getText(stanza, path) return getUsingPath(stanza, path, true); en
 local room_mt = {};
 room_mt.__index = room_mt;
 
+function room_mt:__tostring()
+	return "MUC room ("..self.jid..")";
+end
+
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
 		return "moderator";
@@ -576,10 +580,9 @@ function room_mt:send_form(origin, stanza)
 end
 
 function room_mt:get_form_layout()
-	local title = "Configuration for "..self.jid;
-	return dataform.new({
-		title = title,
-		instructions = title,
+	local form = dataform.new({
+		title = "Configuration for "..self.jid,
+		instructions = "Complete and submit this form to configure the room.",
 		{
 			name = 'FORM_TYPE',
 			type = 'hidden',
@@ -649,6 +652,7 @@ function room_mt:get_form_layout()
 			value = tostring(self:get_historylength())
 		}
 	});
+	return module:fire_event("muc-config-form", { room = self, form = form }) or form;
 end
 
 local valid_whois = {
@@ -668,6 +672,10 @@ function room_mt:process_form(origin, stanza)
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
 
 	local dirty = false
+
+	local event = { room = self, fields = fields, changed = dirty };
+	module:fire_event("muc-config-submitted", event);
+	dirty = event.changed or dirty;
 
 	local name = fields['muc#roomconfig_roomname'];
 	if name ~= self:get_name() then
@@ -765,13 +773,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 	local type = stanza.attr.type;
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
 	if stanza.name == "iq" then
-		if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" then
-			if stanza.tags[1].attr.node then
-				origin.send(st.error_reply(stanza, "cancel", "feature-not-implemented"));
-			else
-				origin.send(self:get_disco_info(stanza));
-			end
-		elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" then
+		if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" and not stanza.tags[1].attr.node then
+			origin.send(self:get_disco_info(stanza));
+		elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" and not stanza.tags[1].attr.node then
 			origin.send(self:get_disco_items(stanza));
 		elseif xmlns == "http://jabber.org/protocol/muc#admin" then
 			local actor = stanza.attr.from;
@@ -896,7 +900,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					origin.send(st.error_reply(stanza, "auth", "forbidden"));
 				end
 			else
-				self:broadcast_message(stanza, self:get_historylength() > 0);
+				self:broadcast_message(stanza, self:get_historylength() > 0 and stanza:get_child("body"));
 			end
 			stanza.attr.from = from;
 		end
@@ -987,7 +991,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			return true;
 		end
 		if actor_affiliation ~= "owner" then
-			if actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+			if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
 				return nil, "cancel", "not-allowed";
 			end
 		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
@@ -1049,11 +1053,12 @@ function room_mt:get_role(nick)
 	return session and session.role or nil;
 end
 function room_mt:can_set_role(actor_jid, occupant_jid, role)
-	local actor = self._occupants[self._jid_nick[actor_jid]];
 	local occupant = self._occupants[occupant_jid];
-	
 	if not occupant or not actor then return nil, "modify", "not-acceptable"; end
 
+	if actor_jid == true then return true; end
+
+	local actor = self._occupants[self._jid_nick[actor_jid]];
 	if actor.role == "moderator" then
 		if occupant.affiliation ~= "owner" and occupant.affiliation ~= "admin" then
 			if actor.affiliation == "owner" or actor.affiliation == "admin" then

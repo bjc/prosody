@@ -9,8 +9,7 @@
 
 local st = require "util.stanza"
 
-local jid_split = require "util.jid".split;
-local datamanager = require "util.datamanager"
+local private_storage = module:open_store();
 
 module:add_feature("jabber:iq:private");
 
@@ -21,7 +20,7 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 	if #query.tags == 1 then
 		local tag = query.tags[1];
 		local key = tag.name..":"..tag.attr.xmlns;
-		local data, err = datamanager.load(origin.username, origin.host, "private");
+		local data, err = private_storage:get(origin.username);
 		if err then
 			origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
 			return true;
@@ -40,7 +39,7 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 				data[key] = st.preserialize(tag);
 			end
 			-- TODO delete datastore if empty
-			if datamanager.store(origin.username, origin.host, "private", data) then
+			if private_storage:set(origin.username, data) then
 				origin.send(st.reply(stanza));
 			else
 				origin.send(st.error_reply(stanza, "wait", "internal-server-error"));

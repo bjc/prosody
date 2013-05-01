@@ -7,7 +7,6 @@
 --
 
 local hosts = _G.hosts;
-local s2s_make_authenticated = require "core.s2smanager".make_authenticated;
 
 local log = module._log;
 
@@ -110,7 +109,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 		if dialback_verifying and attr.from == origin.to_host then
 			local valid;
 			if attr.type == "valid" then
-				s2s_make_authenticated(dialback_verifying, attr.from);
+				module:fire_event("s2s-authenticated", { session = dialback_verifying, host = attr.from });
 				valid = "valid";
 			else
 				-- Warn the original connection that is was not verified successfully
@@ -146,7 +145,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		end
 		if stanza.attr.type == "valid" then
-			s2s_make_authenticated(origin, attr.from);
+			module:fire_event("s2s-authenticated", { session = origin, host = attr.from });
 		else
 			origin:close("not-authorized", "dialback authentication failed");
 		end
@@ -170,7 +169,7 @@ module:hook_stanza(xmlns_stream, "features", function (origin, stanza)
 	end
 end, 100);
 
-module:hook("s2s-authenticate-legacy", function (event)
+module:hook("s2sout-authenticate-legacy", function (event)
 	module:log("debug", "Initiating dialback...");
 	initiate_dialback(event.origin);
 	return true;

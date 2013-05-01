@@ -28,13 +28,14 @@ local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local uuid_gen = require "util.uuid".generate;
-local datamanager = require "util.datamanager";
 local um_is_admin = require "core.usermanager".is_admin;
-local hosts = hosts;
+local hosts = prosody.hosts;
 
 rooms = {};
 local rooms = rooms;
-local persistent_rooms = datamanager.load(nil, muc_host, "persistent") or {};
+local persistent_rooms_storage = module:open_store("persistent");
+local persistent_rooms = persistent_rooms_storage:get() or {};
+local room_configs = module:open_store("config");
 
 -- Configurable options
 muclib.set_max_history_length(module:get_option_number("max_history_messages"));
@@ -66,15 +67,15 @@ local function room_save(room, forced)
 			_data = room._data;
 			_affiliations = room._affiliations;
 		};
-		datamanager.store(node, muc_host, "config", data);
+		room_configs:set(node, data);
 		room._data.history = history;
 	elseif forced then
-		datamanager.store(node, muc_host, "config", nil);
+		room_configs:set(node, nil);
 		if not next(room._occupants) then -- Room empty
 			rooms[room.jid] = nil;
 		end
 	end
-	if forced then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
+	if forced then persistent_rooms_storage:set(nil, persistent_rooms); end
 end
 
 function create_room(jid)
@@ -88,7 +89,7 @@ end
 local persistent_errors = false;
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
-	local data = datamanager.load(node, muc_host, "config");
+	local data = room_configs:get(node);
 	if data then
 		local room = create_room(jid);
 		room._data = data._data;
@@ -99,7 +100,7 @@ for jid in pairs(persistent_rooms) do
 		persistent_errors = true;
 	end
 end
-if persistent_errors then datamanager.store(nil, muc_host, "persistent", persistent_rooms); end
+if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
 
 local host_room = muc_new_room(muc_host);
 host_room.route_stanza = room_route_stanza;
@@ -126,9 +127,10 @@ local function handle_to_domain(event)
 	if type == "error" or type == "result" then return; end
 	if stanza.name == "iq" and type == "get" then
 		local xmlns = stanza.tags[1].attr.xmlns;
-		if xmlns == "http://jabber.org/protocol/disco#info" then
+		local node = stanza.tags[1].attr.node;
+		if xmlns == "http://jabber.org/protocol/disco#info" and not node then
 			origin.send(get_disco_info(stanza));
-		elseif xmlns == "http://jabber.org/protocol/disco#items" then
+		elseif xmlns == "http://jabber.org/protocol/disco#items" and not node then
 			origin.send(get_disco_items(stanza));
 		elseif xmlns == "http://jabber.org/protocol/muc#unique" then
 			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions

@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.5"
+#define MODULE_VERSION "0.3.6"
 
 #include <stdlib.h>
 #include <math.h>
@@ -204,12 +204,13 @@ int level_constants[] = 	{
 			};
 int lc_syslog_log(lua_State* L)
 {
-	int level = luaL_checkoption(L, 1, "notice", level_strings);
-	level = level_constants[level];
+	int level = level_constants[luaL_checkoption(L, 1, "notice", level_strings)];
 
-	luaL_checkstring(L, 2);
+	if(lua_gettop(L) == 3)
+		syslog(level, "%s: %s", luaL_checkstring(L, 2), luaL_checkstring(L, 3));
+	else
+		syslog(level, "%s", lua_tostring(L, 2));
 
-	syslog(level, "%s", lua_tostring(L, 2));
 	return 0;
 }
 
@@ -483,6 +484,9 @@ int string2resource(const char *s) {
 	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
 	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
 	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
+#endif
+#ifdef RLIMIT_NICE
+	if (!strcmp(s, "NICE")) return RLIMIT_NICE;
 #endif
 	return -1;
 }

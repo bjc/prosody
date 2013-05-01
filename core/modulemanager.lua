@@ -19,7 +19,7 @@ local prosody = prosody;
 
 local pcall, xpcall = pcall, xpcall;
 local setmetatable, rawget = setmetatable, rawget;
-local pairs, type, tostring = pairs, type, tostring;
+local ipairs, pairs, type, tostring, t_insert = ipairs, pairs, type, tostring, table.insert;
 
 local debug_traceback = debug.traceback;
 local unpack, select = unpack, select;
@@ -44,12 +44,12 @@ local modulemap = { ["*"] = {} };
 
 -- Load modules when a host is activated
 function load_modules_for_host(host)
-	local component = config.get(host, "core", "component_module");
+	local component = config.get(host, "component_module");
 	
-	local global_modules_enabled = config.get("*", "core", "modules_enabled");
-	local global_modules_disabled = config.get("*", "core", "modules_disabled");
-	local host_modules_enabled = config.get(host, "core", "modules_enabled");
-	local host_modules_disabled = config.get(host, "core", "modules_disabled");
+	local global_modules_enabled = config.get("*", "modules_enabled");
+	local global_modules_disabled = config.get("*", "modules_disabled");
+	local host_modules_enabled = config.get(host, "modules_enabled");
+	local host_modules_disabled = config.get(host, "modules_disabled");
 	
 	if host_modules_enabled == global_modules_enabled then host_modules_enabled = nil; end
 	if host_modules_disabled == global_modules_disabled then host_modules_disabled = nil; end
@@ -218,7 +218,7 @@ local function do_reload_module(host, name)
 			saved = ret;
 		else
 			log("warn", "Error saving module '%s:%s' state: %s", host, name, ret);
-			if not config.get(host, "core", "force_module_reload") then
+			if not config.get(host, "force_module_reload") then
 				log("warn", "Aborting reload due to error, set force_module_reload to ignore this");
 				return nil, "save-state-failed";
 			else
@@ -276,6 +276,23 @@ end
 
 function get_module(host, name)
 	return modulemap[host] and modulemap[host][name];
+end
+
+function get_items(key, host)
+	local result = {};
+	local modules = modulemap[host];
+	if not key or not host or not modules then return nil; end
+
+	for _, module in pairs(modules) do
+		local mod = module.module;
+		if mod.items and mod.items[key] then
+			for _, value in ipairs(mod.items[key]) do
+				t_insert(result, value);
+			end
+		end
+	end
+
+	return result;
 end
 
 function get_modules(host)

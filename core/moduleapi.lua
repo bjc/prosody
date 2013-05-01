@@ -21,7 +21,10 @@ local tonumber, tostring = tonumber, tostring;
 
 local prosody = prosody;
 local hosts = prosody.hosts;
-local core_post_stanza = prosody.core_post_stanza;
+
+-- FIXME: This assert() is to try and catch an obscure bug (2013-04-05)
+local core_post_stanza = assert(prosody.core_post_stanza,
+	"prosody.core_post_stanza is nil, please report this as a bug");
 
 -- Registry of shared module data
 local shared_data = setmetatable({}, { __mode = "v" });
@@ -61,6 +64,20 @@ function api:add_identity(category, type, name)
 end
 function api:add_extension(data)
 	self:add_item("extension", data);
+end
+function api:has_feature(xmlns)
+	for _, feature in ipairs(self:get_host_items("feature")) do
+		if feature == xmlns then return true; end
+	end
+	return false;
+end
+function api:has_identity(category, type, name)
+	for _, id in ipairs(self:get_host_items("identity")) do
+		if id.category == category and id.type == type and id.name == name then
+			return true; 
+		end
+	end
+	return false;
 end
 
 function api:fire_event(...)
@@ -167,12 +184,9 @@ function api:shared(...)
 end
 
 function api:get_option(name, default_value)
-	local value = config.get(self.host, self.name, name);
+	local value = config.get(self.host, name);
 	if value == nil then
-		value = config.get(self.host, "core", name);
-		if value == nil then
-			value = default_value;
-		end
+		value = default_value;
 	end
 	return value;
 end
@@ -256,6 +270,22 @@ function api:get_option_set(name, ...)
 	return set.new(value);
 end
 
+function api:get_option_inherited_set(name, ...)
+	local value = self:get_option_set(name, ...);
+	local global_value = self:context("*"):get_option_set(name, ...);
+	if not value then
+		return global_value;
+	elseif not global_value then
+		return value;
+	end
+	value:include(global_value);
+	return value;
+end
+
+function api:context(host)
+	return setmetatable({host=host or "*"}, {__index=self,__newindex=self});
+end
+
 function api:add_item(key, value)
 	self.items = self.items or {};
 	self.items[key] = self.items[key] or {};
@@ -274,23 +304,7 @@ function api:remove_item(key, value)
 end
 
 function api:get_host_items(key)
-	local result = {};
-	for mod_name, module in pairs(modulemanager.get_modules(self.host)) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
-	for mod_name, module in pairs(modulemanager.get_modules("*")) do
-		module = module.module;
-		if module.items then
-			for _, item in ipairs(module.items[key] or NULL) do
-				t_insert(result, item);
-			end
-		end
-	end
+	local result = modulemanager.get_items(key, self.host) or {};
 	return result;
 end
 
@@ -305,7 +319,13 @@ function api:handle_items(type, added_cb, removed_cb, existing)
 end
 
 function api:provides(name, item)
-	if not item then item = self.environment; end
+	-- if not item then item = setmetatable({}, { __index = function(t,k) return rawget(self.environment, k); end }); end
+	if not item then
+		item = {}
+		for k,v in pairs(self.environment) do
+			if k ~= "module" then item[k] = v; end
+		end
+	end
 	if not item.name then
 		local item_name = self.name;
 		-- Strip a provider prefix to find the item name
@@ -315,6 +335,7 @@ function api:provides(name, item)
 		end
 		item.name = item_name;
 	end
+	item._provided_by = self.name;
 	self:add_item(name.."-provider", item);
 end
 
@@ -337,6 +358,10 @@ end
 function api:load_resource(path, mode)
 	path = config.resolve_relative_path(self:get_directory(), path);
 	return io.open(path, mode);
+end
+
+function api:open_store(name, type)
+	return storagemanager.open(self.host, name or self.name, type);
 end
 
 return api;

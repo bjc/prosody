@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local use_luaevent = prosody and require "core.configmanager".get("*", "core", "use_libevent");
+local use_luaevent = prosody and require "core.configmanager".get("*", "use_libevent");
 
 if use_luaevent then
 	use_luaevent = pcall(require, "luaevent.core");
@@ -42,11 +42,16 @@ end
 
 if prosody then
 	local config_get = require "core.configmanager".get;
+	local defaults = {};
+	for k,v in pairs(server.cfg or server.getsettings()) do
+		defaults[k] = v;
+	end
 	local function load_config()
-		local settings = config_get("*", "core", "network_settings") or {};
+		local settings = config_get("*", "network_settings") or {};
 		if use_luaevent then
 			local event_settings = {
 				ACCEPT_DELAY = settings.event_accept_retry_interval;
+				ACCEPT_QUEUE = settings.tcp_backlog;
 				CLEAR_DELAY = settings.event_clear_interval;
 				CONNECT_TIMEOUT = settings.connect_timeout;
 				DEBUG = settings.debug;
@@ -59,11 +64,15 @@ if prosody then
 				WRITE_TIMEOUT = settings.send_timeout;
 			};
 
-			for k, v in pairs(event_settings) do
-				server.cfg[k] = v;
+			for k,default in pairs(defaults) do
+				server.cfg[k] = event_settings[k] or default;
 			end
 		else
-			server.changesettings(settings);
+			local select_settings = {};
+			for k,default in pairs(defaults) do
+				select_settings[k] = settings[k] or default;
+			end
+			server.changesettings(select_settings);
 		end
 	end
 	load_config();

@@ -1,8 +1,7 @@
-
 local tonumber = tonumber;
 local assert = assert;
 local url_parse = require "socket.url".parse;
-local urldecode = require "net.http".urldecode;
+local urldecode = require "util.http".urldecode;
 
 local function preprocess_path(path)
 	path = urldecode((path:gsub("//+", "/")));
@@ -29,7 +28,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local client = true;
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
 	local buf = "";
-	local chunked;
+	local chunked, chunk_size, chunk_start;
 	local state = nil;
 	local packet;
 	local len;
@@ -65,12 +64,12 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							first_line = line;
 							if client then
 								httpversion, status_code, reason_phrase = line:match("^HTTP/(1%.[01]) (%d%d%d) (.*)$");
+								status_code = tonumber(status_code);
 								if not status_code then error = true; return error_cb("invalid-status-line"); end
 								have_body = not
 									 ( (options_cb and options_cb().method == "HEAD")
 									or (status_code == 204 or status_code == 304 or status_code == 301)
 									or (status_code >= 100 and status_code < 200) );
-								chunked = have_body and headers["transfer-encoding"] == "chunked";
 							else
 								method, path, httpversion = line:match("^(%w+) (%S+) HTTP/(1%.[01])$");
 								if not method then error = true; return error_cb("invalid-status-line"); end
@@ -78,6 +77,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 						end
 					end
 					if not first_line then error = true; return error_cb("invalid-status-line"); end
+					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
@@ -120,22 +120,30 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 				if state then -- read body
 					if client then
 						if chunked then
-							local index = buf:find("\r\n", nil, true);
-							if not index then return; end -- not enough data
-							local chunk_size = buf:match("^%x+");
-							if not chunk_size then error = true; return error_cb("invalid-chunk-size"); end
-							chunk_size = tonumber(chunk_size, 16);
-							index = index + 2;
-							if chunk_size == 0 then
-								state = nil; success_cb(packet);
-							elseif #buf - index + 1 >= chunk_size then -- we have a chunk
-								packet.body = packet.body..buf:sub(index, index + chunk_size - 1);
-								buf = buf:sub(index + chunk_size);
+							if not buf:find("\r\n", nil, true) then
+								return;
+							end -- not enough data
+							if not chunk_size then
+								chunk_size, chunk_start = buf:match("^(%x+)[^\r\n]*\r\n()");
+								chunk_size = chunk_size and tonumber(chunk_size, 16);
+								if not chunk_size then error = true; return error_cb("invalid-chunk-size"); end
 							end
-							error("trailers"); -- FIXME MUST read trailers
+							if chunk_size == 0 and buf:find("\r\n\r\n", chunk_start-2, true) then
+								state, chunk_size = nil, nil;
+								buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
+								success_cb(packet);
+							elseif #buf - chunk_start + 2 >= chunk_size then -- we have a chunk
+								packet.body = packet.body..buf:sub(chunk_start, chunk_start + (chunk_size-1));
+								buf = buf:sub(chunk_start + chunk_size + 2);
+								chunk_size, chunk_start = nil, nil;
+							else -- Partial chunk remaining
+								break;
+							end
 						elseif len and #buf >= len then
 							packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
 							state = nil; success_cb(packet);
+						else
+							break;
 						end
 					elseif #buf >= len then
 						packet.body, buf = buf:sub(1, len), buf:sub(len + 1);

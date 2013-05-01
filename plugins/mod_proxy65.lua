@@ -95,7 +95,7 @@ function module.add_host(module)
 	local proxy_port = next(portmanager.get_active_services():search("proxy65", nil)[1] or {});
 	local proxy_acl = module:get_option("proxy65_acl");
 
-	-- COMPAT w/pre-0.9 where proxy65_port was specified the components section of the config
+	-- COMPAT w/pre-0.9 where proxy65_port was specified in the components section of the config
 	local legacy_config = module:get_option_number("proxy65_port");
 	if legacy_config then
 		module:log("warn", "proxy65_port is deprecated, please put proxy65_ports = { %d } into the global section instead", legacy_config);
@@ -106,16 +106,20 @@ function module.add_host(module)
 	
 	module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
-		origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#info")
-			:tag("identity", {category='proxy', type='bytestreams', name=name}):up()
-			:tag("feature", {var="http://jabber.org/protocol/bytestreams"}) );
-		return true;
+		if not stanza.tags[1].attr.node then
+			origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#info")
+				:tag("identity", {category='proxy', type='bytestreams', name=name}):up()
+				:tag("feature", {var="http://jabber.org/protocol/bytestreams"}) );
+			return true;
+		end
 	end, -1);
 	
 	module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
-		origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#items"));
-		return true;
+		if not stanza.tags[1].attr.node then
+			origin.send(st.reply(stanza):query("http://jabber.org/protocol/disco#items"));
+			return true;
+		end
 	end, -1);
 	
 	module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function(event)

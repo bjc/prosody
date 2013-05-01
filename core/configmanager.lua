@@ -7,8 +7,8 @@
 --
 
 local _G = _G;
-local setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table =
-      setmetatable, loadfile, pcall, rawget, rawset, io, error, dofile, type, pairs, table;
+local setmetatable, rawget, rawset, io, error, dofile, type, pairs, table =
+      setmetatable, rawget, rawset, io, error, dofile, type, pairs, table;
 local format, math_max = string.format, math.max;
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
@@ -22,67 +22,52 @@ module "configmanager"
 local parsers = {};
 
 local config_mt = { __index = function (t, k) return rawget(t, "*"); end};
-local config = setmetatable({ ["*"] = { core = {} } }, config_mt);
+local config = setmetatable({ ["*"] = { } }, config_mt);
 
 -- When host not found, use global
-local host_mt = { };
-
--- When key not found in section, check key in global's section
-function section_mt(section_name)
-	return { __index = 	function (t, k)
-					local section = rawget(config["*"], section_name);
-					if not section then return nil; end
-					return section[k];
-				end
-	};
-end
+local host_mt = { __index = function(_, k) return config["*"][k] end }
 
 function getconfig()
 	return config;
 end
 
-function get(host, section, key)
-	if not key then
-		section, key = "core", section;
+function get(host, key, _oldkey)
+	if key == "core" then
+		key = _oldkey; -- COMPAT with code that still uses "core"
 	end
-	local sec = config[host][section];
-	if sec then
-		return sec[key];
-	end
-	return nil;
+	return config[host][key];
 end
-function _M.rawget(host, section, key)
+function _M.rawget(host, key, _oldkey)
+	if key == "core" then
+		key = _oldkey; -- COMPAT with code that still uses "core"
+	end
 	local hostconfig = rawget(config, host);
 	if hostconfig then
-		local sectionconfig = rawget(hostconfig, section);
-		if sectionconfig then
-			return rawget(sectionconfig, key);
-		end
+		return rawget(hostconfig, key);
 	end
 end
 
-local function set(config, host, section, key, value)
-	if host and section and key then
+local function set(config, host, key, value)
+	if host and key then
 		local hostconfig = rawget(config, host);
 		if not hostconfig then
 			hostconfig = rawset(config, host, setmetatable({}, host_mt))[host];
 		end
-		if not rawget(hostconfig, section) then
-			hostconfig[section] = setmetatable({}, section_mt(section));
-		end
-		hostconfig[section][key] = value;
+		hostconfig[key] = value;
 		return true;
 	end
 	return false;
 end
 
-function _M.set(host, section, key, value)
-	return set(config, host, section, key, value);
+function _M.set(host, key, value, _oldvalue)
+	if key == "core" then
+		key, value = value, _oldvalue; --COMPAT with code that still uses "core"
+	end
+	return set(config, host, key, value);
 end
 
 -- Helper function to resolve relative paths (needed by config)
 do
-	local rel_path_start = ".."..path_sep;
 	function resolve_relative_path(parent_path, path)
 		if path then
 			-- Some normalization
@@ -122,7 +107,7 @@ function load(filename, format)
 	if parsers[format] and parsers[format].load then
 		local f, err = io.open(filename);
 		if f then
-			local new_config = setmetatable({ ["*"] = { core = {} } }, config_mt);
+			local new_config = setmetatable({ ["*"] = { } }, config_mt);
 			local ok, err = parsers[format].load(f:read("*a"), filename, new_config);
 			f:close();
 			if ok then
@@ -166,7 +151,7 @@ end
 -- Built-in Lua parser
 do
 	local pcall, setmetatable = _G.pcall, _G.setmetatable;
-	local rawget, tostring = _G.rawget, _G.tostring;
+	local rawget = _G.rawget;
 	parsers.lua = {};
 	function parsers.lua.load(data, config_file, config)
 		local env;
@@ -176,53 +161,50 @@ do
 			Component = true, component = true,
 			Include = true, include = true, RunScript = true }, {
 				__index = function (t, k)
-					return rawget(_G, k) or
-						function (settings_table)
-							config[__currenthost or "*"][k] = settings_table;
-						end;
+					return rawget(_G, k);
 				end,
 				__newindex = function (t, k, v)
-					set(config, env.__currenthost or "*", "core", k, v);
+					set(config, env.__currenthost or "*", k, v);
 				end
 		});
 		
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
-			if rawget(config, name) and rawget(config[name].core, "component_module") then
+			if rawget(config, name) and rawget(config[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
-					name, config[name].core.component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
+					name, config[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
 			end
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
-			set(config, name or "*", "core", "defined", true);
+			set(config, name or "*", "defined", true);
 			return function (config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", "core", option_name, option_value);
+					set(config, name or "*", option_name, option_value);
 				end
 			end;
 		end
 		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 		
 		function env.Component(name)
-			if rawget(config, name) and rawget(config[name].core, "defined") and not rawget(config[name].core, "component_module") then
+			if rawget(config, name) and rawget(config[name], "defined") and not rawget(config[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
 			end
-			set(config, name, "core", "component_module", "component");
+			set(config, name, "component_module", "component");
 			-- Don't load the global modules by default
-			set(config, name, "core", "load_global_modules", false);
+			set(config, name, "load_global_modules", false);
 			rawset(env, "__currenthost", name);
 			local function handle_config_options(config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", "core", option_name, option_value);
+					set(config, name or "*", option_name, option_value);
 				end
 			end
 	
 			return function (module)
 					if type(module) == "string" then
-						set(config, name, "core", "component_module", module);
+						set(config, name, "component_module", module);
 						return handle_config_options;
 					end
 					return handle_config_options(module);
@@ -230,7 +212,7 @@ do
 		end
 		env.component = env.Component;
 		
-		function env.Include(file, wildcard)
+		function env.Include(file)
 			if file:match("[*?]") then
 				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
 				local path = file:sub(1, math_max(path_pos-2,0));

@@ -7,8 +7,8 @@
 --
 
 
-local full_sessions = full_sessions;
-local bare_sessions = bare_sessions;
+local full_sessions = prosody.full_sessions;
+local bare_sessions = prosody.bare_sessions;
 
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
