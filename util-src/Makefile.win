@@ -1,0 +1,38 @@
+
+LUA_PATH=$(LUA_DEV)
+IDN_PATH=..\..\libidn-1.15
+OPENSSL_PATH=..\..\openssl-0.9.8k
+
+LUA_INCLUDE=$(LUA_PATH)\include
+LUA_LIB=$(LUA_PATH)\lib\lua5.1.lib
+
+IDN_LIB=$(IDN_PATH)\win32\lib\libidn.lib
+IDN_INCLUDE1=$(IDN_PATH)\lib
+IDN_INCLUDE2=$(IDN_PATH)\win32\include
+OPENSSL_LIB=$(OPENSSL_PATH)\out32dll\libeay32.lib
+OPENSSL_INCLUDE=$(OPENSSL_PATH)\include
+
+CL=cl /LD /MD /nologo
+
+all: encodings.dll hashes.dll windows.dll
+
+install: encodings.dll hashes.dll windows.dll
+	copy /Y *.dll ..\util\
+
+clean:
+	del encodings.dll encodings.exp encodings.lib encodings.obj encodings.dll.manifest
+	del hashes.dll hashes.exp hashes.lib hashes.obj hashes.dll.manifest
+	del windows.dll windows.exp windows.lib windows.obj windows.dll.manifest
+
+encodings.dll: encodings.c
+	$(CL) encodings.c /I"$(LUA_INCLUDE)" /I"$(IDN_INCLUDE1)" /I"$(IDN_INCLUDE2)" /link "$(LUA_LIB)" "$(IDN_LIB)" /export:luaopen_util_encodings
+	del encodings.exp encodings.lib encodings.obj encodings.dll.manifest
+
+hashes.dll: hashes.c
+	$(CL) hashes.c /I"$(LUA_INCLUDE)" /I"$(OPENSSL_INCLUDE)" /link "$(LUA_LIB)" "$(OPENSSL_LIB)" /export:luaopen_util_hashes
+	del hashes.exp hashes.lib hashes.obj hashes.dll.manifest
+
+windows.dll: windows.c
+	$(CL) windows.c /I"$(LUA_INCLUDE)" /link "$(LUA_LIB)" dnsapi.lib /export:luaopen_util_windows
+	del windows.exp windows.lib windows.obj windows.dll.manifest
+

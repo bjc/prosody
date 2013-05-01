@@ -1,0 +1,408 @@
+#!/usr/bin/env lua
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
+-- prosody - main executable for Prosody XMPP server
+
+-- Will be modified by configure script if run --
+
+CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
+CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
+CFG_PLUGINDIR=os.getenv("PROSODY_PLUGINDIR");
+CFG_DATADIR=os.getenv("PROSODY_DATADIR");
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+local function is_relative(path)
+	local path_sep = package.config:sub(1,1);
+        return ((path_sep == "/" and path:sub(1,1) ~= "/")
+	or (path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\")))
+end
+
+-- Tell Lua where to find our libraries
+if CFG_SOURCEDIR then
+	local function filter_relative_paths(path)
+		if is_relative(path) then return ""; end
+	end
+	local function sanitise_paths(paths)
+		return (paths:gsub("[^;]+;?", filter_relative_paths):gsub(";;+", ";"));
+	end
+	package.path = sanitise_paths(CFG_SOURCEDIR.."/?.lua;"..package.path);
+	package.cpath = sanitise_paths(CFG_SOURCEDIR.."/?.so;"..package.cpath);
+end
+
+-- Substitute ~ with path to home directory in data path
+if CFG_DATADIR then
+	if os.getenv("HOME") then
+		CFG_DATADIR = CFG_DATADIR:gsub("^~", os.getenv("HOME"));
+	end
+end
+
+-- Global 'prosody' object
+local prosody = { events = require "util.events".new(); };
+_G.prosody = prosody;
+
+-- Check dependencies
+local dependencies = require "util.dependencies";
+if not dependencies.check_dependencies() then
+	os.exit(1);
+end
+
+-- Load the config-parsing module
+config = require "core.configmanager"
+
+-- -- -- --
+-- Define the functions we call during startup, the 
+-- actual startup happens right at the end, where these
+-- functions get called
+
+function read_config()
+	local filenames = {};
+	
+	local filename;
+	if arg[1] == "--config" and arg[2] then
+		table.insert(filenames, arg[2]);
+		if CFG_CONFIGDIR then
+			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
+		end
+	elseif os.getenv("PROSODY_CONFIG") then -- Passed by prosodyctl
+			table.insert(filenames, os.getenv("PROSODY_CONFIG"));
+	else
+		for _, format in ipairs(config.parsers()) do
+			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
+		end
+	end
+	for _,_filename in ipairs(filenames) do
+		filename = _filename;
+		local file = io.open(filename);
+		if file then
+			file:close();
+			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
+			break;
+		end
+	end
+	local ok, level, err = config.load(filename);
+	if not ok then
+		print("\n");
+		print("**************************");
+		if level == "parser" then
+			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua"..":");
+			print("");
+			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
+			if err:match("chunk has too many syntax levels$") then
+				print("An Include statement in a config file is including an already-included");
+				print("file and causing an infinite loop. An Include statement in a config file is...");
+			else
+				print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
+			end
+			print("");
+		elseif level == "file" then
+			print("Prosody was unable to find the configuration file.");
+			print("We looked for: "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
+			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
+		end
+		print("More help on configuring Prosody can be found at http://prosody.im/doc/configure");
+		print("Good luck!");
+		print("**************************");
+		print("");
+		os.exit(1);
+	end
+end
+
+function load_libraries()
+	-- Load socket framework
+	server = require "net.server"
+end	
+
+function init_logging()
+	-- Initialize logging
+	require "core.loggingmanager"
+end
+
+function log_dependency_warnings()
+	dependencies.log_warnings();
+end
+
+function sanity_check()
+	for host, host_config in pairs(config.getconfig()) do
+		if host ~= "*"
+		and host_config.enabled ~= false
+		and not host_config.component_module then
+			return;
+		end
+	end
+	log("error", "No enabled VirtualHost entries found in the config file.");
+	log("error", "At least one active host is required for Prosody to function. Exiting...");
+	os.exit(1);
+end
+
+function sandbox_require()
+	-- Replace require() with one that doesn't pollute _G, required
+	-- for neat sandboxing of modules
+	local _realG = _G;
+	local _real_require = require;
+	if not getfenv then
+		-- FIXME: This is a hack to replace getfenv() in Lua 5.2
+		function getfenv(f) return debug.getupvalue(debug.getinfo(f or 1).func, 1); end
+	end
+	function require(...)
+		local curr_env = getfenv(2);
+		local curr_env_mt = getmetatable(curr_env);
+		local _realG_mt = getmetatable(_realG);
+		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
+			local old_newindex, old_index;
+			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
+			old_index, _realG_mt.__index = _realG_mt.__index, function (_G, k)
+				return rawget(curr_env, k);
+			end;
+			local ret = _real_require(...);
+			_realG_mt.__newindex = old_newindex;
+			_realG_mt.__index = old_index;
+			return ret;
+		end
+		return _real_require(...);
+	end
+end
+
+function set_function_metatable()
+	local mt = {};
+	function mt.__index(f, upvalue)
+		local i, name, value = 0;
+		repeat
+			i = i + 1;
+			name, value = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		return value;
+	end
+	function mt.__newindex(f, upvalue, value)
+		local i, name = 0;
+		repeat
+			i = i + 1;
+			name = debug.getupvalue(f, i);
+		until name == upvalue or name == nil;
+		if name then
+			debug.setupvalue(f, i, value);
+		end
+	end
+	function mt.__tostring(f)
+		local info = debug.getinfo(f);
+		return ("function(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.linedefined);
+	end
+	debug.setmetatable(function() end, mt);
+end
+
+function init_global_state()
+	-- COMPAT: These globals are deprecated
+	bare_sessions = {};
+	full_sessions = {};
+	hosts = {};
+
+	prosody.bare_sessions = bare_sessions;
+	prosody.full_sessions = full_sessions;
+	prosody.hosts = hosts;
+	
+	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
+	local custom_plugin_paths = config.get("*", "plugin_paths");
+	if custom_plugin_paths then
+		local path_sep = package.config:sub(3,3);
+		-- path1;path2;path3;defaultpath...
+		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
+	end
+	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".", 
+	                  plugins = CFG_PLUGINDIR or "plugins", data = data_path };
+
+	prosody.arg = _G.arg;
+
+	prosody.platform = "unknown";
+	if os.getenv("WINDIR") then
+		prosody.platform = "windows";
+	elseif package.config:sub(1,1) == "/" then
+		prosody.platform = "posix";
+	end
+	
+	prosody.installed = nil;
+	if CFG_SOURCEDIR and (prosody.platform == "windows" or CFG_SOURCEDIR:match("^/")) then
+		prosody.installed = true;
+	end
+	
+	if prosody.installed then
+		-- Change working directory to data path.
+		require "lfs".chdir(data_path);
+	end
+
+	-- Function to reload the config file
+	function prosody.reload_config()
+		log("info", "Reloading configuration file");
+		prosody.events.fire_event("reloading-config");
+		local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
+		if not ok then
+			if level == "parser" then
+				log("error", "There was an error parsing the configuration file: %s", tostring(err));
+			elseif level == "file" then
+				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+			end
+		end
+		return ok, (err and tostring(level)..": "..tostring(err)) or nil;
+	end
+
+	-- Function to reopen logfiles
+	function prosody.reopen_logfiles()
+		log("info", "Re-opening log files");
+		prosody.events.fire_event("reopen-log-files");
+	end
+
+	-- Function to initiate prosody shutdown
+	function prosody.shutdown(reason)
+		log("info", "Shutting down: %s", reason or "unknown reason");
+		prosody.shutdown_reason = reason;
+		prosody.events.fire_event("server-stopping", {reason = reason});
+		server.setquitting(true);
+	end
+
+	-- Load SSL settings from config, and create a ctx table
+	local certmanager = require "core.certmanager";
+	local global_ssl_ctx = certmanager.create_context("*", "server");
+	prosody.global_ssl_ctx = global_ssl_ctx;
+
+end
+
+function read_version()
+	-- Try to determine version
+	local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
+	if version_file then
+		prosody.version = version_file:read("*a"):gsub("%s*$", "");
+		version_file:close();
+		if #prosody.version == 12 and prosody.version:match("^[a-f0-9]+$") then
+			prosody.version = "hg:"..prosody.version;
+		end
+	else
+		prosody.version = "unknown";
+	end
+end
+
+function load_secondary_libraries()
+	--- Load and initialise core modules
+	require "util.import"
+	require "util.xmppstream"
+	require "core.stanza_router"
+	require "core.hostmanager"
+	require "core.portmanager"
+	require "core.modulemanager"
+	require "core.usermanager"
+	require "core.rostermanager"
+	require "core.sessionmanager"
+	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
+		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[ \t]*([^\n]*)"));
+		return function() end
+	end});
+
+	require "net.http"
+	
+	require "util.array"
+	require "util.datetime"
+	require "util.iterators"
+	require "util.timer"
+	require "util.helpers"
+	
+	pcall(require, "util.signal") -- Not on Windows
+	
+	-- Commented to protect us from 
+	-- the second kind of people
+	--[[ 
+	pcall(require, "remdebug.engine");
+	if remdebug then remdebug.engine.start() end
+	]]
+
+	require "util.stanza"
+	require "util.jid"
+end
+
+function init_data_store()
+	require "core.storagemanager";
+end
+
+function prepare_to_start()
+	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
+	-- Signal to modules that we are ready to start
+	prosody.events.fire_event("server-starting");
+	prosody.start_time = os.time();
+end	
+
+function init_global_protection()
+	-- Catch global accesses
+	local locked_globals_mt = {
+		__index = function (t, k) log("warn", "%s", debug.traceback("Attempt to read a non-existent global '"..tostring(k).."'", 2)); end;
+		__newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end;
+	};
+		
+	function prosody.unlock_globals()
+		setmetatable(_G, nil);
+	end
+	
+	function prosody.lock_globals()
+		setmetatable(_G, locked_globals_mt);
+	end
+
+	-- And lock now...
+	prosody.lock_globals();
+end
+
+function loop()
+	-- Error handler for errors that make it this far
+	local function catch_uncaught_error(err)
+		if type(err) == "string" and err:match("interrupted!$") then
+			return "quitting";
+		end
+		
+		log("error", "Top-level error, please report:\n%s", tostring(err));
+		local traceback = debug.traceback("", 2);
+		if traceback then
+			log("error", "%s", traceback);
+		end
+		
+		prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
+	end
+	
+	while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
+		socket.sleep(0.2);
+	end
+end
+
+function cleanup()
+	log("info", "Shutdown status: Cleaning up");
+	prosody.events.fire_event("server-cleanup");
+end
+
+-- Are you ready? :)
+-- These actions are in a strict order, as many depend on
+-- previous steps to have already been performed
+read_config();
+init_logging();
+sanity_check();
+sandbox_require();
+set_function_metatable();
+load_libraries();
+init_global_state();
+read_version();
+log("info", "Hello and welcome to Prosody version %s", prosody.version);
+log_dependency_warnings();
+load_secondary_libraries();
+init_data_store();
+init_global_protection();
+prepare_to_start();
+
+prosody.events.fire_event("server-started");
+
+loop();
+
+log("info", "Shutting down...");
+cleanup();
+prosody.events.fire_event("server-stopped");
+log("info", "Shutdown complete");
+

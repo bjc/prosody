@@ -13,9 +13,16 @@ session {
 	host -- the host part of the client's jid (not defined before stream initiation)
 	resource -- the resource part of the client's full jid (not defined before resource binding)
 	full_jid -- convenience for the above 3 as string in username@host/resource form (not defined before resource binding)
-	priority -- the resource priority, default: 0 (not defined before initial presence)
+	priority -- the resource priority, default: 0
+	presence -- the last non-directed presence with no type attribute. initially nil. reset to nil on unavailable presence.
+	interested -- true if the resource requested the roster. Interested resources recieve roster updates. Initially nil.
+	roster -- the user's roster. Loaded as soon as the resource is bound (session becomes a connected resource).
 	
 	-- methods --
 	send(x) -- converts x to a string, and writes it to the connection
 	disconnect(x) -- Disconnect the user and clean up the session, best call sessionmanager.destroy_session() instead of this in most cases
 }
+
+if session.full_jid (also session.roster and session.resource) then this is a "connected resource"
+if session.presence then this is an "available resource" (all available resources are connected resources)
+if session.interested then this is an "interested resource" (all interested resources are connected resources)

@@ -1,292 +1,223 @@
-
--- The code in this file should be self-explanatory, though the logic is horrible
--- for more info on that, see doc/stanza_routing.txt, which attempts to condense
--- the rules from the RFCs (mainly 3921)
-
-require "core.servermanager"
+-- Prosody IM
+-- Copyright (C) 2008-2010 Matthew Wild
+-- Copyright (C) 2008-2010 Waqas Hussain
+-- 
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
 
 local log = require "util.logger".init("stanzarouter")
 
-require "util.jid"
-local jid_split = jid.split;
+local hosts = _G.prosody.hosts;
+local tostring = tostring;
+local st = require "util.stanza";
+local jid_split = require "util.jid".split;
+local jid_prepped_split = require "util.jid".prepped_split;
 
-function core_process_stanza(origin, stanza)
-	log("debug", "Received: "..tostring(stanza))
-	local to = stanza.attr.to;
-	
-	if not to or (hosts[to] and hosts[to].type == "local") then
-		core_handle_stanza(origin, stanza);
-	elseif origin.type == "c2s" then
-		core_route_stanza(origin, stanza);
+local full_sessions = _G.prosody.full_sessions;
+local bare_sessions = _G.prosody.bare_sessions;
+
+local core_post_stanza, core_process_stanza, core_route_stanza;
+
+function deprecated_warning(f)
+	_G[f] = function(...)
+		log("warn", "Using the global %s() is deprecated, use module:send() or prosody.%s(). %s", f, f, debug.traceback());
+		return prosody[f](...);
 	end
-		
+end
+deprecated_warning"core_post_stanza";
+deprecated_warning"core_process_stanza";
+deprecated_warning"core_route_stanza";
+
+local function handle_unhandled_stanza(host, origin, stanza)
+	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
+	if name == "iq" and xmlns == "jabber:client" then
+		if stanza.attr.type == "get" or stanza.attr.type == "set" then
+			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
+			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
+		else
+			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
+			return true;
+		end
+	end
+	if stanza.attr.xmlns == nil and origin.send then
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
+		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
+	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
+		origin:close("unsupported-stanza-type");
+	end
 end
 
-function core_handle_stanza(origin, stanza)
-	-- Handlers
-	if origin.type == "c2s" or origin.type == "c2s_unauthed" then
-		local session = origin;
-		stanza.attr.from = session.full_jid;
-		
-		log("debug", "Routing stanza");
-		-- Stanza has no to attribute
-		--local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-		--if not to_host then error("Invalid destination JID: "..string.format("{ %q, %q, %q } == %q", to_node or "", to_host or "", to_resource or "", stanza.attr.to or "nil")); end
-		
-		-- Stanza is to this server, or a user on this server
-		log("debug", "Routing stanza to local");
-		handle_stanza(session, stanza);
-	end	
+local iq_types = { set=true, get=true, result=true, error=true };
+function core_process_stanza(origin, stanza)
+	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
+
+	-- TODO verify validity of stanza (as well as JID validity)
+	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
+	if stanza.name == "iq" then
+		if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
+		if not iq_types[stanza.attr.type] or ((stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1)) then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
+			return;
+		end
+	end
+
+	if origin.type == "c2s" and not stanza.attr.xmlns then
+		if not origin.full_jid
+			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
+					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
+			-- authenticated client isn't bound and current stanza is not a bind request
+			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
+				origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
+			end
+			return;
+		end
+
+		-- TODO also, stanzas should be returned to their original state before the function ends
+		stanza.attr.from = origin.full_jid;
+	end
+	local to, xmlns = stanza.attr.to, stanza.attr.xmlns;
+	local from = stanza.attr.from;
+	local node, host, resource;
+	local from_node, from_host, from_resource;
+	local to_bare, from_bare;
+	if to then
+		if full_sessions[to] or bare_sessions[to] or hosts[to] then
+			node, host = jid_split(to); -- TODO only the host is needed, optimize
+		else
+			node, host, resource = jid_prepped_split(to);
+			if not host then
+				log("warn", "Received stanza with invalid destination JID: %s", to);
+				if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+					origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The destination address is invalid: "..to));
+				end
+				return;
+			end
+			to_bare = node and (node.."@"..host) or host; -- bare JID
+			if resource then to = to_bare.."/"..resource; else to = to_bare; end
+			stanza.attr.to = to;
+		end
+	end
+	if from and not origin.full_jid then
+		-- We only stamp the 'from' on c2s stanzas, so we still need to check validity
+		from_node, from_host, from_resource = jid_prepped_split(from);
+		if not from_host then
+			log("warn", "Received stanza with invalid source JID: %s", from);
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				origin.send(st.error_reply(stanza, "modify", "jid-malformed", "The source address is invalid: "..from));
+			end
+			return;
+		end
+		from_bare = from_node and (from_node.."@"..from_host) or from_host; -- bare JID
+		if from_resource then from = from_bare.."/"..from_resource; else from = from_bare; end
+		stanza.attr.from = from;
+	end
+
+	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
+		if origin.type == "s2sin" and not origin.dummy then
+			local host_status = origin.hosts[from_host];
+			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
+				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
+				origin:close("not-authorized");
+				return;
+			elseif not hosts[host] then
+				log("warn", "Remote server %s sent us a stanza for %s, closing stream", origin.from_host, host);
+				origin:close("host-unknown");
+				return;
+			end
+		end
+		core_post_stanza(origin, stanza, origin.full_jid);
+	else
+		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
+		if h then
+			local event;
+			if xmlns == nil then
+				if stanza.name == "iq" and (stanza.attr.type == "set" or stanza.attr.type == "get") then
+					event = "stanza/iq/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name;
+				else
+					event = "stanza/"..stanza.name;
+				end
+			else
+				event = "stanza/"..xmlns..":"..stanza.name;
+			end
+			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
+		end
+		if host and not hosts[host] then host = nil; end -- COMPAT: workaround for a Pidgin bug which sets 'to' to the SRV result
+		handle_unhandled_stanza(host or origin.host or origin.to_host, origin, stanza);
+	end
+end
+
+function core_post_stanza(origin, stanza, preevents)
+	local to = stanza.attr.to;
+	local node, host, resource = jid_split(to);
+	local to_bare = node and (node.."@"..host) or host; -- bare JID
+
+	local to_type, to_self;
+	if node then
+		if resource then
+			to_type = '/full';
+		else
+			to_type = '/bare';
+			if node == origin.username and host == origin.host then
+				stanza.attr.to = nil;
+				to_self = true;
+			end
+		end
+	else
+		if host then
+			to_type = '/host';
+		else
+			to_type = '/bare';
+			to_self = true;
+		end
+	end
+
+	local event_data = {origin=origin, stanza=stanza};
+	if preevents then -- c2s connection
+		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
+	end
+	local h = hosts[to_bare] or hosts[host or origin.host];
+	if h then
+		if h.events.fire_event(stanza.name..to_type, event_data) then return; end -- do processing
+		if to_self and h.events.fire_event(stanza.name..'/self', event_data) then return; end -- do processing
+		handle_unhandled_stanza(h.host, origin, stanza);
+	else
+		core_route_stanza(origin, stanza);
+	end
 end
 
 function core_route_stanza(origin, stanza)
-	-- Hooks
-	-- Deliver
-end
+	local node, host, resource = jid_split(stanza.attr.to);
+	local from_node, from_host, from_resource = jid_split(stanza.attr.from);
 
-function handle_stanza_nodest(stanza)
-	if stanza.name == "iq" then
-		handle_stanza_iq_no_to(session, stanza);
-	elseif stanza.name == "presence" then
-		-- Broadcast to this user's contacts
-		handle_stanza_presence_broadcast(session, stanza);
-		-- also, if it is initial presence, send out presence probes
-		if not session.last_presence then
-			handle_stanza_presence_probe_broadcast(session, stanza);
-		end
-		session.last_presence = stanza;
-	elseif stanza.name == "message" then
-		-- Treat as if message was sent to bare JID of the sender
-		handle_stanza_to_local_user(stanza);
-	end
-end
-
-function handle_stanza_tolocal(stanza)
-	local node, host, resource = jid.split(stanza.attr.to);
-	if host and hosts[host] and hosts[host].type == "local" then
-			-- Is a local host, handle internally
-			if node then
-				-- Is a local user, send to their session
-				log("debug", "Routing stanza to %s@%s", node, host);
-				if not session.username then return; end --FIXME: Correct response when trying to use unauthed stream is what?
-				handle_stanza_to_local_user(stanza);
-			else
-				-- Is sent to this server, let's handle it...
-				log("debug", "Routing stanza to %s", host);
-				handle_stanza_to_server(stanza, session);
-			end
-	end
-end
-
-function handle_stanza_toremote(stanza)
-	log("error", "Stanza bound for remote host, but s2s is not implemented");
-end
-
-
---[[
-local function route_c2s_stanza(session, stanza)
-	stanza.attr.from = session.full_jid;
-	if not stanza.attr.to and session.username then
-		-- Has no 'to' attribute, handle internally
-		if stanza.name == "iq" then
-			handle_stanza_iq_no_to(session, stanza);
-		elseif stanza.name == "presence" then
-			-- Broadcast to this user's contacts
-			handle_stanza_presence_broadcast(session, stanza);
-			-- also, if it is initial presence, send out presence probes
-			if not session.last_presence then
-				handle_stanza_presence_probe_broadcast(session, stanza);
-			end
-			session.last_presence = stanza;
-		elseif stanza.name == "message" then
-			-- Treat as if message was sent to bare JID of the sender
-			handle_stanza_to_local_user(stanza);
-		end
-	end
-	local node, host, resource = jid.split(stanza.attr.to);
-	if host and hosts[host] and hosts[host].type == "local" then
-			-- Is a local host, handle internally
-			if node then
-				-- Is a local user, send to their session
-				if not session.username then return; end --FIXME: Correct response when trying to use unauthed stream is what?
-				handle_stanza_to_local_user(stanza);
-			else
-				-- Is sent to this server, let's handle it...
-				handle_stanza_to_server(stanza, session);
-			end
+	-- Auto-detect origin if not specified
+	origin = origin or hosts[from_host];
+	if not origin then return false; end
+	
+	if hosts[host] then
+		-- old stanza routing code removed
+		core_post_stanza(origin, stanza);
 	else
-		-- Is not for us or a local user, route accordingly
-		route_s2s_stanza(stanza);
-	end
-end
-
-function handle_stanza_no_to(session, stanza)
-	if not stanza.attr.id then log("warn", "<iq> without id attribute is invalid"); end
-	local xmlns = (stanza.tags[1].attr and stanza.tags[1].attr.xmlns);
-	if stanza.attr.type == "get" or stanza.attr.type == "set" then
-		if iq_handlers[xmlns] then
-			if iq_handlers[xmlns](stanza) then return; end; -- If handler returns true, it handled it
-		end
-		-- Oh, handler didn't handle it. Need to send service-unavailable now.
-		log("warn", "Unhandled namespace: "..xmlns);
-		session:send(format("<iq type='error' id='%s'><error type='cancel'><service-unavailable/></error></iq>", stanza.attr.id));
-		return; -- All done!
-	end
-end
-
-function handle_stanza_to_local_user(stanza)
-	if stanza.name == "message" then
-		handle_stanza_message_to_local_user(stanza);
-	elseif stanza.name == "presence" then
-		handle_stanza_presence_to_local_user(stanza);
-	elseif stanza.name == "iq" then
-		handle_stanza_iq_to_local_user(stanza);
-	end
-end
-
-function handle_stanza_message_to_local_user(stanza)
-	local node, host, resource = stanza.to.node, stanza.to.host, stanza.to.resource;
-	local destuser = hosts[host].sessions[node];
-	if destuser then
-		if resource and destuser[resource] then
-			destuser[resource]:send(stanza);
+		log("debug", "Routing to remote...");
+		local host_session = hosts[from_host];
+		if not host_session then
+			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
 		else
-			-- Bare JID, or resource offline
-			local best_session;
-			for resource, session in pairs(destuser.sessions) do
-				if not best_session then best_session = session;
-				elseif session.priority >= best_session.priority and session.priority >= 0 then
-					best_session = session;
-				end
-			end
-			if not best_session then
-				offlinemessage.new(node, host, stanza);
-			else
-				print("resource '"..resource.."' was not online, have chosen to send to '"..best_session.username.."@"..best_session.host.."/"..best_session.resource.."'");
-				destuser[best_session]:send(stanza);
-			end
-		end
-	else
-		-- User is offline
-		offlinemessage.new(node, host, stanza);
-	end
-end
-
-function handle_stanza_presence_to_local_user(stanza)
-	local node, host, resource = stanza.to.node, stanza.to.host, stanza.to.resource;
-	local destuser = hosts[host].sessions[node];
-	if destuser then
-		if resource then
-			if destuser[resource] then
-				destuser[resource]:send(stanza);
-			else
-				return;
-			end
-		else
-			-- Broadcast to all user's resources
-			for resource, session in pairs(destuser.sessions) do
-				session:send(stanza);
+			local xmlns = stanza.attr.xmlns;
+			stanza.attr.xmlns = nil;
+			local routed = host_session.events.fire_event("route/remote", { origin = origin, stanza = stanza, from_host = from_host, to_host = host });
+			stanza.attr.xmlns = xmlns; -- reset
+			if not routed then
+				log("debug", "... no, just kidding.");
+				if stanza.attr.type == "error" or (stanza.name == "iq" and stanza.attr.type == "result") then return; end
+				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
 			end
 		end
 	end
 end
-
-function handle_stanza_iq_to_local_user(stanza)
-
-end
-
-function foo()
-		local node, host, resource = stanza.to.node, stanza.to.host, stanza.to.resource;
-		local destuser = hosts[host].sessions[node];
-		if destuser and destuser.sessions then
-			-- User online
-			if resource and destuser.sessions[resource] then
-				stanza.to:send(stanza);
-			else
-				--User is online, but specified resource isn't (or no resource specified)
-				local best_session;
-				for resource, session in pairs(destuser.sessions) do
-					if not best_session then best_session = session;
-					elseif session.priority >= best_session.priority and session.priority >= 0 then
-						best_session = session;
-					end
-				end
-				if not best_session then
-					offlinemessage.new(node, host, stanza);
-				else
-					print("resource '"..resource.."' was not online, have chosen to send to '"..best_session.username.."@"..best_session.host.."/"..best_session.resource.."'");
-					resource = best_session.resource;
-				end
-			end
-			if destuser.sessions[resource] == session then
-				log("warn", "core", "Attempt to send stanza to self, dropping...");
-			else
-				print("...sending...", tostring(stanza));
-				--destuser.sessions[resource].conn.write(tostring(data));
-				print("   to conn ", destuser.sessions[resource].conn);
-				destuser.sessions[resource].conn.write(tostring(stanza));
-				print("...sent")
-			end
-		elseif stanza.name == "message" then
-			print("   ...will be stored offline");
-			offlinemessage.new(node, host, stanza);
-		elseif stanza.name == "iq" then
-			print("   ...is an iq");
-			stanza.from:send(st.reply(stanza)
-				:tag("error", { type = "cancel" })
-					:tag("service-unavailable", { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }));
-		end
-end
-
--- Broadcast a presence stanza to all of a user's contacts
-function handle_stanza_presence_broadcast(session, stanza)
-	if session.roster then
-		local initial_presence = not session.last_presence;
-		session.last_presence = stanza;
-		
-		-- Broadcast presence and probes
-		local broadcast = st.presence({ from = session.full_jid, type = stanza.attr.type });
-
-		for child in stanza:childtags() do
-			broadcast:add_child(child);
-		end
-		for contact_jid in pairs(session.roster) do
-			broadcast.attr.to = contact_jid;
-			send_to(contact_jid, broadcast);
-			if initial_presence then
-				local node, host = jid.split(contact_jid);
-				if hosts[host] and hosts[host].type == "local" then
-					local contact = hosts[host].sessions[node]
-					if contact then
-						local pres = st.presence { to = session.full_jid };
-						for resource, contact_session in pairs(contact.sessions) do
-							if contact_session.last_presence then
-								pres.tags = contact_session.last_presence.tags;
-								pres.attr.from = contact_session.full_jid;
-								send(pres);
-							end
-						end
-					end
-					--FIXME: Do we send unavailable if they are offline?
-				else
-					probe.attr.to = contact;
-					send_to(contact, probe);
-				end
-			end
-		end
-		
-		-- Probe for our contacts' presence
-	end
-end
-
--- Broadcast presence probes to all of a user's contacts
-function handle_stanza_presence_probe_broadcast(session, stanza)
-end
-
--- 
-function handle_stanza_to_server(stanza)
-end
-
-function handle_stanza_iq_no_to(session, stanza)
-end
-]]
+prosody.core_process_stanza = core_process_stanza;
+prosody.core_post_stanza = core_post_stanza;
+prosody.core_route_stanza = core_route_stanza;

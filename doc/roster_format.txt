@@ -1,0 +1,19 @@
+
+This file documents the structure of the roster object.
+
+table roster {
+  [string bare_jid] = roster_item
+}
+
+table roster_item {
+  string subscription = "none" | "to" | "from" | "both"
+  string name = Opaque string set by client. (optional)
+  set groups = a set of opaque strings set by the client
+  boolean ask = nil | "subscribe" - a value of true indicates subscription is pending
+}
+
+The roster is available as
+ hosts[host].sessions[username].roster
+and a copy is made to session.roster for all sessions.
+
+All modifications to a roster should be done through the rostermanager.

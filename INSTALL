@@ -1,0 +1,73 @@
+(This file was created from
+http://prosody.im/doc/installing_from_source on 2013-03-31)
+
+====== Installing from source ======
+==== Dependencies ====
+There are a couple of libraries which Prosody needs installed before 
+you can build it. These are:
+
+  * lua5.1: The Lua 5.1 interpreter
+  * liblua5.1: Lua 5.1 library
+  * libssl 0.9.8: OpenSSL
+  * libidn11: GNU libidn library, version 1.1
+
+These can be installed on Debian/Ubuntu with the packages: lua5.1 
+liblua5.1-dev libidn11-dev libssl-dev
+
+On Mandriva try: urpmi lua liblua-devel libidn-devel libopenssl-devel
+
+On other systems... good luck, but please let me know of the best way 
+of getting the dependencies for your system and I can add it here.
+
+==== configure ====
+The first step of building is to run the configure script. This 
+creates a file called 'config.unix' which is used by the next step to 
+control aspects of the build process.
+
+All options to configure can be seen by running ./configure --help. 
+Sometimes you won't need to pass any parameters to configure, but on 
+most systems you shall.
+
+To make this a little easier, there are a few presets which configure 
+accepts. You can load a preset using:
+
+   ./configure --ostype=PRESET
+
+Where PRESET can currently be one of: 'debian', 'macosx' or (in 0.8 
+and later) 'freebsd'
+
+==== make ====
+Once you have run configure successfully, then you can simply run:
+
+   make
+
+Simple? :-)
+
+If you do happen to have problems at this stage, it is most likely 
+due to the build process not finding the dependencies. Ensure you 
+have them installed, and in the standard library paths for your 
+system.
+
+For more help, just ask ;-)
+
+==== install ====
+At this stage you should be able to run Prosody simply with:
+
+   ./prosody
+
+There is no problem with this, it is actually the easiest way to do 
+development, as it doesn't spread parts around your system, and you 
+can keep multiple versions around in their own directories without 
+conflict.
+
+Should you wish to install it system-wide however, simply run:
+
+   sudo make install
+
+...it will install into /usr/local/ by default. To change this you 
+can pass to the initial ./configure using the 'prefix' option, or 
+edit config.unix directly. If the new path doesn't require root 
+permission to write to, you also won't need (or want) to use 'sudo' 
+in front of the 'make install'.
+
+Have fun, and see you on Jabber!

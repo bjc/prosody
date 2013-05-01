@@ -1,7 +1,12 @@
 Welcome hackers!
 
-This project accepts and *encourages* contributions. If you would like to get involved you can join us on our mailing list at: <doh, we need a mailing list>
+This project accepts and *encourages* contributions. If you would like to get 
+involved you can join us on our mailing list and discussion rooms. More 
+information on these at http://prosody.im/discuss
 
-You can also find us in the chatroom at lxmppd@chatbox.heavy-horse.co.uk
+Patches are welcome, though before sending we would appreciate if you read 
+docs/coding_style.txt for guidelines on how to format your code, and other tips.
 
-Patches are welcome, though before sending we would appreciate if you read docs/coding_style.txt for guidelines on how to format your code.
+Documentation for developers can be found at http://prosody.im/doc/developers
+
+Have fun :)
