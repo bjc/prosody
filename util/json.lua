@@ -258,16 +258,16 @@ function json.decode(json)
 		return val;
 	end
 	local function readstring()
-		local s = "";
+		local s = {};
 		checkandskip("\"");
 		while ch do
 			while ch and ch ~= "\\" and ch ~= "\"" do
-				s = s..ch; next();
+				t_insert(s, ch); next();
 			end
 			if ch == "\\" then
 				next();
 				if unescapes[ch] then
-					s = s..unescapes[ch];
+					t_insert(s, unescapes[ch]);
 					next();
 				elseif ch == "u" then
 					local seq = "";
@@ -277,13 +277,13 @@ function json.decode(json)
 						if not ch:match("[0-9a-fA-F]") then error("invalid unicode escape sequence in string"); end
 						seq = seq..ch;
 					end
-					s = s..codepoint_to_utf8(tonumber(seq, 16));
+					t_insert(s, codepoint_to_utf8(tonumber(seq, 16)));
 					next();
 				else error("invalid escape sequence in string"); end
 			end
 			if ch == "\"" then
 				next();
-				return s;
+				return t_concat(s);
 			end
 		end
 		error("eof while reading string");
