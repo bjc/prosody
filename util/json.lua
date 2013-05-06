@@ -17,7 +17,7 @@ local newproxy, getmetatable = newproxy, getmetatable;
 local print = print;
 
 local has_array, array = pcall(require, "util.array");
-local array_mt = hasarray and getmetatable(array()) or {};
+local array_mt = has_array and getmetatable(array()) or {};
 
 --module("json")
 local json = {};
