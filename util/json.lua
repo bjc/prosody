@@ -13,7 +13,7 @@ local tostring, tonumber = tostring, tonumber;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local error = error;
-local newproxy, getmetatable = newproxy, getmetatable;
+local newproxy, getmetatable, setmetatable = newproxy, getmetatable, setmetatable;
 local print = print;
 
 local has_array, array = pcall(require, "util.array");
