@@ -1072,6 +1072,10 @@ function dns.settimeout(...)
 	return _resolver:settimeout(...);
 end
 
+function dns.cache()
+	return _resolver.cache;
+end
+
 function dns.socket_wrapper_set(...)    -- - - - - - - - -  socket_wrapper_set
 	return _resolver:socket_wrapper_set(...);
 end
