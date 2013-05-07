@@ -207,6 +207,7 @@ function commands.help(session, data)
 		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[port - Commands to manage ports the server is listening on]]
+		print [[dns - Commands to manage and inspect the internal DNS resolver]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
@@ -239,6 +240,12 @@ function commands.help(session, data)
 	elseif section == "port" then
 		print [[port:list() - Lists all network ports prosody currently listens on]]
 		print [[port:close(port, interface) - Close a port]]
+	elseif section == "dns" then
+		print [[dns:lookup(name, type, class) - Do a DNS lookup]]
+		print [[dns:addnameserver(nameserver) - Add a nameserver to the list]]
+		print [[dns:setnameserver(nameserver) - Replace the list of name servers with the supplied one]]
+		print [[dns:purge() - Clear the DNS cache]]
+		print [[dns:cache() - Show cached records]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
@@ -999,6 +1006,40 @@ function def_env.xmpp:ping(localhost, remotehost)
 	else
 		return nil, "No such host";
 	end
+end
+
+def_env.dns = {};
+local adns = require"net.adns";
+local dns = require"net.dns";
+
+function def_env.dns:lookup(name, typ, class)
+	local ret = "Query sent";
+	local print = self.session.print;
+	local function handler(...)
+		ret = "Got response";
+		print(...);
+	end
+	adns.lookup(handler, name, typ, class);
+	return true, ret;
+end
+
+function def_env.dns:addnameserver(...)
+	dns.addnameserver(...)
+	return true
+end
+
+function def_env.dns:setnameserver(...)
+	dns.setnameserver(...)
+	return true
+end
+
+function def_env.dns:purge()
+	dns.purge()
+	return true
+end
+
+function def_env.dns:cache()
+	return true, "Cache:\n"..tostring(dns.cache())
 end
 
 -------------
