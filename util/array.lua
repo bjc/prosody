@@ -17,7 +17,7 @@ local tostring = tostring;
 local array = {};
 local array_base = {};
 local array_methods = {};
-local array_mt = { __index = array_methods, __tostring = function (array) return array:concat(", "); end };
+local array_mt = { __index = array_methods, __tostring = function (array) return "{"..array:concat(", ").."}"; end };
 
 local function new_array(self, t, _s, _var)
 	if type(t) == "function" then -- Assume iterator
