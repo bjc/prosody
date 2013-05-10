@@ -80,9 +80,6 @@ end
 
 function handlers.get_subscriptions(origin, stanza, subscriptions)
 	local node = subscriptions.attr.node;
-	if not node then
-		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
-	end
 	local ok, ret = service:get_subscriptions(node, stanza.attr.from, stanza.attr.from);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, ret));
