@@ -99,20 +99,21 @@ c2s_require_encryption = false
 -- Force certificate authentication for server-to-server connections?
 -- This provides ideal security, but requires servers you communicate
 -- with to support encryption AND present valid, trusted certificates.
+-- NOTE: Your version of LuaSec must support certificate verification!
 -- For more information see http://prosody.im/doc/s2s#security
 
-s2s_secure = true
+s2s_secure_auth = false
 
 -- Many servers don't support encryption or have invalid or self-signed
 -- certificates. You can list domains here that will not be required to
 -- authenticate using certificates. They will be authenticated using DNS.
 
--- s2s_insecure_domains = { "gmail.com" }
+--s2s_insecure_domains = { "gmail.com" }
 
--- Even if you leave s2s_secure disabled, you can still require it for
--- some domains by specifying a list here.
+-- Even if you leave s2s_secure_auth disabled, you can still require valid
+-- certificates for some domains by specifying a list here.
 
--- s2s_secure_domains = { "jabber.org" }
+--s2s_secure_domains = { "jabber.org" }
 
 -- Select the authentication backend to use. The 'internal' providers
 -- use Prosody's configured data storage to store the authentication data.
