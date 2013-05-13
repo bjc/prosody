@@ -15,7 +15,12 @@
 
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef _MSC_VER
+typedef unsigned __int32 uint32_t;
+#else
 #include <inttypes.h>
+#endif
 
 #include "lua.h"
 #include "lauxlib.h"
