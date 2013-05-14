@@ -83,6 +83,7 @@ function create_room(jid)
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
+	module:fire_event("muc-room-created", { room = room });
 	return room;
 end
 
