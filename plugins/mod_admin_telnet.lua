@@ -236,6 +236,7 @@ function commands.help(session, data)
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
+		print [[server:memory() - Show details about the server's memory usage]]
 		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
 	elseif section == "port" then
 		print [[port:list() - Lists all network ports prosody currently listens on]]
@@ -298,6 +299,26 @@ end
 function def_env.server:shutdown(reason)
 	prosody.shutdown(reason);
 	return true, "Shutdown initiated";
+end
+
+local function human(kb)
+	local unit = "K";
+	if kb > 1024 then
+		kb, unit = kb/1024, "M";
+	end
+	return ("%0.2f%sB"):format(kb, unit);
+end
+
+function def_env.server:memory()
+	if not pposix.meminfo then
+		return true, "Lua is using "..collectgarbage("count");
+	end
+	local mem, lua_mem = pposix.meminfo(), collectgarbage("count");
+	local print = self.session.print;
+	print("Process: "..human((mem.allocated+mem.allocated_mmap)/1024));
+	print("   Used: "..human(mem.used/1024).." ("..human(lua_mem).." by Lua)");
+	print("   Free: "..human(mem.unused/1024).." ("..human(mem.returnable/1024).." returnable)");
+	return true, "OK";
 end
 
 def_env.module = {};
