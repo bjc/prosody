@@ -98,8 +98,8 @@ function room_mt:get_default_role(affiliation)
 	elseif affiliation == "member" then
 		return "participant";
 	elseif not affiliation then
-		if not self:is_members_only() then
-			return self:is_moderated() and "visitor" or "participant";
+		if not self:get_members_only() then
+			return self:get_moderated() and "visitor" or "participant";
 		end
 	end
 end
@@ -218,10 +218,10 @@ function room_mt:get_disco_info(stanza)
 		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
 		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
-		:tag("feature", {var=self:is_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
-		:tag("feature", {var=self:is_members_only() and "muc_membersonly" or "muc_open"}):up()
-		:tag("feature", {var=self:is_persistent() and "muc_persistent" or "muc_temporary"}):up()
-		:tag("feature", {var=self:is_hidden() and "muc_hidden" or "muc_public"}):up()
+		:tag("feature", {var=self:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
+		:tag("feature", {var=self:get_members_only() and "muc_membersonly" or "muc_open"}):up()
+		:tag("feature", {var=self:get_persistent() and "muc_persistent" or "muc_temporary"}):up()
+		:tag("feature", {var=self:get_hidden() and "muc_hidden" or "muc_public"}):up()
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
 		:add_child(dataform.new({
 			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
@@ -296,7 +296,7 @@ function room_mt:set_moderated(moderated)
 		if self.save then self:save(true); end
 	end
 end
-function room_mt:is_moderated()
+function room_mt:get_moderated()
 	return self._data.moderated;
 end
 function room_mt:set_members_only(members_only)
@@ -306,7 +306,7 @@ function room_mt:set_members_only(members_only)
 		if self.save then self:save(true); end
 	end
 end
-function room_mt:is_members_only()
+function room_mt:get_members_only()
 	return self._data.members_only;
 end
 function room_mt:set_persistent(persistent)
@@ -316,7 +316,7 @@ function room_mt:set_persistent(persistent)
 		if self.save then self:save(true); end
 	end
 end
-function room_mt:is_persistent()
+function room_mt:get_persistent()
 	return self._data.persistent;
 end
 function room_mt:set_hidden(hidden)
@@ -326,8 +326,14 @@ function room_mt:set_hidden(hidden)
 		if self.save then self:save(true); end
 	end
 end
-function room_mt:is_hidden()
+function room_mt:get_hidden()
 	return self._data.hidden;
+end
+function room_mt:get_public()
+	return not self:get_hidden();
+end
+function room_mt:set_public(public)
+	return self:set_hidden(not public);
 end
 function room_mt:set_changesubject(changesubject)
 	changesubject = changesubject and true or nil;
@@ -604,13 +610,13 @@ function room_mt:get_form_layout()
 			name = 'muc#roomconfig_persistentroom',
 			type = 'boolean',
 			label = 'Make Room Persistent?',
-			value = self:is_persistent()
+			value = self:get_persistent()
 		},
 		{
 			name = 'muc#roomconfig_publicroom',
 			type = 'boolean',
 			label = 'Make Room Publicly Searchable?',
-			value = not self:is_hidden()
+			value = not self:get_hidden()
 		},
 		{
 			name = 'muc#roomconfig_changesubject',
@@ -637,13 +643,13 @@ function room_mt:get_form_layout()
 			name = 'muc#roomconfig_moderatedroom',
 			type = 'boolean',
 			label = 'Make Room Moderated?',
-			value = self:is_moderated()
+			value = self:get_moderated()
 		},
 		{
 			name = 'muc#roomconfig_membersonly',
 			type = 'boolean',
 			label = 'Make Room Members-Only?',
-			value = self:is_members_only()
+			value = self:get_members_only()
 		},
 		{
 			name = 'muc#roomconfig_historylength',
@@ -655,10 +661,7 @@ function room_mt:get_form_layout()
 	return module:fire_event("muc-config-form", { room = self, form = form }) or form;
 end
 
-local valid_whois = {
-	moderators = true,
-	anyone = true,
-}
+local valid_whois = { moderators = true, anyone = true };
 
 function room_mt:process_form(origin, stanza)
 	local query = stanza.tags[1];
@@ -671,81 +674,43 @@ function room_mt:process_form(origin, stanza)
 	local fields = self:get_form_layout():data(form);
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
 
-	local dirty = false
 
-	local event = { room = self, fields = fields, changed = dirty };
+	local changed = {};
+
+	local function handle_option(name, field, allowed)
+		local new = fields[field];
+		if new == nil then return; end
+		if allowed and not allowed[new] then return; end
+		if new == self["get_"..name](self) then return; end
+		changed[name] = true;
+		self["set_"..name](self, new);
+	end
+
+	local event = { room = self, fields = fields, changed = changed, stanza = stanza, origin = origin, update_option = handle_option };
 	module:fire_event("muc-config-submitted", event);
-	dirty = event.changed or dirty;
 
-	local name = fields['muc#roomconfig_roomname'];
-	if name ~= self:get_name() then
-		self:set_name(name);
-	end
-
-	local description = fields['muc#roomconfig_roomdesc'];
-	if description ~= self:get_description() then
-		self:set_description(description);
-	end
-
-	local persistent = fields['muc#roomconfig_persistentroom'];
-	dirty = dirty or (self:is_persistent() ~= persistent)
-	module:log("debug", "persistent=%s", tostring(persistent));
-
-	local moderated = fields['muc#roomconfig_moderatedroom'];
-	dirty = dirty or (self:is_moderated() ~= moderated)
-	module:log("debug", "moderated=%s", tostring(moderated));
-
-	local membersonly = fields['muc#roomconfig_membersonly'];
-	dirty = dirty or (self:is_members_only() ~= membersonly)
-	module:log("debug", "membersonly=%s", tostring(membersonly));
-
-	local public = fields['muc#roomconfig_publicroom'];
-	dirty = dirty or (self:is_hidden() ~= (not public and true or nil))
-
-	local changesubject = fields['muc#roomconfig_changesubject'];
-	dirty = dirty or (self:get_changesubject() ~= (not changesubject and true or nil))
-	module:log('debug', 'changesubject=%s', changesubject and "true" or "false")
-
-	local historylength = tonumber(fields['muc#roomconfig_historylength']);
-	dirty = dirty or (historylength and (self:get_historylength() ~= historylength));
-	module:log('debug', 'historylength=%s', historylength)
-
-
-	local whois = fields['muc#roomconfig_whois'];
-	if not valid_whois[whois] then
-	    origin.send(st.error_reply(stanza, 'cancel', 'bad-request', "Invalid value for 'whois'"));
-	    return;
-	end
-	local whois_changed = self._data.whois ~= whois
-	self._data.whois = whois
-	module:log('debug', 'whois=%s', whois)
-
-	local password = fields['muc#roomconfig_roomsecret'];
-	if self:get_password() ~= password then
-		self:set_password(password);
-	end
-	self:set_moderated(moderated);
-	self:set_members_only(membersonly);
-	self:set_persistent(persistent);
-	self:set_hidden(not public);
-	self:set_changesubject(changesubject);
-	self:set_historylength(historylength);
+	handle_option("name", "muc#roomconfig_roomname");
+	handle_option("description", "muc#roomconfig_roomdesc");
+	handle_option("persistent", "muc#roomconfig_persistentroom");
+	handle_option("moderated", "muc#roomconfig_moderatedroom");
+	handle_option("members_only", "muc#roomconfig_membersonly");
+	handle_option("public", "muc#roomconfig_publicroom");
+	handle_option("changesubject", "muc#roomconfig_changesubject");
+	handle_option("historylength", "muc#roomconfig_historylength");
+	handle_option("whois", "muc#roomconfig_whois", valid_whois);
+	handle_option("password", "muc#roomconfig_roomsecret");
 
 	if self.save then self:save(true); end
 	origin.send(st.reply(stanza));
 
-	if dirty or whois_changed then
+	if next(changed) then
 		local msg = st.message({type='groupchat', from=self.jid})
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
-
-		if dirty then
-			msg.tags[1]:tag('status', {code = '104'}):up();
-		end
-		if whois_changed then
+				:tag('status', {code = '104'}):up();
+		if changed.whois then
 			local code = (whois == 'moderators') and "173" or "172";
 			msg.tags[1]:tag('status', {code = code}):up();
 		end
-
 		self:broadcast_message(msg, false)
 	end
 end
@@ -943,7 +908,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					:tag('body') -- Add a plain message for clients which don't support invites
 						:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 					:up();
-				if self:is_members_only() and not self:get_affiliation(_invitee) then
+				if self:get_members_only() and not self:get_affiliation(_invitee) then
 					log("debug", "%s invited %s into members only room %s, granting membership", _from, _invitee, _to);
 					self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. self._jid_nick[_from])
 				end
