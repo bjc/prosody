@@ -10,6 +10,10 @@
 
 local it = {};
 
+local t_insert = table.insert;
+local select, unpack, next = select, unpack, next;
+local function pack(...) return { n = select("#", ...), ... }; end
+
 -- Reverse an iterator
 function it.reverse(f, s, var)
 	local results = {};
@@ -19,7 +23,7 @@ function it.reverse(f, s, var)
 		local ret = { f(s, var) };
 		var = ret[1];
 	        if var == nil then break; end
-		table.insert(results, 1, ret);
+		t_insert(results, 1, ret);
 	end
 	
 	-- Then return our reverse one
@@ -55,12 +59,12 @@ function it.unique(f, s, var)
 	
 	return function ()
 		while true do
-			local ret = { f(s, var) };
+			local ret = pack(f(s, var));
 			var = ret[1];
 		        if var == nil then break; end
 		        if not set[var] then
 				set[var] = true;
-				return var;
+				return unpack(ret, 1, ret.n);
 			end
 		end
 	end;
@@ -71,8 +75,7 @@ function it.count(f, s, var)
 	local x = 0;
 	
 	while true do
-		local ret = { f(s, var) };
-		var = ret[1];
+		local var = f(s, var);
 	        if var == nil then break; end
 		x = x + 1;
 	end
@@ -104,7 +107,7 @@ end
 function it.tail(n, f, s, var)
 	local results, count = {}, 0;
 	while true do
-		local ret = { f(s, var) };
+		local ret = pack(f(s, var));
 		var = ret[1];
 	        if var == nil then break; end
 		results[(count%n)+1] = ret;
@@ -117,7 +120,8 @@ function it.tail(n, f, s, var)
 	return function ()
 		pos = pos + 1;
 		if pos > n then return nil; end
-		return unpack(results[((count-1+pos)%n)+1]);
+		local ret = results[((count-1+pos)%n)+1];
+		return unpack(ret, 1, ret.n);
 	end
 	--return reverse(head(n, reverse(f, s, var)));
 end
@@ -139,7 +143,7 @@ function it.to_array(f, s, var)
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
-		table.insert(t, var);
+		t_insert(t, var);
 	end
 	return t;
 end
