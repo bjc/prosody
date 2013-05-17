@@ -957,9 +957,9 @@ function commands.check(arg)
 				if is_component then
 					print("    DNS records are necessary if you want users on other servers to access this component.");
 				end
-				print("");
 				problem_hosts:add(host);
 			end
+			print("");
 		end
 		if not problem_hosts:empty() then
 			print("");
