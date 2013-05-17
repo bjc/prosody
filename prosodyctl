@@ -822,6 +822,7 @@ function commands.check(arg)
 	end
 	if not what or what == "dns" then
 		local dns = require "net.dns";
+		local ip = require "util.ip";
 		local c2s_ports = set.new(config.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(config.get("*", "s2s_ports") or {5269});
 		
@@ -835,7 +836,7 @@ function commands.check(arg)
 		
 		local problem_hosts = set.new();
 		
-		local external_addresses = set.new();
+		local external_addresses, internal_addresses = set.new(), set.new();
 		
 		local fqdn = socket.dns.tohostname(socket.dns.gethostname());
 		if fqdn then
@@ -850,6 +851,16 @@ function commands.check(arg)
 				for _, record in ipairs(res) do
 					external_addresses:add(record.aaaa);
 				end
+			end
+		end
+		
+		local local_addresses = socket.local_addresses and socket.local_addresses() or {};
+		
+		for addr in it.values(local_addresses) do
+			if not ip.new_ip(addr).private then
+				external_addresses:add(addr);
+			else
+				internal_addresses:add(addr);
 			end
 		end
 		
@@ -918,6 +929,10 @@ function commands.check(arg)
 						if external_addresses:contains(record.a) then
 							some_targets_ok = true;
 							host_ok_v4 = true;
+						elseif internal_addresses:contains(record.a) then
+							host_ok_v4 = true;
+							some_targets_ok = true;
+							print("    "..host.." A record points to internal address, external connections might fail");
 						else
 							print("    "..host.." A record points to unknown address "..record.a);
 							all_targets_ok = false;
@@ -930,6 +945,10 @@ function commands.check(arg)
 						if external_addresses:contains(record.aaaa) then
 							some_targets_ok = true;
 							host_ok_v6 = true;
+						elseif internal_addresses:contains(record.aaaa) then
+							host_ok_v6 = true;
+							some_targets_ok = true;
+							print("    "..host.." AAAA record points to internal address, external connections might fail");
 						else
 							print("    "..host.." AAAA record points to unknown address "..record.aaaa);
 							all_targets_ok = false;
