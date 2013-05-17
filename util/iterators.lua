@@ -75,7 +75,7 @@ function it.count(f, s, var)
 	local x = 0;
 	
 	while true do
-		local var = f(s, var);
+		var = f(s, var);
 	        if var == nil then break; end
 		x = x + 1;
 	end
