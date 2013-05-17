@@ -193,5 +193,20 @@ function ip_methods:scope()
 	return value;
 end
 
+function ip_methods:private()
+	local private = self.scope ~= 0xE;
+	if not private and self.proto == "IPv4" then
+		local ip = self.addr;
+		local fields = {};
+		ip:gsub("([^.]*).?", function (c) fields[#fields + 1] = tonumber(c) end);
+		if fields[1] == 127 or fields[1] == 10 or (fields[1] == 192 and fields[2] == 168)
+		or (fields[1] == 172 and (fields[2] >= 16 or fields[2] <= 32)) then
+			private = true;
+		end
+	end
+	self.private = private;
+	return private;
+end
+
 return {new_ip = new_ip,
 	commonPrefixLength = commonPrefixLength};
