@@ -123,7 +123,21 @@ function it.tail(n, f, s, var)
 		local ret = results[((count-1+pos)%n)+1];
 		return unpack(ret, 1, ret.n);
 	end
-	--return reverse(head(n, reverse(f, s, var)));
+	--return reverse(head(n, reverse(f, s, var))); -- !
+end
+
+function it.filter(filter, f, s, var)
+	if type(filter) ~= "function" then
+		local filter_value = filter;
+		function filter(x) return x ~= filter_value; end
+	end
+	return function (s, var)
+		local ret;
+		repeat ret = pack(f(s, var));
+			var = ret[1];
+		until var == nil or filter(unpack(ret, 1, ret.n));
+		return unpack(ret, 1, ret.n);
+	end, s, var;
 end
 
 local function _ripairs_iter(t, key) if key > 1 then return key-1, t[key-1]; end end
