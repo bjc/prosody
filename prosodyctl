@@ -937,12 +937,17 @@ function commands.check(arg)
 					end
 				end
 				
+				local bad_protos = {}
 				if not host_ok_v4 then
-					print("    Host "..host.." does not seem to resolve to this server for IPv4");
+					table.insert(bad_protos, "IPv4");
 				end
-				if not host_ok_v6 and v6_supported then
-					print("    Host "..host.." does not seem to resolve to this server for IPv6");
-				elseif host_ok_v6 and not v6_supported then
+				if not host_ok_v6 then
+					table.insert(bad_protos, "IPv6");
+				end
+				if #bad_protos > 0 then
+					print("    Host "..host.." does not seem to resolve to this server ("..table.concat(bad_protos, "/")..")");
+				end
+				if host_ok_v6 and not v6_supported then
 					print("    Host "..host.." has AAAA records, but your version of LuaSocket does not support IPv6.");
 					print("      Please see http://prosody.im/doc/ipv6 for more information.");
 				end
