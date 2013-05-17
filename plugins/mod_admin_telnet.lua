@@ -538,12 +538,7 @@ function def_env.c2s:show(match_jid)
 			count = count + 1;
 			local status, priority = "unavailable", tostring(session.priority or "-");
 			if session.presence then
-				status = session.presence:child_with_name("show");
-				if status then
-					status = status:get_text() or "[invalid!]";
-				else
-					status = "available";
-				end
+				status = session.presence:get_child_text("show") or "available";
 			end
 			print(session_flags(session, { "   "..jid.." - "..status.."("..priority..")" }));
 		end		
