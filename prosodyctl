@@ -776,6 +776,58 @@ function commands.cert(arg)
 	show_usage("cert config|request|generate|key", "Helpers for generating X.509 certificates and keys.")
 end
 
+function commands.check(arg)
+	local what = table.remove(arg, 1);
+	local array, set = require "util.array", require "util.set";
+	local it = require "util.iterators";
+	local ok = true;
+	if not what or what == "config" then
+		print("Checking config...");
+		local known_global_options = set.new({
+			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
+			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings"
+		});
+		local config = config.getconfig();
+		-- Check that we have any global options (caused by putting a host at the top)
+		if it.count(it.filter("log", pairs(config["*"]))) == 0 then
+			ok = false;
+			print("");
+			print("    No global options defined. Perhaps you have put a host definition at the top")
+			print("    of the config file? They should be at the bottom, see http://prosody.im/doc/configure#overview");
+		end
+		-- Check for global options under hosts
+		local global_options = set.new(it.to_array(it.keys(config["*"])));
+		for host, options in it.filter("*", pairs(config)) do
+			local host_options = set.new(it.to_array(it.keys(options)));
+			local misplaced_options = set.intersection(host_options, known_global_options);
+			for name in pairs(options) do
+				if name:match("^interfaces?")
+				or name:match("_ports?$") or name:match("_interfaces?$")
+				or name:match("_ssl$") then
+					misplaced_options:add(name);
+				end
+			end
+			if not misplaced_options:empty() then
+				ok = false;
+				print("");
+				local n = it.count(misplaced_options);
+				print("    You have "..n.." option"..(n>1 and "s " or " ").."set under "..host.." that should be");
+				print("    in the global section of the config file, above any VirtualHost or Component definitions,")
+				print("    see http://prosody.im/doc/configure#overview for more information.")
+				print("");
+				print("    You need to move the following option"..(n>1 and "s" or "")..": "..table.concat(it.to_array(misplaced_options), ", "));
+			end
+		end
+		print("Done.");
+	end
+	if not ok then
+		print("Problems found, see above.");
+	else
+		print("All checks passed, congratulations!");
+	end
+	return ok and 0 or 2;
+end
+
 ---------------------
 
 if command and command:match("^mod_") then -- Is a command in a module
