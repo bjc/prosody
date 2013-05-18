@@ -682,9 +682,9 @@ function def_env.s2s:showcert(domain)
 				error("This version of LuaSec does not support certificate viewing");
 			end
 		else
-			local certs = conn:getpeerchain();
-			local cert = certs[1];
+			local cert = conn:getpeercertificate();
 			if cert then
+				local certs = conn:getpeerchain();
 				local digest = cert:digest("sha1");
 				if not cert_set[digest] then
 					local chain_valid, chain_errors = conn:getpeerverification();
