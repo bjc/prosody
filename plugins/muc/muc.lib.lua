@@ -594,11 +594,11 @@ end
 
 function room_mt:send_form(origin, stanza)
 	origin.send(st.reply(stanza):query("http://jabber.org/protocol/muc#owner")
-		:add_child(self:get_form_layout():form())
+		:add_child(self:get_form_layout(stanza.attr.from):form())
 	);
 end
 
-function room_mt:get_form_layout()
+function room_mt:get_form_layout(actor)
 	local form = dataform.new({
 		title = "Configuration for "..self.jid,
 		instructions = "Complete and submit this form to configure the room.",
@@ -671,7 +671,7 @@ function room_mt:get_form_layout()
 			value = tostring(self:get_historylength())
 		}
 	});
-	return module:fire_event("muc-config-form", { room = self, form = form }) or form;
+	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
 
 function room_mt:process_form(origin, stanza)
@@ -682,7 +682,7 @@ function room_mt:process_form(origin, stanza)
 	if form.attr.type == "cancel" then origin.send(st.reply(stanza)); return; end
 	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form")); return; end
 
-	local fields = self:get_form_layout():data(form);
+	local fields = self:get_form_layout(stanza.attr.from):data(form);
 	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
 
 
