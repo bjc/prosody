@@ -357,6 +357,19 @@ function room_mt:set_historylength(length)
 end
 
 
+local valid_whois = { moderators = true, anyone = true };
+
+function room_mt:set_whois(whois)
+	if valid_whois[whois] and self._data.whois ~= whois then
+		self._data.whois = whois;
+		if self.save then self:save(true); end
+	end
+end
+
+function room_mt:get_whois()
+	return self._data.whois;
+end
+
 local function construct_stanza_id(room, stanza)
 	local from_jid, to_nick = stanza.attr.from, stanza.attr.to;
 	local from_nick = room._jid_nick[from_jid];
@@ -661,8 +674,6 @@ function room_mt:get_form_layout()
 	return module:fire_event("muc-config-form", { room = self, form = form }) or form;
 end
 
-local valid_whois = { moderators = true, anyone = true };
-
 function room_mt:process_form(origin, stanza)
 	local query = stanza.tags[1];
 	local form;
@@ -708,7 +719,7 @@ function room_mt:process_form(origin, stanza)
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
 				:tag('status', {code = '104'}):up();
 		if changed.whois then
-			local code = (whois == 'moderators') and "173" or "172";
+			local code = (self:get_whois() == 'moderators') and "173" or "172";
 			msg.tags[1]:tag('status', {code = code}):up();
 		end
 		self:broadcast_message(msg, false)
