@@ -37,7 +37,7 @@ local opt_keepalives = module:get_option_boolean("s2s_tcp_keepalives", module:ge
 local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
 local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
-local require_encryption = module:get_option_boolean("s2s_require_encryption", secure_auth);
+local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
 
 local sessions = module:shared("sessions");
 
@@ -185,7 +185,7 @@ end
 function make_authenticated(event)
 	local session, host = event.session, event.host;
 	if not session.secure then
-		if require_encryption or secure_auth or secure_domains[host] then
+		if require_encryption or (secure_auth and not(insecure_domains[host])) or secure_domains[host] then
 			session:close({
 				condition = "policy-violation",
 				text = "Encrypted server-to-server communication is required but was not "
