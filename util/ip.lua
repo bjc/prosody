@@ -14,8 +14,10 @@ local hex2bits = { ["0"] = "0000", ["1"] = "0001", ["2"] = "0010", ["3"] = "0011
 local function new_ip(ipStr, proto)
 	if not proto then
 		local sep = ipStr:match("^%x+(.)");
-		if sep == ":" then proto = "IPv6"
-		elseif sep == "." then proto = "IPv4"
+		if sep == ":" or (not(sep) and ipStr:sub(1,1) == ":") then
+			proto = "IPv6"
+		elseif sep == "." then
+			proto = "IPv4"
 		end
 		if not proto then
 			return nil, "invalid address";
