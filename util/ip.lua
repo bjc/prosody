@@ -15,6 +15,13 @@ local function new_ip(ipStr, proto)
 	if proto ~= "IPv4" and proto ~= "IPv6" then
 		return nil, "invalid protocol";
 	end
+	if proto == "IPv6" and ipStr:find('.', 1, true) then
+		local changed;
+		ipStr, changed = ipStr:gsub(":(%d+)%.(%d+)%.(%d+)%.(%d+)$", function(a,b,c,d)
+			return (":%04X:%04X"):format(a*256+b,c*256+d);
+		end);
+		if changed ~= 1 then return nil, "invalid-address"; end
+	end
 
 	return setmetatable({ addr = ipStr, proto = proto }, ip_mt);
 end
