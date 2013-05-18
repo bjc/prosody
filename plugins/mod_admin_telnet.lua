@@ -700,9 +700,9 @@ function def_env.s2s:showcert(domain)
 				error("This version of LuaSec does not support certificate viewing");
 			end
 		else
-			local certs = conn:getpeerchain();
-			local cert = certs[1];
+			local cert = conn:getpeercertificate();
 			if cert then
+				local certs = conn:getpeerchain();
 				local digest = cert:digest("sha1");
 				if not cert_set[digest] then
 					local chain_valid, chain_errors = conn:getpeerverification();
@@ -957,7 +957,9 @@ local um = require"core.usermanager";
 def_env.user = {};
 function def_env.user:create(jid, password)
 	local username, host = jid_split(jid);
-	if um.user_exists(username, host) then
+	if not hosts[host] then
+		return nil, "No such host: "..host;
+	elseif um.user_exists(username, host) then
 		return nil, "User exists";
 	end
 	local ok, err = um.create_user(username, password, host);
@@ -970,7 +972,9 @@ end
 
 function def_env.user:delete(jid)
 	local username, host = jid_split(jid);
-	if not um.user_exists(username, host) then
+	if not hosts[host] then
+		return nil, "No such host: "..host;
+	elseif um.user_exists(username, host) then
 		return nil, "No such user";
 	end
 	local ok, err = um.delete_user(username, host);
@@ -983,7 +987,9 @@ end
 
 function def_env.user:password(jid, password)
 	local username, host = jid_split(jid);
-	if not um.user_exists(username, host) then
+	if not hosts[host] then
+		return nil, "No such host: "..host;
+	elseif um.user_exists(username, host) then
 		return nil, "No such user";
 	end
 	local ok, err = um.set_password(username, password, host);
