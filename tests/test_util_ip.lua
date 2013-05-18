@@ -1,6 +1,6 @@
 
-function match(match)
-	local _ = require "util.ip".new_ip;
+function match(match, _M)
+	local _ = _M.new_ip;
 	local ip = _"10.20.30.40";
 	assert_equal(match(ip, _"10.0.0.0", 8), true);
 	assert_equal(match(ip, _"10.0.0.0", 16), false);
@@ -23,8 +23,67 @@ function match(match)
 	assert_equal(match(ip, _"10.0.0.0"), false, "no specified number of bits (differing ip)");
 	assert_equal(match(ip, _"10.20.30.40"), true, "no specified number of bits (same ip)");
 
-	assert_equal(match(_"80.244.94.84", _"80.244.94.84"), true, "simple ip");
+	assert_equal(match(_"127.0.0.1", _"127.0.0.1"), true, "simple ip");
 
 	assert_equal(match(_"8.8.8.8", _"8.8.0.0", 16), true);
 	assert_equal(match(_"8.8.4.4", _"8.8.0.0", 16), true);
+end
+
+function parse_cidr(parse_cidr, _M)
+	local new_ip = _M.new_ip;
+	
+	assert_equal(new_ip"0.0.0.0", new_ip"0.0.0.0")
+	
+	local function assert_cidr(cidr, ip, bits)
+		local parsed_ip, parsed_bits = parse_cidr(cidr);
+		assert_equal(new_ip(ip), parsed_ip, cidr.." parsed ip is "..ip);
+		assert_equal(bits, parsed_bits, cidr.." parsed bits is "..tostring(bits));
+	end
+	assert_cidr("0.0.0.0", "0.0.0.0", nil);
+	assert_cidr("127.0.0.1", "127.0.0.1", nil);
+	assert_cidr("127.0.0.1/0", "127.0.0.1", 0);
+	assert_cidr("127.0.0.1/8", "127.0.0.1", 8);
+	assert_cidr("127.0.0.1/32", "127.0.0.1", 32);
+	assert_cidr("127.0.0.1/256", "127.0.0.1", 256);
+	assert_cidr("::/48", "::", 48);
+end
+
+function new_ip(new_ip)
+	local v4, v6 = "IPv4", "IPv6";
+	local function assert_proto(s, proto)
+		local ip = new_ip(s);
+		if proto then
+			assert_equal(ip and ip.proto, proto, "protocol is correct for "..("%q"):format(s));
+		else
+			assert_equal(ip, nil, "address is invalid");
+		end
+	end
+	assert_proto("127.0.0.1", v4);
+	assert_proto("::1", v6);
+	assert_proto("", nil);
+	assert_proto("abc", nil);
+	assert_proto("   ", nil);
+end
+
+function commonPrefixLength(cpl, _M)
+	local new_ip = _M.new_ip;
+	local function assert_cpl6(a, b, len, v4)
+		local ipa, ipb = new_ip(a), new_ip(b);
+		if v4 then len = len+96; end
+		assert_equal(cpl(ipa, ipb), len, "common prefix length of "..a.." and "..b.." is "..len);
+		assert_equal(cpl(ipb, ipa), len, "common prefix length of "..b.." and "..a.." is "..len);
+	end
+	local function assert_cpl4(a, b, len)
+		return assert_cpl6(a, b, len, "IPv4");
+	end
+	assert_cpl4("0.0.0.0", "0.0.0.0", 32);
+	assert_cpl4("255.255.255.255", "0.0.0.0", 0);
+	assert_cpl4("255.255.255.255", "255.255.0.0", 16);
+	assert_cpl4("255.255.255.255", "255.255.255.255", 32);
+	assert_cpl4("255.255.255.255", "255.255.255.255", 32);
+
+	assert_cpl6("::1", "::1", 128);
+	assert_cpl6("abcd::1", "abcd::1", 128);
+	assert_cpl6("abcd::abcd", "abcd::", 112);
+	assert_cpl6("abcd::abcd", "abcd::abcd:abcd", 96);
 end
