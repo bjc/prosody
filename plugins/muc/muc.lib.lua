@@ -215,7 +215,6 @@ function room_mt:get_disco_items(stanza)
 	return reply;
 end
 function room_mt:set_subject(current_nick, subject)
-	-- TODO check nick's authority
 	if subject == "" then subject = nil; end
 	self._data['subject'] = subject;
 	self._data['subject_from'] = current_nick;
@@ -848,7 +847,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			if subject then
 				if occupant.role == "moderator" or
 					( self._data.changesubject and occupant.role == "participant" ) then -- and participant
-					self:set_subject(current_nick, subject); -- TODO use broadcast_message_stanza
+					self:set_subject(current_nick, subject);
 				else
 					stanza.attr.from = from;
 					origin.send(st.error_reply(stanza, "auth", "forbidden"));
