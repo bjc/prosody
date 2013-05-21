@@ -27,28 +27,16 @@ local muc_domain = nil; --module:get_host();
 local default_history_length, max_history_length = 20, math.huge;
 
 ------------
-local function filter_xmlns_from_array(array, filters)
-	local count = 0;
-	for i=#array,1,-1 do
-		local attr = array[i].attr;
-		if filters[attr and attr.xmlns] then
-			t_remove(array, i);
-			count = count + 1;
-		end
-	end
-	return count;
-end
-local function filter_xmlns_from_stanza(stanza, filters)
-	if filters then
-		if filter_xmlns_from_array(stanza.tags, filters) ~= 0 then
-			return stanza, filter_xmlns_from_array(stanza, filters);
-		end
-	end
-	return stanza, 0;
-end
 local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
+local function presence_filter(tag)
+	if presence_filters[tag.attr.xmlns] then
+		return nil;
+	end
+	return tag;
+end
+
 local function get_filtered_presence(stanza)
-	return filter_xmlns_from_stanza(st.clone(stanza):reset(), presence_filters);
+	return st.clone(stanza):maptags(presence_filter);
 end
 local kickable_error_conditions = {
 	["gone"] = true;
