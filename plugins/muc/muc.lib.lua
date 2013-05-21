@@ -1008,7 +1008,7 @@ function room_mt:get_role(nick)
 end
 function room_mt:can_set_role(actor_jid, occupant_jid, role)
 	local occupant = self._occupants[occupant_jid];
-	if not occupant or not actor then return nil, "modify", "not-acceptable"; end
+	if not occupant or not actor_jid then return nil, "modify", "not-acceptable"; end
 
 	if actor_jid == true then return true; end
 
