@@ -834,7 +834,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	elseif stanza.name == "message" and type == "groupchat" then
-		local from, to = stanza.attr.from, stanza.attr.to;
+		local from = stanza.attr.from;
 		local current_nick = self._jid_nick[from];
 		local occupant = self._occupants[current_nick];
 		if not occupant then -- not in room
