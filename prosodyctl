@@ -820,7 +820,15 @@ function commands.check(arg)
 				print("");
 				print("    You need to move the following option"..(n>1 and "s" or "")..": "..table.concat(it.to_array(misplaced_options), ", "));
 			end
+			local subdomain = host:match("^[^.]+");
+			if not(is_component) and (subdomain == "jabber" or subdomain == "xmpp"
+			   or subdomain == "chat" or subdomain == "im") then
+			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
+			   	print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
+			   	print("     For more information see: http://prosody.im/doc/dns");
+			end
 		end
+		
 		print("Done.\n");
 	end
 	if not what or what == "dns" then
