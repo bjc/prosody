@@ -72,17 +72,6 @@ local function is_kickable_error(stanza)
 	local cond = get_error_condition(stanza);
 	return kickable_error_conditions[cond] and cond;
 end
-local function getUsingPath(stanza, path, getText)
-	local tag = stanza;
-	for _, name in ipairs(path) do
-		if type(tag) ~= 'table' then return; end
-		tag = tag:child_with_name(name);
-	end
-	if tag and getText then tag = table.concat(tag); end
-	return tag;
-end
-local function getTag(stanza, path) return getUsingPath(stanza, path); end
-local function getText(stanza, path) return getUsingPath(stanza, path, true); end
 -----------
 
 local room_mt = {};
@@ -867,7 +856,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		else
 			local from = stanza.attr.from;
 			stanza.attr.from = current_nick;
-			local subject = getText(stanza, {"subject"});
+			local subject = stanza:get_child_text("subject");
 			if subject then
 				if occupant.role == "moderator" or
 					( self._data.changesubject and occupant.role == "participant" ) then -- and participant
