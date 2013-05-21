@@ -823,6 +823,7 @@ function commands.check(arg)
 			local subdomain = host:match("^[^.]+");
 			if not(is_component) and (subdomain == "jabber" or subdomain == "xmpp"
 			   or subdomain == "chat" or subdomain == "im") then
+			   	print("");
 			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
 			   	print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
 			   	print("     For more information see: http://prosody.im/doc/dns");
