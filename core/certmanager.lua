@@ -17,11 +17,12 @@ local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
 local config_path = prosody.paths.config;
 
-local luasec_has_noticket, luasec_has_verifyext;
+local luasec_has_noticket, luasec_has_verifyext, luasec_has_no_compression;
 if ssl then
 	local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 	luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
 	luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
+	luasec_has_no_compression = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
 end
 
 module "certmanager"
@@ -38,6 +39,9 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	for i=1,#default_verifyext do -- Remove lsec_ prefix
 		default_verify[#default_verify+1] = default_verifyext[i]:sub(6);
 	end
+end
+if luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true then
+	default_options[#default_options+1] = "no_compression";
 end
 
 function create_context(host, mode, user_ssl_config)
