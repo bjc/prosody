@@ -821,7 +821,7 @@ function commands.check(arg)
 				print("    You need to move the following option"..(n>1 and "s" or "")..": "..table.concat(it.to_array(misplaced_options), ", "));
 			end
 			local subdomain = host:match("^[^.]+");
-			if not(is_component) and (subdomain == "jabber" or subdomain == "xmpp"
+			if not(host_options:contains("component_module")) and (subdomain == "jabber" or subdomain == "xmpp"
 			   or subdomain == "chat" or subdomain == "im") then
 			   	print("");
 			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
