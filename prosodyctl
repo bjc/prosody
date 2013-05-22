@@ -933,6 +933,25 @@ function commands.check(arg)
 				target_hosts:remove("localhost");
 			end
 			
+			local modules = set.new(it.to_array(it.values(host_options.modules_enabled)))
+			                + set.new(it.to_array(it.values(config.get("*", "modules_enabled"))))
+			                + set.new({ config.get(host, "component_module") });
+
+			if modules:contains("proxy65") then
+				local proxy65_target = config.get(host, "proxy65_address") or host;
+				local A, AAAA = dns.lookup(proxy65_target, "A"), dns.lookup(proxy65_target, "AAAA");
+				local prob = {};
+				if not A then
+					table.insert(prob, "A");
+				end
+				if v6_supported and not AAAA then
+					table.insert(prob, "AAAA");
+				end
+				if #prob > 0 then
+					print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/").." record. Create one or set 'proxy65_address' to the correct host/IP.");
+				end
+			end
+			
 			for host in target_hosts do
 				local host_ok_v4, host_ok_v6;
 				local res = dns.lookup(host, "A");
