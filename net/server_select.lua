@@ -861,16 +861,16 @@ loop = function(once) -- this is the main loop of the program
 			_starttime = _currenttime
 			for handler, timestamp in pairs( _writetimes ) do
 				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
-					--_writetimes[ handler ] = nil
 					handler.disconnect( )( handler, "send timeout" )
 					handler:force_close()	 -- forced disconnect
 				end
 			end
 			for handler, timestamp in pairs( _readtimes ) do
 				if os_difftime( _currenttime - timestamp ) > _readtimeout then
-					--_readtimes[ handler ] = nil
-					handler.disconnect( )( handler, "read timeout" )
-					handler:close( )	-- forced disconnect?
+					if not(handler.onreadtimeout) or handler:onreadtimeout() ~= true then
+						handler.disconnect( )( handler, "read timeout" )
+						handler:close( )	-- forced disconnect?
+					end
 				end
 			end
 		end
