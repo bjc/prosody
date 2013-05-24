@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -218,7 +218,7 @@ local function bosh_close_stream(session, reason)
 		held_request.headers = default_headers;
 		held_request:send(response_body);
 	end
-	sessions[session.sid]  = nil;
+	sessions[session.sid] = nil;
 	inactive_sessions[session] = nil;
 	sm_destroy_session(session);
 end
@@ -291,7 +291,8 @@ function stream_callbacks.streamopened(context, attr)
 					body_attr.hold = tostring(session.bosh_hold);
 					body_attr.authid = sid;
 					body_attr.secure = "true";
-					body_attr.ver  = '1.6'; from = session.host;
+					body_attr.ver  = '1.6';
+					body_attr.from = session.host;
 					body_attr["xmlns:xmpp"] = "urn:xmpp:xbosh";
 					body_attr["xmpp:version"] = "1.0";
 				end
