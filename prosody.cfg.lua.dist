@@ -78,7 +78,7 @@ modules_disabled = {
 	-- "offline"; -- Store offline messages
 	-- "c2s"; -- Handle client connections
 	-- "s2s"; -- Handle server-to-server connections
-};
+}
 
 -- Disable account creation by default, for security
 -- For more information see http://prosody.im/doc/creating_accounts
