@@ -364,8 +364,8 @@ function stream_callbacks.handlestanza(context, stanza)
 	end
 end
 
-function stream_callbacks.streamclosed(request)
-	local session = sessions[request.sid];
+function stream_callbacks.streamclosed(context)
+	local session = sessions[context.sid];
 	if session then
 		session.bosh_processing = false;
 		if #session.send_buffer > 0 then
