@@ -133,12 +133,23 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(even
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
-	if node and node ~= "" then return; end -- TODO fire event?
 	local username = jid_split(stanza.attr.to) or origin.username;
 	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+		if node and node ~= "" then
+			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
+			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
+			local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false}
+			module:fire_event("account-disco-info-node", event);
+			if event.exists then
+				origin.send(reply);
+			else
+				origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
+			end
+			return true;
+		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-		module:fire_event("account-disco-info", { origin = origin, stanza = reply });
+		module:fire_event("account-disco-info", { origin = origin, reply = reply });
 		origin.send(reply);
 		return true;
 	end
@@ -147,12 +158,23 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#items:query", function(eve
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
-	if node and node ~= "" then return; end -- TODO fire event?
 	local username = jid_split(stanza.attr.to) or origin.username;
 	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+		if node and node ~= "" then
+			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#items', node=node});
+			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
+			local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false}
+			module:fire_event("account-disco-items-node", event);
+			if event.exists then
+				origin.send(reply);
+			else
+				origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
+			end
+			return true;
+		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#items'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-		module:fire_event("account-disco-items", { origin = origin, stanza = reply });
+		module:fire_event("account-disco-items", { origin = origin, stanza = stanza, reply = reply });
 		origin.send(reply);
 		return true;
 	end
