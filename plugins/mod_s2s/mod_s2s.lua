@@ -616,7 +616,6 @@ function listener.ondisconnect(conn, err)
 		if err and session.direction == "outgoing" and session.notopen then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2sout.attempt_connection(session, err) then
-				(session.log or log)("debug", "...so we're going to try another target");
 				return; -- Session lives for now
 			end
 		end
