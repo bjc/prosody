@@ -624,6 +624,13 @@ function listener.ondisconnect(conn, err)
 	end
 end
 
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return session.sends2s(' ');
+	end
+end
+
 function listener.register_outgoing(conn, session)
 	session.direction = "outgoing";
 	sessions[conn] = session;
