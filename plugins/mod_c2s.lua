@@ -262,6 +262,13 @@ function listener.ondisconnect(conn, err)
 	end
 end
 
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return session.send(' ');
+	end
+end
+
 function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
