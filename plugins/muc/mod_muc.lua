@@ -224,3 +224,39 @@ function shutdown_component()
 end
 module.unload = shutdown_component;
 module:hook_global("server-stopping", shutdown_component);
+
+-- Ad-hoc commands
+module:depends("adhoc")
+local t_concat = table.concat;
+local keys = require "util.iterators".keys;
+local adhoc_new = module:require "adhoc".new;
+local adhoc_initial = require "util.adhoc".new_initial_data_form;
+local dataforms_new = require "util.dataforms".new;
+
+local destroy_rooms_layout = dataforms_new {
+	title = "Destroy rooms";
+	instructions = "Select the rooms to destroy";
+
+	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#destroy" };
+	{ name = "rooms", type = "list-multi", required = true, label = "Rooms to destroy:"};
+};
+
+local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
+	return { rooms = array.collect(keys(rooms)):sort() };
+end, function(fields, errors)
+	if errors then
+		local errmsg = {};
+		for name, err in pairs(errors) do
+			errmsg[#errmsg + 1] = name .. ": " .. err;
+		end
+		return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
+	end
+	for _, room in ipairs(fields.rooms) do
+		rooms[room]:destroy();
+		rooms[room] = nil;
+	end
+	return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
+end);
+local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
+
+module:provides("adhoc", destroy_rooms_desc);
