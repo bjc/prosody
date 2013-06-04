@@ -958,7 +958,7 @@ function def_env.user:delete(jid)
 	local username, host = jid_split(jid);
 	if not hosts[host] then
 		return nil, "No such host: "..host;
-	elseif um.user_exists(username, host) then
+	elseif not um.user_exists(username, host) then
 		return nil, "No such user";
 	end
 	local ok, err = um.delete_user(username, host);
