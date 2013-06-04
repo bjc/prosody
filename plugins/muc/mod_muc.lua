@@ -40,6 +40,10 @@ local room_configs = module:open_store("config");
 -- Configurable options
 muclib.set_max_history_length(module:get_option_number("max_history_messages"));
 
+module:depends("disco");
+module:add_identity("conference", "text", muc_name);
+module:add_feature("http://jabber.org/protocol/muc");
+
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
@@ -107,20 +111,15 @@ local host_room = muc_new_room(muc_host);
 host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
 
-local function get_disco_info(stanza)
-	return st.iq({type='result', id=stanza.attr.id, from=muc_host, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#info")
-		:tag("identity", {category='conference', type='text', name=muc_name}):up()
-		:tag("feature", {var="http://jabber.org/protocol/muc"}); -- TODO cache disco reply
-end
-local function get_disco_items(stanza)
-	local reply = st.iq({type='result', id=stanza.attr.id, from=muc_host, to=stanza.attr.from}):query("http://jabber.org/protocol/disco#items");
+module:hook("host-disco-items", function(event)
+	local reply = event.reply;
+	module:log("debug", "host-disco-items called");
 	for jid, room in pairs(rooms) do
 		if not room:get_hidden() then
 			reply:tag("item", {jid=jid, name=room:get_name()}):up();
 		end
 	end
-	return reply; -- TODO cache disco reply
-end
+end);
 
 local function handle_to_domain(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -129,11 +128,7 @@ local function handle_to_domain(event)
 	if stanza.name == "iq" and type == "get" then
 		local xmlns = stanza.tags[1].attr.xmlns;
 		local node = stanza.tags[1].attr.node;
-		if xmlns == "http://jabber.org/protocol/disco#info" and not node then
-			origin.send(get_disco_info(stanza));
-		elseif xmlns == "http://jabber.org/protocol/disco#items" and not node then
-			origin.send(get_disco_items(stanza));
-		elseif xmlns == "http://jabber.org/protocol/muc#unique" then
+		if xmlns == "http://jabber.org/protocol/muc#unique" then
 			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions
 		else
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- TODO disco/etc
