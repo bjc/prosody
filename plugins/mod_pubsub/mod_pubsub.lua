@@ -18,6 +18,10 @@ local lib_pubsub = module:require "pubsub";
 local handlers = lib_pubsub.handlers;
 local pubsub_error_reply = lib_pubsub.pubsub_error_reply;
 
+module:depends("disco");
+module:add_identity("pubsub", "service", pubsub_disco_name);
+module:add_feature("http://jabber.org/protocol/pubsub");
+
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
 	local pubsub = stanza.tags[1];
@@ -51,8 +55,6 @@ end
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
-local disco_info;
-
 local feature_map = {
 	create = { "create-nodes", "instant-nodes", "item-ids" };
 	retract = { "delete-items", "retract-items" };
@@ -64,87 +66,59 @@ local feature_map = {
 	get_subscriptions = { "retrieve-subscriptions" };
 };
 
-local function add_disco_features_from_service(disco, service)
+local function add_disco_features_from_service(service)
 	for method, features in pairs(feature_map) do
 		if service[method] then
 			for _, feature in ipairs(features) do
 				if feature then
-					disco:tag("feature", { var = xmlns_pubsub.."#"..feature }):up();
+					module:add_feature(xmlns_pubsub.."#"..feature);
 				end
 			end
 		end
 	end
 	for affiliation in pairs(service.config.capabilities) do
 		if affiliation ~= "none" and affiliation ~= "owner" then
-			disco:tag("feature", { var = xmlns_pubsub.."#"..affiliation.."-affiliation" }):up();
+			module:add_feature(xmlns_pubsub.."#"..affiliation.."-affiliation");
 		end
 	end
 end
 
-local function build_disco_info(service)
-	local disco_info = st.stanza("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-		:tag("identity", { category = "pubsub", type = "service", name = pubsub_disco_name }):up()
-		:tag("feature", { var = "http://jabber.org/protocol/pubsub" }):up();
-	add_disco_features_from_service(disco_info, service);
-	return disco_info;
-end
-
-module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function (event)
-	local origin, stanza = event.origin, event.stanza;
-	local node = stanza.tags[1].attr.node;
-	if not node then
-		return origin.send(st.reply(stanza):add_child(disco_info));
-	else
-		local ok, ret = service:get_nodes(stanza.attr.from);
-		if ok and not ret[node] then
-			ok, ret = false, "item-not-found";
-		end
-		if not ok then
-			return origin.send(pubsub_error_reply(stanza, ret));
-		end
-		local reply = st.reply(stanza)
-			:tag("query", { xmlns = "http://jabber.org/protocol/disco#info", node = node })
-				:tag("identity", { category = "pubsub", type = "leaf" });
-		return origin.send(reply);
+module:hook("host-disco-info-node", function (event)
+	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
+	local ok, ret = service:get_nodes(stanza.attr.from);
+	if ok and not ret[node] then
+		return;
 	end
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, ret));
+	end
+	event.exists = true;
+	reply:tag("identity", { category = "pubsub", type = "leaf" });
 end);
 
-local function handle_disco_items_on_node(event)
-	local stanza, origin = event.stanza, event.origin;
-	local query = stanza.tags[1];
-	local node = query.attr.node;
+module:hook("host-disco-items-node", function (event)
+	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
 	local ok, ret = service:get_items(node, stanza.attr.from);
 	if not ok then
 		return origin.send(pubsub_error_reply(stanza, ret));
 	end
 
-	local reply = st.reply(stanza)
-		:tag("query", { xmlns = "http://jabber.org/protocol/disco#items", node = node });
-
 	for id, item in pairs(ret) do
 		reply:tag("item", { jid = module.host, name = id }):up();
 	end
+	event.exists = true;
+end);
 
-	return origin.send(reply);
-end
 
-
-module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function (event)
-	if event.stanza.tags[1].attr.node then
-		return handle_disco_items_on_node(event);
-	end
+module:hook("host-disco-items", function (event)
+	local stanza, origin, reply = event.stanza, event.origin, event.reply;
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
-		event.origin.send(pubsub_error_reply(event.stanza, ret));
-	else
-		local reply = st.reply(event.stanza)
-			:tag("query", { xmlns = "http://jabber.org/protocol/disco#items" });
-		for node, node_obj in pairs(ret) do
-			reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
-		end
-		event.origin.send(reply);
+		return origin.send(pubsub_error_reply(event.stanza, ret));
 	end
-	return true;
+	for node, node_obj in pairs(ret) do
+		reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
+	end
 end);
 
 local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
@@ -158,7 +132,7 @@ end
 function set_service(new_service)
 	service = new_service;
 	module.environment.service = service;
-	disco_info = build_disco_info(service);
+	add_disco_features_from_service(service);
 end
 
 function module.save()
@@ -169,83 +143,87 @@ function module.restore(data)
 	set_service(data.service);
 end
 
-set_service(pubsub.new({
-	capabilities = {
-		none = {
-			create = false;
-			publish = false;
-			retract = false;
-			get_nodes = true;
+function module.load()
+	if module.reloading then return; end
 
-			subscribe = true;
-			unsubscribe = true;
-			get_subscription = true;
-			get_subscriptions = true;
-			get_items = true;
+	set_service(pubsub.new({
+		capabilities = {
+			none = {
+				create = false;
+				publish = false;
+				retract = false;
+				get_nodes = true;
 
-			subscribe_other = false;
-			unsubscribe_other = false;
-			get_subscription_other = false;
-			get_subscriptions_other = false;
+				subscribe = true;
+				unsubscribe = true;
+				get_subscription = true;
+				get_subscriptions = true;
+				get_items = true;
 
-			be_subscribed = true;
-			be_unsubscribed = true;
+				subscribe_other = false;
+				unsubscribe_other = false;
+				get_subscription_other = false;
+				get_subscriptions_other = false;
 
-			set_affiliation = false;
+				be_subscribed = true;
+				be_unsubscribed = true;
+
+				set_affiliation = false;
+			};
+			publisher = {
+				create = false;
+				publish = true;
+				retract = true;
+				get_nodes = true;
+
+				subscribe = true;
+				unsubscribe = true;
+				get_subscription = true;
+				get_subscriptions = true;
+				get_items = true;
+
+				subscribe_other = false;
+				unsubscribe_other = false;
+				get_subscription_other = false;
+				get_subscriptions_other = false;
+
+				be_subscribed = true;
+				be_unsubscribed = true;
+
+				set_affiliation = false;
+			};
+			owner = {
+				create = true;
+				publish = true;
+				retract = true;
+				delete = true;
+				get_nodes = true;
+
+				subscribe = true;
+				unsubscribe = true;
+				get_subscription = true;
+				get_subscriptions = true;
+				get_items = true;
+
+
+				subscribe_other = true;
+				unsubscribe_other = true;
+				get_subscription_other = true;
+				get_subscriptions_other = true;
+
+				be_subscribed = true;
+				be_unsubscribed = true;
+
+				set_affiliation = true;
+			};
 		};
-		publisher = {
-			create = false;
-			publish = true;
-			retract = true;
-			get_nodes = true;
 
-			subscribe = true;
-			unsubscribe = true;
-			get_subscription = true;
-			get_subscriptions = true;
-			get_items = true;
+		autocreate_on_publish = autocreate_on_publish;
+		autocreate_on_subscribe = autocreate_on_subscribe;
 
-			subscribe_other = false;
-			unsubscribe_other = false;
-			get_subscription_other = false;
-			get_subscriptions_other = false;
+		broadcaster = simple_broadcast;
+		get_affiliation = get_affiliation;
 
-			be_subscribed = true;
-			be_unsubscribed = true;
-
-			set_affiliation = false;
-		};
-		owner = {
-			create = true;
-			publish = true;
-			retract = true;
-			delete = true;
-			get_nodes = true;
-
-			subscribe = true;
-			unsubscribe = true;
-			get_subscription = true;
-			get_subscriptions = true;
-			get_items = true;
-
-
-			subscribe_other = true;
-			unsubscribe_other = true;
-			get_subscription_other = true;
-			get_subscriptions_other = true;
-
-			be_subscribed = true;
-			be_unsubscribed = true;
-
-			set_affiliation = true;
-		};
-	};
-
-	autocreate_on_publish = autocreate_on_publish;
-	autocreate_on_subscribe = autocreate_on_subscribe;
-
-	broadcaster = simple_broadcast;
-	get_affiliation = get_affiliation;
-
-	normalize_jid = jid_bare;
-}));
+		normalize_jid = jid_bare;
+	}));
+end
