@@ -284,6 +284,7 @@ function stream_callbacks.streamopened(context, attr)
 					sid = sid;
 				};
 				if creating_session then
+					creating_session = nil;
 					body_attr.inactivity = tostring(BOSH_DEFAULT_INACTIVITY);
 					body_attr.polling = tostring(BOSH_DEFAULT_POLLING);
 					body_attr.requests = tostring(BOSH_DEFAULT_REQUESTS);
