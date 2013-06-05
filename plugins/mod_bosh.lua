@@ -35,24 +35,9 @@ local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
 local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
-
-local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8", ["Connection"] = "keep-alive" };
-
 local cross_domain = module:get_option("cross_domain_bosh", false);
-if cross_domain then
-	default_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
-	default_headers["Access-Control-Allow-Headers"] = "Content-Type";
-	default_headers["Access-Control-Max-Age"] = "7200";
 
-	if cross_domain == true then
-		default_headers["Access-Control-Allow-Origin"] = "*";
-	elseif type(cross_domain) == "table" then
-		cross_domain = table.concat(cross_domain, ", ");
-	end
-	if type(cross_domain) == "string" then
-		default_headers["Access-Control-Allow-Origin"] = cross_domain;
-	end
-end
+if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
 
 local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
 
@@ -100,11 +85,22 @@ function on_destroy_request(request)
 	end
 end
 
+local function set_cross_domain_headers(response)
+	local headers = response.headers;
+	headers.access_control_allow_methods = "GET, POST, OPTIONS";
+	headers.access_control_allow_headers = "Content-Type";
+	headers.access_control_max_age = "7200";
+
+	if cross_domain == true then
+		headers.access_control_allow_origin = "*";
+	else
+		headers.access_control_allow_origin = cross_domain;
+	end
+	return response;
+end
+
 function handle_OPTIONS(request)
-	local headers = {};
-	for k,v in pairs(default_headers) do headers[k] = v; end
-	headers["Content-Type"] = nil;
-	return { headers = headers, body = "" };
+	return set_cross_domain_headers(request.response);
 end
 
 function handle_POST(event)
@@ -117,6 +113,13 @@ function handle_POST(event)
 	local context = { request = request, response = response, notopen = true };
 	local stream = new_xmpp_stream(context, stream_callbacks);
 	response.context = context;
+
+	local headers = response.headers;
+	headers.content_type = "text/xml; charset=utf-8";
+
+	if cross_domain then
+		set_cross_domain_headers(response);
+	end
 	
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
@@ -217,7 +220,6 @@ local function bosh_close_stream(session, reason)
 
 	local response_body = tostring(close_reply);
 	for _, held_request in ipairs(session.requests) do
-		held_request.headers = default_headers;
 		held_request:send(response_body);
 	end
 	sessions[session.sid] = nil;
@@ -311,7 +313,6 @@ function stream_callbacks.streamopened(context, attr)
 	if not session then
 		-- Unknown sid
 		log("info", "Client tried to use sid '%s' which we don't know about", sid);
-		response.headers = default_headers;
 		response:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
 		context.notopen = nil;
 		return;
@@ -381,7 +382,6 @@ function stream_callbacks.error(context, error)
 	log("debug", "Error parsing BOSH request payload; %s", error);
 	if not context.sid then
 		local response = context.response;
-		response.headers = default_headers;
 		response.status_code = 400;
 		response:send();
 		return;
