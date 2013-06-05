@@ -139,9 +139,6 @@ function handle_POST(event)
 		local r = session.requests;
 		log("debug", "Session %s has %d out of %d requests open", context.sid, #r, session.bosh_hold);
 		log("debug", "and there are %d things in the send_buffer:", #session.send_buffer);
-		for i, thing in ipairs(session.send_buffer) do
-			log("debug", "    %s", tostring(thing));
-		end
 		if #r > session.bosh_hold then
 			-- We are holding too many requests, send what's in the buffer,
 			log("debug", "We are holding too many requests, so...");
