@@ -123,7 +123,10 @@ function handle_POST(event)
 	-- In particular, the streamopened() stream callback is where
 	-- much of the session logic happens, because it's where we first
 	-- get to see the 'sid' of this request.
-	stream:feed(body);
+	if not stream:feed(body) then
+		module:log("warn", "Error parsing BOSH payload")
+		return 400;
+	end
 	
 	-- Stanzas (if any) in the request have now been processed, and
 	-- we take care of the high-level BOSH logic here, including
@@ -174,6 +177,8 @@ function handle_POST(event)
 			return true; -- Inform http server we shall reply later
 		end
 	end
+	module:log("warn", "Unable to associate request with a session (incomplete request?)");
+	return 400;
 end
 
 
