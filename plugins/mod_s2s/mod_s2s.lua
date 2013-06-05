@@ -616,12 +616,18 @@ function listener.ondisconnect(conn, err)
 		if err and session.direction == "outgoing" and session.notopen then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2sout.attempt_connection(session, err) then
-				(session.log or log)("debug", "...so we're going to try another target");
 				return; -- Session lives for now
 			end
 		end
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
 		s2s_destroy_session(session, err);
+	end
+end
+
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return session.sends2s(' ');
 	end
 end
 
