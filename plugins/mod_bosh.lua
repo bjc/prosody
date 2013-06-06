@@ -281,7 +281,6 @@ function stream_callbacks.streamopened(context, attr)
 			local oldest_request = r[1];
 			if oldest_request and not session.bosh_processing then
 				log("debug", "We have an open request, so sending on that");
-				oldest_request.headers = default_headers;
 				local body_attr = { xmlns = "http://jabber.org/protocol/httpbind",
 					["xmlns:stream"] = "http://etherx.jabber.org/streams";
 					type = session.bosh_terminate and "terminate" or nil;
