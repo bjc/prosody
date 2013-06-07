@@ -324,7 +324,7 @@ function stream_callbacks.streamopened(context, attr)
 			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
 		elseif diff <= 0 then
 			-- Repeated, ignore
-			session.log("debug", "rid repeated (on request %s), ignoring: %s (diff %d)", request.id, session.rid, diff);
+			session.log("debug", "rid repeated, ignoring: %s (diff %d)", session.rid, diff);
 			context.notopen = nil;
 			context.ignore = true;
 			context.sid = sid;
