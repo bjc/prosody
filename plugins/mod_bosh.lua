@@ -292,7 +292,8 @@ function stream_callbacks.streamopened(context, attr)
 					body_attr.hold = tostring(session.bosh_hold);
 					body_attr.authid = sid;
 					body_attr.secure = "true";
-					body_attr.ver  = '1.6'; from = session.host;
+					body_attr.ver  = '1.6';
+					body_attr.from = session.host;
 					body_attr["xmlns:xmpp"] = "urn:xmpp:xbosh";
 					body_attr["xmpp:version"] = "1.0";
 				end
