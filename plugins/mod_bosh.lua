@@ -100,7 +100,9 @@ local function set_cross_domain_headers(response)
 end
 
 function handle_OPTIONS(event)
-	set_cross_domain_headers(event.response);
+	if cross_domain and event.request.headers.origin then
+		set_cross_domain_headers(event.response);
+	end
 	return "";
 end
 
@@ -118,7 +120,7 @@ function handle_POST(event)
 	local headers = response.headers;
 	headers.content_type = "text/xml; charset=utf-8";
 
-	if cross_domain then
+	if cross_domain and event.request.headers.origin then
 		set_cross_domain_headers(response);
 	end
 	
