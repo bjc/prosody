@@ -1022,6 +1022,81 @@ function commands.check(arg)
 			ok = false;
 		end
 	end
+	if not what or what == "certs" then
+		local cert_ok;
+		print"Checking certificates..."
+		local x509_verify_identity = require"util.x509".verify_identity;
+		local ssl = dependencies.softreq"ssl";
+		-- local datetime_parse = require"util.datetime".parse_x509;
+		local load_cert = ssl and ssl.x509 and ssl.x509.load;
+		-- or ssl.cert_from_pem
+		if not ssl then
+			print("LuaSec not available, can't perform certificate checks")
+			if what == "certs" then cert_ok = false end
+		elseif not load_cert then
+			print("This version of LuaSec (" .. ssl._VERSION .. ") does not support certificate checking");
+			cert_ok = false
+		else
+			for host in pairs(hosts) do
+				if host ~= "*" then -- Should check global certs too.
+					print("Checking certificate for "..host);
+					-- First, let's find out what certificate this host uses.
+					local ssl_config = config.rawget(host, "ssl");
+					if not ssl_config then
+						local base_host = host:match("%.(.*)");
+						ssl_config = config.get(base_host, "ssl");
+					end
+					if not ssl_config then
+						print("  No 'ssl' option defined for "..host)
+						cert_ok = false
+					elseif not ssl_config.certificate then
+						print("  No 'certificate' set in ssl option for "..host)
+						cert_ok = false
+					elseif not ssl_config.key then
+						print("  No 'key' set in ssl option for "..host)
+						cert_ok = false
+					else
+						local key, err = io.open(ssl_config.key); -- Permissions check only
+						if not key then
+							print("    Could not open "..ssl_config.key..": "..err);
+							cert_ok = false
+						else
+							key:close();
+						end
+						local cert_fh, err = io.open(ssl_config.certificate); -- Load the file.
+						if not cert_fh then
+							print("    Could not open "..ssl_config.certificate..": "..err);
+							cert_ok = false
+						else
+							print("  Certificate: "..ssl_config.certificate)
+							local cert = load_cert(cert_fh:read"*a"); cert_fh = cert_fh:close();
+							if not cert:validat(os.time()) then
+								print("    Certificate has expired.")
+								cert_ok = false
+							end
+							if config.get(host, "component_module") == nil
+							and not x509_verify_identity(host, "_xmpp-client", cert) then
+								print("    Not vaild for client connections to "..host..".")
+								cert_ok = false
+							end
+							if (not (config.get(name, "anonymous_login")
+								or config.get(name, "authentication") == "anonymous"))
+							and not x509_verify_identity(host, "_xmpp-client", cert) then
+								print("    Not vaild for server-to-server connections to "..host..".")
+								cert_ok = false
+							end
+						end
+					end
+				end
+			end
+			if cert_ok == false then
+				print("")
+				print("For more information about certificates please see http://prosody.im/doc/certificates");
+				ok = false
+			end
+		end
+		print("")
+	end
 	if not ok then
 		print("Problems found, see above.");
 	else
