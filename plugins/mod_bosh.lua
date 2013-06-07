@@ -352,7 +352,7 @@ function stream_callbacks.streamopened(context, attr)
 		local features = st.stanza("stream:features");
 		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
 		fire_event("stream-features", session, features);
-		session.send(tostring(features));
+		session.send(features);
 		session.notopen = nil;
 	end
 end
