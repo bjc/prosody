@@ -36,7 +36,7 @@ local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 
-local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8", ["Connection"] = "keep-alive" };
+local default_headers = { ["Content-Type"] = "text/xml; charset=utf-8" };
 
 local cross_domain = module:get_option("cross_domain_bosh", false);
 if cross_domain then
