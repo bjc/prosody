@@ -100,7 +100,8 @@ local function set_cross_domain_headers(response)
 end
 
 function handle_OPTIONS(event)
-	return set_cross_domain_headers(event.response);
+	set_cross_domain_headers(event.response);
+	return "";
 end
 
 function handle_POST(event)
