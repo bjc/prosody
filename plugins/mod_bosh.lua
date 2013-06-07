@@ -99,8 +99,8 @@ local function set_cross_domain_headers(response)
 	return response;
 end
 
-function handle_OPTIONS(request)
-	return set_cross_domain_headers(request.response);
+function handle_OPTIONS(event)
+	return set_cross_domain_headers(event.response);
 end
 
 function handle_POST(event)
