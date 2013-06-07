@@ -780,6 +780,10 @@ function commands.cert(arg)
 end
 
 function commands.check(arg)
+	if arg[1] == "--help" then
+		show_usage([[check]], [[Perform basic checks on your Prosody installation]]);
+		return 1;
+	end
 	local what = table.remove(arg, 1);
 	local array, set = require "util.array", require "util.set";
 	local it = require "util.iterators";
