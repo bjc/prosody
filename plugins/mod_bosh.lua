@@ -62,7 +62,7 @@ local os_time = os.time;
 local sessions, inactive_sessions = module:shared("sessions", "inactive_sessions");
 
 -- Used to respond to idle sessions (those with waiting requests)
-local waiting_requests = {};
+local waiting_requests = module:shared("waiting_requests");
 function on_destroy_request(request)
 	log("debug", "Request destroyed: %s", tostring(request));
 	waiting_requests[request] = nil;
@@ -397,7 +397,7 @@ function stream_callbacks.error(context, error)
 	end
 end
 
-local dead_sessions = {};
+local dead_sessions = module:shared("dead_sessions");
 function on_timer()
 	-- log("debug", "Checking for requests soon to timeout...");
 	-- Identify requests timing out within the next few seconds
