@@ -497,7 +497,7 @@ local function session_flags(session, line)
 	if session.smacks then
 		line[#line+1] = "(sm)";
 	end
-	if (session.ip or session.conn and session.conn:ip()):match(":") then
+	if session.ip and session.ip:match(":") then
 		line[#line+1] = "(IPv6)";
 	end
 	return table.concat(line, " ");
