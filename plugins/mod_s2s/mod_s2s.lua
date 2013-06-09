@@ -590,6 +590,7 @@ function listener.onconnect(conn)
 	else -- Outgoing session connected
 		session:open_stream(session.from_host, session.to_host);
 	end
+	session.ip = conn:ip();
 end
 
 function listener.onincoming(conn, data)
