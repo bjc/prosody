@@ -263,7 +263,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	if socket:getfd() >= _maxfd then
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
 		socket:close( ) -- Should we send some kind of error here?
-		server.pause( )
+		if server then
+			server.pause( )
+		end
 		return nil, nil, "fd-too-large"
 	end
 	socket:settimeout( 0 )
