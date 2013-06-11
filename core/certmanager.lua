@@ -62,6 +62,8 @@ function create_context(host, mode, user_ssl_config)
 		verifyext = user_ssl_config.verifyext or default_verifyext;
 		options = user_ssl_config.options or default_options;
 		depth = user_ssl_config.depth;
+		curve = user_ssl_config.curve;
+		dhparam = user_ssl_config.dhparam;
 	};
 
 	local ctx, err = ssl_newcontext(ssl_config);
