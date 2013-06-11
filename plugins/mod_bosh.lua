@@ -37,6 +37,7 @@ local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 local cross_domain = module:get_option("cross_domain_bosh", false);
 
+if cross_domain == true then cross_domain = "*"; end
 if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
 
 local trusted_proxies = module:get_option_set("trusted_proxies", {"127.0.0.1"})._items;
@@ -90,12 +91,7 @@ local function set_cross_domain_headers(response)
 	headers.access_control_allow_methods = "GET, POST, OPTIONS";
 	headers.access_control_allow_headers = "Content-Type";
 	headers.access_control_max_age = "7200";
-
-	if cross_domain == true then
-		headers.access_control_allow_origin = "*";
-	else
-		headers.access_control_allow_origin = cross_domain;
-	end
+	headers.access_control_allow_origin = cross_domain;
 	return response;
 end
 
