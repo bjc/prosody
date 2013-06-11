@@ -265,15 +265,23 @@ end
 function listener.onreadtimeout(conn)
 	local session = sessions[conn];
 	if session then
-		return session.send(' ');
+		return (hosts[session.host] or prosody).events.fire_event("c2s-read-timeout", { session = session });
 	end
+end
+
+local function keepalive(event)
+	return event.session.send(' ');
 end
 
 function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
-function module.add_host() end
+function module.add_host(module)
+	module:hook("c2s-read-timeout", keepalive, -1);
+end
+
+module:hook("c2s-read-timeout", keepalive, -1);
 
 module:hook("server-stopping", function(event)
 	local reason = event.reason;
