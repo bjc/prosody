@@ -44,6 +44,11 @@ if luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= tr
 	default_options[#default_options+1] = "no_compression";
 end
 
+if luasec_has_no_compression then -- Has no_compression? Then it has these too...
+	default_options[#default_options+1] = "single_dh_use";
+	default_options[#default_options+1] = "single_ecdh_use";
+end
+
 function create_context(host, mode, user_ssl_config)
 	user_ssl_config = user_ssl_config or default_ssl_config;
 
