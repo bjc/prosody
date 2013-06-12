@@ -233,6 +233,9 @@ function service:delete(node, actor)
 	end
 	--
 	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
 	self.nodes[node] = nil;
 	self.config.broadcaster("delete", node, node_obj.subscribers);
 	return true;
