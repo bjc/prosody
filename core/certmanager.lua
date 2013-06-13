@@ -54,6 +54,8 @@ function create_context(host, mode, user_ssl_config)
 
 	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
 	if not user_ssl_config then return nil, "No SSL/TLS configuration present for "..host; end
+	if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+	if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
 	
 	local ssl_config = {
 		mode = mode;
