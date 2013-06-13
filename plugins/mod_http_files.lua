@@ -19,7 +19,7 @@ local base_path = module:get_option_string("http_files_dir", module:get_option_s
 local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
 local directory_index = module:get_option_boolean("http_dir_listing");
 
-local mime_map = module:shared("mime").types;
+local mime_map = module:shared("/*/http_files/mime").types;
 if not mime_map then
 	mime_map = {
 		html = "text/html", htm = "text/html",
