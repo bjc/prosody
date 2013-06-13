@@ -187,7 +187,11 @@ field_readers["list-multi"] =
 		for value in field_tag:childtags("value") do
 			result[#result+1] = value:get_text();
 		end
-		return result, (required and #result == 0 and "Required value missing" or nil);
+		if #result > 0 then
+			return result;
+		elseif required then
+			return nil, "Required value missing";
+		end
 	end
 
 field_readers["text-multi"] =
