@@ -62,7 +62,7 @@ local function publish(session, node, id, item)
 		end
 	else
 		if not user_data then user_data = {}; data[bare] = user_data; end
-		user_data[node] = {id or "1", item};
+		user_data[node] = {id, item};
 	end
 
 	-- broadcast
@@ -169,7 +169,8 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 			local node = payload.attr.node;
 			payload = payload.tags[1];
 			if payload and payload.name == "item" then -- <item>
-				local id = payload.attr.id;
+				local id = payload.attr.id or "1";
+				payload.attr.id = id;
 				session.send(st.reply(stanza));
 				publish(session, node, id, st.clone(payload));
 				return true;
