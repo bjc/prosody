@@ -11,8 +11,10 @@
 
 package.path = package.path ..";../?.lua";
 
-if arg[0]:match("[/\\]") then
-	package.path = package.path .. ";"..arg[0]:gsub("[^/\\]*$", "?.lua");
+local my_name = arg[0];
+if my_name:match("[/\\]") then
+	package.path = package.path..";"..my_name:gsub("[^/\\]+$", "../?.lua");
+	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
 end
 
 local erlparse = require "erlparse";
@@ -229,10 +231,10 @@ local help = "/? -? ? /h -h /help -help --help";
 if not arg or help:find(arg, 1, true) then
 	print([[ejabberd db dump importer for Prosody
 
-  Usage: ejabberd2prosody.lua filename.txt
+  Usage: ]]..my_name..[[ filename.txt
 
 The file can be generated from ejabberd using:
-  sudo ./bin/ejabberdctl dump filename.txt
+  sudo ejabberdctl dump filename.txt
 
 Note: The path of ejabberdctl depends on your ejabberd installation, and ejabberd needs to be running for ejabberdctl to work.]]);
 	os.exit(1);
