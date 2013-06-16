@@ -55,7 +55,6 @@ local function can_do_tls(session)
 		return true;
 	end
 	if session.type == "c2s_unauthed" then
-		module:log("debug", "session.ssl_ctx = ssl_ctx_c2s;")
 		session.ssl_ctx = ssl_ctx_c2s;
 	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
 		session.ssl_ctx = ssl_ctx_s2sin;
