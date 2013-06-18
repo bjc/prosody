@@ -19,6 +19,7 @@ local adns = require "net.adns";
 local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
 local st = require "util.stanza";
+local local_addresses = require "util.net".local_addresses;
 
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
@@ -333,20 +334,12 @@ module:hook_global("service-added", function (event)
 	end
 	for source, _ in pairs(s2s_sources) do
 		if source == "*" or source == "0.0.0.0" then
-			if not socket.local_addresses then
-				sources[#sources + 1] = new_ip("0.0.0.0", "IPv4");
-			else
-				for _, addr in ipairs(socket.local_addresses("ipv4", true)) do
-					sources[#sources + 1] = new_ip(addr, "IPv4");
-				end
+			for _, addr in ipairs(local_addresses("ipv4", true)) do
+				sources[#sources + 1] = new_ip(addr, "IPv4");
 			end
 		elseif source == "::" then
-			if not socket.local_addresses then
-				sources[#sources + 1] = new_ip("::", "IPv6");
-			else
-				for _, addr in ipairs(socket.local_addresses("ipv6", true)) do
-					sources[#sources + 1] = new_ip(addr, "IPv6");
-				end
+			for _, addr in ipairs(local_addresses("ipv6", true)) do
+				sources[#sources + 1] = new_ip(addr, "IPv6");
 			end
 		else
 			sources[#sources + 1] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
