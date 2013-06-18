@@ -14,9 +14,9 @@ CFLAGS+=-ggdb
 .PHONY: all install clean
 .SUFFIXES: .c .o .so
 
-all: encodings.so hashes.so pposix.so signal.so
+all: encodings.so hashes.so net.so pposix.so signal.so
 
-install: encodings.so hashes.so pposix.so signal.so
+install: encodings.so hashes.so net.so pposix.so signal.so
 	install *.so ../util/
 
 clean:
