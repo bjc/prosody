@@ -276,10 +276,13 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	host_session.secure = nil;
 
 	local conn, handler;
-	if connect_host.proto == "IPv4" then
+	local proto = connect_host.proto;
+	if proto == "IPv4" then
 		conn, handler = socket.tcp();
-	else
+	elseif proto == "IPv6" and socket.tcp6 then
 		conn, handler = socket.tcp6();
+	else
+		handler = "Unsupported protocol: "..tostring(proto);
 	end
 	
 	if not conn then
