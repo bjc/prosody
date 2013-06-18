@@ -145,7 +145,7 @@ _tcpbacklog = 128 -- some kind of hint to the OS
 _maxsendlen = 51000 * 1024 -- max len of send buffer
 _maxreadlen = 25000 * 1024 -- max len of read buffer
 
-_checkinterval = 1200000 -- interval in secs to check idle clients
+_checkinterval = 30 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
 _readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
 
@@ -863,16 +863,16 @@ loop = function(once) -- this is the main loop of the program
 			_starttime = _currenttime
 			for handler, timestamp in pairs( _writetimes ) do
 				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
-					--_writetimes[ handler ] = nil
 					handler.disconnect( )( handler, "send timeout" )
 					handler:force_close()	 -- forced disconnect
 				end
 			end
 			for handler, timestamp in pairs( _readtimes ) do
 				if os_difftime( _currenttime - timestamp ) > _readtimeout then
-					--_readtimes[ handler ] = nil
-					handler.disconnect( )( handler, "read timeout" )
-					handler:close( )	-- forced disconnect?
+					if not(handler.onreadtimeout) or handler:onreadtimeout() ~= true then
+						handler.disconnect( )( handler, "read timeout" )
+						handler:close( )	-- forced disconnect?
+					end
 				end
 			end
 		end
