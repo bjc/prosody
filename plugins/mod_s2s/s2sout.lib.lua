@@ -18,7 +18,6 @@ local socket = require "socket";
 local adns = require "net.adns";
 local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
-local st = require "util.stanza";
 local local_addresses = require "util.net".local_addresses;
 
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
@@ -74,7 +73,7 @@ function s2sout.initiate_connection(host_session)
 end
 
 function s2sout.attempt_connection(host_session, err)
-	local from_host, to_host = host_session.from_host, host_session.to_host;
+	local to_host = host_session.to_host;
 	local connect_host, connect_port = to_host and idna_to_ascii(to_host), 5269;
 	
 	if not connect_host then
@@ -267,10 +266,7 @@ end
 
 function s2sout.make_connect(host_session, connect_host, connect_port)
 	(host_session.log or log)("info", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
-	-- Ok, we're going to try to connect
-	
-	local from_host, to_host = host_session.from_host, host_session.to_host;
-	
+
 	-- Reset secure flag in case this is another
 	-- connection attempt after a failed STARTTLS
 	host_session.secure = nil;
