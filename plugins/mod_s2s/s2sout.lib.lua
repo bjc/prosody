@@ -18,7 +18,7 @@ local socket = require "socket";
 local adns = require "net.adns";
 local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
-local st = require "util.stanza";
+local local_addresses = require "util.net".local_addresses;
 
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
@@ -47,7 +47,6 @@ end
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
 	host_session.version = 1;
-	host_session.open_stream = session_open_stream;
 	
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
@@ -74,7 +73,7 @@ function s2sout.initiate_connection(host_session)
 end
 
 function s2sout.attempt_connection(host_session, err)
-	local from_host, to_host = host_session.from_host, host_session.to_host;
+	local to_host = host_session.to_host;
 	local connect_host, connect_port = to_host and idna_to_ascii(to_host), 5269;
 	
 	if not connect_host then
@@ -267,19 +266,19 @@ end
 
 function s2sout.make_connect(host_session, connect_host, connect_port)
 	(host_session.log or log)("info", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
-	-- Ok, we're going to try to connect
-	
-	local from_host, to_host = host_session.from_host, host_session.to_host;
-	
+
 	-- Reset secure flag in case this is another
 	-- connection attempt after a failed STARTTLS
 	host_session.secure = nil;
 
 	local conn, handler;
-	if connect_host.proto == "IPv4" then
+	local proto = connect_host.proto;
+	if proto == "IPv4" then
 		conn, handler = socket.tcp();
-	else
+	elseif proto == "IPv6" and socket.tcp6 then
 		conn, handler = socket.tcp6();
+	else
+		handler = "Unsupported protocol: "..tostring(proto);
 	end
 	
 	if not conn then
@@ -330,20 +329,12 @@ module:hook_global("service-added", function (event)
 	end
 	for source, _ in pairs(s2s_sources) do
 		if source == "*" or source == "0.0.0.0" then
-			if not socket.local_addresses then
-				sources[#sources + 1] = new_ip("0.0.0.0", "IPv4");
-			else
-				for _, addr in ipairs(socket.local_addresses("ipv4", true)) do
-					sources[#sources + 1] = new_ip(addr, "IPv4");
-				end
+			for _, addr in ipairs(local_addresses("ipv4", true)) do
+				sources[#sources + 1] = new_ip(addr, "IPv4");
 			end
 		elseif source == "::" then
-			if not socket.local_addresses then
-				sources[#sources + 1] = new_ip("::", "IPv6");
-			else
-				for _, addr in ipairs(socket.local_addresses("ipv6", true)) do
-					sources[#sources + 1] = new_ip(addr, "IPv6");
-				end
+			for _, addr in ipairs(local_addresses("ipv6", true)) do
+				sources[#sources + 1] = new_ip(addr, "IPv6");
 			end
 		else
 			sources[#sources + 1] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
