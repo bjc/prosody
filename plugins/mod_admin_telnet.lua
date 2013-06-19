@@ -683,14 +683,9 @@ end
 function def_env.s2s:showcert(domain)
 	local ser = require "util.serialization".serialize;
 	local print = self.session.print;
-	local domain_sessions = set.new(array.collect(keys(incoming_s2s)))
-		/function(session) return session.from_host == domain and session or nil; end;
-	for local_host in values(prosody.hosts) do
-		local s2sout = local_host.s2sout;
-		if s2sout and s2sout[domain] then
-			domain_sessions:add(s2sout[domain]);
-		end
-	end
+	local s2s_sessions = module:shared"/*/s2s/sessions";
+	local domain_sessions = set.new(array.collect(values(s2s_sessions)))
+		/function(session) return (session.to_host == domain or session.from_host == domain) and session or nil; end;
 	local cert_set = {};
 	for session in domain_sessions do
 		local conn = session.conn;
