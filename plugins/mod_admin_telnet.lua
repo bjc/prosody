@@ -776,76 +776,38 @@ end
 
 function def_env.s2s:close(from, to)
 	local print, count = self.session.print, 0;
+	local s2s_sessions = module:shared"/*/s2s/sessions";
 	
-	if not (from and to) then
+	local match_id;
+	if from and not to then
+		match_id, from = from;
+	elseif not to then
 		return false, "Syntax: s2s:close('from', 'to') - Closes all s2s sessions from 'from' to 'to'";
 	elseif from == to then
 		return false, "Both from and to are the same... you can't do that :)";
 	end
 	
-	if hosts[from] and not hosts[to] then
-		-- Is an outgoing connection
-		local session = hosts[from].s2sout[to];
-		if not session then
-			print("No outgoing connection from "..from.." to "..to)
-		else
+	for _, session in pairs(s2s_sessions) do
+		local id = session.type..tostring(session):sub(10);
+		if (match_id and match_id == id)
+		or (session.from_host == from and session.to_host == to) then
+			print(("Closing connection from %s to %s [%s]"):format(session.from_host, session.to_host, id));
 			(session.close or s2smanager.destroy_session)(session);
-			count = count + 1;
-			print("Closed outgoing session from "..from.." to "..to);
+			count = count + 1 ;
 		end
-	elseif hosts[to] and not hosts[from] then
-		-- Is an incoming connection
-		for session in pairs(incoming_s2s) do
-			if session.to_host == to and session.from_host == from then
-				(session.close or s2smanager.destroy_session)(session);
-				count = count + 1;
 			end
-		end
-		
-		if count == 0 then
-			print("No incoming connections from "..from.." to "..to);
-		else
-			print("Closed "..count.." incoming session"..((count == 1 and "") or "s").." from "..from.." to "..to);
-		end
-	elseif hosts[to] and hosts[from] then
-		return false, "Both of the hostnames you specified are local, there are no s2s sessions to close";
-	else
-		return false, "Neither of the hostnames you specified are being used on this server";
-	end
-	
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
 end
 
 function def_env.s2s:closeall(host)
         local count = 0;
-
-        if not host or type(host) ~= "string" then return false, "wrong syntax: please use s2s:closeall('hostname.tld')"; end
-        if hosts[host] then
-                for session in pairs(incoming_s2s) do
-                        if session.to_host == host then
-                                (session.close or s2smanager.destroy_session)(session);
+	local s2s_sessions = module:shared"/*/s2s/sessions";
+	for _,session in pairs(s2s_sessions) do
+		if not host or session.from_host == host or session.to_host == host then
+			session:close();
                                 count = count + 1;
                         end
                 end
-                for _, session in pairs(hosts[host].s2sout) do
-                        (session.close or s2smanager.destroy_session)(session);
-                        count = count + 1;
-                end
-        else
-                for session in pairs(incoming_s2s) do
-			if session.from_host == host then
-				(session.close or s2smanager.destroy_session)(session);
-				count = count + 1;
-			end
-		end
-		for _, h in pairs(hosts) do
-			if h.s2sout[host] then
-				(h.s2sout[host].close or s2smanager.destroy_session)(h.s2sout[host]);
-				count = count + 1;
-			end
-		end
-        end
-
 	if count == 0 then return false, "No sessions to close.";
 	else return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s"); end
 end
