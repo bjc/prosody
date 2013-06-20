@@ -17,7 +17,6 @@ local _G = _G;
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
-local incoming_s2s = prosody.incoming_s2s;
 
 local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
@@ -582,76 +581,77 @@ end
 
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
-	local _print = self.session.print;
 	local print = self.session.print;
 	
 	local count_in, count_out = 0,0;
+	local s2s_list = { };
 	
-	for host, host_session in pairs(hosts) do
-		print = function (...) _print(host); _print(...); print = _print; end
-		for remotehost, session in pairs(host_session.s2sout) do
-			if (not match_jid) or remotehost:match(match_jid) or host:match(match_jid) then
-				count_out = count_out + 1;
-				print(session_flags(session, {"   ", host, "->", remotehost}));
-				if session.sendq then
-					print("        There are "..#session.sendq.." queued outgoing stanzas for this connection");
-				end
-				if session.type == "s2sout_unauthed" then
-					if session.connecting then
-						print("        Connection not yet established");
-						if not session.srv_hosts then
-							if not session.conn then
-								print("        We do not yet have a DNS answer for this host's SRV records");
-							else
-								print("        This host has no SRV records, using A record instead");
-							end
-						elseif session.srv_choice then
-							print("        We are on SRV record "..session.srv_choice.." of "..#session.srv_hosts);
-							local srv_choice = session.srv_hosts[session.srv_choice];
-							print("        Using "..(srv_choice.target or ".")..":"..(srv_choice.port or 5269));
+	local s2s_sessions = module:shared"/*/s2s/sessions";
+	for _, session in pairs(s2s_sessions) do
+		local remotehost, localhost, direction;
+		if session.direction == "outgoing" then
+			direction = "->";
+			count_out = count_out + 1;
+			remotehost, localhost = session.to_host or "?", session.from_host or "?";
+		else
+			direction = "<-";
+			count_in = count_in + 1;
+			remotehost, localhost = session.from_host or "?", session.to_host or "?";
+		end
+		local sess_lines = { l = localhost, r = remotehost,
+			session_flags(session, { "", direction, remotehost or "?",
+				"["..session.type..tostring(session):match("[a-f0-9]*$").."]" })};
+
+		if (not match_jid) or remotehost:match(match_jid) or localhost:match(match_jid) then
+			table.insert(s2s_list, sess_lines);
+			local print = function (s) table.insert(sess_lines, "        "..s); end
+			if session.sendq then
+				print("There are "..#session.sendq.." queued outgoing stanzas for this connection");
+			end
+			if session.type == "s2sout_unauthed" then
+				if session.connecting then
+					print("Connection not yet established");
+					if not session.srv_hosts then
+						if not session.conn then
+							print("We do not yet have a DNS answer for this host's SRV records");
+						else
+							print("This host has no SRV records, using A record instead");
 						end
-					elseif session.notopen then
-						print("        The <stream> has not yet been opened");
-					elseif not session.dialback_key then
-						print("        Dialback has not been initiated yet");
-					elseif session.dialback_key then
-						print("        Dialback has been requested, but no result received");
+					elseif session.srv_choice then
+						print("We are on SRV record "..session.srv_choice.." of "..#session.srv_hosts);
+						local srv_choice = session.srv_hosts[session.srv_choice];
+						print("Using "..(srv_choice.target or ".")..":"..(srv_choice.port or 5269));
 					end
+				elseif session.notopen then
+					print("The <stream> has not yet been opened");
+				elseif not session.dialback_key then
+					print("Dialback has not been initiated yet");
+				elseif session.dialback_key then
+					print("Dialback has been requested, but no result received");
 				end
 			end
-		end	
-		local subhost_filter = function (h)
-				return (match_jid and h:match(match_jid));
-			end
-		for session in pairs(incoming_s2s) do
-			if session.to_host == host and ((not match_jid) or host:match(match_jid)
-				or (session.from_host and session.from_host:match(match_jid))
-				-- Pft! is what I say to list comprehensions
-				or (session.hosts and #array.collect(keys(session.hosts)):filter(subhost_filter)>0)) then
-				count_in = count_in + 1;
-				print(session_flags(session, {"   ", host, "<-", session.from_host or "(unknown)"}));
-				if session.type == "s2sin_unauthed" then
-						print("        Connection not yet authenticated");
-				end
+			if session.type == "s2sin_unauthed" then
+				print("Connection not yet authenticated");
+			elseif session.type == "s2sin" then
 				for name in pairs(session.hosts) do
 					if name ~= session.from_host then
-						print("        also hosts "..tostring(name));
+						print("also hosts "..tostring(name));
 					end
 				end
 			end
 		end
-		
-		print = _print;
 	end
-	
-	for session in pairs(incoming_s2s) do
-		if not session.to_host and ((not match_jid) or session.from_host and session.from_host:match(match_jid)) then
-			count_in = count_in + 1;
-			print("Other incoming s2s connections");
-			print("    (unknown) <- "..(session.from_host or "(unknown)"));			
-		end
+
+	-- Sort by local host, then remote host
+	table.sort(s2s_list, function(a,b)
+		if a.l == b.l then return a.r < b.r; end
+		return a.l < b.l;
+	end);
+	local lasthost;
+	for _, sess_lines in ipairs(s2s_list) do
+		if sess_lines.l ~= lasthost then print(sess_lines.l); lasthost=sess_lines.l end
+		for _, line in ipairs(sess_lines) do print(line); end
 	end
-	
 	return true, "Total: "..count_out.." outgoing, "..count_in.." incoming connections";
 end
 
