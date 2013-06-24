@@ -85,7 +85,7 @@ local function set_encoding()
 					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
 					local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
 					local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
-					for row in success:rows() do
+					for row in result:rows() do
 						local column_name, column_type = unpack(row);
 						engine:execute(fix_column_query1:format(column_name, column_name));
 						engine:execute(fix_column_query2:format(column_name, column_name, column_type));
