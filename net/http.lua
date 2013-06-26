@@ -116,8 +116,17 @@ function request(u, ex, callback)
 	
 	local method, headers, body;
 	
+	local host, port = req.host, req.port;
+	local host_header = host;
+	if (port == "80" and req.scheme == "http")
+	or (port == "443" and req.scheme == "https") then
+		port = nil;
+	elseif port then
+		host_header = host_header..":"..port;
+	end
+
 	headers = {
-		["Host"] = req.host;
+		["Host"] = host_header;
 		["User-Agent"] = "Prosody XMPP Server";
 	};
 	
@@ -148,12 +157,12 @@ function request(u, ex, callback)
 	if using_https and not ssl_available then
 		error("SSL not available, unable to contact https URL");
 	end
-	local port = tonumber(req.port) or (using_https and 443 or 80);
+	local port_number = port and tonumber(port) or (using_https and 443 or 80);
 	
 	-- Connect the socket, and wrap it with net.server
 	local conn = socket.tcp();
 	conn:settimeout(10);
-	local ok, err = conn:connect(req.host, port);
+	local ok, err = conn:connect(host, port_number);
 	if not ok and err ~= "timeout" then
 		callback(nil, 0, req);
 		return nil, err;
@@ -164,7 +173,7 @@ function request(u, ex, callback)
 		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
 	end
 
-	req.handler, req.conn = server.wrapclient(conn, req.host, port, listener, "*a", sslctx);
+	req.handler, req.conn = server.wrapclient(conn, host, port_number, listener, "*a", sslctx);
 	req.write = function (...) return req.handler:write(...); end
 	
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
