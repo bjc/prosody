@@ -500,6 +500,7 @@ int lc_setrlimit(lua_State *L) {
 	if(arguments < 1 || arguments > 3) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "incorrect-arguments");
+		return 2;
 	}
 
 	resource = luaL_checkstring(L, 1);
