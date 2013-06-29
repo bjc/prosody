@@ -428,7 +428,14 @@ end
 end
 
 -- import modules
-package.path = [[C:\Documents and Settings\Waqas\Desktop\mercurial\prosody-hg\?.lua;]]..package.path;
+package.path = package.path.."..\?.lua;";
+
+local my_name = arg[0];
+if my_name:match("[/\\]") then
+	package.path = package.path..";"..my_name:gsub("[^/\\]+$", "../?.lua");
+	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
+end
+
 
 -- ugly workaround for getting datamanager to work outside of prosody :(
 prosody = { };
