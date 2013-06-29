@@ -32,7 +32,7 @@ if not mime_map then
 		jpeg = "image/jpeg", jpg = "image/jpeg",
 		svg = "image/svg+xml",
 	};
-	module:shared("mime").types = mime_map;
+	module:shared("/*/http_files/mime").types = mime_map;
 
 	local mime_types, err = open(module:get_option_string("mime_types_file", "/etc/mime.types"),"r");
 	if mime_types then
