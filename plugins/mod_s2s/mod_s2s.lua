@@ -135,6 +135,12 @@ function route_to_new_session(event)
 	return true;
 end
 
+local function keepalive(event)
+	return event.session.sends2s(' ');
+end
+
+module:hook("s2s-read-timeout", keepalive, -1);
+
 function module.add_host(module)
 	if module:get_option_boolean("disallow_s2s", false) then
 		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see http://prosody.im/doc/s2s#disabling");
@@ -143,6 +149,7 @@ function module.add_host(module)
 	module:hook("route/remote", route_to_existing_session, -1);
 	module:hook("route/remote", route_to_new_session, -10);
 	module:hook("s2s-authenticated", make_authenticated, -1);
+	module:hook("s2s-read-timeout", keepalive, -1);
 end
 
 -- Stream is authorised, and ready for normal stanzas
@@ -590,6 +597,7 @@ function listener.onconnect(conn)
 	else -- Outgoing session connected
 		session:open_stream(session.from_host, session.to_host);
 	end
+	session.ip = conn:ip();
 end
 
 function listener.onincoming(conn, data)
@@ -616,12 +624,18 @@ function listener.ondisconnect(conn, err)
 		if err and session.direction == "outgoing" and session.notopen then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
 			if s2sout.attempt_connection(session, err) then
-				(session.log or log)("debug", "...so we're going to try another target");
 				return; -- Session lives for now
 			end
 		end
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
 		s2s_destroy_session(session, err);
+	end
+end
+
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("s2s-read-timeout", { session = session });
 	end
 end
 
