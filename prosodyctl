@@ -870,7 +870,7 @@ function commands.check(arg)
 			end
 		end
 		
-		local local_addresses = socket.local_addresses and socket.local_addresses() or {};
+		local local_addresses = require"util.net".local_addresses() or {};
 		
 		for addr in it.values(local_addresses) do
 			if not ip.new_ip(addr).private then
