@@ -263,19 +263,19 @@ module:hook("iq-result/bare/disco", function(event)
 end);
 
 module:hook("account-disco-info", function(event)
-	local stanza = event.stanza;
-	stanza:tag('identity', {category='pubsub', type='pep'}):up();
-	stanza:tag('feature', {var='http://jabber.org/protocol/pubsub#publish'}):up();
+	local reply = event.reply;
+	reply:tag('identity', {category='pubsub', type='pep'}):up();
+	reply:tag('feature', {var='http://jabber.org/protocol/pubsub#publish'}):up();
 end);
 
 module:hook("account-disco-items", function(event)
-	local stanza = event.stanza;
-	local bare = stanza.attr.to;
+	local reply = event.reply;
+	local bare = reply.attr.to;
 	local user_data = data[bare];
 
 	if user_data then
 		for node, _ in pairs(user_data) do
-			stanza:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
+			reply:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
 		end
 	end
 end);

@@ -6,6 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
+env = {
+	prosody = { events = require "util.events".new() };
+};
 
 function compare_srv_priorities(csp)
 	local r1 = { priority = 10, weight = 0 }
