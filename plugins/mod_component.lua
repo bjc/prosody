@@ -9,6 +9,7 @@
 module:set_global();
 
 local t_concat = table.concat;
+local traceback = debug.traceback;
 
 local logger = require "util.logger";
 local sha1 = require "util.hashes".sha1;
@@ -183,6 +184,7 @@ function stream_callbacks.streamclosed(session)
 	session:close();
 end
 
+local function handleerr(err) log("error", "Traceback[component]: %s", traceback(tostring(err), 2)); end
 function stream_callbacks.handlestanza(session, stanza)
 	-- Namespaces are icky.
 	if not stanza.attr.xmlns and stanza.name == "handshake" then
@@ -213,7 +215,10 @@ function stream_callbacks.handlestanza(session, stanza)
 			return;
 		end
 	end
-	return core_process_stanza(session, stanza);
+
+	if stanza then
+		return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
+	end
 end
 
 --- Closing a component connection
