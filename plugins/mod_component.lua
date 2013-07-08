@@ -9,6 +9,7 @@
 module:set_global();
 
 local t_concat = table.concat;
+local xpcall, tostring, type = xpcall, tostring, type;
 local traceback = debug.traceback;
 
 local logger = require "util.logger";
