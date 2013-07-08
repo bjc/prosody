@@ -20,6 +20,8 @@ local logger = require "util.logger";
 local log = logger.init("mod_bosh");
 local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
+local xpcall, tostring, type = xpcall, tostring, type;
+local traceback = debug.traceback;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -352,6 +354,7 @@ function stream_callbacks.streamopened(context, attr)
 	end
 end
 
+local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(tostring(err), 2)); end
 function stream_callbacks.handlestanza(context, stanza)
 	if context.ignore then return; end
 	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
@@ -362,7 +365,7 @@ function stream_callbacks.handlestanza(context, stanza)
 		end
 		stanza = session.filter("stanzas/in", stanza);
 		if stanza then
-			core_process_stanza(session, stanza);
+			return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
 		end
 	end
 end
