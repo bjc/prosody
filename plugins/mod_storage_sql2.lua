@@ -148,7 +148,7 @@ local user, store;
 local function keyval_store_get()
 	local haveany;
 	local result = {};
-	for row in engine:select("SELECT `key`,`type`,`value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user, store) do
+	for row in engine:select("SELECT `key`,`type`,`value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user or "", store) do
 		haveany = true;
 		local k = row[1];
 		local v = deserialize(row[2], row[3]);
@@ -165,7 +165,7 @@ local function keyval_store_get()
 	end
 end
 local function keyval_store_set(data)
-	engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user, store);
+	engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user or "", store);
 	
 	if data and next(data) ~= nil then
 		local extradata = {};
@@ -173,7 +173,7 @@ local function keyval_store_set(data)
 			if type(key) == "string" and key ~= "" then
 				local t, value = serialize(value);
 				assert(t, value);
-				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user, store, key, t, value);
+				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, key, t, value);
 			else
 				extradata[key] = value;
 			end
@@ -181,7 +181,7 @@ local function keyval_store_set(data)
 		if next(extradata) ~= nil then
 			local t, extradata = serialize(extradata);
 			assert(t, extradata);
-			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user, store, "", t, extradata);
+			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, "", t, extradata);
 		end
 	end
 	return true;
