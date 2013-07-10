@@ -2,6 +2,16 @@
 local json = require "util.json";
 local resolve_relative_path = require "core.configmanager".resolve_relative_path;
 
+local unpack = unpack
+local function iterator(result)
+	return function(result)
+		local row = result();
+		if row ~= nil then
+			return unpack(row);
+		end
+	end, result, nil;
+end
+
 local mod_sql = module:require("sql");
 local params = module:get_option("sql");
 
@@ -200,9 +210,11 @@ function keyval_store:set(username, data)
 	end);
 end
 function keyval_store:users()
-	return engine:transaction(function()
+	local ok, result = engine:transaction(function()
 		return engine:select("SELECT DISTINCT `user` FROM `prosody` WHERE `host`=? AND `store`=?", host, self.store);
 	end);
+	if not ok then return ok, result end
+	return iterator(result);
 end
 
 local driver = {};
@@ -220,9 +232,11 @@ function driver:stores(username)
 	if username == true or not username then
 		username = "";
 	end
-	return engine:transaction(function()
+	local ok, result = engine:transaction(function()
 		return engine:select(sql, host, username);
 	end);
+	if not ok then return ok, result end
+	return iterator(result);
 end
 
 function driver:purge(username)
