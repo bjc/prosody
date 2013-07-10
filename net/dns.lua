@@ -629,10 +629,10 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	else
 		sock, err = socket.udp();
 	end
+	if sock and self.socket_wrapper then sock, err = self.socket_wrapper(sock, self); end
 	if not sock then
 		return nil, err;
 	end
-	if self.socket_wrapper then sock = self.socket_wrapper(sock, self); end
 	sock:settimeout(0);
 	-- todo: attempt to use a random port, fallback to 0
 	sock:setsockname('*', 0);
