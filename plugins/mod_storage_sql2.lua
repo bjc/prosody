@@ -1,6 +1,11 @@
 
 local json = require "util.json";
+local xml_parse = require "util.xml".parse;
 local resolve_relative_path = require "core.configmanager".resolve_relative_path;
+
+local stanza_mt = require"util.stanza".stanza_mt;
+local getmetatable = getmetatable;
+local function is_stanza(x) return getmetatable(x) == stanza_mt; end
 
 local unpack = unpack
 local function iterator(result)
@@ -134,6 +139,8 @@ local function serialize(value)
 	local t = type(value);
 	if t == "string" or t == "boolean" or t == "number" then
 		return t, tostring(value);
+	elseif is_stanza(value) then
+		return "xml", tostring(value);
 	elseif t == "table" then
 		local value,err = json.encode(value);
 		if value then return "json", value; end
@@ -149,6 +156,8 @@ local function deserialize(t, value)
 	elseif t == "number" then return tonumber(value);
 	elseif t == "json" then
 		return json.decode(value);
+	elseif t == "xml" then
+		return xml_parse(value);
 	end
 end
 
