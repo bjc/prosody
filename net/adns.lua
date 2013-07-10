@@ -68,9 +68,9 @@ function new_async_socket(sock, resolver)
 			resolver:servfail(conn); -- Let the magic commence
 		end
 	end
-	handler = server.wrapclient(sock, "dns", 53, listener);
+	handler, err = server.wrapclient(sock, "dns", 53, listener);
 	if not handler then
-		log("warn", "handler is nil");
+		return nil, err;
 	end
 	
 	handler.settimeout = function () end
