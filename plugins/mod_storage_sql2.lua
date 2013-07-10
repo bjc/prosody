@@ -217,11 +217,16 @@ function keyval_store:users()
 	return iterator(result);
 end
 
+local stores = {
+	keyval = keyval_store;
+};
+
 local driver = {};
 
 function driver:open(store, typ)
-	if not typ then -- default key-value store
-		return setmetatable({ store = store }, keyval_store);
+	local store_mt = stores[typ or "keyval"];
+	if store_mt then
+		return setmetatable({ store = store }, store_mt);
 	end
 	return nil, "unsupported-store";
 end
