@@ -264,6 +264,8 @@ function engine:_create_table(table)
 	sql = sql.. ");"
 	if self.params.driver == "PostgreSQL" then
 		sql = sql:gsub("`", "\"");
+	elseif self.params.driver == "MySQL" then
+		sql = sql:gsub(";$", " CHARACTER SET 'utf8' COLLATE 'utf8_bin';");
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
