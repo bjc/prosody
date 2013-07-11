@@ -23,7 +23,8 @@ local params = module:get_option("sql");
 local engine; -- TODO create engine
 
 local function create_table()
-	--[[local Table,Column,Index = mod_sql.Table,mod_sql.Column,mod_sql.Index;
+	local Table,Column,Index = mod_sql.Table,mod_sql.Column,mod_sql.Index;
+	--[[
 	local ProsodyTable = Table {
 		name="prosody";
 		Column { name="host", type="TEXT", nullable=false };
@@ -78,6 +79,22 @@ local function create_table()
 			end
 		end
 	end
+	local ProsodyArchiveTable = Table {
+		name="prosodyarchive";
+		Column { name="sort_id", type="INTEGER PRIMARY KEY AUTOINCREMENT", nullable=false };
+		Column { name="host", type="TEXT", nullable=false };
+		Column { name="user", type="TEXT", nullable=false };
+		Column { name="store", type="TEXT", nullable=false };
+		Column { name="key", type="TEXT", nullable=false }; -- item id
+		Column { name="when", type="INTEGER", nullable=false }; -- timestamp
+		Column { name="with", type="TEXT", nullable=false }; -- related id
+		Column { name="type", type="TEXT", nullable=false };
+		Column { name="value", type=params.driver == "MySQL" and "MEDIUMTEXT" or "TEXT", nullable=false };
+		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
+	};
+	engine:transaction(function()
+		ProsodyArchiveTable:create(engine);
+	end);
 end
 local function set_encoding()
 	if params.driver ~= "SQLite3" then
