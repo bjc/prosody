@@ -1,12 +1,15 @@
 
 local json = require "util.json";
 local xml_parse = require "util.xml".parse;
+local uuid = require "util.uuid";
 local resolve_relative_path = require "core.configmanager".resolve_relative_path;
 
 local stanza_mt = require"util.stanza".stanza_mt;
 local getmetatable = getmetatable;
+local t_concat = table.concat;
 local function is_stanza(x) return getmetatable(x) == stanza_mt; end
 
+local noop = function() end
 local unpack = unpack
 local function iterator(result)
 	return function(result)
@@ -243,8 +246,94 @@ function keyval_store:users()
 	return iterator(result);
 end
 
+local archive_store = {}
+archive_store.__index = archive_store
+function archive_store:append(username, when, with, value)
+	local user,store = username,self.store;
+	return engine:transaction(function()
+		local key = uuid.generate();
+		local t, value = serialize(value);
+		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
+		return key;
+	end);
+end
+function archive_store:find(username, query)
+	query = query or {};
+	local user,store = username,self.store;
+	local total;
+	local ok, result = engine:transaction(function()
+		local sql_query = "SELECT `key`, `type`, `value`, `when` FROM `prosodyarchive` WHERE %s ORDER BY `sort_id` %s%s;";
+		local args = { host, user or "", store, };
+		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
+
+		-- Time range, inclusive
+		if query.start then
+			args[#args+1] = query.start
+			where[#where+1] = "`when` >= ?"
+		end
+		if query["end"] then
+			args[#args+1] = query["end"];
+			if query.start then
+				where[#where] = "`when` BETWEEN ? AND ?" -- is this inclusive?
+			else
+				where[#where+1] = "`when` >= ?"
+			end
+		end
+
+		-- Related name
+		if query.with then
+			where[#where+1] = "`with` = ?";
+			args[#args+1] = query.with
+		end
+
+		-- Unique id
+		if query.key then
+			where[#where+1] = "`key` = ?";
+			args[#args+1] = query.key
+		end
+
+		-- Total matching
+		if query.total then
+			local stats = engine:select(sql_query:gsub("^(SELECT).-(FROM)", "%1 COUNT(*) %2"):format(t_concat(where, " AND "), "DESC", ""), unpack(args));
+			if stats then
+				local _total = stats()
+				total = _total and _total[1];
+			end
+			if query.limit == 0 then -- Skip the real query
+				return noop, total;
+			end
+		end
+
+		-- Before or after specific item, exclusive
+		if query.after then
+			where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
+			args[#args+1] = query.after
+		end
+		if query.before then
+			where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
+			args[#args+1] = query.before
+		end
+
+		if query.limit then
+			args[#args+1] = query.limit;
+		end
+
+		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
+		module:log("debug", sql_query);
+		return engine:select(sql_query, unpack(args));
+	end);
+	if not ok then return ok, result end
+	return function()
+		local row = result();
+		if row ~= nil then
+			return row[1], deserialize(row[2], row[3]), row[4];
+		end
+	end, total;
+end
+
 local stores = {
 	keyval = keyval_store;
+	archive = archive_store;
 };
 
 local driver = {};
