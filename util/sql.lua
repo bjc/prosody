@@ -177,8 +177,8 @@ function engine:execute(sql, ...)
 end
 
 local result_mt = { __index = {
-	affected = function(self) return self.__affected; end;
-	rowcount = function(self) return self.__rowcount; end;
+	affected = function(self) return self.__stmt:affected(); end;
+	rowcount = function(self) return self.__stmt:rowcount(); end;
 } };
 
 function engine:execute_query(sql, ...)
@@ -200,7 +200,7 @@ function engine:execute_update(sql, ...)
 		prepared[sql] = stmt;
 	end
 	assert(stmt:execute(...));
-	return setmetatable({ __affected = stmt:affected(), __rowcount = stmt:rowcount() }, result_mt);
+	return setmetatable({ __stmt = stmt }, result_mt);
 end
 engine.insert = engine.execute_update;
 engine.select = engine.execute_query;
