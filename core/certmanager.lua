@@ -38,6 +38,7 @@ local core_defaults = {
 	options = { "no_sslv2", luasec_has_noticket and "no_ticket" or nil };
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
+	ciphers = "HIGH:!DSS:!aNULL@STRENGTH";
 }
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true
