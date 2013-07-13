@@ -68,6 +68,7 @@ function create_context(host, mode, user_ssl_config)
 		options = user_ssl_config.options or default_options;
 		depth = user_ssl_config.depth;
 		curve = user_ssl_config.curve or "secp384r1";
+		ciphers = user_ssl_config.ciphers or "HIGH:!DSS:!aNULL@STRENGTH";
 		dhparam = user_ssl_config.dhparam;
 	};
 
