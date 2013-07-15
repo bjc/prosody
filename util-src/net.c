@@ -37,10 +37,10 @@ const char * const type_strings[] = {
 
 static int lc_local_addresses(lua_State *L)
 {
+#ifndef _WIN32
 	/* Link-local IPv4 addresses; see RFC 3927 and RFC 5735 */
 	const long ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
 	const long ip4_mask      = htonl(0xffff0000);
-#ifndef _WIN32
 	struct ifaddrs *addr = NULL, *a;
 	int n = 1;
 #endif
@@ -56,9 +56,10 @@ static int lc_local_addresses(lua_State *L)
 		strerror(errno));
 		return 2;
 	}
-
+#endif
 	lua_newtable(L);
 
+#ifndef _WIN32
 	for (a = addr; a; a = a->ifa_next) {
 		int family;
 		char ipaddr[INET6_ADDRSTRLEN];
@@ -91,9 +92,8 @@ static int lc_local_addresses(lua_State *L)
 	}
 
 	freeifaddrs(addr);
-
-	return 1;
 #endif
+	return 1;
 }
 
 int luaopen_util_net(lua_State* L)
