@@ -17,11 +17,13 @@ local jid_prep = jid.prep;
 
 local module_host = module:get_host();
 
-function inject_roster_contacts(username, host, roster)
+function inject_roster_contacts(event)
+	local username, host= event.username, event.host;
 	--module:log("debug", "Injecting group members to roster");
 	local bare_jid = username.."@"..host;
 	if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
 	
+	local roster = event.roster;
 	local function import_jids_to_roster(group_name)
 		for jid in pairs(groups[group_name]) do
 			-- Add them to roster
