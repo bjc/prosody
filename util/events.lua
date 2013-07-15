@@ -60,11 +60,11 @@ function new()
 			remove_handler(event, handler);
 		end
 	end;
-	local function fire_event(event, ...)
-		local h = handlers[event];
+	local function fire_event(event_name, event_data)
+		local h = handlers[event_name];
 		if h then
 			for i=1,#h do
-				local ret = h[i](...);
+				local ret = h[i](event_data);
 				if ret ~= nil then return ret; end
 			end
 		end
