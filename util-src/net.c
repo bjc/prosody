@@ -20,6 +20,7 @@
   #include <net/if.h>
   #include <ifaddrs.h>
   #include <arpa/inet.h>
+  #include <netinet/in.h>
 #endif
 
 #include <lua.h>
