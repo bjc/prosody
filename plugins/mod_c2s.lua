@@ -79,8 +79,6 @@ function stream_callbacks.streamopened(session, attr)
 
 	local features = st.stanza("stream:features");
 	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-	module:fire_event("stream-features", session, features);
-
 	send(features);
 end
 
