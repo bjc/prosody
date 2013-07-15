@@ -264,12 +264,6 @@ function init_global_state()
 		prosody.events.fire_event("server-stopping", {reason = reason});
 		server.setquitting(true);
 	end
-
-	-- Load SSL settings from config, and create a ctx table
-	local certmanager = require "core.certmanager";
-	local global_ssl_ctx = certmanager.create_context("*", "server");
-	prosody.global_ssl_ctx = global_ssl_ctx;
-
 end
 
 function read_version()
