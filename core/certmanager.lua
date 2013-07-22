@@ -12,6 +12,7 @@ local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
 local tostring = tostring;
+local pairs = pairs;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -28,53 +29,61 @@ end
 module "certmanager"
 
 -- Global SSL options if not overridden per-host
-local default_ssl_config = configmanager.get("*", "ssl");
-local default_capath = "/etc/ssl/certs";
-local default_verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
-local default_options = { "no_sslv2", luasec_has_noticket and "no_ticket" or nil };
-local default_verifyext = { "lsec_continue", "lsec_ignore_purpose" };
+local global_ssl_config = configmanager.get("*", "ssl");
+
+local core_defaults = {
+	capath = "/etc/ssl/certs";
+	protocol = "sslv23";
+	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
+	options = { "no_sslv2", luasec_has_noticket and "no_ticket" or nil };
+	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
+	curve = "secp384r1";
+	ciphers = "HIGH:!DSS:!aNULL@STRENGTH";
+}
+local path_options = { -- These we pass through resolve_path()
+	key = true, certificate = true, cafile = true, capath = true
+}
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
-	for i=1,#default_verifyext do -- Remove lsec_ prefix
-		default_verify[#default_verify+1] = default_verifyext[i]:sub(6);
+	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
+		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
 	end
 end
-if luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true then
-	default_options[#default_options+1] = "no_compression";
-end
 
-if luasec_has_no_compression then -- Has no_compression? Then it has these too...
-	default_options[#default_options+1] = "single_dh_use";
-	default_options[#default_options+1] = "single_ecdh_use";
+if luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true then
+	core_defaults.options[#core_defaults.options+1] = "no_compression";
 end
 
 function create_context(host, mode, user_ssl_config)
-	user_ssl_config = user_ssl_config or default_ssl_config;
+	user_ssl_config = user_ssl_config or {}
+	user_ssl_config.mode = mode;
 
 	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
-	if not user_ssl_config then return nil, "No SSL/TLS configuration present for "..host; end
-	
-	local ssl_config = {
-		mode = mode;
-		protocol = user_ssl_config.protocol or "sslv23";
-		key = resolve_path(config_path, user_ssl_config.key);
-		password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
-		certificate = resolve_path(config_path, user_ssl_config.certificate);
-		capath = resolve_path(config_path, user_ssl_config.capath or default_capath);
-		cafile = resolve_path(config_path, user_ssl_config.cafile);
-		verify = user_ssl_config.verify or default_verify;
-		verifyext = user_ssl_config.verifyext or default_verifyext;
-		options = user_ssl_config.options or default_options;
-		depth = user_ssl_config.depth;
-		curve = user_ssl_config.curve or "secp384r1";
-		ciphers = user_ssl_config.ciphers or "HIGH:!DSS:!aNULL@STRENGTH";
-		dhparam = user_ssl_config.dhparam;
-	};
 
-	local ctx, err = ssl_newcontext(ssl_config);
+	if global_ssl_config then
+		for option,default_value in pairs(global_ssl_config) do
+			if not user_ssl_config[option] then
+				user_ssl_config[option] = default_value;
+			end
+		end
+	end
+	for option,default_value in pairs(core_defaults) do
+		if not user_ssl_config[option] then
+			user_ssl_config[option] = default_value;
+		end
+	end
+	user_ssl_config.password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+	for option in pairs(path_options) do
+		user_ssl_config[option] = user_ssl_config[option] and resolve_path(config_path, user_ssl_config[option]);
+	end
 
-	-- LuaSec ignores the cipher list from the config, so we have to take care
+	if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+	if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+
+	local ctx, err = ssl_newcontext(user_ssl_config);
+
+	-- COMPAT Older LuaSec ignores the cipher list from the config, so we have to take care
 	-- of it ourselves (W/A for #x)
 	if ctx and user_ssl_config.ciphers then
 		local success;
@@ -87,9 +96,9 @@ function create_context(host, mode, user_ssl_config)
 		local file = err:match("^error loading (.-) %(");
 		if file then
 			if file == "private key" then
-				file = ssl_config.key or "your private key";
+				file = user_ssl_config.key or "your private key";
 			elseif file == "certificate" then
-				file = ssl_config.certificate or "your certificate file";
+				file = user_ssl_config.certificate or "your certificate file";
 			end
 			local reason = err:match("%((.+)%)$") or "some reason";
 			if reason == "Permission denied" then
@@ -112,7 +121,7 @@ function create_context(host, mode, user_ssl_config)
 end
 
 function reload_ssl_config()
-	default_ssl_config = configmanager.get("*", "ssl");
+	global_ssl_config = configmanager.get("*", "ssl");
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);

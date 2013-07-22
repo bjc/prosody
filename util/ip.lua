@@ -12,7 +12,17 @@ local ip_mt = { __index = function (ip, key) return (ip_methods[key])(ip); end,
 local hex2bits = { ["0"] = "0000", ["1"] = "0001", ["2"] = "0010", ["3"] = "0011", ["4"] = "0100", ["5"] = "0101", ["6"] = "0110", ["7"] = "0111", ["8"] = "1000", ["9"] = "1001", ["A"] = "1010", ["B"] = "1011", ["C"] = "1100", ["D"] = "1101", ["E"] = "1110", ["F"] = "1111" };
 
 local function new_ip(ipStr, proto)
-	if proto ~= "IPv4" and proto ~= "IPv6" then
+	if not proto then
+		local sep = ipStr:match("^%x+(.)");
+		if sep == ":" or (not(sep) and ipStr:sub(1,1) == ":") then
+			proto = "IPv6"
+		elseif sep == "." then
+			proto = "IPv4"
+		end
+		if not proto then
+			return nil, "invalid address";
+		end
+	elseif proto ~= "IPv4" and proto ~= "IPv6" then
 		return nil, "invalid protocol";
 	end
 	if proto == "IPv6" and ipStr:find('.', 1, true) then
@@ -192,5 +202,43 @@ function ip_methods:scope()
 	return value;
 end
 
+function ip_methods:private()
+	local private = self.scope ~= 0xE;
+	if not private and self.proto == "IPv4" then
+		local ip = self.addr;
+		local fields = {};
+		ip:gsub("([^.]*).?", function (c) fields[#fields + 1] = tonumber(c) end);
+		if fields[1] == 127 or fields[1] == 10 or (fields[1] == 192 and fields[2] == 168)
+		or (fields[1] == 172 and (fields[2] >= 16 or fields[2] <= 32)) then
+			private = true;
+		end
+	end
+	self.private = private;
+	return private;
+end
+
+local function parse_cidr(cidr)
+	local bits;
+	local ip_len = cidr:find("/", 1, true);
+	if ip_len then
+		bits = tonumber(cidr:sub(ip_len+1, -1));
+		cidr = cidr:sub(1, ip_len-1);
+	end
+	return new_ip(cidr), bits;
+end
+
+local function match(ipA, ipB, bits)
+	local common_bits = commonPrefixLength(ipA, ipB);
+	if not bits then
+		return ipA == ipB;
+	end
+	if bits and ipB.proto == "IPv4" then
+		common_bits = common_bits - 96; -- v6 mapped addresses always share these bits
+	end
+	return common_bits >= bits;
+end
+
 return {new_ip = new_ip,
-	commonPrefixLength = commonPrefixLength};
+	commonPrefixLength = commonPrefixLength,
+	parse_cidr = parse_cidr,
+	match=match};
