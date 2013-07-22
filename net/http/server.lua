@@ -168,7 +168,7 @@ function handle_request(conn, request, finish_cb)
 	local conn_header = request.headers.connection;
 	conn_header = conn_header and ","..conn_header:gsub("[ \t]", ""):lower().."," or ""
 	local httpversion = request.httpversion
-	local persistent = conn_header:find(",Keep-Alive,", 1, true)
+	local persistent = conn_header:find(",keep-alive,", 1, true)
 		or (httpversion == "1.1" and not conn_header:find(",close,", 1, true));
 
 	local response_conn_header;

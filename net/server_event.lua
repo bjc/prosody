@@ -485,6 +485,7 @@ do
 			onincoming = listener.onincoming;  -- will be called when client sends data
 			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
 			onreadtimeout = listener.onreadtimeout; -- called when socket inactivity timeout occurs
+			ondrain = listener.ondrain; -- called when writebuffer is empty
 			onstatus = listener.onstatus; -- called for status changes (e.g. of SSL/TLS)
 			eventread = false, eventwrite = false, eventclose = false,
 			eventhandshake = false, eventstarthandshake = false;  -- event handler
