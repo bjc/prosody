@@ -25,7 +25,7 @@ local log = module._log;
 
 local c2s_timeout = module:get_option_number("c2s_timeout");
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
-local opt_keepalives = module:get_option_boolean("tcp_keepalives", false);
+local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
