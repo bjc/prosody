@@ -437,10 +437,11 @@ do
 	end
 	
 	function interface_mt:setlistener(listener)
-		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout, self.onstatus
-			= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout, listener.onstatus;
+		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout, self.onreadtimeout, self.onstatus
+			= listener.onconnect, listener.ondisconnect, listener.onincoming,
+			  listener.ontimeout, listener.onreadtimeout, listener.onstatus;
 	end
-	
+
 	-- Stub handlers
 	function interface_mt:onconnect()
 	end
@@ -449,6 +450,12 @@ do
 	function interface_mt:ondisconnect()
 	end
 	function interface_mt:ontimeout()
+	end
+	function interface_mt:onreadtimeout()
+		self.fatalerror = "timeout during receiving"
+		debug( "connection failed:", self.fatalerror )
+		self:_close()
+		self.eventread = nil
 	end
 	function interface_mt:ondrain()
 	end
@@ -477,6 +484,7 @@ do
 			ondisconnect = listener.ondisconnect;  -- will be called when client disconnects
 			onincoming = listener.onincoming;  -- will be called when client sends data
 			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
+			onreadtimeout = listener.onreadtimeout; -- called when socket inactivity timeout occurs
 			ondrain = listener.ondrain; -- called when writebuffer is empty
 			onstatus = listener.onstatus; -- called for status changes (e.g. of SSL/TLS)
 			eventread = false, eventwrite = false, eventclose = false,
@@ -575,61 +583,56 @@ do
 				interface.eventread = nil
 				return -1
 			end
-			if EV_TIMEOUT == event then  -- took too long to get some data from client -> disconnect
-				interface.fatalerror = "timeout during receiving"
-				debug( "connection failed:", interface.fatalerror )
+			if EV_TIMEOUT == event and interface:onreadtimeout() ~= true then
+				return -1 -- took too long to get some data from client -> disconnect
+			end
+			if interface._usingssl then  -- handle luasec
+				if interface.eventwritetimeout then  -- ok, in the past writecallback was regged
+					local ret = interface.writecallback( )  -- call it
+					--vdebug( "tried to write in readcallback, result:", tostring(ret) )
+				end
+				if interface.eventreadtimeout then
+					interface.eventreadtimeout:close( )
+					interface.eventreadtimeout = nil
+				end
+			end
+			local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
+			--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
+			buffer = buffer or part
+			if buffer and #buffer > cfg.MAX_READ_LENGTH then  -- check buffer length
+				interface.fatalerror = "receive buffer exceeded"
+				debug( "fatal error:", interface.fatalerror )
 				interface:_close()
 				interface.eventread = nil
 				return -1
-			else -- can read
-				if interface._usingssl then  -- handle luasec
-					if interface.eventwritetimeout then  -- ok, in the past writecallback was regged
-						local ret = interface.writecallback( )  -- call it
-						--vdebug( "tried to write in readcallback, result:", tostring(ret) )
+			end
+			if err and ( err ~= "timeout" and err ~= "wantread" ) then
+				if "wantwrite" == err then -- need to read on write event
+					if not interface.eventwrite then  -- register new write event if needed
+						interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
 					end
-					if interface.eventreadtimeout then
-						interface.eventreadtimeout:close( )
-						interface.eventreadtimeout = nil
-					end
-				end
-				local buffer, err, part = interface.conn:receive( interface._pattern )  -- receive buffer with "pattern"
-				--vdebug( "read data:", tostring(buffer), "error:", tostring(err), "part:", tostring(part) )
-				buffer = buffer or part
-				if buffer and #buffer > cfg.MAX_READ_LENGTH then  -- check buffer length
-					interface.fatalerror = "receive buffer exceeded"
-					debug( "fatal error:", interface.fatalerror )
+					interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
+						function( )
+							interface:_close()
+						end, cfg.READ_TIMEOUT
+					)
+					debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
+					-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
+				else  -- connection was closed or fatal error
+					interface.fatalerror = err
+					debug( "connection failed in read event:", interface.fatalerror )
 					interface:_close()
 					interface.eventread = nil
 					return -1
 				end
-				if err and ( err ~= "timeout" and err ~= "wantread" ) then
-					if "wantwrite" == err then -- need to read on write event
-						if not interface.eventwrite then  -- register new write event if needed
-							interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
-						end
-						interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
-							function( )
-								interface:_close()
-							end, cfg.READ_TIMEOUT
-						)
-						debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
-						-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
-					else  -- connection was closed or fatal error
-						interface.fatalerror = err
-						debug( "connection failed in read event:", interface.fatalerror )
-						interface:_close()
-						interface.eventread = nil
-						return -1
-					end
-				else
-					interface.onincoming( interface, buffer, err )  -- send new data to listener
-				end
-				if interface.noreading then
-					interface.eventread = nil;
-					return -1;
-				end
-				return EV_READ, cfg.READ_TIMEOUT
+			else
+				interface.onincoming( interface, buffer, err )  -- send new data to listener
 			end
+			if interface.noreading then
+				interface.eventread = nil;
+				return -1;
+			end
+			return EV_READ, cfg.READ_TIMEOUT
 		end
 
 		client:settimeout( 0 )  -- set non blocking

@@ -50,7 +50,7 @@ function stream_callbacks.streamopened(session, attr)
 	session.streamid = uuid_generate();
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
 
-	if not hosts[session.host] then
+	if not hosts[session.host] or not hosts[session.host].modules.c2s then
 		-- We don't serve this host...
 		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
 		return;
@@ -79,8 +79,6 @@ function stream_callbacks.streamopened(session, attr)
 
 	local features = st.stanza("stream:features");
 	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-	module:fire_event("stream-features", session, features);
-
 	send(features);
 end
 
@@ -262,9 +260,26 @@ function listener.ondisconnect(conn, err)
 	end
 end
 
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("c2s-read-timeout", { session = session });
+	end
+end
+
+local function keepalive(event)
+	return event.session.send(' ');
+end
+
 function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
+
+function module.add_host(module)
+	module:hook("c2s-read-timeout", keepalive, -1);
+end
+
+module:hook("c2s-read-timeout", keepalive, -1);
 
 module:hook("server-stopping", function(event)
 	local reason = event.reason;
