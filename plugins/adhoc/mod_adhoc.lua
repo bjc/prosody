@@ -6,6 +6,8 @@
 --
 
 local st = require "util.stanza";
+local keys = require "util.iterators".keys;
+local array_collect = require "util.array".collect;
 local is_admin = require "core.usermanager".is_admin;
 local adhoc_handle_cmd = module:require "adhoc".handle_cmd;
 local xmlns_cmd = "http://jabber.org/protocol/commands";
@@ -56,7 +58,9 @@ module:hook("iq/host/"..xmlns_disco.."#items:query", function (event)
 		reply = st.reply(stanza);
 		reply:tag("query", { xmlns = xmlns_disco.."#items",
 		    node = xmlns_cmd });
-		for node, command in pairs(commands) do
+		local nodes = array_collect(keys(commands)):sort();
+		for _, node in ipairs(nodes) do
+			local command = commands[node];
 			if (command.permission == "admin" and admin)
 			    or (command.permission == "global_admin" and global_admin)
 			    or (command.permission == "user") then
