@@ -34,7 +34,6 @@ function _M.handle_cmd(command, origin, stanza)
 
 	local data, state = command:handler(dataIn, states[sessionid]);
 	states[sessionid] = state;
-	local stanza = st.reply(stanza);
 	local cmdtag;
 	if data.status == "completed" then
 		states[sessionid] = nil;
@@ -44,8 +43,8 @@ function _M.handle_cmd(command, origin, stanza)
 		cmdtag = command:cmdtag("canceled", sessionid);
 	elseif data.status == "error" then
 		states[sessionid] = nil;
-		stanza = st.error_reply(stanza, data.error.type, data.error.condition, data.error.message);
-		origin.send(stanza);
+		local reply = st.error_reply(stanza, data.error.type, data.error.condition, data.error.message);
+		origin.send(reply);
 		return true;
 	else
 		cmdtag = command:cmdtag("executing", sessionid);
@@ -78,8 +77,9 @@ function _M.handle_cmd(command, origin, stanza)
 			cmdtag:add_child(content);
 		end
 	end
-	stanza:add_child(cmdtag);
-	origin.send(stanza);
+	local reply = st.reply(stanza);
+	reply:add_child(cmdtag);
+	origin.send(reply);
 
 	return true;
 end
