@@ -100,38 +100,37 @@ local function create_table()
 	end);
 end
 local function set_encoding()
-	if params.driver ~= "SQLite3" then
-		local set_names_query = "SET NAMES 'utf8';";
-		if params.driver == "MySQL" then
-			set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
-		end
-		local success,err = engine:transaction(function() return engine:execute(set_names_query); end);
-		if not success then
-			module:log("error", "Failed to set database connection encoding to UTF8: %s", err);
-			return;
-		end
-		if params.driver == "MySQL" then
-			-- COMPAT w/pre-0.9: Upgrade tables to UTF-8 if not already
-			local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
-			local success,err = engine:transaction(function()
-				local result = engine:execute(check_encoding_query);
-				local n_bad_columns = result:rowcount();
-				if n_bad_columns > 0 then
-					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
-					local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
-					local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
-					for row in result:rows() do
-						local column_name, column_type = unpack(row);
-						engine:execute(fix_column_query1:format(column_name, column_name));
-						engine:execute(fix_column_query2:format(column_name, column_name, column_type));
-					end
-					module:log("info", "Database encoding upgrade complete!");
+	if params.driver == "SQLite3" then return end
+	local set_names_query = "SET NAMES 'utf8';";
+	if params.driver == "MySQL" then
+		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
+	end
+	local success,err = engine:transaction(function() return engine:execute(set_names_query); end);
+	if not success then
+		module:log("error", "Failed to set database connection encoding to UTF8: %s", err);
+		return;
+	end
+	if params.driver == "MySQL" then
+		-- COMPAT w/pre-0.9: Upgrade tables to UTF-8 if not already
+		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
+		local success,err = engine:transaction(function()
+			local result = engine:execute(check_encoding_query);
+			local n_bad_columns = result:rowcount();
+			if n_bad_columns > 0 then
+				module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
+				local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
+				local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
+				for row in result:rows() do
+					local column_name, column_type = unpack(row);
+					engine:execute(fix_column_query1:format(column_name, column_name));
+					engine:execute(fix_column_query2:format(column_name, column_name, column_type));
 				end
-			end);
-			local success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
-			if not success then
-				module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
+				module:log("info", "Database encoding upgrade complete!");
 			end
+		end);
+		local success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
 		end
 	end
 end
