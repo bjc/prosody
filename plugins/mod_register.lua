@@ -170,13 +170,10 @@ local function parse_response(query)
 end
 
 local recent_ips = {};
-local min_seconds_between_registrations = module:get_option("min_seconds_between_registrations");
-local whitelist_only = module:get_option("whitelist_registration_only");
-local whitelisted_ips = module:get_option("registration_whitelist") or { "127.0.0.1" };
-local blacklisted_ips = module:get_option("registration_blacklist") or {};
-
-for _, ip in ipairs(whitelisted_ips) do whitelisted_ips[ip] = true; end
-for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
+local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
+local whitelist_only = module:get_option_boolean("whitelist_registration_only");
+local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1" })._items;
+local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
 
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
