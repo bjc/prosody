@@ -255,6 +255,7 @@ local function check_cert_status(session)
 				else
 					session.cert_identity_status = "invalid"
 				end
+				(session.log or log)("debug", "certificate identity validation result: %s", session.cert_identity_status);
 			end
 		end
 	end
