@@ -642,7 +642,7 @@ function check_auth_policy(event)
 		must_secure = false;
 	end
 	
-	if must_secure and not session.cert_identity_status then
+	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		module:log("warn", "Forbidding insecure connection to/from %s", host);
 		if session.direction == "incoming" then
 			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host });
