@@ -85,7 +85,7 @@ static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
 	if (key_len > 64) {
 		desc->Init(desc->ctx);
 		desc->Update(desc->ctx, key, key_len);
-		desc->Final(desc->ctx, hashedKey);
+		desc->Final(hashedKey, desc->ctx);
 		key = (const char*)hashedKey;
 		key_len = desc->digestLength;
 	}
