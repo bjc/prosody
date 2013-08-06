@@ -246,7 +246,7 @@ local function check_cert_status(session)
 		-- Is there any interest in printing out all/the number of errors here?
 		if not chain_valid then
 			(session.log or log)("debug", "certificate chain validation result: invalid");
-			for depth, t in ipairs(errors or NULL) do
+			for depth, t in pairs(errors or NULL) do
 				(session.log or log)("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
 			end
 			session.cert_chain_status = "invalid";
@@ -262,6 +262,7 @@ local function check_cert_status(session)
 				else
 					session.cert_identity_status = "invalid"
 				end
+				(session.log or log)("debug", "certificate identity validation result: %s", session.cert_identity_status);
 			end
 		end
 	end
@@ -658,7 +659,7 @@ function check_auth_policy(event)
 		must_secure = false;
 	end
 	
-	if must_secure and not session.cert_identity_status then
+	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		module:log("warn", "Forbidding insecure connection to/from %s", host);
 		if session.direction == "incoming" then
 			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host });
