@@ -673,7 +673,7 @@ end
 -- I think there's going to be more confusion among operators if we
 -- break from that.
 local function print_errors(print, errors)
-	for depth, t in ipairs(errors) do
+	for depth, t in pairs(errors) do
 		print(
 			("    %d: %s"):format(
 				depth-1,
