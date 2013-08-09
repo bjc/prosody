@@ -137,16 +137,16 @@ end
 
 do -- process options to get a db connection
 	params = params or { driver = "SQLite3" };
-	
+
 	if params.driver == "SQLite3" then
 		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
 	end
-	
+
 	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
 
 	--local dburi = db2uri(params);
 	engine = mod_sql:create_engine(params);
-	
+
 	-- Encoding mess
 	set_encoding();
 
@@ -204,7 +204,7 @@ local function keyval_store_get()
 end
 local function keyval_store_set(data)
 	engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user or "", store);
-	
+
 	if data and next(data) ~= nil then
 		local extradata = {};
 		for key, value in pairs(data) do

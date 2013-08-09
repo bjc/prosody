@@ -78,7 +78,7 @@ function on_destroy_request(request)
 				break;
 			end
 		end
-		
+
 		-- If this session now has no requests open, mark it as inactive
 		local max_inactive = session.bosh_max_inactive;
 		if max_inactive and #requests == 0 then
@@ -121,7 +121,7 @@ function handle_POST(event)
 	if cross_domain and event.request.headers.origin then
 		set_cross_domain_headers(response);
 	end
-	
+
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
 	-- In particular, the streamopened() stream callback is where
@@ -131,7 +131,7 @@ function handle_POST(event)
 		module:log("warn", "Error parsing BOSH payload")
 		return 400;
 	end
-	
+
 	-- Stanzas (if any) in the request have now been processed, and
 	-- we take care of the high-level BOSH logic here, including
 	-- giving a response or putting the request "on hold".
@@ -164,7 +164,7 @@ function handle_POST(event)
 			session.send_buffer = {};
 			session.send(resp);
 		end
-		
+
 		if not response.finished then
 			-- We're keeping this request open, to respond later
 			log("debug", "Have nothing to say, so leaving request unanswered for now");
@@ -172,7 +172,7 @@ function handle_POST(event)
 				waiting_requests[response] = os_time() + session.bosh_wait;
 			end
 		end
-		
+
 		if session.bosh_terminate then
 			session.log("debug", "Closing session with %d requests open", #session.requests);
 			session:close();
@@ -192,10 +192,10 @@ local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
 
 local function bosh_close_stream(session, reason)
 	(session.log or log)("info", "BOSH client disconnected");
-	
+
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams });
-	
+
 
 	if reason then
 		close_reply.attr.condition = "remote-stream-error";
@@ -236,7 +236,7 @@ function stream_callbacks.streamopened(context, attr)
 	if not sid then
 		-- New session request
 		context.notopen = nil; -- Signals that we accept this opening tag
-		
+
 		-- TODO: Sanity checks here (rid, to, known host, etc.)
 		if not hosts[attr.to] then
 			-- Unknown host
@@ -246,7 +246,7 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
-		
+
 		-- New session
 		sid = new_uuid();
 		local session = {
@@ -259,9 +259,9 @@ function stream_callbacks.streamopened(context, attr)
 			ip = get_ip_from_request(request);
 		};
 		sessions[sid] = session;
-		
+
 		local filter = initialize_filters(session);
-		
+
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 
@@ -308,7 +308,7 @@ function stream_callbacks.streamopened(context, attr)
 		end
 		request.sid = sid;
 	end
-	
+
 	local session = sessions[sid];
 	if not session then
 		-- Unknown sid
@@ -317,7 +317,7 @@ function stream_callbacks.streamopened(context, attr)
 		context.notopen = nil;
 		return;
 	end
-	
+
 	if session.rid then
 		local rid = tonumber(attr.rid);
 		local diff = rid - session.rid;
@@ -334,7 +334,7 @@ function stream_callbacks.streamopened(context, attr)
 		end
 		session.rid = rid;
 	end
-	
+
 	if attr.type == "terminate" then
 		-- Client wants to end this session, which we'll do
 		-- after processing any stanzas in this request
@@ -388,7 +388,7 @@ function stream_callbacks.error(context, error)
 		response:send();
 		return;
 	end
-	
+
 	local session = sessions[context.sid];
 	if error == "stream-error" then -- Remote stream error, we close normally
 		session:close();
@@ -412,7 +412,7 @@ function on_timer()
 			end
 		end
 	end
-	
+
 	now = now - 3;
 	local n_dead_sessions = 0;
 	for session, close_after in pairs(inactive_sessions) do

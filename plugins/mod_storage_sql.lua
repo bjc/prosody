@@ -93,7 +93,7 @@ local function create_table()
 	elseif params.driver == "MySQL" then
 		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
 	end
-	
+
 	local stmt, err = connection:prepare(create_sql);
 	if stmt then
 		local ok = stmt:execute();
@@ -159,18 +159,18 @@ do -- process options to get a db connection
 	end
 
 	params = params or { driver = "SQLite3" };
-	
+
 	if params.driver == "SQLite3" then
 		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
 	end
-	
+
 	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
 
 	dburi = db2uri(params);
 	connection = connections[dburi];
-	
+
 	assert(connect());
-	
+
 	-- Automatically create table, ignore failure (table probably already exists)
 	create_table();
 end
@@ -209,7 +209,7 @@ local function dosql(sql, ...)
 	local ok, err = stmt:execute(...);
 	if not ok and not test_connection() then error("connection failed"); end
 	if not ok then return nil, err; end
-	
+
 	return stmt;
 end
 local function getsql(sql, ...)
@@ -236,7 +236,7 @@ end
 local function keyval_store_get()
 	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	if not stmt then return rollback(nil, err); end
-	
+
 	local haveany;
 	local result = {};
 	for row in stmt:rows(true) do
@@ -256,7 +256,7 @@ end
 local function keyval_store_set(data)
 	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?");
 	if not affected then return rollback(affected, err); end
-	
+
 	if data and next(data) ~= nil then
 		local extradata = {};
 		for key, value in pairs(data) do
@@ -314,7 +314,7 @@ end
 local function map_store_get(key)
 	local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	if not stmt then return rollback(nil, err); end
-	
+
 	local haveany;
 	local result = {};
 	for row in stmt:rows(true) do
@@ -334,7 +334,7 @@ end
 local function map_store_set(key, data)
 	local affected, err = setsql("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
 	if not affected then return rollback(affected, err); end
-	
+
 	if data and next(data) ~= nil then
 		if type(key) == "string" and key ~= "" then
 			local t, value = serialize(data);
@@ -365,15 +365,15 @@ local list_store = {};
 list_store.__index = list_store;
 function list_store:scan(username, from, to, jid, typ)
 	user,store = username,self.store;
-	
+
 	local cols = {"from", "to", "jid", "typ"};
 	local vals = { from ,  to ,  jid ,  typ };
 	local stmt, err;
 	local query = "SELECT * FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=?";
-	
+
 	query = query.." ORDER BY time";
 	--local stmt, err = getsql("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", key or "");
-	
+
 	return nil, "not-implemented"
 end
 
