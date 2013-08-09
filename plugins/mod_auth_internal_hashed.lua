@@ -62,12 +62,12 @@ function provider.test_password(username, password)
 	if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
 		return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 	end
-	
+
 	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
-	
+
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
-	
+
 	if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key then
 		return true;
 	else
@@ -83,7 +83,7 @@ function provider.set_password(username, password)
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
 		local stored_key_hex = to_hex(stored_key);
 		local server_key_hex = to_hex(server_key);
-		
+
 		account.stored_key = stored_key_hex
 		account.server_key = server_key_hex
 
@@ -134,7 +134,7 @@ function provider.get_sasl_handler()
 				credentials = accounts:get(username);
 				if not credentials then return; end
 			end
-			
+
 			local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
 			stored_key = stored_key and from_hex(stored_key);
 			server_key = server_key and from_hex(server_key);
@@ -143,6 +143,6 @@ function provider.get_sasl_handler()
 	};
 	return new_sasl(host, testpass_authentication_profile);
 end
-	
+
 module:provides("auth", provider);
 

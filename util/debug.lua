@@ -93,14 +93,14 @@ function get_traceback_table(thread, start_level)
 			info = debug.getinfo(level+1);
 		end
 		if not info then break; end
-		
+
 		levels[(level-start_level)+1] = {
 			level = level;
 			info = info;
 			locals = get_locals_table(level+1);
 			upvalues = get_upvalues_table(info.func);
 		};
-	end	
+	end
 	return levels;
 end
 
@@ -137,12 +137,12 @@ function _traceback(thread, message, level)
 	level = level or 1;
 
 	message = message and (message.."\n") or "";
-	
+
 	-- +3 counts for this function, and the pcall() and wrapper above us
 	local levels = get_traceback_table(thread, level+3);
-	
+
 	local last_source_desc;
-	
+
 	local lines = {};
 	for nlevel, level in ipairs(levels) do
 		local info = level.info;

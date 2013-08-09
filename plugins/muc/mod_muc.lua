@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -16,7 +16,7 @@ local muc_name = module:get_option("name");
 if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local restrict_room_creation = module:get_option("restrict_room_creation");
 if restrict_room_creation then
-	if restrict_room_creation == true then 
+	if restrict_room_creation == true then
 		restrict_room_creation = "admin";
 	elseif restrict_room_creation ~= "admin" and restrict_room_creation ~= "local" then
 		restrict_room_creation = nil;

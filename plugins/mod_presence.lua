@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -227,7 +227,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 	local st_from, st_to = stanza.attr.from, stanza.attr.to;
 	stanza.attr.from, stanza.attr.to = from_bare, to_bare;
 	log("debug", "inbound presence %s from %s for %s", stanza.attr.type, from_bare, to_bare);
-	
+
 	if stanza.attr.type == "probe" then
 		local result, err = rostermanager.is_contact_subscribed(node, host, from_bare);
 		if result then
@@ -312,7 +312,7 @@ module:hook("presence/bare", function(data)
 		if t ~= nil and t ~= "unavailable" and t ~= "error" then -- check for subscriptions and probes sent to bare JID
 			return handle_inbound_presence_subscriptions_and_probes(origin, stanza, jid_bare(stanza.attr.from), jid_bare(stanza.attr.to));
 		end
-	
+
 		local user = bare_sessions[to];
 		if user then
 			for _, session in pairs(user.sessions) do
@@ -347,7 +347,7 @@ end);
 module:hook("presence/host", function(data)
 	-- inbound presence to the host
 	local stanza = data.stanza;
-	
+
 	local from_bare = jid_bare(stanza.attr.from);
 	local t = stanza.attr.type;
 	if t == "probe" then

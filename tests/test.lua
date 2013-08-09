@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -20,7 +20,7 @@ function run_all_tests()
 	dotest "util.ip"
 	dotest "util.stanza"
 	dotest "util.sasl.scram"
-	
+
 	dosingletest("test_sasl.lua", "latin1toutf8");
 end
 
@@ -87,12 +87,12 @@ function dosingletest(testname, fname)
 		print("WARNING: ", "Failed to initialise tests for "..testname, err);
 		return;
 	end
-	
+
 	if type(tests[fname]) ~= "function" then
 		error(testname.." has no test '"..fname.."'", 0);
 	end
-	
-	
+
+
 	local line_hook, line_info = new_line_coverage_monitor(testname);
 	debug.sethook(line_hook, "l")
 	local success, ret = pcall(tests[fname]);
@@ -134,7 +134,7 @@ function dotest(unitname)
 		print("WARNING: ", "Failed to load module: "..unitname, err);
 		return;
 	end
-	
+
 	local oldmodule, old_M = _fakeG.module, _fakeG._M;
 	_fakeG.module = function () _M = unit end
 	setfenv(chunk, unit);
@@ -144,7 +144,7 @@ function dotest(unitname)
 		print("WARNING: ", "Failed to initialise module: "..unitname, err);
 		return;
 	end
-	
+
 	if type(ret) == "table" then
 		for k,v in pairs(ret) do
 			unit[k] = v;
@@ -197,11 +197,11 @@ end
 function new_line_coverage_monitor(file)
 	local lines_hit, funcs_hit = {}, {};
 	local total_lines, covered_lines = 0, 0;
-	
+
 	for line in io.lines(file) do
 		total_lines = total_lines + 1;
 	end
-	
+
 	return function (event, line) -- Line hook
 			if not lines_hit[line] then
 				local info = debug.getinfo(2, "fSL")

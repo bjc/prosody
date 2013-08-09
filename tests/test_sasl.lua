@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -30,7 +30,7 @@ function latin1toutf8()
 	local function assert_utf8(latin, utf8)
 			assert_equal(_latin1toutf8(latin), utf8, "Incorrect UTF8 from Latin1: "..tostring(latin));
 	end
-	
+
 	assert_utf8("", "")
 	assert_utf8("test", "test")
 	assert_utf8(nil, nil)

@@ -1,7 +1,7 @@
--- 
+--
 -- server.lua by blastbeat of the luadch project
 -- Re-used here under the MIT/X Consortium License
--- 
+--
 -- Modifications (C) 2008-2010 Matthew Wild, Waqas Hussain
 --
 
@@ -607,7 +607,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			shutdown = id
 			_socketlist[ socket ] = handler
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
-			
+
 			-- remove traces of the old socket
 			_readlistlen = removesocket( _readlist, oldsocket, _readlistlen )
 			_sendlistlen = removesocket( _sendlist, oldsocket, _sendlistlen )
@@ -695,7 +695,7 @@ local function link(sender, receiver, buffersize)
 			sender_locked = nil;
 		end
 	end
-	
+
 	local _readbuffer = sender.readbuffer;
 	function sender.readbuffer()
 		_readbuffer();
@@ -969,7 +969,7 @@ return {
 
 	addclient = addclient,
 	wrapclient = wrapclient,
-	
+
 	loop = loop,
 	link = link,
 	step = step,

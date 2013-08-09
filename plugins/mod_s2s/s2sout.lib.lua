@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -47,14 +47,14 @@ end
 function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
 	host_session.version = 1;
-	
+
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
 		-- Intentionally not returning here, the
 		-- session is needed, connected or not
 		s2s_destroy_session(host_session);
 	end
-	
+
 	if not host_session.sends2s then
 		-- A sends2s which buffers data (until the stream is opened)
 		-- note that data in this buffer will be sent before the stream is authed
@@ -75,11 +75,11 @@ end
 function s2sout.attempt_connection(host_session, err)
 	local to_host = host_session.to_host;
 	local connect_host, connect_port = to_host and idna_to_ascii(to_host), 5269;
-	
+
 	if not connect_host then
 		return false;
 	end
-	
+
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
@@ -100,7 +100,7 @@ function s2sout.attempt_connection(host_session, err)
 					return;
 				end
 				t_sort(srv_hosts, compare_srv_priorities);
-				
+
 				local srv_choice = srv_hosts[1];
 				host_session.srv_choice = 1;
 				if srv_choice then
@@ -119,7 +119,7 @@ function s2sout.attempt_connection(host_session, err)
 				end
 			end
 		end, "_xmpp-server._tcp."..connect_host..".", "SRV");
-		
+
 		return true; -- Attempt in progress
 	elseif host_session.ip_hosts then
 		return s2sout.try_connect(host_session, connect_host, connect_port, err);
@@ -133,7 +133,7 @@ function s2sout.attempt_connection(host_session, err)
 		-- We're out of options
 		return false;
 	end
-	
+
 	if not (connect_host and connect_port) then
 		-- Likely we couldn't resolve DNS
 		log("warn", "Hmm, we're without a host (%s) and port (%s) to connect to for %s, giving up :(", tostring(connect_host), tostring(connect_port), tostring(to_host));
@@ -280,7 +280,7 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	else
 		handler = "Unsupported protocol: "..tostring(proto);
 	end
-	
+
 	if not conn then
 		log("warn", "Failed to create outgoing connection, system error: %s", handler);
 		return false, handler;
@@ -292,10 +292,10 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 		log("warn", "s2s connect() to %s (%s:%d) failed: %s", host_session.to_host, connect_host.addr, connect_port, err);
 		return false, err;
 	end
-	
+
 	conn = wrapclient(conn, connect_host.addr, connect_port, s2s_listener, "*a");
 	host_session.conn = conn;
-	
+
 	local filter = initialize_filters(host_session);
 	local w, log = conn.write, host_session.log;
 	host_session.sends2s = function (t)
@@ -310,11 +310,11 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 			end
 		end
 	end
-	
+
 	-- Register this outgoing connection so that xmppserver_listener knows about it
 	-- otherwise it will assume it is a new incoming connection
 	s2s_listener.register_outgoing(conn, host_session);
-	
+
 	log("debug", "Connection attempt in progress...");
 	return true;
 end

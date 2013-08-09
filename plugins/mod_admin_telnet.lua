@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -60,20 +60,20 @@ function console:new_session(conn)
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
-	
+
 	-- Load up environment with helper objects
 	for name, t in pairs(def_env) do
 		if type(t) == "table" then
 			session.env[name] = setmetatable({ session = session }, { __index = t });
 		end
 	end
-	
+
 	return session;
 end
 
 function console:process_line(session, line)
 	local useglobalenv;
-	
+
 	if line:match("^>") then
 		line = line:gsub("^>", "");
 		useglobalenv = true;
@@ -87,9 +87,9 @@ function console:process_line(session, line)
 			return;
 		end
 	end
-	
+
 	session.env._ = line;
-	
+
 	local chunkname = "=console";
 	local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
 	local chunk, err = envload("return "..line, chunkname, env);
@@ -103,20 +103,20 @@ function console:process_line(session, line)
 			return;
 		end
 	end
-	
+
 	local ranok, taskok, message = pcall(chunk);
-	
+
 	if not (ranok or message or useglobalenv) and commands[line:lower()] then
 		commands[line:lower()](session, line);
 		return;
 	end
-	
+
 	if not ranok then
 		session.print("Fatal error while running command, it did not complete");
 		session.print("Error: "..taskok);
 		return;
 	end
-	
+
 	if not message then
 		session.print("Result: "..tostring(taskok));
 		return;
@@ -125,7 +125,7 @@ function console:process_line(session, line)
 		session.print("Message: "..tostring(message));
 		return;
 	end
-	
+
 	session.print("OK: "..tostring(message));
 end
 
@@ -344,9 +344,9 @@ end
 
 function def_env.module:load(name, hosts, config)
 	local mm = require "modulemanager";
-	
+
 	hosts = get_hosts_set(hosts);
-	
+
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0, nil;
 	for host in hosts do
@@ -367,15 +367,15 @@ function def_env.module:load(name, hosts, config)
 			end
 		end
 	end
-	
-	return ok, (ok and "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));	
+
+	return ok, (ok and "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
 function def_env.module:unload(name, hosts)
 	local mm = require "modulemanager";
 
 	hosts = get_hosts_set(hosts, name);
-	
+
 	-- Unload the module for each host
 	local ok, err, count = true, nil, 0;
 	for host in hosts do
@@ -433,7 +433,7 @@ function def_env.module:list(hosts)
 	if type(hosts) ~= "table" then
 		return false, "Please supply a host or a list of hosts you would like to see";
 	end
-	
+
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
 		print((host == "*" and "Global" or host)..":");
@@ -520,7 +520,7 @@ function def_env.c2s:count(match_jid)
 	show_c2s(function (jid, session)
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
-		end		
+		end
 	end);
 	return true, "Total: "..count.." clients";
 end
@@ -540,7 +540,7 @@ function def_env.c2s:show(match_jid)
 				status = session.presence:get_child_text("show") or "available";
 			end
 			print(session_flags(session, { "   "..jid.." - "..status.."("..priority..")" }));
-		end		
+		end
 	end);
 	return true, "Total: "..count.." clients";
 end
@@ -551,7 +551,7 @@ function def_env.c2s:show_insecure(match_jid)
 		if ((not match_jid) or jid:match(match_jid)) and not session.secure then
 			count = count + 1;
 			print(jid);
-		end		
+		end
 	end);
 	return true, "Total: "..count.." insecure client connections";
 end
@@ -562,7 +562,7 @@ function def_env.c2s:show_secure(match_jid)
 		if ((not match_jid) or jid:match(match_jid)) and session.secure then
 			count = count + 1;
 			print(jid);
-		end		
+		end
 	end);
 	return true, "Total: "..count.." secure client connections";
 end
@@ -582,10 +582,10 @@ end
 def_env.s2s = {};
 function def_env.s2s:show(match_jid)
 	local print = self.session.print;
-	
+
 	local count_in, count_out = 0,0;
 	local s2s_list = { };
-	
+
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	for _, session in pairs(s2s_sessions) do
 		local remotehost, localhost, direction;
@@ -724,18 +724,18 @@ function def_env.s2s:showcert(domain)
 	local domain_certs = array.collect(values(cert_set));
 	-- Phew. We now have a array of unique certificates presented by domain.
 	local n_certs = #domain_certs;
-	
+
 	if n_certs == 0 then
 		return "No certificates found for "..domain;
 	end
-	
+
 	local function _capitalize_and_colon(byte)
 		return string.upper(byte)..":";
 	end
 	local function pretty_fingerprint(hash)
 		return hash:gsub("..", _capitalize_and_colon):sub(1, -2);
 	end
-	
+
 	for cert_info in values(domain_certs) do
 		local certs = cert_info.certs;
 		local cert = certs[1];
@@ -777,7 +777,7 @@ end
 function def_env.s2s:close(from, to)
 	local print, count = self.session.print, 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
-	
+
 	local match_id;
 	if from and not to then
 		match_id, from = from;
@@ -786,7 +786,7 @@ function def_env.s2s:close(from, to)
 	elseif from == to then
 		return false, "Both from and to are the same... you can't do that :)";
 	end
-	
+
 	for _, session in pairs(s2s_sessions) do
 		local id = session.type..tostring(session):match("[a-f0-9]+$");
 		if (match_id and match_id == id)
@@ -1031,12 +1031,12 @@ function printbanner(session)
 	local option = module:get_option("console_banner");
 	if option == nil or option == "full" or option == "graphic" then
 		session.print [[
-                   ____                \   /     _       
-                    |  _ \ _ __ ___  ___  _-_   __| |_   _ 
+                   ____                \   /     _
+                    |  _ \ _ __ ___  ___  _-_   __| |_   _
                     | |_) | '__/ _ \/ __|/ _ \ / _` | | | |
                     |  __/| | | (_) \__ \ |_| | (_| | |_| |
                     |_|   |_|  \___/|___/\___/ \__,_|\__, |
-                    A study in simplicity            |___/ 
+                    A study in simplicity            |___/
 
 ]]
 	end
