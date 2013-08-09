@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -154,10 +154,10 @@ local function session_close(session, reason)
 			log("debug", "Disconnecting client, <stream:error> is: %s", stream_error);
 			session.send(stream_error);
 		end
-		
+
 		session.send("</stream:stream>");
 		function session.send() return false; end
-		
+
 		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
 		session.log("info", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
 
@@ -193,9 +193,9 @@ end, 200);
 function listener.onconnect(conn)
 	local session = sm_new_session(conn);
 	sessions[conn] = session;
-	
+
 	session.log("info", "Client connected");
-	
+
 	-- Client is using legacy SSL (otherwise mod_tls sets this flag)
 	if conn:ssl() then
 		session.secure = true;
@@ -208,22 +208,22 @@ function listener.onconnect(conn)
 			session.compressed = sock:compression(); --COMPAT mw/luasec-hg
 		end
 	end
-	
+
 	if opt_keepalives then
 		conn:setoption("keepalive", opt_keepalives);
 	end
-	
+
 	session.close = session_close;
-	
+
 	local stream = new_xmpp_stream(session, stream_callbacks);
 	session.stream = stream;
 	session.notopen = true;
-	
+
 	function session.reset_stream()
 		session.notopen = true;
 		session.stream:reset();
 	end
-	
+
 	session.thread = coroutine.create(function (stanza)
 		while true do
 			core_process_stanza(session, stanza);

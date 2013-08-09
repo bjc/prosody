@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -102,16 +102,16 @@ local function handle_registration_stanza(event)
 				session.send(st.reply(stanza));
 				return old_session_close(session, ...);
 			end
-			
+
 			local ok, err = usermanager_delete_user(username, host);
-			
+
 			if not ok then
 				module:log("debug", "Removing user account %s@%s failed: %s", username, host, err);
 				session.close = old_session_close;
 				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
 				return true;
 			end
-			
+
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
@@ -206,7 +206,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						else
 							local ip = recent_ips[session.ip];
 							ip.count = ip.count + 1;
-							
+
 							if os_time() - ip.time < min_seconds_between_registrations then
 								ip.time = os_time();
 								session.send(st.error_reply(stanza, "wait", "not-acceptable"));

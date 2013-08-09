@@ -753,7 +753,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		return nil, err;
 	end
 	conn:send (o.packet)
-	
+
 	if timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
@@ -849,7 +849,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					-- retire the query
 					local queries = self.active[response.header.id];
 					queries[response.question.raw] = nil;
-					
+
 					if not next(queries) then self.active[response.header.id] = nil; end
 					if not next(self.active) then self:closeall(); end
 
@@ -864,7 +864,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 						set(self.wanted, q.class, q.type, q.name, nil);
 					end
 				end
-				
+
 			end
 		end
 	end

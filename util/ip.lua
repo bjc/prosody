@@ -92,7 +92,7 @@ local function v6scope(ip)
 	if ip:match("^[0:]*1$") then
 		return 0x2;
 	-- Link-local unicast:
-	elseif ip:match("^[Ff][Ee][89ABab]") then 
+	elseif ip:match("^[Ff][Ee][89ABab]") then
 		return 0x2;
 	-- Site-local unicast:
 	elseif ip:match("^[Ff][Ee][CcDdEeFf]") then

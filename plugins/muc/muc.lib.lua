@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -147,10 +147,10 @@ function room_mt:send_history(to, stanza)
 	if history then
 		local x_tag = stanza and stanza:get_child("x", "http://jabber.org/protocol/muc");
 		local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
-		
+
 		local maxchars = history_tag and tonumber(history_tag.attr.maxchars);
 		if maxchars then maxchars = math.floor(maxchars); end
-		
+
 		local maxstanzas = math.floor(history_tag and tonumber(history_tag.attr.maxstanzas) or #history);
 		if not history_tag then maxstanzas = 20; end
 
@@ -163,7 +163,7 @@ function room_mt:send_history(to, stanza)
 
 		local n = 0;
 		local charcount = 0;
-		
+
 		for i=#history,1,-1 do
 			local entry = history[i];
 			if maxchars then
@@ -351,7 +351,7 @@ local function construct_stanza_id(room, stanza)
 	local from_nick = room._jid_nick[from_jid];
 	local occupant = room._occupants[to_nick];
 	local to_jid = occupant.jid;
-	
+
 	return from_nick, to_jid, base64.encode(to_jid.."\0"..stanza.attr.id.."\0"..md5(from_jid));
 end
 local function deconstruct_stanza_id(room, stanza)

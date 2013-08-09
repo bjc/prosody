@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -16,7 +16,7 @@ function compare_srv_priorities(csp)
 	local r3 = { priority = 1000, weight = 2 }
 	local r4 = { priority = 1000, weight = 2 }
 	local r5 = { priority = 1000, weight = 5 }
-	
+
 	assert_equal(csp(r1, r1), false);
 	assert_equal(csp(r1, r2), true);
 	assert_equal(csp(r1, r3), true);

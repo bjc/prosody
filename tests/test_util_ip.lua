@@ -31,9 +31,9 @@ end
 
 function parse_cidr(parse_cidr, _M)
 	local new_ip = _M.new_ip;
-	
+
 	assert_equal(new_ip"0.0.0.0", new_ip"0.0.0.0")
-	
+
 	local function assert_cidr(cidr, ip, bits)
 		local parsed_ip, parsed_bits = parse_cidr(cidr);
 		assert_equal(new_ip(ip), parsed_ip, cidr.." parsed ip is "..ip);

@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -64,7 +64,7 @@ function new_async_socket(sock, resolver)
 			if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
 				log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
 			end
-		
+
 			resolver:servfail(conn); -- Let the magic commence
 		end
 	end
@@ -72,7 +72,7 @@ function new_async_socket(sock, resolver)
 	if not handler then
 		return nil, err;
 	end
-	
+
 	handler.settimeout = function () end
 	handler.setsockname = function (_, ...) return sock:setsockname(...); end
 	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(dummy_send); return ret; end

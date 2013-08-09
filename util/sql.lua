@@ -45,7 +45,7 @@ function String(n) return "String()" end
 };
 
 local functions = {
-	
+
 };
 
 local cmap = {

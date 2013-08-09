@@ -39,7 +39,7 @@ local provider_mt = { __index = new_null_provider() };
 function initialize_host(host)
 	local host_session = hosts[host];
 	if host_session.type ~= "local" then return; end
-	
+
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "authentication") or default_provider;
@@ -115,10 +115,10 @@ function is_admin(jid, host)
 	local is_admin;
 	jid = jid_bare(jid);
 	host = host or "*";
-	
+
 	local host_admins = config.get(host, "admins");
 	local global_admins = config.get("*", "admins");
-	
+
 	if host_admins and host_admins ~= global_admins then
 		if type(host_admins) == "table" then
 			for _,admin in ipairs(host_admins) do
@@ -131,7 +131,7 @@ function is_admin(jid, host)
 			log("error", "Option 'admins' for host '%s' is not a list", host);
 		end
 	end
-	
+
 	if not is_admin and global_admins then
 		if type(global_admins) == "table" then
 			for _,admin in ipairs(global_admins) do
@@ -144,7 +144,7 @@ function is_admin(jid, host)
 			log("error", "Global option 'admins' is not a list");
 		end
 	end
-	
+
 	-- Still not an admin, check with auth provider
 	if not is_admin and host ~= "*" and hosts[host].users and hosts[host].users.is_admin then
 		is_admin = hosts[host].users.is_admin(jid);

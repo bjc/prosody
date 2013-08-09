@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -25,7 +25,7 @@ function it.reverse(f, s, var)
 	        if var == nil then break; end
 		t_insert(results, 1, ret);
 	end
-	
+
 	-- Then return our reverse one
 	local i,max = 0, #results;
 	return function (results)
@@ -56,7 +56,7 @@ end
 -- Given an iterator, iterate only over unique items
 function it.unique(f, s, var)
 	local set = {};
-	
+
 	return function ()
 		while true do
 			local ret = pack(f(s, var));
@@ -73,13 +73,13 @@ end
 --[[ Return the number of items an iterator returns ]]--
 function it.count(f, s, var)
 	local x = 0;
-	
+
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
 		x = x + 1;
 	end
-	
+
 	return x;
 end
 
