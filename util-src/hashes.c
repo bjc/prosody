@@ -79,7 +79,7 @@ static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
 	};
 
 	int i;
-	char hashedKey[64]; /* Maximum used digest length */
+	unsigned char hashedKey[64]; /* Maximum used digest length */
 	union xory k_ipad, k_opad;
 
 	if (key_len > 64) {
