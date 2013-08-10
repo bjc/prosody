@@ -13,6 +13,7 @@ local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 
 local log = module._log;
+local host = module.host;
 
 local accounts = module:open_store("accounts");
 
@@ -40,11 +41,11 @@ end
 -- Default; can be set per-user
 local iteration_count = 4096;
 
-local host = module.host;
 -- define auth provider
 local provider = {};
 
 function provider.test_password(username, password)
+	log("debug", "test password for user '%s'", username);
 	local credentials = accounts:get(username) or {};
 
 	if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
@@ -76,6 +77,7 @@ function provider.test_password(username, password)
 end
 
 function provider.set_password(username, password)
+	log("debug", "set_password for username '%s'", username);
 	local account = accounts:get(username);
 	if account then
 		account.salt = account.salt or generate_uuid();
@@ -96,7 +98,7 @@ end
 function provider.user_exists(username)
 	local account = accounts:get(username);
 	if not account then
-		log("debug", "account not found for username '%s' at host '%s'", username, host);
+		log("debug", "account not found for username '%s'", username);
 		return nil, "Auth failed. Invalid username";
 	end
 	return true;
