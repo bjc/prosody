@@ -26,7 +26,7 @@ function initiate_dialback(session)
 	-- generate dialback key
 	session.dialback_key = generate_dialback(session.streamid, session.to_host, session.from_host);
 	session.sends2s(st.stanza("db:result", { from = session.from_host, to = session.to_host }):text(session.dialback_key));
-	session.log("info", "sent dialback key on outgoing s2s stream");
+	session.log("debug", "sent dialback key on outgoing s2s stream");
 end
 
 function verify_dialback(id, to, from, key)
@@ -71,7 +71,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 
 		if not hosts[to] then
 			-- Not a host that we serve
-			origin.log("info", "%s tried to connect to %s, which we don't serve", from, to);
+			origin.log("warn", "%s tried to connect to %s, which we don't serve", from, to);
 			origin:close("host-unknown");
 			return true;
 		elseif not from then
