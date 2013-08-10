@@ -42,7 +42,6 @@ local iteration_count = 4096;
 local host = module.host;
 -- define auth provider
 local provider = {};
-log("debug", "initializing internal_hashed authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
 	local credentials = accounts:get(username) or {};
