@@ -35,6 +35,7 @@ function provider.get_password(username)
 end
 
 function provider.set_password(username, password)
+	log("debug", "set_password for username '%s'", username);
 	local account = accounts:get(username);
 	if account then
 		account.password = password;
