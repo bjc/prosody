@@ -7,11 +7,12 @@
 -- COPYING file in the source package for more information.
 --
 
-local log = require "util.logger".init("auth_internal_hashed");
 local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
+
+local log = module._log;
 
 local accounts = module:open_store("accounts");
 
