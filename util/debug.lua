@@ -24,11 +24,13 @@ do
 end
 module("debugx", package.seeall);
 
-function get_locals_table(level)
-	level = level + 1; -- Skip this function itself
+function get_locals_table(thread, level)
+	if not thread then
+		level = level + 1; -- Skip this function itself
+	end
 	local locals = {};
 	for local_num = 1, math.huge do
-		local name, value = debug.getlocal(level, local_num);
+		local name, value = debug.getlocal(thread, level, local_num);
 		if not name then break; end
 		table.insert(locals, { name = name, value = value });
 	end
@@ -97,7 +99,7 @@ function get_traceback_table(thread, start_level)
 		levels[(level-start_level)+1] = {
 			level = level;
 			info = info;
-			locals = not thread and get_locals_table(level+1);
+			locals = get_locals_table(thread, level+(thread and 0 or 1));
 			upvalues = get_upvalues_table(info.func);
 		};
 	end
