@@ -491,7 +491,7 @@ int string2resource(const char *s) {
 	return -1;
 }
 
-int arg_to_rlimit(lua_State* L, int idx, rlim_t current) {
+unsigned long int arg_to_rlimit(lua_State* L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
 	case LUA_TSTRING:
 		if(strcmp(lua_tostring(L, idx), "unlimited") == 0)
