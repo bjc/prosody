@@ -16,7 +16,6 @@ local accounts = module:open_store("accounts");
 
 -- define auth provider
 local provider = {};
-log("debug", "initializing internal_plain authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
 	log("debug", "test password for user '%s'", username);
