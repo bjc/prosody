@@ -25,12 +25,14 @@ end
 module("debugx", package.seeall);
 
 function get_locals_table(thread, level)
-	if not thread then
-		level = level + 1; -- Skip this function itself
-	end
 	local locals = {};
 	for local_num = 1, math.huge do
-		local name, value = debug.getlocal(thread, level, local_num);
+		local name, value;
+		if thread then
+			name, value = debug.getlocal(thread, level, local_num);
+		else
+			name, value = debug.getlocal(level+1, local_num);
+		end
 		if not name then break; end
 		table.insert(locals, { name = name, value = value });
 	end
