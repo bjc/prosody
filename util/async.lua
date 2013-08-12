@@ -37,6 +37,8 @@ local function waiter(num)
 		num = num - 1;
 		if num == 0 and waiting then
 			runner_continue(thread);
+		elseif num < 0 then
+			error("done() called too many times");
 		end
 	end;
 end
