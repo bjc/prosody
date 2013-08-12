@@ -28,14 +28,15 @@ local function waiter(num)
 		error("Not running in an async context, see http://prosody.im/doc/developers/async");
 	end
 	num = num or 1;
+	local waiting;
 	return function ()
+		if num == 0 then return; end -- already done
+		waiting = true;
 		coroutine.yield("wait");
 	end, function ()
 		num = num - 1;
-		if num == 0 then
-			if not runner_continue(thread) then
-				error("done() called without wait()!");
-			end
+		if num == 0 and waiting then
+			runner_continue(thread);
 		end
 	end;
 end
