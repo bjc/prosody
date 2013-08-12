@@ -85,7 +85,7 @@ function runner_mt:run(input)
 				consumed, state, err = i, "ready", debug.traceback(thread, new_state);
 				self.thread = nil;
 				break;
-			elseif state == "wait" then
+			elseif new_state == "wait" then
 				consumed, state = i, "waiting";
 				break;
 			end
