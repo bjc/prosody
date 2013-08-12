@@ -22,7 +22,7 @@ local function runner_continue(thread)
 	return true;
 end
 
-function waiter(num)
+local function waiter(num)
 	local thread = coroutine.running();
 	if not thread then
 		error("Not running in an async context, see http://prosody.im/doc/developers/async");
@@ -54,7 +54,7 @@ local function runner_create_thread(func, self)
 end
 
 local empty_watchers = {};
-function runner(func, watchers, data)
+local function runner(func, watchers, data)
 	return setmetatable({ func = func, thread = false, state = "ready", notified_state = "ready",
 		queue = {}, watchers = watchers or empty_watchers, data = data }
 	, runner_mt);
