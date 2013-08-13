@@ -43,7 +43,7 @@ local function waiter(num)
 	end;
 end
 
-function guarder()
+local function guarder()
 	local guards = {};
 	return function (id, func)
 		local thread = coroutine.running();
