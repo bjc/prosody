@@ -10,7 +10,6 @@ local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local ipairs = ipairs;
-local pairs = pairs;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
