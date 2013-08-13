@@ -129,7 +129,7 @@ function s2sout.attempt_connection(host_session, err)
 		connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
 		host_session.log("info", "Connection failed (%s). Attempt #%d: This time to %s:%d", tostring(err), host_session.srv_choice, connect_host, connect_port);
 	else
-		host_session.log("info", "Out of connection options, can't connect to %s", tostring(host_session.to_host));
+		host_session.log("info", "Failed in all attempts to connect to %s", tostring(host_session.to_host));
 		-- We're out of options
 		return false;
 	end
