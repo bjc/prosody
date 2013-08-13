@@ -43,6 +43,42 @@ local function waiter(num)
 	end;
 end
 
+function guarder()
+	local guards = {};
+	return function (id, func)
+		local thread = coroutine.running();
+		if not thread then
+			error("Not running in an async context, see http://prosody.im/doc/developers/async");
+		end
+		local guard = guards[id];
+		if not guard then
+			guard = {};
+			guards[id] = guard;
+			log("debug", "New guard!");
+		else
+			table.insert(guard, thread);
+			log("debug", "Guarded. %d threads waiting.", #guard)
+			coroutine.yield("wait");
+		end
+		local function exit()
+			local next_waiting = table.remove(guard, 1);
+			if next_waiting then
+				log("debug", "guard: Executing next waiting thread (%d left)", #guard)
+				runner_continue(next_waiting);
+			else
+				log("debug", "Guard off duty.")
+				guards[id] = nil;
+			end
+		end
+		if func then
+			func();
+			exit();
+			return;
+		end
+		return exit;
+	end;
+end
+
 local runner_mt = {};
 runner_mt.__index = runner_mt;
 
@@ -119,4 +155,4 @@ function runner_mt:enqueue(input)
 	table.insert(self.queue, input);
 end
 
-return { waiter = waiter, runner = runner };
+return { waiter = waiter, guarder = guarder, runner = runner };
