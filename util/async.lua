@@ -103,8 +103,12 @@ function runner_mt:run(input)
 		n = #q;
 	end
 	self.state = state;
-	if state ~= self.notified_state then
-		self.notified_state = state;
+	if err or state ~= self.notified_state then
+		if err then
+			state = "error"
+		else
+			self.notified_state = state;
+		end
 		local handler = self.watchers[state];
 		if handler then handler(self, err); end
 	end
