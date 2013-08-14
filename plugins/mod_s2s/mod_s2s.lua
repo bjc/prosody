@@ -158,7 +158,7 @@ function mark_connected(session)
 
 	local from, to = session.from_host, session.to_host;
 
-	session.log("info", "%s s2s connection %s->%s complete", session.direction, from, to);
+	session.log("info", "%s s2s connection %s->%s complete", session.direction:gsub("^.", string.upper), from, to);
 
 	local event_data = { session = session };
 	if session.type == "s2sout" then
@@ -491,7 +491,7 @@ local function session_close(session, reason, remote_reason)
 		function session.sends2s() return false; end
 
 		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
-		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction, session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
+		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper), session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
