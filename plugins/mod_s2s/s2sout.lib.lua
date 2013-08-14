@@ -265,7 +265,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 end
 
 function s2sout.make_connect(host_session, connect_host, connect_port)
-	(host_session.log or log)("info", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
+	(host_session.log or log)("debug", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
 
 	-- Reset secure flag in case this is another
 	-- connection attempt after a failed STARTTLS
