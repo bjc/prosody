@@ -157,7 +157,7 @@ local function session_close(session, reason)
 		function session.send() return false; end
 
 		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
-		session.log("info", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
+		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
