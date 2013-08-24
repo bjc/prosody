@@ -135,7 +135,7 @@ module:hook("presence/bare", function(event)
 					recipients[user][recipient] = hash;
 					local from_bare = origin.type == "c2s" and origin.username.."@"..origin.host;
 					if self or origin.type ~= "c2s" or (recipients[from_bare] and recipients[from_bare][origin.full_jid]) ~= hash then
-						-- COMPAT from ~= stanza.attr.to because OneTeam can't deal with missing from attribute
+						-- COMPAT from ~= stanza.attr.to because OneTeam and Asterisk 1.8 can't deal with missing from attribute
 						origin.send(
 							st.stanza("iq", {from=user, to=stanza.attr.from, id="disco", type="get"})
 								:query("http://jabber.org/protocol/disco#info")
