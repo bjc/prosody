@@ -348,9 +348,9 @@ local first_escape = {
 function json.decode(json)
 	json = json:gsub("\\.", first_escape) -- get rid of all escapes except \uXXXX, making string parsing much simpler
 		--:gsub("[\r\n]", "\t"); -- \r\n\t are equivalent, we care about none of them, and none of them can be in strings
-	
+
 	-- TODO do encoding verification
-	
+
 	local val, index = _readvalue(json, 1);
 	if val == nil then return val, index; end
 	if json:find("[^ \t\r\n]", index) then return nil, "garbage at eof"; end
