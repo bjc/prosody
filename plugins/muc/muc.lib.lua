@@ -480,6 +480,12 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					log("debug", "%s joining as %s", from, to);
 					if not next(self._affiliations) then -- new room, no owners
 						self._affiliations[jid_bare(from)] = "owner";
+						if self.locked and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+							self.locked = nil; -- Older groupchat protocol doesn't lock
+						end
+					elseif self.locked then -- Deny entry
+						origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+						return;
 					end
 					local affiliation = self:get_affiliation(from);
 					local role = self:get_default_role(affiliation)
@@ -500,6 +506,9 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						pr:tag("status", {code='110'}):up();
 						if self._data.whois == 'anyone' then
 							pr:tag("status", {code='100'}):up();
+						end
+						if self.locked then
+							pr:tag("status", {code='201'}):up();
 						end
 						pr.attr.to = from;
 						self:_route_stanza(pr);
@@ -688,6 +697,10 @@ function room_mt:process_form(origin, stanza)
 	handle_option("password", "muc#roomconfig_roomsecret");
 
 	if self.save then self:save(true); end
+	if self.locked then
+		module:fire_event("muc-room-unlocked", { room = self });
+		self.locked = nil;
+	end
 	origin.send(st.reply(stanza));
 
 	if next(changed) then
