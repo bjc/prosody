@@ -77,7 +77,7 @@ do
 			local is_relative;
 			if path_sep == "/" and path:sub(1,1) ~= "/" then
 				is_relative = true;
-			elseif path_sep == "\\" and (path:sub(1,1) ~= "/" and (path:sub(2,3) ~= ":\\" or path:sub(2,3) ~= ":/")) then
+			elseif path_sep == "\\" and (path:sub(1,1) ~= "/" and (path:sub(2,3) ~= ":\\" and path:sub(2,3) ~= ":/")) then
 				is_relative = true;
 			end
 			if is_relative then
