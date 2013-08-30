@@ -6,6 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
+local array = require "util.array";
 
 if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
