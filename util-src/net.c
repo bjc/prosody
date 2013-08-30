@@ -42,8 +42,8 @@ static int lc_local_addresses(lua_State *L)
 	const long ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
 	const long ip4_mask      = htonl(0xffff0000);
 	struct ifaddrs *addr = NULL, *a;
-	int n = 1;
 #endif
+	int n = 1;
 	int type = luaL_checkoption(L, 1, "both", type_strings);
 	const char link_local = lua_toboolean(L, 2); /* defaults to 0 (false) */
 	const char ipv4 = (type == 0 || type == 1);
@@ -92,6 +92,15 @@ static int lc_local_addresses(lua_State *L)
 	}
 
 	freeifaddrs(addr);
+#else
+	if (ipv4) {
+		lua_pushstring(L, "0.0.0.0");
+		lua_rawseti(L, -2, n++);
+	}
+	if (ipv6) {
+		lua_pushstring(L, "::");
+		lua_rawseti(L, -2, n++);
+	}
 #endif
 	return 1;
 }
