@@ -23,6 +23,9 @@ if restrict_room_creation then
 		restrict_room_creation = nil;
 	end
 end
+local lock_rooms = module:get_option_boolean("muc_room_locking", false);
+local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
+
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
 local jid_split = require "util.jid".split;
@@ -88,6 +91,16 @@ function create_room(jid)
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
+	if lock_rooms then
+		room.locked = true;
+		if lock_room_timeout and lock_room_timeout > 0 then
+			module:add_timer(lock_room_timeout, function ()
+				if room.locked then
+					room:destroy(); -- Not unlocked in time
+				end
+			end);
+		end
+	end
 	module:fire_event("muc-room-created", { room = room });
 	return room;
 end
