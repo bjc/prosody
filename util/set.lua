@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -40,13 +40,13 @@ function set_mt.__eq(set1, set2)
 			return false;
 		end
 	end
-	
+
 	for item in pairs(set2) do
 		if not set1[item] then
 			return false;
 		end
 	end
-	
+
 	return true;
 end
 function set_mt.__tostring(set)
@@ -65,23 +65,23 @@ end
 function new(list)
 	local items = setmetatable({}, items_mt);
 	local set = { _items = items };
-	
+
 	function set:add(item)
 		items[item] = true;
 	end
-	
+
 	function set:contains(item)
 		return items[item];
 	end
-	
+
 	function set:items()
 		return items;
 	end
-	
+
 	function set:remove(item)
 		items[item] = nil;
 	end
-	
+
 	function set:add_list(list)
 		if list then
 			for _, item in ipairs(list) do
@@ -89,7 +89,7 @@ function new(list)
 			end
 		end
 	end
-	
+
 	function set:include(otherset)
 		for item in otherset do
 			items[item] = true;
@@ -101,22 +101,22 @@ function new(list)
 			items[item] = nil;
 		end
 	end
-	
+
 	function set:empty()
 		return not next(items);
 	end
-	
+
 	if list then
 		set:add_list(list);
 	end
-	
+
 	return setmetatable(set, set_mt);
 end
 
 function union(set1, set2)
 	local set = new();
 	local items = set._items;
-	
+
 	for item in pairs(set1._items) do
 		items[item] = true;
 	end
@@ -124,14 +124,14 @@ function union(set1, set2)
 	for item in pairs(set2._items) do
 		items[item] = true;
 	end
-	
+
 	return set;
 end
 
 function difference(set1, set2)
 	local set = new();
 	local items = set._items;
-	
+
 	for item in pairs(set1._items) do
 		items[item] = (not set2._items[item]) or nil;
 	end
@@ -142,13 +142,13 @@ end
 function intersection(set1, set2)
 	local set = new();
 	local items = set._items;
-	
+
 	set1, set2 = set1._items, set2._items;
-	
+
 	for item in pairs(set1) do
 		items[item] = (not not set2[item]) or nil;
 	end
-	
+
 	return set;
 end
 
