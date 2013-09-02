@@ -36,7 +36,7 @@
 #include "lauxlib.h"
 
 #include <fcntl.h>
-#if defined(_GNU_SOURCE)
+#if defined(__linux__) && defined(_GNU_SOURCE)
 #include <linux/falloc.h>
 #endif
 
@@ -670,7 +670,7 @@ int lc_fallocate(lua_State* L)
 	offset = luaL_checkinteger(L, 2);
 	len = luaL_checkinteger(L, 3);
 
-#if defined(_GNU_SOURCE)
+#if defined(__linux__) && defined(_GNU_SOURCE)
 	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) == 0)
 	{
 		lua_pushboolean(L, 1);
