@@ -91,13 +91,13 @@ function new(list)
 	end
 	
 	function set:include(otherset)
-		for item in pairs(otherset) do
+		for item in otherset do
 			items[item] = true;
 		end
 	end
 
 	function set:exclude(otherset)
-		for item in pairs(otherset) do
+		for item in otherset do
 			items[item] = nil;
 		end
 	end
