@@ -838,6 +838,7 @@ function commands.check(arg)
 	end
 	if not what or what == "dns" then
 		local dns = require "net.dns";
+		local idna = require "util.encodings".idna;
 		local ip = require "util.ip";
 		local c2s_ports = set.new(config.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(config.get("*", "s2s_ports") or {5269});
@@ -856,13 +857,13 @@ function commands.check(arg)
 		
 		local fqdn = socket.dns.tohostname(socket.dns.gethostname());
 		if fqdn then
-			local res = dns.lookup(fqdn, "A");
+			local res = dns.lookup(idna.to_ascii(fqdn), "A");
 			if res then
 				for _, record in ipairs(res) do
 					external_addresses:add(record.a);
 				end
 			end
-			local res = dns.lookup(fqdn, "AAAA");
+			local res = dns.lookup(idna.to_ascii(fqdn), "AAAA");
 			if res then
 				for _, record in ipairs(res) do
 					external_addresses:add(record.aaaa);
@@ -895,7 +896,7 @@ function commands.check(arg)
 			print("Checking DNS for "..(is_component and "component" or "host").." "..host.."...");
 			local target_hosts = set.new();
 			if not is_component then
-				local res = dns.lookup("_xmpp-client._tcp."..host..".", "SRV");
+				local res = dns.lookup("_xmpp-client._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res then
 					for _, record in ipairs(res) do
 						target_hosts:add(record.srv.target);
@@ -912,7 +913,7 @@ function commands.check(arg)
 					end
 				end
 			end
-			local res = dns.lookup("_xmpp-server._tcp."..host..".", "SRV");
+			local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
 			if res then
 				for _, record in ipairs(res) do
 					target_hosts:add(record.srv.target);
@@ -943,7 +944,7 @@ function commands.check(arg)
 
 			if modules:contains("proxy65") then
 				local proxy65_target = config.get(host, "proxy65_address") or host;
-				local A, AAAA = dns.lookup(proxy65_target, "A"), dns.lookup(proxy65_target, "AAAA");
+				local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
 				local prob = {};
 				if not A then
 					table.insert(prob, "A");
@@ -958,7 +959,7 @@ function commands.check(arg)
 			
 			for host in target_hosts do
 				local host_ok_v4, host_ok_v6;
-				local res = dns.lookup(host, "A");
+				local res = dns.lookup(idna.to_ascii(host), "A");
 				if res then
 					for _, record in ipairs(res) do
 						if external_addresses:contains(record.a) then
@@ -974,7 +975,7 @@ function commands.check(arg)
 						end
 					end
 				end
-				local res = dns.lookup(host, "AAAA");
+				local res = dns.lookup(idna.to_ascii(host), "AAAA");
 				if res then
 					for _, record in ipairs(res) do
 						if external_addresses:contains(record.aaaa) then
