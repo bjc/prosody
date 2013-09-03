@@ -13,6 +13,8 @@ local ssl_newcontext = ssl and ssl.newcontext;
 
 local tostring = tostring;
 local pairs = pairs;
+local type = type;
+local io_open = io.open;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -41,7 +43,7 @@ local core_defaults = {
 	ciphers = "HIGH:!DSS:!aNULL@STRENGTH";
 }
 local path_options = { -- These we pass through resolve_path()
-	key = true, certificate = true, cafile = true, capath = true
+	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
@@ -75,11 +77,24 @@ function create_context(host, mode, user_ssl_config)
 	end
 	user_ssl_config.password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	for option in pairs(path_options) do
-		user_ssl_config[option] = user_ssl_config[option] and resolve_path(config_path, user_ssl_config[option]);
+		if type(user_ssl_config[option]) == "string" then
+			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
+		end
 	end
 
 	if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+
+	-- LuaSec expects dhparam to be a callback that takes two arguments.
+	-- We ignore those because it is mostly used for having a separate
+	-- set of params for EXPORT ciphers, which we don't have by default.
+	if type(user_ssl_config.dhparam) == "string" then
+		local f, err = io_open(user_ssl_config.dhparam);
+		if not f then return nil, "Could not open DH parameters: "..err end
+		local dhparam = f:read("*a");
+		f:close();
+		user_ssl_config.dhparam = function() return dhparam; end
+	end
 
 	local ctx, err = ssl_newcontext(user_ssl_config);
 
