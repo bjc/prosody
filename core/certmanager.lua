@@ -12,6 +12,8 @@ local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 
 local tostring = tostring;
+local type = type;
+local io_open = io.open;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -75,12 +77,12 @@ function create_context(host, mode, user_ssl_config)
 	-- LuaSec expects dhparam to be a callback that takes two arguments.
 	-- We ignore those because it is mostly used for having a separate
 	-- set of params for EXPORT ciphers, which we don't have by default.
-	if type(user_ssl_config.dhparam) == "string" then
-		local f, err = io_open(resolve_path(user_ssl_config.dhparam));
+	if type(ssl_config.dhparam) == "string" then
+		local f, err = io_open(resolve_path(config_path, ssl_config.dhparam));
 		if not f then return nil, "Could not open DH parameters: "..err end
 		local dhparam = f:read("*a");
 		f:close();
-		user_ssl_config.dhparam = function() return dhparam; end
+		ssl_config.dhparam = function() return dhparam; end
 	end
 
 	local ctx, err = ssl_newcontext(ssl_config);
