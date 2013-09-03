@@ -72,6 +72,17 @@ function create_context(host, mode, user_ssl_config)
 		dhparam = user_ssl_config.dhparam;
 	};
 
+	-- LuaSec expects dhparam to be a callback that takes two arguments.
+	-- We ignore those because it is mostly used for having a separate
+	-- set of params for EXPORT ciphers, which we don't have by default.
+	if type(user_ssl_config.dhparam) == "string" then
+		local f, err = io_open(resolve_path(user_ssl_config.dhparam));
+		if not f then return nil, "Could not open DH parameters: "..err end
+		local dhparam = f:read("*a");
+		f:close();
+		user_ssl_config.dhparam = function() return dhparam; end
+	end
+
 	local ctx, err = ssl_newcontext(ssl_config);
 
 	-- COMPAT: LuaSec 0.4.1 ignores the cipher list from the config, so we have to take
