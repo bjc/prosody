@@ -75,7 +75,7 @@ function new(list)
 	end
 
 	function set:items()
-		return items;
+		return next, items;
 	end
 
 	function set:remove(item)
