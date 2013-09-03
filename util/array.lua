@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -59,13 +59,13 @@ function array_base.filter(outa, ina, func)
 			write = write + 1;
 		end
 	end
-	
+
 	if inplace and write <= start_length then
 		for i=write,start_length do
 			outa[i] = nil;
 		end
 	end
-	
+
 	return outa;
 end
 

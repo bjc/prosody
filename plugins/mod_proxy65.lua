@@ -2,7 +2,7 @@
 -- Copyright (C) 2008-2011 Matthew Wild
 -- Copyright (C) 2008-2011 Waqas Hussain
 -- Copyright (C) 2009 Thilo Cestonaro
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -30,7 +30,7 @@ function listener.onincoming(conn, data)
 		(conn == initiator and target or initiator):write(data);
 		return;
 	end -- FIXME server.link should be doing this?
-	
+
 	if not session.greeting_done then
 		local nmethods = data:byte(2) or 0;
 		if data:byte(1) == 0x05 and nmethods > 0 and #data == 2 + nmethods then -- check if we have all the data
@@ -90,7 +90,7 @@ end
 
 function module.add_host(module)
 	local host, name = module:get_host(), module:get_option_string("name", "SOCKS5 Bytestreams Service");
-	
+
 	local proxy_address = module:get_option("proxy65_address", host);
 	local proxy_port = next(portmanager.get_active_services():search("proxy65", nil)[1] or {});
 	local proxy_acl = module:get_option("proxy65_acl");
@@ -103,7 +103,7 @@ function module.add_host(module)
 
 	module:add_identity("proxy", "bytestreams", name);
 	module:add_feature("http://jabber.org/protocol/bytestreams");
-	
+
 	module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
 		if not stanza.tags[1].attr.node then
@@ -113,7 +113,7 @@ function module.add_host(module)
 			return true;
 		end
 	end, -1);
-	
+
 	module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
 		if not stanza.tags[1].attr.node then
@@ -121,10 +121,10 @@ function module.add_host(module)
 			return true;
 		end
 	end, -1);
-	
+
 	module:hook("iq-get/host/http://jabber.org/protocol/bytestreams:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
-		
+
 		-- check ACL
 		while proxy_acl and #proxy_acl > 0 do -- using 'while' instead of 'if' so we can break out of it
 			local jid = stanza.attr.from;
@@ -137,22 +137,22 @@ function module.add_host(module)
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
 		end
-	
+
 		local sid = stanza.tags[1].attr.sid;
 		origin.send(st.reply(stanza):tag("query", {xmlns="http://jabber.org/protocol/bytestreams", sid=sid})
 			:tag("streamhost", {jid=host, host=proxy_address, port=proxy_port}));
 		return true;
 	end);
-	
+
 	module:hook("iq-set/host/http://jabber.org/protocol/bytestreams:query", function(event)
 		local origin, stanza = event.origin, event.stanza;
-	
+
 		local query = stanza.tags[1];
 		local sid = query.attr.sid;
 		local from = stanza.attr.from;
 		local to = query:get_child_text("activate");
 		local prepped_to = jid_prep(to);
-	
+
 		local info = "sid: "..tostring(sid)..", initiator: "..tostring(from)..", target: "..tostring(prepped_to or to);
 		if prepped_to and sid then
 			local sha = sha1(sid .. from .. prepped_to, true);
