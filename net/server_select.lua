@@ -937,7 +937,7 @@ local addclient = function( address, port, listeners, pattern, sslctx )
 	client:settimeout( 0 )
 	_, err = client:connect( address, port )
 	if err then -- try again
-		local handler = wrapclient( client, address, port, listeners )
+		local handler = wrapclient( client, address, port, listeners, pattern, sslctx )
 	else
 		wrapconnection( nil, listeners, client, address, port, "clientport", pattern, sslctx )
 	end
