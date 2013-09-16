@@ -113,6 +113,10 @@ function api:hook_tag(xmlns, name, handler, priority)
 end
 api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
 
+function api:unhook(event, handler)
+	return self:unhook_object_event((hosts[self.host] or prosody).events, event, handler);
+end
+
 function api:require(lib)
 	local f, n = pluginloader.load_code(self.name, lib..".lib.lua", self.environment);
 	if not f then
