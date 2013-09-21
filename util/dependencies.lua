@@ -11,9 +11,9 @@ module("dependencies", package.seeall)
 function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
 
 -- Required to be able to find packages installed with luarocks
---if not softreq "luarocks.loader" then -- LuaRocks 2.x
---	softreq "luarocks.require"; -- LuaRocks <1.x
---end
+if not softreq "luarocks.loader" then -- LuaRocks 2.x
+	softreq "luarocks.require"; -- LuaRocks <1.x
+end
 
 function missingdep(name, sources, msg)
 	print("");
