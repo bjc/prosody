@@ -16,9 +16,6 @@ CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=os.getenv("PROSODY_PLUGINDIR");
 CFG_DATADIR=os.getenv("PROSODY_DATADIR");
 
-package.path = "/Users/tfar/share/lua/5.1/?.lua;"..package.path;
-package.cpath = "/Users/tfar/lib/lua/5.1/?.so;"..package.cpath;
-
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- Tell Lua where to find our libraries
