@@ -13,7 +13,6 @@
 
 local s_match = string.match;
 local type = type
-local string = string
 local tostring = tostring;
 local base64 = require "util.encodings".base64;
 local hmac_sha1 = require "util.hashes".hmac_sha1;
@@ -124,28 +123,33 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
 			self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
-				= client_first_message:match("^(%a)=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
+				= client_first_message:match("^([ynp])=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
 
-			-- check for invalid gs2_flag_type start
-			local gs2_flag_type = string.sub(self.state.gs2_cbind_flag, 0, 1)
-			if gs2_flag_type ~=  "y" and gs2_flag_type ~=  "n" and gs2_flag_type ~=  "p" then
-				return "failure", "malformed-request", "The GS2 header has to start with 'y', 'n', or 'p'."
+			local gs2_cbind_flag = self.state.gs2_cbind_flag;
+
+			if not gs2_cbind_flag then
+				return "failure", "malformed-request";
 			end
 
-			if support_channel_binding then
-				if string.sub(self.state.gs2_cbind_flag, 0, 1) == "y" then
+			if support_channel_binding and gs2_cbind_flag == "y" then
+				-- "y" -> client does support channel binding
+				--        but thinks the server does not.
 					return "failure", "malformed-request";
 				end
-				
+
+			if gs2_cbind_flag == "n" then
+				-- "n" -> client doesn't support channel binding.
+				support_channel_binding = false;
+			end
+
+			if support_channel_binding and gs2_cbind_flag == "p" then
 				-- check whether we support the proposed channel binding type
 				if not self.profile.cb[self.state.gs2_cbind_name] then
 					return "failure", "malformed-request", "Proposed channel binding type isn't supported.";
 				end
 			else
-				-- we don't support channelbinding, 
-				if self.state.gs2_cbind_flag ~= "n" and self.state.gs2_cbind_flag ~= "y" then
-					return "failure", "malformed-request";
-				end
+				-- no channel binding,
+				self.state.gs2_cbind_name = nil;
 			end
 
 			if not self.state.name or not self.state.clientnonce then
@@ -242,7 +246,7 @@ end
 function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
 		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
-		
+
 		-- register channel binding equivalent
 		registerMechanism("SCRAM-"..hash_name.."-PLUS", {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash), {"tls-unique"});
 	end
