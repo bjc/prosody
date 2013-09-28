@@ -256,6 +256,48 @@ function archive_store:append(username, when, with, value)
 		return key;
 	end);
 end
+
+-- Helpers for building the WHERE clause
+local function archive_where(query, args, where)
+	-- Time range, inclusive
+	if query.start then
+		args[#args+1] = query.start
+		where[#where+1] = "`when` >= ?"
+	end
+
+	if query["end"] then
+		args[#args+1] = query["end"];
+		if query.start then
+			where[#where] = "`when` BETWEEN ? AND ?" -- is this inclusive?
+		else
+			where[#where+1] = "`when` >= ?"
+		end
+	end
+
+	-- Related name
+	if query.with then
+		where[#where+1] = "`with` = ?";
+		args[#args+1] = query.with
+	end
+
+	-- Unique id
+	if query.key then
+		where[#where+1] = "`key` = ?";
+		args[#args+1] = query.key
+	end
+end
+local function archive_where_id_range(query, args, where)
+	-- Before or after specific item, exclusive
+	if query.after then  -- keys better be unique!
+		where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
+		args[#args+1] = query.after
+	end
+	if query.before then
+		where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
+		args[#args+1] = query.before
+	end
+end
+
 function archive_store:find(username, query)
 	query = query or {};
 	local user,store = username,self.store;
@@ -265,31 +307,7 @@ function archive_store:find(username, query)
 		local args = { host, user or "", store, };
 		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
 
-		-- Time range, inclusive
-		if query.start then
-			args[#args+1] = query.start
-			where[#where+1] = "`when` >= ?"
-		end
-		if query["end"] then
-			args[#args+1] = query["end"];
-			if query.start then
-				where[#where] = "`when` BETWEEN ? AND ?" -- is this inclusive?
-			else
-				where[#where+1] = "`when` >= ?"
-			end
-		end
-
-		-- Related name
-		if query.with then
-			where[#where+1] = "`with` = ?";
-			args[#args+1] = query.with
-		end
-
-		-- Unique id
-		if query.key then
-			where[#where+1] = "`key` = ?";
-			args[#args+1] = query.key
-		end
+		archive_where(query, args, where);
 
 		-- Total matching
 		if query.total then
@@ -303,15 +321,7 @@ function archive_store:find(username, query)
 			end
 		end
 
-		-- Before or after specific item, exclusive
-		if query.after then
-			where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
-			args[#args+1] = query.after
-		end
-		if query.before then
-			where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
-			args[#args+1] = query.before
-		end
+		archive_where_id_range(query, args, where);
 
 		if query.limit then
 			args[#args+1] = query.limit;
