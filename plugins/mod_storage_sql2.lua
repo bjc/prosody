@@ -340,6 +340,21 @@ function archive_store:find(username, query)
 	end, total;
 end
 
+function archive_store:delete(username, query)
+	query = query or {};
+	local user,store = username,self.store;
+	return engine:transaction(function()
+		local sql_query = "DELETE FROM `prosodyarchive` WHERE %s;";
+		local args = { host, user or "", store, };
+		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
+		archive_where(query, args, where);
+		archive_where_id_range(query, args, where);
+		sql_query = sql_query:format(t_concat(where, " AND "));
+		module:log("debug", sql_query);
+		return engine:delete(sql_query, unpack(args));
+	end);
+end
+
 local stores = {
 	keyval = keyval_store;
 	archive = archive_store;
