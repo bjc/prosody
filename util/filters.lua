@@ -52,7 +52,7 @@ function add_filter(session, type, callback, priority)
 	local i = 0;
 	repeat
 		i = i + 1;
-	until not filter_list[i] or filter_list[filter_list[i]] >= priority;
+	until not filter_list[i] or filter_list[filter_list[i]] < priority;
 	
 	t_insert(filter_list, i, callback);
 	filter_list[callback] = priority;
