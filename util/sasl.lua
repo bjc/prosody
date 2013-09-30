@@ -18,6 +18,7 @@ local type = type
 local setmetatable = setmetatable;
 local assert = assert;
 local require = require;
+local print = print
 
 module "sasl"
 
@@ -27,19 +28,38 @@ Authentication Backend Prototypes:
 state = false : disabled
 state = true : enabled
 state = nil : non-existant
+
+Channel Binding:
+
+To enable support of channel binding in some mechanisms you need to provide appropriate callbacks in a table
+at profile.cb.
+
+Example:
+	profile.cb["tls-unique"] = function(self)
+		return self.user
+	end
+
 ]]
 
 local method = {};
 method.__index = method;
 local mechanisms = {};
 local backend_mechanism = {};
+local mechanism_channelbindings = {};
 
 -- register a new SASL mechanims
-function registerMechanism(name, backends, f)
+local function registerMechanism(name, backends, f, cb_backends)
 	assert(type(name) == "string", "Parameter name MUST be a string.");
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
 	assert(type(f) == "function", "Parameter f MUST be a function.");
+	if cb_backends then assert(type(cb_backends) == "table"); end
 	mechanisms[name] = f
+	if cb_backends then
+		mechanism_channelbindings[name] = {};
+		for _, cb_name in ipairs(cb_backends) do
+			mechanism_channelbindings[name][cb_name] = true;
+		end
+	end
 	for _, backend_name in ipairs(backends) do
 		if backend_mechanism[backend_name] == nil then backend_mechanism[backend_name] = {}; end
 		t_insert(backend_mechanism[backend_name], name);
@@ -63,6 +83,15 @@ function new(realm, profile)
 	return setmetatable({ profile = profile, realm = realm, mechs = mechanisms }, method);
 end
 
+-- add a channel binding handler
+function method:add_cb_handler(name, f)
+	if type(self.profile.cb) ~= "table" then
+		self.profile.cb = {};
+	end
+	self.profile.cb[name] = f;
+	return self;
+end
+
 -- get a fresh clone with the same realm and profile
 function method:clean_clone()
 	return new(self.realm, self.profile)
@@ -70,7 +99,21 @@ end
 
 -- get a list of possible SASL mechanims to use
 function method:mechanisms()
-	return self.mechs;
+	local current_mechs = {};
+	for mech, _ in pairs(self.mechs) do
+		if mechanism_channelbindings[mech] and self.profile.cb then
+			local ok = false;
+			for cb_name, _ in pairs(self.profile.cb) do
+				if mechanism_channelbindings[mech][cb_name] then
+					ok = true;
+				end
+			end
+			if ok == true then current_mechs[mech] = true; end
+		else
+			current_mechs[mech] = true;
+		end
+	end
+	return current_mechs;
 end
 
 -- select a mechanism to use
@@ -92,5 +135,6 @@ require "util.sasl.plain"     .init(registerMechanism);
 require "util.sasl.digest-md5".init(registerMechanism);
 require "util.sasl.anonymous" .init(registerMechanism);
 require "util.sasl.scram"     .init(registerMechanism);
+require "util.sasl.external"  .init(registerMechanism);
 
 return _M;
