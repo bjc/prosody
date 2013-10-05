@@ -202,7 +202,7 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
 		:add_child(dataform.new({
 			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
-			{ name = "muc#roominfo_description", label = "Description"},
+			{ name = "muc#roominfo_description", label = "Description", value = "" },
 			{ name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) }
 		}):form({["muc#roominfo_description"] = self:get_description()}, 'result'))
 	;
