@@ -18,7 +18,6 @@ local type = type
 local setmetatable = setmetatable;
 local assert = assert;
 local require = require;
-local print = print
 
 module "sasl"
 
