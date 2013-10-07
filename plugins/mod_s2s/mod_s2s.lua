@@ -283,6 +283,7 @@ function stream_callbacks.streamopened(session, attr)
 	-- TODO: Rename session.secure to session.encrypted
 	if session.secure == false then
 		session.secure = true;
+		session.encrypted = true;
 
 		local sock = session.conn:socket();
 		if sock.info then
