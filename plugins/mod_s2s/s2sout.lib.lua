@@ -270,6 +270,7 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	-- Reset secure flag in case this is another
 	-- connection attempt after a failed STARTTLS
 	host_session.secure = nil;
+	host_session.encrypted = nil;
 
 	local conn, handler;
 	local proto = connect_host.proto;
