@@ -242,7 +242,7 @@ module:hook("stream-features", function(event)
 			return;
 		end
 		origin.sasl_handler = usermanager_get_sasl_handler(module.host, origin);
-		if origin.secure then
+		if origin.encrypted then
 			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if origin.conn:socket().getpeerfinished then
