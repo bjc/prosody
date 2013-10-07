@@ -69,6 +69,7 @@ function stream_callbacks.streamopened(session, attr)
 	-- since we now have a new stream header, session is secured
 	if session.secure == false then
 		session.secure = true;
+		session.encrypted = true;
 
 		local sock = session.conn:socket();
 		if sock.info then
@@ -209,6 +210,7 @@ function listener.onconnect(conn)
 	-- Client is using legacy SSL (otherwise mod_tls sets this flag)
 	if conn:ssl() then
 		session.secure = true;
+		session.encrypted = true;
 
 		-- Check if TLS compression is used
 		local sock = conn:socket();
