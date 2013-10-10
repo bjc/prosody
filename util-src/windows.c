@@ -58,7 +58,7 @@ static int Lget_consolecolor(lua_State *L) {
 	
 	if (console == INVALID_HANDLE_VALUE) return lerror(L, "GetStdHandle");
 	if (!GetConsoleScreenBufferInfo(console, &info)) return lerror(L, "GetConsoleScreenBufferInfo");
-	if (!ReadConsoleOutputAttribute(console, &color, sizeof(WORD), info.dwCursorPosition, &read_len)) return lerror(L, "ReadConsoleOutputAttribute");
+	if (!ReadConsoleOutputAttribute(console, &color, 1, info.dwCursorPosition, &read_len)) return lerror(L, "ReadConsoleOutputAttribute");
 
 	lua_pushnumber(L, color);
 	return 1;
