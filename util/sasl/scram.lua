@@ -113,8 +113,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 
 			-- TODO: fail if authzid is provided, since we don't support them yet
 			self.state["client_first_message"] = client_first_message;
-			self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
-				= client_first_message:match("^([ynp])=?([%a%-]*),(.*),n=(.*),r=([^,]*).*");
+			self.state["gs2_header"], self.state["gs2_cbind_flag"], self.state["gs2_cbind_name"], self.state["authzid"], self.state["name"], self.state["clientnonce"]
+				= client_first_message:match("^(([ynp])=?([%a%-]*),(.*),)n=(.*),r=([^,]*).*");
 
 			local gs2_cbind_flag = self.state.gs2_cbind_flag;
 
@@ -200,14 +200,14 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
 			end
 
+			local client_gs2_header = base64.decode(self.state.channelbinding)
+			local our_client_gs2_header = self.state["gs2_header"]
 			if self.state.gs2_cbind_name then
 				-- we support channelbinding, so check if the value is valid
-				local client_gs2_header = base64.decode(self.state.channelbinding)
-				local our_client_gs2_header = "p="..self.state.gs2_cbind_name..","..self.state["authzid"]..","..self.profile.cb[self.state.gs2_cbind_name](self);
-
-				if client_gs2_header ~= our_client_gs2_header then
-					return "failure", "malformed-request", "Invalid channel binding value.";
-				end
+				our_client_gs2_header = our_client_gs2_header .. self.profile.cb[self.state.gs2_cbind_name](self);
+			end
+			if client_gs2_header ~= our_client_gs2_header then
+				return "failure", "malformed-request", "Invalid channel binding value.";
 			end
 
 			if self.state.nonce ~= self.state.clientnonce..self.state.servernonce then
