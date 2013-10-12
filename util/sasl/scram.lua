@@ -113,7 +113,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local client_first_message = message;
 
 			-- TODO: fail if authzid is provided, since we don't support them yet
-			local gs2_header, gs2_cbind_flag, gs2_cbind_name, authzid, client_first_message_bare, name, clientnonce
+			local gs2_header, gs2_cbind_flag, gs2_cbind_name, authzid, client_first_message_bare, username, clientnonce
 				= s_match(client_first_message, "^(([pny])=?([^,]*),([^,]*),)(m?=?[^,]*,?n=([^,]*),r=([^,]*),?.*)$");
 
 			if not gs2_cbind_flag then
@@ -141,8 +141,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				gs2_cbind_name = nil;
 			end
 
-			name = validate_username(name, self.profile.nodeprep);
-			if not name then
+			username = validate_username(username, self.profile.nodeprep);
+			if not username then
 				log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
 				return "failure", "malformed-request", "Invalid username.";
 			end
@@ -150,7 +150,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- retreive credentials
 			local stored_key, server_key, salt, iteration_count;
 			if self.profile.plain then
-				local password, state = self.profile.plain(self, name, self.realm)
+				local password, state = self.profile.plain(self, username, self.realm)
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 
@@ -171,7 +171,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				end
 			elseif self.profile[profile_name] then
 				local state;
-				stored_key, server_key, iteration_count, salt, state = self.profile[profile_name](self, name, self.realm);
+				stored_key, server_key, iteration_count, salt, state = self.profile[profile_name](self, username, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 			end
@@ -181,7 +181,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			self.state = {
 				gs2_header = gs2_header;
 				gs2_cbind_name = gs2_cbind_name;
-				name = name;
+				username = username;
 				nonce = nonce;
 
 				server_key = server_key;
@@ -225,7 +225,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 
 			if StoredKey == H_f(ClientKey) then
 				local server_final_message = "v="..base64.encode(ServerSignature);
-				self["username"] = state.name;
+				self["username"] = state.username;
 				return "success", server_final_message;
 			else
 				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated.";
