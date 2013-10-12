@@ -101,6 +101,7 @@ function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 end
 
 local function scram_gen(hash_name, H_f, HMAC_f)
+	local profile_name = "scram_" .. hashprep(hash_name);
 	local function scram_hash(self, message)
 		local support_channel_binding = false;
 		if self.profile.cb then support_channel_binding = true; end
@@ -168,9 +169,9 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					log("error", "Generating authentication database failed. Reason: %s", stored_key);
 					return "failure", "temporary-auth-failure";
 				end
-			elseif self.profile["scram_"..hashprep(hash_name)] then
+			elseif self.profile[profile_name] then
 				local state;
-				stored_key, server_key, iteration_count, salt, state = self.profile["scram_"..hashprep(hash_name)](self, name, self.realm);
+				stored_key, server_key, iteration_count, salt, state = self.profile[profile_name](self, name, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 			end
