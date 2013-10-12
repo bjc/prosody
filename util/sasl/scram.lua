@@ -112,8 +112,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local client_first_message = message;
 
 			-- TODO: fail if authzid is provided, since we don't support them yet
-			local gs2_header, gs2_cbind_flag, gs2_cbind_name, authzid, name, clientnonce
-				= client_first_message:match("^(([ynp])=?([%a%-]*),(.*),)n=(.*),r=([^,]*).*");
+			local gs2_header, gs2_cbind_flag, gs2_cbind_name, authzid, client_first_message_bare, name, clientnonce
+				= s_match(client_first_message, "^(([pny])=?([^,]*),([^,]*),)(m?=?[^,]*,?n=([^,]*),r=([^,]*),?.*)$");
 
 			if not gs2_cbind_flag then
 				return "failure", "malformed-request";
@@ -185,7 +185,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 
 				server_key = server_key;
 				stored_key = stored_key;
-				client_first_message = client_first_message;
+				client_first_message_bare = client_first_message_bare;
 				server_first_message = server_first_message;
 			}
 			return "challenge", server_first_message
@@ -193,7 +193,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- we are processing client_final_message
 			local client_final_message = message;
 
-			local channelbinding, nonce, proof = client_final_message:match("^c=(.*),r=(.*),.*p=(.*)");
+			local client_final_message_without_proof, channelbinding, nonce, proof
+				= s_match(client_final_message, "(c=([^,]*),r=([^,]*),?.-),p=(.*)$");
 
 			if not proof or not nonce or not channelbinding then
 				return "failure", "malformed-request", "Missing an attribute(p, r or c) in SASL message.";
@@ -216,7 +217,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			local ServerKey = state.server_key;
 			local StoredKey = state.stored_key;
 
-			local AuthMessage = "n=" .. s_match(state.client_first_message,"n=(.+)") .. "," .. state.server_first_message .. "," .. s_match(client_final_message, "(.+),p=.+")
+			local AuthMessage = state.client_first_message_bare .. "," .. state.server_first_message .. "," .. client_final_message_without_proof
 			local ClientSignature = HMAC_f(StoredKey, AuthMessage)
 			local ClientKey = binaryXOR(ClientSignature, base64.decode(proof))
 			local ServerSignature = HMAC_f(ServerKey, AuthMessage)
