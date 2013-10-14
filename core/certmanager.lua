@@ -53,8 +53,12 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	end
 end
 
-if luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true then
-	core_defaults.options[#core_defaults.options+1] = "no_compression";
+if luasec_has_no_compression then -- Has no_compression? Then it has these too...
+	default_options[#default_options+1] = "single_dh_use";
+	default_options[#default_options+1] = "single_ecdh_use";
+	if configmanager.get("*", "ssl_compression") ~= true then
+		core_defaults.options[#core_defaults.options+1] = "no_compression";
+	end
 end
 
 function create_context(host, mode, user_ssl_config)
