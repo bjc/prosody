@@ -82,17 +82,7 @@ local function create_table()
 		ProsodyArchiveTable:create(engine);
 	end);
 end
-local function set_encoding()
-	if params.driver == "SQLite3" then return end
-	local set_names_query = "SET NAMES 'utf8';";
-	if params.driver == "MySQL" then
-		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
-	end
-	local success,err = engine:transaction(function() return engine:execute(set_names_query); end);
-	if not success then
-		module:log("error", "Failed to set database connection encoding to UTF8: %s", err);
-	end
-end
+
 local function upgrade_table()
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
@@ -146,7 +136,7 @@ do -- process options to get a db connection
 	--local dburi = db2uri(params);
 	engine = mod_sql:create_engine(params);
 
-	set_encoding();
+	engine:set_encoding();
 
 	-- Automatically create table, ignore failure (table probably already exists)
 	create_table();
