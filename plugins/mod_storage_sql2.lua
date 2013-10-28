@@ -64,24 +64,7 @@ local function create_table()
 		engine:execute(create_sql);
 		engine:execute(index_sql);
 	end);
-	if not success then -- so we failed to create
-		if params.driver == "MySQL" then
-			success,err = engine:transaction(function()
-				local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
-				if result:rowcount() > 0 then
-					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
-					module:log("info", "Database table automatically upgraded");
-				end
-				return true;
-			end);
-			if not success then
-				module:log("error", "Failed to check/upgrade database schema (%s), please see "
-					.."http://prosody.im/doc/mysql for help",
-					err or "unknown error");
-			end
-		end
-	end
+
 	local ProsodyArchiveTable = Table {
 		name="prosodyarchive";
 		Column { name="sort_id", type="INTEGER PRIMARY KEY AUTOINCREMENT", nullable=false };
@@ -112,9 +95,24 @@ local function set_encoding()
 end
 local function upgrade_table()
 	if params.driver == "MySQL" then
+		local success,err = engine:transaction(function()
+			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			if result:rowcount() > 0 then
+				module:log("info", "Upgrading database schema...");
+				engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+				module:log("info", "Database table automatically upgraded");
+			end
+			return true;
+		end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database schema (%s), please see "
+				.."http://prosody.im/doc/mysql for help",
+				err or "unknown error");
+			return false;
+		end
 		-- COMPAT w/pre-0.9: Upgrade tables to UTF-8 if not already
 		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
-		local success,err = engine:transaction(function()
+		success,err = engine:transaction(function()
 			local result = engine:execute(check_encoding_query);
 			local n_bad_columns = result:rowcount();
 			if n_bad_columns > 0 then
@@ -129,7 +127,7 @@ local function upgrade_table()
 				module:log("info", "Database encoding upgrade complete!");
 			end
 		end);
-		local success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
+		success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
 		if not success then
 			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
 		end
@@ -148,12 +146,12 @@ do -- process options to get a db connection
 	--local dburi = db2uri(params);
 	engine = mod_sql:create_engine(params);
 
-	-- Encoding mess
 	set_encoding();
-	upgrade_table();
 
 	-- Automatically create table, ignore failure (table probably already exists)
 	create_table();
+	-- Encoding mess
+	upgrade_table();
 end
 
 local function serialize(value)
