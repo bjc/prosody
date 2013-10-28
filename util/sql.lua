@@ -276,6 +276,17 @@ function engine:_create_table(table)
 	end
 	return success;
 end
+function engine:set_encoding() -- to UTF-8
+	if self.params.driver == "SQLite3" then return end
+	local set_names_query = "SET NAMES 'utf8';";
+	if self.params.driver == "MySQL" then
+		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
+	end
+	local success,err = engine:transaction(function() return engine:execute(set_names_query); end);
+	if not success then
+		log("error", "Failed to set database connection encoding to UTF8: %s", err);
+	end
+end
 local engine_mt = { __index = engine };
 
 local function db2uri(params)
