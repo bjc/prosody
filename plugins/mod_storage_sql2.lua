@@ -41,9 +41,6 @@ local function create_table()
 	engine:transaction(function()
 		ProsodyTable:create(engine);
 	end);]]
-	if not module:get_option("sql_manage_tables", true) then
-		return;
-	end
 
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
 	if params.driver == "PostgreSQL" then
@@ -138,10 +135,12 @@ do -- process options to get a db connection
 
 	engine:set_encoding();
 
-	-- Automatically create table, ignore failure (table probably already exists)
-	create_table();
-	-- Encoding mess
-	upgrade_table();
+	if module:get_option("sql_manage_tables", true) then
+		-- Automatically create table, ignore failure (table probably already exists)
+		create_table();
+		-- Encoding mess
+		upgrade_table();
+	end
 end
 
 local function serialize(value)
