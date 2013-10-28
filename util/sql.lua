@@ -262,6 +262,7 @@ function engine:_create_table(table)
 	for i,col in ipairs(table.c) do
 		sql = sql.."`"..col.name.."` "..col.type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
+		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
 		if i ~= #table.c then sql = sql..", "; end
 	end
 	sql = sql.. ");"
