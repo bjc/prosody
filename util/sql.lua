@@ -263,6 +263,15 @@ function engine:_create_table(table)
 		sql = sql.."`"..col.name.."` "..col.type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
 		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
+		if col.auto_increment == true then
+			if self.params.driver == "PostgreSQL" then
+				sql = sql.." SERIAL";
+			elseif self.params.driver == "MySQL" then
+				sql = sql.." AUTO_INCREMENT";
+			elseif self.params.driver == "SQLite3" then
+				sql = sql.." AUTOINCREMENT";
+			end
+		end
 		if i ~= #table.c then sql = sql..", "; end
 	end
 	sql = sql.. ");"
