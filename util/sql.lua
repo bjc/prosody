@@ -251,6 +251,9 @@ function engine:_create_index(index)
 	elseif self.params.driver == "MySQL" then
 		sql = sql:gsub("`([,)])", "`(20)%1");
 	end
+	if index.unique then
+		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
+	end
 	--print(sql);
 	return self:execute(sql);
 end
