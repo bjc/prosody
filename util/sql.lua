@@ -290,8 +290,14 @@ function engine:_create_table(table)
 	return success;
 end
 function engine:set_encoding() -- to UTF-8
-	if self.params.driver == "SQLite3" then return end
 	local driver = self.params.driver;
+	if driver == "SQLite3" then
+		return self:transaction(function()
+			if self:select"PRAGMA encoding;"()[1] == "UTF-8" then
+				self.charset = "utf8";
+			end
+		end);
+	end
 	local set_names_query = "SET NAMES '%s';"
 	local charset = "utf8";
 	if driver == "MySQL" then
