@@ -73,7 +73,7 @@ local function create_table()
 		Column { name="with", type="TEXT", nullable=false }; -- related id
 		Column { name="type", type="TEXT", nullable=false };
 		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
+		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
 	};
 	engine:transaction(function()
 		ProsodyArchiveTable:create(engine);
