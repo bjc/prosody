@@ -15,6 +15,9 @@ local get_time = require "socket".gettime;
 local t_insert = table.insert;
 local pairs = pairs;
 local type = type;
+local debug_traceback = debug.traceback;
+local tostring = tostring;
+local xpcall = xpcall;
 
 local data = {};
 local new_data = {};
@@ -87,7 +90,7 @@ local params = {};
 local next_time = nil;
 local _id, _callback, _now, _param;
 local function _call() return _callback(_now, _id, _param); end
-local function _traceback_handler(err) log("error", "Traceback[timer]: %s", traceback(tostring(err), 2)); end
+local function _traceback_handler(err) log("error", "Traceback[timer]: %s", debug_traceback(tostring(err), 2)); end
 local function _on_timer(now)
 	local peek;
 	while true do
