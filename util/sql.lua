@@ -260,7 +260,11 @@ end
 function engine:_create_table(table)
 	local sql = "CREATE TABLE `"..table.name.."` (";
 	for i,col in ipairs(table.c) do
-		sql = sql.."`"..col.name.."` "..col.type;
+		local col_type = col.type;
+		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
+			col_type = "TEXT"; -- MEDIUMTEXT is MySQL-specific
+		end
+		sql = sql.."`"..col.name.."` "..col_type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
 		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
 		if col.auto_increment == true then
