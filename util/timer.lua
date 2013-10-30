@@ -96,8 +96,8 @@ local function _on_timer(now)
 		local _;
 		_, _callback, _id = h:pop();
 		_now = now;
-		_param = params[id];
-		params[id] = nil;
+		_param = params[_id];
+		params[_id] = nil;
 		--item(now, id, _param); -- FIXME pcall
 		local success, err = xpcall(_call, _traceback_handler);
 		if success and type(err) == "number" then
