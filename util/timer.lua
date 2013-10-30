@@ -117,7 +117,7 @@ function add_task(delay, callback, param)
 	params[id] = param;
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
-		_add_task(next_time - current_time, on_timer);
+		_add_task(next_time - current_time, _on_timer);
 	end
 	return id;
 end
@@ -131,7 +131,7 @@ function reschedule(id, delay)
 	h:reprioritize(id, delay);
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
-		_add_task(next_time - current_time, on_timer);
+		_add_task(next_time - current_time, _on_timer);
 	end
 	return id;
 end
