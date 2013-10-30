@@ -27,7 +27,7 @@ local engine; -- TODO create engine
 
 local function create_table()
 	local Table,Column,Index = mod_sql.Table,mod_sql.Column,mod_sql.Index;
-	--[[
+
 	local ProsodyTable = Table {
 		name="prosody";
 		Column { name="host", type="TEXT", nullable=false };
@@ -40,26 +40,6 @@ local function create_table()
 	};
 	engine:transaction(function()
 		ProsodyTable:create(engine);
-	end);]]
-
-	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
-	if params.driver == "PostgreSQL" then
-		create_sql = create_sql:gsub("`", "\"");
-	elseif params.driver == "MySQL" then
-		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT")
-			:gsub(";$", " CHARACTER SET 'utf8' COLLATE 'utf8_bin';");
-	end
-
-	local index_sql = "CREATE INDEX `prosody_index` ON `prosody` (`host`, `user`, `store`, `key`)";
-	if params.driver == "PostgreSQL" then
-		index_sql = index_sql:gsub("`", "\"");
-	elseif params.driver == "MySQL" then
-		index_sql = index_sql:gsub("`([,)])", "`(20)%1");
-	end
-
-	local success,err = engine:transaction(function()
-		engine:execute(create_sql);
-		engine:execute(index_sql);
 	end);
 
 	local ProsodyArchiveTable = Table {
