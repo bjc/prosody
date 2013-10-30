@@ -35,7 +35,7 @@ local function create_table()
 		Column { name="store", type="TEXT", nullable=false };
 		Column { name="key", type="TEXT", nullable=false };
 		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type="TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
 		Index { name="prosody_index", "host", "user", "store", "key" };
 	};
 	engine:transaction(function()
@@ -72,7 +72,7 @@ local function create_table()
 		Column { name="when", type="INTEGER", nullable=false }; -- timestamp
 		Column { name="with", type="TEXT", nullable=false }; -- related id
 		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type=params.driver == "MySQL" and "MEDIUMTEXT" or "TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
 		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
 	};
 	engine:transaction(function()
