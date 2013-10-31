@@ -27,7 +27,7 @@ local engine; -- TODO create engine
 
 local function create_table()
 	local Table,Column,Index = mod_sql.Table,mod_sql.Column,mod_sql.Index;
-	--[[
+
 	local ProsodyTable = Table {
 		name="prosody";
 		Column { name="host", type="TEXT", nullable=false };
@@ -35,56 +35,16 @@ local function create_table()
 		Column { name="store", type="TEXT", nullable=false };
 		Column { name="key", type="TEXT", nullable=false };
 		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type="TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
 		Index { name="prosody_index", "host", "user", "store", "key" };
 	};
 	engine:transaction(function()
 		ProsodyTable:create(engine);
-	end);]]
-	if not module:get_option("sql_manage_tables", true) then
-		return;
-	end
-
-	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
-	if params.driver == "PostgreSQL" then
-		create_sql = create_sql:gsub("`", "\"");
-	elseif params.driver == "MySQL" then
-		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT")
-			:gsub(";$", " CHARACTER SET 'utf8' COLLATE 'utf8_bin';");
-	end
-
-	local index_sql = "CREATE INDEX `prosody_index` ON `prosody` (`host`, `user`, `store`, `key`)";
-	if params.driver == "PostgreSQL" then
-		index_sql = index_sql:gsub("`", "\"");
-	elseif params.driver == "MySQL" then
-		index_sql = index_sql:gsub("`([,)])", "`(20)%1");
-	end
-
-	local success,err = engine:transaction(function()
-		engine:execute(create_sql);
-		engine:execute(index_sql);
 	end);
-	if not success then -- so we failed to create
-		if params.driver == "MySQL" then
-			success,err = engine:transaction(function()
-				local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
-				if result:rowcount() > 0 then
-					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
-					module:log("info", "Database table automatically upgraded");
-				end
-				return true;
-			end);
-			if not success then
-				module:log("error", "Failed to check/upgrade database schema (%s), please see "
-					.."http://prosody.im/doc/mysql for help",
-					err or "unknown error");
-			end
-		end
-	end
+
 	local ProsodyArchiveTable = Table {
 		name="prosodyarchive";
-		Column { name="sort_id", type="INTEGER PRIMARY KEY AUTOINCREMENT", nullable=false };
+		Column { name="sort_id", type="INTEGER", primary_key=true, auto_increment=true, nullable=false };
 		Column { name="host", type="TEXT", nullable=false };
 		Column { name="user", type="TEXT", nullable=false };
 		Column { name="store", type="TEXT", nullable=false };
@@ -92,28 +52,34 @@ local function create_table()
 		Column { name="when", type="INTEGER", nullable=false }; -- timestamp
 		Column { name="with", type="TEXT", nullable=false }; -- related id
 		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type=params.driver == "MySQL" and "MEDIUMTEXT" or "TEXT", nullable=false };
-		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
+		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
 	};
 	engine:transaction(function()
 		ProsodyArchiveTable:create(engine);
 	end);
 end
-local function set_encoding()
-	if params.driver == "SQLite3" then return end
-	local set_names_query = "SET NAMES 'utf8';";
+
+local function upgrade_table()
 	if params.driver == "MySQL" then
-		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
-	end
-	local success,err = engine:transaction(function() return engine:execute(set_names_query); end);
-	if not success then
-		module:log("error", "Failed to set database connection encoding to UTF8: %s", err);
-		return;
-	end
-	if params.driver == "MySQL" then
+		local success,err = engine:transaction(function()
+			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			if result:rowcount() > 0 then
+				module:log("info", "Upgrading database schema...");
+				engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+				module:log("info", "Database table automatically upgraded");
+			end
+			return true;
+		end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database schema (%s), please see "
+				.."http://prosody.im/doc/mysql for help",
+				err or "unknown error");
+			return false;
+		end
 		-- COMPAT w/pre-0.9: Upgrade tables to UTF-8 if not already
 		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
-		local success,err = engine:transaction(function()
+		success,err = engine:transaction(function()
 			local result = engine:execute(check_encoding_query);
 			local n_bad_columns = result:rowcount();
 			if n_bad_columns > 0 then
@@ -128,7 +94,7 @@ local function set_encoding()
 				module:log("info", "Database encoding upgrade complete!");
 			end
 		end);
-		local success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
+		success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
 		if not success then
 			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
 		end
@@ -147,11 +113,14 @@ do -- process options to get a db connection
 	--local dburi = db2uri(params);
 	engine = mod_sql:create_engine(params);
 
-	-- Encoding mess
-	set_encoding();
+	engine:set_encoding();
 
-	-- Automatically create table, ignore failure (table probably already exists)
-	create_table();
+	if module:get_option("sql_manage_tables", true) then
+		-- Automatically create table, ignore failure (table probably already exists)
+		create_table();
+		-- Encoding mess
+		upgrade_table();
+	end
 end
 
 local function serialize(value)
