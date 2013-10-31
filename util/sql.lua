@@ -251,14 +251,31 @@ function engine:_create_index(index)
 	elseif self.params.driver == "MySQL" then
 		sql = sql:gsub("`([,)])", "`(20)%1");
 	end
+	if index.unique then
+		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
+	end
 	--print(sql);
 	return self:execute(sql);
 end
 function engine:_create_table(table)
 	local sql = "CREATE TABLE `"..table.name.."` (";
 	for i,col in ipairs(table.c) do
-		sql = sql.."`"..col.name.."` "..col.type;
+		local col_type = col.type;
+		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
+			col_type = "TEXT"; -- MEDIUMTEXT is MySQL-specific
+		end
+		sql = sql.."`"..col.name.."` "..col_type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
+		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
+		if col.auto_increment == true then
+			if self.params.driver == "PostgreSQL" then
+				sql = sql.." SERIAL";
+			elseif self.params.driver == "MySQL" then
+				sql = sql.." AUTO_INCREMENT";
+			elseif self.params.driver == "SQLite3" then
+				sql = sql.." AUTOINCREMENT";
+			end
+		end
 		if i ~= #table.c then sql = sql..", "; end
 	end
 	sql = sql.. ");"
@@ -275,6 +292,28 @@ function engine:_create_table(table)
 		end
 	end
 	return success;
+end
+function engine:set_encoding() -- to UTF-8
+	local driver = self.params.driver;
+	if driver == "SQLite3" then
+		return self:transaction(function()
+			if self:select"PRAGMA encoding;"()[1] == "UTF-8" then
+				self.charset = "utf8";
+			end
+		end);
+	end
+	local set_names_query = "SET NAMES '%s';"
+	local charset = "utf8";
+	if driver == "MySQL" then
+		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
+		local ok, charsets = self:transaction(function()
+			return self:select"SELECT `CHARACTER_SET_NAME` FROM `CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
+		end);
+		local row = ok and charsets();
+		charset = row and row[1] or charset;
+	end
+	self.charset = charset;
+	return self:transaction(function() return engine:execute(set_names_query:format(charset)); end);
 end
 local engine_mt = { __index = engine };
 
