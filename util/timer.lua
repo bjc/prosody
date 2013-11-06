@@ -105,6 +105,7 @@ local function _on_timer(now)
 		local success, err = xpcall(_call, _traceback_handler);
 		if success and type(err) == "number" then
 			h:insert(_callback, err + now, _id); -- re-add
+			params[_id] = _param;
 		end
 	end
 	next_time = peek;
