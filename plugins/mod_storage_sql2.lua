@@ -239,7 +239,7 @@ local function archive_where(query, args, where)
 		if query.start then
 			where[#where] = "`when` BETWEEN ? AND ?" -- is this inclusive?
 		else
-			where[#where+1] = "`when` >= ?"
+			where[#where+1] = "`when` <= ?"
 		end
 	end
 
