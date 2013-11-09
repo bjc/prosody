@@ -1,13 +1,19 @@
 #!/usr/bin/env lua
 -- Prosody IM
 -- Copyright (C) 2008-2009 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
 
 package.path = package.path..";../?.lua";
 package.cpath = package.cpath..";../?.so"; -- needed for util.pposix used in datamanager
+
+local my_name = arg[0];
+if my_name:match("[/\\]") then
+	package.path = package.path..";"..my_name:gsub("[^/\\]+$", "../?.lua");
+	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
+end
 
 -- ugly workaround for getting datamanager to work outside of prosody :(
 prosody = { };

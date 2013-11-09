@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -45,28 +45,28 @@ local modulemap = { ["*"] = {} };
 -- Load modules when a host is activated
 function load_modules_for_host(host)
 	local component = config.get(host, "component_module");
-	
+
 	local global_modules_enabled = config.get("*", "modules_enabled");
 	local global_modules_disabled = config.get("*", "modules_disabled");
 	local host_modules_enabled = config.get(host, "modules_enabled");
 	local host_modules_disabled = config.get(host, "modules_disabled");
-	
+
 	if host_modules_enabled == global_modules_enabled then host_modules_enabled = nil; end
 	if host_modules_disabled == global_modules_disabled then host_modules_disabled = nil; end
-	
+
 	local global_modules = set.new(autoload_modules) + set.new(global_modules_enabled) - set.new(global_modules_disabled);
 	if component then
 		global_modules = set.intersection(set.new(component_inheritable_modules), global_modules);
 	end
 	local modules = (global_modules + set.new(host_modules_enabled)) - set.new(host_modules_disabled);
-	
+
 	-- COMPAT w/ pre 0.8
 	if modules:contains("console") then
 		log("error", "The mod_console plugin has been renamed to mod_admin_telnet. Please update your config.");
 		modules:remove("console");
 		modules:add("admin_telnet");
 	end
-	
+
 	if component then
 		load(host, component);
 	end
@@ -84,18 +84,18 @@ end);
 local function do_unload_module(host, name)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
-	
+
 	if module_has_method(mod, "unload") then
 		local ok, err = call_module_method(mod, "unload");
 		if (not ok) and err then
 			log("warn", "Non-fatal error unloading module '%s' on '%s': %s", name, host, err);
 		end
 	end
-	
+
 	for object, event, handler in mod.module.event_handlers:iter(nil, nil, nil) do
 		object.remove_handler(event, handler);
 	end
-	
+
 	if mod.module.items then -- remove items
 		local events = (host == "*" and prosody.events) or hosts[host].events;
 		for key,t in pairs(mod.module.items) do
@@ -117,11 +117,11 @@ local function do_load_module(host, module_name, state)
 	elseif not hosts[host] and host ~= "*"then
 		return nil, "unknown-host";
 	end
-	
+
 	if not modulemap[host] then
 		modulemap[host] = hosts[host].modules;
 	end
-	
+
 	if modulemap[host][module_name] then
 		log("warn", "%s is already loaded for %s, so not loading again", module_name, host);
 		return nil, "module-already-loaded";
@@ -147,7 +147,7 @@ local function do_load_module(host, module_name, state)
 		end
 		return nil, "global-module-already-loaded";
 	end
-	
+
 
 
 	local _log = logger.init(host..":"..module_name);
@@ -158,7 +158,7 @@ local function do_load_module(host, module_name, state)
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
-	
+
 	local mod, err = pluginloader.load_code(module_name, nil, pluginenv);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");

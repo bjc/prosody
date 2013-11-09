@@ -1,6 +1,6 @@
 -- Prosody IM
 -- Copyright (C) 2009-2012 Tobias Markmann
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -103,7 +103,7 @@ local function setup_compression(session, deflate_stream)
 			return;
 		end
 		return compressed;
-	end);	
+	end);
 end
 
 -- setup decompression for a stream
@@ -125,19 +125,19 @@ end
 
 module:hook("stanza/http://jabber.org/protocol/compress:compressed", function(event)
 	local session = event.origin;
-	
+
 	if session.type == "s2sout_unauthed" or session.type == "s2sout" then
 		session.log("debug", "Activating compression...")
 		-- create deflate and inflate streams
 		local deflate_stream = get_deflate_stream(session);
 		if not deflate_stream then return true; end
-		
+
 		local inflate_stream = get_inflate_stream(session);
 		if not inflate_stream then return true; end
-		
+
 		-- setup compression for session.w
 		setup_compression(session, deflate_stream);
-			
+
 		-- setup decompression for session.data
 		setup_decompression(session, inflate_stream);
 		session:reset_stream();
@@ -158,29 +158,29 @@ module:hook("stanza/http://jabber.org/protocol/compress:compress", function(even
 			session.log("debug", "Client tried to establish another compression layer.");
 			return true;
 		end
-		
+
 		-- checking if the compression method is supported
 		local method = stanza:child_with_name("method");
 		method = method and (method[1] or "");
 		if method == "zlib" then
 			session.log("debug", "zlib compression enabled.");
-			
+
 			-- create deflate and inflate streams
 			local deflate_stream = get_deflate_stream(session);
 			if not deflate_stream then return true; end
-			
+
 			local inflate_stream = get_inflate_stream(session);
 			if not inflate_stream then return true; end
-			
+
 			(session.sends2s or session.send)(st.stanza("compressed", {xmlns=xmlns_compression_protocol}));
 			session:reset_stream();
-			
+
 			-- setup compression for session.w
 			setup_compression(session, deflate_stream);
-				
+
 			-- setup decompression for session.data
 			setup_decompression(session, inflate_stream);
-			
+
 			session.compressed = true;
 		elseif method then
 			session.log("debug", "%s compression selected, but we don't support it.", tostring(method));
