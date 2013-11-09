@@ -33,7 +33,7 @@ module "certmanager"
 local default_ssl_config = configmanager.get("*", "ssl");
 local default_capath = "/etc/ssl/certs";
 local default_verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
-local default_options = { "no_sslv2", "no_sslv3", luasec_has_noticket and "no_ticket" or nil, "cipher_server_preference" };
+local default_options = { "no_sslv2", "no_sslv3", "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
 local default_verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
