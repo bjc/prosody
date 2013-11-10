@@ -40,7 +40,7 @@ local core_defaults = {
 	options = { "no_sslv2", "no_sslv3", "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
-	ciphers = "HIGH:!DSS:!aNULL@STRENGTH";
+	ciphers = "HIGH+kEDH:HIGH+kEECDH:HIGH+kRSA:!DSS:!3DES:!aNULL";
 }
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true

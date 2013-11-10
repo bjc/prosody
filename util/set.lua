@@ -23,7 +23,7 @@ function set_mt.__sub(set1, set2)
 	return _M.difference(set1, set2);
 end
 function set_mt.__div(set, func)
-	local new_set, new_items = _M.new();
+	local new_set = _M.new();
 	local items, new_items = set._items, new_set._items;
 	for item in pairs(items) do
 		local new_item = func(item);
