@@ -313,7 +313,7 @@ function engine:set_encoding() -- to UTF-8
 		charset = row and row[1] or charset;
 	end
 	self.charset = charset;
-	return self:transaction(function() return engine:execute(set_names_query:format(charset)); end);
+	return self:transaction(function() return self:execute(set_names_query:format(charset)); end);
 end
 local engine_mt = { __index = engine };
 
