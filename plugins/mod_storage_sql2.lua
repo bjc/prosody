@@ -44,7 +44,7 @@ local function create_table()
 
 	local ProsodyArchiveTable = Table {
 		name="prosodyarchive";
-		Column { name="sort_id", type="INTEGER", primary_key=true, auto_increment=true, nullable=false };
+		Column { name="sort_id", type="INTEGER", primary_key=true, auto_increment=true };
 		Column { name="host", type="TEXT", nullable=false };
 		Column { name="user", type="TEXT", nullable=false };
 		Column { name="store", type="TEXT", nullable=false };
