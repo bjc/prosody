@@ -264,13 +264,14 @@ function engine:_create_table(table)
 		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
 			col_type = "TEXT"; -- MEDIUMTEXT is MySQL-specific
 		end
+		if col.auto_increment == true and self.params.driver == "PostgreSQL" then
+			col_type = "BIGSERIAL";
+		end
 		sql = sql.."`"..col.name.."` "..col_type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
 		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
 		if col.auto_increment == true then
-			if self.params.driver == "PostgreSQL" then
-				sql = sql.." SERIAL";
-			elseif self.params.driver == "MySQL" then
+			if self.params.driver == "MySQL" then
 				sql = sql.." AUTO_INCREMENT";
 			elseif self.params.driver == "SQLite3" then
 				sql = sql.." AUTOINCREMENT";
