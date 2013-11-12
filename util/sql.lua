@@ -308,7 +308,7 @@ function engine:set_encoding() -- to UTF-8
 	if driver == "MySQL" then
 		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
 		local ok, charsets = self:transaction(function()
-			return self:select"SELECT `CHARACTER_SET_NAME` FROM `CHARACTER_SETS` WHERE `information_schema`.`CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
+			return self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
 		end);
 		local row = ok and charsets();
 		charset = row and row[1] or charset;
