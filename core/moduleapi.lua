@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2012 Matthew Wild
 -- Copyright (C) 2008-2012 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -44,7 +44,7 @@ function api:get_host()
 end
 
 function api:get_host_type()
-	return self.host ~= "*" and hosts[self.host].type or nil;
+	return (self.host == "*" and "global") or hosts[self.host].type or "local";
 end
 
 function api:set_global()
@@ -74,7 +74,7 @@ end
 function api:has_identity(category, type, name)
 	for _, id in ipairs(self:get_host_items("identity")) do
 		if id.category == category and id.type == type and id.name == name then
-			return true; 
+			return true;
 		end
 	end
 	return false;
@@ -112,6 +112,10 @@ function api:hook_tag(xmlns, name, handler, priority)
 	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
 end
 api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
+
+function api:unhook(event, handler)
+	return self:unhook_object_event((hosts[self.host] or prosody).events, event, handler);
+end
 
 function api:require(lib)
 	local f, n = pluginloader.load_code(self.name, lib..".lib.lua", self.environment);
@@ -252,21 +256,21 @@ function api:get_option_array(name, ...)
 	if value == nil then
 		return nil;
 	end
-	
+
 	if type(value) ~= "table" then
 		return array{ value }; -- Assume any non-list is a single-item list
 	end
-	
+
 	return array():append(value); -- Clone
 end
 
 function api:get_option_set(name, ...)
 	local value = self:get_option_array(name, ...);
-	
+
 	if value == nil then
 		return nil;
 	end
-	
+
 	return set.new(value);
 end
 

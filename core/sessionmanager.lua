@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -44,7 +44,7 @@ function new_session(conn)
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(session):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
-		
+
 	return session;
 end
 
@@ -73,19 +73,19 @@ end
 function destroy_session(session, err)
 	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
 	if session.destroyed then return; end
-	
+
 	-- Remove session/resource from user's session list
 	if session.full_jid then
 		local host_session = hosts[session.host];
-		
+
 		-- Allow plugins to prevent session destruction
 		if host_session.events.fire_event("pre-resource-unbind", {session=session, error=err}) then
 			return;
 		end
-		
+
 		host_session.sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
-		
+
 		if not next(host_session.sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
 			host_session.sessions[session.username] = nil;
@@ -94,7 +94,7 @@ function destroy_session(session, err)
 
 		host_session.events.fire_event("resource-unbind", {session=session, error=err});
 	end
-	
+
 	retire_session(session);
 end
 
@@ -119,7 +119,7 @@ function bind_resource(session, resource)
 	resource = resourceprep(resource);
 	resource = resource ~= "" and resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
-	
+
 	if not hosts[session.host].sessions[session.username] then
 		local sessions = { sessions = {} };
 		hosts[session.host].sessions[session.username] = sessions;
@@ -156,12 +156,12 @@ function bind_resource(session, resource)
 			end
 		end
 	end
-	
+
 	session.resource = resource;
 	session.full_jid = session.username .. '@' .. session.host .. '/' .. resource;
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	full_sessions[session.full_jid] = session;
-	
+
 	local err;
 	session.roster, err = rm_load_roster(session.username, session.host);
 	if err then
@@ -176,9 +176,9 @@ function bind_resource(session, resource)
 		session.log("error", "Roster loading failed: %s", err);
 		return nil, "cancel", "internal-server-error", "Error loading roster";
 	end
-	
+
 	hosts[session.host].events.fire_event("resource-bind", {session=session});
-	
+
 	return true;
 end
 

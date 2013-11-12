@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -42,21 +42,21 @@ _M.ns_pattern = ns_pattern;
 
 function new_sax_handlers(session, stream_callbacks)
 	local xml_handlers = {};
-	
+
 	local cb_streamopened = stream_callbacks.streamopened;
 	local cb_streamclosed = stream_callbacks.streamclosed;
 	local cb_error = stream_callbacks.error or function(session, e, stanza) error("XML stream error: "..tostring(e)..(stanza and ": "..tostring(stanza) or ""),2); end;
 	local cb_handlestanza = stream_callbacks.handlestanza;
-	
+
 	local stream_ns = stream_callbacks.stream_ns or xmlns_streams;
 	local stream_tag = stream_callbacks.stream_tag or "stream";
 	if stream_ns ~= "" then
 		stream_tag = stream_ns..ns_separator..stream_tag;
 	end
 	local stream_error_tag = stream_ns..ns_separator..(stream_callbacks.error_tag or "error");
-	
+
 	local stream_default_ns = stream_callbacks.default_ns;
-	
+
 	local stack = {};
 	local chardata, stanza = {};
 	local non_streamns_depth = 0;
@@ -75,7 +75,7 @@ function new_sax_handlers(session, stream_callbacks)
 			attr.xmlns = curr_ns;
 			non_streamns_depth = non_streamns_depth + 1;
 		end
-		
+
 		for i=1,#attr do
 			local k = attr[i];
 			attr[i] = nil;
@@ -85,7 +85,7 @@ function new_sax_handlers(session, stream_callbacks)
 				attr[k] = nil;
 			end
 		end
-		
+
 		if not stanza then --if we are not currently inside a stanza
 			if session.notopen then
 				if tagname == stream_tag then
@@ -102,7 +102,7 @@ function new_sax_handlers(session, stream_callbacks)
 			if curr_ns == "jabber:client" and name ~= "iq" and name ~= "presence" and name ~= "message" then
 				cb_error(session, "invalid-top-level-element");
 			end
-			
+
 			stanza = setmetatable({ name = name, attr = attr, tags = {} }, stanza_mt);
 		else -- we are inside a stanza, so add a tag
 			t_insert(stack, stanza);
@@ -151,22 +151,22 @@ function new_sax_handlers(session, stream_callbacks)
 			error("Failed to abort parsing");
 		end
 	end
-	
+
 	if lxp_supports_doctype then
 		xml_handlers.StartDoctypeDecl = restricted_handler;
 	end
 	xml_handlers.Comment = restricted_handler;
 	xml_handlers.ProcessingInstruction = restricted_handler;
-	
+
 	local function reset()
 		stanza, chardata = nil, {};
 		stack = {};
 	end
-	
+
 	local function set_session(stream, new_session)
 		session = new_session;
 	end
-	
+
 	return xml_handlers, { reset = reset, set_session = set_session };
 end
 
