@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -72,7 +72,7 @@ module:add_feature("jabber:iq:register");
 
 local register_stream_feature = st.stanza("register", {xmlns="http://jabber.org/features/iq-register"}):up();
 module:hook("stream-features", function(event)
-        local session, features = event.origin, event.features;
+	local session, features = event.origin, event.features;
 
 	-- Advertise registration to unauthorized clients only.
 	if not(allow_registration) or session.type ~= "c2s_unauthed" then
@@ -102,21 +102,21 @@ local function handle_registration_stanza(event)
 				session.send(st.reply(stanza));
 				return old_session_close(session, ...);
 			end
-			
+
 			local ok, err = usermanager_delete_user(username, host);
-			
+
 			if not ok then
 				module:log("debug", "Removing user account %s@%s failed: %s", username, host, err);
 				session.close = old_session_close;
 				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
 				return true;
 			end
-			
+
 			module:log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
-			local username = nodeprep(query:get_child("username"):get_text());
-			local password = query:get_child("password"):get_text();
+			local username = nodeprep(query:get_child_text("username"));
+			local password = query:get_child_text("password");
 			if username and password then
 				if username == session.username then
 					if usermanager_set_password(username, password, session.host) then
@@ -170,13 +170,10 @@ local function parse_response(query)
 end
 
 local recent_ips = {};
-local min_seconds_between_registrations = module:get_option("min_seconds_between_registrations");
-local whitelist_only = module:get_option("whitelist_registration_only");
-local whitelisted_ips = module:get_option("registration_whitelist") or { "127.0.0.1" };
-local blacklisted_ips = module:get_option("registration_blacklist") or {};
-
-for _, ip in ipairs(whitelisted_ips) do whitelisted_ips[ip] = true; end
-for _, ip in ipairs(blacklisted_ips) do blacklisted_ips[ip] = true; end
+local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
+local whitelist_only = module:get_option_boolean("whitelist_registration_only");
+local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1" })._items;
+local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
 
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
@@ -209,7 +206,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						else
 							local ip = recent_ips[session.ip];
 							ip.count = ip.count + 1;
-							
+
 							if os_time() - ip.time < min_seconds_between_registrations then
 								ip.time = os_time();
 								session.send(st.error_reply(stanza, "wait", "not-acceptable"));

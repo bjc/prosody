@@ -204,7 +204,7 @@ function handle_request(conn, request, finish_cb)
 			err_code, err = 400, "Missing or invalid 'Host' header";
 		end
 	end
-	
+
 	if err then
 		response.status_code = err_code;
 		response:send(events.fire_event("http-error", { code = err_code, message = err }));
@@ -250,7 +250,7 @@ function _M.send_response(response, body)
 	if response.finished then return; end
 	response.finished = true;
 	response.conn._http_open_response = nil;
-	
+
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
 	body = body or response.body or "";

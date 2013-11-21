@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -38,7 +38,7 @@ function form_t.form(layout, data, formtype)
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
 
 		local value = (data and data[field.name]) or field.value;
-		
+
 		if value then
 			-- Add value, depending on type
 			if field_type == "hidden" then
@@ -93,11 +93,11 @@ function form_t.form(layout, data, formtype)
 				end
 			end
 		end
-		
+
 		if field.required then
 			form:tag("required"):up();
 		end
-		
+
 		-- Jump back up to list of fields
 		form:up();
 	end
