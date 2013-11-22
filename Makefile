@@ -17,6 +17,7 @@ INSTALLEDDATA = $(DATADIR)
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
+	$(MAKE) -C certs localhost.crt example.com.crt
 
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
