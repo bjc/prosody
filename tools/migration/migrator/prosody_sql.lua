@@ -24,7 +24,7 @@ local function create_table(connection, params)
 	elseif params.driver == "MySQL" then
 		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
 	end
-	
+
 	local stmt = connection:prepare(create_sql);
 	if stmt then
 		local ok = stmt:execute();

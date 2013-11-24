@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -11,6 +11,7 @@ local t_insert, t_sort, t_remove, t_concat
 
 local setmetatable = setmetatable;
 local math_random = math.random;
+local math_floor = math.floor;
 local pairs, ipairs = pairs, ipairs;
 local tostring = tostring;
 
@@ -59,13 +60,13 @@ function array_base.filter(outa, ina, func)
 			write = write + 1;
 		end
 	end
-	
+
 	if inplace and write <= start_length then
 		for i=write,start_length do
 			outa[i] = nil;
 		end
 	end
-	
+
 	return outa;
 end
 
@@ -84,21 +85,31 @@ function array_base.pluck(outa, ina, key)
 	return outa;
 end
 
+function array_base.reverse(outa, ina)
+	local len = #ina;
+	if ina == outa then
+		local middle = math_floor(len/2);
+		len = len + 1;
+		local o; -- opposite
+		for i = 1, middle do
+			o = len - i;
+			outa[i], outa[o] = outa[o], outa[i];
+		end
+	else
+		local off = len + 1;
+		for i = 1, len do
+			outa[i] = ina[off - i];
+		end
+	end
+	return outa;
+end
+
 --- These methods only mutate the array
 function array_methods:shuffle(outa, ina)
 	local len = #self;
 	for i=1,#self do
 		local r = math_random(i,len);
 		self[i], self[r] = self[r], self[i];
-	end
-	return self;
-end
-
-function array_methods:reverse()
-	local len = #self-1;
-	for i=len,1,-1 do
-		self:push(self[i]);
-		self:pop(i);
 	end
 	return self;
 end
