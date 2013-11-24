@@ -16,8 +16,10 @@ local timer = require "util.timer";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
-local ipairs, pairs, select, unpack = ipairs, pairs, select, unpack;
+local ipairs, pairs, select = ipairs, pairs, select;
 local tonumber, tostring = tonumber, tostring;
+local pack = table.pack or function(...) return {n=select("#",...), ...}; end -- table.pack is only in 5.2
+local unpack = table.unpack or unpack; -- renamed in 5.2
 
 local prosody = prosody;
 local hosts = prosody.hosts;
@@ -347,11 +349,29 @@ function api:send(stanza)
 	return core_post_stanza(hosts[self.host], stanza);
 end
 
-function api:add_timer(delay, callback)
-	return timer.add_task(delay, function (t)
-		if self.loaded == false then return; end
-		return callback(t);
-	end);
+local timer_methods = { }
+local timer_mt = {
+	__index = timer_methods;
+}
+function timer_methods:stop( )
+	timer.stop(self.id);
+end
+timer_methods.disarm = timer_methods.stop
+function timer_methods:reschedule(delay)
+	timer.reschedule(self.id, delay)
+end
+
+local function timer_callback(now, id, t)
+	if t.module_env.loaded == false then return; end
+	return t.callback(now, unpack(t, 1, t.n));
+end
+
+function api:add_timer(delay, callback, ...)
+	local t = pack(...)
+	t.module_env = self;
+	t.callback = callback;
+	t.id = timer.add_task(delay, timer_callback, t);
+	return setmetatable(t, timer_mt);
 end
 
 local path_sep = package.config:sub(1,1);
