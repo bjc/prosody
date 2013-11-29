@@ -491,11 +491,24 @@ int string2resource(const char *s) {
 	return -1;
 }
 
+unsigned long int arg_to_rlimit(lua_State* L, int idx, rlim_t current) {
+	switch(lua_type(L, idx)) {
+	case LUA_TSTRING:
+		if(strcmp(lua_tostring(L, idx), "unlimited") == 0)
+			return RLIM_INFINITY;
+	case LUA_TNUMBER:
+		return lua_tointeger(L, idx);
+	case LUA_TNONE:
+	case LUA_TNIL:
+		return current;
+	default:
+		return luaL_argerror(L, idx, "unexpected type");
+	}
+}
+
 int lc_setrlimit(lua_State *L) {
+	struct rlimit lim;
 	int arguments = lua_gettop(L);
-	int softlimit = -1;
-	int hardlimit = -1;
-	const char *resource = NULL;
 	int rid = -1;
 	if(arguments < 1 || arguments > 3) {
 		lua_pushboolean(L, 0);
@@ -503,37 +516,26 @@ int lc_setrlimit(lua_State *L) {
 		return 2;
 	}
 
-	resource = luaL_checkstring(L, 1);
-	softlimit = luaL_checkinteger(L, 2);
-	hardlimit = luaL_checkinteger(L, 3);
-
-	rid = string2resource(resource);
-	if (rid != -1) {
-		struct rlimit lim;
-		struct rlimit lim_current;
-
-		if (softlimit < 0 || hardlimit < 0) {
-			if (getrlimit(rid, &lim_current)) {
-				lua_pushboolean(L, 0);
-				lua_pushstring(L, "getrlimit-failed");
-				return 2;
-			}
-		}
-
-		if (softlimit < 0) lim.rlim_cur = lim_current.rlim_cur;
-			else lim.rlim_cur = softlimit;
-		if (hardlimit < 0) lim.rlim_max = lim_current.rlim_max;
-			else lim.rlim_max = hardlimit;
-
-		if (setrlimit(rid, &lim)) {
-			lua_pushboolean(L, 0);
-			lua_pushstring(L, "setrlimit-failed");
-			return 2;
-		}
-	} else {
-		/* Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard. */
+	rid = string2resource(luaL_checkstring(L, 1));
+	if (rid == -1) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "invalid-resource");
+		return 2;
+	}
+
+	/* Fetch current values to use as defaults */
+	if (getrlimit(rid, &lim)) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "getrlimit-failed");
+		return 2;
+	}
+
+	lim.rlim_cur = arg_to_rlimit(L, 2, lim.rlim_cur);
+	lim.rlim_max = arg_to_rlimit(L, 3, lim.rlim_max);
+
+	if (setrlimit(rid, &lim)) {
+		lua_pushboolean(L, 0);
+		lua_pushstring(L, "setrlimit-failed");
 		return 2;
 	}
 	lua_pushboolean(L, 1);
@@ -552,6 +554,8 @@ int lc_getrlimit(lua_State *L) {
 		return 2;
 	}
 
+
+
 	resource = luaL_checkstring(L, 1);
 	rid = string2resource(resource);
 	if (rid != -1) {
@@ -567,8 +571,14 @@ int lc_getrlimit(lua_State *L) {
 		return 2;
 	}
 	lua_pushboolean(L, 1);
-	lua_pushnumber(L, lim.rlim_cur);
-	lua_pushnumber(L, lim.rlim_max);
+	if(lim.rlim_cur == RLIM_INFINITY)
+		lua_pushstring(L, "unlimited");
+	else
+		lua_pushnumber(L, lim.rlim_cur);
+	if(lim.rlim_max == RLIM_INFINITY)
+		lua_pushstring(L, "unlimited");
+	else
+		lua_pushnumber(L, lim.rlim_max);
 	return 3;
 }
 

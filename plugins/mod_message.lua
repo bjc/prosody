@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -17,7 +17,7 @@ local user_exists = require "core.usermanager".user_exists;
 
 local function process_to_bare(bare, origin, stanza)
 	local user = bare_sessions[bare];
-	
+
 	local t = stanza.attr.type;
 	if t == "error" then
 		-- discard
@@ -66,7 +66,7 @@ end
 module:hook("message/full", function(data)
 	-- message to full JID recieved
 	local origin, stanza = data.origin, data.stanza;
-	
+
 	local session = full_sessions[stanza.attr.to];
 	if session and session.send(stanza) then
 		return true;
