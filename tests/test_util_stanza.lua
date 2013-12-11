@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -18,7 +18,7 @@ end
 
 function deserialize(deserialize, st)
 	local stanza = st.stanza("message", { a = "a" });
-	
+
 	local stanza2 = deserialize(st.preserialize(stanza));
 	assert_is(stanza2 and stanza.name, "deserialize returns a stanza");
 	assert_table(stanza2.attr, "Deserialized stanza has attributes");

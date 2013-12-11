@@ -16,10 +16,9 @@ local accounts = module:open_store("accounts");
 
 -- define auth provider
 local provider = {};
-log("debug", "initializing internal_plain authentication provider for host '%s'", host);
 
 function provider.test_password(username, password)
-	log("debug", "test password for user %s at host %s", username, host);
+	log("debug", "test password for user '%s'", username);
 	local credentials = accounts:get(username) or {};
 
 	if password == credentials.password then
@@ -30,11 +29,12 @@ function provider.test_password(username, password)
 end
 
 function provider.get_password(username)
-	log("debug", "get_password for username '%s' at host '%s'", username, host);
+	log("debug", "get_password for username '%s'", username);
 	return (accounts:get(username) or {}).password;
 end
 
 function provider.set_password(username, password)
+	log("debug", "set_password for username '%s'", username);
 	local account = accounts:get(username);
 	if account then
 		account.password = password;
@@ -46,7 +46,7 @@ end
 function provider.user_exists(username)
 	local account = accounts:get(username);
 	if not account then
-		log("debug", "account not found for username '%s' at host '%s'", username, host);
+		log("debug", "account not found for username '%s'", username);
 		return nil, "Auth failed. Invalid username";
 	end
 	return true;
@@ -76,6 +76,6 @@ function provider.get_sasl_handler()
 	};
 	return new_sasl(host, getpass_authentication_profile);
 end
-	
+
 module:provides("auth", provider);
 

@@ -45,7 +45,7 @@ function String(n) return "String()" end
 };
 
 local functions = {
-	
+
 };
 
 local cmap = {
@@ -177,8 +177,8 @@ function engine:execute(sql, ...)
 end
 
 local result_mt = { __index = {
-	affected = function(self) return self.__affected; end;
-	rowcount = function(self) return self.__rowcount; end;
+	affected = function(self) return self.__stmt:affected(); end;
+	rowcount = function(self) return self.__stmt:rowcount(); end;
 } };
 
 function engine:execute_query(sql, ...)
@@ -200,7 +200,7 @@ function engine:execute_update(sql, ...)
 		prepared[sql] = stmt;
 	end
 	assert(stmt:execute(...));
-	return setmetatable({ __affected = stmt:affected(), __rowcount = stmt:rowcount() }, result_mt);
+	return setmetatable({ __stmt = stmt }, result_mt);
 end
 engine.insert = engine.execute_update;
 engine.select = engine.execute_query;
@@ -251,19 +251,39 @@ function engine:_create_index(index)
 	elseif self.params.driver == "MySQL" then
 		sql = sql:gsub("`([,)])", "`(20)%1");
 	end
+	if index.unique then
+		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
+	end
 	--print(sql);
 	return self:execute(sql);
 end
 function engine:_create_table(table)
 	local sql = "CREATE TABLE `"..table.name.."` (";
 	for i,col in ipairs(table.c) do
-		sql = sql.."`"..col.name.."` "..col.type;
+		local col_type = col.type;
+		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
+			col_type = "TEXT"; -- MEDIUMTEXT is MySQL-specific
+		end
+		if col.auto_increment == true and self.params.driver == "PostgreSQL" then
+			col_type = "BIGSERIAL";
+		end
+		sql = sql.."`"..col.name.."` "..col_type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
+		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
+		if col.auto_increment == true then
+			if self.params.driver == "MySQL" then
+				sql = sql.." AUTO_INCREMENT";
+			elseif self.params.driver == "SQLite3" then
+				sql = sql.." AUTOINCREMENT";
+			end
+		end
 		if i ~= #table.c then sql = sql..", "; end
 	end
 	sql = sql.. ");"
 	if self.params.driver == "PostgreSQL" then
 		sql = sql:gsub("`", "\"");
+	elseif self.params.driver == "MySQL" then
+		sql = sql:gsub(";$", " CHARACTER SET 'utf8' COLLATE 'utf8_bin';");
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
@@ -273,6 +293,28 @@ function engine:_create_table(table)
 		end
 	end
 	return success;
+end
+function engine:set_encoding() -- to UTF-8
+	local driver = self.params.driver;
+	if driver == "SQLite3" then
+		return self:transaction(function()
+			if self:select"PRAGMA encoding;"()[1] == "UTF-8" then
+				self.charset = "utf8";
+			end
+		end);
+	end
+	local set_names_query = "SET NAMES '%s';"
+	local charset = "utf8";
+	if driver == "MySQL" then
+		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
+		local ok, charsets = self:transaction(function()
+			return self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
+		end);
+		local row = ok and charsets();
+		charset = row and row[1] or charset;
+	end
+	self.charset = charset;
+	return self:transaction(function() return self:execute(set_names_query:format(charset)); end);
 end
 local engine_mt = { __index = engine };
 

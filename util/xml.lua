@@ -26,8 +26,8 @@ local parse_xml = (function()
 				attr[i] = nil;
 				local ns, nm = k:match(ns_pattern);
 				if nm ~= "" then
-					ns = ns_prefixes[ns]; 
-					if ns then 
+					ns = ns_prefixes[ns];
+					if ns then
 						attr[ns..":"..nm] = attr[k];
 						attr[k] = nil;
 					end

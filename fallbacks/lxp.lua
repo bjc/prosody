@@ -61,7 +61,7 @@ local function parser(data, handlers, ns_separator)
 		while #data == 0 do data = coroutine.yield(); end
 		return data:sub(1,1);
 	end
-	
+
 	local ns = { xml = "http://www.w3.org/XML/1998/namespace" };
 	ns.__index = ns;
 	local function apply_ns(name, dodefault)
@@ -100,7 +100,7 @@ local function parser(data, handlers, ns_separator)
 		ns = getmetatable(ns);
 		return tag;
 	end
-	
+
 	while true do
 		if peek() == "<" then
 			local elem = read_until(">"):sub(2,-2);
