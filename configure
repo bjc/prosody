@@ -17,6 +17,7 @@ CC=gcc
 CXX=g++
 LD=gcc
 RUNWITH=lua
+EXCERTS=yes
 
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
@@ -64,6 +65,7 @@ Configure Prosody prior to building.
                             Default is $LD
 --require-config            Will cause Prosody to refuse to run when
                             it fails to find a configuration file
+--no-example-certs          Disables generation of example certificates.
 EOF
 }
 
@@ -176,6 +178,9 @@ do
       ;;
    --runwith=*)
       RUNWITH="$value"
+      ;;
+    --no-example-certs)
+      EXCERTS=
       ;;
    *)
       echo "Error: Unknown flag: $1"
@@ -348,6 +353,7 @@ CC=$CC
 CXX=$CXX
 LD=$LD
 RUNWITH=$RUNWITH
+EXCERTS=$EXCERTS
 
 EOF
 
