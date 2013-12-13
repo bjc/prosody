@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2009 Matthew Wild
 -- Copyright (C) 2008-2009 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -24,11 +24,11 @@ module:hook("message/offline/handle", function(event)
 	else
 		node, host = origin.username, origin.host;
 	end
-	
+
 	stanza.attr.stamp, stanza.attr.stamp_legacy = datetime.datetime(), datetime.legacy();
 	local result = datamanager.list_append(node, host, "offline", st.preserialize(stanza));
 	stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
-	
+
 	return result;
 end);
 
