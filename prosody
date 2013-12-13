@@ -86,6 +86,7 @@ function read_config()
 			break;
 		end
 	end
+	prosody.config_file = filename
 	local ok, level, err = config.load(filename);
 	if not ok then
 		print("\n");
@@ -240,7 +241,7 @@ function init_global_state()
 	function prosody.reload_config()
 		log("info", "Reloading configuration file");
 		prosody.events.fire_event("reloading-config");
-		local ok, level, err = config.load((rawget(_G, "CFG_CONFIGDIR") or ".").."/prosody.cfg.lua");
+		local ok, level, err = config.load(prosody.config_file);
 		if not ok then
 			if level == "parser" then
 				log("error", "There was an error parsing the configuration file: %s", tostring(err));
