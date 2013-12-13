@@ -164,7 +164,7 @@ function stanza_handler(event)
 			return true;
 		end
 		if not(restrict_room_creation) or
-		  (restrict_room_creation == "admin" and is_admin(stanza.attr.from)) or
+		  is_admin(stanza.attr.from)) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
 			room = create_room(bare);
 		end
