@@ -258,6 +258,7 @@ function service:publish(node, actor, id, item)
 		end
 		node_obj = self.nodes[node];
 	end
+	node_obj.data[#node_obj.data + 1] = id;
 	node_obj.data[id] = item;
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item);
@@ -275,6 +276,12 @@ function service:retract(node, actor, id, retract)
 		return false, "item-not-found";
 	end
 	node_obj.data[id] = nil;
+	for i, _id in ipairs(node_obj.data) do
+		if id == _id then
+			table.remove(node_obj, i);
+			break;
+		end
+	end
 	if retract then
 		self.config.broadcaster("items", node, node_obj.subscribers, retract);
 	end
@@ -309,7 +316,7 @@ function service:get_items(node, actor, id)
 		return false, "item-not-found";
 	end
 	if id then -- Restrict results to a single specific item
-		return true, { [id] = node_obj.data[id] };
+		return true, { id, [id] = node_obj.data[id] };
 	else
 		return true, node_obj.data;
 	end
