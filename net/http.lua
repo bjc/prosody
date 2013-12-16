@@ -20,6 +20,7 @@ local t_insert, t_concat = table.insert, table.concat;
 local pairs = pairs;
 local tonumber, tostring, xpcall, select, traceback =
       tonumber, tostring, xpcall, select, debug.traceback;
+local assert, error = assert, error
 
 local log = require "util.logger".init("http");
 
@@ -173,7 +174,7 @@ function request(u, ex, callback)
 		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
 	end
 
-	req.handler, req.conn = server.wrapclient(conn, host, port_number, listener, "*a", sslctx);
+	req.handler, req.conn = assert(server.wrapclient(conn, host, port_number, listener, "*a", sslctx));
 	req.write = function (...) return req.handler:write(...); end
 	
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
