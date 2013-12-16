@@ -53,7 +53,7 @@ local entities = {
 
 local function tohtml(plain)
 	return (plain:gsub("[<>&'\"\n]", entities));
-	
+
 end
 
 local function get_page(code, extra)

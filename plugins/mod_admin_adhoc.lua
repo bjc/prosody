@@ -489,7 +489,7 @@ local globally_reload_module_handler = adhoc_initial(globally_reload_module_layo
 	for _, host in pairs(hosts) do
 		loaded_modules:append(array(keys(host.modules)));
 	end
-	loaded_modules = array(keys(set.new(loaded_modules):items())):sort();
+	loaded_modules = array(set.new(loaded_modules):items()):sort();
 	return { module = loaded_modules };
 end, function(fields, err)
 	local is_global = false;
@@ -631,7 +631,7 @@ local globally_unload_module_handler = adhoc_initial(globally_unload_module_layo
 	for _, host in pairs(hosts) do
 		loaded_modules:append(array(keys(host.modules)));
 	end
-	loaded_modules = array(keys(set.new(loaded_modules):items())):sort();
+	loaded_modules = array(set.new(loaded_modules):items()):sort();
 	return { module = loaded_modules };
 end, function(fields, err)
 	local is_global = false;

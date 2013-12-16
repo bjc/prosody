@@ -2,7 +2,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -10,6 +10,14 @@
 prosody = {};
 
 package.path = package.path ..";../?.lua";
+
+local my_name = arg[0];
+if my_name:match("[/\\]") then
+	package.path = package.path..";"..my_name:gsub("[^/\\]+$", "../?.lua");
+	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
+end
+
+
 local serialize = require "util.serialization".serialize;
 local st = require "util.stanza";
 local parse_xml = require "util.xml".parse;

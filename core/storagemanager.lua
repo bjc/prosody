@@ -37,7 +37,7 @@ function initialize_host(host)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
 	end);
-	
+
 	host_session.events.add_handler("item-removed/storage-provider", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, nil);
@@ -70,7 +70,7 @@ function get_driver(host, store)
 	if not driver_name then
 		driver_name = config.get(host, "default_storage") or "internal";
 	end
-	
+
 	local driver = load_driver(host, driver_name);
 	if not driver then
 		log("warn", "Falling back to null driver for %s storage on %s", store, host);
