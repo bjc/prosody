@@ -8,7 +8,7 @@
 
 
 
-local match = string.match;
+local match, sub = string.match, string.sub;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
@@ -47,6 +47,9 @@ end
 local function _prepped_split(jid)
 	local node, host, resource = _split(jid);
 	if host then
+		if sub(host, -1, -1) == "." then -- Strip empty root label
+			host = sub(host, 1, -2);
+		end
 		host = nameprep(host);
 		if not host then return; end
 		if node then
