@@ -78,10 +78,10 @@ local function init(service_name)
 end
 
 -- create a new SASL object which can be used to authenticate clients
--- host_fqdn may be nil in which case gethostname() gives the value. 
+-- host_fqdn may be nil in which case gethostname() gives the value.
 --      For GSSAPI, this determines the hostname in the service ticket (after
 --      reverse DNS canonicalization, only if [libdefaults] rdns = true which
---      is the default).  
+--      is the default).
 function new(realm, service_name, app_name, host_fqdn)
 
 	init(app_name or service_name);

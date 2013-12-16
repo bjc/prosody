@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -100,7 +100,7 @@ function load_roster(username, host)
 		log("warn", "roster for %s has a self-contact", jid);
 	end
 	if not err then
-		hosts[host].events.fire_event("roster-load", username, host, roster);
+		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });
 	end
 	return roster, err;
 end

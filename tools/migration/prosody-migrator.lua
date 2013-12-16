@@ -115,7 +115,7 @@ if have_err then
 	print("");
 	os.exit(1);
 end
-	
+
 local itype = config[from_store].type;
 local otype = config[to_store].type;
 local reader = require("migrator."..itype).reader(config[from_store]);

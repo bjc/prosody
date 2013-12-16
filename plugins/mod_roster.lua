@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -36,10 +36,10 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 
 	if stanza.attr.type == "get" then
 		local roster = st.reply(stanza);
-		
+
 		local client_ver = tonumber(stanza.tags[1].attr.ver);
 		local server_ver = tonumber(session.roster[false].version or 1);
-		
+
 		if not (client_ver and server_ver) or client_ver ~= server_ver then
 			roster:query("jabber:iq:roster");
 			-- Client does not support versioning, or has stale roster

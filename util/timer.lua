@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -42,7 +42,7 @@ if not server.event then
 			end
 			new_data = {};
 		end
-		
+
 		local next_time = math_huge;
 		for i, d in pairs(data) do
 			local t, callback = d[1], d[2];
