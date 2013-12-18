@@ -750,36 +750,21 @@ do
 		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
 
-	function addclient( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
+	function addclient( addr, serverport, listener, pattern, sslctx )
+		if sslctx and not ssl then
+			debug "need luasec, but not available"
+			return nil, "luasec not found"
+		end
 		local client, err = socket.tcp()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err )
 			return nil, err
 		end
 		client:settimeout( 0 )  -- set nonblocking
-		if localaddr then
-			local res, err = client:bind( localaddr, localport, -1 )
-			if not res then
-				debug( "cannot bind client:", err )
-				return nil, err
-			end
-		end
-		local sslctx
-		if sslcfg then  -- handle ssl/new context
-			if not has_luasec then
-				debug "need luasec, but not available"
-				return nil, "luasec not found"
-			end
-			sslctx, err = sslcfg
-			if err then
-				debug( "cannot create new ssl context:", err )
-				return nil, err
-			end
-		end
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" ) then
 			local ip, port = client:getsockname( )
-			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
+			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
 			interface:_start_connection( startssl )
 			debug( "new connection id:", interface.id )
 			return interface, err
