@@ -948,11 +948,11 @@ local addclient = function( address, port, listeners, pattern, sslctx )
 		return nil, err
 	end
 	client:settimeout( 0 )
-	_, err = client:connect( address, port )
-	if err then -- try again
+	local ok, err = client:connect( address, port )
+	if ok or err == "timeout" then
 		return wrapclient( client, address, port, listeners, pattern, sslctx )
 	else
-		return wrapconnection( nil, listeners, client, address, port, "clientport", pattern, sslctx )
+		return nil, err
 	end
 end
 
