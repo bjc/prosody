@@ -716,24 +716,16 @@ do
 end
 
 local addserver = ( function( )
-	return function( addr, port, listener, pattern, sslcfg, startssl )  -- TODO: check arguments
-		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslcfg or "nil", startssl or "nil")
+	return function( addr, port, listener, pattern, sslctx, startssl )  -- TODO: check arguments
+		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
+		if sslctx and not has_luasec then
+			debug "fatal error: luasec not found"
+			return nil, "luasec not found"
+		end
 		local server, err = socket.bind( addr, port, cfg.ACCEPT_QUEUE )  -- create server socket
 		if not server then
 			debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 			return nil, err
-		end
-		local sslctx
-		if sslcfg then
-			if not has_luasec then
-				debug "fatal error: luasec not found"
-				return nil, "luasec not found"
-			end
-			sslctx, err = sslcfg
-			if err then
-				debug( "error while creating new ssl context for server socket:", err )
-				return nil, err
-			end
 		end
 		local interface = handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- new server handler
 		debug( "new server created with id:", tostring(interface))
@@ -751,7 +743,7 @@ do
 	end
 
 	function addclient( addr, serverport, listener, pattern, sslctx )
-		if sslctx and not ssl then
+		if sslctx and not has_luasec then
 			debug "need luasec, but not available"
 			return nil, "luasec not found"
 		end
