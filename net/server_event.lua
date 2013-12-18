@@ -97,7 +97,7 @@ function interface_mt:_close()
 	return self:_destroy();
 end
 
-function interface_mt:_start_connection(plainssl) -- should be called from addclient
+function interface_mt:_start_connection(plainssl) -- called from wrapclient
 	local callback = function( event )
 		if EV_TIMEOUT == event then  -- timeout during connection
 			self.fatalerror = "connection timeout"
@@ -730,7 +730,6 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 	if res or ( err == "timeout" ) then
 		local ip, port = client:getsockname( )
 		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
-		interface:_start_connection( sslctx )
 		debug( "new connection id:", interface.id )
 		return interface, err
 	else
