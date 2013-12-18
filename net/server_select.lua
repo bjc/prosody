@@ -713,11 +713,13 @@ end
 ----------------------------------// PUBLIC //--
 
 addserver = function( addr, port, listeners, pattern, sslctx ) -- this function provides a way for other scripts to reg a server
+	addr = addr or "*"
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
-	end
-	if type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
+	elseif type ( addr ) ~= "string" then
+		err = "invalid address"
+	elseif type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
 		err = "invalid port"
 	elseif _server[ addr..":"..port ] then
 		err = "listeners on '[" .. addr .. "]:" .. port .. "' already exist"
@@ -728,7 +730,6 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
-	addr = addr or "*"
 	local server, err = socket_bind( addr, port, _tcpbacklog )
 	if err then
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
