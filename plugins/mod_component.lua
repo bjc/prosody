@@ -25,6 +25,8 @@ local hosts = prosody.hosts;
 
 local log = module._log;
 
+local opt_keepalives = module:get_option_boolean("component_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
+
 local sessions = module:shared("sessions");
 
 function module.add_host(module)
@@ -269,6 +271,10 @@ function listener.onconnect(conn)
 	local conn_name = "jcp"..tostring(session):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
 	session.close = session_close;
+
+	if opt_keepalives then
+		conn:setoption("keepalive", opt_keepalives);
+	end
 	
 	session.log("info", "Incoming Jabber component connection");
 	
