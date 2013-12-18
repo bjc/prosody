@@ -86,7 +86,7 @@ function module.add_host(module)
 	
 		return true;
 	end
-	module:hook("stanza/jabber:component:accept:handshake", handle_component_auth);
+	module:hook("stanza/jabber:component:accept:handshake", handle_component_auth, -1);
 
 	-- Handle stanzas addressed to this component
 	local function handle_stanza(event)
