@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local socket = require "socket"
 local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "net.http.parser".new;
@@ -171,21 +170,17 @@ local function request(u, ex, callback)
 	end
 	local port_number = port and tonumber(port) or (using_https and 443 or 80);
 
-	-- Connect the socket, and wrap it with net.server
-	local conn = socket.tcp();
-	conn:settimeout(10);
-	local ok, err = conn:connect(host, port_number);
-	if not ok and err ~= "timeout" then
-		callback(nil, 0, req);
-		return nil, err;
-	end
-
 	local sslctx = false;
 	if using_https then
 		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
 	end
 
-	req.handler, req.conn = assert(server.wrapclient(conn, host, port_number, listener, "*a", sslctx));
+	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
+	if not handler then
+		callback(nil, 0, req);
+		return nil, conn;
+	end
+	req.handler, req.conn = handler, conn
 	req.write = function (...) return req.handler:write(...); end
 
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
