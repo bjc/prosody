@@ -742,12 +742,19 @@ do
 		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
 
-	function addclient( addr, serverport, listener, pattern, sslctx )
+	function addclient( addr, serverport, listener, pattern, sslctx, typ )
 		if sslctx and not has_luasec then
 			debug "need luasec, but not available"
 			return nil, "luasec not found"
 		end
-		local client, err = socket.tcp()  -- creating new socket
+		if not typ then
+			typ = "tcp"
+		end
+		local create = socket[typ]
+		if type( create ) ~= "function"  then
+			return nil, "invalid socket type"
+		end
+		local client, err = create()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err )
 			return nil, err
