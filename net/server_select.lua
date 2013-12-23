@@ -942,16 +942,14 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	elseif sslctx and not has_luasec then
 		err = "luasec not found"
 	end
-	if not typ then
+	if getaddrinfo and not typ then
 		local addrinfo, err = getaddrinfo(address)
 		if not addrinfo then return nil, err end
 		if addrinfo[1] and addrinfo[1].family == "inet6" then
 			typ = "tcp6"
-		else
-			typ = "tcp"
 		end
 	end
-	local create = luasocket[typ]
+	local create = luasocket[typ or "tcp"]
 	if type( create ) ~= "function"  then
 		err = "invalid socket type"
 	end
