@@ -51,6 +51,7 @@ local coroutine_yield = coroutine.yield
 local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
+local getaddrinfo = luasocket.dns.getaddrinfo
 
 --// extern lib methods //--
 
@@ -954,12 +955,19 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 		err = "luasec not found"
 	end
 	if not typ then
-		typ = "tcp"
+		local addrinfo, err = getaddrinfo(address)
+		if not addrinfo then return nil, err end
+		if addrinfo[1] and addrinfo[1].family == "inet6" then
+			typ = "tcp6"
+		else
+			typ = "tcp"
+		end
 	end
 	local create = luasocket[typ]
 	if type( create ) ~= "function"  then
 		err = "invalid socket type"
 	end
+
 	if err then
 		out_error( "server.lua, addclient: ", err )
 		return nil, err
