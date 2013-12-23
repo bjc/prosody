@@ -46,6 +46,7 @@ local t_concat = table.concat
 
 local has_luasec, ssl = pcall ( require , "ssl" )
 local socket = use "socket" or require "socket"
+local getaddrinfo = socket.dns.getaddrinfo
 
 local log = require ("util.logger").init("socket")
 
@@ -748,7 +749,13 @@ do
 			return nil, "luasec not found"
 		end
 		if not typ then
-			typ = "tcp"
+			local addrinfo, err = getaddrinfo(addr)
+			if not addrinfo then return nil, err end
+			if addrinfo[1] and addrinfo[1].family == "inet6" then
+				typ = "tcp6"
+			else
+				typ = "tcp"
+			end
 		end
 		local create = socket[typ]
 		if type( create ) ~= "function"  then
