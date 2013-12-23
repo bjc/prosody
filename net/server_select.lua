@@ -930,7 +930,7 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	return handler, socket
 end
 
-local addclient = function( address, port, listeners, pattern, sslctx )
+local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
@@ -941,12 +941,19 @@ local addclient = function( address, port, listeners, pattern, sslctx )
 	elseif sslctx and not has_luasec then
 		err = "luasec not found"
 	end
+	if not typ then
+		typ = "tcp"
+	end
+	local create = luasocket[typ]
+	if type( create ) ~= "function"  then
+		err = "invalid socket type"
+	end
 	if err then
 		out_error( "server.lua, addclient: ", err )
 		return nil, err
 	end
 
-	local client, err = luasocket.tcp( )
+	local client, err = create( )
 	if err then
 		return nil, err
 	end
