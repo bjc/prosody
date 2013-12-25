@@ -216,11 +216,15 @@ end
 
 local archive_store = {}
 archive_store.__index = archive_store
-function archive_store:append(username, when, with, value)
+function archive_store:append(username, key, when, with, value)
+	if value == nil then -- COMPAT early versions
+		when, with, value, key = key, when, with, value
+	end
 	local user,store = username,self.store;
 	return engine:transaction(function()
-		local key = uuid.generate();
+		local key = key or uuid.generate();
 		local t, value = serialize(value);
+		engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND KEY=?", host, user or "", store, key);
 		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
 		return key;
 	end);
