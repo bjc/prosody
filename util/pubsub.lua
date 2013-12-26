@@ -219,6 +219,7 @@ function service:create(node, actor)
 		data = {};
 		affiliations = {};
 	};
+	self.events.fire_event("node-created", { node = node, actor = actor });
 	local ok, err = self:set_affiliation(node, true, actor, "owner");
 	if not ok then
 		self.nodes[node] = nil;
@@ -237,6 +238,7 @@ function service:delete(node, actor)
 		return false, "item-not-found";
 	end
 	self.nodes[node] = nil;
+	self.events.fire_event("node-deleted", { node = node, actor = actor });
 	self.config.broadcaster("delete", node, node_obj.subscribers);
 	return true;
 end
@@ -274,6 +276,7 @@ function service:retract(node, actor, id, retract)
 	if (not node_obj) or (not node_obj.data[id]) then
 		return false, "item-not-found";
 	end
+	self.events.fire_event("item-retracted", { node = node, actor = actor, id = id });
 	node_obj.data[id] = nil;
 	if retract then
 		self.config.broadcaster("items", node, node_obj.subscribers, retract);
@@ -292,6 +295,7 @@ function service:purge(node, actor, notify)
 		return false, "item-not-found";
 	end
 	node_obj.data = {}; -- Purge
+	self.events.fire_event("node-purged", { node = node, actor = actor });
 	if notify then
 		self.config.broadcaster("purge", node, node_obj.subscribers);
 	end
