@@ -216,11 +216,15 @@ end
 
 local archive_store = {}
 archive_store.__index = archive_store
-function archive_store:append(username, when, with, value)
+function archive_store:append(username, key, when, with, value)
+	if value == nil then -- COMPAT early versions
+		when, with, value, key = key, when, with, value
+	end
 	local user,store = username,self.store;
 	return engine:transaction(function()
-		local key = uuid.generate();
+		local key = key or uuid.generate();
 		local t, value = serialize(value);
+		engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND KEY=?", host, user or "", store, key);
 		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
 		return key;
 	end);
@@ -256,14 +260,16 @@ local function archive_where(query, args, where)
 	end
 end
 local function archive_where_id_range(query, args, where)
+	local args_len = #args
 	-- Before or after specific item, exclusive
 	if query.after then  -- keys better be unique!
-		where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
-		args[#args+1] = query.after
+		where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ?` AND user` = ?` AND store` = ?  LIMIT 1)"
+		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.after, args[1], args[2], args[3];
+		args_len = args_len + 4
 	end
 	if query.before then
-		where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? LIMIT 1)"
-		args[#args+1] = query.before
+		where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ?` AND user` = ?` AND store` = ?  LIMIT 1)"
+		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.before, args[1], args[2], args[3];
 	end
 end
 
