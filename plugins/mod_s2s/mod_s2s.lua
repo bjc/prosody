@@ -366,7 +366,7 @@ function stream_callbacks.streamopened(session, attr)
 			if to then
 				hosts[to].events.fire_event("s2s-stream-features", { origin = session, features = features });
 			else
-				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or "unknown host");
+				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or session.ip or "unknown host");
 			end
 
 			log("debug", "Sending stream features: %s", tostring(features));
@@ -467,7 +467,7 @@ local function session_close(session, reason, remote_reason)
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
-				log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, reason);
+				log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, reason);
 				session.sends2s(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
 			elseif type(reason) == "table" then
 				if reason.condition then
@@ -478,7 +478,7 @@ local function session_close(session, reason, remote_reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or "(unknown host)", session.type, tostring(stanza));
+					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, tostring(stanza));
 					session.sends2s(stanza);
 				elseif reason.name then -- a stanza
 					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, tostring(reason));
@@ -660,7 +660,7 @@ function check_auth_policy(event)
 	end
 
 	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
-		module:log("warn", "Forbidding insecure connection to/from %s", host);
+		module:log("warn", "Forbidding insecure connection to/from %s", host or session.ip or "(unknown host)");
 		if session.direction == "incoming" then
 			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host });
 		else -- Close outgoing connections without warning
