@@ -91,14 +91,21 @@ module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 	return true;
 end);
 
+local function assert_log(ret, err)
+	if not ret then
+		module:log("error", "Unable to initialize TLS: %s", err);
+	end
+	return ret;
+end
+
 function module.load()
 	local ssl_config = config.rawget(module.host, "ssl");
 	if not ssl_config then
 		local base_host = module.host:match("%.(.*)");
 		ssl_config = config.get(base_host, "ssl");
 	end
-	host.ssl_ctx = create_context(host.host, "client", ssl_config); -- for outgoing connections
-	host.ssl_ctx_in = create_context(host.host, "server", ssl_config); -- for incoming connections
+	host.ssl_ctx = assert_log(create_context(host.host, "client", ssl_config)); -- for outgoing connections
+	host.ssl_ctx_in = assert_log(create_context(host.host, "server", ssl_config)); -- for incoming connections
 end
 
 function module.unload()
