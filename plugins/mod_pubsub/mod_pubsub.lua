@@ -86,11 +86,8 @@ end
 module:hook("host-disco-info-node", function (event)
 	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
 	local ok, ret = service:get_nodes(stanza.attr.from);
-	if ok and not ret[node] then
+	if not ok or not ret[node] then
 		return;
-	end
-	if not ok then
-		return origin.send(pubsub_error_reply(stanza, ret));
 	end
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" });
@@ -100,7 +97,7 @@ module:hook("host-disco-items-node", function (event)
 	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
 	local ok, ret = service:get_items(node, stanza.attr.from);
 	if not ok then
-		return origin.send(pubsub_error_reply(stanza, ret));
+		return;
 	end
 
 	for id, item in pairs(ret) do
@@ -114,7 +111,7 @@ module:hook("host-disco-items", function (event)
 	local stanza, origin, reply = event.stanza, event.origin, event.reply;
 	local ok, ret = service:get_nodes(event.stanza.attr.from);
 	if not ok then
-		return origin.send(pubsub_error_reply(event.stanza, ret));
+		return;
 	end
 	for node, node_obj in pairs(ret) do
 		reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
