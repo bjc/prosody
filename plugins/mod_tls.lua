@@ -13,6 +13,12 @@ local st = require "util.stanza";
 local c2s_require_encryption = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 local s2s_require_encryption = module:get_option("s2s_require_encryption");
 local allow_s2s_tls = module:get_option("s2s_allow_encryption") ~= false;
+local s2s_secure_auth = module:get_option("s2s_secure_auth");
+
+if s2s_secure_auth and s2s_require_encryption == false then
+	module:log("warn", "s2s_secure_auth implies s2s_require_encryption, but s2s_require_encryption is set to false");
+	s2s_require_encryption = true;
+end
 
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local starttls_attr = { xmlns = xmlns_starttls };
