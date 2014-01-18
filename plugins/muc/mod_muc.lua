@@ -163,6 +163,7 @@ function stanza_handler(event)
 	if room then
 		room:handle_stanza(origin, stanza);
 		if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+			module:fire_event("muc-room-destroyed", { room = room });
 			rooms[bare] = nil; -- discard room
 		end
 	else
