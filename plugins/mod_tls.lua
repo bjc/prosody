@@ -10,9 +10,15 @@ local config = require "core.configmanager";
 local create_context = require "core.certmanager".create_context;
 local st = require "util.stanza";
 
-local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
-local secure_s2s_only = module:get_option("s2s_require_encryption");
+local c2s_require_encryption = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
+local s2s_require_encryption = module:get_option("s2s_require_encryption");
 local allow_s2s_tls = module:get_option("s2s_allow_encryption") ~= false;
+local s2s_secure_auth = module:get_option("s2s_secure_auth");
+
+if s2s_secure_auth and s2s_require_encryption == false then
+	module:log("warn", "s2s_secure_auth implies s2s_require_encryption, but s2s_require_encryption is set to false");
+	s2s_require_encryption = true;
+end
 
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local starttls_attr = { xmlns = xmlns_starttls };
@@ -20,8 +26,8 @@ local starttls_proceed = st.stanza("proceed", starttls_attr);
 local starttls_failure = st.stanza("failure", starttls_attr);
 local c2s_feature = st.stanza("starttls", starttls_attr);
 local s2s_feature = st.stanza("starttls", starttls_attr);
-if secure_auth_only then c2s_feature:tag("required"):up(); end
-if secure_s2s_only then s2s_feature:tag("required"):up(); end
+if c2s_require_encryption then c2s_feature:tag("required"):up(); end
+if s2s_require_encryption then s2s_feature:tag("required"):up(); end
 
 local hosts = prosody.hosts;
 local host = hosts[module.host];
