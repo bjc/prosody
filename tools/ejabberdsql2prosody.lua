@@ -291,11 +291,21 @@ for i, row in ipairs(t["rostergroups"] or NULL) do
 	roster_group(row.username, host, row.jid, row.grp);
 end
 for i, row in ipairs(t["vcard"] or NULL) do
-	local ret, err = dm.store(row.username, host, "vcard", st.preserialize(parse_xml(row.vcard)));
-	print("["..(err or "success").."] vCard: "..row.username.."@"..host);
+	local stanza, err = parse_xml(row.vcard);
+	if stanza then
+		local ret, err = dm.store(row.username, host, "vcard", st.preserialize(stanza));
+		print("["..(err or "success").."] vCard: "..row.username.."@"..host);
+	else
+		print("[error] vCard XML parse failed: "..row.username.."@"..host);
+	end
 end
 for i, row in ipairs(t["private_storage"] or NULL) do
-	private_storage(row.username, host, row.namespace, parse_xml(row.data));
+	local stanza, err = parse_xml(row.data);
+	if stanza then
+		private_storage(row.username, host, row.namespace, stanza);
+	else
+		print("[error] Private XML parse failed: "..row.username.."@"..host);
+	end
 end
 table.sort(t["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
 local time_offset = os.difftime(os.time(os.date("!*t")), os.time(os.date("*t"))) -- to deal with timezones
@@ -304,11 +314,15 @@ local date_parse = function(s)
 	return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec-time_offset});
 end
 for i, row in ipairs(t["spool"] or NULL) do
-	local stanza = parse_xml(row.xml);
-	local last_child = stanza.tags[#stanza.tags];
-	if not last_child or last_child ~= stanza[#stanza] then error("Last child of offline message is not a tag"); end
-	if last_child.name ~= "x" and last_child.attr.xmlns ~= "jabber:x:delay" then error("Last child of offline message is not a timestamp"); end
-	stanza[#stanza], stanza.tags[#stanza.tags] = nil, nil;
-	local t = date_parse(last_child.attr.stamp);
-	offline_msg(row.username, host, t, stanza);
+	local stanza, err = parse_xml(row.xml);
+	if stanza then
+		local last_child = stanza.tags[#stanza.tags];
+		if not last_child or last_child ~= stanza[#stanza] then error("Last child of offline message is not a tag"); end
+		if last_child.name ~= "x" and last_child.attr.xmlns ~= "jabber:x:delay" then error("Last child of offline message is not a timestamp"); end
+		stanza[#stanza], stanza.tags[#stanza.tags] = nil, nil;
+		local t = date_parse(last_child.attr.stamp);
+		offline_msg(row.username, host, t, stanza);
+	else
+		print("[error] Offline message XML parsing failed: "..row.username.."@"..host);
+	end
 end
