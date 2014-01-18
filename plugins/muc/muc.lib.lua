@@ -187,6 +187,8 @@ function room_mt:send_history(to, stanza)
 			self:_route_stanza(msg);
 		end
 	end
+end
+function room_mt:send_subject(to)
 	if self._data['subject'] then
 		self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
 	end
@@ -516,6 +518,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						pr.attr.to = from;
 						self:_route_stanza(pr);
 						self:send_history(from, stanza);
+						self:send_subject(from);
 					elseif not affiliation then -- registration required for entering members-only room
 						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
 						reply.tags[1].attr.code = "407";
