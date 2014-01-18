@@ -152,6 +152,48 @@ function privacy(node, host, default, lists)
 	local ret, err = dm.store(node, host, "privacy", privacy);
 	print("["..(err or "success").."] privacy: " ..node.."@"..host.." - "..count.." list(s)");
 end
+local function _table_to_jid(t)
+	if type(t[2]) == "string" then
+		local jid = t[2];
+		if type(t[1]) == "string" then jid = t[1].."@"..jid; end
+		if type(t[3]) == "string" then jid = jid.."/"..t[3]; end
+		return jid;
+	end
+end
+function muc_room(node, host, properties)
+	local store = { jid = node.."@"..host, _data = {}, _affiliations = {} };
+	for _,aff in ipairs(properties.affiliations) do
+		store._affiliations[_table_to_jid(aff[1])] = aff[2];
+	end
+	store._data.subject = properties.subject;
+	if properties.subject_author then
+		store._data.subject_from = store.jid .. "/" .. properties.subject_author;
+	end
+	store._data.name = properties.title;
+	store._data.description = properties.description;
+	store._data.password = properties.password;
+	store._data.moderated = (properties.moderated == "true") or nil;
+	store._data.members_only = (properties.members_only == "true") or nil;
+	store._data.persistent = (properties.persistent == "true") or nil;
+	store._data.changesubject = (properties.allow_change_subj == "true") or nil;
+	store._data.whois = properties.anonymous == "true" and "moderators" or "anyone";
+	store._data.hidden = (properties.public_list == "false") or nil;
+
+	if not store._data.persistent then
+		return print("[error] muc_room: skipping non-persistent room: "..node.."@"..host);
+	end
+
+	local ret, err = dm.store(node, host, "config", store);
+	if ret then
+		ret, err = dm.load(nil, host, "persistent");
+		if ret or not err then
+			ret = ret or {};
+			ret[store.jid] = true;
+			ret, err = dm.store(nil, host, "persistent", ret);
+		end
+	end
+	print("["..(err or "success").."] muc_room: " ..node.."@"..host);
+end
 
 
 local filters = {
@@ -195,6 +237,15 @@ local filters = {
 	end;
 	privacy = function(tuple)
 		privacy(tuple[2][1], tuple[2][2], tuple[3], tuple[4]);
+	end;
+	muc_room = function(tuple)
+		local properties = {};
+		for _,pair in ipairs(tuple[3]) do
+			if not(type(pair[2]) == "table" and #pair[2] == 0) then -- skip nil values
+				properties[pair[1]] = pair[2];
+			end
+		end
+		muc_room(tuple[2][1], tuple[2][2], properties);
 	end;
 	config = function(tuple)
 		if tuple[2] == "hosts" then
