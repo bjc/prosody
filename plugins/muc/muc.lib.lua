@@ -107,17 +107,20 @@ function room_mt:broadcast_message(stanza, historic)
 	end
 	stanza.attr.to = to;
 	if historic then -- add to history
-		local history = self._data['history'];
-		if not history then history = {}; self._data['history'] = history; end
-		stanza = st.clone(stanza);
-		stanza.attr.to = "";
-		local stamp = datetime.datetime();
-		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
-		stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		local entry = { stanza = stanza, stamp = stamp };
-		t_insert(history, entry);
-		while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
+		return self:save_to_history(stanza)
 	end
+end
+function room_mt:save_to_history(stanza)
+	local history = self._data['history'];
+	if not history then history = {}; self._data['history'] = history; end
+	stanza = st.clone(stanza);
+	stanza.attr.to = "";
+	local stamp = datetime.datetime();
+	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
+	stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+	local entry = { stanza = stanza, stamp = stamp };
+	t_insert(history, entry);
+	while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
 end
 function room_mt:broadcast_except_nick(stanza, nick)
 	for rnick, occupant in pairs(self._occupants) do
@@ -184,6 +187,8 @@ function room_mt:send_history(to, stanza)
 			self:_route_stanza(msg);
 		end
 	end
+end
+function room_mt:send_subject(to)
 	if self._data['subject'] then
 		self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
 	end
@@ -513,6 +518,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						pr.attr.to = from;
 						self:_route_stanza(pr);
 						self:send_history(from, stanza);
+						self:send_subject(from);
 					elseif not affiliation then -- registration required for entering members-only room
 						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
 						reply.tags[1].attr.code = "407";

@@ -52,8 +52,9 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-local _set_affiliation = muc_new_room.room_mt.set_affiliation;
-local _get_affiliation = muc_new_room.room_mt.get_affiliation;
+room_mt = muclib.room_mt; -- Yes, global.
+local _set_affiliation = room_mt.set_affiliation;
+local _get_affiliation = room_mt.get_affiliation;
 function muclib.room_mt:get_affiliation(jid)
 	if is_admin(jid) then return "owner"; end
 	return _get_affiliation(self, jid);
