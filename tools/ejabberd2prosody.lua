@@ -247,7 +247,7 @@ local filters = {
 		end
 		muc_room(tuple[2][1], tuple[2][2], properties);
 	end;
-	config = function(tuple)
+	--[=[config = function(tuple)
 		if tuple[2] == "hosts" then
 			local output = io.output(); io.output("prosody.cfg.lua");
 			io.write("-- Configuration imported from ejabberd --\n");
@@ -275,7 +275,7 @@ local filters = {
 			io.output(output);
 			print("prosody.cfg.lua created");
 		end
-	end;
+	end;]=]
 };
 
 local arg = ...;
