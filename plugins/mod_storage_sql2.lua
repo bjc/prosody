@@ -222,9 +222,12 @@ function archive_store:append(username, key, when, with, value)
 	end
 	local user,store = username,self.store;
 	return engine:transaction(function()
-		local key = key or uuid.generate();
+		if key then
+			engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, user or "", store, key);
+		else
+			key = uuid.generate();
+		end
 		local t, value = serialize(value);
-		engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND KEY=?", host, user or "", store, key);
 		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
 		return key;
 	end);

@@ -30,7 +30,7 @@ dm.set_data_path("data");
 
 function build_stanza(tuple, stanza)
 	assert(type(tuple) == "table", "XML node is of unexpected type: "..type(tuple));
-	if tuple[1] == "xmlelement" then
+	if tuple[1] == "xmlelement" or tuple[1] == "xmlel" then
 		assert(type(tuple[2]) == "string", "element name has type: "..type(tuple[2]));
 		assert(type(tuple[3]) == "table", "element attribute array has type: "..type(tuple[3]));
 		assert(type(tuple[4]) == "table", "element children array has type: "..type(tuple[4]));
@@ -247,7 +247,7 @@ local filters = {
 		end
 		muc_room(tuple[2][1], tuple[2][2], properties);
 	end;
-	config = function(tuple)
+	--[=[config = function(tuple)
 		if tuple[2] == "hosts" then
 			local output = io.output(); io.output("prosody.cfg.lua");
 			io.write("-- Configuration imported from ejabberd --\n");
@@ -275,7 +275,7 @@ local filters = {
 			io.output(output);
 			print("prosody.cfg.lua created");
 		end
-	end;
+	end;]=]
 };
 
 local arg = ...;
