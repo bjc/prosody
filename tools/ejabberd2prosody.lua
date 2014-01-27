@@ -163,7 +163,7 @@ end
 function muc_room(node, host, properties)
 	local store = { jid = node.."@"..host, _data = {}, _affiliations = {} };
 	for _,aff in ipairs(properties.affiliations) do
-		store._affiliations[_table_to_jid(aff[1])] = aff[2];
+		store._affiliations[_table_to_jid(aff[1])] = aff[2][1] or aff[2];
 	end
 	store._data.subject = properties.subject;
 	if properties.subject_author then
