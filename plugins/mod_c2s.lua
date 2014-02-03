@@ -38,7 +38,6 @@ local runner_callbacks = {};
 
 --- Stream events handlers
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
-local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/streams", xmlns = stream_callbacks.default_ns, version = "1.0", id = "" };
 
 function stream_callbacks.streamopened(session, attr)
 	local send = session.send;
@@ -58,9 +57,7 @@ function stream_callbacks.streamopened(session, attr)
 		return;
 	end
 
-	send("<?xml version='1.0'?>"..st.stanza("stream:stream", {
-		xmlns = 'jabber:client', ["xmlns:stream"] = 'http://etherx.jabber.org/streams';
-		id = session.streamid, from = session.host, version = '1.0', ["xml:lang"] = 'en' }):top_tag());
+	session:open_stream();
 
 	(session.log or log)("debug", "Sent reply <stream:stream> to client");
 	session.notopen = nil;
@@ -129,8 +126,7 @@ local function session_close(session, reason)
 	local log = session.log or log;
 	if session.conn then
 		if session.notopen then
-			session.send("<?xml version='1.0'?>");
-			session.send(st.stanza("stream:stream", default_stream_attr):top_tag());
+			session:open_stream();
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by client
 			local stream_error = st.stanza("stream:error");
@@ -176,6 +172,19 @@ local function session_close(session, reason)
 			conn:close();
 		end
 	end
+end
+
+local function session_open_stream(session)
+	local attr = {
+		["xmlns:stream"] = 'http://etherx.jabber.org/streams',
+		xmlns = stream_callbacks.default_ns,
+		version = "1.0",
+		["xml:lang"] = 'en',
+		id = session.streamid or "",
+		from = session.host
+	};
+	session.send("<?xml version='1.0'?>");
+	session.send(st.stanza("stream:stream", attr):top_tag());
 end
 
 module:hook_global("user-deleted", function(event)
@@ -225,6 +234,7 @@ function listener.onconnect(conn)
 		conn:setoption("keepalive", opt_keepalives);
 	end
 
+	session.open_stream = session_open_stream;
 	session.close = session_close;
 
 	local stream = new_xmpp_stream(session, stream_callbacks);
