@@ -570,6 +570,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				end
 				stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 			else -- message
+				stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
 				stanza.attr.from = current_nick;
 				for jid in pairs(o_data.sessions) do
 					stanza.attr.to = jid;

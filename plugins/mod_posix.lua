@@ -128,7 +128,7 @@ function syslog_sink_maker(config)
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
-local daemonize = module:get_option("daemonize");
+local daemonize = module:get_option("daemonize", prosody.installed);
 if daemonize == nil then
 	local no_daemonize = module:get_option("no_daemonize"); --COMPAT w/ 0.5
 	daemonize = not no_daemonize;
