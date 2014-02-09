@@ -325,6 +325,10 @@ function archive_store:delete(username, query)
 		local sql_query = "DELETE FROM `prosodyarchive` WHERE %s;";
 		local args = { host, user or "", store, };
 		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
+		if user == true then
+			table.remove(args, 2);
+			table.remove(where, 2);
+		end
 		archive_where(query, args, where);
 		archive_where_id_range(query, args, where);
 		sql_query = sql_query:format(t_concat(where, " AND "));
