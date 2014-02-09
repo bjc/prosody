@@ -23,8 +23,7 @@ local console_listener = { default_port = 5582; default_mode = "*a"; interface =
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid = require "util.jid";
-local jid_bare, jid_split = jid.bare, jid.split;
+local jid_bare, jid_split = import("util.jid", "bare", "prepped_split");
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
