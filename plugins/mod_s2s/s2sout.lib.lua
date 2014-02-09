@@ -347,6 +347,9 @@ module:hook_global("service-added", function (event)
 			has_ipv4 = true;
 		end
 	end
+	if not (has_ipv4 or has_ipv6)  then
+		module:log("warn", "No local IPv4 or IPv6 addresses detected, outgoing connections may fail");
+	end
 end);
 
 return s2sout;
