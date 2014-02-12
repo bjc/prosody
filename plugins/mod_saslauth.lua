@@ -245,7 +245,7 @@ module:hook("stream-features", function(event)
 		if origin.encrypted then
 			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
-			if origin.conn:socket().getpeerfinished then
+			if origin.conn:socket().getpeerfinished and origin.sasl_handler.add_cb_handler then
 				origin.sasl_handler:add_cb_handler("tls-unique", function(self)
 					return self.userdata:getpeerfinished();
 				end);
