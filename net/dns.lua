@@ -14,6 +14,7 @@
 
 local socket = require "socket";
 local timer = require "util.timer";
+local new_ip = require "util.ip".new_ip;
 
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
@@ -597,11 +598,12 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 		if resolv_conf then
 			for line in resolv_conf:lines() do
 				line = line:gsub("#.*$", "")
-					:match('^%s*nameserver%s+(.*)%s*$');
+					:match('^%s*nameserver%s+([%x:%.]*)%s*$');
 				if line then
-					line:gsub("%f[%d.](%d+%.%d+%.%d+%.%d+)%f[^%d.]", function (address)
-						self:addnameserver(address)
-					end);
+					local ip = new_ip(line);
+					if ip then
+						self:addnameserver(ip.addr);
+					end
 				end
 			end
 		end
@@ -621,7 +623,12 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	if sock then return sock; end
 
 	local err;
-	sock, err = socket.udp();
+	local peer = self.server[servernum];
+	if peer:find(":") then
+		sock, err = socket.udp6();
+	else
+		sock, err = socket.udp();
+	end
 	if sock and self.socket_wrapper then sock, err = self.socket_wrapper(sock, self); end
 	if not sock then
 		return nil, err;
@@ -629,7 +636,7 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	sock:settimeout(0);
 	-- todo: attempt to use a random port, fallback to 0
 	sock:setsockname('*', 0);
-	sock:setpeername(self.server[servernum], 53);
+	sock:setpeername(peer, 53);
 	self.socket[servernum] = sock;
 	self.socketset[sock] = servernum;
 	return sock;
@@ -746,7 +753,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		return nil, err;
 	end
 	conn:send (o.packet)
-	
+
 	if timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
@@ -842,7 +849,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					-- retire the query
 					local queries = self.active[response.header.id];
 					queries[response.question.raw] = nil;
-					
+
 					if not next(queries) then self.active[response.header.id] = nil; end
 					if not next(self.active) then self:closeall(); end
 
@@ -857,7 +864,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 						set(self.wanted, q.class, q.type, q.name, nil);
 					end
 				end
-				
+
 			end
 		end
 	end

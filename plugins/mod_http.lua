@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2012 Matthew Wild
 -- Copyright (C) 2008-2012 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -108,7 +108,7 @@ function module.add_host(module)
 			end
 		end
 	end
-	
+
 	local function http_app_removed(event)
 		local app_handlers = apps[event.item.name];
 		apps[event.item.name] = nil;
@@ -116,7 +116,7 @@ function module.add_host(module)
 			module:unhook_object_event(server, event, handler);
 		end
 	end
-	
+
 	module:handle_items("http-provider", http_app_added, http_app_removed);
 
 	server.add_host(host);
