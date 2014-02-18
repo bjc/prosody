@@ -31,7 +31,6 @@ local muc_new_room = muclib.new_room;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
-local uuid_gen = require "util.uuid".generate;
 local um_is_admin = require "core.usermanager".is_admin;
 local hosts = prosody.hosts;
 
@@ -47,6 +46,7 @@ muclib.set_max_history_length(module:get_option_number("max_history_messages"));
 module:depends("disco");
 module:add_identity("conference", "text", muc_name);
 module:add_feature("http://jabber.org/protocol/muc");
+module:depends "muc_unique"
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
@@ -136,25 +136,6 @@ module:hook("host-disco-items", function(event)
 	end
 end);
 
-local function handle_to_domain(event)
-	local origin, stanza = event.origin, event.stanza;
-	local type = stanza.attr.type;
-	if type == "error" or type == "result" then return; end
-	if stanza.name == "iq" and type == "get" then
-		local xmlns = stanza.tags[1].attr.xmlns;
-		local node = stanza.tags[1].attr.node;
-		if xmlns == "http://jabber.org/protocol/muc#unique" then
-			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions
-		else
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- TODO disco/etc
-		end
-	else
-		host_room:handle_stanza(origin, stanza);
-		--origin.send(st.error_reply(stanza, "cancel", "service-unavailable", "The muc server doesn't deal with messages and presence directed at it"));
-	end
-	return true;
-end
-
 function stanza_handler(event)
 	local origin, stanza = event.origin, event.stanza;
 	local bare = jid_bare(stanza.attr.to);
@@ -187,7 +168,15 @@ module:hook("presence/bare", stanza_handler, -1);
 module:hook("iq/full", stanza_handler, -1);
 module:hook("message/full", stanza_handler, -1);
 module:hook("presence/full", stanza_handler, -1);
-module:hook("iq/host", handle_to_domain, -1);
+
+local function handle_to_domain(event)
+	local origin, stanza = event.origin, event.stanza;
+	local type = stanza.attr.type;
+	if type == "error" then return; end
+	host_room:handle_stanza(origin, stanza);
+	-- origin.send(st.error_reply(stanza, "cancel", "service-unavailable", "The muc server doesn't deal with messages and presence directed at it"));
+	return true;
+end
 module:hook("message/host", handle_to_domain, -1);
 module:hook("presence/host", handle_to_domain, -1);
 
