@@ -44,8 +44,10 @@ function build_stanza(tuple, stanza)
 		for _, a in ipairs(tuple[4]) do build_stanza(a, stanza); end
 		if up then stanza:up(); else return stanza end
 	elseif tuple[1] == "xmlcdata" then
-		assert(type(tuple[2]) == "string", "XML CDATA has unexpected type: "..type(tuple[2]));
-		stanza:text(tuple[2]);
+		if type(tuple[2]) ~= "table" then
+			assert(type(tuple[2]) == "string", "XML CDATA has unexpected type: "..type(tuple[2]));
+			stanza:text(tuple[2]);
+		end -- else it's [], i.e., the null value, used for the empty string
 	else
 		error("unknown element type: "..serialize(tuple));
 	end
