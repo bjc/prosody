@@ -126,7 +126,7 @@ end
 module:hook("stanza/http://jabber.org/protocol/compress:compressed", function(event)
 	local session = event.origin;
 	
-	if session.type == "s2sout_unauthed" or session.type == "s2sout" then
+	if session.type == "s2sout" then
 		session.log("debug", "Activating compression...")
 		-- create deflate and inflate streams
 		local deflate_stream = get_deflate_stream(session);
@@ -150,7 +150,7 @@ end);
 module:hook("stanza/http://jabber.org/protocol/compress:compress", function(event)
 	local session, stanza = event.origin, event.stanza;
 
-	if session.type == "c2s" or session.type == "s2sin" or session.type == "c2s_unauthed" or session.type == "s2sin_unauthed" then
+	if session.type == "c2s" or session.type == "s2sin" then
 		-- fail if we are already compressed
 		if session.compressed then
 			local error_st = st.stanza("failure", {xmlns=xmlns_compression_protocol}):tag("setup-failed");
