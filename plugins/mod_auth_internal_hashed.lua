@@ -7,6 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local max = math.max;
+
 local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
@@ -39,7 +41,7 @@ end
 
 
 -- Default; can be set per-user
-local iteration_count = 4096;
+local default_iteration_count = 4096;
 
 -- define auth provider
 local provider = {};
@@ -80,8 +82,8 @@ function provider.set_password(username, password)
 	log("debug", "set_password for username '%s'", username);
 	local account = accounts:get(username);
 	if account then
-		account.salt = account.salt or generate_uuid();
-		account.iteration_count = account.iteration_count or iteration_count;
+		account.salt = generate_uuid();
+		account.iteration_count = max(account.iteration_count or 0, default_iteration_count);
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
 		local stored_key_hex = to_hex(stored_key);
 		local server_key_hex = to_hex(server_key);
@@ -113,10 +115,10 @@ function provider.create_user(username, password)
 		return accounts:set(username, {});
 	end
 	local salt = generate_uuid();
-	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
+	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, default_iteration_count);
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
-	return accounts:set(username, {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
+	return accounts:set(username, {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = default_iteration_count});
 end
 
 function provider.delete_user(username)
