@@ -9,6 +9,7 @@
 local select = select;
 local pairs, ipairs = pairs, ipairs;
 
+local gettime = os.time;
 local datetime = require "util.datetime";
 
 local dataform = require "util.dataforms";
@@ -145,47 +146,75 @@ function room_mt:send_occupant_list(to)
 		end
 	end
 end
-function room_mt:send_history(to, stanza)
+
+local function parse_history(stanza)
+	local x_tag = stanza:get_child("x", "http://jabber.org/protocol/muc");
+	local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
+	if not history_tag then
+		return nil, 20, nil
+	end
+
+	local maxchars = tonumber(history_tag.attr.maxchars);
+
+	local maxstanzas = tonumber(history_tag.attr.maxstanzas);
+
+	-- messages received since the UTC datetime specified
+	local since = history_tag.attr.since;
+	if since then
+		since = datetime.parse(since);
+	end
+
+	-- messages received in the last "X" seconds.
+	local seconds = tonumber(history_tag.attr.seconds);
+	if seconds then
+		seconds = gettime() - seconds
+		if since then
+			since = math.max(since, seconds);
+		else
+			since = seconds;
+		end
+	end
+
+	return maxchars, maxstanzas, since
+end
+-- Get history for 'to'
+function room_mt:get_history(to, maxchars, maxstanzas, since)
 	local history = self._data['history']; -- send discussion history
-	if history then
-		local x_tag = stanza and stanza:get_child("x", "http://jabber.org/protocol/muc");
-		local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
+	if not history then return end
+	local history_len = #history
 
-		local maxchars = history_tag and tonumber(history_tag.attr.maxchars);
-		if maxchars then maxchars = math.floor(maxchars); end
-
-		local maxstanzas = math.floor(history_tag and tonumber(history_tag.attr.maxstanzas) or #history);
-		if not history_tag then maxstanzas = 20; end
-
-		local seconds = history_tag and tonumber(history_tag.attr.seconds);
-		if seconds then seconds = datetime.datetime(os.time() - math.floor(seconds)); end
-
-		local since = history_tag and history_tag.attr.since;
-		if since then since = datetime.parse(since); since = since and datetime.datetime(since); end
-		if seconds and (not since or since < seconds) then since = seconds; end
-
-		local n = 0;
-		local charcount = 0;
-
-		for i=#history,1,-1 do
-			local entry = history[i];
-			if maxchars then
-				if not entry.chars then
-					entry.stanza.attr.to = "";
-					entry.chars = #tostring(entry.stanza);
-				end
-				charcount = charcount + entry.chars + #to;
-				if charcount > maxchars then break; end
+	maxstanzas = maxstanzas or history_len
+	local n = 0;
+	local charcount = 0;
+	for i=history_len,1,-1 do
+		local entry = history[i];
+		if maxchars then
+			if not entry.chars then
+				entry.stanza.attr.to = "";
+				entry.chars = #tostring(entry.stanza);
 			end
-			if since and since > entry.stamp then break; end
-			if n + 1 > maxstanzas then break; end
-			n = n + 1;
+			charcount = charcount + entry.chars + #to;
+			if charcount > maxchars then break; end
 		end
-		for i=#history-n+1,#history do
-			local msg = history[i].stanza;
-			msg.attr.to = to;
-			self:_route_stanza(msg);
-		end
+		if since and since > entry.stamp then break; end
+		if n + 1 > maxstanzas then break; end
+		n = n + 1;
+	end
+
+	local i = history_len-n+1
+	return function()
+		if i > history_len then return nil end
+		local entry = history[i]
+		local msg = entry.stanza
+		msg.attr.to = to;
+		i = i + 1
+		return msg
+	end
+end
+function room_mt:send_history(to, stanza)
+	local maxchars, maxstanzas, since = parse_history(stanza)
+	for msg in self:get_history(to, maxchars, maxstanzas, since) do
+		self:_route_stanza(msg);
 	end
 end
 function room_mt:send_subject(to)
