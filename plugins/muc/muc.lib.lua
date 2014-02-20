@@ -404,6 +404,281 @@ local function deconstruct_stanza_id(room, stanza)
 	end
 end
 
+function room_mt:handle_presence_error_to_occupant(origin, stanza)
+	local current_nick = self._jid_nick[stanza.attr.from];
+	if not current_nick then
+		return true -- discard
+	end
+	log("debug", "kicking %s from %s", current_nick, self.jid);
+	return self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza))
+end
+
+function room_mt:handle_unavailable_to_occupant(origin, stanza)
+	local from = stanza.attr.from;
+	local current_nick = self._jid_nick[from];
+	if not current_nick then
+		return true; -- discard
+	end
+	local pr = get_filtered_presence(stanza);
+	pr.attr.from = current_nick;
+	log("debug", "%s leaving %s", current_nick, self.jid);
+	self._jid_nick[from] = nil;
+	local occupant = self._occupants[current_nick];
+	local new_jid = next(occupant.sessions);
+	if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
+	if new_jid then
+		local jid = occupant.jid;
+		occupant.jid = new_jid;
+		occupant.sessions[from] = nil;
+		pr.attr.to = from;
+		pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+			:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
+			:tag("status", {code='110'}):up();
+		self:_route_stanza(pr);
+		if jid ~= new_jid then
+			pr = st.clone(occupant.sessions[new_jid])
+				:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+				:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none"});
+			pr.attr.from = current_nick;
+			self:broadcast_except_nick(pr, current_nick);
+		end
+	else
+		occupant.role = 'none';
+		self:broadcast_presence(pr, from);
+		self._occupants[current_nick] = nil;
+	end
+	return true;
+end
+
+function room_mt:handle_occupant_presence(origin, stanza)
+	local from = stanza.attr.from;
+	local pr = get_filtered_presence(stanza);
+	local current_nick = stanza.attr.to
+	pr.attr.from = current_nick;
+	log("debug", "%s broadcasted presence", current_nick);
+	self._occupants[current_nick].sessions[from] = pr;
+	self:broadcast_presence(pr, from);
+	return true;
+end
+
+function room_mt:handle_change_nick(origin, stanza, current_nick, to)
+	local from = stanza.attr.from;
+	local occupant = self._occupants[current_nick];
+	local is_multisession = next(occupant.sessions, next(occupant.sessions));
+	if self._occupants[to] or is_multisession then
+		log("debug", "%s couldn't change nick", current_nick);
+		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+		reply.tags[1].attr.code = "409";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	else
+		local data = self._occupants[current_nick];
+		local to_nick = select(3, jid_split(to));
+		log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
+		local p = st.presence({type='unavailable', from=current_nick});
+		self:broadcast_presence(p, from, '303', to_nick);
+		self._occupants[current_nick] = nil;
+		self._occupants[to] = data;
+		self._jid_nick[from] = to;
+		local pr = get_filtered_presence(stanza);
+		pr.attr.from = to;
+		self._occupants[to].sessions[from] = pr;
+		self:broadcast_presence(pr, from);
+		return true;
+	end
+end
+
+function room_mt:handle_join(origin, stanza)
+	local from, to = stanza.attr.from, stanza.attr.to;
+	log("debug", "%s joining as %s", from, to);
+	if not next(self._affiliations) then -- new room, no owners
+		self._affiliations[jid_bare(from)] = "owner";
+		if self.locked and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+			self.locked = nil; -- Older groupchat protocol doesn't lock
+		end
+	elseif self.locked then -- Deny entry
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+		return true;
+	end
+	local affiliation = self:get_affiliation(from);
+	local role = self:get_default_role(affiliation)
+	if role then -- new occupant
+		local is_merge = not not self._occupants[to]
+		if not is_merge then
+			self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
+		else
+			self._occupants[to].sessions[from] = get_filtered_presence(stanza);
+		end
+		self._jid_nick[from] = to;
+		self:send_occupant_list(from);
+		local pr = get_filtered_presence(stanza);
+		pr.attr.from = to;
+		pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
+			:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
+		if not is_merge then
+			self:broadcast_except_nick(pr, to);
+		end
+		pr:tag("status", {code='110'}):up();
+		if self._data.whois == 'anyone' then
+			pr:tag("status", {code='100'}):up();
+		end
+		if self.locked then
+			pr:tag("status", {code='201'}):up();
+		end
+		pr.attr.to = from;
+		self:_route_stanza(pr);
+		self:send_history(from, stanza);
+		self:send_subject(from);
+		return true;
+	elseif not affiliation then -- registration required for entering members-only room
+		local reply = st.error_reply(stanza, "auth", "registration-required"):up();
+		reply.tags[1].attr.code = "407";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	else -- banned
+		local reply = st.error_reply(stanza, "auth", "forbidden"):up();
+		reply.tags[1].attr.code = "403";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	end
+end
+
+function room_mt:handle_available_to_occupant(origin, stanza)
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local current_nick = self._jid_nick[from];
+	if current_nick then
+		--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
+			if current_nick == to then -- simple presence
+				return self:handle_occupant_presence(origin, stanza)
+			else -- change nick
+				return self:handle_change_nick(origin, stanza, current_nick, to)
+			end
+		--else -- possible rejoin
+		--	log("debug", "%s had connection replaced", current_nick);
+		--	self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
+		--		:tag('status'):text('Replaced by new connection'):up()); -- send unavailable
+		--	self:handle_to_occupant(origin, stanza); -- resend available
+		--end
+	else -- enter room
+		local new_nick = to;
+		if self._occupants[to] then
+			if jid_bare(from) ~= jid_bare(self._occupants[to].jid) then
+				new_nick = nil;
+			end
+		end
+		local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
+		password = password and password:get_child("password", "http://jabber.org/protocol/muc");
+		password = password and password[1] ~= "" and password[1];
+		if self:get_password() and self:get_password() ~= password then
+			log("debug", "%s couldn't join due to invalid password: %s", from, to);
+			local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
+			reply.tags[1].attr.code = "401";
+			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+			return true;
+		elseif not new_nick then
+			log("debug", "%s couldn't join due to nick conflict: %s", from, to);
+			local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+			reply.tags[1].attr.code = "409";
+			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+			return true;
+		else
+			return self:handle_join(origin, stanza)
+		end
+	end
+end
+
+function room_mt:handle_presence_to_occupant(origin, stanza)
+	local type = stanza.attr.type;
+	if type == "error" then -- error, kick em out!
+		return self:handle_presence_error_to_occupant(origin, stanza)
+	elseif type == "unavailable" then -- unavailable
+		return self:handle_unavailable_to_occupant(origin, stanza)
+	elseif not type then -- available
+		return self:handle_available_to_occupant(origin, stanza)
+	elseif type ~= 'result' then -- bad type
+		if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
+			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
+		end
+	end
+	return true;
+end
+
+function room_mt:handle_private(origin, stanza)
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local current_nick = self._jid_nick[from];
+	local type = stanza.attr.type;
+	local o_data = self._occupants[to];
+	if o_data then
+		log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
+		if stanza.name == "iq" then
+			local id = stanza.attr.id;
+			if stanza.attr.type == "get" or stanza.attr.type == "set" then
+				stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
+			else
+				stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
+			end
+			if type == 'get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then
+				stanza.attr.to = jid_bare(stanza.attr.to);
+			end
+			if stanza.attr.id then
+				self:_route_stanza(stanza);
+			end
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
+		else -- message
+			stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
+			stanza.attr.from = current_nick;
+			for jid in pairs(o_data.sessions) do
+				stanza.attr.to = jid;
+				self:_route_stanza(stanza);
+			end
+			stanza.attr.from, stanza.attr.to = from, to;
+		end
+	elseif type ~= "error" and type ~= "result" then -- recipient not in room
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+	end
+	return true;
+end
+
+function room_mt:handle_iq_to_occupant(origin, stanza)
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local current_nick = self._jid_nick[from];
+	if not current_nick then
+		local type = stanza.attr.type;
+		if (type == "error" or type == "result") then
+			local id = stanza.attr.id;
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
+			if stanza.attr.id then
+				self:_route_stanza(stanza);
+			end
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
+		else
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+		end
+		return true;
+	else
+		return self:handle_private(origin, stanza)
+	end
+end
+
+function room_mt:handle_message_to_occupant(origin, stanza)
+	local current_nick = self._jid_nick[stanza.attr.from];
+	local type = stanza.attr.type;
+	if not current_nick then -- not in room
+		if type ~= "error" then
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+		end
+		return true;
+	end
+	if type == "groupchat" then -- groupchat messages not allowed in PM
+		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		return true;
+	elseif type == "error" and is_kickable_error(stanza) then
+		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
+		return self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
+	else -- private stanza
+		return self:handle_private(origin, stanza)
+	end
+end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
@@ -413,203 +688,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	log("debug", "room: %s, current_nick: %s, stanza: %s", room or "nil", current_nick or "nil", stanza:top_tag());
 	if (select(2, jid_split(from)) == muc_domain) then error("Presence from the MUC itself!!!"); end
 	if stanza.name == "presence" then
-		local pr = get_filtered_presence(stanza);
-		pr.attr.from = current_nick;
-		if type == "error" then -- error, kick em out!
-			if current_nick then
-				log("debug", "kicking %s from %s", current_nick, room);
-				self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza));
-			end
-		elseif type == "unavailable" then -- unavailable
-			if current_nick then
-				log("debug", "%s leaving %s", current_nick, room);
-				self._jid_nick[from] = nil;
-				local occupant = self._occupants[current_nick];
-				local new_jid = next(occupant.sessions);
-				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
-				if new_jid then
-					local jid = occupant.jid;
-					occupant.jid = new_jid;
-					occupant.sessions[from] = nil;
-					pr.attr.to = from;
-					pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-						:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
-						:tag("status", {code='110'}):up();
-					self:_route_stanza(pr);
-					if jid ~= new_jid then
-						pr = st.clone(occupant.sessions[new_jid])
-							:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-							:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none"});
-						pr.attr.from = current_nick;
-						self:broadcast_except_nick(pr, current_nick);
-					end
-				else
-					occupant.role = 'none';
-					self:broadcast_presence(pr, from);
-					self._occupants[current_nick] = nil;
-				end
-			end
-		elseif not type then -- available
-			if current_nick then
-				--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
-					if current_nick == to then -- simple presence
-						log("debug", "%s broadcasted presence", current_nick);
-						self._occupants[current_nick].sessions[from] = pr;
-						self:broadcast_presence(pr, from);
-					else -- change nick
-						local occupant = self._occupants[current_nick];
-						local is_multisession = next(occupant.sessions, next(occupant.sessions));
-						if self._occupants[to] or is_multisession then
-							log("debug", "%s couldn't change nick", current_nick);
-							local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-							reply.tags[1].attr.code = "409";
-							origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-						else
-							local data = self._occupants[current_nick];
-							local to_nick = select(3, jid_split(to));
-							if to_nick then
-								log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
-								local p = st.presence({type='unavailable', from=current_nick});
-								self:broadcast_presence(p, from, '303', to_nick);
-								self._occupants[current_nick] = nil;
-								self._occupants[to] = data;
-								self._jid_nick[from] = to;
-								pr.attr.from = to;
-								self._occupants[to].sessions[from] = pr;
-								self:broadcast_presence(pr, from);
-							else
-								--TODO malformed-jid
-							end
-						end
-					end
-				--else -- possible rejoin
-				--	log("debug", "%s had connection replaced", current_nick);
-				--	self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
-				--		:tag('status'):text('Replaced by new connection'):up()); -- send unavailable
-				--	self:handle_to_occupant(origin, stanza); -- resend available
-				--end
-			else -- enter room
-				local new_nick = to;
-				local is_merge;
-				if self._occupants[to] then
-					if jid_bare(from) ~= jid_bare(self._occupants[to].jid) then
-						new_nick = nil;
-					end
-					is_merge = true;
-				end
-				local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
-				password = password and password:get_child("password", "http://jabber.org/protocol/muc");
-				password = password and password[1] ~= "" and password[1];
-				if self:get_password() and self:get_password() ~= password then
-					log("debug", "%s couldn't join due to invalid password: %s", from, to);
-					local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
-					reply.tags[1].attr.code = "401";
-					origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-				elseif not new_nick then
-					log("debug", "%s couldn't join due to nick conflict: %s", from, to);
-					local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-					reply.tags[1].attr.code = "409";
-					origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-				else
-					log("debug", "%s joining as %s", from, to);
-					if not next(self._affiliations) then -- new room, no owners
-						self._affiliations[jid_bare(from)] = "owner";
-						if self.locked and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-							self.locked = nil; -- Older groupchat protocol doesn't lock
-						end
-					elseif self.locked then -- Deny entry
-						origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-						return;
-					end
-					local affiliation = self:get_affiliation(from);
-					local role = self:get_default_role(affiliation)
-					if role then -- new occupant
-						if not is_merge then
-							self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
-						else
-							self._occupants[to].sessions[from] = get_filtered_presence(stanza);
-						end
-						self._jid_nick[from] = to;
-						self:send_occupant_list(from);
-						pr.attr.from = to;
-						pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-							:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
-						if not is_merge then
-							self:broadcast_except_nick(pr, to);
-						end
-						pr:tag("status", {code='110'}):up();
-						if self._data.whois == 'anyone' then
-							pr:tag("status", {code='100'}):up();
-						end
-						if self.locked then
-							pr:tag("status", {code='201'}):up();
-						end
-						pr.attr.to = from;
-						self:_route_stanza(pr);
-						self:send_history(from, stanza);
-						self:send_subject(from);
-					elseif not affiliation then -- registration required for entering members-only room
-						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
-						reply.tags[1].attr.code = "407";
-						origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-					else -- banned
-						local reply = st.error_reply(stanza, "auth", "forbidden"):up();
-						reply.tags[1].attr.code = "403";
-						origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-					end
-				end
-			end
-		elseif type ~= 'result' then -- bad type
-			if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
-				origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
-			end
-		end
-	elseif not current_nick then -- not in room
-		if (type == "error" or type == "result") and stanza.name == "iq" then
-			local id = stanza.attr.id;
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-			if stanza.attr.id then
-				self:_route_stanza(stanza);
-			end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
-		elseif type ~= "error" then
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
-		end
-	elseif stanza.name == "message" and type == "groupchat" then -- groupchat messages not allowed in PM
-		origin.send(st.error_reply(stanza, "modify", "bad-request"));
-	elseif current_nick and stanza.name == "message" and type == "error" and is_kickable_error(stanza) then
-		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
-		self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
-	else -- private stanza
-		local o_data = self._occupants[to];
-		if o_data then
-			log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
-			if stanza.name == "iq" then
-				local id = stanza.attr.id;
-				if stanza.attr.type == "get" or stanza.attr.type == "set" then
-					stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
-				else
-					stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-				end
-				if type == 'get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then
-					stanza.attr.to = jid_bare(stanza.attr.to);
-				end
-				if stanza.attr.id then
-					self:_route_stanza(stanza);
-				end
-				stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
-			else -- message
-				stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
-				stanza.attr.from = current_nick;
-				for jid in pairs(o_data.sessions) do
-					stanza.attr.to = jid;
-					self:_route_stanza(stanza);
-				end
-				stanza.attr.from, stanza.attr.to = from, to;
-			end
-		elseif type ~= "error" and type ~= "result" then -- recipient not in room
-			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
-		end
+		return self:handle_presence_to_occupant(origin, stanza)
+	elseif stanza.name == "iq" then
+		return self:handle_iq_to_occupant(origin, stanza)
+	elseif stanza.name == "message" then
+		return self:handle_message_to_occupant(origin, stanza)
 	end
 end
 
