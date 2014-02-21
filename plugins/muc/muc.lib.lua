@@ -603,65 +603,45 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 	return true;
 end
 
-function room_mt:handle_private(origin, stanza)
-	local from, to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self._jid_nick[from];
-	local type = stanza.attr.type;
-	local o_data = self._occupants[to];
-	if o_data then
-		log("debug", "%s sent private stanza to %s (%s)", from, to, o_data.jid);
-		if stanza.name == "iq" then
-			local id = stanza.attr.id;
-			if stanza.attr.type == "get" or stanza.attr.type == "set" then
-				stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
-			else
-				stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-			end
-			if type == 'get' and stanza.tags[1].attr.xmlns == 'vcard-temp' then
-				stanza.attr.to = jid_bare(stanza.attr.to);
-			end
-			if stanza.attr.id then
-				self:_route_stanza(stanza);
-			end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
-		else -- message
-			stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
-			stanza.attr.from = current_nick;
-			for jid in pairs(o_data.sessions) do
-				stanza.attr.to = jid;
-				self:_route_stanza(stanza);
-			end
-			stanza.attr.from, stanza.attr.to = from, to;
-		end
-	elseif type ~= "error" and type ~= "result" then -- recipient not in room
-		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
-	end
-	return true;
-end
-
 function room_mt:handle_iq_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self._jid_nick[from];
-	if not current_nick then
-		local type = stanza.attr.type;
-		if (type == "error" or type == "result") then
-			local id = stanza.attr.id;
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-			if stanza.attr.id then
-				self:_route_stanza(stanza);
-			end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
-		else
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+	local type = stanza.attr.type;
+	local id = stanza.attr.id;
+	if (type == "error" or type == "result") then
+		stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
+		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
+		if stanza.attr.id then
+			self:_route_stanza(stanza);
 		end
+		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
-	else
-		return self:handle_private(origin, stanza)
+	else -- Type is "get" or "set"
+		local current_nick = self._jid_nick[from];
+		if not current_nick then
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+			return true;
+		end
+		local o_data = self._occupants[to];
+		if not o_data then -- recipient not in room
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+			return true;
+		end
+		stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
+		log("debug", "%s sent private iq stanza to %s (%s)", from, to, o_data.jid);
+		if stanza.tags[1].attr.xmlns == 'vcard-temp' then
+			stanza.attr.to = jid_bare(stanza.attr.to);
+		end
+		if stanza.attr.id then
+			self:_route_stanza(stanza);
+		end
+		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
+		return true;
 	end
 end
 
 function room_mt:handle_message_to_occupant(origin, stanza)
-	local current_nick = self._jid_nick[stanza.attr.from];
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local current_nick = self._jid_nick[from];
 	local type = stanza.attr.type;
 	if not current_nick then -- not in room
 		if type ~= "error" then
@@ -674,17 +654,30 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 		return true;
 	elseif type == "error" and is_kickable_error(stanza) then
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
-		return self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
-	else -- private stanza
-		return self:handle_private(origin, stanza)
+		self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
+		return true;
 	end
+
+	local o_data = self._occupants[to];
+	if not o_data then
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+		return true;
+	end
+	log("debug", "%s sent private message stanza to %s (%s)", from, to, o_data.jid);
+	stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
+	stanza.attr.from = current_nick;
+	for jid in pairs(o_data.sessions) do
+		stanza.attr.to = jid;
+		self:_route_stanza(stanza);
+	end
+	stanza.attr.from, stanza.attr.to = from, to;
+	return true;
 end
 
 function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local room = jid_bare(to);
 	local current_nick = self._jid_nick[from];
-	local type = stanza.attr.type;
 	log("debug", "room: %s, current_nick: %s, stanza: %s", room or "nil", current_nick or "nil", stanza:top_tag());
 	if (select(2, jid_split(from)) == muc_domain) then error("Presence from the MUC itself!!!"); end
 	if stanza.name == "presence" then
