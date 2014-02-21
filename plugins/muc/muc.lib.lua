@@ -982,9 +982,8 @@ function room_mt:handle_iq_to_room(origin, stanza)
 		elseif stanza.attr.type == "set" then
 			return self:handle_owner_query_set_to_room(origin, stanza)
 		end
-	elseif type == "set" or type == "get" then
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		return true;
+	else
+		return nil;
 	end
 end
 
@@ -1035,9 +1034,8 @@ function room_mt:handle_presence_to_room(origin, stanza)
 		self:handle_to_occupant(origin, stanza);
 		stanza.attr.to = to;
 		return true;
-	elseif type ~= "error" and type ~= "result" then
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		return true;
+	else
+		return nil;
 	end
 end
 
@@ -1090,9 +1088,7 @@ function room_mt:handle_message_to_room(origin, stanza)
 			return true;
 		end
 	else
-		if type == "error" or type == "result" then return; end
-		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		return true;
+		return nil;
 	end
 end
 
@@ -1108,10 +1104,18 @@ end
 
 function room_mt:handle_stanza(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
+	local handled
 	if to_resource then
-		self:handle_to_occupant(origin, stanza);
+		handled = self:handle_to_occupant(origin, stanza);
 	else
-		self:handle_to_room(origin, stanza);
+		handled = self:handle_to_room(origin, stanza);
+	end
+
+	if not handled then
+		local type = stanza.attr.type
+		if stanza.name ~= "iq" or type == "get" or type == "set" then
+			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		end
 	end
 end
 
