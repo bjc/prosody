@@ -854,114 +854,156 @@ function room_mt:destroy(newjid, reason, password)
 	module:fire_event("muc-room-destroyed", { room = self });
 end
 
+function room_mt:handle_admin_item_set_command(origin, stanza)
+	local item = stanza.tags[1].tags[1];
+	if item.attr.jid then -- Validate provided JID
+		item.attr.jid = jid_prep(item.attr.jid);
+		if not item.attr.jid then
+			origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
+			return true;
+		end
+	end
+	if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
+		local occupant = self._occupants[self.jid.."/"..item.attr.nick];
+		if occupant then item.attr.jid = occupant.jid; end
+	elseif not item.attr.nick and item.attr.jid then
+		local nick = self._jid_nick[item.attr.jid];
+		if nick then item.attr.nick = select(3, jid_split(nick)); end
+	end
+	local actor = stanza.attr.from;
+	local callback = function() origin.send(st.reply(stanza)); end
+	local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
+	if item.attr.affiliation and item.attr.jid and not item.attr.role then
+		local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
+		if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+		return true;
+	elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
+		local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback, reason);
+		if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+		return true;
+	else
+		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		return true;
+	end
+end
+
+function room_mt:handle_admin_item_get_command(origin, stanza)
+	local actor = stanza.attr.from;
+	local affiliation = self:get_affiliation(actor);
+	local current_nick = self._jid_nick[actor];
+	local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
+	local item = stanza.tags[1].tags[1];
+	local _aff = item.attr.affiliation;
+	local _rol = item.attr.role;
+	if _aff and not _rol then
+		if affiliation == "owner" or (affiliation == "admin" and _aff ~= "owner" and _aff ~= "admin") then
+			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
+			for jid, affiliation in pairs(self._affiliations) do
+				if affiliation == _aff then
+					reply:tag("item", {affiliation = _aff, jid = jid}):up();
+				end
+			end
+			origin.send(reply);
+			return true;
+		else
+			origin.send(st.error_reply(stanza, "auth", "forbidden"));
+			return true;
+		end
+	elseif _rol and not _aff then
+		if role == "moderator" then
+			-- TODO allow admins and owners not in room? Provide read-only access to everyone who can see the participants anyway?
+			if _rol == "none" then _rol = nil; end
+			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
+			for occupant_jid, occupant in pairs(self._occupants) do
+				if occupant.role == _rol then
+					reply:tag("item", {
+						nick = select(3, jid_split(occupant_jid)),
+						role = _rol or "none",
+						affiliation = occupant.affiliation or "none",
+						jid = occupant.jid
+						}):up();
+				end
+			end
+			origin.send(reply);
+			return true;
+		else
+			origin.send(st.error_reply(stanza, "auth", "forbidden"));
+			return true;
+		end
+	else
+		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		return true;
+	end
+end
+
+function room_mt:handle_owner_query_get_to_room(origin, stanza)
+	if self:get_affiliation(stanza.attr.from) ~= "owner" then
+		origin.send(st.error_reply(stanza, "auth", "forbidden", "Only owners can configure rooms"));
+		return true;
+	end
+
+	self:send_form(origin, stanza);
+	return true;
+end
+function room_mt:handle_owner_query_set_to_room(origin, stanza)
+	if self:get_affiliation(stanza.attr.from) ~= "owner" then
+		origin.send(st.error_reply(stanza, "auth", "forbidden", "Only owners can configure rooms"));
+		return true;
+	end
+
+	local child = stanza.tags[1].tags[1];
+	if not child then
+		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		return true;
+	elseif child.name == "destroy" then
+		local newjid = child.attr.jid;
+		local reason, password;
+		for _,tag in ipairs(child.tags) do
+			if tag.name == "reason" then
+				reason = #tag.tags == 0 and tag[1];
+			elseif tag.name == "password" then
+				password = #tag.tags == 0 and tag[1];
+			end
+		end
+		self:destroy(newjid, reason, password);
+		origin.send(st.reply(stanza));
+		return true;
+	else
+		self:process_form(origin, stanza);
+		return true;
+	end
+end
+
 function room_mt:handle_iq_to_room(origin, stanza)
 	local type = stanza.attr.type;
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
 	if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" and not stanza.tags[1].attr.node then
 		origin.send(self:get_disco_info(stanza));
+		return true;
 	elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" and not stanza.tags[1].attr.node then
 		origin.send(self:get_disco_items(stanza));
+		return true;
 	elseif xmlns == "http://jabber.org/protocol/muc#admin" then
-		local actor = stanza.attr.from;
-		local affiliation = self:get_affiliation(actor);
-		local current_nick = self._jid_nick[actor];
-		local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
 		local item = stanza.tags[1].tags[1];
 		if item and item.name == "item" then
 			if type == "set" then
-				local callback = function() origin.send(st.reply(stanza)); end
-				if item.attr.jid then -- Validate provided JID
-					item.attr.jid = jid_prep(item.attr.jid);
-					if not item.attr.jid then
-						origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
-						return;
-					end
-				end
-				if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
-					local occupant = self._occupants[self.jid.."/"..item.attr.nick];
-					if occupant then item.attr.jid = occupant.jid; end
-				elseif not item.attr.nick and item.attr.jid then
-					local nick = self._jid_nick[item.attr.jid];
-					if nick then item.attr.nick = select(3, jid_split(nick)); end
-				end
-				local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
-				if item.attr.affiliation and item.attr.jid and not item.attr.role then
-					local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
-					if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-				elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
-					local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback, reason);
-					if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-				else
-					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
-				end
+				return self:handle_admin_item_set_command(origin, stanza)
 			elseif type == "get" then
-				local _aff = item.attr.affiliation;
-				local _rol = item.attr.role;
-				if _aff and not _rol then
-					if affiliation == "owner" or (affiliation == "admin" and _aff ~= "owner" and _aff ~= "admin") then
-						local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-						for jid, affiliation in pairs(self._affiliations) do
-							if affiliation == _aff then
-								reply:tag("item", {affiliation = _aff, jid = jid}):up();
-							end
-						end
-						origin.send(reply);
-					else
-						origin.send(st.error_reply(stanza, "auth", "forbidden"));
-					end
-				elseif _rol and not _aff then
-					if role == "moderator" then
-						-- TODO allow admins and owners not in room? Provide read-only access to everyone who can see the participants anyway?
-						if _rol == "none" then _rol = nil; end
-						local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-						for occupant_jid, occupant in pairs(self._occupants) do
-							if occupant.role == _rol then
-								reply:tag("item", {
-									nick = select(3, jid_split(occupant_jid)),
-									role = _rol or "none",
-									affiliation = occupant.affiliation or "none",
-									jid = occupant.jid
-									}):up();
-							end
-						end
-						origin.send(reply);
-					else
-						origin.send(st.error_reply(stanza, "auth", "forbidden"));
-					end
-				else
-					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
-				end
+				return self:handle_admin_item_get_command(origin, stanza)
 			end
 		elseif type == "set" or type == "get" then
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+			return true;
 		end
 	elseif xmlns == "http://jabber.org/protocol/muc#owner" and (type == "get" or type == "set") and stanza.tags[1].name == "query" then
-		if self:get_affiliation(stanza.attr.from) ~= "owner" then
-			origin.send(st.error_reply(stanza, "auth", "forbidden", "Only owners can configure rooms"));
-		elseif stanza.attr.type == "get" then
-			self:send_form(origin, stanza);
+		if stanza.attr.type == "get" then
+			return self:handle_owner_query_get_to_room(origin, stanza)
 		elseif stanza.attr.type == "set" then
-			local child = stanza.tags[1].tags[1];
-			if not child then
-				origin.send(st.error_reply(stanza, "modify", "bad-request"));
-			elseif child.name == "destroy" then
-				local newjid = child.attr.jid;
-				local reason, password;
-				for _,tag in ipairs(child.tags) do
-					if tag.name == "reason" then
-						reason = #tag.tags == 0 and tag[1];
-					elseif tag.name == "password" then
-						password = #tag.tags == 0 and tag[1];
-					end
-				end
-				self:destroy(newjid, reason, password);
-				origin.send(st.reply(stanza));
-			else
-				self:process_form(origin, stanza);
-			end
+			return self:handle_owner_query_set_to_room(origin, stanza)
 		end
 	elseif type == "set" or type == "get" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		return true;
 	end
 end
 
