@@ -994,8 +994,10 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 	local occupant = self._occupants[current_nick];
 	if not occupant then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+		return true;
 	elseif occupant.role == "visitor" then
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		return true;
 	else
 		local from = stanza.attr.from;
 		stanza.attr.from = current_nick;
@@ -1012,6 +1014,7 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 			self:broadcast_message(stanza, self:get_historylength() > 0 and stanza:get_child("body"));
 		end
 		stanza.attr.from = from;
+		return true;
 	end
 end
 
@@ -1019,6 +1022,7 @@ function room_mt:handle_kickable_to_room(origin, stanza)
 	local current_nick = self._jid_nick[stanza.attr.from];
 	log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
 	self:handle_to_occupant(origin, build_unavailable_presence_from_error(stanza)); -- send unavailable
+	return true;
 end
 
 -- hack - some buggy clients send presence updates to the room rather than their nick
@@ -1030,8 +1034,10 @@ function room_mt:handle_presence_to_room(origin, stanza)
 		stanza.attr.to = current_nick;
 		self:handle_to_occupant(origin, stanza);
 		stanza.attr.to = to;
+		return true;
 	elseif type ~= "error" and type ~= "result" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		return true;
 	end
 end
 
@@ -1060,8 +1066,10 @@ function room_mt:handle_invite_to_room(origin, stanza, payload)
 			self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. self._jid_nick[_from])
 		end
 		self:_route_stanza(invite);
+		return true;
 	else
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
+		return true;
 	end
 end
 
@@ -1079,10 +1087,12 @@ function room_mt:handle_message_to_room(origin, stanza)
 			return self:handle_invite_to_room(origin, stanza, payload)
 		else
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+			return true;
 		end
 	else
 		if type == "error" or type == "result" then return; end
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+		return true;
 	end
 end
 
