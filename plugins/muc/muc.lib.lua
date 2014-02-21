@@ -380,30 +380,6 @@ function room_mt:get_whois()
 	return self._data.whois;
 end
 
-local function construct_stanza_id(room, stanza)
-	local from_jid, to_nick = stanza.attr.from, stanza.attr.to;
-	local from_nick = room._jid_nick[from_jid];
-	local occupant = room._occupants[to_nick];
-	local to_jid = occupant.jid;
-
-	return from_nick, to_jid, base64.encode(to_jid.."\0"..stanza.attr.id.."\0"..md5(from_jid));
-end
-local function deconstruct_stanza_id(room, stanza)
-	local from_jid_possiblybare, to_nick = stanza.attr.from, stanza.attr.to;
-	local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
-	local from_nick = room._jid_nick[from_jid];
-
-	if not(from_nick) then return; end
-	if not(from_jid_possiblybare == from_jid or from_jid_possiblybare == jid_bare(from_jid)) then return; end
-
-	local occupant = room._occupants[to_nick];
-	for to_jid in pairs(occupant and occupant.sessions or {}) do
-		if md5(to_jid) == to_jid_hash then
-			return from_nick, to_jid, id;
-		end
-	end
-end
-
 function room_mt:handle_presence_error_to_occupant(origin, stanza)
 	local current_nick = self._jid_nick[stanza.attr.from];
 	if not current_nick then
@@ -607,33 +583,45 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local type = stanza.attr.type;
 	local id = stanza.attr.id;
+	local current_nick = self._jid_nick[from];
+	local o_data = self._occupants[to];
 	if (type == "error" or type == "result") then
-		stanza.attr.from, stanza.attr.to, stanza.attr.id = deconstruct_stanza_id(self, stanza);
-		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
-		if stanza.attr.id then
-			self:_route_stanza(stanza);
+		do -- deconstruct_stanza_id
+			if not current_nick or not o_data then return nil; end
+			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
+			if not(from == from_jid or from == jid_bare(from_jid)) then return nil; end
+			local session_jid
+			for to_jid in pairs(o_data.sessions) do
+				if md5(to_jid) == to_jid_hash then
+					session_jid = to_jid;
+					break;
+				end
+			end
+			if session_jid == nil then return nil; end
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = current_nick, session_jid, id
 		end
+		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
+		self:_route_stanza(stanza);
 		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
 	else -- Type is "get" or "set"
-		local current_nick = self._jid_nick[from];
 		if not current_nick then
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 			return true;
 		end
-		local o_data = self._occupants[to];
 		if not o_data then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 			return true;
 		end
-		stanza.attr.from, stanza.attr.to, stanza.attr.id = construct_stanza_id(self, stanza);
+		do -- construct_stanza_id
+			stanza.attr.id = base64.encode(to_jid.."\0"..stanza.attr.id.."\0"..md5(from));
+		end
+		stanza.attr.from, stanza.attr.to = current_nick, o_data.jid;
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, o_data.jid);
 		if stanza.tags[1].attr.xmlns == 'vcard-temp' then
 			stanza.attr.to = jid_bare(stanza.attr.to);
 		end
-		if stanza.attr.id then
-			self:_route_stanza(stanza);
-		end
+		self:_route_stanza(stanza);
 		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
 	end
@@ -1026,7 +1014,6 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 		stanza.attr.from = from;
 	end
 end
-
 
 function room_mt:handle_kickable_to_room(origin, stanza)
 	local current_nick = self._jid_nick[stanza.attr.from];
