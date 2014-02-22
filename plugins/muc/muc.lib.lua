@@ -827,6 +827,16 @@ function room_mt:destroy(newjid, reason, password)
 	module:fire_event("muc-room-destroyed", { room = self });
 end
 
+function room_mt:handle_disco_info_get_query(origin, stanza)
+	origin.send(self:get_disco_info(stanza));
+	return true;
+end
+
+function room_mt:handle_disco_items_get_query(origin, stanza)
+	origin.send(self:get_disco_items(stanza));
+	return true;
+end
+
 function room_mt:handle_admin_item_set_command(origin, stanza)
 	local item = stanza.tags[1].tags[1];
 	if item.attr.jid then -- Validate provided JID
@@ -951,11 +961,9 @@ function room_mt:handle_iq_to_room(origin, stanza)
 	local type = stanza.attr.type;
 	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
 	if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" and not stanza.tags[1].attr.node then
-		origin.send(self:get_disco_info(stanza));
-		return true;
+		return self:handle_disco_info_get_query(origin, stanza)
 	elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" and not stanza.tags[1].attr.node then
-		origin.send(self:get_disco_items(stanza));
-		return true;
+		return self:handle_disco_items_get_query(origin, stanza)
 	elseif xmlns == "http://jabber.org/protocol/muc#admin" then
 		local item = stanza.tags[1].tags[1];
 		if item and item.name == "item" then
