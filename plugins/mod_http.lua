@@ -42,7 +42,7 @@ local function get_base_path(host_module, app_name, default_app_path)
 	return (normalize_path(host_module:get_option("http_paths", {})[app_name] -- Host
 		or module:get_option("http_paths", {})[app_name] -- Global
 		or default_app_path)) -- Default
-		:gsub("%$(%w+)", { host = module.host });
+		:gsub("%$(%w+)", { host = host_module.host });
 end
 
 local ports_by_scheme = { http = 80, https = 443, };
@@ -51,6 +51,9 @@ local ports_by_scheme = { http = 80, https = 443, };
 function moduleapi.http_url(module, app_name, default_path)
 	app_name = app_name or (module.name:gsub("^http_", ""));
 	local external_url = url_parse(module:get_option_string("http_external_url")) or {};
+	if external_url.scheme and external_url.port == nil then
+		external_url.port = ports_by_scheme[external_url.scheme];
+	end
 	local services = portmanager.get_active_services();
 	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do
