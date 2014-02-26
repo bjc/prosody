@@ -43,7 +43,7 @@ function provider.get_sasl_handler()
 end
 
 function provider.users()
-	return next, hosts[host].sessions, nil;
+	return next, hosts[module.host].sessions, nil;
 end
 
 -- datamanager callback to disable writes
