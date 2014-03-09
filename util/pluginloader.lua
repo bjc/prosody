@@ -39,10 +39,10 @@ function load_resource(plugin, resource)
 	resource = resource or "mod_"..plugin..".lua";
 
 	local names = {
-		"mod_"..plugin.."/"..plugin.."/"..resource; -- mod_hello/hello/mod_hello.lua
-		"mod_"..plugin.."/"..resource;              -- mod_hello/mod_hello.lua
-		plugin.."/"..resource;                      -- hello/mod_hello.lua
-		resource;                                   -- mod_hello.lua
+		"mod_"..plugin..dir_sep..plugin..dir_sep..resource; -- mod_hello/hello/mod_hello.lua
+		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
+		plugin..dir_sep..resource;                          -- hello/mod_hello.lua
+		resource;                                           -- mod_hello.lua
 	};
 
 	return load_file(names);
