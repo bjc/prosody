@@ -100,7 +100,7 @@ module:hook("host-disco-items-node", function (event)
 		return;
 	end
 
-	for id, item in pairs(ret) do
+	for _, id in ipairs(ret) do
 		reply:tag("item", { jid = module.host, name = id }):up();
 	end
 	event.exists = true;
