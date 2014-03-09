@@ -18,7 +18,7 @@ function test_value(value, returns)
 	assert(module:get_option_number("opt") == returns.number, "number doesn't match");
 	assert(module:get_option_string("opt") == returns.string, "string doesn't match");
 	assert(module:get_option_boolean("opt") == returns.boolean, "boolean doesn't match");
-	
+
 	if type(returns.array) == "table" then
 		local target_array, returned_array = returns.array, module:get_option_array("opt");
 		assert(#target_array == #returned_array, "array length doesn't match");
@@ -28,7 +28,7 @@ function test_value(value, returns)
 	else
 		assert(module:get_option_array("opt") == returns.array, "array is returned (not nil)");
 	end
-	
+
 	if type(returns.set) == "table" then
 		local target_items, returned_items = set.new(returns.set), module:get_option_set("opt");
 		assert(target_items == returned_items, "set doesn't match");
