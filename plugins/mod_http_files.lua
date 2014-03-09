@@ -14,6 +14,7 @@ local os_date = os.date;
 local open = io.open;
 local stat = lfs.attributes;
 local build_path = require"socket.url".build_path;
+local path_sep = package.config:sub(1,1);
 
 local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path"));
 local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
@@ -61,7 +62,7 @@ function serve(opts)
 		local request, response = event.request, event.response;
 		local orig_path = request.path;
 		local full_path = base_path .. (path and "/"..path or "");
-		local attr = stat(full_path);
+		local attr = stat((full_path:gsub('%'..path_sep..'+$','')));
 		if not attr then
 			return 404;
 		end
