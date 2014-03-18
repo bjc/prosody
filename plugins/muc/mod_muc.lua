@@ -213,13 +213,6 @@ for event_name, method in pairs {
 	end, -2)
 end
 
-
-hosts[module.host].send = function(stanza) -- FIXME do a generic fix
-	if stanza.attr.type == "result" or stanza.attr.type == "error" then
-		module:send(stanza);
-	else error("component.send only supports result and error stanzas at the moment"); end
-end
-
 hosts[module:get_host()].muc = { rooms = rooms };
 
 local saved = false;
