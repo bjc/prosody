@@ -1045,9 +1045,10 @@ function room_mt:handle_mediated_invite(origin, stanza, payload)
 				:tag('invite', {from=_from})
 					:tag('reason'):text(_reason or ""):up()
 				:up();
-				if self:get_password() then
-					invite:tag("password"):text(self:get_password()):up();
-				end
+		local password = self:get_password()
+		if password then
+			invite:tag("password"):text(password):up();
+		end
 			invite:up()
 			:tag('x', {xmlns="jabber:x:conference", jid=_to}) -- COMPAT: Some older clients expect this
 				:text(_reason or "")
