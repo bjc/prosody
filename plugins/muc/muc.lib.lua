@@ -416,6 +416,7 @@ function room_mt:handle_unavailable_to_occupant(origin, stanza)
 		occupant.role = 'none';
 		self:broadcast_presence(pr, from);
 		self._occupants[current_nick] = nil;
+		module:fire_event("muc-occupant-left", { room = self; nick = current_nick; });
 	end
 	return true;
 end
@@ -823,6 +824,7 @@ function room_mt:destroy(newjid, reason, password)
 			self._jid_nick[jid] = nil;
 		end
 		self._occupants[nick] = nil;
+		module:fire_event("muc-occupant-left", { room = self; nick = nick; });
 	end
 	self:set_persistent(false);
 	module:fire_event("muc-room-destroyed", { room = self });
