@@ -1031,15 +1031,15 @@ function room_mt:handle_presence_to_room(origin, stanza)
 	return handled;
 end
 
-function room_mt:handle_invite_to_room(origin, stanza, payload)
+function room_mt:handle_mediated_invite(origin, stanza, payload)
 	local _from, _to = stanza.attr.from, stanza.attr.to;
-	if not self._jid_nick[_from] then -- Should be in room to send invite
+	if not self._jid_nick[_from] then -- Should be in room to send invite TODO: allow admins to send at any time
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	end
 	local _invitee = jid_prep(payload.attr.to);
 	if _invitee then
-		local _reason = payload.tags[1] and payload.tags[1].name == 'reason' and #payload.tags[1].tags == 0 and payload.tags[1][1];
+		local _reason = payload:get_child_text("reason")
 		local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 				:tag('invite', {from=_from})
@@ -1077,8 +1077,10 @@ function room_mt:handle_message_to_room(origin, stanza)
 		local x = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 		if x then
 			local payload = x.tags[1];
-			if payload and payload.name == "invite" and payload.attr.to then
-				return self:handle_invite_to_room(origin, stanza, payload)
+			if payload == nil then
+				-- fallthrough
+			elseif payload.name == "invite" and payload.attr.to then
+				return self:handle_mediated_invite(origin, stanza, payload)
 			end
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
