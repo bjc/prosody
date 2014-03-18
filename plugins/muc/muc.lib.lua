@@ -1033,6 +1033,10 @@ end
 
 function room_mt:handle_invite_to_room(origin, stanza, payload)
 	local _from, _to = stanza.attr.from, stanza.attr.to;
+	if not self._jid_nick[_from] then -- Should be in room to send invite
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		return true;
+	end
 	local _invitee = jid_prep(payload.attr.to);
 	if _invitee then
 		local _reason = payload.tags[1] and payload.tags[1].name == 'reason' and #payload.tags[1].tags == 0 and payload.tags[1][1];
@@ -1069,13 +1073,13 @@ function room_mt:handle_message_to_room(origin, stanza)
 		return self:handle_groupchat_to_room(origin, stanza)
 	elseif type == "error" and is_kickable_error(stanza) then
 		return self:handle_kickable(origin, stanza)
-	elseif not(type == "chat" or type == "error" or type == "groupchat" or type == "headline") and #stanza.tags == 1
-		and self._jid_nick[stanza.attr.from] and stanza.tags[1].name == "x" and stanza.tags[1].attr.xmlns == "http://jabber.org/protocol/muc#user" then
-		local x = stanza.tags[1];
-		local payload = (#x.tags == 1 and x.tags[1]);
-		if payload and payload.name == "invite" and payload.attr.to then
-			return self:handle_invite_to_room(origin, stanza, payload)
-		else
+	elseif type == nil then
+		local x = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
+		if x then
+			local payload = x.tags[1];
+			if payload and payload.name == "invite" and payload.attr.to then
+				return self:handle_invite_to_room(origin, stanza, payload)
+			end
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
 		end
