@@ -181,7 +181,7 @@ end
 -- Get history for 'to'
 function room_mt:get_history(to, maxchars, maxstanzas, since)
 	local history = self._data['history']; -- send discussion history
-	if not history then return end
+	if not history then return function() end end
 	local history_len = #history
 
 	maxstanzas = maxstanzas or history_len
