@@ -1067,6 +1067,29 @@ function room_mt:handle_mediated_invite(origin, stanza, payload)
 	end
 end
 
+function room_mt:handle_mediated_decline(origin, stanza, payload)
+	local declinee = jid_prep(payload.attr.to);
+	if declinee then
+		local from, to = stanza.attr.from, stanza.attr.to;
+		-- TODO: Validate declinee
+		local reason = payload:get_child_text("reason")
+		local decline = st.message({from = to, to = declinee, id = stanza.attr.id})
+			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+				:tag('decline', {from=from})
+					:tag('reason'):text(reason or ""):up()
+				:up()
+			:up()
+			:tag('body') -- Add a plain message for clients which don't support declines
+				:text(from..' declined your invite to the room '..to..(reason and (' ('..reason..')') or ""))
+			:up();
+		self:_route_stanza(decline);
+		return true;
+	else
+		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
+		return true;
+	end
+end
+
 function room_mt:handle_message_to_room(origin, stanza)
 	local type = stanza.attr.type;
 	if type == "groupchat" then
@@ -1081,6 +1104,8 @@ function room_mt:handle_message_to_room(origin, stanza)
 				-- fallthrough
 			elseif payload.name == "invite" and payload.attr.to then
 				return self:handle_mediated_invite(origin, stanza, payload)
+			elseif payload.name == "decline" and payload.attr.to then
+				return self:handle_mediated_decline(origin, stanza, payload)
 			end
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
