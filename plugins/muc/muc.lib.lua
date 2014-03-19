@@ -69,6 +69,10 @@ function room_mt:__tostring()
 	return "MUC room ("..self.jid..")";
 end
 
+function room_mt:get_occupant_jid(real_jid)
+	return self._jid_nick[real_jid]
+end
+
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
 		return "moderator";
@@ -134,7 +138,7 @@ function room_mt:broadcast_except_nick(stanza, nick)
 end
 
 function room_mt:send_occupant_list(to)
-	local current_nick = self._jid_nick[to];
+	local current_nick = self:get_occupant_jid(to);
 	for occupant, o_data in pairs(self._occupants) do
 		if occupant ~= current_nick then
 			local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
@@ -383,7 +387,7 @@ end
 
 function room_mt:handle_unavailable_to_occupant(origin, stanza)
 	local from = stanza.attr.from;
-	local current_nick = self._jid_nick[from];
+	local current_nick = self:get_occupant_jid(from);
 	if not current_nick then
 		return true; -- discard
 	end
@@ -514,7 +518,7 @@ end
 
 function room_mt:handle_available_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self._jid_nick[from];
+	local current_nick = self:get_occupant_jid(from);
 	if current_nick then
 		--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
 			if current_nick == to then -- simple presence
@@ -576,7 +580,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local type = stanza.attr.type;
 	local id = stanza.attr.id;
-	local current_nick = self._jid_nick[from];
+	local current_nick = self:get_occupant_jid(from);
 	local o_data = self._occupants[to];
 	if (type == "error" or type == "result") then
 		do -- deconstruct_stanza_id
@@ -622,7 +626,7 @@ end
 
 function room_mt:handle_message_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self._jid_nick[from];
+	local current_nick = self:get_occupant_jid(from);
 	local type = stanza.attr.type;
 	if not current_nick then -- not in room
 		if type ~= "error" then
@@ -836,7 +840,7 @@ function room_mt:handle_admin_item_set_command(origin, stanza)
 		local occupant = self._occupants[self.jid.."/"..item.attr.nick];
 		if occupant then item.attr.jid = occupant.jid; end
 	elseif not item.attr.nick and item.attr.jid then
-		local nick = self._jid_nick[item.attr.jid];
+		local nick = self:get_occupant_jid(item.attr.jid);
 		if nick then item.attr.nick = select(3, jid_split(nick)); end
 	end
 	local actor = stanza.attr.from;
@@ -859,7 +863,7 @@ end
 function room_mt:handle_admin_item_get_command(origin, stanza)
 	local actor = stanza.attr.from;
 	local affiliation = self:get_affiliation(actor);
-	local current_nick = self._jid_nick[actor];
+	local current_nick = self:get_occupant_jid(actor);
 	local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
 	local item = stanza.tags[1].tags[1];
 	local _aff = item.attr.affiliation;
@@ -939,7 +943,7 @@ end
 
 function room_mt:handle_groupchat_to_room(origin, stanza)
 	local from = stanza.attr.from;
-	local current_nick = self._jid_nick[from];
+	local current_nick = self:get_occupant_jid(from);
 	local occupant = self._occupants[current_nick];
 	if not occupant then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
@@ -969,7 +973,7 @@ end
 
 -- hack - some buggy clients send presence updates to the room rather than their nick
 function room_mt:handle_presence_to_room(origin, stanza)
-	local current_nick = self._jid_nick[stanza.attr.from];
+	local current_nick = self:get_occupant_jid(stanza.attr.from);
 	local handled
 	if current_nick then
 		local to = stanza.attr.to;
@@ -982,7 +986,8 @@ end
 
 function room_mt:handle_mediated_invite(origin, stanza, payload)
 	local _from, _to = stanza.attr.from, stanza.attr.to;
-	if not self._jid_nick[_from] then -- Should be in room to send invite TODO: allow admins to send at any time
+	local current_nick = self:get_occupant_jid(_from)
+	if not current_nick then -- Should be in room to send invite TODO: allow admins to send at any time
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	end
@@ -1007,7 +1012,7 @@ function room_mt:handle_mediated_invite(origin, stanza, payload)
 			:up();
 		if self:get_members_only() and not self:get_affiliation(_invitee) then
 			log("debug", "%s invited %s into members only room %s, granting membership", _from, _invitee, _to);
-			self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. self._jid_nick[_from])
+			self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. current_nick)
 		end
 		self:_route_stanza(invite);
 		return true;
@@ -1157,7 +1162,7 @@ function room_mt:can_set_role(actor_jid, occupant_jid, role)
 
 	if actor_jid == true then return true; end
 
-	local actor = self._occupants[self._jid_nick[actor_jid]];
+	local actor = self._occupants[self:get_occupant_jid(actor_jid)];
 	if actor.role == "moderator" then
 		if occupant.affiliation ~= "owner" and occupant.affiliation ~= "admin" then
 			if actor.affiliation == "owner" or actor.affiliation == "admin" then
@@ -1212,7 +1217,7 @@ end
 function room_mt:_route_stanza(stanza)
 	local muc_child;
 	if stanza.name == "presence" then
-		local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
+		local to_occupant = self._occupants[self:get_occupant_jid(stanza.attr.to)];
 		local from_occupant = self._occupants[stanza.attr.from];
 		if to_occupant and from_occupant then
 			if self:get_whois() == 'anyone' then
