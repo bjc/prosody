@@ -656,21 +656,6 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	return true;
 end
 
-function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
-	local from, to = stanza.attr.from, stanza.attr.to;
-	local room = jid_bare(to);
-	local current_nick = self._jid_nick[from];
-	log("debug", "room: %s, current_nick: %s, stanza: %s", room or "nil", current_nick or "nil", stanza:top_tag());
-	if (select(2, jid_split(from)) == muc_domain) then error("Presence from the MUC itself!!!"); end
-	if stanza.name == "presence" then
-		return self:handle_presence_to_occupant(origin, stanza)
-	elseif stanza.name == "iq" then
-		return self:handle_iq_to_occupant(origin, stanza)
-	elseif stanza.name == "message" then
-		return self:handle_message_to_occupant(origin, stanza)
-	end
-end
-
 function room_mt:send_form(origin, stanza)
 	origin.send(st.reply(stanza):query("http://jabber.org/protocol/muc#owner")
 		:add_child(self:get_form_layout(stanza.attr.from):form())
@@ -953,36 +938,6 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 	end
 end
 
-function room_mt:handle_iq_to_room(origin, stanza)
-	local type = stanza.attr.type;
-	local xmlns = stanza.tags[1] and stanza.tags[1].attr.xmlns;
-	if xmlns == "http://jabber.org/protocol/disco#info" and type == "get" and not stanza.tags[1].attr.node then
-		return self:handle_disco_info_get_query(origin, stanza)
-	elseif xmlns == "http://jabber.org/protocol/disco#items" and type == "get" and not stanza.tags[1].attr.node then
-		return self:handle_disco_items_get_query(origin, stanza)
-	elseif xmlns == "http://jabber.org/protocol/muc#admin" then
-		local item = stanza.tags[1].tags[1];
-		if item and item.name == "item" then
-			if type == "set" then
-				return self:handle_admin_item_set_command(origin, stanza)
-			elseif type == "get" then
-				return self:handle_admin_item_get_command(origin, stanza)
-			end
-		elseif type == "set" or type == "get" then
-			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
-			return true;
-		end
-	elseif xmlns == "http://jabber.org/protocol/muc#owner" and (type == "get" or type == "set") and stanza.tags[1].name == "query" then
-		if stanza.attr.type == "get" then
-			return self:handle_owner_query_get_to_room(origin, stanza)
-		elseif stanza.attr.type == "set" then
-			return self:handle_owner_query_set_to_room(origin, stanza)
-		end
-	else
-		return nil;
-	end
-end
-
 function room_mt:handle_groupchat_to_room(origin, stanza)
 	local from = stanza.attr.from;
 	local current_nick = self._jid_nick[from];
@@ -1108,33 +1063,6 @@ function room_mt:handle_message_to_room(origin, stanza)
 		end
 	else
 		return nil;
-	end
-end
-
-function room_mt:handle_to_room(origin, stanza) -- presence changes and groupchat messages, along with disco/etc
-	if stanza.name == "iq" then
-		return self:handle_iq_to_room(origin, stanza)
-	elseif stanza.name == "message" then
-		return self:handle_message_to_room(origin, stanza)
-	elseif stanza.name == "presence" then
-		return self:handle_presence_to_room(origin, stanza)
-	end
-end
-
-function room_mt:handle_stanza(origin, stanza)
-	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
-	local handled
-	if to_resource then
-		handled = self:handle_to_occupant(origin, stanza);
-	else
-		handled = self:handle_to_room(origin, stanza);
-	end
-
-	if not handled then
-		local type = stanza.attr.type
-		if stanza.name ~= "iq" or type == "get" or type == "set" then
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-		end
 	end
 end
 
