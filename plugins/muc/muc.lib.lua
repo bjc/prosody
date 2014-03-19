@@ -232,7 +232,7 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self:get_members_only() and "muc_membersonly" or "muc_open"}):up()
 		:tag("feature", {var=self:get_persistent() and "muc_persistent" or "muc_temporary"}):up()
 		:tag("feature", {var=self:get_hidden() and "muc_hidden" or "muc_public"}):up()
-		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
+		:tag("feature", {var=self:get_whois() ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
 		:add_child(dataform.new({
 			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
 			{ name = "muc#roominfo_description", label = "Description", value = "" },
@@ -488,7 +488,7 @@ function room_mt:handle_join(origin, stanza)
 			self:broadcast_except_nick(pr, to);
 		end
 		pr:tag("status", {code='110'}):up();
-		if self._data.whois == 'anyone' then
+		if self:get_whois() == 'anyone' then
 			pr:tag("status", {code='100'}):up();
 		end
 		if self.locked then
@@ -661,6 +661,7 @@ function room_mt:send_form(origin, stanza)
 end
 
 function room_mt:get_form_layout(actor)
+	local whois = self:get_whois()
 	local form = dataform.new({
 		title = "Configuration for "..self.jid,
 		instructions = "Complete and submit this form to configure the room.",
@@ -704,8 +705,8 @@ function room_mt:get_form_layout(actor)
 			type = 'list-single',
 			label = 'Who May Discover Real JIDs?',
 			value = {
-				{ value = 'moderators', label = 'Moderators Only', default = self._data.whois == 'moderators' },
-				{ value = 'anyone',     label = 'Anyone',          default = self._data.whois == 'anyone' }
+				{ value = 'moderators', label = 'Moderators Only', default = whois == 'moderators' },
+				{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
 			}
 		},
 		{
@@ -952,7 +953,7 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 		local subject = stanza:get_child_text("subject");
 		if subject then
 			if occupant.role == "moderator" or
-				( self._data.changesubject and occupant.role == "participant" ) then -- and participant
+				( self:get_changesubject() and occupant.role == "participant" ) then -- and participant
 				self:set_subject(current_nick, subject);
 			else
 				stanza.attr.from = from;
@@ -1214,7 +1215,7 @@ function room_mt:_route_stanza(stanza)
 		local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
 		local from_occupant = self._occupants[stanza.attr.from];
 		if to_occupant and from_occupant then
-			if self._data.whois == 'anyone' then
+			if self:get_whois() == 'anyone' then
 			    muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 			else
 				if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
