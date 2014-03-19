@@ -755,8 +755,7 @@ end
 
 function room_mt:process_form(origin, stanza)
 	local query = stanza.tags[1];
-	local form;
-	for _, tag in ipairs(query.tags) do if tag.name == "x" and tag.attr.xmlns == "jabber:x:data" then form = tag; break; end end
+	local form = query:get_child("x", "jabber:x:data")
 	if not form then origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); return; end
 	if form.attr.type == "cancel" then origin.send(st.reply(stanza)); return; end
 	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form")); return; end
@@ -858,7 +857,7 @@ function room_mt:handle_admin_item_set_command(origin, stanza)
 	end
 	local actor = stanza.attr.from;
 	local callback = function() origin.send(st.reply(stanza)); end
-	local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
+	local reason = item:get_child_text("reason");
 	if item.attr.affiliation and item.attr.jid and not item.attr.role then
 		local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
 		if not success then origin.send(st.error_reply(stanza, errtype, err)); end
@@ -943,14 +942,8 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 		return true;
 	elseif child.name == "destroy" then
 		local newjid = child.attr.jid;
-		local reason, password;
-		for _,tag in ipairs(child.tags) do
-			if tag.name == "reason" then
-				reason = #tag.tags == 0 and tag[1];
-			elseif tag.name == "password" then
-				password = #tag.tags == 0 and tag[1];
-			end
-		end
+		local reason = child:get_child_text("reason");
+		local password = child:get_child_text("password");
 		self:destroy(newjid, reason, password);
 		origin.send(st.reply(stanza));
 		return true;
@@ -1305,22 +1298,18 @@ function room_mt:_route_stanza(stanza)
 		end
 	end
 	if muc_child then
-		for _, item in pairs(muc_child.tags) do
-			if item.name == "item" then
-				if from_occupant == to_occupant then
-					item.attr.jid = stanza.attr.to;
-				else
-					item.attr.jid = from_occupant.jid;
-				end
+		for item in muc_child:childtags("item") do
+			if from_occupant == to_occupant then
+				item.attr.jid = stanza.attr.to;
+			else
+				item.attr.jid = from_occupant.jid;
 			end
 		end
 	end
 	self:route_stanza(stanza);
 	if muc_child then
-		for _, item in pairs(muc_child.tags) do
-			if item.name == "item" then
-				item.attr.jid = nil;
-			end
+		for item in muc_child:childtags("item") do
+			item.attr.jid = nil;
 		end
 	end
 end
