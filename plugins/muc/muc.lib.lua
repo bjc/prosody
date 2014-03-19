@@ -25,7 +25,6 @@ local setmetatable = setmetatable;
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
-local muc_domain = nil; --module:get_host();
 local default_history_length, max_history_length = 20, math.huge;
 
 ------------
@@ -118,8 +117,8 @@ function room_mt:save_to_history(stanza)
 	stanza = st.clone(stanza);
 	stanza.attr.to = "";
 	local stamp = datetime.datetime();
-	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
-	stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
+	stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 	local entry = { stanza = stanza, stamp = stamp };
 	t_insert(history, entry);
 	while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
