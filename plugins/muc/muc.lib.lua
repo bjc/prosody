@@ -862,8 +862,6 @@ end
 function room_mt:handle_admin_item_get_command(origin, stanza)
 	local actor = stanza.attr.from;
 	local affiliation = self:get_affiliation(actor);
-	local current_nick = self:get_occupant_jid(actor);
-	local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
 	local item = stanza.tags[1].tags[1];
 	local _aff = item.attr.affiliation;
 	local _rol = item.attr.role;
@@ -882,8 +880,8 @@ function room_mt:handle_admin_item_get_command(origin, stanza)
 			return true;
 		end
 	elseif _rol and not _aff then
+		local role = self:get_role(self:get_occupant_jid(actor)) or self:get_default_role(affiliation);
 		if role == "moderator" then
-			-- TODO allow admins and owners not in room? Provide read-only access to everyone who can see the participants anyway?
 			if _rol == "none" then _rol = nil; end
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
 			for occupant_jid, occupant in pairs(self._occupants) do
