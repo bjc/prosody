@@ -987,7 +987,8 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite")
 	local _from, _to = stanza.attr.from, stanza.attr.to;
 	local current_nick = self:get_occupant_jid(_from)
-	if not current_nick then -- Should be in room to send invite TODO: allow admins to send at any time
+	-- Need visitor role or higher to invite
+	if not self._occupants[current_nick].role then
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	end
