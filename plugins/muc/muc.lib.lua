@@ -1011,8 +1011,7 @@ function room_mt:handle_mediated_invite(origin, stanza)
 			:tag('body') -- Add a plain message for clients which don't support invites
 				:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 			:up();
-		module:fire_event("muc-invite-prepared", { room = self, stanza = invite })
-		self:_route_stanza(invite);
+		module:fire_event("muc-invite", { room = self, stanza = invite, origin = origin, incoming = stanza });
 		return true;
 	else
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
@@ -1020,8 +1019,13 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 end
 
+module:hook("muc-invite", function(event)
+	event.room:_route_stanza(event.stanza);
+	return true;
+end, -1)
+
 -- When an invite is sent; add an affiliation for the invitee
-module:hook("muc-invite-prepared", function(event)
+module:hook("muc-invite", function(event)
 	local room, stanza = event.room, event.stanza
 	local invitee = stanza.attr.to
 	if room:get_members_only() and not room:get_affiliation(invitee) then
