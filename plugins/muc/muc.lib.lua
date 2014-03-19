@@ -983,7 +983,8 @@ function room_mt:handle_presence_to_room(origin, stanza)
 	return handled;
 end
 
-function room_mt:handle_mediated_invite(origin, stanza, payload)
+function room_mt:handle_mediated_invite(origin, stanza)
+	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite")
 	local _from, _to = stanza.attr.from, stanza.attr.to;
 	local current_nick = self:get_occupant_jid(_from)
 	if not current_nick then -- Should be in room to send invite TODO: allow admins to send at any time
@@ -1030,7 +1031,8 @@ module:hook("muc-invite-prepared", function(event)
 	end
 end)
 
-function room_mt:handle_mediated_decline(origin, stanza, payload)
+function room_mt:handle_mediated_decline(origin, stanza)
+	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline")
 	local declinee = jid_prep(payload.attr.to);
 	if declinee then
 		local from, to = stanza.attr.from, stanza.attr.to;
@@ -1066,9 +1068,9 @@ function room_mt:handle_message_to_room(origin, stanza)
 			if payload == nil then
 				-- fallthrough
 			elseif payload.name == "invite" and payload.attr.to then
-				return self:handle_mediated_invite(origin, stanza, payload)
+				return self:handle_mediated_invite(origin, stanza)
 			elseif payload.name == "decline" and payload.attr.to then
-				return self:handle_mediated_decline(origin, stanza, payload)
+				return self:handle_mediated_decline(origin, stanza)
 			end
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
