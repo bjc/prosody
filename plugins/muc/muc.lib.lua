@@ -986,7 +986,7 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	local _from, _to = stanza.attr.from, stanza.attr.to;
 	local current_nick = self:get_occupant_jid(_from)
 	-- Need visitor role or higher to invite
-	if not self._occupants[current_nick].role then
+	if not self:get_role(current_nick) or not self:get_default_role(self:get_affiliation(_from)) then
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	end
