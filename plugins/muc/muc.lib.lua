@@ -445,13 +445,12 @@ function room_mt:handle_change_nick(origin, stanza, current_nick, to)
 		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	else
-		local data = self._occupants[current_nick];
 		local to_nick = select(3, jid_split(to));
-		log("debug", "%s (%s) changing nick to %s", current_nick, data.jid, to);
+		log("debug", "%s (%s) changing nick to %s", current_nick, occupant.jid, to);
 		local p = st.presence({type='unavailable', from=current_nick});
 		self:broadcast_presence(p, from, '303', to_nick);
 		self._occupants[current_nick] = nil;
-		self._occupants[to] = data;
+		self._occupants[to] = occupant;
 		self._jid_nick[from] = to;
 		local pr = get_filtered_presence(stanza);
 		pr.attr.from = to;
