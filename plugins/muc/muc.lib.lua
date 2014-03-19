@@ -27,7 +27,6 @@ local md5 = require "util.hashes".md5;
 
 local default_history_length, max_history_length = 20, math.huge;
 
-------------
 local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
 local function presence_filter(tag)
 	if presence_filters[tag.attr.xmlns] then
@@ -35,33 +34,28 @@ local function presence_filter(tag)
 	end
 	return tag;
 end
-
 local function get_filtered_presence(stanza)
 	return st.clone(stanza):maptags(presence_filter);
 end
-local kickable_error_conditions = {
-	["gone"] = true;
-	["internal-server-error"] = true;
-	["item-not-found"] = true;
-	["jid-malformed"] = true;
-	["recipient-unavailable"] = true;
-	["redirect"] = true;
-	["remote-server-not-found"] = true;
-	["remote-server-timeout"] = true;
-	["service-unavailable"] = true;
-	["malformed error"] = true;
-};
 
-local function get_error_condition(stanza)
-	local _, condition = stanza:get_error();
-	return condition or "malformed error";
+local is_kickable_error do
+	local kickable_error_conditions = {
+		["gone"] = true;
+		["internal-server-error"] = true;
+		["item-not-found"] = true;
+		["jid-malformed"] = true;
+		["recipient-unavailable"] = true;
+		["redirect"] = true;
+		["remote-server-not-found"] = true;
+		["remote-server-timeout"] = true;
+		["service-unavailable"] = true;
+		["malformed error"] = true;
+	};
+	function is_kickable_error(stanza)
+		local cond = select(2, stanza:get_error()) or "malformed error";
+		return kickable_error_conditions[cond];
+	end
 end
-
-local function is_kickable_error(stanza)
-	local cond = get_error_condition(stanza);
-	return kickable_error_conditions[cond] and cond;
-end
------------
 
 local room_mt = {};
 room_mt.__index = room_mt;
