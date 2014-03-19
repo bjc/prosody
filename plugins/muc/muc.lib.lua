@@ -1009,10 +1009,7 @@ function room_mt:handle_mediated_invite(origin, stanza, payload)
 			:tag('body') -- Add a plain message for clients which don't support invites
 				:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 			:up();
-		if self:get_members_only() and not self:get_affiliation(_invitee) then
-			log("debug", "%s invited %s into members only room %s, granting membership", _from, _invitee, _to);
-			self:set_affiliation(_from, _invitee, "member", nil, "Invited by " .. current_nick)
-		end
+		module:fire_event("muc-invite-prepared", { room = self, stanza = invite })
 		self:_route_stanza(invite);
 		return true;
 	else
@@ -1020,6 +1017,18 @@ function room_mt:handle_mediated_invite(origin, stanza, payload)
 		return true;
 	end
 end
+
+-- When an invite is sent; add an affiliation for the invitee
+module:hook("muc-invite-prepared", function(event)
+	local room, stanza = event.room, event.stanza
+	local invitee = stanza.attr.to
+	if room:get_members_only() and not room:get_affiliation(invitee) then
+		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from
+		local current_nick = room:get_occupant_jid(from)
+		log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
+		room:set_affiliation(from, invitee, "member", nil, "Invited by " .. current_nick)
+	end
+end)
 
 function room_mt:handle_mediated_decline(origin, stanza, payload)
 	local declinee = jid_prep(payload.attr.to);
