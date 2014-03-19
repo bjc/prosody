@@ -1210,9 +1210,9 @@ end
 
 function room_mt:_route_stanza(stanza)
 	local muc_child;
-	local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
-	local from_occupant = self._occupants[stanza.attr.from];
 	if stanza.name == "presence" then
+		local to_occupant = self._occupants[self._jid_nick[stanza.attr.to]];
+		local from_occupant = self._occupants[stanza.attr.from];
 		if to_occupant and from_occupant then
 			if self._data.whois == 'anyone' then
 			    muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
@@ -1222,13 +1222,13 @@ function room_mt:_route_stanza(stanza)
 				end
 			end
 		end
-	end
-	if muc_child then
-		for item in muc_child:childtags("item") do
-			if from_occupant == to_occupant then
-				item.attr.jid = stanza.attr.to;
-			else
-				item.attr.jid = from_occupant.jid;
+		if muc_child then
+			for item in muc_child:childtags("item") do
+				if from_occupant == to_occupant then
+					item.attr.jid = stanza.attr.to;
+				else
+					item.attr.jid = from_occupant.jid;
+				end
 			end
 		end
 	end
