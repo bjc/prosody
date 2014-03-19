@@ -64,7 +64,6 @@ function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reaso
 	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
 end
 
-local function room_route_stanza(room, stanza) module:send(stanza); end
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	persistent_rooms[room.jid] = room._data.persistent;
@@ -89,7 +88,6 @@ end
 
 function create_room(jid)
 	local room = muc_new_room(jid);
-	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
 	if lock_rooms then
@@ -131,7 +129,6 @@ end
 if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
 
 local host_room = muc_new_room(muc_host);
-host_room.route_stanza = room_route_stanza;
 host_room.save = room_save;
 rooms[muc_host] = host_room;
 
