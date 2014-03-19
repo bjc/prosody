@@ -992,6 +992,9 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 	local _invitee = jid_prep(payload.attr.to);
 	if _invitee then
+		if self:get_whois() == "moderators" then
+			_from = current_nick;
+		end
 		local _reason = payload:get_child_text("reason")
 		local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
