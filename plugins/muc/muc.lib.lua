@@ -610,7 +610,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			return true;
 		end
 		do -- construct_stanza_id
-			stanza.attr.id = base64.encode(to_jid.."\0"..stanza.attr.id.."\0"..md5(from));
+			stanza.attr.id = base64.encode(o_data.jid.."\0"..stanza.attr.id.."\0"..md5(from));
 		end
 		stanza.attr.from, stanza.attr.to = current_nick, o_data.jid;
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, o_data.jid);
