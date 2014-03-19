@@ -27,15 +27,20 @@ local md5 = require "util.hashes".md5;
 
 local default_history_length, max_history_length = 20, math.huge;
 
-local presence_filters = {["http://jabber.org/protocol/muc"]=true;["http://jabber.org/protocol/muc#user"]=true};
-local function presence_filter(tag)
-	if presence_filters[tag.attr.xmlns] then
-		return nil;
+local get_filtered_presence do
+	local presence_filters = {
+		["http://jabber.org/protocol/muc"] = true;
+		["http://jabber.org/protocol/muc#user"] = true;
+	}
+	local function presence_filter(tag)
+		if presence_filters[tag.attr.xmlns] then
+			return nil;
+		end
+		return tag;
 	end
-	return tag;
-end
-local function get_filtered_presence(stanza)
-	return st.clone(stanza):maptags(presence_filter);
+	function get_filtered_presence(stanza)
+		return st.clone(stanza):maptags(presence_filter);
+	end
 end
 
 local is_kickable_error do
