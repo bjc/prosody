@@ -91,10 +91,10 @@ function create_room(jid)
 	room.save = room_save;
 	rooms[jid] = room;
 	if lock_rooms then
-		room.locked = true;
+		room:lock();
 		if lock_room_timeout and lock_room_timeout > 0 then
 			module:add_timer(lock_room_timeout, function ()
-				if room.locked then
+				if room:is_locked() then
 					room:destroy(); -- Not unlocked in time
 				end
 			end);
