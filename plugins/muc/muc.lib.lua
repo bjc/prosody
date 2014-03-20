@@ -141,10 +141,7 @@ end
 function room_mt:broadcast_except_nick(stanza, nick)
 	for rnick, occupant in pairs(self._occupants) do
 		if rnick ~= nick then
-			for jid in pairs(occupant.sessions) do
-				stanza.attr.to = jid;
-				self:_route_stanza(stanza);
-			end
+			self:route_to_occupant(occupant, stanza)
 		end
 	end
 end
