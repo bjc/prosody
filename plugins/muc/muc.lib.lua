@@ -96,6 +96,15 @@ function room_mt:is_locked()
 	return not not self.locked
 end
 
+function room_mt:route_to_occupant(o_data, stanza)
+	local to = stanza.attr.to;
+	for jid in pairs(o_data.sessions) do
+		stanza.attr.to = jid;
+		self:_route_stanza(stanza);
+	end
+	stanza.attr.to = to;
+end
+
 function room_mt:broadcast_presence(stanza, sid, code, nick)
 	stanza = get_filtered_presence(stanza);
 	local occupant = self._occupants[stanza.attr.from];
@@ -113,14 +122,9 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	end
 end
 function room_mt:broadcast_message(stanza, historic)
-	local to = stanza.attr.to;
-	for occupant, o_data in pairs(self._occupants) do
-		for jid in pairs(o_data.sessions) do
-			stanza.attr.to = jid;
-			self:_route_stanza(stanza);
-		end
+	for occupant_jid, o_data in pairs(self._occupants) do
+		self:route_to_occupant(o_data, stanza)
 	end
-	stanza.attr.to = to;
 	if historic then -- add to history
 		return self:save_to_history(stanza)
 	end
@@ -660,11 +664,8 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	log("debug", "%s sent private message stanza to %s (%s)", from, to, o_data.jid);
 	stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
 	stanza.attr.from = current_nick;
-	for jid in pairs(o_data.sessions) do
-		stanza.attr.to = jid;
-		self:_route_stanza(stanza);
-	end
-	stanza.attr.from, stanza.attr.to = from, to;
+	self:route_to_occupant(o_data, stanza)
+	stanza.attr.from = from;
 	return true;
 end
 
