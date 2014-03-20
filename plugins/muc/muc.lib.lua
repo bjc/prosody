@@ -85,6 +85,17 @@ function room_mt:get_default_role(affiliation)
 	end
 end
 
+function room_mt:lock()
+	self.locked = true
+end
+function room_mt:unlock()
+	module:fire_event("muc-room-unlocked", { room = self });
+	self.locked = nil
+end
+function room_mt:is_locked()
+	return not not self.locked
+end
+
 function room_mt:broadcast_presence(stanza, sid, code, nick)
 	stanza = get_filtered_presence(stanza);
 	local occupant = self._occupants[stanza.attr.from];
@@ -465,10 +476,10 @@ function room_mt:handle_join(origin, stanza)
 	log("debug", "%s joining as %s", from, to);
 	if not next(self._affiliations) then -- new room, no owners
 		self._affiliations[jid_bare(from)] = "owner";
-		if self.locked and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-			self.locked = nil; -- Older groupchat protocol doesn't lock
+		if self:is_locked() and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+			self:unlock(); -- Older groupchat protocol doesn't lock
 		end
-	elseif self.locked then -- Deny entry
+	elseif self:is_locked() then -- Deny entry
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
 		return true;
 	end
@@ -494,7 +505,7 @@ function room_mt:handle_join(origin, stanza)
 		if self:get_whois() == 'anyone' then
 			pr:tag("status", {code='100'}):up();
 		end
-		if self.locked then
+		if self:is_locked() then
 			pr:tag("status", {code='201'}):up();
 		end
 		pr.attr.to = from;
@@ -777,9 +788,8 @@ function room_mt:process_form(origin, stanza)
 	handle_option("password", "muc#roomconfig_roomsecret");
 
 	if self.save then self:save(true); end
-	if self.locked then
-		module:fire_event("muc-room-unlocked", { room = self });
-		self.locked = nil;
+	if self:is_locked() then
+		self:unlock();
 	end
 	origin.send(st.reply(stanza));
 
@@ -1267,6 +1277,7 @@ local _M = {}; -- module "muc"
 function _M.new_room(jid, config)
 	return setmetatable({
 		jid = jid;
+		locked = nil;
 		_jid_nick = {};
 		_occupants = {};
 		_data = {
