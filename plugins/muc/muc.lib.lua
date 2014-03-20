@@ -1064,13 +1064,18 @@ function room_mt:handle_mediated_decline(origin, stanza)
 			:tag('body') -- Add a plain message for clients which don't support declines
 				:text(from..' declined your invite to the room '..to..(reason and (' ('..reason..')') or ""))
 			:up();
-		self:_route_stanza(decline);
+		module:fire_event("muc-decline", { room = self, stanza = decline, origin = origin, incoming = stanza });
 		return true;
 	else
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 		return true;
 	end
 end
+
+module:hook("muc-decline", function(event)
+	event.room:_route_stanza(event.stanza);
+	return true;
+end, -1)
 
 function room_mt:handle_message_to_room(origin, stanza)
 	local type = stanza.attr.type;
