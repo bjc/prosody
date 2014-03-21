@@ -472,6 +472,23 @@ end
 function room_mt:handle_join(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
 	log("debug", "%s joining as %s", from, to);
+	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
+	password = password and password:get_child("password", "http://jabber.org/protocol/muc");
+	password = password and password[1] ~= "" and password[1];
+	if self:get_password() and self:get_password() ~= password then
+		log("debug", "%s couldn't join due to invalid password: %s", from, to);
+		local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
+		reply.tags[1].attr.code = "401";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	elseif self._occupants[to] -- occupant already exists
+		and jid_bare(from) ~= jid_bare(self._occupants[to].jid) then -- and has different bare real jid
+		log("debug", "%s couldn't join due to nick conflict: %s", from, to);
+		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+		reply.tags[1].attr.code = "409";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	end
 	if not next(self._affiliations) then -- new room, no owners
 		self._affiliations[jid_bare(from)] = "owner";
 		if self:is_locked() and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
@@ -541,30 +558,7 @@ function room_mt:handle_available_to_occupant(origin, stanza)
 		--	self:handle_to_occupant(origin, stanza); -- resend available
 		--end
 	else -- enter room
-		local new_nick = to;
-		if self._occupants[to] then
-			if jid_bare(from) ~= jid_bare(self._occupants[to].jid) then
-				new_nick = nil;
-			end
-		end
-		local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
-		password = password and password:get_child("password", "http://jabber.org/protocol/muc");
-		password = password and password[1] ~= "" and password[1];
-		if self:get_password() and self:get_password() ~= password then
-			log("debug", "%s couldn't join due to invalid password: %s", from, to);
-			local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
-			reply.tags[1].attr.code = "401";
-			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-			return true;
-		elseif not new_nick then
-			log("debug", "%s couldn't join due to nick conflict: %s", from, to);
-			local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-			reply.tags[1].attr.code = "409";
-			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-			return true;
-		else
-			return self:handle_join(origin, stanza)
-		end
+		return self:handle_join(origin, stanza)
 	end
 end
 
