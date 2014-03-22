@@ -684,7 +684,12 @@ function cert_commands.config(arg)
 				conf.distinguished_name[k] = nv ~= "." and nv or nil;
 			end
 		end
-		local conf_file = io.open(conf_filename, "w");
+		local conf_file, err = io.open(conf_filename, "w");
+		if not conf_file then
+			show_warning("Could not open OpenSSL config file for writing");
+			show_warning(err);
+			os.exit(1);
+		end
 		conf_file:write(conf:serialize());
 		conf_file:close();
 		print("");
