@@ -246,11 +246,6 @@ function room_mt:send_history(stanza)
 		self:_route_stanza(msg);
 	end
 end
-function room_mt:send_subject(to)
-	if self._data['subject'] then
-		self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
-	end
-end
 
 function room_mt:get_disco_info(stanza)
 	local count = 0; for _ in pairs(self._occupants) do count = count + 1; end
@@ -277,13 +272,30 @@ function room_mt:get_disco_items(stanza)
 	end
 	return reply;
 end
+
+function room_mt:get_subject()
+	return self._data['subject'], self._data['subject_from']
+end
+local function create_subject_message(subject)
+	return st.message({type='groupchat'})
+		:tag('subject'):text(subject):up();
+end
+function room_mt:send_subject(to)
+	local from, subject = self:get_subject()
+	if subject then
+		local msg = create_subject_message(subject)
+		msg.attr.from = from
+		msg.attr.to = to
+		self:_route_stanza(msg);
+	end
+end
 function room_mt:set_subject(current_nick, subject)
 	if subject == "" then subject = nil; end
 	self._data['subject'] = subject;
 	self._data['subject_from'] = current_nick;
 	if self.save then self:save(); end
-	local msg = st.message({type='groupchat', from=current_nick})
-		:tag('subject'):text(subject):up();
+	local msg = create_subject_message(subject)
+	msg.attr.from = current_nick
 	self:broadcast_message(msg, false);
 	return true;
 end
