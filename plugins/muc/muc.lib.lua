@@ -119,25 +119,29 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 	self:_route_stanza(stanza);
 end
 function room_mt:broadcast_message(stanza, historic)
+	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza, historic = historic});
 	for occupant_jid, o_data in pairs(self._occupants) do
 		self:route_to_occupant(o_data, stanza)
 	end
-	if historic then -- add to history
-		return self:save_to_history(stanza)
+end
+
+-- add to history
+module:hook("muc-broadcast-message", function(event)
+	if event.historic then
+		local room = event.room
+		local history = room._data['history'];
+		if not history then history = {}; room._data['history'] = history; end
+		local stanza = st.clone(event.stanza);
+		stanza.attr.to = "";
+		local stamp = datetime.datetime();
+		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
+		stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+		local entry = { stanza = stanza, stamp = stamp };
+		t_insert(history, entry);
+		while #history > room:get_historylength() do t_remove(history, 1) end
 	end
-end
-function room_mt:save_to_history(stanza)
-	local history = self._data['history'];
-	if not history then history = {}; self._data['history'] = history; end
-	stanza = st.clone(stanza);
-	stanza.attr.to = "";
-	local stamp = datetime.datetime();
-	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
-	stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-	local entry = { stanza = stanza, stamp = stamp };
-	t_insert(history, entry);
-	while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
-end
+end)
+
 function room_mt:broadcast_except_nick(stanza, nick)
 	for rnick, occupant in pairs(self._occupants) do
 		if rnick ~= nick then
