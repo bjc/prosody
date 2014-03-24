@@ -193,13 +193,17 @@ local function parse_history(stanza)
 
 	return maxchars, maxstanzas, since
 end
--- Get history for 'to'
-function room_mt:get_history(to, maxchars, maxstanzas, since)
-	local history = self._data['history']; -- send discussion history
-	if not history then return function() end end
+
+module:hook("muc-get-history", function(event)
+	local room = event.room
+	local history = room._data['history']; -- send discussion history
+	if not history then return nil end
 	local history_len = #history
 
-	maxstanzas = maxstanzas or history_len
+	local to = event.to
+	local maxchars = event.maxchars
+	local maxstanzas = event.maxstanzas or history_len
+	local since = event.since
 	local n = 0;
 	local charcount = 0;
 	for i=history_len,1,-1 do
@@ -218,7 +222,7 @@ function room_mt:get_history(to, maxchars, maxstanzas, since)
 	end
 
 	local i = history_len-n+1
-	return function()
+	function event:next_stanza()
 		if i > history_len then return nil end
 		local entry = history[i]
 		local msg = entry.stanza
@@ -226,10 +230,19 @@ function room_mt:get_history(to, maxchars, maxstanzas, since)
 		i = i + 1
 		return msg
 	end
-end
-function room_mt:send_history(to, stanza)
+	return true;
+end)
+
+function room_mt:send_history(stanza)
 	local maxchars, maxstanzas, since = parse_history(stanza)
-	for msg in self:get_history(to, maxchars, maxstanzas, since) do
+	local event = {
+		room = self;
+		to = stanza.attr.from; -- `to` is required to calculate the character count for `maxchars`
+		maxchars = maxchars, maxstanzas = maxstanzas, since = since;
+		next_stanza = function() end; -- events should define this iterator
+	}
+	module:fire_event("muc-get-history", event)
+	for msg in event.next_stanza , event do
 		self:_route_stanza(msg);
 	end
 end
