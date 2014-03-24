@@ -120,9 +120,7 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 end
 function room_mt:broadcast_message(stanza, historic)
 	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza, historic = historic});
-	for occupant_jid, o_data in pairs(self._occupants) do
-		self:route_to_occupant(o_data, stanza)
-	end
+	self:broadcast(stanza);
 end
 
 -- add to history
@@ -143,8 +141,14 @@ module:hook("muc-broadcast-message", function(event)
 end)
 
 function room_mt:broadcast_except_nick(stanza, nick)
-	for rnick, occupant in pairs(self._occupants) do
-		if rnick ~= nick then
+	return self:broadcast(stanza, function(rnick, occupant) return rnick ~= nick end)
+end
+
+-- Broadcast a stanza to all occupants in the room.
+-- optionally checks conditional called with nicl
+function room_mt:broadcast(stanza, cond_func)
+	for nick, occupant in pairs(self._occupants) do
+		if cond_func == nil or cond_func(nick, occupant) then
 			self:route_to_occupant(occupant, stanza)
 		end
 	end
