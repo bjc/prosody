@@ -469,36 +469,68 @@ function room_mt:handle_change_nick(origin, stanza, current_nick, to)
 	end
 end
 
-function room_mt:handle_join(origin, stanza)
+module:hook("muc-occupant-pre-join", function(event)
+	return module:fire_event("muc-occupant-pre-join/affiliation", event)
+		or module:fire_event("muc-occupant-pre-join/password", event)
+		or module:fire_event("muc-occupant-pre-join/locked", event)
+		or module:fire_event("muc-occupant-pre-join/nick-conflict", event)
+end, -1)
+
+module:hook("muc-occupant-pre-join/password", function(event)
+	local room, stanza = event.room, event.stanza;
 	local from, to = stanza.attr.from, stanza.attr.to;
-	log("debug", "%s joining as %s", from, to);
 	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	password = password and password:get_child("password", "http://jabber.org/protocol/muc");
 	password = password and password[1] ~= "" and password[1];
-	if self:get_password() and self:get_password() ~= password then
+	if room:get_password() and room:get_password() ~= password then
+		local from, to = stanza.attr.from, stanza.attr.to;
 		log("debug", "%s couldn't join due to invalid password: %s", from, to);
 		local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
 		reply.tags[1].attr.code = "401";
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
-	elseif self._occupants[to] -- occupant already exists
-		and jid_bare(from) ~= jid_bare(self._occupants[to].jid) then -- and has different bare real jid
+	end
+end, -1)
+
+module:hook("muc-occupant-pre-join/nick-conflict", function(event)
+	local room, stanza = event.room, event.stanza;
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local occupant = room._occupants[to]
+	if occupant -- occupant already exists
+		and jid_bare(from) ~= jid_bare(occupant.jid) then -- and has different bare real jid
 		log("debug", "%s couldn't join due to nick conflict: %s", from, to);
 		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
 		reply.tags[1].attr.code = "409";
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-	if not next(self._affiliations) then -- new room, no owners
-		self._affiliations[jid_bare(from)] = "owner";
+end, -1)
+
+module:hook("muc-occupant-pre-join/locked", function(event)
+	if event.room:is_locked() then -- Deny entry
+		event.origin.send(st.error_reply(event.stanza, "cancel", "item-not-found"));
+		return true;
+	end
+end, -1)
+
+function room_mt:handle_join(origin, stanza)
+	local from, to = stanza.attr.from, stanza.attr.to;
+	local affiliation = self:get_affiliation(from);
+	if affiliation == nil and next(self._affiliations) == nil then -- new room, no owners
+		affiliation = "owner";
+		self._affiliations[jid_bare(from)] = affiliation;
 		if self:is_locked() and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
 			self:unlock(); -- Older groupchat protocol doesn't lock
 		end
-	elseif self:is_locked() then -- Deny entry
-		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-		return true;
 	end
-	local affiliation = self:get_affiliation(from);
+	if module:fire_event("muc-occupant-pre-join", {
+		room = self;
+		origin = origin;
+		stanza = stanza;
+		affiliation = affiliation;
+	}) then return true; end
+	log("debug", "%s joining as %s", from, to);
+
 	local role = self:get_default_role(affiliation)
 	if role then -- new occupant
 		local is_merge = not not self._occupants[to]
@@ -528,18 +560,28 @@ function room_mt:handle_join(origin, stanza)
 		self:send_history(from, stanza);
 		self:send_subject(from);
 		return true;
-	elseif not affiliation then -- registration required for entering members-only room
-		local reply = st.error_reply(stanza, "auth", "registration-required"):up();
-		reply.tags[1].attr.code = "407";
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
-	else -- banned
-		local reply = st.error_reply(stanza, "auth", "forbidden"):up();
-		reply.tags[1].attr.code = "403";
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
 	end
 end
+
+-- registration required for entering members-only room
+module:hook("muc-occupant-pre-join/affiliation", function(event)
+	if event.affiliation == nil and event.room:get_members_only() then
+		local reply = st.error_reply(event.stanza, "auth", "registration-required"):up();
+		reply.tags[1].attr.code = "407";
+		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	end
+end, -1)
+
+-- banned
+module:hook("muc-occupant-pre-join/affiliation", function(event)
+	if event.affiliation == "outcast" then
+		local reply = st.error_reply(event.stanza, "auth", "forbidden"):up();
+		reply.tags[1].attr.code = "403";
+		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	end
+end, -1)
 
 function room_mt:handle_available_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
