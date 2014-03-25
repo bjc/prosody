@@ -197,7 +197,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 		return s2s_external_auth(session, stanza)
 	end
 
-	if session.type ~= "c2s_unauthed" then return; end
+	if session.type ~= "c2s_unauthed" or module:get_host_type() ~= "local" then return; end
 
 	if session.sasl_handler and session.sasl_handler.selected then
 		session.sasl_handler = nil; -- allow starting a new SASL negotiation before completing an old one

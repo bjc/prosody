@@ -63,7 +63,6 @@ modules_enabled = {
 		--"http_files"; -- Serve static files from a directory over HTTP
 
 	-- Other specific functionality
-		--"posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
 		--"groups"; -- Shared roster support
 		--"announce"; -- Send announcement to all online users
 		--"welcome"; -- Welcome users who register accounts
@@ -78,6 +77,7 @@ modules_disabled = {
 	-- "offline"; -- Store offline messages
 	-- "c2s"; -- Handle client connections
 	-- "s2s"; -- Handle server-to-server connections
+	-- "posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
 }
 
 -- Disable account creation by default, for security

@@ -100,14 +100,16 @@ end
 function method:mechanisms()
 	local current_mechs = {};
 	for mech, _ in pairs(self.mechs) do
-		if mechanism_channelbindings[mech] and self.profile.cb then
-			local ok = false;
-			for cb_name, _ in pairs(self.profile.cb) do
-				if mechanism_channelbindings[mech][cb_name] then
-					ok = true;
+		if mechanism_channelbindings[mech] then
+			if self.profile.cb then
+				local ok = false;
+				for cb_name, _ in pairs(self.profile.cb) do
+					if mechanism_channelbindings[mech][cb_name] then
+						ok = true;
+					end
 				end
+				if ok == true then current_mechs[mech] = true; end
 			end
-			if ok == true then current_mechs[mech] = true; end
 		else
 			current_mechs[mech] = true;
 		end
