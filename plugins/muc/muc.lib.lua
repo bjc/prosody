@@ -1137,7 +1137,13 @@ function room_mt:handle_mediated_decline(origin, stanza)
 end
 
 module:hook("muc-decline", function(event)
-	event.room:_route_stanza(event.stanza);
+	local room, stanza = event.room, event.stanza
+	local occupant = room:get_occupant_by_real_jid(stanza.attr.to);
+	if occupant then
+		room:route_to_occupant(occupant, stanza)
+	else
+		room:route_stanza(stanza);
+	end
 	return true;
 end, -1)
 
