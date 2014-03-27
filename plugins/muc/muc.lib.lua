@@ -131,10 +131,11 @@ module:hook("muc-broadcast-message", function(event)
 		if not history then history = {}; room._data['history'] = history; end
 		local stanza = st.clone(event.stanza);
 		stanza.attr.to = "";
-		local stamp = datetime.datetime();
+		local ts = gettime();
+		local stamp = datetime.datetime(ts);
 		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
 		stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		local entry = { stanza = stanza, stamp = stamp };
+		local entry = { stanza = stanza, timestamp = ts };
 		t_insert(history, entry);
 		while #history > room:get_historylength() do t_remove(history, 1) end
 	end
@@ -220,7 +221,7 @@ module:hook("muc-get-history", function(event)
 			charcount = charcount + entry.chars + #to;
 			if charcount > maxchars then break; end
 		end
-		if since and since > entry.stamp then break; end
+		if since and since > entry.timestamp then break; end
 		if n + 1 > maxstanzas then break; end
 		n = n + 1;
 	end
