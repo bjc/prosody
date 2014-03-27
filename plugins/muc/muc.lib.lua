@@ -9,6 +9,9 @@
 
 local select = select;
 local pairs, ipairs = pairs, ipairs;
+local next = next;
+local setmetatable = setmetatable;
+local t_insert, t_remove = table.insert, table.remove;
 
 local gettime = os.time;
 local datetime = require "util.datetime";
@@ -20,8 +23,6 @@ local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
-local t_insert, t_remove = table.insert, table.remove;
-local setmetatable = setmetatable;
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
@@ -355,7 +356,7 @@ module:hook("muc-get-history", function(event)
 		return msg
 	end
 	return true;
-end)
+end);
 
 function room_mt:send_history(stanza)
 	local maxchars, maxstanzas, since = parse_history(stanza)
@@ -584,7 +585,7 @@ module:hook("muc-occupant-pre-join/password", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1)
+end, -1);
 
 module:hook("muc-occupant-pre-join/locked", function(event)
 	if event.room:is_locked() then -- Deny entry
@@ -603,9 +604,9 @@ module:hook("muc-occupant-pre-join/affiliation", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1)
+end, -1);
 
--- banned
+-- check if user is banned
 module:hook("muc-occupant-pre-join/affiliation", function(event)
 	local room, stanza = event.room, event.stanza;
 	local affiliation = room:get_affiliation(stanza.attr.from);
@@ -615,7 +616,7 @@ module:hook("muc-occupant-pre-join/affiliation", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1)
+end, -1);
 
 module:hook("muc-occupant-joined", function(event)
 	local room, stanza = event.room, event.stanza;
@@ -857,6 +858,7 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
 	stanza.attr.from = current_nick;
 	self:route_to_occupant(o_data, stanza)
+	-- TODO: Remove x tag?
 	stanza.attr.from = from;
 	return true;
 end
@@ -1189,16 +1191,16 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 	local _invitee = jid_prep(payload.attr.to);
 	if _invitee then
+		local _reason = payload:get_child_text("reason");
 		if self:get_whois() == "moderators" then
 			_from = current_nick;
 		end
-		local _reason = payload:get_child_text("reason")
 		local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 				:tag('invite', {from=_from})
 					:tag('reason'):text(_reason or ""):up()
 				:up();
-		local password = self:get_password()
+		local password = self:get_password();
 		if password then
 			invite:tag("password"):text(password):up();
 		end
@@ -1209,7 +1211,7 @@ function room_mt:handle_mediated_invite(origin, stanza)
 			:tag('body') -- Add a plain message for clients which don't support invites
 				:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
 			:up();
-		module:fire_event("muc-invite", { room = self, stanza = invite, origin = origin, incoming = stanza });
+		module:fire_event("muc-invite", {room = self, stanza = invite, origin = origin, incoming = stanza});
 		return true;
 	else
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
@@ -1232,7 +1234,7 @@ module:hook("muc-invite", function(event)
 		log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
 		room:set_affiliation(from, invitee, "member", nil, "Invited by " .. current_nick)
 	end
-end)
+end);
 
 function room_mt:handle_mediated_decline(origin, stanza)
 	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline")
@@ -1289,13 +1291,11 @@ function room_mt:handle_message_to_room(origin, stanza)
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
 		end
-	else
-		return nil;
 	end
 end
 
 function room_mt:route_stanza(stanza)
-	module:send(stanza)
+	module:send(stanza);
 end
 
 function room_mt:get_affiliation(jid)
