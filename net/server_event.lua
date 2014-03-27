@@ -352,7 +352,7 @@ do
 		return self._server or self;
 	end
 	
-	function interface_mt:port()
+	function interface_mt:clientport()
 		return self._port
 	end
 	
