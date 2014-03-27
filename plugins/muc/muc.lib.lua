@@ -900,7 +900,7 @@ function room_mt:handle_disco_items_get_query(origin, stanza)
 	return true;
 end
 
-function room_mt:handle_admin_item_set_command(origin, stanza)
+function room_mt:handle_admin_query_set_command(origin, stanza)
 	local item = stanza.tags[1].tags[1];
 	if item.attr.jid then -- Validate provided JID
 		item.attr.jid = jid_prep(item.attr.jid);
@@ -933,7 +933,7 @@ function room_mt:handle_admin_item_set_command(origin, stanza)
 	end
 end
 
-function room_mt:handle_admin_item_get_command(origin, stanza)
+function room_mt:handle_admin_query_get_command(origin, stanza)
 	local actor = stanza.attr.from;
 	local affiliation = self:get_affiliation(actor);
 	local item = stanza.tags[1].tags[1];

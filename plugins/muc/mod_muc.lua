@@ -179,8 +179,8 @@ for event_name, method in pairs {
 	-- Normal room interactions
 	["iq-get/bare/http://jabber.org/protocol/disco#info:query"] = "handle_disco_info_get_query" ;
 	["iq-get/bare/http://jabber.org/protocol/disco#items:query"] = "handle_disco_items_get_query" ;
-	["iq-set/bare/http://jabber.org/protocol/muc#admin:item"] = "handle_admin_item_set_command" ;
-	["iq-get/bare/http://jabber.org/protocol/muc#admin:item"] = "handle_admin_item_get_command" ;
+	["iq-set/bare/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_set_command" ;
+	["iq-get/bare/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_get_command" ;
 	["iq-set/bare/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_set_to_room" ;
 	["iq-get/bare/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_get_to_room" ;
 	["message/bare"] = "handle_message_to_room" ;
@@ -188,8 +188,8 @@ for event_name, method in pairs {
 	-- Host room
 	["iq-get/host/http://jabber.org/protocol/disco#info:query"] = "handle_disco_info_get_query" ;
 	["iq-get/host/http://jabber.org/protocol/disco#items:query"] = "handle_disco_items_get_query" ;
-	["iq-set/host/http://jabber.org/protocol/muc#admin:item"] = "handle_admin_item_set_command" ;
-	["iq-get/host/http://jabber.org/protocol/muc#admin:item"] = "handle_admin_item_get_command" ;
+	["iq-set/host/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_set_command" ;
+	["iq-get/host/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_get_command" ;
 	["iq-set/host/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_set_to_room" ;
 	["iq-get/host/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_get_to_room" ;
 	["message/host"] = "handle_message_to_room" ;
