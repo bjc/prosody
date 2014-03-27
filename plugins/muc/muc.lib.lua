@@ -25,23 +25,9 @@ local setmetatable = setmetatable;
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
-local default_history_length, max_history_length = 20, math.huge;
+local occupant_lib = module:require "muc/occupant"
 
-local get_filtered_presence do
-	local presence_filters = {
-		["http://jabber.org/protocol/muc"] = true;
-		["http://jabber.org/protocol/muc#user"] = true;
-	}
-	local function presence_filter(tag)
-		if presence_filters[tag.attr.xmlns] then
-			return nil;
-		end
-		return tag;
-	end
-	function get_filtered_presence(stanza)
-		return st.clone(stanza):maptags(presence_filter);
-	end
-end
+local default_history_length, max_history_length = 20, math.huge;
 
 local is_kickable_error do
 	local kickable_error_conditions = {
@@ -96,28 +82,103 @@ function room_mt:is_locked()
 	return not not self.locked
 end
 
-function room_mt:route_to_occupant(o_data, stanza)
+--- Occupant functions
+function room_mt:new_occupant(bare_real_jid, nick)
+	local occupant = occupant_lib.new(bare_real_jid, nick);
+	local affiliation = self:get_affiliation(bare_real_jid);
+	occupant.role = self:get_default_role(affiliation);
+	return occupant;
+end
+
+function room_mt:get_occupant_by_nick(nick)
+	local occupant = self._occupants[nick];
+	if occupant == nil then return nil end
+	return occupant_lib.copy(occupant);
+end
+
+do
+	local function next_copied_occupant(occupants, occupant_jid)
+		local next_occupant_jid, raw_occupant = next(occupants, occupant_jid);
+		if next_occupant_jid == nil then return nil end
+		return next_occupant_jid, occupant_lib.copy(raw_occupant);
+	end
+	function room_mt:each_occupant(read_only)
+		return next_copied_occupant, self._occupants, nil;
+	end
+end
+
+function room_mt:get_occupant_by_real_jid(real_jid)
+	local occupant_jid = self:get_occupant_jid(real_jid);
+	if occupant_jid == nil then return nil end
+	return self:get_occupant_by_nick(occupant_jid);
+end
+
+function room_mt:save_occupant(occupant)
+	occupant = occupant_lib.copy(occupant); -- So that occupant can be modified more
+	local id = occupant.nick
+
+	-- Need to maintain _jid_nick secondary index
+	local old_occupant = self._occupants[id];
+	if old_occupant then
+		for real_jid in pairs(old_occupant.sessions) do
+			self._jid_nick[real_jid] = nil;
+		end
+	end
+	if occupant.role ~= nil and next(occupant.sessions) then
+		for real_jid, presence in occupant:each_session() do
+			self._jid_nick[real_jid] = occupant.nick;
+		end
+	else
+		occupant = nil
+	end
+	self._occupants[id] = occupant
+end
+
+function room_mt:route_to_occupant(occupant, stanza)
 	local to = stanza.attr.to;
-	for jid in pairs(o_data.sessions) do
-		stanza.attr.to = jid;
-		self:_route_stanza(stanza);
+	for jid, pr in occupant:each_session() do
+		if pr.attr.type ~= "unavailable" then
+			stanza.attr.to = jid;
+			self:route_stanza(stanza);
+		end
 	end
 	stanza.attr.to = to;
 end
 
-function room_mt:broadcast_presence(stanza, sid, code, nick)
-	stanza = get_filtered_presence(stanza);
-	local occupant = self._occupants[stanza.attr.from];
-	stanza:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-		:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none", nick=nick}):up();
-	if code then
-		stanza:tag("status", {code=code}):up();
+-- Adds an item to an "x" element.
+-- actor is the attribute table
+local function add_item(x, affiliation, role, jid, nick, actor, reason)
+	x:tag("item", {affiliation = affiliation; role = role; jid = jid; nick = nick;})
+	if actor then
+		x:tag("actor", actor):up()
 	end
-	self:broadcast_except_nick(stanza, stanza.attr.from);
-	stanza:tag("status", {code='110'}):up();
-	stanza.attr.to = sid;
-	self:_route_stanza(stanza);
+	if reason then
+		x:tag("reason"):text(reason):up()
+	end
+	x:up();
+	return x
 end
+-- actor is (real) jid
+function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
+	local affiliation = self:get_affiliation(occupant.bare_jid);
+	local role = occupant.role;
+	local actor_jid = actor and self:get_occupant_jid(actor);
+	if actor then
+		actor = {nick = select(3,jid_split(actor_jid))};
+	end
+	if is_anonymous then
+		add_item(x, affiliation, role, nil, nick, actor, reason);
+	else
+		if actor_jid then
+			actor.jid = actor_jid;
+		end
+		for real_jid, session in occupant:each_session() do
+			add_item(x, affiliation, role, real_jid, nick, actor, reason);
+		end
+	end
+	return x
+end
+
 function room_mt:broadcast_message(stanza, historic)
 	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza, historic = historic});
 	self:broadcast(stanza);
@@ -139,31 +200,89 @@ module:hook("muc-broadcast-message", function(event)
 		t_insert(history, entry);
 		while #history > room:get_historylength() do t_remove(history, 1) end
 	end
-end)
-
-function room_mt:broadcast_except_nick(stanza, nick)
-	return self:broadcast(stanza, function(rnick, occupant) return rnick ~= nick end)
-end
+end);
 
 -- Broadcast a stanza to all occupants in the room.
--- optionally checks conditional called with nicl
+-- optionally checks conditional called with (nick, occupant)
 function room_mt:broadcast(stanza, cond_func)
-	for nick, occupant in pairs(self._occupants) do
+	for nick, occupant in self:each_occupant() do
 		if cond_func == nil or cond_func(nick, occupant) then
 			self:route_to_occupant(occupant, stanza)
 		end
 	end
 end
 
-function room_mt:send_occupant_list(to)
-	local current_nick = self:get_occupant_jid(to);
-	for occupant, o_data in pairs(self._occupants) do
-		if occupant ~= current_nick then
-			local pres = get_filtered_presence(o_data.sessions[o_data.jid]);
-			pres.attr.to, pres.attr.from = to, occupant;
-			pres:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag("item", {affiliation=o_data.affiliation or "none", role=o_data.role or "none"}):up();
-			self:_route_stanza(pres);
+-- Broadcasts an occupant's presence to the whole room
+-- Takes (and modifies) the x element that goes into the stanzas
+function room_mt:publicise_occupant_status(occupant, full_x, actor, reason)
+	local anon_x;
+	local has_anonymous = self:get_whois() ~= "anyone";
+	if has_anonymous then
+		anon_x = st.clone(full_x);
+		self:build_item_list(occupant, anon_x, true, nil, actor, reason);
+	end
+	self:build_item_list(occupant,full_x, false, nil, actor, reason);
+
+	-- General populance
+	local full_p
+	if occupant.role ~= nil then
+		-- Try to use main jid's presence
+		local pr = occupant:get_presence();
+		if pr ~= nil then
+			full_p = st.clone(pr);
+		end
+	end
+	if full_p == nil then
+		full_p = st.presence{from=occupant.nick; type="unavailable"};
+	end
+	local anon_p;
+	if has_anonymous then
+		anon_p = st.clone(full_p);
+		anon_p:add_child(anon_x);
+	end
+	full_p:add_child(full_x);
+
+	for nick, n_occupant in self:each_occupant() do
+		if nick ~= occupant.nick or n_occupant.role == nil then
+			local pr = full_p;
+			if has_anonymous and n_occupant.role ~= "moderators" and occupant.bare_jid ~= n_occupant.bare_jid then
+				pr = anon_p;
+			end
+			self:route_to_occupant(n_occupant, pr);
+		end
+	end
+
+	-- Presences for occupant itself
+	full_x:tag("status", {code = "110";}):up();
+	if occupant.role == nil then
+		-- They get an unavailable
+		self:route_to_occupant(occupant, full_p);
+	else
+		-- use their own presences as templates
+		for full_jid, pr in occupant:each_session() do
+			if pr.attr.type ~= "unavailable" then
+				pr = st.clone(pr);
+				pr.attr.to = full_jid;
+				-- You can always see your own full jids
+				pr:add_child(full_x);
+				self:route_stanza(pr);
+			end
+		end
+	end
+end
+
+function room_mt:send_occupant_list(to, filter)
+	local to_occupant = self:get_occupant_by_real_jid(to);
+	local has_anonymous = self:get_whois() ~= "anyone"
+	for occupant_jid, occupant in self:each_occupant() do
+		if filter and filter(occupant_jid, occupant) then
+			local x = st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
+			local is_anonymous = has_anonymous and occupant.role ~= "moderator" and to_occupant.bare_jid ~= occupant.bare_jid;
+			self:build_item_list(occupant, x, is_anonymous);
+			local pres = st.clone(occupant:get_presence());
+			pres.attr.to = to;
+			pres:add_child(x);
+			self:route_stanza(pres);
 		end
 	end
 end
@@ -248,12 +367,12 @@ function room_mt:send_history(stanza)
 	}
 	module:fire_event("muc-get-history", event)
 	for msg in event.next_stanza , event do
-		self:_route_stanza(msg);
+		self:route_stanza(msg);
 	end
 end
 
 function room_mt:get_disco_info(stanza)
-	local count = 0; for _ in pairs(self._occupants) do count = count + 1; end
+	local count = 0; for _ in self:each_occupant() do count = count + 1; end
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
 		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
@@ -272,7 +391,7 @@ function room_mt:get_disco_info(stanza)
 end
 function room_mt:get_disco_items(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
-	for room_jid in pairs(self._occupants) do
+	for room_jid in self:each_occupant() do
 		reply:tag("item", {jid = room_jid, name = room_jid:match("/(.*)")}):up();
 	end
 	return reply;
@@ -291,7 +410,7 @@ function room_mt:send_subject(to)
 		local msg = create_subject_message(subject)
 		msg.attr.from = from
 		msg.attr.to = to
-		self:_route_stanza(msg);
+		self:route_stanza(msg);
 	end
 end
 function room_mt:set_subject(current_nick, subject)
@@ -306,14 +425,20 @@ function room_mt:set_subject(current_nick, subject)
 end
 
 function room_mt:handle_kickable(origin, stanza)
+	local real_jid = stanza.attr.from;
+	local occupant = self:get_occupant_by_real_jid(real_jid);
+	if occupant == nil then return nil; end
 	local type, condition, text = stanza:get_error();
 	local error_message = "Kicked: "..(condition and condition:gsub("%-", " ") or "presence error");
 	if text then
 		error_message = error_message..": "..text;
 	end
-	local kick_stanza = st.presence({type='unavailable', from=stanza.attr.from, to=stanza.attr.to})
-		:tag('status'):text(error_message);
-	self:handle_unavailable_to_occupant(origin, kick_stanza); -- send unavailable
+	occupant:set_session(real_jid, st.presence({type="unavailable"})
+		:tag('status'):text(error_message));
+	self:save_occupant(occupant);
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
+		:tag("status", {code = "307"})
+	self:publicise_occupant_status(occupant, x);
 	return true;
 end
 
@@ -428,91 +553,26 @@ function room_mt:get_whois()
 	return self._data.whois;
 end
 
-function room_mt:handle_unavailable_to_occupant(origin, stanza)
-	local from = stanza.attr.from;
-	local current_nick = self:get_occupant_jid(from);
-	if not current_nick then
-		return true; -- discard
+module:hook("muc-room-pre-create", function(event)
+	local room = event.room;
+	if room:is_locked() and not event.stanza:get_child("x", "http://jabber.org/protocol/muc") then
+		room:unlock(); -- Older groupchat protocol doesn't lock
 	end
-	local pr = get_filtered_presence(stanza);
-	pr.attr.from = current_nick;
-	log("debug", "%s leaving %s", current_nick, self.jid);
-	self._jid_nick[from] = nil;
-	local occupant = self._occupants[current_nick];
-	local new_jid = next(occupant.sessions);
-	if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
-	if new_jid then
-		local jid = occupant.jid;
-		occupant.jid = new_jid;
-		occupant.sessions[from] = nil;
-		pr.attr.to = from;
-		pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-			:tag("item", {affiliation=occupant.affiliation or "none", role='none'}):up()
-			:tag("status", {code='110'}):up();
-		self:_route_stanza(pr);
-		if jid ~= new_jid then
-			pr = st.clone(occupant.sessions[new_jid])
-				:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag("item", {affiliation=occupant.affiliation or "none", role=occupant.role or "none"});
-			pr.attr.from = current_nick;
-			self:broadcast_except_nick(pr, current_nick);
-		end
-	else
-		occupant.role = 'none';
-		self:broadcast_presence(pr, from);
-		self._occupants[current_nick] = nil;
-		module:fire_event("muc-occupant-left", { room = self; nick = current_nick; });
-	end
-	return true;
-end
+end, 10);
 
-function room_mt:handle_occupant_presence(origin, stanza)
-	local from = stanza.attr.from;
-	local pr = get_filtered_presence(stanza);
-	local current_nick = stanza.attr.to
-	pr.attr.from = current_nick;
-	log("debug", "%s broadcasted presence", current_nick);
-	self._occupants[current_nick].sessions[from] = pr;
-	self:broadcast_presence(pr, from);
-	return true;
-end
-
-function room_mt:handle_change_nick(origin, stanza, current_nick, to)
-	local from = stanza.attr.from;
-	local occupant = self._occupants[current_nick];
-	local is_multisession = next(occupant.sessions, next(occupant.sessions));
-	if self._occupants[to] or is_multisession then
-		log("debug", "%s couldn't change nick", current_nick);
-		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-		reply.tags[1].attr.code = "409";
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
-	else
-		local to_nick = select(3, jid_split(to));
-		log("debug", "%s (%s) changing nick to %s", current_nick, occupant.jid, to);
-		local p = st.presence({type='unavailable', from=current_nick});
-		self:broadcast_presence(p, from, '303', to_nick);
-		self._occupants[current_nick] = nil;
-		self._occupants[to] = occupant;
-		self._jid_nick[from] = to;
-		local pr = get_filtered_presence(stanza);
-		pr.attr.from = to;
-		self._occupants[to].sessions[from] = pr;
-		self:broadcast_presence(pr, from);
-		return true;
-	end
-end
+-- Give the room creator owner affiliation
+module:hook("muc-room-pre-create", function(event)
+	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
+end, -1);
 
 module:hook("muc-occupant-pre-join", function(event)
 	return module:fire_event("muc-occupant-pre-join/affiliation", event)
 		or module:fire_event("muc-occupant-pre-join/password", event)
-		or module:fire_event("muc-occupant-pre-join/locked", event)
-		or module:fire_event("muc-occupant-pre-join/nick-conflict", event)
+		or module:fire_event("muc-occupant-pre-join/locked", event);
 end, -1)
 
 module:hook("muc-occupant-pre-join/password", function(event)
 	local room, stanza = event.room, event.stanza;
-	local from, to = stanza.attr.from, stanza.attr.to;
 	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	password = password and password:get_child_text("password", "http://jabber.org/protocol/muc");
 	if not password or password == "" then password = nil; end
@@ -526,81 +586,19 @@ module:hook("muc-occupant-pre-join/password", function(event)
 	end
 end, -1)
 
-module:hook("muc-occupant-pre-join/nick-conflict", function(event)
-	local room, stanza = event.room, event.stanza;
-	local from, to = stanza.attr.from, stanza.attr.to;
-	local occupant = room._occupants[to]
-	if occupant -- occupant already exists
-		and jid_bare(from) ~= jid_bare(occupant.jid) then -- and has different bare real jid
-		log("debug", "%s couldn't join due to nick conflict: %s", from, to);
-		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-		reply.tags[1].attr.code = "409";
-		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
-	end
-end, -1)
-
 module:hook("muc-occupant-pre-join/locked", function(event)
 	if event.room:is_locked() then -- Deny entry
 		event.origin.send(st.error_reply(event.stanza, "cancel", "item-not-found"));
 		return true;
 	end
-end, -1)
-
-function room_mt:handle_join(origin, stanza)
-	local from, to = stanza.attr.from, stanza.attr.to;
-	local affiliation = self:get_affiliation(from);
-	if affiliation == nil and next(self._affiliations) == nil then -- new room, no owners
-		affiliation = "owner";
-		self._affiliations[jid_bare(from)] = affiliation;
-		if self:is_locked() and not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-			self:unlock(); -- Older groupchat protocol doesn't lock
-		end
-	end
-	if module:fire_event("muc-occupant-pre-join", {
-		room = self;
-		origin = origin;
-		stanza = stanza;
-		affiliation = affiliation;
-	}) then return true; end
-	log("debug", "%s joining as %s", from, to);
-
-	local role = self:get_default_role(affiliation)
-	if role then -- new occupant
-		local is_merge = not not self._occupants[to]
-		if not is_merge then
-			self._occupants[to] = {affiliation=affiliation, role=role, jid=from, sessions={[from]=get_filtered_presence(stanza)}};
-		else
-			self._occupants[to].sessions[from] = get_filtered_presence(stanza);
-		end
-		self._jid_nick[from] = to;
-		self:send_occupant_list(from);
-		local pr = get_filtered_presence(stanza);
-		pr.attr.from = to;
-		pr:tag("x", {xmlns='http://jabber.org/protocol/muc#user'})
-			:tag("item", {affiliation=affiliation or "none", role=role or "none"}):up();
-		if not is_merge then
-			self:broadcast_except_nick(pr, to);
-		end
-		pr:tag("status", {code='110'}):up();
-		if self:get_whois() == 'anyone' then
-			pr:tag("status", {code='100'}):up();
-		end
-		if self:is_locked() then
-			pr:tag("status", {code='201'}):up();
-		end
-		pr.attr.to = from;
-		self:_route_stanza(pr);
-		self:send_history(from, stanza);
-		self:send_subject(from);
-		return true;
-	end
-end
+end, -1);
 
 -- registration required for entering members-only room
 module:hook("muc-occupant-pre-join/affiliation", function(event)
-	if event.affiliation == nil and event.room:get_members_only() then
-		local reply = st.error_reply(event.stanza, "auth", "registration-required"):up();
+	local room, stanza = event.room, event.stanza;
+	local affiliation = room:get_affiliation(stanza.attr.from);
+	if affiliation == nil and event.room:get_members_only() then
+		local reply = st.error_reply(stanza, "auth", "registration-required"):up();
 		reply.tags[1].attr.code = "407";
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
@@ -609,43 +607,173 @@ end, -1)
 
 -- banned
 module:hook("muc-occupant-pre-join/affiliation", function(event)
-	if event.affiliation == "outcast" then
-		local reply = st.error_reply(event.stanza, "auth", "forbidden"):up();
+	local room, stanza = event.room, event.stanza;
+	local affiliation = room:get_affiliation(stanza.attr.from);
+	if affiliation == "outcast" then
+		local reply = st.error_reply(stanza, "auth", "forbidden"):up();
 		reply.tags[1].attr.code = "403";
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
 end, -1)
 
-function room_mt:handle_available_to_occupant(origin, stanza)
-	local from, to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self:get_occupant_jid(from);
-	if current_nick then
-		--if #pr == #stanza or current_nick ~= to then -- commented because google keeps resending directed presence
-			if current_nick == to then -- simple presence
-				return self:handle_occupant_presence(origin, stanza)
-			else -- change nick
-				return self:handle_change_nick(origin, stanza, current_nick, to)
-			end
-		--else -- possible rejoin
-		--	log("debug", "%s had connection replaced", current_nick);
-		--	self:handle_to_occupant(origin, st.presence({type='unavailable', from=from, to=to})
-		--		:tag('status'):text('Replaced by new connection'):up()); -- send unavailable
-		--	self:handle_to_occupant(origin, stanza); -- resend available
-		--end
-	else -- enter room
-		return self:handle_join(origin, stanza)
-	end
-end
+module:hook("muc-occupant-joined", function(event)
+	local room, stanza = event.room, event.stanza;
+	local real_jid = stanza.attr.from;
+	room:send_occupant_list(real_jid, function(nick, occupant)
+		-- Don't include self
+		return occupant.sessions[real_jid] == nil
+	end);
+	room:send_history(stanza);
+	room:send_subject(real_jid);
+end, -1);
 
 function room_mt:handle_presence_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	if type == "error" then -- error, kick em out!
 		return self:handle_kickable(origin, stanza)
-	elseif type == "unavailable" then -- unavailable
-		return self:handle_unavailable_to_occupant(origin, stanza)
-	elseif not type then -- available
-		return self:handle_available_to_occupant(origin, stanza)
+	elseif type == nil or type == "unavailable" then
+		local real_jid = stanza.attr.from;
+		local bare_jid = jid_bare(real_jid);
+		local orig_occupant, dest_occupant;
+		local is_new_room = next(self._affiliations) == nil;
+		if is_new_room then
+			if type == "unavailable" then return true; end -- Unavailable from someone not in the room
+			if module:fire_event("muc-room-pre-create", {
+					room = self;
+					origin = origin;
+					stanza = stanza;
+				}) then return true; end
+		else
+			orig_occupant = self:get_occupant_by_real_jid(real_jid);
+			if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
+		end
+		local is_first_dest_session;
+		if type == "unavailable" then
+			-- dest_occupant = nil
+		elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
+			log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
+			dest_occupant = orig_occupant;
+		else
+			local dest_jid = stanza.attr.to;
+			dest_occupant = self:get_occupant_by_nick(dest_jid);
+			if dest_occupant == nil then
+				log("debug", "no occupant found for %s; creating new occupant object for %s", dest_jid, real_jid);
+				is_first_dest_session = true;
+				dest_occupant = self:new_occupant(bare_jid, dest_jid);
+			else
+				is_first_dest_session = false;
+			end
+		end
+		local is_last_orig_session;
+		if orig_occupant ~= nil then
+			-- Is there are least 2 sessions?
+			is_last_orig_session = next(orig_occupant.sessions, next(orig_occupant.sessions)) == nil;
+		end
+
+		local event, event_name = {
+			room = self;
+			origin = origin;
+			stanza = stanza;
+			is_first_session = is_first_dest_session;
+			is_last_session = is_last_orig_session;
+		};
+		if orig_occupant == nil then
+			event_name = "muc-occupant-pre-join";
+			event.is_new_room = is_new_room;
+		elseif dest_occupant == nil then
+			event_name = "muc-occupant-pre-leave";
+		else
+			event_name = "muc-occupant-pre-change";
+		end
+		if module:fire_event(event_name, event) then return true; end
+
+		-- Check for nick conflicts
+		if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
+			log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
+			local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+			reply.tags[1].attr.code = "409";
+			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+			return true;
+		end
+
+		-- Send presence stanza about original occupant
+		if orig_occupant ~= nil and orig_occupant ~= dest_occupant then
+			local orig_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+
+			if dest_occupant == nil then -- Session is leaving
+				log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
+				orig_occupant:set_session(real_jid, stanza);
+			else
+				log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
+				orig_occupant:remove_session(real_jid); -- If we are moving to a new nick; we don't want to get our own presence
+
+				local dest_nick = select(3, jid_split(dest_occupant.nick));
+				local affiliation = self:get_affiliation(bare_jid);
+
+				-- This session
+				if not is_first_dest_session then -- User is swapping into another pre-existing session
+					log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
+					-- Show the other session leaving
+					local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
+						:tag("status"):text("you are joining pre-existing session " .. dest_nick):up();
+					add_item(x, affiliation, "none");
+					local pr = st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}
+						:add_child(x);
+					self:route_stanza(pr);
+				else
+					if is_last_orig_session then -- User is moving to a new session
+						log("debug", "no sessions in %s left; marking as nick change", orig_occupant.nick);
+						-- Everyone gets to see this as a nick change
+						local jid = self:get_whois() ~= "anyone" and real_jid or nil; -- FIXME: mods should see real jids
+						add_item(orig_x, affiliation, orig_occupant.role, jid, dest_nick);
+						orig_x:tag("status", {code = "303";}):up();
+					end
+				end
+				-- The session itself always sees a nick change
+				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+				add_item(x, affiliation, orig_occupant.role, real_jid, dest_nick);
+				-- self:build_item_list(orig_occupant, x, false); -- COMPAT
+				x:tag("status", {code = "303";}):up();
+				x:tag("status", {code = "110";}):up();
+				self:route_stanza(st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}:add_child(x));
+			end
+			self:save_occupant(orig_occupant);
+			self:publicise_occupant_status(orig_occupant, orig_x);
+
+			if is_last_orig_session then
+				module:fire_event("muc-occupant-left", {room = self; nick = orig_occupant.nick;});
+			end
+		end
+
+		if dest_occupant ~= nil then
+			dest_occupant:set_session(real_jid, stanza);
+			local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+			if is_new_room then
+				dest_x:tag("status", {code = "201"}):up();
+			end
+			if orig_occupant == nil and self:get_whois() == "anyone" then
+				dest_x:tag("status", {code = "100"}):up();
+			end
+			self:save_occupant(dest_occupant);
+			self:publicise_occupant_status(dest_occupant, dest_x);
+
+			if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
+				log("debug", "session %s split nicks; showing %s rejoining", real_jid, orig_occupant.nick);
+				-- Show the original nick joining again
+				local pr = st.clone(orig_occupant:get_presence());
+				pr.attr.to = real_jid;
+				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+				self:build_item_list(orig_occupant, x, false);
+				-- TODO: new status code to inform client this was the multi-session it left?
+				pr:add_child(x);
+				self:route_stanza(pr);
+			end
+
+			if orig_occupant == nil and is_first_dest_session then
+				module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; stanza = stanza;});
+			end
+		end
 	elseif type ~= 'result' then -- bad type
 		if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
@@ -659,14 +787,14 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	local id = stanza.attr.id;
 	local current_nick = self:get_occupant_jid(from);
-	local o_data = self._occupants[to];
+	local occupant = self:get_occupant_by_nick(to);
 	if (type == "error" or type == "result") then
 		do -- deconstruct_stanza_id
-			if not current_nick or not o_data then return nil; end
+			if not current_nick or not occupant then return nil; end
 			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
 			if not(from == from_jid or from == jid_bare(from_jid)) then return nil; end
 			local session_jid
-			for to_jid in pairs(o_data.sessions) do
+			for to_jid in occupant:each_session() do
 				if md5(to_jid) == to_jid_hash then
 					session_jid = to_jid;
 					break;
@@ -676,7 +804,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			stanza.attr.from, stanza.attr.to, stanza.attr.id = current_nick, session_jid, id
 		end
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
-		self:_route_stanza(stanza);
+		self:route_stanza(stanza);
 		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
 	else -- Type is "get" or "set"
@@ -684,19 +812,19 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 			return true;
 		end
-		if not o_data then -- recipient not in room
+		if not occupant then -- recipient not in room
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 			return true;
 		end
 		do -- construct_stanza_id
-			stanza.attr.id = base64.encode(o_data.jid.."\0"..stanza.attr.id.."\0"..md5(from));
+			stanza.attr.id = base64.encode(occupant.jid.."\0"..stanza.attr.id.."\0"..md5(from));
 		end
-		stanza.attr.from, stanza.attr.to = current_nick, o_data.jid;
-		log("debug", "%s sent private iq stanza to %s (%s)", from, to, o_data.jid);
+		stanza.attr.from, stanza.attr.to = current_nick, occupant.jid;
+		log("debug", "%s sent private iq stanza to %s (%s)", from, to, occupant.jid);
 		if stanza.tags[1].attr.xmlns == 'vcard-temp' then
 			stanza.attr.to = jid_bare(stanza.attr.to);
 		end
-		self:_route_stanza(stanza);
+		self:route_stanza(stanza);
 		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
 	end
@@ -720,7 +848,7 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 		return self:handle_kickable(origin, stanza); -- send unavailable
 	end
 
-	local o_data = self._occupants[to];
+	local o_data = self:get_occupant_by_nick(to);
 	if not o_data then
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 		return true;
@@ -870,23 +998,29 @@ function room_mt:process_form(origin, stanza)
 	end
 end
 
-function room_mt:destroy(newjid, reason, password)
-	local pr = st.presence({type = "unavailable"})
-		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", { affiliation='none', role='none' }):up()
-			:tag("destroy", {jid=newjid})
-	if reason then pr:tag("reason"):text(reason):up(); end
-	if password then pr:tag("password"):text(password):up(); end
-	for nick, occupant in pairs(self._occupants) do
-		pr.attr.from = nick;
-		for jid in pairs(occupant.sessions) do
-			pr.attr.to = jid;
-			self:_route_stanza(pr);
-			self._jid_nick[jid] = nil;
-		end
-		self._occupants[nick] = nil;
-		module:fire_event("muc-occupant-left", { room = self; nick = nick; });
+-- Removes everyone from the room
+function room_mt:clear(x)
+	x = x or st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
+	local occupants_updated = {};
+	for nick, occupant in self:each_occupant() do
+		occupant.role = nil;
+		self:save_occupant(occupant);
+		occupants_updated[occupant] = true;
 	end
+	for occupant in pairs(occupants_updated) do
+		self:publicise_occupant_status(occupant, x);
+		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; });
+	end
+end
+
+function room_mt:destroy(newjid, reason, password)
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+		:tag("item", { affiliation='none', role='none' }):up()
+		:tag("destroy", {jid=newjid});
+	if reason then x:tag("reason"):text(reason):up(); end
+	if password then x:tag("password"):text(password):up(); end
+	x:up();
+	self:clear(x);
 	self:set_persistent(false);
 	module:fire_event("muc-room-destroyed", { room = self });
 end
@@ -911,7 +1045,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 		end
 	end
 	if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
-		local occupant = self._occupants[self.jid.."/"..item.attr.nick];
+		local occupant = self:get_occupant_by_nick(self.jid.."/"..item.attr.nick);
 		if occupant then item.attr.jid = occupant.jid; end
 	elseif not item.attr.nick and item.attr.jid then
 		local nick = self:get_occupant_jid(item.attr.jid);
@@ -958,18 +1092,7 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		local role = self:get_role(self:get_occupant_jid(actor)) or self:get_default_role(affiliation);
 		if role == "moderator" then
 			if _rol == "none" then _rol = nil; end
-			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-			for occupant_jid, occupant in pairs(self._occupants) do
-				if occupant.role == _rol then
-					reply:tag("item", {
-						nick = select(3, jid_split(occupant_jid)),
-						role = _rol or "none",
-						affiliation = occupant.affiliation or "none",
-						jid = occupant.jid
-						}):up();
-				end
-			end
-			origin.send(reply);
+			self:send_occupant_list(actor, function(occupant_jid, occupant) return occupant.role == _rol end);
 			return true;
 		else
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
@@ -1015,8 +1138,7 @@ end
 
 function room_mt:handle_groupchat_to_room(origin, stanza)
 	local from = stanza.attr.from;
-	local current_nick = self:get_occupant_jid(from);
-	local occupant = self._occupants[current_nick];
+	local occupant = self:get_occupant_by_real_jid(from);
 	if not occupant then -- not in room
 		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 		return true;
@@ -1025,12 +1147,12 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 		return true;
 	else
 		local from = stanza.attr.from;
-		stanza.attr.from = current_nick;
+		stanza.attr.from = occupant.nick;
 		local subject = stanza:get_child_text("subject");
 		if subject then
 			if occupant.role == "moderator" or
 				( self:get_changesubject() and occupant.role == "participant" ) then -- and participant
-				self:set_subject(current_nick, subject);
+				self:set_subject(occupant.nick, subject);
 			else
 				stanza.attr.from = from;
 				origin.send(st.error_reply(stanza, "auth", "forbidden"));
@@ -1096,7 +1218,7 @@ function room_mt:handle_mediated_invite(origin, stanza)
 end
 
 module:hook("muc-invite", function(event)
-	event.room:_route_stanza(event.stanza);
+	event.room:route_stanza(event.stanza);
 	return true;
 end, -1)
 
@@ -1210,64 +1332,46 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	end
 	self._affiliations[jid] = affiliation;
 	local role = self:get_default_role(affiliation);
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=affiliation or "none", role=role or "none"})
-				:tag("reason"):text(reason or ""):up()
-			:up();
-	local presence_type = nil;
+	local occupants_updated = {};
+	for nick, occupant in self:each_occupant() do
+		if occupant.bare_jid == jid then
+			occupant.role = role;
+			self:save_occupant(occupant);
+			occupants_updated[occupant] = true;
+		end
+	end
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
 	if not role then -- getting kicked
-		presence_type = "unavailable";
 		if affiliation == "outcast" then
 			x:tag("status", {code="301"}):up(); -- banned
 		else
 			x:tag("status", {code="321"}):up(); -- affiliation change
 		end
 	end
-	local modified_nicks = {};
-	for nick, occupant in pairs(self._occupants) do
-		if jid_bare(occupant.jid) == jid then
-			if not role then -- getting kicked
-				self._occupants[nick] = nil;
-			else
-				occupant.affiliation, occupant.role = affiliation, role;
-			end
-			for jid,pres in pairs(occupant.sessions) do -- remove for all sessions of the nick
-				if not role then self._jid_nick[jid] = nil; end
-				local p = st.clone(pres);
-				p.attr.from = nick;
-				p.attr.type = presence_type;
-				p.attr.to = jid;
-				p:add_child(x);
-				self:_route_stanza(p);
-				if occupant.jid == jid then
-					modified_nicks[nick] = p;
-				end
-			end
-		end
+	for occupant in pairs(occupants_updated) do
+		self:publicise_occupant_status(occupant, x, actor, reason);
 	end
 	if self.save then self:save(); end
 	if callback then callback(); end
-	for nick,p in pairs(modified_nicks) do
-		p.attr.from = nick;
-		self:broadcast_except_nick(p, nick);
-	end
 	return true;
 end
 
 function room_mt:get_role(nick)
-	local session = self._occupants[nick];
-	return session and session.role or nil;
+	local occupant = self:get_occupant_by_nick(nick);
+	return occupant and occupant.role or nil;
 end
 function room_mt:can_set_role(actor_jid, occupant_jid, role)
-	local occupant = self._occupants[occupant_jid];
+	local occupant = self:get_occupant_by_nick(occupant_jid);
 	if not occupant or not actor_jid then return nil, "modify", "not-acceptable"; end
 
 	if actor_jid == true then return true; end
 
-	local actor = self._occupants[self:get_occupant_jid(actor_jid)];
+	local actor = self:get_occupant_by_real_jid(actor_jid);
 	if actor.role == "moderator" then
-		if occupant.affiliation ~= "owner" and occupant.affiliation ~= "admin" then
-			if actor.affiliation == "owner" or actor.affiliation == "admin" then
+		local occupant_affiliation = self:get_affiliation(occupant.bare_jid)
+		local actor_affiliation = self:get_affiliation(actor.bare_jid)
+		if occupant_affiliation ~= "owner" and occupant_affiliation ~= "admin" then
+			if actor_affiliation == "owner" or actor_affiliation == "admin" then
 				return true;
 			elseif occupant.role ~= "moderator" and role ~= "moderator" then
 				return true;
@@ -1281,71 +1385,18 @@ function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
 	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
 	if not allowed then return allowed, err_type, err_condition; end
-	local occupant = self._occupants[occupant_jid];
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
-				:tag("reason"):text(reason or ""):up()
-			:up();
-	local presence_type = nil;
-	if not role then -- kick
-		presence_type = "unavailable";
-		self._occupants[occupant_jid] = nil;
-		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
-			self._jid_nick[jid] = nil;
-		end
-		x:tag("status", {code = "307"}):up();
-	else
-		occupant.role = role;
-	end
-	local bp;
-	for jid,pres in pairs(occupant.sessions) do -- send to all sessions of the nick
-		local p = st.clone(pres);
-		p.attr.from = occupant_jid;
-		p.attr.type = presence_type;
-		p.attr.to = jid;
-		p:add_child(x);
-		self:_route_stanza(p);
-		if occupant.jid == jid then
-			bp = p;
-		end
-	end
-	if callback then callback(); end
-	if bp then
-		self:broadcast_except_nick(bp, occupant_jid);
-	end
-	return true;
-end
 
-function room_mt:_route_stanza(stanza)
-	local muc_child;
-	if stanza.name == "presence" then
-		local to_occupant = self._occupants[self:get_occupant_jid(stanza.attr.to)];
-		local from_occupant = self._occupants[stanza.attr.from];
-		if to_occupant and from_occupant then
-			if self:get_whois() == 'anyone' then
-			    muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
-			else
-				if to_occupant.role == "moderator" or jid_bare(to_occupant.jid) == jid_bare(from_occupant.jid) then
-					muc_child = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
-				end
-			end
-		end
-		if muc_child then
-			for item in muc_child:childtags("item") do
-				if from_occupant == to_occupant then
-					item.attr.jid = stanza.attr.to;
-				else
-					item.attr.jid = from_occupant.jid;
-				end
-			end
-		end
+	local occupant = self:get_occupant_by_nick(occupant_jid);
+	local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
+	if not role then
+		x:tag("status", {code = "307"}):up();
 	end
-	self:route_stanza(stanza);
-	if muc_child then
-		for item in muc_child:childtags("item") do
-			item.attr.jid = nil;
-		end
-	end
+	occupant.role = role;
+	self:save_occupant(occupant);
+	self:publicise_occupant_status(occupant, x, actor, reason);
+	if callback then callback(); end
+	return true;
 end
 
 local _M = {}; -- module "muc"
