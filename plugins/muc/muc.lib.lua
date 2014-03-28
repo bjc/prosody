@@ -1311,12 +1311,24 @@ function room_mt:get_affiliation(jid)
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
+
+local valid_affiliations = {
+	outcast = true;
+	none = true;
+	member = true;
+	admin = true;
+	owner = true;
+};
 function room_mt:set_affiliation(actor, jid, affiliation, reason)
+	if not actor then return nil, "modify", "not-acceptable"; end;
+
 	jid = jid_bare(jid);
-	if affiliation == "none" then affiliation = nil; end
-	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
+
+	if valid_affiliations[affiliation or "none"] == nil then
 		return nil, "modify", "not-acceptable";
 	end
+	affiliation = affiliation ~= "none" and affiliation or nil; -- coerces `affiliation == false` to `nil`
+
 	if actor ~= true then
 		local actor_affiliation = self:get_affiliation(actor);
 		local target_affiliation = self:get_affiliation(jid);
