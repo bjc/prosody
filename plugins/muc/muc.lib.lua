@@ -760,7 +760,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 				-- self:build_item_list(orig_occupant, x, false); -- COMPAT
 				x:tag("status", {code = "303";}):up();
 				x:tag("status", {code = "110";}):up();
-				self:route_stanza(st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}:add_child(x));
+				self:route_stanza(st.presence{from = orig_occupant.nick, to = real_jid, type = "unavailable"}:add_child(x));
 			end
 			self:save_occupant(orig_occupant);
 			self:publicise_occupant_status(orig_occupant, orig_x);
