@@ -276,7 +276,7 @@ function room_mt:send_occupant_list(to, filter)
 	local to_occupant = self:get_occupant_by_real_jid(to);
 	local has_anonymous = self:get_whois() ~= "anyone"
 	for occupant_jid, occupant in self:each_occupant() do
-		if filter and filter(occupant_jid, occupant) then
+		if filter == nil or filter(occupant_jid, occupant) then
 			local x = st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
 			local is_anonymous = has_anonymous and occupant.role ~= "moderator" and to_occupant.bare_jid ~= occupant.bare_jid;
 			self:build_item_list(occupant, x, is_anonymous);
