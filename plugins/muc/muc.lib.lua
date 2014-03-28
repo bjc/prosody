@@ -261,7 +261,7 @@ function room_mt:publicise_occupant_status(occupant, full_x, actor, reason)
 	for nick, n_occupant in self:each_occupant() do
 		if nick ~= occupant.nick or n_occupant.role == nil then
 			local pr = full_p;
-			if has_anonymous and n_occupant.role ~= "moderators" and occupant.bare_jid ~= n_occupant.bare_jid then
+			if has_anonymous and n_occupant.role ~= "moderator" and occupant.bare_jid ~= n_occupant.bare_jid then
 				pr = anon_p;
 			end
 			self:route_to_occupant(n_occupant, pr);
