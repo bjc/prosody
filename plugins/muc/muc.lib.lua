@@ -60,6 +60,21 @@ function room_mt:get_occupant_jid(real_jid)
 	return self._jid_nick[real_jid]
 end
 
+local valid_affiliations = {
+	outcast = 0;
+	none = 1;
+	member = 2;
+	admin = 3;
+	owner = 4;
+};
+
+local valid_roles = {
+	none = 0;
+	visitor = 1;
+	participant = 2;
+	moderator = 3;
+};
+
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
 		return "moderator";
@@ -1312,13 +1327,6 @@ function room_mt:get_affiliation(jid)
 	return result;
 end
 
-local valid_affiliations = {
-	outcast = true;
-	none = true;
-	member = true;
-	admin = true;
-	owner = true;
-};
 function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
@@ -1329,34 +1337,52 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	end
 	affiliation = affiliation ~= "none" and affiliation or nil; -- coerces `affiliation == false` to `nil`
 
+	local target_affiliation = self._affiliations[jid]; -- Raw; don't want to check against host
+	local is_downgrade = valid_affiliations[target_affiliation or "none"] > valid_affiliations[affiliation or "none"];
+
 	if actor ~= true then
-		local actor_affiliation = self:get_affiliation(actor);
-		local target_affiliation = self:get_affiliation(jid);
-		if target_affiliation == affiliation then -- no change, shortcut
-			return true;
-		end
-		if actor_affiliation ~= "owner" then
-			if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
-				return nil, "cancel", "not-allowed";
+		local actor_bare = jid_bare(actor);
+		local actor_affiliation = self._affiliations[actor_bare];
+		if actor_affiliation == "owner" then
+			if actor_bare == jid then -- self change
+				-- need at least one owner
+				local is_last = true;
+				for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
+				if is_last then
+					return nil, "cancel", "conflict";
+				end
 			end
-		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
-			local is_last = true;
-			for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
-			if is_last then
-				return nil, "cancel", "conflict";
-			end
+			-- owners can do anything else
+		elseif affiliation == "owner" or affiliation == "admin"
+			or actor_affiliation ~= "admin"
+			or target_affiliation == "owner" or target_affiliation == "admin" then
+			-- Can't demote owners or other admins
+			return nil, "cancel", "not-allowed";
 		end
 	end
+
+	-- Set in 'database'
 	self._affiliations[jid] = affiliation;
+
+	-- Update roles
 	local role = self:get_default_role(affiliation);
-	local occupants_updated = {};
+	local role_rank = valid_roles[role or "none"];
+	local occupants_updated = {}; -- Filled with old roles
 	for nick, occupant in self:each_occupant() do
 		if occupant.bare_jid == jid then
-			occupant.role = role;
-			self:save_occupant(occupant);
-			occupants_updated[occupant] = true;
+			-- need to publcize in all cases; as affiliation in <item/> has changed.
+			occupants_updated[occupant] = occupant.role;
+			if occupant.role ~= role and (
+				is_downgrade or
+				valid_roles[occupant.role or "none"] < role_rank -- upgrade
+			) then
+				occupant.role = role;
+				self:save_occupant(occupant);
+			end
 		end
 	end
+
+	-- Tell the room of the new occupant affiliations+roles
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
 	if not role then -- getting kicked
 		if affiliation == "outcast" then
@@ -1365,9 +1391,21 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 			x:tag("status", {code="321"}):up(); -- affiliation change
 		end
 	end
-	for occupant in pairs(occupants_updated) do
+	local is_semi_anonymous = self:get_whois() == "moderators";
+	for occupant, old_role in pairs(occupants_updated) do
 		self:publicise_occupant_status(occupant, x, actor, reason);
+		if is_semi_anonymous and
+			(old_role == "moderator" and occupant.role ~= "moderator") or
+			(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
+			-- Send everyone else's presences (as jid visibility has changed)
+			for real_jid in occupant:each_session() do
+				self:send_occupant_list(real_jid, function(occupant_jid, occupant)
+					return occupant.bare_jid ~= jid;
+				end);
+			end
+		end
 	end
+
 	if self.save then self:save(); end
 	return true;
 end
@@ -1377,12 +1415,6 @@ function room_mt:get_role(nick)
 	return occupant and occupant.role or nil;
 end
 
-local valid_roles = {
-	none = true;
-	visitor = true;
-	participant = true;
-	moderator = true;
-}
 function room_mt:set_role(actor, occupant_jid, role, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end
 
