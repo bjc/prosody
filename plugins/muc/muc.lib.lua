@@ -273,13 +273,21 @@ function room_mt:publicise_occupant_status(occupant, full_x, actor, reason)
 end
 
 function room_mt:send_occupant_list(to, filter)
-	local to_occupant = self:get_occupant_by_real_jid(to);
-	local has_anonymous = self:get_whois() ~= "anyone"
+	local to_bare = jid_bare(to);
+	local is_anonymous = true;
+	if self:get_whois() ~= "anyone" then
+		local affiliation = self:get_affiliation(to);
+		if affiliation ~= "admin" and affiliation ~= "owner" then
+			local occupant = self:get_occupant_by_real_jid(to);
+			if not occupant or occupant.role ~= "moderator" then
+				is_anonymous = false;
+			end
+		end
+	end
 	for occupant_jid, occupant in self:each_occupant() do
 		if filter == nil or filter(occupant_jid, occupant) then
 			local x = st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
-			local is_anonymous = has_anonymous and occupant.role ~= "moderator" and to_occupant.bare_jid ~= occupant.bare_jid;
-			self:build_item_list(occupant, x, is_anonymous);
+			self:build_item_list(occupant, x, is_anonymous and to_bare ~= occupant.bare_jid); -- can always see your own jids
 			local pres = st.clone(occupant:get_presence());
 			pres.attr.to = to;
 			pres:add_child(x);
