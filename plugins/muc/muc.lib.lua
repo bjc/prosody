@@ -1013,8 +1013,9 @@ function room_mt:process_form(origin, stanza)
 
 	if next(changed) then
 		local msg = st.message({type='groupchat', from=self.jid})
-			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
-				:tag('status', {code = '104'}):up();
+			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+				:tag('status', {code = '104'}):up()
+			:up();
 		if changed.whois then
 			local code = (self:get_whois() == 'moderators') and "173" or "172";
 			msg.tags[1]:tag('status', {code = code}):up();
