@@ -163,18 +163,18 @@ end
 function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
 	local affiliation = self:get_affiliation(occupant.bare_jid);
 	local role = occupant.role;
-	local actor_jid = actor and self:get_occupant_jid(actor);
+	local actor_attr;
 	if actor then
-		actor = {nick = select(3,jid_split(actor_jid))};
+		actor_attr = {nick = select(3,jid_split(self:get_occupant_jid(actor)))};
 	end
 	if is_anonymous then
-		add_item(x, affiliation, role, nil, nick, actor, reason);
+		add_item(x, affiliation, role, nil, nick, actor_attr, reason);
 	else
-		if actor_jid then
-			actor.jid = actor_jid;
+		if actor_attr then
+			actor_attr.jid = actor;
 		end
 		for real_jid, session in occupant:each_session() do
-			add_item(x, affiliation, role, real_jid, nick, actor, reason);
+			add_item(x, affiliation, role, real_jid, nick, actor_attr, reason);
 		end
 	end
 	return x
