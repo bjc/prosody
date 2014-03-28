@@ -1356,34 +1356,46 @@ function room_mt:get_role(nick)
 	local occupant = self:get_occupant_by_nick(nick);
 	return occupant and occupant.role or nil;
 end
-function room_mt:can_set_role(actor_jid, occupant_jid, role)
+
+local valid_roles = {
+	none = true;
+	visitor = true;
+	participant = true;
+	moderator = true;
+}
+function room_mt:set_role(actor, occupant_jid, role, reason)
+	if not actor then return nil, "modify", "not-acceptable"; end
+
 	local occupant = self:get_occupant_by_nick(occupant_jid);
-	if not occupant or not actor_jid then return nil, "modify", "not-acceptable"; end
+	if not occupant then return nil, "modify", "not-acceptable"; end
 
-	if actor_jid == true then return true; end
+	if valid_roles[role or "none"] == nil then
+		return nil, "modify", "not-acceptable";
+	end
+	role = role ~= "none" and role or nil; -- coerces `role == false` to `nil`
 
-	local actor = self:get_occupant_by_real_jid(actor_jid);
-	if actor.role == "moderator" then
-		local occupant_affiliation = self:get_affiliation(occupant.bare_jid)
-		local actor_affiliation = self:get_affiliation(actor.bare_jid)
-		if occupant_affiliation ~= "owner" and occupant_affiliation ~= "admin" then
-			if actor_affiliation == "owner" or actor_affiliation == "admin" then
-				return true;
-			elseif occupant.role ~= "moderator" and role ~= "moderator" then
-				return true;
+	if actor ~= true then
+		-- Can't do anything to other owners or admins
+		local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
+		if occupant_affiliation == "owner" and occupant_affiliation == "admin" then
+			return nil, "cancel", "not-allowed";
+		end
+
+		-- If you are trying to give or take moderator role you need to be an owner or admin
+		if occupant.role == "moderator" or role == "moderator" then
+			local actor_affiliation = self:get_affiliation(actor);
+			if actor_affiliation ~= "owner" and actor_affiliation ~= "admin" then
+				return nil, "cancel", "not-allowed";
 			end
 		end
-	end
-	return nil, "cancel", "not-allowed";
-end
-function room_mt:set_role(actor, occupant_jid, role, reason)
-	if role == "none" then role = nil; end
-	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
-	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
-	if not allowed then return allowed, err_type, err_condition; end
 
-	local occupant = self:get_occupant_by_nick(occupant_jid);
-	local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
+		-- Need to be in the room and a moderator
+		local actor_occupant = self:get_occupant_by_real_jid(actor);
+		if not actor_occupant or actor_occupant.role ~= "moderator" then
+			return nil, "cancel", "not-allowed";
+		end
+	end
+
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
 	if not role then
 		x:tag("status", {code = "307"}):up();
