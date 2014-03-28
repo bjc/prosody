@@ -1054,20 +1054,18 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 		if nick then item.attr.nick = select(3, jid_split(nick)); end
 	end
 	local actor = stanza.attr.from;
-	local callback = function() origin.send(st.reply(stanza)); end
 	local reason = item:get_child_text("reason");
+	local success, errtype, err
 	if item.attr.affiliation and item.attr.jid and not item.attr.role then
-		local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
-		if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-		return true;
+		success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, reason);
 	elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
-		local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback, reason);
-		if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-		return true;
+		success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, reason);
 	else
-		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
-		return true;
+		success, errtype, err = nil, "cancel", "bad-request";
 	end
+	if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+	origin.send(st.reply(stanza));
+	return true;
 end
 
 function room_mt:handle_admin_query_get_command(origin, stanza)
@@ -1232,7 +1230,7 @@ module:hook("muc-invite", function(event)
 		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from
 		local current_nick = room:get_occupant_jid(from)
 		log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
-		room:set_affiliation(from, invitee, "member", nil, "Invited by " .. current_nick)
+		room:set_affiliation(from, invitee, "member", "Invited by " .. current_nick)
 	end
 end);
 
@@ -1305,7 +1303,7 @@ function room_mt:get_affiliation(jid)
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
-function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
+function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	jid = jid_bare(jid);
 	if affiliation == "none" then affiliation = nil; end
 	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
@@ -1315,7 +1313,6 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 		local actor_affiliation = self:get_affiliation(actor);
 		local target_affiliation = self:get_affiliation(jid);
 		if target_affiliation == affiliation then -- no change, shortcut
-			if callback then callback(); end
 			return true;
 		end
 		if actor_affiliation ~= "owner" then
@@ -1352,7 +1349,6 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 		self:publicise_occupant_status(occupant, x, actor, reason);
 	end
 	if self.save then self:save(); end
-	if callback then callback(); end
 	return true;
 end
 
@@ -1380,7 +1376,7 @@ function room_mt:can_set_role(actor_jid, occupant_jid, role)
 	end
 	return nil, "cancel", "not-allowed";
 end
-function room_mt:set_role(actor, occupant_jid, role, callback, reason)
+function room_mt:set_role(actor, occupant_jid, role, reason)
 	if role == "none" then role = nil; end
 	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
 	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
@@ -1395,7 +1391,6 @@ function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	occupant.role = role;
 	self:save_occupant(occupant);
 	self:publicise_occupant_status(occupant, x, actor, reason);
-	if callback then callback(); end
 	return true;
 end
 
