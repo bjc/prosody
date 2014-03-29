@@ -424,26 +424,21 @@ end
 function room_mt:get_subject()
 	return self._data['subject'], self._data['subject_from']
 end
-local function create_subject_message(subject)
-	return st.message({type='groupchat'})
+local function create_subject_message(from, subject)
+	return st.message({from = from; type = "groupchat"})
 		:tag('subject'):text(subject):up();
 end
 function room_mt:send_subject(to)
-	local from, subject = self:get_subject()
-	if subject then
-		local msg = create_subject_message(subject)
-		msg.attr.from = from
-		msg.attr.to = to
-		self:route_stanza(msg);
-	end
+	local msg = create_subject_message(self:get_subject());
+	msg.attr.to = to;
+	self:route_stanza(msg);
 end
 function room_mt:set_subject(current_nick, subject)
 	if subject == "" then subject = nil; end
 	self._data['subject'] = subject;
 	self._data['subject_from'] = current_nick;
 	if self.save then self:save(); end
-	local msg = create_subject_message(subject)
-	msg.attr.from = current_nick
+	local msg = create_subject_message(current_nick, subject);
 	self:broadcast_message(msg, false);
 	return true;
 end
