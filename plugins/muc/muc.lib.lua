@@ -641,7 +641,7 @@ module:hook("muc-occupant-joined", function(event)
 	local real_jid = stanza.attr.from;
 	room:send_occupant_list(real_jid, function(nick, occupant)
 		-- Don't include self
-		return occupant.sessions[real_jid] == nil
+		return occupant:get_presence(real_jid) == nil;
 	end);
 	room:send_history(stanza);
 	room:send_subject(real_jid);
@@ -687,7 +687,8 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 		local is_last_orig_session;
 		if orig_occupant ~= nil then
 			-- Is there are least 2 sessions?
-			is_last_orig_session = next(orig_occupant.sessions, next(orig_occupant.sessions)) == nil;
+			local iter, ob, last = orig_occupant:each_session();
+			is_last_orig_session = iter(ob, iter(ob, last)) == nil;
 		end
 
 		local event, event_name = {
