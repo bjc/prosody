@@ -29,6 +29,8 @@ if socket.tcp6 and config.get("*", "use_ipv6") ~= false then
 	table.insert(default_local_interfaces, "::1");
 end
 
+local default_mode = config.get("*", "network_default_read_size") or 4096;
+
 --- Private state
 
 -- service_name -> { service_info, ... }
@@ -111,7 +113,7 @@ function activate(service_name)
 		   }
 	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
-	local mode, ssl = listener.default_mode or "*a";
+	local mode, ssl = listener.default_mode or default_mode;
 	local hooked_ports = {};
 	
 	for interface in bind_interfaces do
