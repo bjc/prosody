@@ -140,7 +140,15 @@ function log_warnings()
 		if not pcall(lxp.new, { StartDoctypeDecl = false }) then
 			log("error", "The version of LuaExpat on your system leaves Prosody "
 				.."vulnerable to denial-of-service attacks. You should upgrade to "
-				.."LuaExpat 1.1.1 or higher as soon as possible. See "
+				.."LuaExpat 1.3.0 or higher as soon as possible. See "
+				.."http://prosody.im/doc/depends#luaexpat for more information.");
+		end
+		if not lxp.new({}).getcurrentbytecount then
+			log("error", "The version of LuaExpat on your system does not support "
+				.."stanza size limits, which may leave servers on untrusted "
+				.."networks (e.g. the internet) vulnerable to denial-of-service "
+				.."attacks. You should upgrade to LuaExpat 1.3.0 or higher as "
+				.."soon as possible. See "
 				.."http://prosody.im/doc/depends#luaexpat for more information.");
 		end
 	end
