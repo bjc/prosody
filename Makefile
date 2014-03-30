@@ -55,7 +55,7 @@ util/%.so:
 	$(MAKE) install -C util-src
 
 %.install: %
-	sed "1s/\blua\b/$(RUNWITH)/; \
+	sed "1s| lua$$| $(RUNWITH)|; \
 		s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
 		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
 		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
