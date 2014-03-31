@@ -1272,9 +1272,8 @@ module:hook("muc-invite", function(event)
 	local invitee = stanza.attr.to
 	if room:get_members_only() and not room:get_affiliation(invitee) then
 		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from
-		local current_nick = room:get_occupant_jid(from)
 		log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
-		room:set_affiliation(from, invitee, "member", "Invited by " .. current_nick)
+		room:set_affiliation(from, invitee, "member", "Invited by " .. from); -- This might fail; ignore for now
 	end
 end);
 
