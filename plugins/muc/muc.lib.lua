@@ -1203,27 +1203,15 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 	local _invitee = jid_prep(payload.attr.to);
 	if _invitee then
-		local _reason = payload:get_child_text("reason");
-		if self:get_whois() == "moderators" then
-			_from = current_nick;
-		end
 		local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
 			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 				:tag('invite', {from=_from})
-					:tag('reason'):text(_reason or ""):up()
-				:up();
-		local password = self:get_password();
-		if password then
-			invite:tag("password"):text(password):up();
-		end
-			invite:up()
-			:tag('x', {xmlns="jabber:x:conference", jid=_to}) -- COMPAT: Some older clients expect this
-				:text(_reason or "")
-			:up()
-			:tag('body') -- Add a plain message for clients which don't support invites
-				:text(_from..' invited you to the room '.._to..(_reason and (' ('.._reason..')') or ""))
+					:tag('reason'):text(payload:get_child_text("reason")):up()
+				:up()
 			:up();
-		module:fire_event("muc-invite", {room = self, stanza = invite, origin = origin, incoming = stanza});
+		if not module:fire_event("muc-invite", {room = self, stanza = invite, origin = origin, incoming = stanza}) then
+			self:route_stanza(invite);
+		end
 		return true;
 	else
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
@@ -1231,10 +1219,46 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 end
 
+-- Add password to outgoing invite
 module:hook("muc-invite", function(event)
-	event.room:route_stanza(event.stanza);
-	return true;
-end, -1)
+	local password = event.room:get_password();
+	if password then
+		local x = event.stanza:get_child("x", "http://jabber.org/protocol/muc#user");
+		x:tag("password"):text(password):up();
+	end
+end);
+
+-- COMPAT: Some older clients expect this
+module:hook("muc-invite", function(event)
+	local room, stanza = event.room, event.stanza;
+	local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
+	local reason = invite:get_child_text("reason");
+	stanza:tag('x', {xmlns = "jabber:x:conference"; jid = room.jid;})
+		:text(reason or "")
+	:up();
+end);
+
+-- Add a plain message for clients which don't support invites
+module:hook("muc-invite", function(event)
+	local room, stanza = event.room, event.stanza;
+	local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
+	local reason = invite:get_child_text("reason") or "";
+	stanza:tag("body")
+		:text(invite.attr.from.." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+	:up();
+end);
+
+-- Mask 'from' jid as occupant jid if room is anonymous
+module:hook("muc-invite", function(event)
+	local room, stanza = event.room, event.stanza;
+	if room:get_whois() == "moderators" and room:get_default_role(room:get_affiliation(stanza.attr.to)) ~= "moderator" then
+		local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
+		local occupant_jid = room:get_occupant_jid(invite.attr.from);
+		if occupant_jid ~= nil then -- FIXME: This will expose real jid if inviter is not in room
+			invite.attr.from = occupant_jid;
+		end
+	end
+end, 50);
 
 -- When an invite is sent; add an affiliation for the invitee
 module:hook("muc-invite", function(event)
