@@ -88,6 +88,7 @@ function room_mt:get_default_role(affiliation)
 end
 
 function room_mt:lock()
+	module:fire_event("muc-room-locked", { room = self });
 	self.locked = true
 end
 function room_mt:unlock()
