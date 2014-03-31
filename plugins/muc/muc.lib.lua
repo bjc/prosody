@@ -1279,39 +1279,40 @@ module:hook("muc-invite", function(event)
 end);
 
 function room_mt:handle_mediated_decline(origin, stanza)
-	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline")
+	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
 	local declinee = jid_prep(payload.attr.to);
-	if declinee then
-		local from, to = stanza.attr.from, stanza.attr.to;
-		-- TODO: Validate declinee
-		local reason = payload:get_child_text("reason")
-		local decline = st.message({from = to, to = declinee, id = stanza.attr.id})
-			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag('decline', {from=from})
-					:tag('reason'):text(reason or ""):up()
-				:up()
-			:up()
-			:tag('body') -- Add a plain message for clients which don't support declines
-				:text(from..' declined your invite to the room '..to..(reason and (' ('..reason..')') or ""))
-			:up();
-		module:fire_event("muc-decline", { room = self, stanza = decline, origin = origin, incoming = stanza });
-		return true;
-	else
+	if not declinee then
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 		return true;
+	elseif not module:fire_event("muc-pre-decline", {room = self, origin = origin, stanza = stanza}) then
+		return true;
 	end
-end
-
-module:hook("muc-decline", function(event)
-	local room, stanza = event.room, event.stanza
-	local occupant = room:get_occupant_by_real_jid(stanza.attr.to);
-	if occupant then
-		room:route_to_occupant(occupant, stanza)
-	else
-		room:route_stanza(stanza);
+	local decline = st.message({from = self.jid, to = declinee, id = stanza.attr.id})
+		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+			:tag("decline", {from = stanza.attr.from})
+				:tag("reason"):text(payload:get_child_text("reason")):up()
+			:up()
+		:up();
+	if not module:fire_event("muc-decline", {room = self, stanza = decline, origin = origin, incoming = stanza}) then
+		local occupant = self:get_occupant_by_real_jid(decline.attr.to);
+		if occupant then
+			self:route_to_occupant(occupant, decline);
+		else
+			self:route_stanza(decline);
+		end
 	end
 	return true;
-end, -1)
+end
+
+-- Add a plain message for clients which don't support declines
+module:hook("muc-decline", function(event)
+	local room, stanza = event.room, event.stanza;
+	local decline = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
+	local reason = decline:get_child_text("reason") or "";
+	stanza:tag("body")
+		:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+	:up();
+end);
 
 function room_mt:handle_message_to_room(origin, stanza)
 	local type = stanza.attr.type;
