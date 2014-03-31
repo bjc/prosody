@@ -1204,6 +1204,17 @@ module:hook("muc-pre-invite", function(event)
 	end
 end);
 
+-- Invitation privileges in members-only rooms SHOULD be restricted to room admins;
+-- if a member without privileges to edit the member list attempts to invite another user
+-- the service SHOULD return a <forbidden/> error to the occupant
+module:hook("muc-pre-invite", function(event)
+	local room, stanza = event.room, event.stanza;
+	if room:get_members_only() and valid_affiliations[room:get_affiliation(stanza.attr.from) or "none"] < valid_affiliations.admin then
+		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		return true;
+	end
+end);
+
 function room_mt:handle_mediated_invite(origin, stanza)
 	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
 	local invitee = jid_prep(payload.attr.to);
