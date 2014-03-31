@@ -1192,31 +1192,37 @@ function room_mt:handle_presence_to_room(origin, stanza)
 	return handled;
 end
 
-function room_mt:handle_mediated_invite(origin, stanza)
-	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite")
+-- Need visitor role or higher to invite
+module:hook("muc-pre-invite", function(event)
+	local room, stanza = event.room, event.stanza;
 	local _from, _to = stanza.attr.from, stanza.attr.to;
-	local current_nick = self:get_occupant_jid(_from)
-	-- Need visitor role or higher to invite
-	if not self:get_role(current_nick) or not self:get_default_role(self:get_affiliation(_from)) then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+	local inviter = room:get_occupant_by_real_jid(_from);
+	local role = inviter and inviter.role or room:get_default_role(room:get_affiliation(_from));
+	if valid_roles[role or "none"] <= valid_roles.visitor then
+		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	end
-	local _invitee = jid_prep(payload.attr.to);
-	if _invitee then
-		local invite = st.message({from = _to, to = _invitee, id = stanza.attr.id})
-			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag('invite', {from=_from})
-					:tag('reason'):text(payload:get_child_text("reason")):up()
-				:up()
-			:up();
-		if not module:fire_event("muc-invite", {room = self, stanza = invite, origin = origin, incoming = stanza}) then
-			self:route_stanza(invite);
-		end
-		return true;
-	else
+end);
+
+function room_mt:handle_mediated_invite(origin, stanza)
+	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
+	local invitee = jid_prep(payload.attr.to);
+	if not invitee then
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 		return true;
+	elseif not module:fire_event("muc-pre-invite", {room = self, origin = origin, stanza = stanza}) then
+		return true;
 	end
+	local invite = st.message({from = self.jid, to = invitee, id = stanza.attr.id})
+		:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+			:tag('invite', {from = stanza.attr.from;})
+				:tag('reason'):text(payload:get_child_text("reason")):up()
+			:up()
+		:up();
+	if not module:fire_event("muc-invite", {room = self, stanza = invite, origin = origin, incoming = stanza}) then
+		self:route_stanza(invite);
+	end
+	return true;
 end
 
 -- Add password to outgoing invite
