@@ -585,12 +585,6 @@ module:hook("muc-room-pre-create", function(event)
 end, -1);
 
 module:hook("muc-occupant-pre-join", function(event)
-	return module:fire_event("muc-occupant-pre-join/affiliation", event)
-		or module:fire_event("muc-occupant-pre-join/password", event)
-		or module:fire_event("muc-occupant-pre-join/locked", event);
-end, -1)
-
-module:hook("muc-occupant-pre-join/password", function(event)
 	local room, stanza = event.room, event.stanza;
 	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	password = password and password:get_child_text("password", "http://jabber.org/protocol/muc");
@@ -603,17 +597,17 @@ module:hook("muc-occupant-pre-join/password", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1);
+end, -20);
 
-module:hook("muc-occupant-pre-join/locked", function(event)
+module:hook("muc-occupant-pre-join", function(event)
 	if event.room:is_locked() then -- Deny entry
 		event.origin.send(st.error_reply(event.stanza, "cancel", "item-not-found"));
 		return true;
 	end
-end, -1);
+end, -30);
 
 -- registration required for entering members-only room
-module:hook("muc-occupant-pre-join/affiliation", function(event)
+module:hook("muc-occupant-pre-join", function(event)
 	local room, stanza = event.room, event.stanza;
 	local affiliation = room:get_affiliation(stanza.attr.from);
 	if affiliation == nil and event.room:get_members_only() then
@@ -622,10 +616,10 @@ module:hook("muc-occupant-pre-join/affiliation", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1);
+end, -5);
 
 -- check if user is banned
-module:hook("muc-occupant-pre-join/affiliation", function(event)
+module:hook("muc-occupant-pre-join", function(event)
 	local room, stanza = event.room, event.stanza;
 	local affiliation = room:get_affiliation(stanza.attr.from);
 	if affiliation == "outcast" then
@@ -634,7 +628,7 @@ module:hook("muc-occupant-pre-join/affiliation", function(event)
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
-end, -1);
+end, -10);
 
 module:hook("muc-occupant-joined", function(event)
 	local room, stanza = event.room, event.stanza;
