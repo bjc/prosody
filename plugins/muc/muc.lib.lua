@@ -907,7 +907,6 @@ function room_mt:send_form(origin, stanza)
 end
 
 function room_mt:get_form_layout(actor)
-	local whois = self:get_whois()
 	local form = dataform.new({
 		title = "Configuration for "..self.jid,
 		instructions = "Complete and submit this form to configure the room.",
@@ -915,73 +914,94 @@ function room_mt:get_form_layout(actor)
 			name = 'FORM_TYPE',
 			type = 'hidden',
 			value = 'http://jabber.org/protocol/muc#roomconfig'
-		},
-		{
-			name = 'muc#roomconfig_roomname',
-			type = 'text-single',
-			label = 'Name',
-			value = self:get_name() or "",
-		},
-		{
-			name = 'muc#roomconfig_roomdesc',
-			type = 'text-single',
-			label = 'Description',
-			value = self:get_description() or "",
-		},
-		{
-			name = 'muc#roomconfig_persistentroom',
-			type = 'boolean',
-			label = 'Make Room Persistent?',
-			value = self:get_persistent()
-		},
-		{
-			name = 'muc#roomconfig_publicroom',
-			type = 'boolean',
-			label = 'Make Room Publicly Searchable?',
-			value = not self:get_hidden()
-		},
-		{
-			name = 'muc#roomconfig_changesubject',
-			type = 'boolean',
-			label = 'Allow Occupants to Change Subject?',
-			value = self:get_changesubject()
-		},
-		{
-			name = 'muc#roomconfig_whois',
-			type = 'list-single',
-			label = 'Who May Discover Real JIDs?',
-			value = {
-				{ value = 'moderators', label = 'Moderators Only', default = whois == 'moderators' },
-				{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
-			}
-		},
-		{
-			name = 'muc#roomconfig_roomsecret',
-			type = 'text-private',
-			label = 'Password',
-			value = self:get_password() or "",
-		},
-		{
-			name = 'muc#roomconfig_moderatedroom',
-			type = 'boolean',
-			label = 'Make Room Moderated?',
-			value = self:get_moderated()
-		},
-		{
-			name = 'muc#roomconfig_membersonly',
-			type = 'boolean',
-			label = 'Make Room Members-Only?',
-			value = self:get_members_only()
-		},
-		{
-			name = 'muc#roomconfig_historylength',
-			type = 'text-single',
-			label = 'Maximum Number of History Messages Returned by Room',
-			value = tostring(self:get_historylength())
 		}
 	});
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_roomname',
+		type = 'text-single',
+		label = 'Name',
+		value = event.room:get_name() or "",
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_roomdesc',
+		type = 'text-single',
+		label = 'Description',
+		value = event.room:get_description() or "",
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_persistentroom',
+		type = 'boolean',
+		label = 'Make Room Persistent?',
+		value = event.room:get_persistent()
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_publicroom',
+		type = 'boolean',
+		label = 'Make Room Publicly Searchable?',
+		value = not event.room:get_hidden()
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_changesubject',
+		type = 'boolean',
+		label = 'Allow Occupants to Change Subject?',
+		value = event.room:get_changesubject()
+	});
+end);
+module:hook("muc-config-form", function(event)
+	local whois = event.room:get_whois();
+	table.insert(event.form, {
+		name = 'muc#roomconfig_whois',
+		type = 'list-single',
+		label = 'Who May Discover Real JIDs?',
+		value = {
+			{ value = 'moderators', label = 'Moderators Only', default = whois == 'moderators' },
+			{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
+		}
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_roomsecret',
+		type = 'text-private',
+		label = 'Password',
+		value = event.room:get_password() or "",
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_moderatedroom',
+		type = 'boolean',
+		label = 'Make Room Moderated?',
+		value = event.room:get_moderated()
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_membersonly',
+		type = 'boolean',
+		label = 'Make Room Members-Only?',
+		value = event.room:get_members_only()
+	});
+end);
+module:hook("muc-config-form", function(event)
+	table.insert(event.form, {
+		name = 'muc#roomconfig_historylength',
+		type = 'text-single',
+		label = 'Maximum Number of History Messages Returned by Room',
+		value = tostring(event.room:get_historylength())
+	});
+end);
 
 function room_mt:process_form(origin, stanza)
 	local query = stanza.tags[1];
