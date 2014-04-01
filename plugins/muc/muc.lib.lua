@@ -397,23 +397,46 @@ function room_mt:send_history(stanza)
 end
 
 function room_mt:get_disco_info(stanza)
-	local count = 0; for _ in self:each_occupant() do count = count + 1; end
-	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
-		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
-		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
-		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
-		:tag("feature", {var=self:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up()
-		:tag("feature", {var=self:get_members_only() and "muc_membersonly" or "muc_open"}):up()
-		:tag("feature", {var=self:get_persistent() and "muc_persistent" or "muc_temporary"}):up()
-		:tag("feature", {var=self:get_hidden() and "muc_hidden" or "muc_public"}):up()
-		:tag("feature", {var=self:get_whois() ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
-		:add_child(dataform.new({
-			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
-			{ name = "muc#roominfo_description", label = "Description", value = "" },
-			{ name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) }
-		}):form({["muc#roominfo_description"] = self:get_description()}, 'result'))
-	;
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
+	local form = dataform.new {
+		{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" };
+	};
+	module:fire_event("muc-disco#info", {room = self; reply = reply; form = form;});
+	reply:add_child(form:form(nil, "result"));
+	return reply;
 end
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("identity", {category="conference", type="text", name=event.room:get_name()}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_members_only() and "muc_membersonly" or "muc_open"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_persistent() and "muc_persistent" or "muc_temporary"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_hidden() and "muc_hidden" or "muc_public"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = event.room:get_whois() ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up();
+end);
+module:hook("muc-disco#info", function(event)
+	table.insert(event.form, { name = "muc#roominfo_description", label = "Description", value = event.room:get_description() });
+end);
+module:hook("muc-disco#info", function(event)
+	local count = 0; for _ in event.room:each_occupant() do count = count + 1; end
+	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
+end);
+
 function room_mt:get_disco_items(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
 	for room_jid in self:each_occupant() do
