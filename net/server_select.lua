@@ -397,6 +397,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.clientport = function( )
 		return clientport
 	end
+	handler.port = handler.clientport -- COMPAT server_event
 	local write = function( self, data )
 		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
