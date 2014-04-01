@@ -1004,59 +1004,82 @@ module:hook("muc-config-form", function(event)
 end);
 
 function room_mt:process_form(origin, stanza)
-	local query = stanza.tags[1];
-	local form = query:get_child("x", "jabber:x:data")
-	if not form then origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); return; end
-	if form.attr.type == "cancel" then origin.send(st.reply(stanza)); return; end
-	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form")); return; end
-
-	local fields = self:get_form_layout(stanza.attr.from):data(form);
-	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
-
-
-	local changed = {};
-
-	local function handle_option(name, field, allowed)
-		local new = fields[field];
-		if new == nil then return; end
-		if allowed and not allowed[new] then return; end
-		if new == self["get_"..name](self) then return; end
-		changed[name] = true;
-		self["set_"..name](self, new);
-	end
-
-	local event = { room = self, fields = fields, changed = changed, stanza = stanza, origin = origin, update_option = handle_option };
-	module:fire_event("muc-config-submitted", event);
-
-	handle_option("name", "muc#roomconfig_roomname");
-	handle_option("description", "muc#roomconfig_roomdesc");
-	handle_option("persistent", "muc#roomconfig_persistentroom");
-	handle_option("moderated", "muc#roomconfig_moderatedroom");
-	handle_option("members_only", "muc#roomconfig_membersonly");
-	handle_option("public", "muc#roomconfig_publicroom");
-	handle_option("changesubject", "muc#roomconfig_changesubject");
-	handle_option("historylength", "muc#roomconfig_historylength");
-	handle_option("whois", "muc#roomconfig_whois", valid_whois);
-	handle_option("password", "muc#roomconfig_roomsecret");
-
-	if self.save then self:save(true); end
-	if self:is_locked() then
-		self:unlock();
-	end
-	origin.send(st.reply(stanza));
-
-	if next(changed) then
-		local msg = st.message({type='groupchat', from=self.jid})
-			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
-				:tag('status', {code = '104'}):up()
-			:up();
-		if changed.whois then
-			local code = (self:get_whois() == 'moderators') and "173" or "172";
-			msg.tags[1]:tag('status', {code = code}):up();
+	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
+	if form.attr.type == "cancel" then
+		origin.send(st.reply(stanza));
+	elseif form.attr.type == "submit" then
+		local fields = self:get_form_layout(stanza.attr.from):data(form);
+		if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then
+			origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration"));
+			return true;
 		end
-		self:broadcast_message(msg, false)
+
+		local changed = {};
+
+		local function handle_option(name, field, allowed)
+			local new = fields[field];
+			if new == nil then return; end
+			if allowed and not allowed[new] then return; end
+			if new == self["get_"..name](self) then return; end
+			changed[name] = true;
+			self["set_"..name](self, new);
+		end
+
+		local event = { room = self, fields = fields, changed = changed, stanza = stanza, origin = origin, update_option = handle_option };
+		module:fire_event("muc-config-submitted", event);
+
+		if self.save then self:save(true); end
+		if self:is_locked() then
+			self:unlock();
+		end
+		origin.send(st.reply(stanza));
+
+		if next(changed) then
+			local msg = st.message({type='groupchat', from=self.jid})
+				:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+					:tag('status', {code = '104'}):up()
+				:up();
+			if changed.whois then
+				local code = (self:get_whois() == 'moderators') and "173" or "172";
+				msg.tags[1]:tag('status', {code = code}):up();
+			end
+			self:broadcast_message(msg, false)
+		end
+	else
+		origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form"));
 	end
+	return true;
 end
+module:hook("muc-config-submitted", function(event)
+	event.update_option("name", "muc#roomconfig_roomname");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("description", "muc#roomconfig_roomdesc");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("persistent", "muc#roomconfig_persistentroom");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("moderated", "muc#roomconfig_moderatedroom");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("members_only", "muc#roomconfig_membersonly");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("public", "muc#roomconfig_publicroom");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("changesubject", "muc#roomconfig_changesubject");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("historylength", "muc#roomconfig_historylength");
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("whois", "muc#roomconfig_whois", valid_whois);
+end);
+module:hook("muc-config-submitted", function(event)
+	event.update_option("password", "muc#roomconfig_roomsecret");
+end);
 
 -- Removes everyone from the room
 function room_mt:clear(x)
@@ -1188,8 +1211,10 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 		self:destroy(newjid, reason, password);
 		origin.send(st.reply(stanza));
 		return true;
+	elseif child.name == "x" and child.attr.xmlns == "jabber:x:data" then
+		return self:process_form(origin, stanza);
 	else
-		self:process_form(origin, stanza);
+		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		return true;
 	end
 end
