@@ -368,6 +368,7 @@ do
 	function interface_mt:ssl()
 		return self._usingssl
 	end
+	interface_mt.clientport = interface_mt.port -- COMPAT server_select
 
 	function interface_mt:type()
 		return self._type or "client"
