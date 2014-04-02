@@ -36,7 +36,8 @@ end
 local function copy_occupant(occupant)
 	local sessions = {};
 	for full_jid, presence_stanza in pairs(occupant.sessions) do
-		if presence_stanza.attr.type ~= "unavailable" then
+		-- Don't keep unavailable presences, as they'll accumulate; unless they're the primary session
+		if presence_stanza.attr.type ~= "unavailable" or full_jid == occupant.jid then
 			sessions[full_jid] = presence_stanza;
 		end
 	end
@@ -49,24 +50,35 @@ local function copy_occupant(occupant)
 	}, occupant_mt);
 end
 
+-- finds another session to be the primary (there might not be one)
+function occupant_mt:choose_new_primary()
+	for jid, pr in self:each_session() do
+		if pr.attr.type ~= "unavailable" then
+			return jid;
+		end
+	end
+	return nil;
+end
+
 function occupant_mt:set_session(real_jid, presence_stanza, replace_primary)
 	local pr = get_filtered_presence(presence_stanza);
 	pr.attr.from = self.nick;
 	pr.attr.to = real_jid;
 
 	self.sessions[real_jid] = pr;
-	if replace_primary or self.jid == nil then
+	if replace_primary then
 		self.jid = real_jid;
+	elseif self.jid == nil or (pr.attr.type == "unavailable" and self.jid == real_jid) then
+		-- Only leave an unavailable presence as primary when there are no other options
+		self.jid = self:choose_new_primary() or real_jid;
 	end
 end
 
 function occupant_mt:remove_session(real_jid)
 	-- Delete original session
-	local presence_stanza = self.sessions[real_jid];
 	self.sessions[real_jid] = nil;
 	if self.jid == real_jid then
-		-- find another session to be the primary (might be nil)
-		self.jid = next(self.sessions);
+		self.jid = self:choose_new_primary();
 	end
 end
 
