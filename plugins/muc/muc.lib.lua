@@ -87,18 +87,6 @@ function room_mt:get_default_role(affiliation)
 	end
 end
 
-function room_mt:lock()
-	module:fire_event("muc-room-locked", { room = self });
-	self.locked = true
-end
-function room_mt:unlock()
-	module:fire_event("muc-room-unlocked", { room = self });
-	self.locked = nil
-end
-function room_mt:is_locked()
-	return not not self.locked
-end
-
 --- Occupant functions
 function room_mt:new_occupant(bare_real_jid, nick)
 	local occupant = occupant_lib.new(bare_real_jid, nick);
@@ -583,13 +571,6 @@ function room_mt:get_whois()
 	return self._data.whois;
 end
 
-module:hook("muc-room-pre-create", function(event)
-	local room = event.room;
-	if room:is_locked() and not event.stanza:get_child("x", "http://jabber.org/protocol/muc") then
-		room:unlock(); -- Older groupchat protocol doesn't lock
-	end
-end, 10);
-
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
@@ -609,13 +590,6 @@ module:hook("muc-occupant-pre-join", function(event)
 		return true;
 	end
 end, -20);
-
-module:hook("muc-occupant-pre-join", function(event)
-	if event.room:is_locked() then -- Deny entry
-		event.origin.send(st.error_reply(event.stanza, "cancel", "item-not-found"));
-		return true;
-	end
-end, -30);
 
 -- registration required for entering members-only room
 module:hook("muc-occupant-pre-join", function(event)
@@ -1006,9 +980,6 @@ function room_mt:process_form(origin, stanza)
 		module:fire_event("muc-config-submitted", event);
 
 		if self.save then self:save(true); end
-		if self:is_locked() then
-			self:unlock();
-		end
 		origin.send(st.reply(stanza));
 
 		if next(event.status_codes) then
@@ -1543,7 +1514,6 @@ local _M = {}; -- module "muc"
 function _M.new_room(jid, config)
 	return setmetatable({
 		jid = jid;
-		locked = nil;
 		_jid_nick = {};
 		_occupants = {};
 		_data = {

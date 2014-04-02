@@ -23,8 +23,6 @@ if restrict_room_creation then
 		restrict_room_creation = nil;
 	end
 end
-local lock_rooms = module:get_option_boolean("muc_room_locking", false);
-local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
 
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
@@ -47,6 +45,7 @@ module:depends("disco");
 module:add_identity("conference", "text", muc_name);
 module:add_feature("http://jabber.org/protocol/muc");
 module:depends "muc_unique"
+module:require "muc/lock";
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
@@ -92,20 +91,6 @@ function create_room(jid)
 	rooms[jid] = room;
 	module:fire_event("muc-room-created", { room = room });
 	return room;
-end
-
-if lock_rooms then
-	module:hook("muc-room-created", function(event)
-		local room = event.room;
-		room:lock();
-		if lock_room_timeout and lock_room_timeout > 0 then
-			module:add_timer(lock_room_timeout, function ()
-				if room:is_locked() then
-					room:destroy(); -- Not unlocked in time
-				end
-			end);
-		end
-	end);
 end
 
 function forget_room(jid)
