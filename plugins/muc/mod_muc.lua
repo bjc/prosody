@@ -90,7 +90,13 @@ function create_room(jid)
 	local room = muc_new_room(jid);
 	room.save = room_save;
 	rooms[jid] = room;
-	if lock_rooms then
+	module:fire_event("muc-room-created", { room = room });
+	return room;
+end
+
+if lock_rooms then
+	module:hook("muc-room-created", function(event)
+		local room = event.room;
 		room:lock();
 		if lock_room_timeout and lock_room_timeout > 0 then
 			module:add_timer(lock_room_timeout, function ()
@@ -99,9 +105,7 @@ function create_room(jid)
 				end
 			end);
 		end
-	end
-	module:fire_event("muc-room-created", { room = room });
-	return room;
+	end);
 end
 
 function forget_room(jid)
