@@ -243,7 +243,7 @@ function new(session, stream_callbacks, stanza_size_limit)
 
 	return {
 		reset = function ()
-			parser = new_parser(handlers, ns_separator);
+			parser = new_parser(handlers, ns_separator, false);
 			parse = parser.parse;
 			n_outstanding_bytes = 0;
 			meta.reset();
