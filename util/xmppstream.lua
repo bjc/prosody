@@ -157,11 +157,11 @@ function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 	function xml_handlers:CharacterData(data)
 		if stanza then
 			if lxp_supports_bytecount then
-				stanza_size = stanza_size + #data --self:getcurrentbytecount();
+				stanza_size = stanza_size + self:getcurrentbytecount();
 			end
 			t_insert(chardata, data);
 		elseif lxp_supports_bytecount then
-			cb_handleprogress(#data--[[self:getcurrentbytecount()]]);
+			cb_handleprogress(self:getcurrentbytecount());
 		end
 	end
 	function xml_handlers:EndElement(tagname)
@@ -238,7 +238,7 @@ function new(session, stream_callbacks, stanza_size_limit)
 	end
 
 	local handlers, meta = new_sax_handlers(session, stream_callbacks, handle_progress);
-	local parser = new_parser(handlers, ns_separator);
+	local parser = new_parser(handlers, ns_separator, false);
 	local parse = parser.parse;
 
 	return {
