@@ -1014,18 +1014,16 @@ function room_mt:process_form(origin, stanza)
 			return true;
 		end
 
-		local changed = {};
-
-		local function handle_option(name, field, allowed)
+		local event = {room = self; origin = origin; stanza = stanza; fields = fields; status_codes = {};};
+		function event.update_option(name, field, allowed)
 			local new = fields[field];
 			if new == nil then return; end
 			if allowed and not allowed[new] then return; end
 			if new == self["get_"..name](self) then return; end
-			changed[name] = true;
+			event.status_codes["104"] = true;
 			self["set_"..name](self, new);
+			return true;
 		end
-
-		local event = { room = self, fields = fields, changed = changed, stanza = stanza, origin = origin, update_option = handle_option };
 		module:fire_event("muc-config-submitted", event);
 
 		if self.save then self:save(true); end
@@ -1034,15 +1032,13 @@ function room_mt:process_form(origin, stanza)
 		end
 		origin.send(st.reply(stanza));
 
-		if next(changed) then
+		if next(event.status_codes) then
 			local msg = st.message({type='groupchat', from=self.jid})
 				:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
-					:tag('status', {code = '104'}):up()
-				:up();
-			if changed.whois then
-				local code = (self:get_whois() == 'moderators') and "173" or "172";
-				msg.tags[1]:tag('status', {code = code}):up();
+			for code in pairs(event.status_codes) do
+				msg:tag("status", {code = code;}):up();
 			end
+			msg:up();
 			self:broadcast_message(msg, false)
 		end
 	else
@@ -1075,7 +1071,10 @@ module:hook("muc-config-submitted", function(event)
 	event.update_option("historylength", "muc#roomconfig_historylength");
 end);
 module:hook("muc-config-submitted", function(event)
-	event.update_option("whois", "muc#roomconfig_whois", valid_whois);
+	if event.update_option("whois", "muc#roomconfig_whois", valid_whois) then
+		local code = (event.room:get_whois() == 'moderators') and "173" or "172";
+		event.status_codes[code] = true;
+	end
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("password", "muc#roomconfig_roomsecret");
