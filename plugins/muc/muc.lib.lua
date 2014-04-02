@@ -400,9 +400,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
 end);
 module:hook("muc-disco#info", function(event)
@@ -479,16 +476,6 @@ function room_mt:set_name(name)
 end
 function room_mt:get_name()
 	return self._data.name or jid_split(self.jid);
-end
-function room_mt:set_password(password)
-	if password == "" or type(password) ~= "string" then password = nil; end
-	if self._data.password ~= password then
-		self._data.password = password;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_password()
-	return self._data.password;
 end
 function room_mt:set_moderated(moderated)
 	moderated = moderated and true or nil;
@@ -575,21 +562,6 @@ end
 module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
 end, -1);
-
-module:hook("muc-occupant-pre-join", function(event)
-	local room, stanza = event.room, event.stanza;
-	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
-	password = password and password:get_child_text("password", "http://jabber.org/protocol/muc");
-	if not password or password == "" then password = nil; end
-	if room:get_password() ~= password then
-		local from, to = stanza.attr.from, stanza.attr.to;
-		log("debug", "%s couldn't join due to invalid password: %s", from, to);
-		local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
-		reply.tags[1].attr.code = "401";
-		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
-	end
-end, -20);
 
 -- registration required for entering members-only room
 module:hook("muc-occupant-pre-join", function(event)
@@ -925,14 +897,6 @@ module:hook("muc-config-form", function(event)
 end);
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_roomsecret',
-		type = 'text-private',
-		label = 'Password',
-		value = event.room:get_password() or "",
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_moderatedroom',
 		type = 'boolean',
 		label = 'Make Room Moderated?',
@@ -1022,9 +986,6 @@ module:hook("muc-config-submitted", function(event)
 		local code = (event.room:get_whois() == 'moderators') and "173" or "172";
 		event.status_codes[code] = true;
 	end
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("password", "muc#roomconfig_roomsecret");
 end);
 
 -- Removes everyone from the room
@@ -1250,15 +1211,6 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	end
 	return true;
 end
-
--- Add password to outgoing invite
-module:hook("muc-invite", function(event)
-	local password = event.room:get_password();
-	if password then
-		local x = event.stanza:get_child("x", "http://jabber.org/protocol/muc#user");
-		x:tag("password"):text(password):up();
-	end
-end);
 
 -- COMPAT: Some older clients expect this
 module:hook("muc-invite", function(event)
@@ -1508,6 +1460,10 @@ end
 local description = module:require "muc/description";
 room_mt.get_description = description.get;
 room_mt.set_description = description.set;
+
+local password = module:require "muc/password";
+room_mt.get_password = password.get;
+room_mt.set_password = password.set;
 
 local _M = {}; -- module "muc"
 
