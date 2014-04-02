@@ -430,9 +430,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_whois() ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	table.insert(event.form, { name = "muc#roominfo_description", label = "Description", value = event.room:get_description() });
-end);
-module:hook("muc-disco#info", function(event)
 	local count = 0; for _ in event.room:each_occupant() do count = count + 1; end
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
 end);
@@ -494,16 +491,6 @@ function room_mt:set_name(name)
 end
 function room_mt:get_name()
 	return self._data.name or jid_split(self.jid);
-end
-function room_mt:set_description(description)
-	if description == "" or type(description) ~= "string" then description = nil; end
-	if self._data.description ~= description then
-		self._data.description = description;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_description()
-	return self._data.description;
 end
 function room_mt:set_password(password)
 	if password == "" or type(password) ~= "string" then password = nil; end
@@ -928,14 +915,6 @@ module:hook("muc-config-form", function(event)
 end);
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_roomdesc',
-		type = 'text-single',
-		label = 'Description',
-		value = event.room:get_description() or "",
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_persistentroom',
 		type = 'boolean',
 		label = 'Make Room Persistent?',
@@ -1048,9 +1027,6 @@ function room_mt:process_form(origin, stanza)
 end
 module:hook("muc-config-submitted", function(event)
 	event.update_option("name", "muc#roomconfig_roomname");
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("description", "muc#roomconfig_roomdesc");
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("persistent", "muc#roomconfig_persistentroom");
@@ -1557,6 +1533,10 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	self:publicise_occupant_status(occupant, x, actor, reason);
 	return true;
 end
+
+local description = module:require "muc/description";
+room_mt.get_description = description.get;
+room_mt.set_description = description.set;
 
 local _M = {}; -- module "muc"
 
