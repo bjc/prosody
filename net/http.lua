@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -37,7 +37,7 @@ function listener.onconnect(conn)
 	if req.query then
 		t_insert(request_line, 4, "?"..req.query);
 	end
-	
+
 	conn:write(t_concat(request_line));
 	local t = { [2] = ": ", [4] = "\r\n" };
 	for k, v in pairs(req.headers) do
@@ -45,7 +45,7 @@ function listener.onconnect(conn)
 		conn:write(t_concat(t));
 	end
 	conn:write("\r\n");
-	
+
 	if req.body then
 		conn:write(req.body);
 	end
@@ -81,12 +81,12 @@ local function request_reader(request, data, err)
 			end
 			destroy_request(request);
 		end
-		
+
 		if not data then
 			error_cb(err);
 			return;
 		end
-		
+
 		local function success_cb(r)
 			if request.callback then
 				request.callback(r.body, r.code, r, request);
@@ -105,18 +105,18 @@ end
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
 function request(u, ex, callback)
 	local req = url.parse(u);
-	
+
 	if not (req and req.host) then
 		callback(nil, 0, req);
 		return nil, "invalid-url";
 	end
-	
+
 	if not req.path then
 		req.path = "/";
 	end
-	
+
 	local method, headers, body;
-	
+
 	local host, port = req.host, req.port;
 	local host_header = host;
 	if (port == "80" and req.scheme == "http")
@@ -130,7 +130,7 @@ function request(u, ex, callback)
 		["Host"] = host_header;
 		["User-Agent"] = "Prosody XMPP Server";
 	};
-	
+
 	if req.userinfo then
 		headers["Authorization"] = "Basic "..b64(req.userinfo);
 	end
@@ -150,16 +150,16 @@ function request(u, ex, callback)
 			end
 		end
 	end
-	
+
 	-- Attach to request object
 	req.method, req.headers, req.body = method, headers, body;
-	
+
 	local using_https = req.scheme == "https";
 	if using_https and not ssl_available then
 		error("SSL not available, unable to contact https URL");
 	end
 	local port_number = port and tonumber(port) or (using_https and 443 or 80);
-	
+
 	-- Connect the socket, and wrap it with net.server
 	local conn = socket.tcp();
 	conn:settimeout(10);
@@ -168,7 +168,7 @@ function request(u, ex, callback)
 		callback(nil, 0, req);
 		return nil, err;
 	end
-	
+
 	local sslctx = false;
 	if using_https then
 		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
@@ -176,7 +176,7 @@ function request(u, ex, callback)
 
 	req.handler, req.conn = assert(server.wrapclient(conn, host, port_number, listener, "*a", sslctx));
 	req.write = function (...) return req.handler:write(...); end
-	
+
 	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
 	req.reader = request_reader;
 	req.state = "status";

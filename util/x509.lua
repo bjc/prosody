@@ -161,7 +161,9 @@ function verify_identity(host, service, cert)
 
 		if sans[oid_xmppaddr] then
 			had_supported_altnames = true
-			if compare_xmppaddr(host, sans[oid_xmppaddr]) then return true end
+			if service == "_xmpp-client" or service == "_xmpp-server" then
+				if compare_xmppaddr(host, sans[oid_xmppaddr]) then return true end
+			end
 		end
 
 		if sans[oid_dnssrv] then

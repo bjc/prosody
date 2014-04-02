@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -196,7 +196,7 @@ function core_route_stanza(origin, stanza)
 	-- Auto-detect origin if not specified
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
-	
+
 	if hosts[host] then
 		-- old stanza routing code removed
 		core_post_stanza(origin, stanza);
