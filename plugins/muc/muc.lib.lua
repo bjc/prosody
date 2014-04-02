@@ -394,9 +394,6 @@ function room_mt:get_disco_info(stanza)
 	return reply;
 end
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("identity", {category="conference", type="text", name=event.room:get_name()}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
 end);
 module:hook("muc-disco#info", function(event)
@@ -467,16 +464,6 @@ function room_mt:handle_kickable(origin, stanza)
 	return true;
 end
 
-function room_mt:set_name(name)
-	if name == "" or type(name) ~= "string" or name == (jid_split(self.jid)) then name = nil; end
-	if self._data.name ~= name then
-		self._data.name = name;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_name()
-	return self._data.name or jid_split(self.jid);
-end
 function room_mt:set_moderated(moderated)
 	moderated = moderated and true or nil;
 	if self._data.moderated ~= moderated then
@@ -853,14 +840,6 @@ function room_mt:get_form_layout(actor)
 end
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_roomname',
-		type = 'text-single',
-		label = 'Name',
-		value = event.room:get_name() or "",
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_persistentroom',
 		type = 'boolean',
 		label = 'Make Room Persistent?',
@@ -960,9 +939,6 @@ function room_mt:process_form(origin, stanza)
 	end
 	return true;
 end
-module:hook("muc-config-submitted", function(event)
-	event.update_option("name", "muc#roomconfig_roomname");
-end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("persistent", "muc#roomconfig_persistentroom");
 end);
@@ -1456,6 +1432,10 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	self:publicise_occupant_status(occupant, x, actor, reason);
 	return true;
 end
+
+local name = module:require "muc/name";
+room_mt.get_name = name.get;
+room_mt.set_name = name.set;
 
 local description = module:require "muc/description";
 room_mt.get_description = description.get;
