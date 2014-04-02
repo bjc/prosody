@@ -1032,7 +1032,7 @@ function room_mt:can_set_role(actor_jid, occupant_jid, role)
 	if actor_jid == true then return true; end
 
 	local actor = self._occupants[self._jid_nick[actor_jid]];
-	if actor.role == "moderator" then
+	if actor and actor.role == "moderator" then
 		if occupant.affiliation ~= "owner" and occupant.affiliation ~= "admin" then
 			if actor.affiliation == "owner" or actor.affiliation == "admin" then
 				return true;
