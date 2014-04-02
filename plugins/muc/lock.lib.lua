@@ -45,7 +45,7 @@ end, 10);
 
 -- Don't let users into room while it is locked
 module:hook("muc-occupant-pre-join", function(event)
-	if is_locked(event.room) then -- Deny entry
+	if not event.is_new_room and is_locked(event.room) then -- Deny entry
 		event.origin.send(st.error_reply(event.stanza, "cancel", "item-not-found"));
 		return true;
 	end
