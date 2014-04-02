@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -39,22 +39,22 @@ end
 function handle_announcement(event)
 	local origin, stanza = event.origin, event.stanza;
 	local node, host, resource = jid.split(stanza.attr.to);
-	
+
 	if resource ~= "announce/online" then
 		return; -- Not an announcement
 	end
-	
+
 	if not is_admin(stanza.attr.from) then
 		-- Not an admin? Not allowed!
 		module:log("warn", "Non-admin '%s' tried to send server announcement", stanza.attr.from);
 		return;
 	end
-	
+
 	module:log("info", "Sending server announcement to all online users");
 	local message = st.clone(stanza);
 	message.attr.type = "headline";
 	message.attr.from = host;
-	
+
 	local c = send_to_online(message, host);
 	module:log("info", "Announcement sent to %d online users", c);
 	return true;
@@ -83,9 +83,9 @@ function announce_handler(self, data, state)
 		module:log("info", "Sending server announcement to all online users");
 		local message = st.message({type = "headline"}, fields.announcement):up()
 			:tag("subject"):text(fields.subject or "Announcement");
-		
+
 		local count = send_to_online(message, data.to);
-		
+
 		module:log("info", "Announcement sent to %d online users", count);
 		return { status = "completed", info = ("Announcement sent to %d online users"):format(count) };
 	else

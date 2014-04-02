@@ -89,7 +89,7 @@ function activate(service_name)
 	if not service_info then
 		return nil, "Unknown service: "..service_name;
 	end
-	
+
 	local listener = service_info.listener;
 
 	local config_prefix = (service_info.config_prefix or service_name).."_";
@@ -105,7 +105,7 @@ function activate(service_name)
 		or listener.default_interface -- COMPAT w/pre0.9
 		or default_interfaces
 	bind_interfaces = set.new(type(bind_interfaces)~="table" and {bind_interfaces} or bind_interfaces);
-	
+
 	local bind_ports = config.get("*", config_prefix.."ports")
 		or service_info.default_ports
 		or {service_info.default_port
@@ -115,7 +115,7 @@ function activate(service_name)
 
 	local mode, ssl = listener.default_mode or default_mode;
 	local hooked_ports = {};
-	
+
 	for interface in bind_interfaces do
 		for port in bind_ports do
 			local port_number = tonumber(port);
@@ -190,7 +190,7 @@ function register_service(service_name, service_info)
 			log("error", "Failed to activate service '%s': %s", service_name, err or "unknown error");
 		end
 	end
-	
+
 	fire_event("service-added", { name = service_name, service = service_info });
 	return true;
 end

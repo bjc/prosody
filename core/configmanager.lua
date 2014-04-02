@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -73,7 +73,7 @@ do
 			-- Some normalization
 			parent_path = parent_path:gsub("%"..path_sep.."+$", "");
 			path = path:gsub("^%.%"..path_sep.."+", "");
-			
+
 			local is_relative;
 			if path_sep == "/" and path:sub(1,1) ~= "/" then
 				is_relative = true;
@@ -85,7 +85,7 @@ do
 			end
 		end
 		return path;
-	end	
+	end
 end
 
 -- Helper function to convert a glob to a Lua pattern
@@ -167,7 +167,7 @@ do
 					set(config, env.__currenthost or "*", k, v);
 				end
 		});
-		
+
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
 			if rawget(config, name) and rawget(config[name], "component_module") then
@@ -185,7 +185,7 @@ do
 			end;
 		end
 		env.Host, env.host = env.VirtualHost, env.VirtualHost;
-		
+
 		function env.Component(name)
 			if rawget(config, name) and rawget(config[name], "defined") and not rawget(config[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
@@ -201,7 +201,7 @@ do
 					set(config, name or "*", option_name, option_value);
 				end
 			end
-	
+
 			return function (module)
 					if type(module) == "string" then
 						set(config, name, "component_module", module);
@@ -211,7 +211,7 @@ do
 				end
 		end
 		env.component = env.Component;
-		
+
 		function env.Include(file)
 			if file:match("[*?]") then
 				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
@@ -240,26 +240,26 @@ do
 			end
 		end
 		env.include = env.Include;
-		
+
 		function env.RunScript(file)
 			return dofile(resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file));
 		end
-		
+
 		local chunk, err = envload(data, "@"..config_file, env);
-		
+
 		if not chunk then
 			return nil, err;
 		end
-		
+
 		local ok, err = pcall(chunk);
-		
+
 		if not ok then
 			return nil, err;
 		end
-		
+
 		return true;
 	end
-	
+
 end
 
 return _M;

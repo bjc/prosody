@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -99,7 +99,7 @@ function stanza_mt:get_child(name, xmlns)
 		if (not name or child.name == name)
 			and ((not xmlns and self.attr.xmlns == child.attr.xmlns)
 				or child.attr.xmlns == xmlns) then
-			
+
 			return child;
 		end
 	end
@@ -152,7 +152,7 @@ end
 function stanza_mt:maptags(callback)
 	local tags, curr_tag = self.tags, 1;
 	local n_children, n_tags = #self, #tags;
-	
+
 	local i = 1;
 	while curr_tag <= n_tags and n_tags > 0 do
 		if self[i] == tags[curr_tag] then
@@ -258,13 +258,13 @@ end
 
 function stanza_mt.get_error(stanza)
 	local type, condition, text;
-	
+
 	local error_tag = stanza:get_child("error");
 	if not error_tag then
 		return nil, nil, nil;
 	end
 	type = error_tag.attr.type;
-	
+
 	for _, child in ipairs(error_tag.tags) do
 		if child.attr.xmlns == xmlns_stanzas then
 			if not text and child.name == "text" then
@@ -333,7 +333,7 @@ function deserialize(stanza)
 			stanza.tags = tags;
 		end
 	end
-	
+
 	return stanza;
 end
 
@@ -390,7 +390,7 @@ if do_pretty_printing then
 	local style_attrv = getstyle("red");
 	local style_tagname = getstyle("red");
 	local style_punc = getstyle("magenta");
-	
+
 	local attr_format = " "..getstring(style_attrk, "%s")..getstring(style_punc, "=")..getstring(style_attrv, "'%s'");
 	local top_tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">");
 	--local tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">").."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
@@ -411,7 +411,7 @@ if do_pretty_printing then
 		end
 		return s_format(tag_format, t.name, attr_string, children_text, t.name);
 	end
-	
+
 	function stanza_mt.pretty_top_tag(t)
 		local attr_string = "";
 		if t.attr then

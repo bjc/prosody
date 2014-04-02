@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -29,20 +29,47 @@ local s2s_feature = st.stanza("starttls", starttls_attr);
 if c2s_require_encryption then c2s_feature:tag("required"):up(); end
 if s2s_require_encryption then s2s_feature:tag("required"):up(); end
 
-local global_ssl_ctx = prosody.global_ssl_ctx;
-
 local hosts = prosody.hosts;
 local host = hosts[module.host];
 
-local function can_do_tls(session)
-	if session.type == "c2s_unauthed" then
-		return session.conn.starttls and host.ssl_ctx_in;
-	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
-		return session.conn.starttls and host.ssl_ctx_in;
-	elseif session.direction == "outgoing" and allow_s2s_tls then
-		return session.conn.starttls and host.ssl_ctx;
+local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
+do
+	local function get_ssl_cfg(typ)
+		local cfg_key = (typ and typ.."_" or "").."ssl";
+		local ssl_config = config.rawget(module.host, cfg_key);
+		if not ssl_config then
+			local base_host = module.host:match("%.(.*)");
+			ssl_config = config.get(base_host, cfg_key);
+		end
+		return ssl_config or typ and get_ssl_cfg();
 	end
-	return false;
+
+	local ssl_config, err = get_ssl_cfg("c2s");
+	ssl_ctx_c2s, err = create_context(host.host, "server", ssl_config); -- for incoming client connections
+	if err then module:log("error", "Error creating context for c2s: %s", err); end
+
+	ssl_config = get_ssl_cfg("s2s");
+	ssl_ctx_s2sin, err = create_context(host.host, "server", ssl_config); -- for incoming server connections
+	ssl_ctx_s2sout = create_context(host.host, "client", ssl_config); -- for outgoing server connections
+	if err then module:log("error", "Error creating context for s2s: %s", err); end -- Both would have the same issue
+end
+
+local function can_do_tls(session)
+	if not session.conn.starttls then
+		return false;
+	elseif session.ssl_ctx then
+		return true;
+	end
+	if session.type == "c2s_unauthed" then
+		session.ssl_ctx = ssl_ctx_c2s;
+	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
+		session.ssl_ctx = ssl_ctx_s2sin;
+	elseif session.direction == "outgoing" and allow_s2s_tls then
+		session.ssl_ctx = ssl_ctx_s2sout;
+	else
+		return false;
+	end
+	return session.ssl_ctx;
 end
 
 -- Hook <starttls/>
@@ -51,9 +78,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	if can_do_tls(origin) then
 		(origin.sends2s or origin.send)(starttls_proceed);
 		origin:reset_stream();
-		local host = origin.to_host or origin.host;
-		local ssl_ctx = host and hosts[host].ssl_ctx_in or global_ssl_ctx;
-		origin.conn:starttls(ssl_ctx);
+		origin.conn:starttls(origin.ssl_ctx);
 		origin.log("debug", "TLS negotiation started for %s...", origin.type);
 		origin.secure = false;
 	else
@@ -91,30 +116,7 @@ end, 500);
 module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
 	module:log("debug", "Proceeding with TLS on s2sout...");
 	session:reset_stream();
-	local ssl_ctx = session.from_host and hosts[session.from_host].ssl_ctx or global_ssl_ctx;
-	session.conn:starttls(ssl_ctx);
+	session.conn:starttls(session.ssl_ctx);
 	session.secure = false;
 	return true;
 end);
-
-local function assert_log(ret, err)
-	if not ret then
-		module:log("error", "Unable to initialize TLS: %s", err);
-	end
-	return ret;
-end
-
-function module.load()
-	local ssl_config = config.rawget(module.host, "ssl");
-	if not ssl_config then
-		local base_host = module.host:match("%.(.*)");
-		ssl_config = config.get(base_host, "ssl");
-	end
-	host.ssl_ctx = assert_log(create_context(host.host, "client", ssl_config)); -- for outgoing connections
-	host.ssl_ctx_in = assert_log(create_context(host.host, "server", ssl_config)); -- for incoming connections
-end
-
-function module.unload()
-	host.ssl_ctx = nil;
-	host.ssl_ctx_in = nil;
-end

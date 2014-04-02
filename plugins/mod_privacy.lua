@@ -2,7 +2,7 @@
 -- Copyright (C) 2009-2010 Matthew Wild
 -- Copyright (C) 2009-2010 Waqas Hussain
 -- Copyright (C) 2009 Thilo Cestonaro
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -103,7 +103,7 @@ end
 
 function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 	local bare_jid = origin.username.."@"..origin.host;
-	
+
 	if privacy_lists.lists == nil then
 		privacy_lists.lists = {};
 	end
@@ -119,14 +119,14 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 		if to_number(item.attr.order) == nil or to_number(item.attr.order) < 0 or orderCheck[item.attr.order] ~= nil then
 			return {"modify", "bad-request", "Order attribute not valid."};
 		end
-		
+
 		if item.attr.type ~= nil and item.attr.type ~= "jid" and item.attr.type ~= "subscription" and item.attr.type ~= "group" then
 			return {"modify", "bad-request", "Type attribute not valid."};
 		end
-		
+
 		local tmp = {};
 		orderCheck[item.attr.order] = true;
-		
+
 		tmp["type"] = item.attr.type;
 		tmp["value"] = item.attr.value;
 		tmp["action"] = item.attr.action;
@@ -135,13 +135,13 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 		tmp["presence-out"] = false;
 		tmp["message"] = false;
 		tmp["iq"] = false;
-		
+
 		if #item.tags > 0 then
 			for _,tag in ipairs(item.tags) do
 				tmp[tag.name] = true;
 			end
 		end
-		
+
 		if tmp.type == "subscription" then
 			if	tmp.value ~= "both" and
 				tmp.value ~= "to" and
@@ -150,13 +150,13 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 				return {"cancel", "bad-request", "Subscription value must be both, to, from or none."};
 			end
 		end
-		
+
 		if tmp.action ~= "deny" and tmp.action ~= "allow" then
 			return {"cancel", "bad-request", "Action must be either deny or allow."};
 		end
 		list.items[#list.items + 1] = tmp;
 	end
-	
+
 	table.sort(list, function(a, b) return a.order < b.order; end);
 
 	origin.send(st.reply(stanza));
@@ -207,14 +207,14 @@ function getList(privacy_lists, origin, stanza, name)
 			return {"cancel", "item-not-found", "Unknown list specified."};
 		end
 	end
-	
+
 	origin.send(reply);
 	return true;
 end
 
 module:hook("iq/bare/jabber:iq:privacy:query", function(data)
 	local origin, stanza = data.origin, data.stanza;
-	
+
 	if stanza.attr.to == nil then -- only service requests to own bare JID
 		local query = stanza.tags[1]; -- the query element
 		local valid = false;
@@ -285,12 +285,12 @@ function checkIfNeedToBeBlocked(e, session)
 	local bare_jid = session.username.."@"..session.host;
 	local to = stanza.attr.to or bare_jid;
 	local from = stanza.attr.from;
-	
+
 	local is_to_user = bare_jid == jid_bare(to);
 	local is_from_user = bare_jid == jid_bare(from);
-	
+
 	--module:log("debug", "stanza: %s, to: %s, from: %s", tostring(stanza.name), tostring(to), tostring(from));
-	
+
 	if privacy_lists.lists == nil or
 		not (session.activePrivacyList or privacy_lists.default)
 	then
@@ -300,7 +300,7 @@ function checkIfNeedToBeBlocked(e, session)
 		--module:log("debug", "Not blocking communications between user's resources");
 		return; -- from one of a user's resource to another => HANDS OFF!
 	end
-	
+
 	local listname = session.activePrivacyList;
 	if listname == nil then
 		listname = privacy_lists.default; -- no active list selected, use default list

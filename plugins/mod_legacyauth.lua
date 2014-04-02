@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -43,7 +43,7 @@ module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 		session.send(st.error_reply(stanza, "modify", "not-acceptable", "Encryption (SSL or TLS) is required to connect to this server"));
 		return true;
 	end
-	
+
 	local username = stanza.tags[1]:child_with_name("username");
 	local password = stanza.tags[1]:child_with_name("password");
 	local resource = stanza.tags[1]:child_with_name("resource");
