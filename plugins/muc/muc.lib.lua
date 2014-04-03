@@ -39,16 +39,30 @@ function room_mt:get_occupant_jid(real_jid)
 end
 
 function room_mt:get_default_role(affiliation)
-	if affiliation == "owner" or affiliation == "admin" then
-		return "moderator";
-	elseif affiliation == "member" then
-		return "participant";
-	elseif not affiliation then
-		if not self:get_members_only() then
-			return self:get_moderated() and "visitor" or "participant";
-		end
-	end
+	local role = module:fire_event("muc-get-default-role", {
+		room = self;
+		affiliation = affiliation;
+		affiliation_rank = valid_affiliations[affiliation or "none"];
+	});
+	return role, valid_roles[role or "none"];
 end
+module:hook("muc-get-default-role", function(event)
+	if event.affiliation_rank >= valid_affiliations.admin then
+		return "moderator";
+	elseif event.affiliation_rank >= valid_affiliations.member then
+		return "participant";
+	end
+end);
+module:hook("muc-get-default-role", function(event)
+	if not event.affiliation and event.room:get_members_only() then
+		return false;
+	end
+end);
+module:hook("muc-get-default-role", function(event)
+	if not event.affiliation then
+		return event.room:get_moderated() and "visitor" or "participant";
+	end
+end, -1);
 
 --- Occupant functions
 function room_mt:new_occupant(bare_real_jid, nick)
