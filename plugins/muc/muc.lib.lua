@@ -217,41 +217,53 @@ function room_mt:broadcast(stanza, cond_func)
 	end
 end
 
--- Broadcasts an occupant's presence to the whole room
--- Takes (and modifies) the x element that goes into the stanzas
-function room_mt:publicise_occupant_status(occupant, full_x, actor, reason)
-	local anon_x;
-	local has_anonymous = self:get_whois() ~= "anyone";
-	if has_anonymous then
-		anon_x = st.clone(full_x);
-		self:build_item_list(occupant, anon_x, true, nil, actor, reason);
+local function can_see_real_jids(whois, occupant)
+	if whois == "anyone" then
+		return true;
+	elseif whois == "moderators" then
+		return valid_roles[occupant.role or "none"] >= valid_roles.moderator;
 	end
-	self:build_item_list(occupant,full_x, false, nil, actor, reason);
+end
 
-	-- General populance
-	local full_p
+local function get_base_presence(occupant)
 	if occupant.role ~= nil then
 		-- Try to use main jid's presence
 		local pr = occupant:get_presence();
 		if pr ~= nil then
-			full_p = st.clone(pr);
+			return st.clone(pr);
 		end
 	end
-	if full_p == nil then
-		full_p = st.presence{from=occupant.nick; type="unavailable"};
-	end
-	local anon_p;
-	if has_anonymous then
-		anon_p = st.clone(full_p);
-		anon_p:add_child(anon_x);
-	end
-	full_p:add_child(full_x);
+	return st.presence {from = occupant.nick; type = "unavailable";};
+end
 
+-- Broadcasts an occupant's presence to the whole room
+-- Takes the x element that goes into the stanzas
+function room_mt:publicise_occupant_status(occupant, base_x, actor, reason)
+	-- Build real jid and (optionally) occupant jid template presences
+	local function get_presence(is_anonymous)
+		local x = st.clone(base_x);
+		self:build_item_list(occupant, x, is_anonymous, actor, reason);
+		return get_base_presence(occupant):add_child(x), x;
+	end
+	local full_p, full_x = get_presence(false);
+	local anon_p, anon_x;
+	local function get_anon_p()
+		if anon_p == nil then
+			anon_p, anon_x = get_presence(true);
+		end
+		return anon_p, anon_x;
+	end
+
+	local whois = self:get_whois();
+
+	-- General populance
 	for nick, n_occupant in self:each_occupant() do
-		if nick ~= occupant.nick or n_occupant.role == nil then
-			local pr = full_p;
-			if has_anonymous and n_occupant.role ~= "moderator" and occupant.bare_jid ~= n_occupant.bare_jid then
-				pr = anon_p;
+		if nick ~= occupant.nick then
+			local pr;
+			if can_see_real_jids(whois, occupant) or occupant.bare_jid == n_occupant.bare_jid then
+				pr = full_p;
+			else
+				pr = get_anon_p();
 			end
 			self:route_to_occupant(n_occupant, pr);
 		end
@@ -279,11 +291,12 @@ end
 function room_mt:send_occupant_list(to, filter)
 	local to_bare = jid_bare(to);
 	local is_anonymous = true;
-	if self:get_whois() ~= "anyone" then
+	local whois = self:get_whois();
+	if whois ~= "anyone" then
 		local affiliation = self:get_affiliation(to);
 		if affiliation ~= "admin" and affiliation ~= "owner" then
 			local occupant = self:get_occupant_by_real_jid(to);
-			if not occupant or occupant.role ~= "moderator" then
+			if not occupant or can_see_real_jids(whois, occupant) then
 				is_anonymous = false;
 			end
 		end
