@@ -163,10 +163,11 @@ local function add_item(x, affiliation, role, jid, nick, actor, reason)
 	x:up();
 	return x
 end
+
 -- actor is (real) jid
 function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
-	local affiliation = self:get_affiliation(occupant.bare_jid);
-	local role = occupant.role;
+	local affiliation = self:get_affiliation(occupant.bare_jid) or "none";
+	local role = occupant.role or "none";
 	local actor_attr;
 	if actor then
 		actor_attr = {nick = select(3,jid_split(self:get_occupant_jid(actor)))};
