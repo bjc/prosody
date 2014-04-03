@@ -11,13 +11,8 @@ local select = select;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local setmetatable = setmetatable;
-local t_insert, t_remove = table.insert, table.remove;
-
-local gettime = os.time;
-local datetime = require "util.datetime";
 
 local dataform = require "util.dataforms";
-
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
@@ -28,7 +23,6 @@ local md5 = require "util.hashes".md5;
 
 local occupant_lib = module:require "muc/occupant"
 
-local default_history_length, max_history_length = 20, math.huge;
 
 local is_kickable_error do
 	local kickable_error_conditions = {
@@ -185,28 +179,10 @@ function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
 	return x
 end
 
-function room_mt:broadcast_message(stanza, historic)
-	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza, historic = historic});
+function room_mt:broadcast_message(stanza)
+	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza});
 	self:broadcast(stanza);
 end
-
--- add to history
-module:hook("muc-broadcast-message", function(event)
-	if event.historic then
-		local room = event.room
-		local history = room._data['history'];
-		if not history then history = {}; room._data['history'] = history; end
-		local stanza = st.clone(event.stanza);
-		stanza.attr.to = "";
-		local ts = gettime();
-		local stamp = datetime.datetime(ts);
-		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
-		stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		local entry = { stanza = stanza, timestamp = ts };
-		t_insert(history, entry);
-		while #history > room:get_historylength() do t_remove(history, 1) end
-	end
-end);
 
 -- Broadcast a stanza to all occupants in the room.
 -- optionally checks conditional called with (nick, occupant)
@@ -312,90 +288,6 @@ function room_mt:send_occupant_list(to, filter)
 	end
 end
 
-local function parse_history(stanza)
-	local x_tag = stanza:get_child("x", "http://jabber.org/protocol/muc");
-	local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
-	if not history_tag then
-		return nil, 20, nil
-	end
-
-	local maxchars = tonumber(history_tag.attr.maxchars);
-
-	local maxstanzas = tonumber(history_tag.attr.maxstanzas);
-
-	-- messages received since the UTC datetime specified
-	local since = history_tag.attr.since;
-	if since then
-		since = datetime.parse(since);
-	end
-
-	-- messages received in the last "X" seconds.
-	local seconds = tonumber(history_tag.attr.seconds);
-	if seconds then
-		seconds = gettime() - seconds
-		if since then
-			since = math.max(since, seconds);
-		else
-			since = seconds;
-		end
-	end
-
-	return maxchars, maxstanzas, since
-end
-
-module:hook("muc-get-history", function(event)
-	local room = event.room
-	local history = room._data['history']; -- send discussion history
-	if not history then return nil end
-	local history_len = #history
-
-	local to = event.to
-	local maxchars = event.maxchars
-	local maxstanzas = event.maxstanzas or history_len
-	local since = event.since
-	local n = 0;
-	local charcount = 0;
-	for i=history_len,1,-1 do
-		local entry = history[i];
-		if maxchars then
-			if not entry.chars then
-				entry.stanza.attr.to = "";
-				entry.chars = #tostring(entry.stanza);
-			end
-			charcount = charcount + entry.chars + #to;
-			if charcount > maxchars then break; end
-		end
-		if since and since > entry.timestamp then break; end
-		if n + 1 > maxstanzas then break; end
-		n = n + 1;
-	end
-
-	local i = history_len-n+1
-	function event:next_stanza()
-		if i > history_len then return nil end
-		local entry = history[i]
-		local msg = entry.stanza
-		msg.attr.to = to;
-		i = i + 1
-		return msg
-	end
-	return true;
-end);
-
-function room_mt:send_history(stanza)
-	local maxchars, maxstanzas, since = parse_history(stanza)
-	local event = {
-		room = self;
-		to = stanza.attr.from; -- `to` is required to calculate the character count for `maxchars`
-		maxchars = maxchars, maxstanzas = maxstanzas, since = since;
-		next_stanza = function() end; -- events should define this iterator
-	}
-	module:fire_event("muc-get-history", event)
-	for msg in event.next_stanza , event do
-		self:route_stanza(msg);
-	end
-end
-
 function room_mt:get_disco_info(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
 	local form = dataform.new {
@@ -451,7 +343,7 @@ function room_mt:set_subject(current_nick, subject)
 	self._data['subject_from'] = current_nick;
 	if self.save then self:save(); end
 	local msg = create_subject_message(current_nick, subject);
-	self:broadcast_message(msg, false);
+	self:broadcast_message(msg);
 	return true;
 end
 
@@ -529,16 +421,6 @@ end
 function room_mt:get_changesubject()
 	return self._data.changesubject;
 end
-function room_mt:get_historylength()
-	return self._data.history_length or default_history_length;
-end
-function room_mt:set_historylength(length)
-	length = math.min(tonumber(length) or default_history_length, max_history_length or math.huge);
-	if length == default_history_length then
-		length = nil;
-	end
-	self._data.history_length = length;
-end
 
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
@@ -569,16 +451,19 @@ module:hook("muc-occupant-pre-join", function(event)
 	end
 end, -10);
 
+-- Send occupant list to newly joined user
 module:hook("muc-occupant-joined", function(event)
-	local room, stanza = event.room, event.stanza;
-	local real_jid = stanza.attr.from;
-	room:send_occupant_list(real_jid, function(nick, occupant)
+	local real_jid = event.stanza.attr.from;
+	event.room:send_occupant_list(real_jid, function(nick, occupant)
 		-- Don't include self
 		return occupant:get_presence(real_jid) == nil;
 	end);
-	room:send_history(stanza);
-	room:send_subject(real_jid);
-end, -1);
+end, 80);
+
+-- Send subject to joining user
+module:hook("muc-occupant-joined", function(event)
+	event.room:send_subject(event.stanza.attr.from);
+end, 20);
 
 function room_mt:handle_presence_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
@@ -871,14 +756,6 @@ module:hook("muc-config-form", function(event)
 		value = event.room:get_members_only()
 	});
 end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
-		name = 'muc#roomconfig_historylength',
-		type = 'text-single',
-		label = 'Maximum Number of History Messages Returned by Room',
-		value = tostring(event.room:get_historylength())
-	});
-end);
 
 function room_mt:process_form(origin, stanza)
 	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
@@ -913,7 +790,7 @@ function room_mt:process_form(origin, stanza)
 				msg:tag("status", {code = code;}):up();
 			end
 			msg:up();
-			self:broadcast_message(msg, false)
+			self:broadcast_message(msg);
 		end
 	else
 		origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form"));
@@ -934,9 +811,6 @@ module:hook("muc-config-submitted", function(event)
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("changesubject", "muc#roomconfig_changesubject");
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("historylength", "muc#roomconfig_historylength");
 end);
 
 -- Removes everyone from the room
@@ -1099,7 +973,7 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 				origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			end
 		else
-			self:broadcast_message(stanza, self:get_historylength() > 0 and stanza:get_child("body"));
+			self:broadcast_message(stanza);
 		end
 		stanza.attr.from = from;
 		return true;
@@ -1412,7 +1286,14 @@ local whois = module:require "muc/whois";
 room_mt.get_whois = whois.get;
 room_mt.set_whois = whois.set;
 
+local history = module:require "muc/history";
+room_mt.send_history = history.send;
+room_mt.get_historylength = history.get_length;
+room_mt.set_historylength = history.set_length;
+
 local _M = {}; -- module "muc"
+
+_M.set_max_history_length = history.set_max_length;
 
 function _M.new_room(jid, config)
 	return setmetatable({
@@ -1420,15 +1301,9 @@ function _M.new_room(jid, config)
 		_jid_nick = {};
 		_occupants = {};
 		_data = {
-		    history_length = math.min((config and config.history_length)
-		    	or default_history_length, max_history_length);
 		};
 		_affiliations = {};
 	}, room_mt);
-end
-
-function _M.set_max_history_length(_max_history_length)
-	max_history_length = _max_history_length or math.huge;
 end
 
 _M.room_mt = room_mt;
