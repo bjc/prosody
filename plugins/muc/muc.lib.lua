@@ -622,13 +622,14 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	local from, to = stanza.attr.from, stanza.attr.to;
 	local type = stanza.attr.type;
 	local id = stanza.attr.id;
-	local current_nick = self:get_occupant_jid(from);
 	local occupant = self:get_occupant_by_nick(to);
 	if (type == "error" or type == "result") then
 		do -- deconstruct_stanza_id
-			if not current_nick or not occupant then return nil; end
+			if not occupant then return nil; end
 			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
 			if not(from == from_jid or from == jid_bare(from_jid)) then return nil; end
+			local from_occupant_jid = self:get_occupant_jid(from_jid);
+			if from_occupant_jid == nil then return nil; end
 			local session_jid
 			for to_jid in occupant:each_session() do
 				if md5(to_jid) == to_jid_hash then
@@ -637,13 +638,14 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 				end
 			end
 			if session_jid == nil then return nil; end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = current_nick, session_jid, id
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = from_jid, session_jid, id;
 		end
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
 		self:route_stanza(stanza);
 		stanza.attr.from, stanza.attr.to, stanza.attr.id = from, to, id;
 		return true;
 	else -- Type is "get" or "set"
+		local current_nick = self:get_occupant_jid(from);
 		if not current_nick then
 			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
 			return true;
