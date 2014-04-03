@@ -113,7 +113,6 @@ function room_mt:route_to_occupant(occupant, stanza)
 	stanza.attr.to = to;
 end
 
--- Adds an item to an "x" element.
 -- actor is the attribute table
 local function add_item(x, affiliation, role, jid, nick, actor, reason)
 	x:tag("item", {affiliation = affiliation; role = role; jid = jid; nick = nick;})
@@ -874,9 +873,17 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		end
 	elseif _rol and not _aff then
 		local role = self:get_role(self:get_occupant_jid(actor)) or self:get_default_role(affiliation);
-		if role == "moderator" then
+		if valid_roles[role or "none"] >= valid_roles.moderator then
 			if _rol == "none" then _rol = nil; end
-			self:send_occupant_list(actor, function(occupant_jid, occupant) return occupant.role == _rol end);
+			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
+			-- TODO: whois check here? (though fully anonymous rooms are not supported)
+			for occupant_jid, occupant in self:each_occupant() do
+				if occupant.role == _rol then
+					local nick = select(3,jid_split(occupant_jid));
+					self:build_item_list(occupant, reply, false, nick);
+				end
+			end
+			origin.send(reply:up());
 			return true;
 		else
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
