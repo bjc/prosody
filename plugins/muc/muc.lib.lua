@@ -238,11 +238,11 @@ end
 
 -- Broadcasts an occupant's presence to the whole room
 -- Takes the x element that goes into the stanzas
-function room_mt:publicise_occupant_status(occupant, base_x, actor, reason)
+function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason)
 	-- Build real jid and (optionally) occupant jid template presences
 	local function get_presence(is_anonymous)
 		local x = st.clone(base_x);
-		self:build_item_list(occupant, x, is_anonymous, actor, reason);
+		self:build_item_list(occupant, x, is_anonymous, nick, actor, reason);
 		return get_base_presence(occupant):add_child(x), x;
 	end
 	local full_p, full_x = get_presence(false);
@@ -277,13 +277,11 @@ function room_mt:publicise_occupant_status(occupant, base_x, actor, reason)
 	else
 		-- use their own presences as templates
 		for full_jid, pr in occupant:each_session() do
-			if pr.attr.type ~= "unavailable" then
-				pr = st.clone(pr);
-				pr.attr.to = full_jid;
-				-- You can always see your own full jids
-				pr:add_child(full_x);
-				self:route_stanza(pr);
-			end
+			pr = st.clone(pr);
+			pr.attr.to = full_jid;
+			-- You can always see your own full jids
+			pr:add_child(full_x);
+			self:route_stanza(pr);
 		end
 	end
 end
@@ -671,46 +669,44 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 		-- Send presence stanza about original occupant
 		if orig_occupant ~= nil and orig_occupant ~= dest_occupant then
 			local orig_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-
+			local dest_nick;
 			if dest_occupant == nil then -- Session is leaving
 				log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
 				orig_occupant:set_session(real_jid, stanza);
 			else
 				log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
-				orig_occupant:remove_session(real_jid); -- If we are moving to a new nick; we don't want to get our own presence
-
-				local dest_nick = select(3, jid_split(dest_occupant.nick));
-				local affiliation = self:get_affiliation(bare_jid);
-
-				-- This session
+				local generated_unavail = st.presence {from = orig_occupant.nick, to = real_jid, type = "unavailable"};
+				orig_occupant:set_session(real_jid, generated_unavail);
+				dest_nick = select(3, jid_split(dest_occupant.nick));
 				if not is_first_dest_session then -- User is swapping into another pre-existing session
 					log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
 					-- Show the other session leaving
 					local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
 						:tag("status"):text("you are joining pre-existing session " .. dest_nick):up();
-					add_item(x, affiliation, "none");
+					add_item(x, self:get_affiliation(bare_jid), "none");
 					local pr = st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}
 						:add_child(x);
 					self:route_stanza(pr);
-				else
-					if is_last_orig_session then -- User is moving to a new session
-						log("debug", "no sessions in %s left; marking as nick change", orig_occupant.nick);
-						-- Everyone gets to see this as a nick change
-						local jid = self:get_whois() ~= "anyone" and real_jid or nil; -- FIXME: mods should see real jids
-						add_item(orig_x, affiliation, orig_occupant.role, jid, dest_nick);
-						orig_x:tag("status", {code = "303";}):up();
-					end
 				end
-				-- The session itself always sees a nick change
-				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-				add_item(x, affiliation, orig_occupant.role, real_jid, dest_nick);
-				-- self:build_item_list(orig_occupant, x, false); -- COMPAT
-				x:tag("status", {code = "303";}):up();
-				x:tag("status", {code = "110";}):up();
-				self:route_stanza(st.presence{from = orig_occupant.nick, to = real_jid, type = "unavailable"}:add_child(x));
+				if is_first_dest_session and is_last_orig_session then -- Normal nick change
+					log("debug", "no sessions in %s left; publically marking as nick change", orig_occupant.nick);
+					orig_x:tag("status", {code = "303";}):up();
+				else -- The session itself always needs to see a nick change
+					-- don't want to get our old nick's available presence,
+					-- so remove our session from there, and manually generate an unavailable
+					orig_occupant:remove_session(real_jid);
+					log("debug", "generating nick change for %s", real_jid);
+					local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+					-- self:build_item_list(orig_occupant, x, false, dest_nick); -- COMPAT: clients get confused if they see other items besides their own
+					add_item(x, self:get_affiliation(bare_jid), orig_occupant.role, real_jid, dest_nick);
+					x:tag("status", {code = "303";}):up();
+					x:tag("status", {code = "110";}):up();
+					self:route_stanza(generated_unavail:add_child(x));
+					dest_nick = nil; -- set dest_nick to nil; so general populance doesn't see it for whole orig_occupant
+				end
 			end
 			self:save_occupant(orig_occupant);
-			self:publicise_occupant_status(orig_occupant, orig_x);
+			self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
 
 			if is_last_orig_session then
 				module:fire_event("muc-occupant-left", {room = self; nick = orig_occupant.nick;});
@@ -1381,7 +1377,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	end
 	local is_semi_anonymous = self:get_whois() == "moderators";
 	for occupant, old_role in pairs(occupants_updated) do
-		self:publicise_occupant_status(occupant, x, actor, reason);
+		self:publicise_occupant_status(occupant, x, nil, actor, reason);
 		if is_semi_anonymous and
 			(old_role == "moderator" and occupant.role ~= "moderator") or
 			(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
@@ -1442,7 +1438,7 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	end
 	occupant.role = role;
 	self:save_occupant(occupant);
-	self:publicise_occupant_status(occupant, x, actor, reason);
+	self:publicise_occupant_status(occupant, x, nil, actor, reason);
 	return true;
 end
 
