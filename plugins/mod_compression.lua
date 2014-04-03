@@ -26,7 +26,7 @@ end
 
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
-	if not origin.compressed and (origin.type == "c2s" or origin.type == "s2sin" or origin.type == "s2sout") then
+	if not origin.compressed and origin.type == "c2s" then
 		-- FIXME only advertise compression support when TLS layer has no compression enabled
 		features:add_child(compression_stream_feature);
 	end
@@ -35,7 +35,7 @@ end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	-- FIXME only advertise compression support when TLS layer has no compression enabled
-	if not origin.compressed and (origin.type == "c2s" or origin.type == "s2sin" or origin.type == "s2sout") then
+	if not origin.compressed and origin.type == "s2sin" then
 		features:add_child(compression_stream_feature);
 	end
 end);
@@ -43,13 +43,13 @@ end);
 -- Hook to activate compression if remote server supports it.
 module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
-			if not session.compressed and (session.type == "c2s" or session.type == "s2sin" or session.type == "s2sout") then
+			if not session.compressed and session.type == "s2sout" then
 				-- does remote server support compression?
-				local comp_st = stanza:child_with_name("compression");
+				local comp_st = stanza:get_child("compression", xmlns_compression_feature);
 				if comp_st then
 					-- do we support the mechanism
-					for a in comp_st:children() do
-						local algorithm = a[1]
+					for a in comp_st:childtags("method") do
+						local algorithm = a:get_text();
 						if algorithm == "zlib" then
 							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):tag("method"):text("zlib"))
 							session.log("debug", "Enabled compression using zlib.")
@@ -160,8 +160,7 @@ module:hook("stanza/http://jabber.org/protocol/compress:compress", function(even
 		end
 
 		-- checking if the compression method is supported
-		local method = stanza:child_with_name("method");
-		method = method and (method[1] or "");
+		local method = stanza:get_child_text("method");
 		if method == "zlib" then
 			session.log("debug", "zlib compression enabled.");
 
