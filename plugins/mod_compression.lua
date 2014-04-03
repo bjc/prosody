@@ -45,7 +45,7 @@ module:hook_stanza(xmlns_stream, "features",
 		function (session, stanza)
 			if not session.compressed and session.type == "s2sout" then
 				-- does remote server support compression?
-				local comp_st = stanza:child_with_name("compression");
+				local comp_st = stanza:get_child("compression", xmlns_compression_feature);
 				if comp_st then
 					-- do we support the mechanism
 					for a in comp_st:children() do
@@ -160,8 +160,7 @@ module:hook("stanza/http://jabber.org/protocol/compress:compress", function(even
 		end
 
 		-- checking if the compression method is supported
-		local method = stanza:child_with_name("method");
-		method = method and (method[1] or "");
+		local method = stanza:get_child_text("method");
 		if method == "zlib" then
 			session.log("debug", "zlib compression enabled.");
 
