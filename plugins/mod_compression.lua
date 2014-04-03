@@ -48,8 +48,8 @@ module:hook_stanza(xmlns_stream, "features",
 				local comp_st = stanza:get_child("compression", xmlns_compression_feature);
 				if comp_st then
 					-- do we support the mechanism
-					for a in comp_st:children() do
-						local algorithm = a[1]
+					for a in comp_st:childtags("method") do
+						local algorithm = a:get_text();
 						if algorithm == "zlib" then
 							session.sends2s(st.stanza("compress", {xmlns=xmlns_compression_protocol}):tag("method"):text("zlib"))
 							session.log("debug", "Enabled compression using zlib.")
