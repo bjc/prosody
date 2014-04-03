@@ -421,9 +421,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_hidden() and "muc_hidden" or "muc_public"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_whois() ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	local count = 0; for _ in event.room:each_occupant() do count = count + 1; end
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
 end);
@@ -541,20 +538,6 @@ function room_mt:set_historylength(length)
 		length = nil;
 	end
 	self._data.history_length = length;
-end
-
-
-local valid_whois = { moderators = true, anyone = true };
-
-function room_mt:set_whois(whois)
-	if valid_whois[whois] and self._data.whois ~= whois then
-		self._data.whois = whois;
-		if self.save then self:save(true); end
-	end
-end
-
-function room_mt:get_whois()
-	return self._data.whois;
 end
 
 -- Give the room creator owner affiliation
@@ -873,18 +856,6 @@ module:hook("muc-config-form", function(event)
 	});
 end);
 module:hook("muc-config-form", function(event)
-	local whois = event.room:get_whois();
-	table.insert(event.form, {
-		name = 'muc#roomconfig_whois',
-		type = 'list-single',
-		label = 'Who May Discover Real JIDs?',
-		value = {
-			{ value = 'moderators', label = 'Moderators Only', default = whois == 'moderators' },
-			{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
-		}
-	});
-end);
-module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = 'muc#roomconfig_moderatedroom',
 		type = 'boolean',
@@ -966,12 +937,6 @@ module:hook("muc-config-submitted", function(event)
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("historylength", "muc#roomconfig_historylength");
-end);
-module:hook("muc-config-submitted", function(event)
-	if event.update_option("whois", "muc#roomconfig_whois", valid_whois) then
-		local code = (event.room:get_whois() == 'moderators') and "173" or "172";
-		event.status_codes[code] = true;
-	end
 end);
 
 -- Removes everyone from the room
@@ -1218,21 +1183,9 @@ module:hook("muc-invite", function(event)
 	:up();
 end);
 
--- Mask 'from' jid as occupant jid if room is anonymous
-module:hook("muc-invite", function(event)
-	local room, stanza = event.room, event.stanza;
-	if room:get_whois() == "moderators" and room:get_default_role(room:get_affiliation(stanza.attr.to)) ~= "moderator" then
-		local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
-		local occupant_jid = room:get_occupant_jid(invite.attr.from);
-		if occupant_jid ~= nil then -- FIXME: This will expose real jid if inviter is not in room
-			invite.attr.from = occupant_jid;
-		end
-	end
-end, 50);
-
 -- When an invite is sent; add an affiliation for the invitee
 module:hook("muc-invite", function(event)
-	local room, stanza = event.room, event.stanza
+	local room, stanza = event.room, event.stanza;
 	local invitee = stanza.attr.to
 	if room:get_members_only() and not room:get_affiliation(invitee) then
 		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from
@@ -1455,6 +1408,10 @@ local password = module:require "muc/password";
 room_mt.get_password = password.get;
 room_mt.set_password = password.set;
 
+local whois = module:require "muc/whois";
+room_mt.get_whois = whois.get;
+room_mt.set_whois = whois.set;
+
 local _M = {}; -- module "muc"
 
 function _M.new_room(jid, config)
@@ -1463,7 +1420,6 @@ function _M.new_room(jid, config)
 		_jid_nick = {};
 		_occupants = {};
 		_data = {
-		    whois = 'moderators';
 		    history_length = math.min((config and config.history_length)
 		    	or default_history_length, max_history_length);
 		};
