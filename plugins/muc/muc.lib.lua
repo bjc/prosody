@@ -23,26 +23,9 @@ local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 
 local occupant_lib = module:require "muc/occupant"
-
-
-local is_kickable_error do
-	local kickable_error_conditions = {
-		["gone"] = true;
-		["internal-server-error"] = true;
-		["item-not-found"] = true;
-		["jid-malformed"] = true;
-		["recipient-unavailable"] = true;
-		["redirect"] = true;
-		["remote-server-not-found"] = true;
-		["remote-server-timeout"] = true;
-		["service-unavailable"] = true;
-		["malformed error"] = true;
-	};
-	function is_kickable_error(stanza)
-		local cond = select(2, stanza:get_error()) or "malformed error";
-		return kickable_error_conditions[cond];
-	end
-end
+local muc_util = module:require "muc/util";
+local is_kickable_error = muc_util.is_kickable_error;
+local valid_roles, valid_affiliations = muc_util.valid_roles, muc_util.valid_affiliations;
 
 local room_mt = {};
 room_mt.__index = room_mt;
@@ -54,21 +37,6 @@ end
 function room_mt:get_occupant_jid(real_jid)
 	return self._jid_nick[real_jid]
 end
-
-local valid_affiliations = {
-	outcast = 0;
-	none = 1;
-	member = 2;
-	admin = 3;
-	owner = 4;
-};
-
-local valid_roles = {
-	none = 0;
-	visitor = 1;
-	participant = 2;
-	moderator = 3;
-};
 
 function room_mt:get_default_role(affiliation)
 	if affiliation == "owner" or affiliation == "admin" then
