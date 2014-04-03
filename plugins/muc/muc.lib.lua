@@ -13,6 +13,7 @@ local next = next;
 local setmetatable = setmetatable;
 
 local dataform = require "util.dataforms";
+local iterators = require "util.iterators";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
@@ -313,7 +314,7 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_hidden() and "muc_hidden" or "muc_public"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	local count = 0; for _ in event.room:each_occupant() do count = count + 1; end
+	local count = iterators.count(event.room:each_occupant());
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
 end);
 
