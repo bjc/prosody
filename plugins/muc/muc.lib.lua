@@ -54,11 +54,6 @@ module:hook("muc-get-default-role", function(event)
 	end
 end);
 module:hook("muc-get-default-role", function(event)
-	if not event.affiliation and event.room:get_members_only() then
-		return false;
-	end
-end);
-module:hook("muc-get-default-role", function(event)
 	if not event.affiliation then
 		return event.room:get_moderated() and "visitor" or "participant";
 	end
@@ -286,9 +281,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_members_only() and "muc_membersonly" or "muc_open"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_persistent() and "muc_persistent" or "muc_temporary"}):up();
 end);
 module:hook("muc-disco#info", function(event)
@@ -357,16 +349,6 @@ end
 function room_mt:get_moderated()
 	return self._data.moderated;
 end
-function room_mt:set_members_only(members_only)
-	members_only = members_only and true or nil;
-	if self._data.members_only ~= members_only then
-		self._data.members_only = members_only;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_members_only()
-	return self._data.members_only;
-end
 function room_mt:set_persistent(persistent)
 	persistent = persistent and true or nil;
 	if self._data.persistent ~= persistent then
@@ -409,17 +391,6 @@ module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
 end, -1);
 
--- registration required for entering members-only room
-module:hook("muc-occupant-pre-join", function(event)
-	local room, stanza = event.room, event.stanza;
-	local affiliation = room:get_affiliation(stanza.attr.from);
-	if affiliation == nil and event.room:get_members_only() then
-		local reply = st.error_reply(stanza, "auth", "registration-required"):up();
-		reply.tags[1].attr.code = "407";
-		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
-	end
-end, -5);
 
 -- check if user is banned
 module:hook("muc-occupant-pre-join", function(event)
@@ -732,14 +703,6 @@ module:hook("muc-config-form", function(event)
 		value = event.room:get_moderated()
 	});
 end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
-		name = 'muc#roomconfig_membersonly',
-		type = 'boolean',
-		label = 'Make Room Members-Only?',
-		value = event.room:get_members_only()
-	});
-end);
 
 function room_mt:process_form(origin, stanza)
 	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
@@ -786,9 +749,6 @@ module:hook("muc-config-submitted", function(event)
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("moderated", "muc#roomconfig_moderatedroom");
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("members_only", "muc#roomconfig_membersonly");
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("public", "muc#roomconfig_publicroom");
@@ -997,17 +957,6 @@ module:hook("muc-pre-invite", function(event)
 	end
 end);
 
--- Invitation privileges in members-only rooms SHOULD be restricted to room admins;
--- if a member without privileges to edit the member list attempts to invite another user
--- the service SHOULD return a <forbidden/> error to the occupant
-module:hook("muc-pre-invite", function(event)
-	local room, stanza = event.room, event.stanza;
-	if room:get_members_only() and valid_affiliations[room:get_affiliation(stanza.attr.from) or "none"] < valid_affiliations.admin then
-		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
-		return true;
-	end
-end);
-
 function room_mt:handle_mediated_invite(origin, stanza)
 	local payload = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
 	local invitee = jid_prep(payload.attr.to);
@@ -1047,17 +996,6 @@ module:hook("muc-invite", function(event)
 	stanza:tag("body")
 		:text(invite.attr.from.." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
 	:up();
-end);
-
--- When an invite is sent; add an affiliation for the invitee
-module:hook("muc-invite", function(event)
-	local room, stanza = event.room, event.stanza;
-	local invitee = stanza.attr.to
-	if room:get_members_only() and not room:get_affiliation(invitee) then
-		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from
-		log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
-		room:set_affiliation(from, invitee, "member", "Invited by " .. from); -- This might fail; ignore for now
-	end
 end);
 
 function room_mt:handle_mediated_decline(origin, stanza)
@@ -1277,6 +1215,10 @@ room_mt.set_password = password.set;
 local whois = module:require "muc/whois";
 room_mt.get_whois = whois.get;
 room_mt.set_whois = whois.set;
+
+local members_only = module:require "muc/members_only";
+room_mt.get_members_only = members_only.get;
+room_mt.set_members_only = members_only.set;
 
 local history = module:require "muc/history";
 room_mt.send_history = history.send;
