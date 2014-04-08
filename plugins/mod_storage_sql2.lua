@@ -289,7 +289,7 @@ function archive_store:find(username, query)
 
 		-- Total matching
 		if query.total then
-			local stats = engine:select(sql_query:gsub("^(SELECT).-(FROM)", "%1 COUNT(*) %2"):format(t_concat(where, " AND "), "DESC", ""), unpack(args));
+			local stats = engine:select("SELECT COUNT(*) FROM `prosodyarchive` WHERE " .. t_concat(where, " AND "), unpack(args));
 			if stats then
 				local _total = stats()
 				total = _total and _total[1];
