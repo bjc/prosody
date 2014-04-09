@@ -49,9 +49,6 @@ _G.prosody = prosody;
 
 -- Check dependencies
 local dependencies = require "util.dependencies";
-if not dependencies.check_dependencies() then
-	os.exit(1);
-end
 
 -- Load the config-parsing module
 config = require "core.configmanager"
@@ -112,6 +109,12 @@ function read_config()
 		print("Good luck!");
 		print("**************************");
 		print("");
+		os.exit(1);
+	end
+end
+
+function check_dependencies()
+	if not dependencies.check_dependencies() then
 		os.exit(1);
 	end
 end
@@ -388,6 +391,7 @@ init_logging();
 sanity_check();
 sandbox_require();
 set_function_metatable();
+check_dependencies();
 load_libraries();
 init_global_state();
 read_version();
