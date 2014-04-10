@@ -414,7 +414,11 @@ function commands.start(arg)
 	
 	local ok, ret = prosodyctl.start();
 	if ok then
-		if config.get("*", "daemonize") ~= false then
+		local daemonize = config.get("*", "daemonize");
+		if daemonize == nil then
+			daemonize = prosody.installed;
+		end
+		if daemonize then
 			local i=1;
 			while true do
 				local ok, running = prosodyctl.isrunning();

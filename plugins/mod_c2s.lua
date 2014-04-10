@@ -174,19 +174,6 @@ local function session_close(session, reason)
 	end
 end
 
-local function session_open_stream(session)
-	local attr = {
-		["xmlns:stream"] = 'http://etherx.jabber.org/streams',
-		xmlns = stream_callbacks.default_ns,
-		version = "1.0",
-		["xml:lang"] = 'en',
-		id = session.streamid or "",
-		from = session.host
-	};
-	session.send("<?xml version='1.0'?>");
-	session.send(st.stanza("stream:stream", attr):top_tag());
-end
-
 module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
 	local user = hosts[host].sessions[username];
@@ -234,7 +221,6 @@ function listener.onconnect(conn)
 		conn:setoption("keepalive", opt_keepalives);
 	end
 
-	session.open_stream = session_open_stream;
 	session.close = session_close;
 
 	local stream = new_xmpp_stream(session, stream_callbacks);
