@@ -177,9 +177,7 @@ function stream_callbacks.streamopened(session, attr)
 	session.streamid = uuid_gen();
 	session.notopen = nil;
 	-- Return stream header
-	session.send("<?xml version='1.0'?>");
-	session.send(st.stanza("stream:stream", { xmlns=xmlns_component,
-			["xmlns:stream"]='http://etherx.jabber.org/streams', id=session.streamid, from=session.host }):top_tag());
+	session:open_stream();
 end
 
 function stream_callbacks.streamclosed(session)
