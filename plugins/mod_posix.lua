@@ -129,14 +129,6 @@ end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
 local daemonize = module:get_option("daemonize", prosody.installed);
-if daemonize == nil then
-	local no_daemonize = module:get_option("no_daemonize"); --COMPAT w/ 0.5
-	daemonize = not no_daemonize;
-	if no_daemonize ~= nil then
-		module:log("warn", "The 'no_daemonize' option is now replaced by 'daemonize'");
-		module:log("warn", "Update your config from 'no_daemonize = %s' to 'daemonize = %s'", tostring(no_daemonize), tostring(daemonize));
-	end
-end
 
 local function remove_log_sinks()
 	local lm = require "core.loggingmanager";
