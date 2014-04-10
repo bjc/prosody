@@ -49,6 +49,14 @@ package.preload["util.ztact"] = function ()
 end;
 
 function check_dependencies()
+	if _VERSION ~= "Lua 5.1" then
+		print "***********************************"
+		print("Unsupported Lua version: ".._VERSION);
+		print("Only Lua 5.1 is supported.");
+		print "***********************************"
+		return false;
+	end
+
 	local fatal;
 
 	local lxp = softreq "lxp"
