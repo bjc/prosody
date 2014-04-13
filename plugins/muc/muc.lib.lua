@@ -977,9 +977,11 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 	end
 	self._affiliations[jid] = affiliation;
 	local role = self:get_default_role(affiliation);
+	local actor_nick = select(3, jid_split(self._jid_nick[actor]));
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=affiliation or "none", role=role or "none"})
 				:tag("reason"):text(reason or ""):up()
+				:tag("actor", {nick=actor_nick}):up()
 			:up();
 	local presence_type = nil;
 	if not role then -- getting kicked
@@ -1049,9 +1051,11 @@ function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
 	if not allowed then return allowed, err_type, err_condition; end
 	local occupant = self._occupants[occupant_jid];
+	local actor_nick = select(3, jid_split(self._jid_nick[actor]));
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
 				:tag("reason"):text(reason or ""):up()
+				:tag("actor", {nick=actor_nick}):up()
 			:up();
 	local presence_type = nil;
 	if not role then -- kick
