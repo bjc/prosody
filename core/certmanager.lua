@@ -81,7 +81,11 @@ function create_context(host, mode, user_ssl_config)
 			user_ssl_config[option] = default_value;
 		end
 	end
-	user_ssl_config.password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+
+	-- We can't read the password interactively when daemonized
+	user_ssl_config.password = user_ssl_config.password or
+		function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+
 	for option in pairs(path_options) do
 		if type(user_ssl_config[option]) == "string" then
 			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
