@@ -194,6 +194,9 @@ end
 
 function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
+	if luasec_has_no_compression then
+		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
+	end
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
