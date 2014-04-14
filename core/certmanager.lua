@@ -87,8 +87,10 @@ function create_context(host, mode, user_ssl_config)
 		end
 	end
 
-	if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
-	if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+	if mode == "server" then
+		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+	end
 
 	-- LuaSec expects dhparam to be a callback that takes two arguments.
 	-- We ignore those because it is mostly used for having a separate
