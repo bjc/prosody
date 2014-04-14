@@ -46,6 +46,9 @@ local core_defaults = {
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
+local set_options = {
+	options = true, verify = true, verifyext = true
+}
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
@@ -60,6 +63,18 @@ if luasec_has_no_compression then -- Has no_compression? Then it has these too..
 	if configmanager.get("*", "ssl_compression") ~= true then
 		core_defaults.options[#core_defaults.options+1] = "no_compression";
 	end
+end
+
+local function merge_set(t, o)
+	if type(t) ~= "table" then t = { t } end
+	for k,v in pairs(t) do
+		if v == true or v == false then
+			o[k] = v;
+		else
+			o[v] = true;
+		end
+	end
+	return o;
 end
 
 function create_context(host, mode, user_ssl_config)
@@ -80,6 +95,20 @@ function create_context(host, mode, user_ssl_config)
 		if user_ssl_config[option] == nil then
 			user_ssl_config[option] = default_value;
 		end
+	end
+
+	for option in pairs(set_options) do
+		local merged = {};
+		merge_set(core_defaults[option], merged);
+		merge_set(global_ssl_config[option], merged);
+		merge_set(user_ssl_config[option], merged);
+		local final_array = {};
+		for opt, enable in pairs(merged) do
+			if enable then
+				final_array[#final_array+1] = opt;
+			end
+		end
+		user_ssl_config[option] = final_array;
 	end
 
 	-- We can't read the password interactively when daemonized
