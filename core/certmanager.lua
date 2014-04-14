@@ -34,11 +34,19 @@ module "certmanager"
 -- Global SSL options if not overridden per-host
 local global_ssl_config = configmanager.get("*", "ssl");
 
+-- Built-in defaults
 local core_defaults = {
 	capath = "/etc/ssl/certs";
 	protocol = "tlsv1+";
 	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
-	options = { "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
+	options = {
+		cipher_server_preference = true;
+		no_ticket = luasec_has_noticket;
+		no_compression = luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		-- Has no_compression? Then it has these too...
+		single_dh_use = luasec_has_no_compression;
+		single_ecdh_use = luasec_has_no_compression;
+	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
 	ciphers = "HIGH+kEDH:HIGH+kEECDH:HIGH:!PSK:!SRP:!3DES:!aNULL";
@@ -54,14 +62,6 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
 	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
 		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
-	end
-end
-
-if luasec_has_no_compression then -- Has no_compression? Then it has these too...
-	core_defaults.options[#core_defaults.options+1] = "single_dh_use";
-	core_defaults.options[#core_defaults.options+1] = "single_ecdh_use";
-	if configmanager.get("*", "ssl_compression") ~= true then
-		core_defaults.options[#core_defaults.options+1] = "no_compression";
 	end
 end
 
