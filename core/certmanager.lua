@@ -36,9 +36,9 @@ local global_ssl_config = configmanager.get("*", "ssl");
 
 local core_defaults = {
 	capath = "/etc/ssl/certs";
-	protocol = "sslv23";
+	protocol = "tlsv1+";
 	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
-	options = { "no_sslv2", "no_sslv3", "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
+	options = { "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
 	ciphers = "HIGH+kEDH:HIGH+kEECDH:HIGH:!PSK:!SRP:!3DES:!aNULL";
@@ -77,6 +77,9 @@ local function merge_set(t, o)
 	return o;
 end
 
+local protocols = { "sslv2", "sslv3", "tlsv1", "tlsv1_1", "tlsv1_2" };
+for i = 1, #protocols do protocols[protocols[i] .. "+"] = i - 1; end
+
 function create_context(host, mode, user_ssl_config)
 	user_ssl_config = user_ssl_config or {}
 	user_ssl_config.mode = mode;
@@ -94,6 +97,14 @@ function create_context(host, mode, user_ssl_config)
 	for option,default_value in pairs(core_defaults) do
 		if user_ssl_config[option] == nil then
 			user_ssl_config[option] = default_value;
+		end
+	end
+
+	local min_protocol = protocols[user_ssl_config.protocol];
+	if min_protocol then
+		user_ssl_config.protocol = "sslv23";
+		for i = min_protocol, 1, -1 do
+			user_ssl_config.options["no_"..protocols[i]] = true;
 		end
 	end
 
