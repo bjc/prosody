@@ -15,6 +15,7 @@ local tostring = tostring;
 local pairs = pairs;
 local type = type;
 local io_open = io.open;
+local t_concat = table.concat;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -85,6 +86,11 @@ function create_context(host, mode, user_ssl_config)
 		if type(user_ssl_config[option]) == "string" then
 			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
 		end
+	end
+
+	-- Allow the cipher list to be a table
+	if type(user_ssl_config.ciphers) == "table" then
+		user_ssl_config.ciphers = t_concat(user_ssl_config.ciphers, ":")
 	end
 
 	if mode == "server" then
