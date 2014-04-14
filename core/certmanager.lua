@@ -69,13 +69,14 @@ function create_context(host, mode, user_ssl_config)
 
 	if global_ssl_config then
 		for option,default_value in pairs(global_ssl_config) do
-			if not user_ssl_config[option] then
+			if user_ssl_config[option] == nil then
 				user_ssl_config[option] = default_value;
 			end
 		end
 	end
+
 	for option,default_value in pairs(core_defaults) do
-		if not user_ssl_config[option] then
+		if user_ssl_config[option] == nil then
 			user_ssl_config[option] = default_value;
 		end
 	end
