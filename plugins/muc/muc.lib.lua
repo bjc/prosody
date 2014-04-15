@@ -297,7 +297,7 @@ function room_mt:get_disco_items(stanza)
 end
 
 function room_mt:get_subject()
-	return self._data['subject'], self._data['subject_from']
+	return self._data.subject_from, self._data.subject;
 end
 local function create_subject_message(from, subject)
 	return st.message({from = from; type = "groupchat"})
@@ -878,7 +878,25 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 	end
 end
 
+module:hook("muc-subject-change", function(event)
+	local room, stanza = event.room, event.stanza;
+	local occupant = room:get_occupant_by_real_jid(stanza.attr.from);
+	if occupant.role == "moderator" or
+		( occupant.role == "participant" and room:get_changesubject() ) then -- and participant
+		local subject = stanza:get_child_text("subject");
+		room:set_subject(occupant.nick, subject);
+	else
+		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
+	end
+	return true;
+end);
+
 function room_mt:handle_groupchat_to_room(origin, stanza)
+	-- Prosody has made the decision that messages with <subject/> are exclusively subject changes
+	-- e.g. body will be ignored; even if the subject change was not allowed
+	if stanza:get_child("subject") then
+		return module:fire_event("muc-subject-change", {room = self, origin = origin, stanza = stanza});
+	end
 	local from = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(from);
 	if not occupant then -- not in room
@@ -887,24 +905,11 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 	elseif occupant.role == "visitor" then
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
-	else
-		local from = stanza.attr.from;
-		stanza.attr.from = occupant.nick;
-		local subject = stanza:get_child_text("subject");
-		if subject then
-			if occupant.role == "moderator" or
-				( self:get_changesubject() and occupant.role == "participant" ) then -- and participant
-				self:set_subject(occupant.nick, subject);
-			else
-				stanza.attr.from = from;
-				origin.send(st.error_reply(stanza, "auth", "forbidden"));
-			end
-		else
-			self:broadcast_message(stanza);
-		end
-		stanza.attr.from = from;
-		return true;
 	end
+	stanza.attr.from = occupant.nick;
+	self:broadcast_message(stanza);
+	stanza.attr.from = from;
+	return true;
 end
 
 -- hack - some buggy clients send presence updates to the room rather than their nick
