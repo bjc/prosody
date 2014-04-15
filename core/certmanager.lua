@@ -15,6 +15,7 @@ local tostring = tostring;
 local pairs = pairs;
 local type = type;
 local io_open = io.open;
+local t_concat = table.concat;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -33,17 +34,28 @@ module "certmanager"
 -- Global SSL options if not overridden per-host
 local global_ssl_config = configmanager.get("*", "ssl");
 
+-- Built-in defaults
 local core_defaults = {
 	capath = "/etc/ssl/certs";
-	protocol = "sslv23";
+	protocol = "tlsv1+";
 	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
-	options = { "no_sslv2", "no_sslv3", "cipher_server_preference", luasec_has_noticket and "no_ticket" or nil };
+	options = {
+		cipher_server_preference = true;
+		no_ticket = luasec_has_noticket;
+		no_compression = luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		-- Has no_compression? Then it has these too...
+		single_dh_use = luasec_has_no_compression;
+		single_ecdh_use = luasec_has_no_compression;
+	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
 	ciphers = "HIGH+kEDH:HIGH+kEECDH:HIGH:!PSK:!SRP:!3DES:!aNULL";
 }
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
+}
+local set_options = {
+	options = true, verify = true, verifyext = true
 }
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
@@ -53,13 +65,20 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	end
 end
 
-if luasec_has_no_compression then -- Has no_compression? Then it has these too...
-	core_defaults.options[#core_defaults.options+1] = "single_dh_use";
-	core_defaults.options[#core_defaults.options+1] = "single_ecdh_use";
-	if configmanager.get("*", "ssl_compression") ~= true then
-		core_defaults.options[#core_defaults.options+1] = "no_compression";
+local function merge_set(t, o)
+	if type(t) ~= "table" then t = { t } end
+	for k,v in pairs(t) do
+		if v == true or v == false then
+			o[k] = v;
+		else
+			o[v] = true;
+		end
 	end
+	return o;
 end
+
+local protocols = { "sslv2", "sslv3", "tlsv1", "tlsv1_1", "tlsv1_2" };
+for i = 1, #protocols do protocols[protocols[i] .. "+"] = i - 1; end
 
 function create_context(host, mode, user_ssl_config)
 	user_ssl_config = user_ssl_config or {}
@@ -69,25 +88,59 @@ function create_context(host, mode, user_ssl_config)
 
 	if global_ssl_config then
 		for option,default_value in pairs(global_ssl_config) do
-			if not user_ssl_config[option] then
+			if user_ssl_config[option] == nil then
 				user_ssl_config[option] = default_value;
 			end
 		end
 	end
+
 	for option,default_value in pairs(core_defaults) do
-		if not user_ssl_config[option] then
+		if user_ssl_config[option] == nil then
 			user_ssl_config[option] = default_value;
 		end
 	end
-	user_ssl_config.password = user_ssl_config.password or function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+
+	local min_protocol = protocols[user_ssl_config.protocol];
+	if min_protocol then
+		user_ssl_config.protocol = "sslv23";
+		for i = min_protocol, 1, -1 do
+			user_ssl_config.options["no_"..protocols[i]] = true;
+		end
+	end
+
+	for option in pairs(set_options) do
+		local merged = {};
+		merge_set(core_defaults[option], merged);
+		merge_set(global_ssl_config[option], merged);
+		merge_set(user_ssl_config[option], merged);
+		local final_array = {};
+		for opt, enable in pairs(merged) do
+			if enable then
+				final_array[#final_array+1] = opt;
+			end
+		end
+		user_ssl_config[option] = final_array;
+	end
+
+	-- We can't read the password interactively when daemonized
+	user_ssl_config.password = user_ssl_config.password or
+		function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+
 	for option in pairs(path_options) do
 		if type(user_ssl_config[option]) == "string" then
 			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
 		end
 	end
 
-	if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
-	if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+	-- Allow the cipher list to be a table
+	if type(user_ssl_config.ciphers) == "table" then
+		user_ssl_config.ciphers = t_concat(user_ssl_config.ciphers, ":")
+	end
+
+	if mode == "server" then
+		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+	end
 
 	-- LuaSec expects dhparam to be a callback that takes two arguments.
 	-- We ignore those because it is mostly used for having a separate
@@ -141,6 +194,9 @@ end
 
 function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
+	if luasec_has_no_compression then
+		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
+	end
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
