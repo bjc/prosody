@@ -26,6 +26,7 @@ end
 
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
+local persistent = module:require "muc/persistent";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -65,8 +66,9 @@ end
 
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
-	persistent_rooms[room.jid] = room._data.persistent;
-	if room._data.persistent then
+	local is_persistent = persistent.get(room);
+	persistent_rooms[room.jid] = is_persistent;
+	if is_persistent then
 		local history = room._data.history;
 		room._data.history = nil;
 		local data = {
@@ -138,7 +140,7 @@ end)
 
 module:hook("muc-occupant-left",function(event)
 	local room = event.room
-	if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+	if not next(room._occupants) and not persistent.get(room) then -- empty, non-persistent room
 		module:fire_event("muc-room-destroyed", { room = room });
 	end
 end);
