@@ -281,9 +281,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_persistent() and "muc_persistent" or "muc_temporary"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_hidden() and "muc_hidden" or "muc_public"}):up();
 end);
 module:hook("muc-disco#info", function(event)
@@ -348,16 +345,6 @@ function room_mt:set_moderated(moderated)
 end
 function room_mt:get_moderated()
 	return self._data.moderated;
-end
-function room_mt:set_persistent(persistent)
-	persistent = persistent and true or nil;
-	if self._data.persistent ~= persistent then
-		self._data.persistent = persistent;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_persistent()
-	return self._data.persistent;
 end
 function room_mt:set_hidden(hidden)
 	hidden = hidden and true or nil;
@@ -673,14 +660,6 @@ function room_mt:get_form_layout(actor)
 end
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_persistentroom',
-		type = 'boolean',
-		label = 'Make Room Persistent?',
-		value = event.room:get_persistent()
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_publicroom',
 		type = 'boolean',
 		label = 'Make Room Publicly Searchable?',
@@ -745,9 +724,6 @@ function room_mt:process_form(origin, stanza)
 	return true;
 end
 module:hook("muc-config-submitted", function(event)
-	event.update_option("persistent", "muc#roomconfig_persistentroom");
-end);
-module:hook("muc-config-submitted", function(event)
 	event.update_option("moderated", "muc#roomconfig_moderatedroom");
 end);
 module:hook("muc-config-submitted", function(event)
@@ -780,7 +756,6 @@ function room_mt:destroy(newjid, reason, password)
 	if password then x:tag("password"):text(password):up(); end
 	x:up();
 	self:clear(x);
-	self:set_persistent(false);
 	module:fire_event("muc-room-destroyed", { room = self });
 end
 
@@ -1219,6 +1194,10 @@ room_mt.set_whois = whois.set;
 local members_only = module:require "muc/members_only";
 room_mt.get_members_only = members_only.get;
 room_mt.set_members_only = members_only.set;
+
+local persistent = module:require "muc/persistent";
+room_mt.get_persistent = persistent.get;
+room_mt.set_persistent = persistent.set;
 
 local history = module:require "muc/history";
 room_mt.send_history = history.send;
