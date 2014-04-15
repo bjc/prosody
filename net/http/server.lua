@@ -185,6 +185,7 @@ function handle_request(conn, request, finish_cb)
 		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
+		done = _M.finish_response;
 		finish_cb = finish_cb;
 	};
 	conn._http_open_response = response;
@@ -246,24 +247,31 @@ function handle_request(conn, request, finish_cb)
 	response.status_code = 404;
 	response:send(events.fire_event("http-error", { code = 404 }));
 end
-function _M.send_response(response, body)
-	if response.finished then return; end
-	response.finished = true;
-	response.conn._http_open_response = nil;
-
+local function prepare_header(response)
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
-	body = body or response.body or "";
-	headers.content_length = #body;
-
 	local output = { status_line };
 	for k,v in pairs(headers) do
 		t_insert(output, headerfix[k]..v);
 	end
 	t_insert(output, "\r\n\r\n");
 	t_insert(output, body);
-
+	return output;
+end
+_M.prepare_header = prepare_header;
+function _M.send_response(response, body)
+	if response.finished then return; end
+	body = body or response.body or "";
+	headers.content_length = #body;
+	local output = prepare_header(respone);
+	t_insert(output, body);
 	response.conn:write(t_concat(output));
+	response:finish();
+end
+function _M.finish_response(response)
+	if response.finished then return; end
+	response.finished = true;
+	response.conn._http_open_response = nil;
 	if response.on_destroy then
 		response:on_destroy();
 		response.on_destroy = nil;
