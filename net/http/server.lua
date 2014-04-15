@@ -255,18 +255,17 @@ local function prepare_header(response)
 		t_insert(output, headerfix[k]..v);
 	end
 	t_insert(output, "\r\n\r\n");
-	t_insert(output, body);
 	return output;
 end
 _M.prepare_header = prepare_header;
 function _M.send_response(response, body)
 	if response.finished then return; end
 	body = body or response.body or "";
-	headers.content_length = #body;
-	local output = prepare_header(respone);
+	response.headers.content_length = #body;
+	local output = prepare_header(response);
 	t_insert(output, body);
 	response.conn:write(t_concat(output));
-	response:finish();
+	response:done();
 end
 function _M.finish_response(response)
 	if response.finished then return; end
