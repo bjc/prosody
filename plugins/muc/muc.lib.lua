@@ -296,28 +296,6 @@ function room_mt:get_disco_items(stanza)
 	return reply;
 end
 
-function room_mt:get_subject()
-	return self._data.subject_from, self._data.subject;
-end
-local function create_subject_message(from, subject)
-	return st.message({from = from; type = "groupchat"})
-		:tag('subject'):text(subject):up();
-end
-function room_mt:send_subject(to)
-	local msg = create_subject_message(self:get_subject());
-	msg.attr.to = to;
-	self:route_stanza(msg);
-end
-function room_mt:set_subject(current_nick, subject)
-	if subject == "" then subject = nil; end
-	self._data['subject'] = subject;
-	self._data['subject_from'] = current_nick;
-	if self.save then self:save(); end
-	local msg = create_subject_message(current_nick, subject);
-	self:broadcast_message(msg);
-	return true;
-end
-
 function room_mt:handle_kickable(origin, stanza)
 	local real_jid = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(real_jid);
@@ -362,16 +340,6 @@ end
 function room_mt:set_public(public)
 	return self:set_hidden(not public);
 end
-function room_mt:set_changesubject(changesubject)
-	changesubject = changesubject and true or nil;
-	if self._data.changesubject ~= changesubject then
-		self._data.changesubject = changesubject;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_changesubject()
-	return self._data.changesubject;
-end
 
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
@@ -399,11 +367,6 @@ module:hook("muc-occupant-joined", function(event)
 		return occupant:get_presence(real_jid) == nil;
 	end);
 end, 80);
-
--- Send subject to joining user
-module:hook("muc-occupant-joined", function(event)
-	event.room:send_subject(event.stanza.attr.from);
-end, 20);
 
 function room_mt:handle_presence_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
@@ -668,14 +631,6 @@ module:hook("muc-config-form", function(event)
 end);
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_changesubject',
-		type = 'boolean',
-		label = 'Allow Occupants to Change Subject?',
-		value = event.room:get_changesubject()
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_moderatedroom',
 		type = 'boolean',
 		label = 'Make Room Moderated?',
@@ -728,9 +683,6 @@ module:hook("muc-config-submitted", function(event)
 end);
 module:hook("muc-config-submitted", function(event)
 	event.update_option("public", "muc#roomconfig_publicroom");
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("changesubject", "muc#roomconfig_changesubject");
 end);
 
 -- Removes everyone from the room
@@ -877,19 +829,6 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 		return true;
 	end
 end
-
-module:hook("muc-subject-change", function(event)
-	local room, stanza = event.room, event.stanza;
-	local occupant = room:get_occupant_by_real_jid(stanza.attr.from);
-	if occupant.role == "moderator" or
-		( occupant.role == "participant" and room:get_changesubject() ) then -- and participant
-		local subject = stanza:get_child_text("subject");
-		room:set_subject(occupant.nick, subject);
-	else
-		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
-	end
-	return true;
-end);
 
 function room_mt:handle_groupchat_to_room(origin, stanza)
 	-- Prosody has made the decision that messages with <subject/> are exclusively subject changes
@@ -1203,6 +1142,13 @@ room_mt.set_members_only = members_only.set;
 local persistent = module:require "muc/persistent";
 room_mt.get_persistent = persistent.get;
 room_mt.set_persistent = persistent.set;
+
+local subject = module:require "muc/subject";
+room_mt.get_changesubject = subject.get_changesubject;
+room_mt.set_changesubject = subject.set_changesubject;
+room_mt.get_subject = subject.get;
+room_mt.set_subject = subject.set;
+room_mt.send_subject = subject.send;
 
 local history = module:require "muc/history";
 room_mt.send_history = history.send;
