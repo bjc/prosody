@@ -281,9 +281,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_hidden() and "muc_hidden" or "muc_public"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	local count = iterators.count(event.room:each_occupant());
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
 end);
@@ -323,22 +320,6 @@ function room_mt:set_moderated(moderated)
 end
 function room_mt:get_moderated()
 	return self._data.moderated;
-end
-function room_mt:set_hidden(hidden)
-	hidden = hidden and true or nil;
-	if self._data.hidden ~= hidden then
-		self._data.hidden = hidden;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_hidden()
-	return self._data.hidden;
-end
-function room_mt:get_public()
-	return not self:get_hidden();
-end
-function room_mt:set_public(public)
-	return self:set_hidden(not public);
 end
 
 -- Give the room creator owner affiliation
@@ -623,14 +604,6 @@ function room_mt:get_form_layout(actor)
 end
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
-		name = 'muc#roomconfig_publicroom',
-		type = 'boolean',
-		label = 'Make Room Publicly Searchable?',
-		value = not event.room:get_hidden()
-	});
-end);
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
 		name = 'muc#roomconfig_moderatedroom',
 		type = 'boolean',
 		label = 'Make Room Moderated?',
@@ -680,9 +653,6 @@ function room_mt:process_form(origin, stanza)
 end
 module:hook("muc-config-submitted", function(event)
 	event.update_option("moderated", "muc#roomconfig_moderatedroom");
-end);
-module:hook("muc-config-submitted", function(event)
-	event.update_option("public", "muc#roomconfig_publicroom");
 end);
 
 -- Removes everyone from the room
@@ -1126,6 +1096,16 @@ room_mt.set_name = name.set;
 local description = module:require "muc/description";
 room_mt.get_description = description.get;
 room_mt.set_description = description.set;
+
+local hidden = module:require "muc/hidden";
+room_mt.get_hidden = hidden.get;
+room_mt.set_hidden = hidden.set;
+function room_mt:get_public()
+	return not self:get_hidden();
+end
+function room_mt:set_public(public)
+	return self:set_hidden(not public);
+end
 
 local password = module:require "muc/password";
 room_mt.get_password = password.get;
