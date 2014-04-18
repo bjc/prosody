@@ -252,6 +252,9 @@ function new(session, stream_callbacks, stanza_size_limit)
 			id = session.streamid or "",
 			from = from or session.host, to = to,
 		};
+		if session.stream_attrs then
+			session:stream_attrs(from, to, attr)
+		end
 		send("<?xml version='1.0'?>");
 		send(st.stanza("stream:stream", attr):top_tag());
 		return true;
