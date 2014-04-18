@@ -43,7 +43,8 @@ module:hook("muc-config-submitted", function(event)
 end);
 
 local function get_subject(room)
-	return room._data.subject_from, room._data.subject;
+	-- a <message/> stanza from the room JID (or from the occupant JID of the entity that set the subject)
+	return room._data.subject_from or room.jid, room._data.subject;
 end
 
 local function send_subject(room, to)
@@ -66,7 +67,7 @@ end
 
 -- Send subject to joining user
 module:hook("muc-occupant-joined", function(event)
-	event.room:send_subject(event.stanza.attr.from);
+	send_subject(event.room, event.stanza.attr.from);
 end, 20);
 
 -- Role check for subject changes
