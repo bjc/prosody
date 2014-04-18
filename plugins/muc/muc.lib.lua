@@ -405,6 +405,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			local dest_nick;
 			if dest_occupant == nil then -- Session is leaving
 				log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
+				orig_occupant.role = nil;
 				orig_occupant:set_session(real_jid, stanza);
 			else
 				log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
