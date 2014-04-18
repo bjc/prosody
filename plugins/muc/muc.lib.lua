@@ -49,15 +49,10 @@ end
 module:hook("muc-get-default-role", function(event)
 	if event.affiliation_rank >= valid_affiliations.admin then
 		return "moderator";
-	elseif event.affiliation_rank >= valid_affiliations.member then
+	elseif event.affiliation_rank >= valid_affiliations.none then
 		return "participant";
 	end
 end);
-module:hook("muc-get-default-role", function(event)
-	if not event.affiliation then
-		return event.room:get_moderated() and "visitor" or "participant";
-	end
-end, -1);
 
 --- Occupant functions
 function room_mt:new_occupant(bare_real_jid, nick)
@@ -278,9 +273,6 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = event.room:get_moderated() and "muc_moderated" or "muc_unmoderated"}):up();
-end);
-module:hook("muc-disco#info", function(event)
 	local count = iterators.count(event.room:each_occupant());
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
 end);
@@ -311,22 +303,10 @@ function room_mt:handle_kickable(origin, stanza)
 	return true;
 end
 
-function room_mt:set_moderated(moderated)
-	moderated = moderated and true or nil;
-	if self._data.moderated ~= moderated then
-		self._data.moderated = moderated;
-		if self.save then self:save(true); end
-	end
-end
-function room_mt:get_moderated()
-	return self._data.moderated;
-end
-
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
 end, -1);
-
 
 -- check if user is banned
 module:hook("muc-occupant-pre-join", function(event)
@@ -602,14 +582,6 @@ function room_mt:get_form_layout(actor)
 	});
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
-		name = 'muc#roomconfig_moderatedroom',
-		type = 'boolean',
-		label = 'Make Room Moderated?',
-		value = event.room:get_moderated()
-	});
-end);
 
 function room_mt:process_form(origin, stanza)
 	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
@@ -651,9 +623,6 @@ function room_mt:process_form(origin, stanza)
 	end
 	return true;
 end
-module:hook("muc-config-submitted", function(event)
-	event.update_option("moderated", "muc#roomconfig_moderatedroom");
-end);
 
 -- Removes everyone from the room
 function room_mt:clear(x)
@@ -1118,6 +1087,10 @@ room_mt.set_whois = whois.set;
 local members_only = module:require "muc/members_only";
 room_mt.get_members_only = members_only.get;
 room_mt.set_members_only = members_only.set;
+
+local moderated = module:require "muc/moderated";
+room_mt.get_moderated = moderated.get;
+room_mt.set_moderated = moderated.set;
 
 local persistent = module:require "muc/persistent";
 room_mt.get_persistent = persistent.get;
