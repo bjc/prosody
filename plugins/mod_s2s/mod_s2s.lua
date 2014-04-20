@@ -510,22 +510,10 @@ local function session_close(session, reason, remote_reason)
 	end
 end
 
-function session_open_stream(session, from, to)
-	local attr = {
-		["xmlns:stream"] = 'http://etherx.jabber.org/streams',
-		xmlns = 'jabber:server',
-		version = session.version and (session.version > 0 and "1.0" or nil),
-		["xml:lang"] = 'en',
-		id = session.streamid,
-		from = from, to = to,
-	}
+function session_stream_attrs(session, from, to, attr)
 	if not from or (hosts[from] and hosts[from].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
-
-	session.sends2s("<?xml version='1.0'?>");
-	session.sends2s(st.stanza("stream:stream", attr):top_tag());
-	return true;
 end
 
 -- Session initialization logic shared by incoming and outgoing
@@ -540,7 +528,7 @@ local function initialize_session(session)
 		session.stream:reset();
 	end
 
-	session.open_stream = session_open_stream;
+	session.stream_attrs = session_stream_attrs;
 
 	local filter = session.filter;
 	function session.data(data)
