@@ -111,7 +111,9 @@ function create_context(host, mode, user_ssl_config)
 	for option in pairs(set_options) do
 		local merged = {};
 		merge_set(core_defaults[option], merged);
-		merge_set(global_ssl_config[option], merged);
+		if global_ssl_config then
+			merge_set(global_ssl_config[option], merged);
+		end
 		merge_set(user_ssl_config[option], merged);
 		local final_array = {};
 		for opt, enable in pairs(merged) do
