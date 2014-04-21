@@ -51,13 +51,16 @@ end);
 
 -- registration required for entering members-only room
 module:hook("muc-occupant-pre-join", function(event)
-	local room, stanza = event.room, event.stanza;
-	local affiliation = room:get_affiliation(stanza.attr.from);
-	if affiliation == nil and get_members_only(event.room) then
-		local reply = st.error_reply(stanza, "auth", "registration-required"):up();
-		reply.tags[1].attr.code = "407";
-		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-		return true;
+	local room = event.room;
+	if get_members_only(room) then
+		local stanza = event.stanza;
+		local affiliation = room:get_affiliation(stanza.attr.from);
+		if valid_affiliations[affiliation or "none"] <= valid_affiliations.none then
+			local reply = st.error_reply(stanza, "auth", "registration-required"):up();
+			reply.tags[1].attr.code = "407";
+			event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+			return true;
+		end
 	end
 end, -5);
 
@@ -65,21 +68,32 @@ end, -5);
 -- if a member without privileges to edit the member list attempts to invite another user
 -- the service SHOULD return a <forbidden/> error to the occupant
 module:hook("muc-pre-invite", function(event)
-	local room, stanza = event.room, event.stanza;
-	if get_members_only(room) and room:get_affiliation(stanza.attr.from) or "none" < valid_affiliations.admin then
-		event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
-		return true;
+	local room = event.room;
+	if get_members_only(room) then
+		local stanza = event.stanza;
+		local affiliation = room:get_affiliation(stanza.attr.from);
+		if valid_affiliations[affiliation or "none"] < valid_affiliations.admin then
+			event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
+			return true;
+		end
 	end
 end);
 
 -- When an invite is sent; add an affiliation for the invitee
 module:hook("muc-invite", function(event)
-	local room, stanza = event.room, event.stanza;
-	local invitee = stanza.attr.to;
-	if get_members_only(room) and not room:get_affiliation(invitee) then
-		local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite").attr.from;
-		module:log("debug", "%s invited %s into members only room %s, granting membership", from, invitee, room.jid);
-		room:set_affiliation(from, invitee, "member", "Invited by " .. from); -- This might fail; ignore for now
+	local room = event.room;
+	if get_members_only(room) then
+		local stanza = event.stanza;
+		local invitee = stanza.attr.to;
+		local affiliation = room:get_affiliation(invitee);
+		if valid_affiliations[affiliation or "none"] <= valid_affiliations.none then
+			local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user")
+				:get_child("invite").attr.from;
+			module:log("debug", "%s invited %s into members only room %s, granting membership",
+				from, invitee, room.jid);
+			-- This might fail; ignore for now
+			room:set_affiliation(from, invitee, "member", "Invited by " .. from);
+		end
 	end
 end);
 
