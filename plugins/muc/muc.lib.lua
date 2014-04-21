@@ -320,15 +320,6 @@ module:hook("muc-occupant-pre-join", function(event)
 	end
 end, -10);
 
--- Send occupant list to newly joined user
-module:hook("muc-occupant-joined", function(event)
-	local real_jid = event.stanza.attr.from;
-	event.room:send_occupant_list(real_jid, function(nick, occupant)
-		-- Don't include self
-		return occupant:get_presence(real_jid) == nil;
-	end);
-end, 80);
-
 function room_mt:handle_presence_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	if type == "error" then -- error, kick em out!
@@ -457,6 +448,14 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 				dest_x:tag("status", {code = "100"}):up();
 			end
 			self:save_occupant(dest_occupant);
+
+			if orig_occupant == nil and is_first_dest_session then
+				-- Send occupant list to newly joined user
+				self:send_occupant_list(real_jid, function(nick, occupant)
+					-- Don't include self
+					return occupant:get_presence(real_jid) == nil;
+				end)
+			end
 			self:publicise_occupant_status(dest_occupant, dest_x);
 
 			if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
