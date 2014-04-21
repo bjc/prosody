@@ -822,7 +822,7 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	if not invitee then
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 		return true;
-	elseif not module:fire_event("muc-pre-invite", {room = self, origin = origin, stanza = stanza}) then
+	elseif module:fire_event("muc-pre-invite", {room = self, origin = origin, stanza = stanza}) then
 		return true;
 	end
 	local invite = st.message({from = self.jid, to = invitee, id = stanza.attr.id})
@@ -863,7 +863,7 @@ function room_mt:handle_mediated_decline(origin, stanza)
 	if not declinee then
 		origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
 		return true;
-	elseif not module:fire_event("muc-pre-decline", {room = self, origin = origin, stanza = stanza}) then
+	elseif module:fire_event("muc-pre-decline", {room = self, origin = origin, stanza = stanza}) then
 		return true;
 	end
 	local decline = st.message({from = self.jid, to = declinee, id = stanza.attr.id})
