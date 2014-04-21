@@ -16,6 +16,7 @@ local pairs = pairs;
 local type = type;
 local io_open = io.open;
 local t_concat = table.concat;
+local t_insert = table.insert;
 
 local prosody = prosody;
 local resolve_path = configmanager.resolve_relative_path;
@@ -100,14 +101,6 @@ function create_context(host, mode, user_ssl_config)
 		end
 	end
 
-	local min_protocol = protocols[user_ssl_config.protocol];
-	if min_protocol then
-		user_ssl_config.protocol = "sslv23";
-		for i = min_protocol, 1, -1 do
-			user_ssl_config.options["no_"..protocols[i]] = true;
-		end
-	end
-
 	for option in pairs(set_options) do
 		local merged = {};
 		merge_set(core_defaults[option], merged);
@@ -122,6 +115,14 @@ function create_context(host, mode, user_ssl_config)
 			end
 		end
 		user_ssl_config[option] = final_array;
+	end
+
+	local min_protocol = protocols[user_ssl_config.protocol];
+	if min_protocol then
+		user_ssl_config.protocol = "sslv23";
+		for i = 1, min_protocol do
+			t_insert(user_ssl_config.options, "no_"..protocols[i]);
+		end
 	end
 
 	-- We can't read the password interactively when daemonized
