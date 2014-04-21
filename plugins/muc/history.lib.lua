@@ -131,7 +131,7 @@ end
 -- Send history on join
 module:hook("muc-occupant-joined", function(event)
 	send_history(event.room, event.stanza);
-end, 50); -- Between occupant list (80) and subject(20)
+end, 50); -- Before subject(20)
 
 -- add to history
 module:hook("muc-broadcast-message", function(event)
