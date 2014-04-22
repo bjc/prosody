@@ -428,7 +428,7 @@ end
 end
 
 -- import modules
-package.path = package.path.."..\?.lua;";
+package.path = package.path..";../?.lua;";
 
 local my_name = arg[0];
 if my_name:match("[/\\]") then
