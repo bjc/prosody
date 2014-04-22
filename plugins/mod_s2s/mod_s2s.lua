@@ -150,6 +150,13 @@ function module.add_host(module)
 	module:hook("route/remote", route_to_new_session, -10);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
+	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
+		if session.type == "s2sout" then
+			-- Stream is authenticated and we are seem to be done with feature negotiation,
+			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
+			mark_connected(session);
+		end
+	end, -1);
 end
 
 -- Stream is authorised, and ready for normal stanzas
@@ -219,7 +226,10 @@ function make_authenticated(event)
 	end
 	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
 
-	mark_connected(session);
+	if (session.type == "s2sout" and session.external_auth ~= "succeeded") or session.type == "s2sin" then
+		-- Stream either used dialback for authentication or is an incoming stream.
+		mark_connected(session);
+	end
 
 	return true;
 end

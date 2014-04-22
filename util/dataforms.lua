@@ -94,6 +94,15 @@ function form_t.form(layout, data, formtype)
 			end
 		end
 
+		local media = field.media;
+		if media then
+			form:tag("media", { xmlns = "urn:xmpp:media-element", height = media.height, width = media.width });
+			for _, val in ipairs(media) do
+				form:tag("uri", { type = val.type }):text(val.uri):up()
+			end
+			form:up();
+		end
+
 		if field.required then
 			form:tag("required"):up();
 		end
