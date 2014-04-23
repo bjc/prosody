@@ -113,23 +113,27 @@ function indexed_heap:reprioritize(id, priority)
 	k = _percolate_down(self.priorities, k, self.ids, self.index);
 end
 function indexed_heap:remove_index(k)
-	local size = #self.priorities;
-
 	local result = self.priorities[k];
+	if result == nil then return; end
+
 	local result_sync = self.ids[k];
 	local item = self.items[result_sync];
-	if result == nil then return; end
-	self.index[result_sync] = nil;
-	self.items[result_sync] = nil;
+	local size = #self.priorities;
 
 	self.priorities[k] = self.priorities[size];
 	self.ids[k] = self.ids[size];
 	self.index[self.ids[k]] = k;
+
 	t_remove(self.priorities);
 	t_remove(self.ids);
 
-	k = _percolate_up(self.priorities, k, self.ids, self.index);
-	k = _percolate_down(self.priorities, k, self.ids, self.index);
+	self.index[result_sync] = nil;
+	self.items[result_sync] = nil;
+
+	if size > k then
+		k = _percolate_up(self.priorities, k, self.ids, self.index);
+		k = _percolate_down(self.priorities, k, self.ids, self.index);
+	end
 
 	return result, item, result_sync;
 end
