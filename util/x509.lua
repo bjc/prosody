@@ -20,6 +20,7 @@
 
 local nameprep = require "util.encodings".stringprep.nameprep;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local base64 = require "util.encodings".base64;
 local log = require "util.logger".init("x509");
 local pairs, ipairs = pairs, ipairs;
 local s_format = string.format;
@@ -212,6 +213,25 @@ function verify_identity(host, service, cert)
 
 	-- If all else fails, well, why should we be any different?
 	return false
+end
+
+local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n"..
+"([0-9A-Za-z+/=\r\n]*)\r?\n%-%-%-%-%-END %1%-%-%-%-%-";
+
+function pem2der(pem)
+	local typ, data = pem:match(pat);
+	if typ and data then
+		return base64.decode(data), typ;
+	end
+end
+
+local wrap = ('.'):rep(64);
+local envelope = "-----BEGIN %s-----\n%s\n-----END %s-----\n"
+
+function der2pem(data, typ)
+	typ = typ and typ:upper() or "CERTIFICATE";
+	data = base64.encode(data);
+	return s_format(envelope, typ, data:gsub(wrap, '%0\n', (#data-1)/64), typ);
 end
 
 return _M;
