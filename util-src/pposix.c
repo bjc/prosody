@@ -674,11 +674,15 @@ int lc_fallocate(lua_State* L)
 	len = luaL_checkinteger(L, 3);
 
 #if defined(__linux__) && defined(_GNU_SOURCE)
-	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) == 0)
+	errno = 0;
+	ret = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len);
+	if(ret == 0)
 	{
 		lua_pushboolean(L, 1);
 		return 1;
 	}
+	/* Some old versions of Linux apparently use the return value instead of errno */
+	if(errno == 0) errno = ret;
 
 	if(errno != ENOSYS && errno != EOPNOTSUPP)
 	{
