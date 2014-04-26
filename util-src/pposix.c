@@ -674,6 +674,7 @@ int lc_meminfo(lua_State* L)
 #if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
 int lc_fallocate(lua_State* L)
 {
+	int ret;
 	off_t offset, len;
 	FILE *f = *(FILE**) luaL_checkudata(L, 1, LUA_FILEHANDLE);
 	if (f == NULL)
@@ -683,11 +684,15 @@ int lc_fallocate(lua_State* L)
 	len = luaL_checkinteger(L, 3);
 
 #if defined(__linux__) && defined(_GNU_SOURCE)
-	if(fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len) == 0)
+	errno = 0;
+	ret = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len);
+	if(ret == 0)
 	{
 		lua_pushboolean(L, 1);
 		return 1;
 	}
+	/* Some old versions of Linux apparently use the return value instead of errno */
+	if(errno == 0) errno = ret;
 
 	if(errno != ENOSYS && errno != EOPNOTSUPP)
 	{
@@ -701,7 +706,8 @@ int lc_fallocate(lua_State* L)
 #warning Note that posix_fallocate() will still be used on filesystems that dont support fallocate()
 #endif
 
-	if(posix_fallocate(fileno(f), offset, len) == 0)
+	ret = posix_fallocate(fileno(f), offset, len);
+	if(ret == 0)
 	{
 		lua_pushboolean(L, 1);
 		return 1;
@@ -709,7 +715,7 @@ int lc_fallocate(lua_State* L)
 	else
 	{
 		lua_pushnil(L);
-		lua_pushstring(L, strerror(errno));
+		lua_pushstring(L, strerror(ret));
 		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
 		 * this assumes that offset == length of the file */
 		ftruncate(fileno(f), offset);
