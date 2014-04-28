@@ -13,8 +13,6 @@ if module:get_host_type() ~= "component" then
 end
 
 local muc_host = module:get_host();
-local muc_name = module:get_option("name");
-if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
 local restrict_room_creation = module:get_option("restrict_room_creation");
 if restrict_room_creation then
 	if restrict_room_creation == true then
@@ -44,7 +42,7 @@ local room_configs = module:open_store("config");
 muclib.set_max_history_length(module:get_option_number("max_history_messages"));
 
 module:depends("disco");
-module:add_identity("conference", "text", muc_name);
+module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
 module:add_feature("http://jabber.org/protocol/muc");
 module:depends "muc_unique"
 module:require "muc/lock";
