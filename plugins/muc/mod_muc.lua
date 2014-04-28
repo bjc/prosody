@@ -12,7 +12,6 @@ if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
-local muc_host = module:get_host();
 local restrict_room_creation = module:get_option("restrict_room_creation");
 if restrict_room_creation then
 	if restrict_room_creation == true then
@@ -120,10 +119,6 @@ for jid in pairs(persistent_rooms) do
 end
 if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
 
-local host_room = muc_new_room(muc_host);
-host_room.save = room_save;
-rooms[muc_host] = host_room;
-
 module:hook("host-disco-items", function(event)
 	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
@@ -227,7 +222,6 @@ function shutdown_component()
 		for roomjid, room in pairs(rooms) do
 			room:clear(x);
 		end
-		host_room:clear(x);
 	end
 end
 module.unload = shutdown_component;
