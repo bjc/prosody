@@ -26,6 +26,7 @@ end
 
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
+room_mt = muclib.room_mt; -- Yes, global.
 local persistent = module:require "muc/persistent";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
@@ -52,16 +53,18 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-room_mt = muclib.room_mt; -- Yes, global.
-local _set_affiliation = room_mt.set_affiliation;
-local _get_affiliation = room_mt.get_affiliation;
-function muclib.room_mt:get_affiliation(jid)
-	if is_admin(jid) then return "owner"; end
-	return _get_affiliation(self, jid);
-end
-function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
-	if is_admin(jid) then return nil, "modify", "not-acceptable"; end
-	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
+do -- Monkey patch to make server admins room owners
+	local _get_affiliation = room_mt.get_affiliation;
+	function room_mt:get_affiliation(jid)
+		if is_admin(jid) then return "owner"; end
+		return _get_affiliation(self, jid);
+	end
+
+	local _set_affiliation = room_mt.set_affiliation;
+	function room_mt:set_affiliation(actor, jid, ...)
+		if is_admin(jid) then return nil, "modify", "not-acceptable"; end
+		return _set_affiliation(self, actor, jid, ...);
+	end
 end
 
 local function room_save(room, forced)
