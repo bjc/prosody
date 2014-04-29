@@ -1114,8 +1114,6 @@ room_mt.set_historylength = history.set_length;
 
 local _M = {}; -- module "muc"
 
-_M.set_max_history_length = history.set_max_length;
-
 function _M.new_room(jid, config)
 	return setmetatable({
 		jid = jid;
