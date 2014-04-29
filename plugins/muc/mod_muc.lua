@@ -30,9 +30,8 @@ local st = require "util.stanza";
 local um_is_admin = require "core.usermanager".is_admin;
 local hosts = prosody.hosts;
 
-rooms = {};
-local rooms = rooms;
-
+local rooms = module:shared "rooms";
+_G.rooms = rooms;
 
 module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
@@ -203,31 +202,13 @@ for event_name, method in pairs {
 	end, -2)
 end
 
-local saved = false;
-module.save = function()
-	saved = true;
-	return {rooms = rooms};
-end
-module.restore = function(data)
-	for jid, oldroom in pairs(data.rooms or {}) do
-		local room = create_room(jid);
-		room._jid_nick = oldroom._jid_nick;
-		room._occupants = oldroom._occupants;
-		room._data = oldroom._data;
-		room._affiliations = oldroom._affiliations;
-	end
-end
-
 function shutdown_component()
-	if not saved then
-		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-				:tag("status", { code = "332"}):up();
-		for roomjid, room in pairs(rooms) do
-			room:clear(x);
-		end
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+		:tag("status", { code = "332"}):up();
+	for roomjid, room in pairs(rooms) do
+		room:clear(x);
 	end
 end
-module.unload = shutdown_component;
 module:hook_global("server-stopping", shutdown_component);
 
 -- Ad-hoc commands
