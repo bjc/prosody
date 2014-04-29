@@ -12,15 +12,6 @@ if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
-local restrict_room_creation = module:get_option("restrict_room_creation");
-if restrict_room_creation then
-	if restrict_room_creation == true then
-		restrict_room_creation = "admin";
-	elseif restrict_room_creation ~= "admin" and restrict_room_creation ~= "local" then
-		restrict_room_creation = nil;
-	end
-end
-
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
 room_mt = muclib.room_mt; -- Yes, global.
@@ -146,20 +137,31 @@ module:hook("muc-room-destroyed",function(event)
 	forget_room(room.jid)
 end)
 
+do
+	local restrict_room_creation = module:get_option("restrict_room_creation");
+	if restrict_room_creation == true then
+		restrict_room_creation = "admin";
+	end
+	if restrict_room_creation then
+		local host_suffix = module.host:gsub("^[^%.]+%.", "");
+		module:hook("muc-room-pre-create", function(event)
+			local user_jid = event.stanza.attr.from;
+			if not is_admin(user_jid) and not (
+				restrict_room_creation == "local" and
+				select(2, jid_split(user_jid)) == host_suffix
+			) then
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				return true;
+			end
+		end);
+	end
+end
+
 -- Watch presence to create rooms
 local function attempt_room_creation(event)
 	local origin, stanza = event.origin, event.stanza;
 	local room_jid = jid_bare(stanza.attr.to);
-	if stanza.attr.type == nil and
-		get_room_from_jid(room_jid) == nil and
-		(
-			not(restrict_room_creation) or
-			is_admin(stanza.attr.from) or
-			(
-				restrict_room_creation == "local" and
-				select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")
-			)
-		) then
+	if stanza.attr.type == nil and get_room_from_jid(room_jid) == nil then
 		create_room(room_jid);
 	end
 end
