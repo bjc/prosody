@@ -33,8 +33,6 @@ local hosts = prosody.hosts;
 rooms = {};
 local rooms = rooms;
 
--- Configurable options
-muclib.set_max_history_length(module:get_option_number("max_history_messages"));
 
 module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));

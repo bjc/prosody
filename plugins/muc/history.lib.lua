@@ -11,7 +11,8 @@ local gettime = os.time;
 local datetime = require "util.datetime";
 local st = require "util.stanza";
 
-local default_history_length, max_history_length = 20, math.huge;
+local default_history_length = 20;
+local max_history_length = module:get_option_number("max_history_messages", math.huge);
 
 local function set_max_history_length(_max_history_length)
 	max_history_length = _max_history_length or math.huge;
