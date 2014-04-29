@@ -79,6 +79,10 @@ do
 	end
 end
 
+function room_mt:has_occupant()
+	return next(self._occupants, nil) ~= nil
+end
+
 function room_mt:get_occupant_by_real_jid(real_jid)
 	local occupant_jid = self:get_occupant_jid(real_jid);
 	if occupant_jid == nil then return nil end
