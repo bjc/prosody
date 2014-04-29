@@ -205,8 +205,6 @@ for event_name, method in pairs {
 	end, -2)
 end
 
-hosts[module:get_host()].muc = { rooms = rooms };
-
 local saved = false;
 module.save = function()
 	saved = true;
@@ -220,7 +218,6 @@ module.restore = function(data)
 		room._data = oldroom._data;
 		room._affiliations = oldroom._affiliations;
 	end
-	hosts[module:get_host()].muc = { rooms = rooms };
 end
 
 function shutdown_component()
