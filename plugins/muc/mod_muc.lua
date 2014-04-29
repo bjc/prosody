@@ -13,7 +13,6 @@ if module:get_host_type() ~= "component" then
 end
 
 local muclib = module:require "muc";
-local muc_new_room = muclib.new_room;
 room_mt = muclib.room_mt; -- Yes, global.
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
@@ -48,11 +47,8 @@ do -- Monkey patch to make server admins room owners
 	end
 end
 
-function create_room(jid)
-	local room = muc_new_room(jid);
-	rooms[jid] = room;
-	module:fire_event("muc-room-created", { room = room });
-	return room;
+function track_room(room)
+	rooms[room.jid] = room;
 end
 
 function forget_room(jid)
@@ -93,9 +89,9 @@ do -- Persistent rooms
 	end
 
 	-- When room is created, over-ride 'save' method
-	module:hook("muc-room-created", function(event)
+	module:hook("muc-occupant-pre-create", function(event)
 		event.room.save = room_save;
-	end);
+	end, 1000);
 
 	-- Automatically destroy empty non-persistent rooms
 	module:hook("muc-occupant-left",function(event)
@@ -110,9 +106,10 @@ do -- Persistent rooms
 		local node = jid_split(jid);
 		local data = room_configs:get(node);
 		if data then
-			local room = create_room(jid);
+			local room = muclib.new_room(jid);
 			room._data = data._data;
 			room._affiliations = data._affiliations;
+			track_room(room);
 		else -- missing room data
 			persistent_rooms[jid] = nil;
 			module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
@@ -131,6 +128,10 @@ module:hook("host-disco-items", function(event)
 		end
 	end
 end);
+
+module:hook("muc-room-pre-create", function(event)
+	track_room(event.room);
+end, -1000);
 
 module:hook("muc-room-destroyed",function(event)
 	local room = event.room
@@ -156,18 +157,6 @@ do
 		end);
 	end
 end
-
--- Watch presence to create rooms
-local function attempt_room_creation(event)
-	local origin, stanza = event.origin, event.stanza;
-	local room_jid = jid_bare(stanza.attr.to);
-	if stanza.attr.type == nil and get_room_from_jid(room_jid) == nil then
-		create_room(room_jid);
-	end
-end
-module:hook("presence/full", attempt_room_creation, -1)
-module:hook("presence/bare", attempt_room_creation, -1)
-module:hook("presence/host", attempt_room_creation, -1)
 
 for event_name, method in pairs {
 	-- Normal room interactions
@@ -195,10 +184,16 @@ for event_name, method in pairs {
 } do
 	module:hook(event_name, function (event)
 		local origin, stanza = event.origin, event.stanza;
-		local room = get_room_from_jid(jid_bare(stanza.attr.to))
+		local room_jid = jid_bare(stanza.attr.to);
+		local room = get_room_from_jid(room_jid);
 		if room == nil then
-			origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
-			return true;
+			-- Watch presence to create rooms
+			if stanza.attr.type == nil and stanza.name == "presence" then
+				room = muclib.new_room(room_jid);
+			else
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				return true;
+			end
 		end
 		return room[method](room, origin, stanza);
 	end, -2)
