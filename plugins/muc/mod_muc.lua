@@ -239,8 +239,7 @@ end, function(fields, errors)
 		return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
 	end
 	for _, room in ipairs(fields.rooms) do
-		rooms[room]:destroy();
-		rooms[room] = nil;
+		get_room_from_jid(room):destroy();
 	end
 	return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
 end);
