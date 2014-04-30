@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local array = require "util.array";
-
 if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
@@ -213,36 +211,38 @@ function shutdown_component()
 end
 module:hook_global("server-stopping", shutdown_component);
 
--- Ad-hoc commands
-module:depends("adhoc")
-local t_concat = table.concat;
-local adhoc_new = module:require "adhoc".new;
-local adhoc_initial = require "util.adhoc".new_initial_data_form;
-local dataforms_new = require "util.dataforms".new;
+do -- Ad-hoc commands
+	module:depends "adhoc";
+	local t_concat = table.concat;
+	local adhoc_new = module:require "adhoc".new;
+	local adhoc_initial = require "util.adhoc".new_initial_data_form;
+	local array = require "util.array";
+	local dataforms_new = require "util.dataforms".new;
 
-local destroy_rooms_layout = dataforms_new {
-	title = "Destroy rooms";
-	instructions = "Select the rooms to destroy";
+	local destroy_rooms_layout = dataforms_new {
+		title = "Destroy rooms";
+		instructions = "Select the rooms to destroy";
 
-	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#destroy" };
-	{ name = "rooms", type = "list-multi", required = true, label = "Rooms to destroy:"};
-};
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#destroy" };
+		{ name = "rooms", type = "list-multi", required = true, label = "Rooms to destroy:"};
+	};
 
-local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
-	return { rooms = array.collect(each_room):pluck("jid"):sort(); };
-end, function(fields, errors)
-	if errors then
-		local errmsg = {};
-		for name, err in pairs(errors) do
-			errmsg[#errmsg + 1] = name .. ": " .. err;
+	local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
+		return { rooms = array.collect(each_room):pluck("jid"):sort(); };
+	end, function(fields, errors)
+		if errors then
+			local errmsg = {};
+			for name, err in pairs(errors) do
+				errmsg[#errmsg + 1] = name .. ": " .. err;
+			end
+			return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
 		end
-		return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
-	end
-	for _, room in ipairs(fields.rooms) do
-		get_room_from_jid(room):destroy();
-	end
-	return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
-end);
-local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
+		for _, room in ipairs(fields.rooms) do
+			get_room_from_jid(room):destroy();
+		end
+		return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
+	end);
+	local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
 
-module:provides("adhoc", destroy_rooms_desc);
+	module:provides("adhoc", destroy_rooms_desc);
+end
