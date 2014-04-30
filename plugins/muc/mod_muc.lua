@@ -14,6 +14,7 @@ end
 
 local muclib = module:require "muc";
 room_mt = muclib.room_mt; -- Yes, global.
+local iterators = require "util.iterators";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -57,6 +58,10 @@ end
 
 function get_room_from_jid(room_jid)
 	return rooms[room_jid]
+end
+
+function each_room()
+	return iterators.values(rooms);
 end
 
 do -- Persistent rooms
@@ -122,9 +127,9 @@ end
 module:hook("host-disco-items", function(event)
 	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
-	for jid, room in pairs(rooms) do
+	for room in each_room() do
 		if not room:get_hidden() then
-			reply:tag("item", {jid=jid, name=room:get_name()}):up();
+			reply:tag("item", {jid=room.jid, name=room:get_name()}):up();
 		end
 	end
 end);
@@ -202,7 +207,7 @@ end
 function shutdown_component()
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 		:tag("status", { code = "332"}):up();
-	for roomjid, room in pairs(rooms) do
+	for room in each_room() do
 		room:clear(x);
 	end
 end
@@ -211,7 +216,6 @@ module:hook_global("server-stopping", shutdown_component);
 -- Ad-hoc commands
 module:depends("adhoc")
 local t_concat = table.concat;
-local keys = require "util.iterators".keys;
 local adhoc_new = module:require "adhoc".new;
 local adhoc_initial = require "util.adhoc".new_initial_data_form;
 local dataforms_new = require "util.dataforms".new;
@@ -225,7 +229,7 @@ local destroy_rooms_layout = dataforms_new {
 };
 
 local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
-	return { rooms = array.collect(keys(rooms)):sort() };
+	return { rooms = array.collect(each_room):pluck("jid"):sort(); };
 end, function(fields, errors)
 	if errors then
 		local errmsg = {};
