@@ -816,6 +816,9 @@ function commands.check(arg)
 	end
 	if not what or what == "config" then
 		print("Checking config...");
+		local deprecated = set.new({
+			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login",
+		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
 			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings"
@@ -830,6 +833,13 @@ function commands.check(arg)
 		end
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
+		local deprecated_global_options = set.intersection(global_options, deprecated);
+		if not deprecated_global_options:empty() then
+			print("");
+			print("    You have some deprecated options in the global section:");
+			print("    "..tostring(deprecated_global_options))
+			ok = false;
+		end
 		for host, options in enabled_hosts() do
 			local host_options = set.new(it.to_array(it.keys(options)));
 			local misplaced_options = set.intersection(host_options, known_global_options);
