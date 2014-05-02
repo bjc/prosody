@@ -799,6 +799,21 @@ function commands.check(arg)
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(config.getconfig())); end
+	if not what or what == "disabled" then
+		local disabled_hosts = set.new();
+		for host, host_options in it.filter("*", pairs(config.getconfig())) do
+			if host_options.enabled == false then
+				disabled_hosts:add(host);
+			end
+		end
+		if not disabled_hosts:empty() then
+			local msg = "Checks will be skipped for these disabled hosts: %s";
+			if what then msg = "These hosts are disabled: %s"; end
+			show_warning(msg, tostring(disabled_hosts));
+			if what then return 0; end
+			print""
+		end
+	end
 	if not what or what == "config" then
 		print("Checking config...");
 		local known_global_options = set.new({
