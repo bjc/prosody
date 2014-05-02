@@ -831,6 +831,17 @@ function commands.check(arg)
 			print("    No global options defined. Perhaps you have put a host definition at the top")
 			print("    of the config file? They should be at the bottom, see http://prosody.im/doc/configure#overview");
 		end
+		if it.count(enabled_hosts()) == 0 then
+			ok = false;
+			print("");
+			if it.count(it.filter("*", pairs(config))) == 0 then
+				print("    No hosts are defined, please add at least one VirtualHost section")
+			elseif config["*"]["enabled"] == false then
+				print("    No hosts are enabled. Remove enabled = false from the global section or put enabled = true under at least one VirtualHost section")
+			else
+				print("    All hosts are disabled. Remove enabled = false from at least one VirtualHost section")
+			end
+		end
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
 		local deprecated_global_options = set.intersection(global_options, deprecated);
