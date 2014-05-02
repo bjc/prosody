@@ -797,6 +797,8 @@ function commands.check(arg)
 	local array, set = require "util.array", require "util.set";
 	local it = require "util.iterators";
 	local ok = true;
+	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
+	local function enabled_hosts() return it.filter(disabled_hosts, pairs(config.getconfig())); end
 	if not what or what == "config" then
 		print("Checking config...");
 		local known_global_options = set.new({
@@ -813,7 +815,7 @@ function commands.check(arg)
 		end
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
-		for host, options in it.filter("*", pairs(config)) do
+		for host, options in enabled_hosts() do
 			local host_options = set.new(it.to_array(it.keys(options)));
 			local misplaced_options = set.intersection(host_options, known_global_options);
 			for name in pairs(options) do
@@ -898,7 +900,7 @@ function commands.check(arg)
 		
 		local v6_supported = not not socket.tcp6;
 		
-		for host, host_options in it.filter("*", pairs(config.getconfig())) do
+		for host, host_options in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
 			
 			local is_component = not not host_options.component_module;
@@ -1047,54 +1049,52 @@ function commands.check(arg)
 			print("This version of LuaSec (" .. ssl._VERSION .. ") does not support certificate checking");
 			cert_ok = false
 		else
-			for host in pairs(hosts) do
-				if host ~= "*" then -- Should check global certs too.
-					print("Checking certificate for "..host);
-					-- First, let's find out what certificate this host uses.
-					local ssl_config = config.rawget(host, "ssl");
-					if not ssl_config then
-						local base_host = host:match("%.(.*)");
-						ssl_config = config.get(base_host, "ssl");
-					end
-					if not ssl_config then
-						print("  No 'ssl' option defined for "..host)
-						cert_ok = false
-					elseif not ssl_config.certificate then
-						print("  No 'certificate' set in ssl option for "..host)
-						cert_ok = false
-					elseif not ssl_config.key then
-						print("  No 'key' set in ssl option for "..host)
+			for host in enabled_hosts() do
+				print("Checking certificate for "..host);
+				-- First, let's find out what certificate this host uses.
+				local ssl_config = config.rawget(host, "ssl");
+				if not ssl_config then
+					local base_host = host:match("%.(.*)");
+					ssl_config = config.get(base_host, "ssl");
+				end
+				if not ssl_config then
+					print("  No 'ssl' option defined for "..host)
+					cert_ok = false
+				elseif not ssl_config.certificate then
+					print("  No 'certificate' set in ssl option for "..host)
+					cert_ok = false
+				elseif not ssl_config.key then
+					print("  No 'key' set in ssl option for "..host)
+					cert_ok = false
+				else
+					local key, err = io.open(ssl_config.key); -- Permissions check only
+					if not key then
+						print("    Could not open "..ssl_config.key..": "..err);
 						cert_ok = false
 					else
-						local key, err = io.open(ssl_config.key); -- Permissions check only
-						if not key then
-							print("    Could not open "..ssl_config.key..": "..err);
+						key:close();
+					end
+					local cert_fh, err = io.open(ssl_config.certificate); -- Load the file.
+					if not cert_fh then
+						print("    Could not open "..ssl_config.certificate..": "..err);
+						cert_ok = false
+					else
+						print("  Certificate: "..ssl_config.certificate)
+						local cert = load_cert(cert_fh:read"*a"); cert_fh = cert_fh:close();
+						if not cert:validat(os.time()) then
+							print("    Certificate has expired.")
 							cert_ok = false
-						else
-							key:close();
 						end
-						local cert_fh, err = io.open(ssl_config.certificate); -- Load the file.
-						if not cert_fh then
-							print("    Could not open "..ssl_config.certificate..": "..err);
+						if config.get(host, "component_module") == nil
+							and not x509_verify_identity(host, "_xmpp-client", cert) then
+							print("    Not vaild for client connections to "..host..".")
 							cert_ok = false
-						else
-							print("  Certificate: "..ssl_config.certificate)
-							local cert = load_cert(cert_fh:read"*a"); cert_fh = cert_fh:close();
-							if not cert:validat(os.time()) then
-								print("    Certificate has expired.")
-								cert_ok = false
-							end
-							if config.get(host, "component_module") == nil
+						end
+						if (not (config.get(name, "anonymous_login")
+							or config.get(name, "authentication") == "anonymous"))
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
-								print("    Not vaild for client connections to "..host..".")
-								cert_ok = false
-							end
-							if (not (config.get(name, "anonymous_login")
-								or config.get(name, "authentication") == "anonymous"))
-							and not x509_verify_identity(host, "_xmpp-client", cert) then
-								print("    Not vaild for server-to-server connections to "..host..".")
-								cert_ok = false
-							end
+							print("    Not vaild for server-to-server connections to "..host..".")
+							cert_ok = false
 						end
 					end
 				end
