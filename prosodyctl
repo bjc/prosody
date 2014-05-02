@@ -1115,8 +1115,8 @@ function commands.check(arg)
 							print("    Not vaild for client connections to "..host..".")
 							cert_ok = false
 						end
-						if (not (config.get(name, "anonymous_login")
-							or config.get(name, "authentication") == "anonymous"))
+						if (not (config.get(host, "anonymous_login")
+							or config.get(host, "authentication") == "anonymous"))
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
 							print("    Not vaild for server-to-server connections to "..host..".")
 							cert_ok = false
