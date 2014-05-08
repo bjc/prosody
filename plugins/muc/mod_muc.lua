@@ -23,11 +23,10 @@ if restrict_room_creation then
 		restrict_room_creation = nil;
 	end
 end
-local lock_rooms = module:get_option_boolean("muc_room_locking", false);
-local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
 
 local muclib = module:require "muc";
 local muc_new_room = muclib.new_room;
+local persistent = module:require "muc/persistent";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -47,6 +46,7 @@ module:depends("disco");
 module:add_identity("conference", "text", muc_name);
 module:add_feature("http://jabber.org/protocol/muc");
 module:depends "muc_unique"
+module:require "muc/lock";
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
@@ -66,8 +66,9 @@ end
 
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
-	persistent_rooms[room.jid] = room._data.persistent;
-	if room._data.persistent then
+	local is_persistent = persistent.get(room);
+	persistent_rooms[room.jid] = is_persistent;
+	if is_persistent then
 		local history = room._data.history;
 		room._data.history = nil;
 		local data = {
@@ -90,16 +91,6 @@ function create_room(jid)
 	local room = muc_new_room(jid);
 	room.save = room_save;
 	rooms[jid] = room;
-	if lock_rooms then
-		room:lock();
-		if lock_room_timeout and lock_room_timeout > 0 then
-			module:add_timer(lock_room_timeout, function ()
-				if room:is_locked() then
-					room:destroy(); -- Not unlocked in time
-				end
-			end);
-		end
-	end
 	module:fire_event("muc-room-created", { room = room });
 	return room;
 end
@@ -149,7 +140,7 @@ end)
 
 module:hook("muc-occupant-left",function(event)
 	local room = event.room
-	if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
+	if not next(room._occupants) and not persistent.get(room) then -- empty, non-persistent room
 		module:fire_event("muc-room-destroyed", { room = room });
 	end
 end);
@@ -228,27 +219,14 @@ module.restore = function(data)
 	hosts[module:get_host()].muc = { rooms = rooms };
 end
 
-function shutdown_room(room, stanza)
-	for nick, occupant in pairs(room._occupants) do
-		stanza.attr.from = nick;
-		for jid in pairs(occupant.sessions) do
-			stanza.attr.to = jid;
-			room:_route_stanza(stanza);
-			room._jid_nick[jid] = nil;
-		end
-		room._occupants[nick] = nil;
-	end
-end
 function shutdown_component()
 	if not saved then
-		local stanza = st.presence({type = "unavailable"})
-			:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-				:tag("item", { affiliation='none', role='none' }):up()
+		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 				:tag("status", { code = "332"}):up();
 		for roomjid, room in pairs(rooms) do
-			shutdown_room(room, stanza);
+			room:clear(x);
 		end
-		shutdown_room(host_room, stanza);
+		host_room:clear(x);
 	end
 end
 module.unload = shutdown_component;
