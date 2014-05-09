@@ -15,9 +15,13 @@ local fire_event = prosody and prosody.events.fire_event or function () end;
 
 local envload = require"util.envload".envload;
 local lfs = require "lfs";
+local resolve_relative_path = require"util.paths".resolve_relative_path;
+local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
 
 module "configmanager"
+
+_M.resolve_relative_path = resolve_relative_path; -- COMPAT
 
 local parsers = {};
 
@@ -64,41 +68,6 @@ function _M.set(host, key, value, _oldvalue)
 		key, value = value, _oldvalue; --COMPAT with code that still uses "core"
 	end
 	return set(config, host, key, value);
-end
-
--- Helper function to resolve relative paths (needed by config)
-do
-	function resolve_relative_path(parent_path, path)
-		if path then
-			-- Some normalization
-			parent_path = parent_path:gsub("%"..path_sep.."+$", "");
-			path = path:gsub("^%.%"..path_sep.."+", "");
-
-			local is_relative;
-			if path_sep == "/" and path:sub(1,1) ~= "/" then
-				is_relative = true;
-			elseif path_sep == "\\" and (path:sub(1,1) ~= "/" and (path:sub(2,3) ~= ":\\" and path:sub(2,3) ~= ":/")) then
-				is_relative = true;
-			end
-			if is_relative then
-				return parent_path..path_sep..path;
-			end
-		end
-		return path;
-	end
-end
-
--- Helper function to convert a glob to a Lua pattern
-local function glob_to_pattern(glob)
-	return "^"..glob:gsub("[%p*?]", function (c)
-		if c == "*" then
-			return ".*";
-		elseif c == "?" then
-			return ".";
-		else
-			return "%"..c;
-		end
-	end).."$";
 end
 
 function load(filename, format)
