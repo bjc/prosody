@@ -14,7 +14,7 @@ local format, math_max = string.format, math.max;
 local fire_event = prosody and prosody.events.fire_event or function () end;
 
 local envload = require"util.envload".envload;
-local lfs = require "lfs";
+local deps = require"util.dependencies";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
@@ -183,6 +183,10 @@ do
 
 		function env.Include(file)
 			if file:match("[*?]") then
+				local lfs = deps.softreq "lfs";
+				if not lfs then
+					error(format("Error expanding wildcard pattern in Include %q - LuaFileSystem not available", file));
+				end
 				local path_pos, glob = file:match("()([^"..path_sep.."]+)$");
 				local path = file:sub(1, math_max(path_pos-2,0));
 				local config_path = config_file:gsub("[^"..path_sep.."]+$", "");
