@@ -2,7 +2,7 @@
 local json = require "util.json";
 local xml_parse = require "util.xml".parse;
 local uuid = require "util.uuid";
-local resolve_relative_path = require "core.configmanager".resolve_relative_path;
+local resolve_relative_path = require "util.paths".resolve_relative_path;
 
 local stanza_mt = require"util.stanza".stanza_mt;
 local getmetatable = getmetatable;

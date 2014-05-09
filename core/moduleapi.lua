@@ -13,6 +13,7 @@ local set = require "util.set";
 local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
+local resolve_relative_path = require"util.paths".resolve_relative_path;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -380,7 +381,7 @@ function api:get_directory()
 end
 
 function api:load_resource(path, mode)
-	path = config.resolve_relative_path(self:get_directory(), path);
+	path = resolve_relative_path(self:get_directory(), path);
 	return io.open(path, mode);
 end
 
