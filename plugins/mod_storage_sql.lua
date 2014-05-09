@@ -49,7 +49,7 @@ local function db2uri(params)
 end
 
 
-local resolve_relative_path = require "core.configmanager".resolve_relative_path;
+local resolve_relative_path = require "util.paths".resolve_relative_path;
 
 local function test_connection()
 	if not connection then return nil; end
