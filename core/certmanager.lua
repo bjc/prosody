@@ -19,7 +19,7 @@ local t_concat = table.concat;
 local t_insert = table.insert;
 
 local prosody = prosody;
-local resolve_path = configmanager.resolve_relative_path;
+local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config;
 
 local luasec_has_noticket, luasec_has_verifyext, luasec_has_no_compression;
