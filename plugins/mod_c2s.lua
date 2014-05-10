@@ -50,7 +50,7 @@ function stream_callbacks.streamopened(session, attr)
 	session.streamid = uuid_generate();
 	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
 
-	if not hosts[session.host] then
+	if not hosts[session.host] or not hosts[session.host].users then
 		-- We don't serve this host...
 		session:close{ condition = "host-unknown", text = "This server does not serve "..tostring(session.host)};
 		return;
