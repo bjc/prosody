@@ -238,11 +238,11 @@ module:hook("muc-get-history", function(event)
 	return true;
 end)
 
-function room_mt:send_history(stanza)
+function room_mt:send_history(to, stanza)
 	local maxchars, maxstanzas, since = parse_history(stanza)
 	local event = {
 		room = self;
-		to = stanza.attr.from; -- `to` is required to calculate the character count for `maxchars`
+		to = to; -- `to` is required to calculate the character count for `maxchars`
 		maxchars = maxchars, maxstanzas = maxstanzas, since = since;
 		next_stanza = function() end; -- events should define this iterator
 	}
