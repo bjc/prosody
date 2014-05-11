@@ -492,6 +492,13 @@ end
 
 local function session_flags(session, line)
 	line = line or {};
+	if session.type == "c2s" then
+		local status, priority = "unavailable", tostring(session.priority or "-");
+		if session.presence then
+			status = session.presence:get_child_text("show") or "available";
+		end
+		line[#line+1] = status.."("..priority..")";
+	end
 	if session.cert_identity_status == "valid" then
 		line[#line+1] = "(authenticated)";
 	end
@@ -543,11 +550,7 @@ function def_env.c2s:show(match_jid)
 		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
-			local status, priority = "unavailable", tostring(session.priority or "-");
-			if session.presence then
-				status = session.presence:get_child_text("show") or "available";
-			end
-			print(session_flags(session, { "   "..jid.." - "..status.."("..priority..")" }));
+			print(session_flags(session, { "  ", jid }));
 		end
 	end);
 	return true, "Total: "..count.." clients";
