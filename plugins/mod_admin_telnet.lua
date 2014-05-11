@@ -154,6 +154,14 @@ function console_listener.onincoming(conn, data)
 	session.partial_data = data:match("[^\n]+$");
 end
 
+function console_listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		session.send("\0");
+		return true;
+	end
+end
+
 function console_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
@@ -212,9 +220,11 @@ function commands.help(session, data)
 		print [[c2s:show(jid) - Show all client sessions with the specified JID (or all if no JID given)]]
 		print [[c2s:show_insecure() - Show all unencrypted client connections]]
 		print [[c2s:show_secure() - Show all encrypted client connections]]
+		print [[c2s:show_tls() - Show TLS cipher info for encrypted sessions]]
 		print [[c2s:close(jid) - Close all sessions for the specified JID]]
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
+		print [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
 		print [[s2s:close(from, to) - Close a connection from one domain to another]]
 		print [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
 	elseif section == "module" then
@@ -471,22 +481,28 @@ function def_env.config:reload()
 	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
-def_env.hosts = {};
-function def_env.hosts:list()
-	for host, host_session in pairs(hosts) do
-		self.session.print(host);
+local function common_info(session, line)
+	if session.id then
+		line[#line+1] = "["..session.id.."]"
+	else
+		line[#line+1] = "["..session.type..(tostring(session):match("%x*$")).."]"
 	end
-	return true, "Done";
-end
-
-function def_env.hosts:add(name)
 end
 
 local function session_flags(session, line)
 	line = line or {};
+	common_info(session, line);
+	if session.type == "c2s" then
+		local status, priority = "unavailable", tostring(session.priority or "-");
+		if session.presence then
+			status = session.presence:get_child_text("show") or "available";
+		end
+		line[#line+1] = status.."("..priority..")";
+	end
 	if session.cert_identity_status == "valid" then
-		line[#line+1] = "(secure)";
-	elseif session.secure then
+		line[#line+1] = "(authenticated)";
+	end
+	if session.secure then
 		line[#line+1] = "(encrypted)";
 	end
 	if session.compressed then
@@ -497,6 +513,23 @@ local function session_flags(session, line)
 	end
 	if session.ip and session.ip:match(":") then
 		line[#line+1] = "(IPv6)";
+	end
+	return table.concat(line, " ");
+end
+
+local function tls_info(session, line)
+	line = line or {};
+	common_info(session, line);
+	if session.secure then
+		local sock = session.conn and session.conn.socket and session.conn:socket();
+		if sock and sock.info then
+			local info = sock:info();
+			line[#line+1] = ("(%s with %s)"):format(info.protocol, info.cipher);
+		else
+			line[#line+1] = "(cipher info unavailable)";
+		end
+	else
+		line[#line+1] = "(insecure)";
 	end
 	return table.concat(line, " ");
 end
@@ -524,8 +557,9 @@ function def_env.c2s:count(match_jid)
 	return true, "Total: "..count.." clients";
 end
 
-function def_env.c2s:show(match_jid)
+function def_env.c2s:show(match_jid, annotate)
 	local print, count = self.session.print, 0;
+	annotate = annotate or session_flags;
 	local curr_host;
 	show_c2s(function (jid, session)
 		if curr_host ~= session.host then
@@ -534,11 +568,7 @@ function def_env.c2s:show(match_jid)
 		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
-			local status, priority = "unavailable", tostring(session.priority or "-");
-			if session.presence then
-				status = session.presence:get_child_text("show") or "available";
-			end
-			print(session_flags(session, { "   "..jid.." - "..status.."("..priority..")" }));
+			print(annotate(session, { "  ", jid }));
 		end
 	end);
 	return true, "Total: "..count.." clients";
@@ -566,6 +596,10 @@ function def_env.c2s:show_secure(match_jid)
 	return true, "Total: "..count.." secure client connections";
 end
 
+function def_env.c2s:show_tls(match_jid)
+	return self:show(match_jid, tls_info);
+end
+
 function def_env.c2s:close(match_jid)
 	local count = 0;
 	show_c2s(function (jid, session)
@@ -579,8 +613,9 @@ end
 
 
 def_env.s2s = {};
-function def_env.s2s:show(match_jid)
+function def_env.s2s:show(match_jid, annotate)
 	local print = self.session.print;
+	annotate = annotate or session_flags;
 
 	local count_in, count_out = 0,0;
 	local s2s_list = { };
@@ -598,8 +633,7 @@ function def_env.s2s:show(match_jid)
 			remotehost, localhost = session.from_host or "?", session.to_host or "?";
 		end
 		local sess_lines = { l = localhost, r = remotehost,
-			session_flags(session, { "", direction, remotehost or "?",
-				"["..session.type..tostring(session):match("[a-f0-9]*$").."]" })};
+			annotate(session, { "", direction, remotehost or "?" })};
 
 		if (not match_jid) or remotehost:match(match_jid) or localhost:match(match_jid) then
 			table.insert(s2s_list, sess_lines);
@@ -652,6 +686,10 @@ function def_env.s2s:show(match_jid)
 		for _, line in ipairs(sess_lines) do print(line); end
 	end
 	return true, "Total: "..count_out.." outgoing, "..count_in.." incoming connections";
+end
+
+function def_env.s2s:show_tls(match_jid)
+	return self:show(match_jid, tls_info);
 end
 
 local function print_subject(print, subject)
@@ -823,9 +861,19 @@ end
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
+	local type;
 	for host in values(array.collect(keys(prosody.hosts)):sort()) do
 		i = i + 1;
-		print(host);
+		type = hosts[host].type;
+		if type == "local" then
+			print(host);
+		else
+			type = module:context(host):get_option_string("component_module", type);
+			if type ~= "component" then
+				type = type .. " component";
+			end
+			print(("%s (%s)"):format(host, type));
+		end
 	end
 	return true, i.." hosts";
 end
