@@ -491,8 +491,17 @@ end
 function def_env.hosts:add(name)
 end
 
+local function common_info(session, line)
+	if session.id then
+		line[#line+1] = "["..session.id.."]"
+	else
+		line[#line+1] = "["..session.type..(tostring(session):match("%x*$")).."]"
+	end
+end
+
 local function session_flags(session, line)
 	line = line or {};
+	common_info(session, line);
 	if session.type == "c2s" then
 		local status, priority = "unavailable", tostring(session.priority or "-");
 		if session.presence then
@@ -520,6 +529,7 @@ end
 
 local function tls_info(session, line)
 	line = line or {};
+	common_info(session, line);
 	if session.secure then
 		local sock = session.conn and session.conn.socket and session.conn:socket();
 		if sock and sock.info then
@@ -628,8 +638,7 @@ function def_env.s2s:show(match_jid, annotate)
 			remotehost, localhost = session.from_host or "?", session.to_host or "?";
 		end
 		local sess_lines = { l = localhost, r = remotehost,
-			annotate(session, { "", direction, remotehost or "?",
-				"["..session.type..tostring(session):match("[a-f0-9]*$").."]" })};
+			annotate(session, { "", direction, remotehost or "?" })};
 
 		if (not match_jid) or remotehost:match(match_jid) or localhost:match(match_jid) then
 			table.insert(s2s_list, sess_lines);
