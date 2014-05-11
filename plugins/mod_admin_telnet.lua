@@ -493,8 +493,9 @@ end
 local function session_flags(session, line)
 	line = line or {};
 	if session.cert_identity_status == "valid" then
-		line[#line+1] = "(secure)";
-	elseif session.secure then
+		line[#line+1] = "(authenticated)";
+	end
+	if session.secure then
 		line[#line+1] = "(encrypted)";
 	end
 	if session.compressed then
