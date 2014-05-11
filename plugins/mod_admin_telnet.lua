@@ -481,17 +481,6 @@ function def_env.config:reload()
 	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
-def_env.hosts = {};
-function def_env.hosts:list()
-	for host, host_session in pairs(hosts) do
-		self.session.print(host);
-	end
-	return true, "Done";
-end
-
-function def_env.hosts:add(name)
-end
-
 local function common_info(session, line)
 	if session.id then
 		line[#line+1] = "["..session.id.."]"
