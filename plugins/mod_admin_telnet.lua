@@ -872,9 +872,19 @@ end
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
+	local type;
 	for host in values(array.collect(keys(prosody.hosts)):sort()) do
 		i = i + 1;
-		print(host);
+		type = hosts[host].type;
+		if type == "local" then
+			print(host);
+		else
+			type = module:context(host):get_option_string("component_module", type);
+			if type ~= "component" then
+				type = type .. " component";
+			end
+			print(("%s (%s)"):format(host, type));
+		end
 	end
 	return true, i.." hosts";
 end
