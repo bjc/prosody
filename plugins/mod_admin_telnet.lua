@@ -220,6 +220,7 @@ function commands.help(session, data)
 		print [[c2s:show(jid) - Show all client sessions with the specified JID (or all if no JID given)]]
 		print [[c2s:show_insecure() - Show all unencrypted client connections]]
 		print [[c2s:show_secure() - Show all encrypted client connections]]
+		print [[c2s:show_tls() - Show TLS cipher info for encrypted sessions]]
 		print [[c2s:close(jid) - Close all sessions for the specified JID]]
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
@@ -567,8 +568,9 @@ function def_env.c2s:count(match_jid)
 	return true, "Total: "..count.." clients";
 end
 
-function def_env.c2s:show(match_jid)
+function def_env.c2s:show(match_jid, annotate)
 	local print, count = self.session.print, 0;
+	annotate = annotate or session_flags;
 	local curr_host;
 	show_c2s(function (jid, session)
 		if curr_host ~= session.host then
@@ -577,7 +579,7 @@ function def_env.c2s:show(match_jid)
 		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
-			print(session_flags(session, { "  ", jid }));
+			print(annotate(session, { "  ", jid }));
 		end
 	end);
 	return true, "Total: "..count.." clients";
@@ -603,6 +605,10 @@ function def_env.c2s:show_secure(match_jid)
 		end
 	end);
 	return true, "Total: "..count.." secure client connections";
+end
+
+function def_env.c2s:show_tls(match_jid)
+	return self:show(match_jid, tls_info);
 end
 
 function def_env.c2s:close(match_jid)
