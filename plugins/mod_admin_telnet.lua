@@ -154,6 +154,14 @@ function console_listener.onincoming(conn, data)
 	session.partial_data = data:match("[^\n]+$");
 end
 
+function console_listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		session.send("\0");
+		return true;
+	end
+end
+
 function console_listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
