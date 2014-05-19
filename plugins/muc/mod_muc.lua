@@ -20,7 +20,6 @@ local um_is_admin = require "core.usermanager".is_admin;
 local hosts = prosody.hosts;
 
 local rooms = module:shared "rooms";
-_G.rooms = rooms;
 
 module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
