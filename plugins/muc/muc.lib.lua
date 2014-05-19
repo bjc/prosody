@@ -453,7 +453,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			end
 			self:save_occupant(dest_occupant);
 
-			if orig_occupant == nil and is_first_dest_session then
+			if orig_occupant == nil then
 				-- Send occupant list to newly joined user
 				self:send_occupant_list(real_jid, function(nick, occupant)
 					-- Don't include self
