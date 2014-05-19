@@ -100,11 +100,21 @@ function room_mt:save_occupant(occupant)
 			self._jid_nick[real_jid] = nil;
 		end
 	end
-	if occupant.role ~= nil and next(occupant.sessions) then
+
+	local has_live_session = false
+	if occupant.role ~= nil then
 		for real_jid, presence in occupant:each_session() do
-			self._jid_nick[real_jid] = occupant.nick;
+			if presence.attr.type == nil then
+				has_live_session = true
+				self._jid_nick[real_jid] = occupant.nick;
+			end
 		end
-	else
+		if not has_live_session then
+			-- Has no live sessions left; they have left the room.
+			occupant.role = nil
+		end
+	end
+	if not has_live_session then
 		occupant = nil
 	end
 	self._occupants[id] = occupant
