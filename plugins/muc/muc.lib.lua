@@ -123,10 +123,8 @@ end
 function room_mt:route_to_occupant(occupant, stanza)
 	local to = stanza.attr.to;
 	for jid, pr in occupant:each_session() do
-		if pr.attr.type ~= "unavailable" then
-			stanza.attr.to = jid;
-			self:route_stanza(stanza);
-		end
+		stanza.attr.to = jid;
+		self:route_stanza(stanza);
 	end
 	stanza.attr.to = to;
 end
