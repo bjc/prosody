@@ -541,7 +541,23 @@ local function initialize_session(session)
 
 	session.stream_attrs = session_stream_attrs;
 
-	local filter = session.filter;
+	local filter = initialize_filters(session);
+	local conn = session.conn;
+	local w = conn.write;
+
+	function session.sends2s(t)
+		log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
+		if t.name then
+			t = filter("stanzas/out", t);
+		end
+		if t then
+			t = filter("bytes/out", tostring(t));
+			if t then
+				return w(conn, t);
+			end
+		end
+	end
+
 	function session.data(data)
 		data = filter("bytes/in", data);
 		if data then
@@ -580,22 +596,6 @@ function listener.onconnect(conn)
 		session = s2s_new_incoming(conn);
 		sessions[conn] = session;
 		session.log("debug", "Incoming s2s connection");
-
-		local filter = initialize_filters(session);
-		local w = conn.write;
-		session.sends2s = function (t)
-			log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^([^>]*>?)"));
-			if t.name then
-				t = filter("stanzas/out", t);
-			end
-			if t then
-				t = filter("bytes/out", tostring(t));
-				if t then
-					return w(conn, t);
-				end
-			end
-		end
-
 		initialize_session(session);
 	else -- Outgoing session connected
 		session:open_stream(session.from_host, session.to_host);
