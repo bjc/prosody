@@ -13,13 +13,16 @@ local log = module._log;
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 local nameprep = require "util.encodings".stringprep.nameprep;
+local uuid_gen = require"util.uuid".generate;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
+local dialback_secret = module.host .. (module:get_option_string("dialback_secret") or uuid_gen());
+
 function generate_dialback(id, to, from)
-	return sha256_hash(id..to..from..hosts[from].dialback_secret, true);
+	return sha256_hash(id..to..dialback_secret, true);
 end
 
 function initiate_dialback(session)

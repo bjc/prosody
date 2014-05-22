@@ -74,7 +74,6 @@ function activate(host, host_config)
 		host = host;
 		s2sout = {};
 		events = events_new();
-		dialback_secret = configmanager.get(host, "dialback_secret") or uuid_gen();
 		send = host_send;
 		modules = {};
 	};
