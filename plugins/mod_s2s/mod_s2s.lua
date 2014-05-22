@@ -529,6 +529,7 @@ end
 -- Session initialization logic shared by incoming and outgoing
 local function initialize_session(session)
 	local stream = new_xmpp_stream(session, stream_callbacks);
+	local log = session.log or log;
 	session.stream = stream;
 
 	session.notopen = true;
@@ -546,8 +547,8 @@ local function initialize_session(session)
 		if data then
 			local ok, err = stream:feed(data);
 			if ok then return; end
-			(session.log or log)("warn", "Received invalid XML: %s", data);
-			(session.log or log)("warn", "Problem was: %s", err);
+			log("warn", "Received invalid XML: %s", data);
+			log("warn", "Problem was: %s", err);
 			session:close("not-well-formed");
 		end
 	end
