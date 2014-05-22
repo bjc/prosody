@@ -643,7 +643,6 @@ function listener.onreadtimeout(conn)
 end
 
 function listener.register_outgoing(conn, session)
-	session.direction = "outgoing";
 	sessions[conn] = session;
 	initialize_session(session);
 end
