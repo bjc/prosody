@@ -53,7 +53,7 @@ end
 -- finds another session to be the primary (there might not be one)
 function occupant_mt:choose_new_primary()
 	for jid, pr in self:each_session() do
-		if pr.attr.type ~= "unavailable" then
+		if pr.attr.type == nil then
 			return jid;
 		end
 	end
