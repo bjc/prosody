@@ -297,21 +297,6 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 	conn = wrapclient(conn, connect_host.addr, connect_port, s2s_listener, "*a");
 	host_session.conn = conn;
 
-	local filter = initialize_filters(host_session);
-	local w, log = conn.write, host_session.log;
-	host_session.sends2s = function (t)
-		log("debug", "sending: %s", (t.top_tag and t:top_tag()) or t:match("^[^>]*>?"));
-		if t.name then
-			t = filter("stanzas/out", t);
-		end
-		if t then
-			t = filter("bytes/out", tostring(t));
-			if t then
-				return w(conn, tostring(t));
-			end
-		end
-	end
-
 	-- Register this outgoing connection so that xmppserver_listener knows about it
 	-- otherwise it will assume it is a new incoming connection
 	s2s_listener.register_outgoing(conn, host_session);
