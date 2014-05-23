@@ -79,6 +79,10 @@ do
 	end
 end
 
+function room_mt:has_occupant()
+	return next(self._occupants, nil) ~= nil
+end
+
 function room_mt:get_occupant_by_real_jid(real_jid)
 	local occupant_jid = self:get_occupant_jid(real_jid);
 	if occupant_jid == nil then return nil end
@@ -96,11 +100,21 @@ function room_mt:save_occupant(occupant)
 			self._jid_nick[real_jid] = nil;
 		end
 	end
-	if occupant.role ~= nil and next(occupant.sessions) then
+
+	local has_live_session = false
+	if occupant.role ~= nil then
 		for real_jid, presence in occupant:each_session() do
-			self._jid_nick[real_jid] = occupant.nick;
+			if presence.attr.type == nil then
+				has_live_session = true
+				self._jid_nick[real_jid] = occupant.nick;
+			end
 		end
-	else
+		if not has_live_session then
+			-- Has no live sessions left; they have left the room.
+			occupant.role = nil
+		end
+	end
+	if not has_live_session then
 		occupant = nil
 	end
 	self._occupants[id] = occupant
@@ -109,10 +123,8 @@ end
 function room_mt:route_to_occupant(occupant, stanza)
 	local to = stanza.attr.to;
 	for jid, pr in occupant:each_session() do
-		if pr.attr.type ~= "unavailable" then
-			stanza.attr.to = jid;
-			self:route_stanza(stanza);
-		end
+		stanza.attr.to = jid;
+		self:route_stanza(stanza);
 	end
 	stanza.attr.to = to;
 end
@@ -396,7 +408,9 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			local dest_nick;
 			if dest_occupant == nil then -- Session is leaving
 				log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
-				orig_occupant.role = nil;
+				if is_last_orig_session then
+					orig_occupant.role = nil;
+				end
 				orig_occupant:set_session(real_jid, stanza);
 			else
 				log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
@@ -449,7 +463,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			end
 			self:save_occupant(dest_occupant);
 
-			if orig_occupant == nil and is_first_dest_session then
+			if orig_occupant == nil then
 				-- Send occupant list to newly joined user
 				self:send_occupant_list(real_jid, function(nick, occupant)
 					-- Don't include self
@@ -1109,8 +1123,6 @@ room_mt.get_historylength = history.get_length;
 room_mt.set_historylength = history.set_length;
 
 local _M = {}; -- module "muc"
-
-_M.set_max_history_length = history.set_max_length;
 
 function _M.new_room(jid, config)
 	return setmetatable({
