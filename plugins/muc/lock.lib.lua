@@ -23,7 +23,10 @@ local function is_locked(room)
 end
 
 if lock_rooms then
-	module:hook("muc-room-created", function(event)
+	module:hook("muc-room-pre-create", function(event)
+		-- Older groupchat protocol doesn't lock
+		if not event.stanza:get_child("x", "http://jabber.org/protocol/muc") then return end
+		-- Lock room at creation
 		local room = event.room;
 		lock(room);
 		if lock_room_timeout and lock_room_timeout > 0 then
@@ -33,15 +36,8 @@ if lock_rooms then
 				end
 			end);
 		end
-	end);
+	end, 10);
 end
-
--- Older groupchat protocol doesn't lock
-module:hook("muc-room-pre-create", function(event)
-	if is_locked(event.room) and not event.stanza:get_child("x", "http://jabber.org/protocol/muc") then
-		unlock(event.room);
-	end
-end, 10);
 
 -- Don't let users into room while it is locked
 module:hook("muc-occupant-pre-join", function(event)
