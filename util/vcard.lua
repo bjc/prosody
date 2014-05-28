@@ -319,6 +319,68 @@ function from_xep54(vCard)
 	end
 end
 
+local vcard4 = { }
+
+function vcard4:text(node, params, value)
+	self:tag(node:lower())
+	-- FIXME params
+	if type(value) == "string" then
+		self:tag("text"):text(value):up()
+	elseif vcard4[node] then
+		vcard4[node](value);
+	end
+	self:up();
+end
+
+function vcard4.N(value)
+	for i, k in ipairs(vCard_dtd.N.values) do
+		value:tag(k):text(value[i]):up();
+	end
+end
+
+local xmlns_vcard4 = "urn:ietf:params:xml:ns:vcard-4.0"
+
+local function item_to_vcard4(item)
+	local typ = item.name:lower();
+	local t = st.stanza(typ, { xmlns = xmlns_vcard4 });
+
+	local prop_def = vCard4_dtd[typ];
+	if prop_def == "text" then
+		t:tag("text"):text(item[1]):up();
+	elseif type(prop_def) == "table" then
+		if prop_def.values then
+			for i, v in ipairs(prop_def.values) do
+				t:tag(v:lower()):text(item[i] or ""):up();
+			end
+		else
+			t:tag("unsupported",{xmlns="http://zash.se/protocol/vcardlib"})
+		end
+	else
+		t:tag("unsupported",{xmlns="http://zash.se/protocol/vcardlib"})
+	end
+	return t;
+end
+
+local function vcard_to_vcard4xml(vCard)
+	local t = st.stanza("vcard", { xmlns = xmlns_vcard4 });
+	for i=1,#vCard do
+		t:add_child(item_to_vcard4(vCard[i]));
+	end
+	return t;
+end
+
+local function vcards_to_vcard4xml(vCards)
+	if not vCards[1] or vCards[1].name then
+		return vcard_to_vcard4xml(vCards)
+	else
+		local t = st.stanza("vcards", { xmlns = xmlns_vcard4 });
+		for i=1,#vCards do
+			t:add_child(vcard_to_vcard4xml(vCards[i]));
+		end
+		return t;
+	end
+end
+
 -- This was adapted from http://xmpp.org/extensions/xep-0054.html#dtd
 vCard_dtd = {
 	VERSION = "text", --MUST be 3.0, so parsing is redundant
@@ -445,10 +507,69 @@ vCard_dtd = {
 vCard_dtd.LOGO = vCard_dtd.PHOTO;
 vCard_dtd.SOUND = vCard_dtd.PHOTO;
 
+vCard4_dtd = {
+	source = "uri",
+	kind = "text",
+	xml = "text",
+	fn = "text",
+	n = {
+		values = {
+			"family",
+			"given",
+			"middle",
+			"prefix",
+			"suffix",
+		},
+	},
+	nickname = "text",
+	photo = "uri",
+	bday = "date-and-or-time",
+	anniversary = "date-and-or-time",
+	gender = "text",
+	adr = {
+		values = {
+			"pobox",
+			"ext",
+			"street",
+			"locality",
+			"region",
+			"code",
+			"country",
+		}
+	},
+	tel = "text",
+	email = "text",
+	impp = "uri",
+	lang = "language-tag",
+	tz = "text",
+	geo = "uri",
+	title = "text",
+	role = "text",
+	logo = "uri",
+	org = "text",
+	member = "uri",
+	related = "uri",
+	categories = "text",
+	note = "text",
+	prodid = "text",
+	rev = "timestamp",
+	sound = "uri",
+	uid = "uri",
+	clientpidmap = "number, uuid",
+	url = "uri",
+	version = "text",
+	key = "uri",
+	fburl = "uri",
+	caladruri = "uri",
+	caluri = "uri",
+};
+
 return {
 	from_text = from_text;
 	to_text = to_text;
 
 	from_xep54 = from_xep54;
 	to_xep54 = to_xep54;
+
+	to_vcard4 = vcards_to_vcard4xml;
 };
