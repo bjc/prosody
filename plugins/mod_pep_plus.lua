@@ -52,7 +52,7 @@ local function get_broadcaster(name)
 	return simple_broadcast;
 end
 
-local function get_pep_service(name)
+function get_pep_service(name)
 	if services[name] then
 		return services[name];
 	end
