@@ -964,6 +964,19 @@ function def_env.muc:room(room_jid)
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
 
+function def_env.muc:list(host)
+	local host_session = hosts[host];
+	if not host_session or not host_session.modules.muc then
+		return nil, "Please supply the address of a local MUC component";
+	end
+	local c = 0;
+	for name in keys(host_session.modules.muc.rooms) do
+		print(name);
+		c = c + 1;
+	end
+	return true, c.." rooms";
+end
+
 local um = require"core.usermanager";
 
 def_env.user = {};
