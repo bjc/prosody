@@ -17,6 +17,7 @@ local from_text, to_text, from_xep54, to_xep54;
 local line_sep = "\n";
 
 local vCard_dtd; -- See end of file
+local vCard4_dtd;
 
 local function fold_line()
 	error "Not implemented" --TODO
