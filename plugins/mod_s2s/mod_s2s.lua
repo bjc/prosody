@@ -576,6 +576,8 @@ local function initialize_session(session)
 		return handlestanza(session, stanza);
 	end
 
+	module:fire_event("s2s-created", { session = session });
+
 	add_task(connect_timeout, function ()
 		if session.type == "s2sin" or session.type == "s2sout" then
 			return; -- Ok, we're connected
