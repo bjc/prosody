@@ -207,6 +207,9 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 		return get_base_presence(occupant):add_child(x), x;
 	end
 	local full_p, full_x = get_presence(false);
+
+	module:fire_event("muc-broadcast-presence", {room = self; stanza = full_p; x = full_x;});
+
 	local anon_p, anon_x;
 	local function get_anon_p()
 		if anon_p == nil then
