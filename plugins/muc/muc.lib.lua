@@ -252,14 +252,14 @@ end
 
 function room_mt:send_occupant_list(to, filter)
 	local to_bare = jid_bare(to);
-	local is_anonymous = true;
+	local is_anonymous = false;
 	local whois = self:get_whois();
 	if whois ~= "anyone" then
 		local affiliation = self:get_affiliation(to);
 		if affiliation ~= "admin" and affiliation ~= "owner" then
 			local occupant = self:get_occupant_by_real_jid(to);
-			if not occupant or can_see_real_jids(whois, occupant) then
-				is_anonymous = false;
+			if not (occupant and can_see_real_jids(whois, occupant)) then
+				is_anonymous = true;
 			end
 		end
 	end
