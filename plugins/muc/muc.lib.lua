@@ -224,7 +224,7 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	for nick, n_occupant in self:each_occupant() do
 		if nick ~= occupant.nick then
 			local pr;
-			if can_see_real_jids(whois, occupant) or occupant.bare_jid == n_occupant.bare_jid then
+			if can_see_real_jids(whois, n_occupant) or occupant.bare_jid == n_occupant.bare_jid then
 				pr = full_p;
 			else
 				pr = get_anon_p();
