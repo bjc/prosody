@@ -41,4 +41,18 @@ function _M.is_kickable_error(stanza)
 	return kickable_error_conditions[cond];
 end
 
+local muc_x_filters = {
+	["http://jabber.org/protocol/muc"] = true;
+	["http://jabber.org/protocol/muc#user"] = true;
+}
+local function muc_x_filter(tag)
+	if muc_x_filters[tag.attr.xmlns] then
+		return nil;
+	end
+	return tag;
+end
+function _M.filter_muc_x(stanza)
+	return stanza:maptags(muc_x_filter);
+end
+
 return _M;
