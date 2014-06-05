@@ -841,8 +841,10 @@ function room_mt:handle_mediated_invite(origin, stanza)
 	elseif module:fire_event("muc-pre-invite", {room = self, origin = origin, stanza = stanza}) then
 		return true;
 	end
-	local invite = st.message({from = self.jid, to = invitee, id = stanza.attr.id})
-		:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
+	local invite = muc_util.filter_muc_x(st.clone(stanza));
+	invite.attr.from = self.jid;
+	invite.attr.to = invitee;
+	invite:tag('x', {xmlns='http://jabber.org/protocol/muc#user'})
 			:tag('invite', {from = stanza.attr.from;})
 				:tag('reason'):text(payload:get_child_text("reason")):up()
 			:up()
