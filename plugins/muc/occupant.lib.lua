@@ -2,21 +2,10 @@ local next = next;
 local pairs = pairs;
 local setmetatable = setmetatable;
 local st = require "util.stanza";
+local util = module:require "muc/util";
 
-local get_filtered_presence do
-	local presence_filters = {
-		["http://jabber.org/protocol/muc"] = true;
-		["http://jabber.org/protocol/muc#user"] = true;
-	}
-	local function presence_filter(tag)
-		if presence_filters[tag.attr.xmlns] then
-			return nil;
-		end
-		return tag;
-	end
-	function get_filtered_presence(stanza)
-		return st.clone(stanza):maptags(presence_filter);
-	end
+local function get_filtered_presence(stanza)
+	return util.filter_muc_x(st.clone(stanza));
 end
 
 local occupant_mt = {};
