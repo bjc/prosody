@@ -884,8 +884,10 @@ function room_mt:handle_mediated_decline(origin, stanza)
 	elseif module:fire_event("muc-pre-decline", {room = self, origin = origin, stanza = stanza}) then
 		return true;
 	end
-	local decline = st.message({from = self.jid, to = declinee, id = stanza.attr.id})
-		:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+	local decline = muc_util.filter_muc_x(st.clone(stanza));
+	decline.attr.from = self.jid;
+	decline.attr.to = declinee;
+	decline:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 			:tag("decline", {from = stanza.attr.from})
 				:tag("reason"):text(payload:get_child_text("reason")):up()
 			:up()
