@@ -868,11 +868,13 @@ end);
 -- Add a plain message for clients which don't support invites
 module:hook("muc-invite", function(event)
 	local room, stanza = event.room, event.stanza;
-	local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
-	local reason = invite:get_child_text("reason") or "";
-	stanza:tag("body")
-		:text(invite.attr.from.." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
-	:up();
+	if not stanza:get_child("body") then
+		local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
+		local reason = invite:get_child_text("reason") or "";
+		stanza:tag("body")
+			:text(invite.attr.from.." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+		:up();
+	end
 end);
 
 function room_mt:handle_mediated_decline(origin, stanza)
@@ -906,11 +908,13 @@ end
 -- Add a plain message for clients which don't support declines
 module:hook("muc-decline", function(event)
 	local room, stanza = event.room, event.stanza;
-	local decline = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
-	local reason = decline:get_child_text("reason") or "";
-	stanza:tag("body")
-		:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
-	:up();
+	if not stanza:get_child("body") then
+		local decline = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
+		local reason = decline:get_child_text("reason") or "";
+		stanza:tag("body")
+			:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+		:up();
+	end
 end);
 
 function room_mt:handle_message_to_room(origin, stanza)
