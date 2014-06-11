@@ -895,7 +895,11 @@ function room_mt:handle_mediated_decline(origin, stanza)
 			:up()
 		:up();
 	if not module:fire_event("muc-decline", {room = self, stanza = decline, origin = origin, incoming = stanza}) then
-		local occupant = self:get_occupant_by_real_jid(decline.attr.to);
+		local declinee = decline.attr.to; -- re-fetch, in case event modified it
+		local occupant
+		if jid_bare(declinee) == self.jid then -- declinee jid is already an in-room jid
+			occupant = self:get_occupant_by_nick(declinee);
+		end
 		if occupant then
 			self:route_to_occupant(occupant, decline);
 		else
