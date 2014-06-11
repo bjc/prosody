@@ -91,7 +91,7 @@ do -- Persistent rooms
 	end
 
 	-- When room is created, over-ride 'save' method
-	module:hook("muc-occupant-pre-create", function(event)
+	module:hook("muc-room-pre-create", function(event)
 		event.room.save = room_save;
 	end, 1000);
 
