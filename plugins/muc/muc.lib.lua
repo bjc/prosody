@@ -186,30 +186,32 @@ local function can_see_real_jids(whois, occupant)
 	end
 end
 
-local function get_base_presence(occupant)
-	if occupant.role ~= nil then
-		-- Try to use main jid's presence
-		local pr = occupant:get_presence();
-		if pr ~= nil then
-			return st.clone(pr);
-		end
-	end
-	return st.presence {from = occupant.nick; type = "unavailable";};
-end
-
 -- Broadcasts an occupant's presence to the whole room
 -- Takes the x element that goes into the stanzas
 function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason)
 	-- Build real jid and (optionally) occupant jid template presences
+	local base_presence;
+	if occupant.role ~= nil then
+		-- Try to use main jid's presence
+		local pr = occupant:get_presence();
+		if pr ~= nil then
+			base_presence = st.clone(pr);
+		end
+	end
+	base_presence = base_presence or st.presence {from = occupant.nick; type = "unavailable";};
+
+	-- Fire event (before full_p and anon_p are created)
+	module:fire_event("muc-broadcast-presence", {room = self; stanza = base_presence; x = base_x;});
+
 	local function get_presence(is_anonymous)
 		local x = st.clone(base_x);
 		self:build_item_list(occupant, x, is_anonymous, nick, actor, reason);
-		return get_base_presence(occupant):add_child(x), x;
+		return st.clone(base_presence):add_child(x), x;
 	end
+
 	local full_p, full_x = get_presence(false);
 
-	module:fire_event("muc-broadcast-presence", {room = self; stanza = full_p; x = full_x;});
-
+	-- Create anon_p lazily
 	local anon_p, anon_x;
 	local function get_anon_p()
 		if anon_p == nil then
