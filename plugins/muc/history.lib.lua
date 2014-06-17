@@ -130,7 +130,7 @@ local function send_history(room, stanza)
 end
 
 -- Send history on join
-module:hook("muc-occupant-joined", function(event)
+module:hook("muc-occupant-session-new", function(event)
 	send_history(event.room, event.stanza);
 end, 50); -- Before subject(20)
 
