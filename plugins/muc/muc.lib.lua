@@ -487,8 +487,11 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 				self:route_stanza(pr);
 			end
 
-			if orig_occupant == nil and is_first_dest_session then
-				module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; stanza = stanza;});
+			if orig_occupant == nil then
+				if is_first_dest_session then
+					module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; stanza = stanza;});
+				end
+				module:fire_event("muc-occupant-session-new", {room = self; nick = dest_occupant.nick; stanza = stanza; jid = real_jid;});
 			end
 		end
 	elseif type ~= 'result' then -- bad type

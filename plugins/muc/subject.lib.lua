@@ -66,7 +66,7 @@ local function set_subject(room, from, subject)
 end
 
 -- Send subject to joining user
-module:hook("muc-occupant-joined", function(event)
+module:hook("muc-occupant-session-new", function(event)
 	send_subject(event.room, event.stanza.attr.from);
 end, 20);
 
