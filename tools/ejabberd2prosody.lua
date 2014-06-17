@@ -56,6 +56,16 @@ function build_time(tuple)
 	local Megaseconds,Seconds,Microseconds = unpack(tuple);
 	return Megaseconds * 1000000 + Seconds;
 end
+function build_jid(tuple, full)
+	local node, jid, resource = tuple[1], tuple[2], tuple[3]
+	if type(node) == "string" and node ~= "" then
+		jid = tuple[1] .. "@" .. jid;
+	end
+	if full and type(resource) == "string" and resource ~= "" then
+		jid = jid .. "/" .. resource;
+	end
+	return jid;
+end
 
 function vcard(node, host, stanza)
 	local ret, err = dm.store(node, host, "vcard", st.preserialize(stanza));
@@ -105,10 +115,7 @@ function privacy(node, host, default, lists)
 				if _type == "jid" then
 					if type(value) ~= "table" then print("[error] privacy: jid value is not valid: "..tostring(value)); break; end
 					local _node, _host, _resource = value[1], value[2], value[3];
-					if (type(_node) == "table") then _node = nil; end
-					if (type(_host) == "table") then _host = nil; end
-					if (type(_resource) == "table") then _resource = nil; end
-					value = (_node and _node.."@".._host or _host)..(_resource and "/".._resource or "");
+					value = build_jid(value, true)
 				elseif _type == "none" then
 					_type = nil;
 					value = nil;
@@ -154,18 +161,10 @@ function privacy(node, host, default, lists)
 	local ret, err = dm.store(node, host, "privacy", privacy);
 	print("["..(err or "success").."] privacy: " ..node.."@"..host.." - "..count.." list(s)");
 end
-local function _table_to_jid(t)
-	if type(t[2]) == "string" then
-		local jid = t[2];
-		if type(t[1]) == "string" then jid = t[1].."@"..jid; end
-		if type(t[3]) == "string" then jid = jid.."/"..t[3]; end
-		return jid;
-	end
-end
 function muc_room(node, host, properties)
 	local store = { jid = node.."@"..host, _data = {}, _affiliations = {} };
 	for _,aff in ipairs(properties.affiliations) do
-		store._affiliations[_table_to_jid(aff[1])] = aff[2][1] or aff[2];
+		store._affiliations[build_jid(aff[1])] = aff[2][1] or aff[2];
 	end
 	store._data.subject = properties.subject;
 	if properties.subject_author then
@@ -207,7 +206,7 @@ local filters = {
 	end;
 	roster = function(tuple)
 		local node = tuple[3][1]; local host = tuple[3][2];
-		local contact = (type(tuple[4][1]) == "table") and tuple[4][2] or tuple[4][1].."@"..tuple[4][2];
+		local contact = build_jid(tuple[4]);
 		local name = tuple[5]; local subscription = tuple[6];
 		local ask = tuple[7]; local groups = tuple[8];
 		if type(name) ~= type("") then name = nil; end
