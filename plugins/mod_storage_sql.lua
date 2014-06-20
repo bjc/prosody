@@ -380,10 +380,10 @@ end
 local driver = {};
 
 function driver:open(store, typ)
-	if not typ then -- default key-value store
-		return setmetatable({ store = store }, keyval_store);
+	if typ and typ ~= "keyval" then
+		return nil, "unsupported-store";
 	end
-	return nil, "unsupported-store";
+	return setmetatable({ store = store }, keyval_store);
 end
 
 function driver:stores(username)
