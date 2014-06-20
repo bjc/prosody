@@ -1,8 +1,11 @@
 local driver = {};
 local driver_mt = { __index = driver };
 
-function driver:open(store)
-	return setmetatable({ store = store }, driver_mt);
+function driver:open(store, typ)
+	if typ and typ ~= "keyval" then
+		return nil, "unsupported-store";
+	end
+	return setmetatable({ store = store, type = typ }, driver_mt);
 end
 function driver:get(user)
 	return {};
