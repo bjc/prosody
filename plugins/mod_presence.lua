@@ -137,6 +137,9 @@ function handle_normal_presence(origin, stanza)
 			origin.directed = nil;
 		end
 	else
+		if not origin.presence then
+			module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
+		end
 		origin.presence = stanza;
 		stanza:tag("delay", { xmlns = "urn:xmpp:delay", from = host, stamp = datetime.datetime() }):up();
 		if origin.priority ~= priority then

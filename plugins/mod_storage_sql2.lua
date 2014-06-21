@@ -198,7 +198,9 @@ local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user,store = username,self.store;
-	return select(2, engine:transaction(keyval_store_get));
+	local ok, result = engine:transaction(keyval_store_get);
+	if not ok then return ok, result; end
+	return result;
 end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
