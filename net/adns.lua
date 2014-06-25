@@ -52,6 +52,7 @@ function new_async_socket(sock, resolver)
 	local peername = "<unknown>";
 	local listener = {};
 	local handler = {};
+	local err;
 	function listener.onincoming(conn, data)
 		if data then
 			dns.feed(handler, data);
