@@ -761,7 +761,7 @@ do
 		end
 		client:settimeout( 0 )  -- set nonblocking
 		local res, err = client:connect( addr, serverport )  -- connect
-		if res or ( err == "timeout" ) then
+		if res or ( err == "timeout" or err == "Operation already in progress" ) then
 			if client.getsockname then
 				addr = client:getsockname( )
 			end
