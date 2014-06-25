@@ -966,7 +966,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	end
 	client:settimeout( 0 )
 	local ok, err = client:connect( address, port )
-	if ok or err == "timeout" then
+	if ok or err == "timeout" or err == "Operation already in progress" then
 		return wrapclient( client, address, port, listeners, pattern, sslctx )
 	else
 		return nil, err
