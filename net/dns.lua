@@ -722,6 +722,14 @@ end
 function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	qname, qtype, qclass = standardize(qname, qtype, qclass)
 
+	local co = coroutine.running();
+	local q = get(self.wanted, qclass, qtype, qname);
+	if co and q then
+		-- We are already waiting for a reply to an identical query.
+		set(self.wanted, qclass, qtype, qname, co, true);
+		return true;
+	end
+
 	if not self.server then self:adddefaultnameservers(); end
 
 	local question = encodeQuestion(qname, qtype, qclass);
@@ -742,7 +750,6 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	self.active[id][question] = o;
 
 	-- remember which coroutine wants the answer
-	local co = coroutine.running();
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
 		--set(self.yielded, co, qclass, qtype, qname, true);
