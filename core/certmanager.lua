@@ -10,13 +10,12 @@ local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl = ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
+local new_config = require"util.sslconfig".new;
 
 local tostring = tostring;
 local pairs = pairs;
 local type = type;
 local io_open = io.open;
-local t_concat = table.concat;
-local t_insert = table.insert;
 
 local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
@@ -55,9 +54,6 @@ local core_defaults = {
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
-local set_options = {
-	options = true, verify = true, verifyext = true
-}
 
 if ssl and not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
@@ -66,83 +62,30 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	end
 end
 
-local function merge_set(t, o)
-	if type(t) ~= "table" then t = { t } end
-	for k,v in pairs(t) do
-		if v == true or v == false then
-			o[k] = v;
-		else
-			o[v] = true;
-		end
-	end
-	return o;
-end
-
-local protocols = { "sslv2", "sslv3", "tlsv1", "tlsv1_1", "tlsv1_2" };
-for i = 1, #protocols do protocols[protocols[i] .. "+"] = i - 1; end
-
 function create_context(host, mode, user_ssl_config)
-	user_ssl_config = user_ssl_config or {}
-	user_ssl_config.mode = mode;
-
 	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
 
-	if global_ssl_config then
-		for option,default_value in pairs(global_ssl_config) do
-			if user_ssl_config[option] == nil then
-				user_ssl_config[option] = default_value;
-			end
-		end
-	end
+	local cfg = new_config();
+	cfg:apply(core_defaults);
+	cfg:apply(global_ssl_config);
+	cfg:apply({
+		mode = mode,
+		-- We can't read the password interactively when daemonized
+		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
+	});
+	cfg:apply(user_ssl_config);
 
-	for option,default_value in pairs(core_defaults) do
-		if user_ssl_config[option] == nil then
-			user_ssl_config[option] = default_value;
-		end
-	end
+	user_ssl_config = cfg:final();
 
-	for option in pairs(set_options) do
-		local merged = {};
-		merge_set(core_defaults[option], merged);
-		if global_ssl_config then
-			merge_set(global_ssl_config[option], merged);
-		end
-		merge_set(user_ssl_config[option], merged);
-		local final_array = {};
-		for opt, enable in pairs(merged) do
-			if enable then
-				final_array[#final_array+1] = opt;
-			end
-		end
-		user_ssl_config[option] = final_array;
+	if mode == "server" then
+		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
 	end
-
-	local min_protocol = protocols[user_ssl_config.protocol];
-	if min_protocol then
-		user_ssl_config.protocol = "sslv23";
-		for i = 1, min_protocol do
-			t_insert(user_ssl_config.options, "no_"..protocols[i]);
-		end
-	end
-
-	-- We can't read the password interactively when daemonized
-	user_ssl_config.password = user_ssl_config.password or
-		function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 
 	for option in pairs(path_options) do
 		if type(user_ssl_config[option]) == "string" then
 			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
 		end
-	end
-
-	-- Allow the cipher list to be a table
-	if type(user_ssl_config.ciphers) == "table" then
-		user_ssl_config.ciphers = t_concat(user_ssl_config.ciphers, ":")
-	end
-
-	if mode == "server" then
-		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
-		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
 	end
 
 	-- LuaSec expects dhparam to be a callback that takes two arguments.
