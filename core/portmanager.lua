@@ -72,16 +72,6 @@ prosody.events.add_handler("item-removed/net-provider", function (event)
 	unregister_service(item.name, item);
 end);
 
-local function duplicate_ssl_config(ssl_config)
-	local ssl_config = type(ssl_config) == "table" and ssl_config or {};
-
-	local _config = {};
-	for k, v in pairs(ssl_config) do
-		_config[k] = v;
-	end
-	return _config;
-end
-
 --- Public API
 
 function activate(service_name)
@@ -127,24 +117,15 @@ function activate(service_name)
 				local err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
-					local ssl_config = duplicate_ssl_config((config.get("*", config_prefix.."ssl") and config.get("*", config_prefix.."ssl")[interface])
-								or (config.get("*", config_prefix.."ssl") and config.get("*", config_prefix.."ssl")[port])
-								or config.get("*", config_prefix.."ssl")
-								or (config.get("*", "ssl") and config.get("*", "ssl")[interface])
-								or (config.get("*", "ssl") and config.get("*", "ssl")[port])
-								or config.get("*", "ssl"));
-					-- add default entries for, or override ssl configuration
-					if ssl_config and service_info.ssl_config then
-						for key, value in pairs(service_info.ssl_config) do
-							if not service_info.ssl_config_override and not ssl_config[key] then
-								ssl_config[key] = value;
-							elseif service_info.ssl_config_override then
-								ssl_config[key] = value;
-							end
-						end
-					end
-
-					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server", ssl_config);
+					local global_ssl_config = config.get("*", "ssl") or {};
+					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
+					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server",
+						service_info.ssl_config or {},
+						prefix_ssl_config[interface],
+						prefix_ssl_config[port],
+						prefix_ssl_config,
+						global_ssl_config[interface],
+						global_ssl_config[port]);
 					if not ssl then
 						log("error", "Error binding encrypted port for %s: %s", service_info.name, error_to_friendly_message(service_name, port_number, err) or "unknown error");
 					end
