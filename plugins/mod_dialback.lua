@@ -19,7 +19,15 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
-local dialback_secret = module.host .. (module:get_option_string("dialback_secret") or uuid_gen());
+local dialback_secret = module.host .. module:get_option_string("dialback_secret", uuid_gen());
+
+function module.save()
+	return { dialback_secret = dialback_secret };
+end
+
+function module.restore(state)
+	dialback_secret = state.dialback_secret;
+end
 
 function generate_dialback(id, to, from)
 	return sha256_hash(id..to..dialback_secret, true);
