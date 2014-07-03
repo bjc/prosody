@@ -16,6 +16,7 @@ local tostring = tostring;
 local pairs = pairs;
 local type = type;
 local io_open = io.open;
+local select = select;
 
 local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
@@ -62,7 +63,7 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 	end
 end
 
-function create_context(host, mode, user_ssl_config)
+function create_context(host, mode, ...)
 	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
 
 	local cfg = new_config();
@@ -73,9 +74,11 @@ function create_context(host, mode, user_ssl_config)
 		-- We can't read the password interactively when daemonized
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
-	cfg:apply(user_ssl_config);
 
-	user_ssl_config = cfg:final();
+	for i = select('#', ...), 1, -1 do
+		cfg:apply(select(i, ...));
+	end
+	local user_ssl_config = cfg:final();
 
 	if mode == "server" then
 		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
