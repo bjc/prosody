@@ -90,6 +90,7 @@ function handle_normal_presence(origin, stanza)
 		end
 	end
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
+		module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
 		origin.presence = stanza; -- FIXME repeated later
 		local probe = st.presence({from = origin.full_jid, type = "probe"});
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
@@ -137,9 +138,6 @@ function handle_normal_presence(origin, stanza)
 			origin.directed = nil;
 		end
 	else
-		if not origin.presence then
-			module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
-		end
 		origin.presence = stanza;
 		stanza:tag("delay", { xmlns = "urn:xmpp:delay", from = host, stamp = datetime.datetime() }):up();
 		if origin.priority ~= priority then
