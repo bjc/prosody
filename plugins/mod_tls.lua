@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local config = require "core.configmanager";
 local create_context = require "core.certmanager".create_context;
 local st = require "util.stanza";
 
@@ -34,23 +33,26 @@ local host = hosts[module.host];
 
 local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
 do
-	local function get_ssl_cfg(typ)
-		local cfg_key = (typ and typ.."_" or "").."ssl";
-		local ssl_config = config.rawget(module.host, cfg_key);
-		if not ssl_config then
-			local base_host = module.host:match("%.(.*)");
-			ssl_config = config.get(base_host, cfg_key);
-		end
-		return ssl_config or typ and get_ssl_cfg();
-	end
+	local NULL, err = {};
+	local global = module:context("*");
+	local parent = module:context(module.host:match("%.(.*)$"));
 
-	local ssl_config, err = get_ssl_cfg("c2s");
-	ssl_ctx_c2s, err = create_context(host.host, "server", ssl_config); -- for incoming client connections
+	local parent_ssl = parent:get_option("ssl");
+	local host_ssl   = module:get_option("ssl", parent_ssl);
+
+	local global_c2s = global:get_option("c2s_ssl", NULL);
+	local parent_c2s = parent:get_option("c2s_ssl", NULL);
+	local host_c2s   = module:get_option("c2s_ssl", parent_c2s);
+
+	local global_s2s = global:get_option("s2s_ssl", NULL);
+	local parent_s2s = parent:get_option("s2s_ssl", NULL);
+	local host_s2s   = module:get_option("s2s_ssl", parent_s2s);
+
+	ssl_ctx_c2s, err = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
 	if err then module:log("error", "Error creating context for c2s: %s", err); end
 
-	ssl_config = get_ssl_cfg("s2s");
-	ssl_ctx_s2sin, err = create_context(host.host, "server", ssl_config); -- for incoming server connections
-	ssl_ctx_s2sout = create_context(host.host, "client", ssl_config); -- for outgoing server connections
+	ssl_ctx_s2sin, err = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
+	ssl_ctx_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s); -- for outgoing server connections
 	if err then module:log("error", "Error creating context for s2s: %s", err); end -- Both would have the same issue
 end
 
