@@ -82,12 +82,14 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		local attr = stanza.attr;
 		local to, from = nameprep(attr.to), nameprep(attr.from);
 
-		if check_cert_status(origin, from) == false then
-			return
-		elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
-			origin.sends2s(st.stanza("db:result", { to = from, from = to, id = attr.id, type = "valid" }));
-			module:fire_event("s2s-authenticated", { session = origin, host = from });
-			return true;
+		if origin.secure then
+			if check_cert_status(origin, from) == false then
+				return
+			elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
+				origin.sends2s(st.stanza("db:result", { to = from, from = to, id = attr.id, type = "valid" }));
+				module:fire_event("s2s-authenticated", { session = origin, host = from });
+				return true;
+			end
 		end
 
 		if not hosts[to] then
