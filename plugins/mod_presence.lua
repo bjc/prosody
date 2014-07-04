@@ -55,14 +55,14 @@ local ignore_presence_priority = module:get_option("ignore_presence_priority");
 
 function handle_normal_presence(origin, stanza)
 	if ignore_presence_priority then
-		local priority = stanza:child_with_name("priority");
+		local priority = stanza:get_child("priority");
 		if priority and priority[1] ~= "0" then
 			for i=#priority.tags,1,-1 do priority.tags[i] = nil; end
 			for i=#priority,1,-1 do priority[i] = nil; end
 			priority[1] = "0";
 		end
 	end
-	local priority = stanza:child_with_name("priority");
+	local priority = stanza:get_child("priority");
 	if priority and #priority > 0 then
 		priority = t_concat(priority);
 		if s_find(priority, "^[+-]?[0-9]+$") then
@@ -90,6 +90,7 @@ function handle_normal_presence(origin, stanza)
 		end
 	end
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
+		module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
 		origin.presence = stanza; -- FIXME repeated later
 		local probe = st.presence({from = origin.full_jid, type = "probe"});
 		for jid, item in pairs(roster) do -- probe all contacts we are subscribed to
@@ -137,9 +138,6 @@ function handle_normal_presence(origin, stanza)
 			origin.directed = nil;
 		end
 	else
-		if not origin.presence then
-			module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
-		end
 		origin.presence = stanza;
 		stanza:tag("delay", { xmlns = "urn:xmpp:delay", from = host, stamp = datetime.datetime() }):up();
 		if origin.priority ~= priority then
