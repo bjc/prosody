@@ -13,6 +13,7 @@ local log = module._log;
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 local nameprep = require "util.encodings".stringprep.nameprep;
+local check_cert_status = module:depends"s2s".check_cert_status;
 local uuid_gen = require"util.uuid".generate;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
@@ -20,6 +21,7 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
 local dialback_secret = module.host .. module:get_option_string("dialback_secret", uuid_gen());
+local dwd = module:get_option_boolean("dialback_without_dialback", false);
 
 function module.save()
 	return { dialback_secret = dialback_secret };
@@ -79,6 +81,14 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		-- We need to check the key with the Authoritative server
 		local attr = stanza.attr;
 		local to, from = nameprep(attr.to), nameprep(attr.from);
+
+		if check_cert_status(origin, from) == false then
+			return
+		elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
+			origin.sends2s(st.stanza("db:result", { to = from, from = to, id = attr.id, type = "valid" }));
+			module:fire_event("s2s-authenticated", { session = origin, host = from });
+			return true;
+		end
 
 		if not hosts[to] then
 			-- Not a host that we serve
