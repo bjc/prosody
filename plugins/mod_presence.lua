@@ -55,14 +55,14 @@ local ignore_presence_priority = module:get_option("ignore_presence_priority");
 
 function handle_normal_presence(origin, stanza)
 	if ignore_presence_priority then
-		local priority = stanza:child_with_name("priority");
+		local priority = stanza:get_child("priority");
 		if priority and priority[1] ~= "0" then
 			for i=#priority.tags,1,-1 do priority.tags[i] = nil; end
 			for i=#priority,1,-1 do priority[i] = nil; end
 			priority[1] = "0";
 		end
 	end
-	local priority = stanza:child_with_name("priority");
+	local priority = stanza:get_child("priority");
 	if priority and #priority > 0 then
 		priority = t_concat(priority);
 		if s_find(priority, "^[+-]?[0-9]+$") then

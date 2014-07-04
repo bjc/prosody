@@ -44,9 +44,10 @@ module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 		return true;
 	end
 
-	local username = stanza.tags[1]:child_with_name("username");
-	local password = stanza.tags[1]:child_with_name("password");
-	local resource = stanza.tags[1]:child_with_name("resource");
+	local query = stanza.tags[1];
+	local username = query:get_child("username");
+	local password = query:get_child("password");
+	local resource = query:get_child("resource");
 	if not (username and password and resource) then
 		local reply = st.reply(stanza);
 		session.send(reply:query("jabber:iq:auth")
