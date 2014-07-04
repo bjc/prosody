@@ -528,16 +528,18 @@ function commands.about(arg)
 		return 1;
 	end
 	
+	local pwd = ".";
 	local array = require "util.array";
 	local keys = require "util.iterators".keys;
+	local relpath = config.resolve_relative_path;
 	
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
 	print("# Prosody directories");
-	print("Data directory:  ", CFG_DATADIR or "./");
-	print("Plugin directory:", CFG_PLUGINDIR or "./");
-	print("Config directory:", CFG_CONFIGDIR or "./");
-	print("Source directory:", CFG_SOURCEDIR or "./");
+	print("Data directory:     "..relpath(pwd, data_path));
+	print("Plugin directory:   "..relpath(pwd, CFG_PLUGINDIR or "."));
+	print("Config directory:   "..relpath(pwd, CFG_CONFIGDIR or "."));
+	print("Source directory:   "..relpath(pwd, CFG_SOURCEDIR or "."));
 	print("");
 	print("# Lua environment");
 	print("Lua version:             ", _G._VERSION);
