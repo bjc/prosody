@@ -284,7 +284,7 @@ module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 	local resource;
 	if stanza.attr.type == "set" then
 		local bind = stanza.tags[1];
-		resource = bind:child_with_name("resource");
+		resource = bind:get_child("resource");
 		resource = resource and #resource.tags == 0 and resource[1] or nil;
 	end
 	local success, err_type, err, err_msg = sm_bind_resource(origin, resource);
