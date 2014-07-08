@@ -14,6 +14,8 @@ local lib_pubsub = module:require "pubsub";
 local handlers = lib_pubsub.handlers;
 local pubsub_error_reply = lib_pubsub.pubsub_error_reply;
 
+local empty_set = set_new();
+
 local services = {};
 local recipients = {};
 local hash_map = {};
@@ -222,22 +224,37 @@ end
 
 local function update_subscriptions(recipient, service_name, nodes)
 	local service = get_pep_service(service_name);
+	nodes = nodes or empty_set;
 
-	recipients[service_name] = recipients[service_name] or {};
-	nodes = nodes or set_new();
-	local old = recipients[service_name][recipient];
-
-	if old and type(old) == table then
-		for node in pairs((old - nodes):items()) do
-			service:remove_subscription(node, recipient, recipient);
-		end
+	local service_recipients = recipients[service_name];
+	if not service_recipients then
+		service_recipients = {};
+		recipients[service_name] = service_recipients;
 	end
 
-	for node in nodes:items() do
+	local current = service_recipients[recipient];
+	if not current or type(current) ~= "table" then
+		current = empty_set;
+	end
+
+	if (current == empty_set or current:empty()) and (nodes == empty_set or nodes:empty()) then
+		return;
+	end
+
+	for node in current - nodes do
+		service:remove_subscription(node, recipient, recipient);
+	end
+
+	for node in nodes - current do
 		service:add_subscription(node, recipient, recipient);
 		resend_last_item(recipient, node, service);
 	end
-	recipients[service_name][recipient] = nodes;
+
+	if nodes == empty_set or nodes:empty() then
+		nodes = nil;
+	end
+
+	service_recipients[recipient] = nodes;
 end
 
 module:hook("presence/bare", function(event)
