@@ -82,7 +82,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		local attr = stanza.attr;
 		local to, from = nameprep(attr.to), nameprep(attr.from);
 
-		if origin.secure then
+		if dwd and origin.secure then
 			if check_cert_status(origin, from) == false then
 				return
 			elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
