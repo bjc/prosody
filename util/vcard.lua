@@ -348,6 +348,8 @@ local function item_to_vcard4(item)
 	local prop_def = vCard4_dtd[typ];
 	if prop_def == "text" then
 		t:tag("text"):text(item[1]):up();
+	elseif prop_def == "uri" then
+		t:tag("uri"):text(item[1]):up();
 	elseif type(prop_def) == "table" then
 		if prop_def.values then
 			for i, v in ipairs(prop_def.values) do
