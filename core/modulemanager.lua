@@ -29,7 +29,7 @@ pcall = function(f, ...)
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
 end
 
-local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s"};
+local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s", "s2s_auth_certs"};
 local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s"};
 
 -- We need this to let modules access the real global namespace
