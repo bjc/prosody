@@ -15,7 +15,6 @@ local core_process_stanza = prosody.core_process_stanza;
 local tostring, type = tostring, type;
 local t_insert = table.insert;
 local xpcall, traceback = xpcall, debug.traceback;
-local NULL = {};
 
 local add_task = require "util.timer".add_task;
 local st = require "util.stanza";
@@ -26,7 +25,6 @@ local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
-local cert_verify_identity = require "util.x509".verify_identity;
 local fire_global_event = prosody.events.fire_event;
 
 local s2sout = module:require("s2sout");
