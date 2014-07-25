@@ -705,6 +705,7 @@ local function link(sender, receiver, buffersize)
 			sender:lock_read(true);
 		end
 	end
+	sender:set_mode("*a");
 end
 
 ----------------------------------// PUBLIC //--
