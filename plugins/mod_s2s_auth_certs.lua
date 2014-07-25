@@ -9,6 +9,7 @@ module:hook("s2s-check-certificate", function(event)
 	local conn = session.conn:socket();
 
 	if cert then
+		local log = session.log or log;
 		local chain_valid, errors;
 		if conn.getpeerverification then
 			chain_valid, errors = conn:getpeerverification();
@@ -20,13 +21,13 @@ module:hook("s2s-check-certificate", function(event)
 		end
 		-- Is there any interest in printing out all/the number of errors here?
 		if not chain_valid then
-			(session.log or log)("debug", "certificate chain validation result: invalid");
+			log("debug", "certificate chain validation result: invalid");
 			for depth, t in pairs(errors or NULL) do
-				(session.log or log)("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
+				log("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
 			end
 			session.cert_chain_status = "invalid";
 		else
-			(session.log or log)("debug", "certificate chain validation result: valid");
+			log("debug", "certificate chain validation result: valid");
 			session.cert_chain_status = "valid";
 
 			-- We'll go ahead and verify the asserted identity if the
@@ -37,7 +38,7 @@ module:hook("s2s-check-certificate", function(event)
 				else
 					session.cert_identity_status = "invalid"
 				end
-				(session.log or log)("debug", "certificate identity validation result: %s", session.cert_identity_status);
+				log("debug", "certificate identity validation result: %s", session.cert_identity_status);
 			end
 		end
 	end
