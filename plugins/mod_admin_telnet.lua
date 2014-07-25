@@ -1073,12 +1073,12 @@ function def_env.dns:lookup(name, typ, class)
 end
 
 function def_env.dns:addnameserver(...)
-	dns.addnameserver(...)
+	dns._resolver:addnameserver(...)
 	return true
 end
 
 function def_env.dns:setnameserver(...)
-	dns.setnameserver(...)
+	dns._resolver:setnameserver(...)
 	return true
 end
 
