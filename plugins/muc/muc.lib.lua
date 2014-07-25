@@ -201,7 +201,11 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	base_presence = base_presence or st.presence {from = occupant.nick; type = "unavailable";};
 
 	-- Fire event (before full_p and anon_p are created)
-	module:fire_event("muc-broadcast-presence", {room = self; stanza = base_presence; x = base_x;});
+	module:fire_event("muc-broadcast-presence", {
+		room = self; stanza = base_presence; x = base_x;
+		occupant = occupant; is_anonymous = is_anonymous;
+		nick = nick; actor = actor; reason = reason;
+	});
 
 	local function get_presence(is_anonymous)
 		local x = st.clone(base_x);
