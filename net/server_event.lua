@@ -850,6 +850,7 @@ local function link(sender, receiver, buffersize)
 			sender:pause();
 		end
 	end
+	sender:set_mode("*a");
 end
 
 return {
