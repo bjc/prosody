@@ -770,7 +770,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					end
 				end
 				-- Tried everything, failed
-				self:cancel(qclass, qtype, qname, co, true);
+				self:cancel(qclass, qtype, qname);
 			end
 		end)
 	end
@@ -910,13 +910,13 @@ function resolver:feed(sock, packet, force)
 	return response;
 end
 
-function resolver:cancel(qclass, qtype, qname, co, call_handler)
+function resolver:cancel(qclass, qtype, qname)
 	local cos = get(self.wanted, qclass, qtype, qname);
 	if cos then
-		if call_handler then
-			coroutine.resume(co);
+		for co in pairs(cos) do
+			if coroutine.status(co) == "suspended" then coroutine.resume(co); end
 		end
-		cos[co] = nil;
+		set(self.wanted, qclass, qtype, qname, nil);
 	end
 end
 
