@@ -752,7 +752,6 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	-- remember which coroutine wants the answer
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
-		--set(self.yielded, co, qclass, qtype, qname, true);
 	end
 
 	local conn, err = self:getsocket(o.server)
@@ -777,7 +776,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 					end
 				end
 				-- Tried everything, failed
-				self:cancel(qclass, qtype, qname, co, true);
+				self:cancel(qclass, qtype, qname);
 			end
 		end)
 	end
@@ -865,7 +864,6 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					local cos = get(self.wanted, q.class, q.type, q.name);
 					if cos then
 						for co in pairs(cos) do
-							set(self.yielded, co, q.class, q.type, q.name, nil);
 							if coroutine.status(co) == "suspended" then coroutine.resume(co); end
 						end
 						set(self.wanted, q.class, q.type, q.name, nil);
@@ -906,7 +904,6 @@ function resolver:feed(sock, packet, force)
 			local cos = get(self.wanted, q.class, q.type, q.name);
 			if cos then
 				for co in pairs(cos) do
-					set(self.yielded, co, q.class, q.type, q.name, nil);
 					if coroutine.status(co) == "suspended" then coroutine.resume(co); end
 				end
 				set(self.wanted, q.class, q.type, q.name, nil);
@@ -917,13 +914,13 @@ function resolver:feed(sock, packet, force)
 	return response;
 end
 
-function resolver:cancel(qclass, qtype, qname, co, call_handler)
+function resolver:cancel(qclass, qtype, qname)
 	local cos = get(self.wanted, qclass, qtype, qname);
 	if cos then
-		if call_handler then
-			coroutine.resume(co);
+		for co in pairs(cos) do
+			if coroutine.status(co) == "suspended" then coroutine.resume(co); end
 		end
-		cos[co] = nil;
+		set(self.wanted, qclass, qtype, qname, nil);
 	end
 end
 
@@ -1044,7 +1041,7 @@ end
 function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
 	-- this function seems to be redundant with resolver.new ()
 
-	local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, yielded = {}, best_server = 1 };
+	local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, best_server = 1 };
 	setmetatable (r, resolver);
 	setmetatable (r.cache, cache_metatable);
 	setmetatable (r.unsorted, { __mode = 'kv' });
