@@ -372,7 +372,6 @@ function commands.deluser(arg)
 	
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
 	end
 
