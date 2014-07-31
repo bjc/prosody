@@ -268,6 +268,8 @@ local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
 
+local jid_split = require "util.jid".prepped_split;
+
 local prosodyctl_timeout = (config.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
@@ -278,7 +280,7 @@ function commands.adduser(arg)
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
 		return 1;
 	end
-	local user, host = arg[1]:match("([^@]+)@(.+)");
+	local user, host = jid_split(arg[1]);
 	if not user and host then
 		show_message [[Failed to understand JID, please supply the JID you want to create]]
 		show_usage [[adduser user@host]]
@@ -317,7 +319,7 @@ function commands.passwd(arg)
 		show_usage([[passwd JID]], [[Set the password for the specified user account in Prosody]]);
 		return 1;
 	end
-	local user, host = arg[1]:match("([^@]+)@(.+)");
+	local user, host = jid_split(arg[1])
 	if not user and host then
 		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
 		show_usage [[passwd user@host]]
@@ -356,7 +358,7 @@ function commands.deluser(arg)
 		show_usage([[deluser JID]], [[Permanently remove the specified user account from Prosody]]);
 		return 1;
 	end
-	local user, host = arg[1]:match("([^@]+)@(.+)");
+	local user, host = jid_split(arg[1]);
 	if not user and host then
 		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
 		show_usage [[passwd user@host]]
