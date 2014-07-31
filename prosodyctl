@@ -268,13 +268,14 @@ local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
 
+local jid_split = require "util.jid".prepped_split;
+
 local prosodyctl_timeout = (config.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
 local command = arg[1];
 
 function commands.adduser(arg)
-	local jid_split = require "util.jid".split;
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
 		return 1;
@@ -314,7 +315,6 @@ function commands.adduser(arg)
 end
 
 function commands.passwd(arg)
-	local jid_split = require "util.jid".split;
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[passwd JID]], [[Set the password for the specified user account in Prosody]]);
 		return 1;
@@ -354,7 +354,6 @@ function commands.passwd(arg)
 end
 
 function commands.deluser(arg)
-	local jid_split = require "util.jid".split;
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[deluser JID]], [[Permanently remove the specified user account from Prosody]]);
 		return 1;
@@ -373,7 +372,6 @@ function commands.deluser(arg)
 	
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
 	end
 
