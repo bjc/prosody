@@ -19,6 +19,9 @@ local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
 
+local have_encodings, encodings = pcall(require, "util.encodings");
+local nameprep = have_encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
+
 module "configmanager"
 
 _M.resolve_relative_path = resolve_relative_path; -- COMPAT
@@ -139,6 +142,7 @@ do
 
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
+			name = nameprep(name);
 			if rawget(config, name) and rawget(config[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -156,6 +160,7 @@ do
 		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 
 		function env.Component(name)
+			name = nameprep(name);
 			if rawget(config, name) and rawget(config[name], "defined") and not rawget(config[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
