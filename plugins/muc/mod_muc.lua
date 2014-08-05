@@ -148,7 +148,8 @@ do
 	if restrict_room_creation then
 		local host_suffix = module.host:gsub("^[^%.]+%.", "");
 		module:hook("muc-room-pre-create", function(event)
-			local user_jid = event.stanza.attr.from;
+			local origin, stanza = event.origin, event.stanza;
+			local user_jid = stanza.attr.from;
 			if not is_admin(user_jid) and not (
 				restrict_room_creation == "local" and
 				select(2, jid_split(user_jid)) == host_suffix
