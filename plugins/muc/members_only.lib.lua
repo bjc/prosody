@@ -7,6 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local st = require "util.stanza";
+
 local muc_util = module:require "muc/util";
 local valid_roles, valid_affiliations = muc_util.valid_roles, muc_util.valid_affiliations;
 
