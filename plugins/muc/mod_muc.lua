@@ -44,80 +44,93 @@ do -- Monkey patch to make server admins room owners
 	end
 end
 
+local persistent = module:require "muc/persistent";
+local persistent_rooms_storage = module:open_store("persistent");
+local persistent_rooms = module:open_store("persistent", "map");
+local room_configs = module:open_store("config");
+
+local function room_save(room, forced)
+	local node = jid_split(room.jid);
+	local is_persistent = persistent.get(room);
+	persistent_rooms:set(room.jid, is_persistent);
+	if is_persistent then
+		local history = room._data.history;
+		room._data.history = nil;
+		local data = {
+			jid = room.jid;
+			_data = room._data;
+			_affiliations = room._affiliations;
+		};
+		room_configs:set(node, data);
+		room._data.history = history;
+	elseif forced then
+		room_configs:set(node, nil);
+		if not next(room._occupants) then -- Room empty
+			rooms[room.jid] = nil;
+		end
+	end
+end
+
+-- Automatically destroy empty non-persistent rooms
+module:hook("muc-occupant-left",function(event)
+	local room = event.room
+	if not room:has_occupant() and not persistent.get(room) then -- empty, non-persistent room
+		module:fire_event("muc-room-destroyed", { room = room });
+	end
+end);
+
 function track_room(room)
 	rooms[room.jid] = room;
+	-- When room is created, over-ride 'save' method
+	room.save = room_save;
+end
+
+local function restore_room(jid)
+	local node = jid_split(jid);
+	local data = room_configs:get(node);
+	if data then
+		local room = muclib.new_room(jid);
+		room._data = data._data;
+		room._affiliations = data._affiliations;
+		track_room(room);
+		return room;
+	end
 end
 
 function forget_room(jid)
 	rooms[jid] = nil;
+	local node = jid_split(room.jid);
+	room_configs:set(node, nil);
+	if persistent.get(room_jid) then
+		persistent_rooms:set(room_jid, nil);
+	end
 end
 
 function get_room_from_jid(room_jid)
-	return rooms[room_jid]
+	local room = rooms[room_jid];
+	if room == nil then
+		-- Check if in persistent storage
+		if persistent_rooms:get(room_jid) then
+			room = restore_room(room_jid);
+			if room == nil then
+				module:log("error", "Missing data for room '%s', removing from persistent room list", room_jid);
+				persistent_rooms:set(room_jid, nil);
+			end
+		end
+	end
+	return room
 end
 
 function each_room()
-	return iterators.values(rooms);
-end
-
-do -- Persistent rooms
-	local persistent = module:require "muc/persistent";
-	local persistent_rooms_storage = module:open_store("persistent");
-	local persistent_rooms = persistent_rooms_storage:get() or {};
-	local room_configs = module:open_store("config");
-
-	local function room_save(room, forced)
-		local node = jid_split(room.jid);
-		local is_persistent = persistent.get(room);
-		persistent_rooms[room.jid] = is_persistent;
-		if is_persistent then
-			local history = room._data.history;
-			room._data.history = nil;
-			local data = {
-				jid = room.jid;
-				_data = room._data;
-				_affiliations = room._affiliations;
-			};
-			room_configs:set(node, data);
-			room._data.history = history;
-		elseif forced then
-			room_configs:set(node, nil);
-			if not next(room._occupants) then -- Room empty
-				rooms[room.jid] = nil;
+	for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
+		if rooms[room_jid] == nil then -- Don't restore rooms that already exist
+			local room = restore_room(room_jid);
+			if room == nil then
+				module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
 			end
 		end
-		if forced then persistent_rooms_storage:set(nil, persistent_rooms); end
 	end
-
-	-- When room is created, over-ride 'save' method
-	module:hook("muc-room-pre-create", function(event)
-		event.room.save = room_save;
-	end, 1000);
-
-	-- Automatically destroy empty non-persistent rooms
-	module:hook("muc-occupant-left",function(event)
-		local room = event.room
-		if not room:has_occupant() and not persistent.get(room) then -- empty, non-persistent room
-			module:fire_event("muc-room-destroyed", { room = room });
-		end
-	end);
-
-	local persistent_errors = false;
-	for jid in pairs(persistent_rooms) do
-		local node = jid_split(jid);
-		local data = room_configs:get(node);
-		if data then
-			local room = muclib.new_room(jid);
-			room._data = data._data;
-			room._affiliations = data._affiliations;
-			track_room(room);
-		else -- missing room data
-			persistent_rooms[jid] = nil;
-			module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
-			persistent_errors = true;
-		end
-	end
-	if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
+	return iterators.values(rooms);
 end
 
 module:hook("host-disco-items", function(event)
