@@ -79,16 +79,15 @@ function prep(jid)
 end
 
 function join(node, host, resource)
-	if node and host and resource then
+	if not host then return end -- Invalid JID
+	if node and resource then
 		return node.."@"..host.."/"..resource;
-	elseif node and host then
+	elseif node then
 		return node.."@"..host;
-	elseif host and resource then
+	elseif resource then
 		return host.."/"..resource;
-	elseif host then
-		return host;
 	end
-	return nil; -- Invalid JID
+	return host;
 end
 
 function compare(jid, acl)
