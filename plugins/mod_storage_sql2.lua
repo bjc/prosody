@@ -216,6 +216,40 @@ function keyval_store:users()
 	return iterator(result);
 end
 
+local map_store = {};
+map_store.__index = map_store;
+function map_store:get(username, key)
+	return engine:transaction(function()
+		if type(key) == "string" and key ~= "" then
+			local iter, state, first = engine:select("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				host, username, self.store, key or "");
+			local row = iter(state, first);
+			if row then
+				return deserialize(row.type, row.value);
+			else
+				return nil;
+			end
+		else
+			error("TODO: non-string keys");
+		end
+	end);
+end
+function map_store:set(username, key, data)
+	return engine:transaction(function()
+		if data == nil then
+			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				host, username, self.store, key or "");
+		elseif type(key) == "string" and key ~= "" then
+			local t, value = assert(serialize(data));
+			engine:update("UPDATE `prosody` SET `type`=?, `value`=? WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				t, value, host, username, self.store, key);
+		else
+			error("TODO: non-string keys");
+		end
+		return true;
+	end);
+end
+
 local archive_store = {}
 archive_store.__index = archive_store
 function archive_store:append(username, key, when, with, value)
@@ -341,6 +375,7 @@ end
 
 local stores = {
 	keyval = keyval_store;
+	map = map_store;
 	archive = archive_store;
 };
 
