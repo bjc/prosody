@@ -17,7 +17,6 @@ local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local um_is_admin = require "core.usermanager".is_admin;
-local hosts = prosody.hosts;
 
 local rooms = module:shared "rooms";
 
