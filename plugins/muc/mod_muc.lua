@@ -52,7 +52,7 @@ local room_configs = module:open_store("config");
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	local is_persistent = persistent.get(room);
-	persistent_rooms:set(room.jid, is_persistent);
+	persistent_rooms:set(nil, room.jid, is_persistent);
 	if is_persistent then
 		local history = room._data.history;
 		room._data.history = nil;
@@ -102,7 +102,7 @@ function forget_room(jid)
 	local node = jid_split(room.jid);
 	room_configs:set(node, nil);
 	if persistent.get(room_jid) then
-		persistent_rooms:set(room_jid, nil);
+		persistent_rooms:set(nil, room_jid, nil);
 	end
 end
 
@@ -110,11 +110,11 @@ function get_room_from_jid(room_jid)
 	local room = rooms[room_jid];
 	if room == nil then
 		-- Check if in persistent storage
-		if persistent_rooms:get(room_jid) then
+		if persistent_rooms:get(nil, room_jid) then
 			room = restore_room(room_jid);
 			if room == nil then
 				module:log("error", "Missing data for room '%s', removing from persistent room list", room_jid);
-				persistent_rooms:set(room_jid, nil);
+				persistent_rooms:set(nil, room_jid, nil);
 			end
 		end
 	end
