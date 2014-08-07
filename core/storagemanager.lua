@@ -80,11 +80,44 @@ function get_driver(host, store)
 	return driver, driver_name;
 end
 
+local map_shim_mt = {
+	__index = {
+		get = function(self, username, key)
+			local ret, err = self.keyval_store:get(username);
+			if ret == nil and err then return nil, err end
+			return ret[key];
+		end;
+		set = function(self, username, key, data)
+			local current, err = self.keyval_store:get(username);
+			if current == nil then
+				if err then
+					return nil, err;
+				else
+					current = {};
+				end
+			end
+			current[key] = data;
+			return self.keyval_store:set(username, current);
+		end;
+	};
+}
+local function create_map_shim(host, store)
+	local keyval_store, err = open(host, store, "keyval");
+	if keyval_store == nil then return nil, err end
+	return setmetatable({
+		keyval_store = keyval_store;
+	}, map_shim_mt);
+end
+
 function open(host, store, typ)
 	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
 	if not ret then
 		if err == "unsupported-store" then
+			if typ == "map" then -- Use shim on top of keyval store
+				log("debug", "map storage driver unavailable, using shim on top of keyval store.");
+				return create_map_shim(host, store);
+			end
 			log("debug", "Storage driver %s does not support store %s (%s), falling back to null driver",
 				driver_name, store, typ or "<nil>");
 			ret = null_storage_driver;
