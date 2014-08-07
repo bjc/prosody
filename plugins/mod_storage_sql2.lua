@@ -219,7 +219,7 @@ end
 local map_store = {};
 map_store.__index = map_store;
 function map_store:get(username, key)
-	return engine:transaction(function()
+	local ok, result = engine:transaction(function()
 		if type(key) == "string" and key ~= "" then
 			local iter, state, first = engine:select("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
 				host, username, self.store, key or "");
@@ -233,9 +233,11 @@ function map_store:get(username, key)
 			error("TODO: non-string keys");
 		end
 	end);
+	if not ok then return nil, result; end
+	return result;
 end
 function map_store:set(username, key, data)
-	return engine:transaction(function()
+	local ok, result = engine:transaction(function()
 		if data == nil then
 			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
 				host, username, self.store, key or "");
@@ -248,6 +250,8 @@ function map_store:set(username, key, data)
 		end
 		return true;
 	end);
+	if not ok then return nil, result; end
+	return result;
 end
 
 local archive_store = {}
