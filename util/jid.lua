@@ -65,21 +65,8 @@ local function _prepped_split(jid)
 end
 prepped_split = _prepped_split;
 
-function prep(jid)
-	local node, host, resource = _prepped_split(jid);
-	if host then
-		if node then
-			host = node .. "@" .. host;
-		end
-		if resource then
-			host = host .. "/" .. resource;
-		end
-	end
-	return host;
-end
-
-function join(node, host, resource)
-	if not host then return end -- Invalid JID
+local function _join(node, host, resource)
+	if not host then return end
 	if node and resource then
 		return node.."@"..host.."/"..resource;
 	elseif node then
@@ -88,6 +75,12 @@ function join(node, host, resource)
 		return host.."/"..resource;
 	end
 	return host;
+end
+join = _join;
+
+function prep(jid)
+	local node, host, resource = _prepped_split(jid);
+	return _join(node, host, resource);
 end
 
 function compare(jid, acl)
