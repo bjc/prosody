@@ -103,7 +103,7 @@ local map_shim_mt = {
 	__index = {
 		get = function(self, username, key)
 			local ret, err = self.keyval_store:get(username);
-			if ret == nil and err then return nil, err end
+			if ret == nil then return nil, err end
 			return ret[key];
 		end;
 		set = function(self, username, key, data)
