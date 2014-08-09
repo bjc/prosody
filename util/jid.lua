@@ -37,11 +37,7 @@ end
 split = _split;
 
 function bare(jid)
-	local node, host = _split(jid);
-	if node and host then
-		return node.."@"..host;
-	end
-	return host;
+	return jid and match(jid, "^[^/]+");
 end
 
 local function _prepped_split(jid)
@@ -65,30 +61,22 @@ local function _prepped_split(jid)
 end
 prepped_split = _prepped_split;
 
-function prep(jid)
-	local node, host, resource = _prepped_split(jid);
-	if host then
-		if node then
-			host = node .. "@" .. host;
-		end
-		if resource then
-			host = host .. "/" .. resource;
-		end
+local function _join(node, host, resource)
+	if not host then return end
+	if node and resource then
+		return node.."@"..host.."/"..resource;
+	elseif node then
+		return node.."@"..host;
+	elseif resource then
+		return host.."/"..resource;
 	end
 	return host;
 end
+join = _join;
 
-function join(node, host, resource)
-	if node and host and resource then
-		return node.."@"..host.."/"..resource;
-	elseif node and host then
-		return node.."@"..host;
-	elseif host and resource then
-		return host.."/"..resource;
-	elseif host then
-		return host;
-	end
-	return nil; -- Invalid JID
+function prep(jid)
+	local node, host, resource = _prepped_split(jid);
+	return _join(node, host, resource);
 end
 
 function compare(jid, acl)
