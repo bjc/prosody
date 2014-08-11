@@ -97,11 +97,12 @@ local function restore_room(jid)
 	end
 end
 
-function forget_room(jid)
-	rooms[jid] = nil;
+function forget_room(room)
+	local room_jid = room.jid;
 	local node = jid_split(room.jid);
+	rooms[room_jid] = nil;
 	room_configs:set(node, nil);
-	if persistent.get(room_jid) then
+	if persistent.get(room) then
 		persistent_rooms:set(nil, room_jid, nil);
 	end
 end
@@ -148,8 +149,7 @@ module:hook("muc-room-pre-create", function(event)
 end, -1000);
 
 module:hook("muc-room-destroyed",function(event)
-	local room = event.room
-	forget_room(room.jid)
+	return forget_room(event.room);
 end)
 
 do
