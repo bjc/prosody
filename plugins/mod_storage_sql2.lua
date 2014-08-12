@@ -221,13 +221,8 @@ map_store.__index = map_store;
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
 		if type(key) == "string" and key ~= "" then
-			local iter, state, first = engine:select("SELECT * FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
-				host, username, self.store, key or "");
-			local row = iter(state, first);
-			if row then
-				return deserialize(row.type, row.value);
-			else
-				return nil;
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, key) do
+				return deserialize(row[1], row[2]);
 			end
 		else
 			error("TODO: non-string keys");
@@ -238,13 +233,13 @@ function map_store:get(username, key)
 end
 function map_store:set(username, key, data)
 	local ok, result = engine:transaction(function()
-		if data == nil then
+		if type(key) == "string" and key ~= "" then
 			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
-				host, username, self.store, key or "");
-		elseif type(key) == "string" and key ~= "" then
-			local t, value = assert(serialize(data));
-			engine:update("UPDATE `prosody` SET `type`=?, `value`=? WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
-				t, value, host, username, self.store, key);
+				host, username or "", self.store, key);
+			if data ~= nil then
+				local t, value = assert(serialize(data));
+				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
+			end
 		else
 			error("TODO: non-string keys");
 		end
