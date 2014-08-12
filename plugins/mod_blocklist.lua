@@ -103,11 +103,11 @@ end);
 local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
-	local act = stanza.tags[1];
+	local action = stanza.tags[1];
 	local new = {};
 
 	local jid;
-	for item in act:childtags("item") do
+	for item in action:childtags("item") do
 		jid = jid_prep(item.attr.jid);
 		if not jid then
 			return origin.send(st_error_reply(stanza, "modify", "jid-malformed"));
@@ -116,7 +116,7 @@ local function edit_blocklist(event)
 		new[jid] = is_contact_subscribed(username, host, jid) or false;
 	end
 
-	local mode = act.name == "block" or nil;
+	local mode = action.name == "block" or nil;
 
 	if mode and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
@@ -156,7 +156,7 @@ local function edit_blocklist(event)
 	end
 	if sessions[username] then
 		local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
-			:add_child(act); -- I am lazy
+			:add_child(action); -- I am lazy
 
 		for _, session in pairs(sessions[username].sessions) do
 			if session.interested_blocklist then
