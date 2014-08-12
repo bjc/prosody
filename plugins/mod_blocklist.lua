@@ -127,7 +127,7 @@ local function edit_blocklist(event)
 
 	local new_blocklist = {};
 
-	if mode and next(new) then
+	if mode or next(new) then
 		for jid in pairs(blocklist) do
 			new_blocklist[jid] = true;
 		end
