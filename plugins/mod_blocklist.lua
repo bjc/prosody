@@ -98,7 +98,7 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	return origin.send(reply);
 end);
 
--- Add or remove a bare jid from the blocklist
+-- Add or remove some jid(s) from the blocklist
 -- We want this to be atomic and not do a partial update
 local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
