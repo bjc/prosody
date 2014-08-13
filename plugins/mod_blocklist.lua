@@ -98,16 +98,16 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	return origin.send(reply);
 end);
 
--- Add or remove a bare jid from the blocklist
+-- Add or remove some jid(s) from the blocklist
 -- We want this to be atomic and not do a partial update
 local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
-	local act = stanza.tags[1];
+	local action = stanza.tags[1];
 	local new = {};
 
 	local jid;
-	for item in act:childtags("item") do
+	for item in action:childtags("item") do
 		jid = jid_prep(item.attr.jid);
 		if not jid then
 			return origin.send(st_error_reply(stanza, "modify", "jid-malformed"));
@@ -116,7 +116,7 @@ local function edit_blocklist(event)
 		new[jid] = is_contact_subscribed(username, host, jid) or false;
 	end
 
-	local mode = act.name == "block" or nil;
+	local mode = action.name == "block" or nil;
 
 	if mode and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
@@ -127,7 +127,7 @@ local function edit_blocklist(event)
 
 	local new_blocklist = {};
 
-	if mode and next(new) then
+	if mode or next(new) then
 		for jid in pairs(blocklist) do
 			new_blocklist[jid] = true;
 		end
@@ -156,7 +156,7 @@ local function edit_blocklist(event)
 	end
 	if sessions[username] then
 		local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
-			:add_child(act); -- I am lazy
+			:add_child(action); -- I am lazy
 
 		for _, session in pairs(sessions[username].sessions) do
 			if session.interested_blocklist then
