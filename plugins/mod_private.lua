@@ -27,7 +27,7 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 	end
 	if stanza.attr.type == "get" then
 		if data and data[key] then
-			return origin.send(st.reply(stanza):query("jabber:iq:private"):add_child(st.deserialize(data)));
+			return origin.send(st.reply(stanza):query("jabber:iq:private"):add_child(st.deserialize(data[key])));
 		else
 			return origin.send(st.reply(stanza):add_child(query));
 		end
