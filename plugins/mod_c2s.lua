@@ -91,7 +91,7 @@ end
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
-		session.log("debug", "Invalid opening stream header");
+		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
 		(session.log or log)("debug", "Client XML parse error: %s", tostring(data));
