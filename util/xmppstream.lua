@@ -109,7 +109,7 @@ function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 					end
 				else
 					-- Garbage before stream?
-					cb_error(session, "no-stream");
+					cb_error(session, "no-stream", tagname);
 				end
 				return;
 			end
