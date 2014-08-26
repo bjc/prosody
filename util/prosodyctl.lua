@@ -188,6 +188,10 @@ function getpid()
 	if not pidfile then
 		return false, "no-pidfile";
 	end
+
+	if type(pidfile) ~= "string" then
+		return false, "invalid-pidfile";
+	end
 	
 	local modules_enabled = set.new(config.get("*", "modules_enabled"));
 	if not modules_enabled:contains("posix") then
