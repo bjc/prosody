@@ -362,7 +362,9 @@ function stream_callbacks.streamopened(session, attr)
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);
 		end
+		session.notopen = nil;
 	elseif session.direction == "outgoing" then
+		session.notopen = nil;
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
@@ -396,7 +398,6 @@ function stream_callbacks.streamopened(session, attr)
 			end
 		end
 	end
-	session.notopen = nil;
 end
 
 function stream_callbacks.streamclosed(session)
