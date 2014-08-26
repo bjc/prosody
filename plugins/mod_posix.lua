@@ -80,7 +80,7 @@ local function write_pidfile()
 	if pidfile_handle then
 		remove_pidfile();
 	end
-	pidfile = module:get_option("pidfile");
+	pidfile = module:get_option_string("pidfile");
 	if pidfile then
 		local err;
 		local mode = stat(pidfile) and "r+" or "w+";
