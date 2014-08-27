@@ -528,6 +528,7 @@ local function initialize_session(session)
 		
 	function session.reset_stream()
 		session.notopen = true;
+		session.streamid = nil;
 		session.stream:reset();
 	end
 
