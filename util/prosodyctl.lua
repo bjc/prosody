@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
---
+-- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -146,7 +146,7 @@ function adduser(params)
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-
+	
 	local ok, errmsg = usermanager.create_user(user, password, host);
 	if not ok then
 		return false, errmsg;
@@ -162,7 +162,7 @@ function user_exists(params)
 	if not(provider) or provider.name == "null" then
 		usermanager.initialize_host(host);
 	end
-
+	
 	return usermanager.user_exists(user, host);
 end
 
@@ -170,7 +170,7 @@ function passwd(params)
 	if not _M.user_exists(params) then
 		return false, "no-such-user";
 	end
-
+	
 	return _M.adduser(params);
 end
 
@@ -179,7 +179,7 @@ function deluser(params)
 		return false, "no-such-user";
 	end
 	local user, host = nodeprep(params.user), nameprep(params.host);
-
+	
 	return usermanager.delete_user(user, host);
 end
 
@@ -189,29 +189,33 @@ function getpid()
 		return false, "no-pidfile";
 	end
 
+	if type(pidfile) ~= "string" then
+		return false, "invalid-pidfile";
+	end
+	
 	local modules_enabled = set.new(config.get("*", "modules_disabled"));
 	if prosody.platform ~= "posix" or modules_enabled:contains("posix") then
 		return false, "no-posix";
 	end
-
+	
 	local file, err = io.open(pidfile, "r+");
 	if not file then
 		return false, "pidfile-read-failed", err;
 	end
-
+	
 	local locked, err = lfs.lock(file, "w");
 	if locked then
 		file:close();
 		return false, "pidfile-not-locked";
 	end
-
+	
 	local pid = tonumber(file:read("*a"));
 	file:close();
-
+	
 	if not pid then
 		return false, "invalid-pid";
 	end
-
+	
 	return true, pid;
 end
 
@@ -252,10 +256,10 @@ function stop()
 	if not ret then
 		return false, "not-running";
 	end
-
+	
 	local ok, pid = _M.getpid()
 	if not ok then return false, pid; end
-
+	
 	signal.kill(pid, signal.SIGTERM);
 	return true;
 end
@@ -268,10 +272,10 @@ function reload()
 	if not ret then
 		return false, "not-running";
 	end
-
+	
 	local ok, pid = _M.getpid()
 	if not ok then return false, pid; end
-
+	
 	signal.kill(pid, signal.SIGHUP);
 	return true;
 end

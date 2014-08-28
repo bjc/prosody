@@ -98,7 +98,7 @@ function listener.onconnect(conn)
 	local pending = {};
 	local waiting = false;
 	local function process_next()
-		if waiting then log("debug", "can't process_next, waiting"); return; end
+		if waiting then return; end -- log("debug", "can't process_next, waiting");
 		waiting = true;
 		while sessions[conn] and #pending > 0 do
 			local request = t_remove(pending);
