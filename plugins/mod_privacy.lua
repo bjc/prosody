@@ -157,7 +157,7 @@ function createOrReplaceList (privacy_lists, origin, stanza, name, entries)
 		list.items[#list.items + 1] = tmp;
 	end
 	
-	table.sort(list, function(a, b) return a.order < b.order; end);
+	table.sort(list.items, function(a, b) return a.order < b.order; end);
 
 	origin.send(st.reply(stanza));
 	if bare_sessions[bare_jid] ~= nil then
