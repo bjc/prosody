@@ -109,7 +109,7 @@ function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 					end
 				else
 					-- Garbage before stream?
-					cb_error(session, "no-stream");
+					cb_error(session, "no-stream", tagname);
 				end
 				return;
 			end
@@ -249,7 +249,7 @@ function new(session, stream_callbacks, stanza_size_limit)
 			["xml:lang"] = "en",
 			xmlns = stream_callbacks.default_ns,
 			version = session.version and (session.version > 0 and "1.0" or nil),
-			id = session.streamid or "",
+			id = session.streamid,
 			from = from or session.host, to = to,
 		};
 		if session.stream_attrs then
