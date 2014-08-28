@@ -347,7 +347,9 @@ function stream_callbacks.streamopened(session, attr)
 			log("debug", "Sending stream features: %s", tostring(features));
 			send(features);
 		end
+		session.notopen = nil;
 	elseif session.direction == "outgoing" then
+		session.notopen = nil;
 		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
 		if not attr.id then error("stream response did not give us a streamid!!!"); end
 		session.streamid = attr.id;
@@ -381,7 +383,6 @@ function stream_callbacks.streamopened(session, attr)
 			end
 		end
 	end
-	session.notopen = nil;
 end
 
 function stream_callbacks.streamclosed(session)
@@ -391,6 +392,7 @@ end
 
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
+		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
 		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
@@ -501,6 +503,7 @@ local function initialize_session(session)
 
 	function session.reset_stream()
 		session.notopen = true;
+		session.streamid = nil;
 		session.stream:reset();
 	end
 
