@@ -147,6 +147,12 @@ module:hook("stanza/http://jabber.org/protocol/compress:compressed", function(ev
 	end
 end);
 
+module:hook("stanza/http://jabber.org/protocol/compress:failure", function(event)
+	local err = event.stanza:get_child();
+	(event.origin.log or module._log)("warn", "Compression setup failed (%s)", err and err.name or "unknown reason");
+	return true;
+end);
+
 module:hook("stanza/http://jabber.org/protocol/compress:compress", function(event)
 	local session, stanza = event.origin, event.stanza;
 
