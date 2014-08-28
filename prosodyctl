@@ -220,6 +220,7 @@ local error_messages = setmetatable({
 		["no-such-host"] = "The given hostname does not exist in the config";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
+		["invalid-pidfile"] = "The 'pidfile' option in the configuration file is not a string, see http://prosody.im/doc/prosodyctl#pidfile for help";
 		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see http://prosody.im/doc/prosodyctl for more info";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
