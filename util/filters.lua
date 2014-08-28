@@ -45,6 +45,8 @@ function add_filter(session, type, callback, priority)
 	if not filter_list then
 		filter_list = {};
 		session.filters[type] = filter_list;
+	elseif filter_list[callback] then
+		return; -- Filter already added
 	end
 	
 	priority = priority or 0;
