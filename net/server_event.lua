@@ -438,8 +438,11 @@ do
 	end
 	
 	function interface_mt:setlistener(listener)
-		self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout, self.onstatus
-			= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout, listener.onstatus;
+		self:ondetach(); -- Notify listener that it is no longer responsible for this connection
+		self.onconnect, self.ondisconnect, self.onincoming,
+		self.ontimeout, self.onstatus, self.ondetach
+			= listener.onconnect, listener.ondisconnect, listener.onincoming,
+			listener.ontimeout, listener.onstatus, listener.ondetach;
 	end
 	
 	-- Stub handlers
@@ -452,6 +455,8 @@ do
 	function interface_mt:ontimeout()
 	end
 	function interface_mt:ondrain()
+	end
+	function interface_mt:ondetach()
 	end
 	function interface_mt:onstatus()
 	end
@@ -479,6 +484,7 @@ do
 			onincoming = listener.onincoming;  -- will be called when client sends data
 			ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
 			ondrain = listener.ondrain; -- called when writebuffer is empty
+			ondetach = listener.ondetach; -- called when disassociating this listener from this connection
 			onstatus = listener.onstatus; -- called for status changes (e.g. of SSL/TLS)
 			eventread = false, eventwrite = false, eventclose = false,
 			eventhandshake = false, eventstarthandshake = false;  -- event handler
