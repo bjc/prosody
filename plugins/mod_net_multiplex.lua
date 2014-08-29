@@ -34,7 +34,6 @@ end
 function listener.onincoming(conn, data)
 	if not data then return; end
 	local buf = buffers[conn];
-	buffers[conn] = nil;
 	buf = buf and buf..data or data;
 	for service, multiplex_pattern in pairs(available_services) do
 		if buf:match(multiplex_pattern) then
@@ -56,6 +55,8 @@ end
 function listener.ondisconnect(conn, err)
 	buffers[conn] = nil; -- warn if no buffer?
 end
+
+listener.ondetach = listener.ondisconnect;
 
 module:provides("net", {
 	name = "multiplex";
