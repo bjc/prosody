@@ -266,6 +266,10 @@ function listener.associate_session(conn, session)
 	sessions[conn] = session;
 end
 
+function listener.ondetach(conn)
+	sessions[conn] = nil;
+end
+
 module:hook("server-stopping", function(event)
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
