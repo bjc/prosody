@@ -163,6 +163,10 @@ function console_listener.ondisconnect(conn, err)
 	end
 end
 
+function console_listener.ondetach(conn)
+	sessions[conn] = nil;
+end
+
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
 
