@@ -638,6 +638,10 @@ function listener.register_outgoing(conn, session)
 	initialize_session(session);
 end
 
+function listener.ondetach(conn)
+	sessions[conn] = nil;
+end
+
 function check_auth_policy(event)
 	local host, session = event.host, event.session;
 	local must_secure = secure_auth;
