@@ -319,6 +319,10 @@ function listener.ondisconnect(conn, err)
 	end
 end
 
+function listener.ondetach(conn)
+	sessions[conn] = nil;
+end
+
 module:provides("net", {
 	name = "component";
 	private = true;

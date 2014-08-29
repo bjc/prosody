@@ -72,6 +72,10 @@ function listener.ondisconnect(conn, err)
 	requests[conn] = nil;
 end
 
+function listener.ondetach(conn)
+	requests[conn] = nil;
+end
+
 local function request_reader(request, data, err)
 	if not request.parser then
 		local function error_cb(reason)
