@@ -240,7 +240,7 @@ do -- Ad-hoc commands
 	};
 
 	local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
-		return { rooms = array.collect(each_room):pluck("jid"):sort(); };
+		return { rooms = array.collect(each_room()):pluck("jid"):sort(); };
 	end, function(fields, errors)
 		if errors then
 			local errmsg = {};
