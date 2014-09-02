@@ -142,6 +142,10 @@ function listener.ondisconnect(conn)
 	sessions[conn] = nil;
 end
 
+function listener.ondetach(conn)
+	sessions[conn] = nil;
+end
+
 function listener.onincoming(conn, data)
 	sessions[conn]:feed(data);
 end
