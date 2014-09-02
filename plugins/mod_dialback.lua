@@ -82,6 +82,15 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		local attr = stanza.attr;
 		local to, from = nameprep(attr.to), nameprep(attr.from);
 
+		if not hosts[to] then
+			-- Not a host that we serve
+			origin.log("warn", "%s tried to connect to %s, which we don't serve", from, to);
+			origin:close("host-unknown");
+			return true;
+		elseif not from then
+			origin:close("improper-addressing");
+		end
+
 		if dwd and origin.secure then
 			if check_cert_status(origin, from) == false then
 				return
@@ -90,15 +99,6 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 				module:fire_event("s2s-authenticated", { session = origin, host = from });
 				return true;
 			end
-		end
-
-		if not hosts[to] then
-			-- Not a host that we serve
-			origin.log("warn", "%s tried to connect to %s, which we don't serve", from, to);
-			origin:close("host-unknown");
-			return true;
-		elseif not from then
-			origin:close("improper-addressing");
 		end
 
 		origin.hosts[from] = { dialback_key = stanza[1] };
