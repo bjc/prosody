@@ -284,7 +284,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local status = listeners.onstatus
 	local disconnect = listeners.ondisconnect
 	local drain = listeners.ondrain
-	local detach = listener.ondetach
+	local detach = listeners.ondetach
 
 	local bufferqueue = { } -- buffer array
 	local bufferqueuelen = 0	-- end of buffer array
