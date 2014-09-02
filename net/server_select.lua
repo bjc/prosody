@@ -285,6 +285,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local disconnect = listeners.ondisconnect
 	local drain = listeners.ondrain
 	local onreadtimeout = listeners.onreadtimeout;
+	local detach = listeners.ondetach
 
 	local bufferqueue = { } -- buffer array
 	local bufferqueuelen = 0	-- end of buffer array
@@ -316,11 +317,15 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.onreadtimeout = onreadtimeout;
 
 	handler.setlistener = function( self, listeners )
+		if detach then
+			detach(self) -- Notify listener that it is no longer responsible for this connection
+		end
 		dispatch = listeners.onincoming
 		disconnect = listeners.ondisconnect
 		status = listeners.onstatus
 		drain = listeners.ondrain
 		handler.onreadtimeout = listeners.onreadtimeout
+		detach = listeners.ondetach
 	end
 	handler.getstats = function( )
 		return readtraffic, sendtraffic
