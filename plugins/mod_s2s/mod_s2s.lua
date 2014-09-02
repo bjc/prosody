@@ -365,8 +365,11 @@ function stream_callbacks.streamopened(session, attr)
 		session.notopen = nil;
 	elseif session.direction == "outgoing" then
 		session.notopen = nil;
-		-- If we are just using the connection for verifying dialback keys, we won't try and auth it
-		if not attr.id then error("stream response did not give us a streamid!!!"); end
+		if not attr.id then
+			log("error", "Stream response did not give us a stream id!");
+			session:close({ condition = "undefined-condition", text = "Missing stream ID" });
+			return;
+		end
 		session.streamid = attr.id;
 
 		if session.secure and not session.cert_chain_status then
