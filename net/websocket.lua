@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local t_concat = table.concat;
+
 local http = require "net.http";
 local frames = require "net.websocket.frames";
 local base64 = require "util.encodings".base64;
@@ -76,7 +78,7 @@ function websocket_listeners.onincoming(handler, buffer, err)
 			if frame.FIN then
 				s.databuffer = nil;
 				if s.onmessage then
-					s:onmessage(table.concat(databuffer), databuffer.type);
+					s:onmessage(t_concat(databuffer), databuffer.type);
 				end
 			end
 		else -- Control frame
@@ -176,28 +178,31 @@ local websocket_metatable = {
 local function connect(url, ex, listeners)
 	ex = ex or {};
 
-	--[[ RFC 6455 4.1.7:
+	--[[RFC 6455 4.1.7:
 		The request MUST include a header field with the name
-        |Sec-WebSocket-Key|.  The value of this header field MUST be a
-        nonce consisting of a randomly selected 16-byte value that has
-        been base64-encoded (see Section 4 of [RFC4648]).  The nonce
-        MUST be selected randomly for each connection.
-    ]]
+	|Sec-WebSocket-Key|.  The value of this header field MUST be a
+	nonce consisting of a randomly selected 16-byte value that has
+	been base64-encoded (see Section 4 of [RFC4648]).  The nonce
+	MUST be selected randomly for each connection.
+	]]
 	local key = base64.encode(random_bytes(16));
 
 	-- Either a single protocol string or an array of protocol strings.
 	local protocol = ex.protocol;
-	if type(protocol) == "table" then
-		protocol = table.concat(protocol, ", ");
+	if type(protocol) == "string" then
+		protocol = { protocol };
+	end
+	for _, v in ipairs(protocol) do
+		protocol[v] = true;
 	end
 
 	local headers = {
 		["Upgrade"] = "websocket";
 		["Connection"] = "Upgrade";
 		["Sec-WebSocket-Key"] = key;
-		["Sec-WebSocket-Protocol"] = protocol;
-        ["Sec-WebSocket-Version"] = "13";
-        ["Sec-WebSocket-Extensions"] = ex.extensions;
+		["Sec-WebSocket-Protocol"] = t_concat(protocol, ", ");
+		["Sec-WebSocket-Version"] = "13";
+		["Sec-WebSocket-Extensions"] = ex.extensions;
 	}
 	if ex.headers then
 		for k,v in pairs(ex.headers) do
@@ -225,36 +230,36 @@ local function connect(url, ex, listeners)
 
 	local http_url = url:gsub("^(ws)", "http");
 	local http_req = http.request(http_url, {
-			method = "GET";
-			headers = headers;
-			sslctx = ex.sslctx;
-		}, function(b, c, r, http_req)
-			if c ~= 101
-				or r.headers["connection"]:lower() ~= "upgrade"
-				or r.headers["upgrade"] ~= "websocket"
-				or r.headers["sec-websocket-accept"] ~= base64.encode(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-				-- TODO: check "Sec-WebSocket-Protocol"
-				then
-				s.readyState = 3;
-				log("warn", "WebSocket connection to %s failed: %s", url, tostring(b));
-				if s.onerror then s:onerror("connecting-failed"); end
-				return
-			end
+		method = "GET";
+		headers = headers;
+		sslctx = ex.sslctx;
+	}, function(b, c, r, http_req)
+		if c ~= 101
+		   or r.headers["connection"]:lower() ~= "upgrade"
+		   or r.headers["upgrade"] ~= "websocket"
+		   or r.headers["sec-websocket-accept"] ~= base64.encode(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+		   or not protocol[r.headers["sec-websocket-protocol"]]
+		   then
+			s.readyState = 3;
+			log("warn", "WebSocket connection to %s failed: %s", url, tostring(b));
+			if s.onerror then s:onerror("connecting-failed"); end
+			return;
+		end
 
-			s.protocol = r.headers["sec-websocket-protocol"];
+		s.protocol = r.headers["sec-websocket-protocol"];
 
-			-- Take possession of socket from http
-			http_req.conn = nil;
-			local handler = http_req.handler;
-			s.handler = handler;
-			websockets[handler] = s;
-			handler:setlistener(websocket_listeners);
+		-- Take possession of socket from http
+		http_req.conn = nil;
+		local handler = http_req.handler;
+		s.handler = handler;
+		websockets[handler] = s;
+		handler:setlistener(websocket_listeners);
 
-			log("debug", "WebSocket connected successfully to %s", url);
-			s.readyState = 1;
-			if s.onopen then s:onopen(); end
-			websocket_listeners.onincoming(handler, b);
-		end);
+		log("debug", "WebSocket connected successfully to %s", url);
+		s.readyState = 1;
+		if s.onopen then s:onopen(); end
+		websocket_listeners.onincoming(handler, b);
+	end);
 
 	return s;
 end

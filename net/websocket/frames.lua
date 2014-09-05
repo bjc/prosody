@@ -29,7 +29,7 @@ local function read_uint16be(str, pos)
 	local l1, l2 = s_byte(str, pos, pos+1);
 	return l1*256 + l2;
 end
--- TODO: this may lose precision
+-- FIXME: this may lose precision
 local function read_uint64be(str, pos)
 	local l1, l2, l3, l4, l5, l6, l7, l8 = s_byte(str, pos, pos+7);
 	return lshift(l1, 56) + lshift(l2, 48) + lshift(l3, 40) + lshift(l4, 32)
@@ -38,12 +38,12 @@ end
 local function pack_uint16be(x)
 	return s_char(rshift(x, 8), band(x, 0xFF));
 end
-local function sm(x, n)
+local function get_byte(x, n)
 	return band(rshift(x, n), 0xFF);
 end
 local function pack_uint64be(x)
-	return s_char(rshift(x, 56), sm(x, 48), sm(x, 40), sm(x, 32),
-		sm(x, 24), sm(x, 16), sm(x, 8), band(x, 0xFF));
+	return s_char(rshift(x, 56), get_byte(x, 48), get_byte(x, 40), get_byte(x, 32),
+		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF));
 end
 
 local function parse_frame_header(frame)
@@ -78,7 +78,7 @@ local function parse_frame_header(frame)
 	end
 
 	if result.MASK then
-		result.key = { s_byte(frame, pos+1, pos+4) };
+		result.key = { s_byte(frame, length_bytes+3, length_bytes+6) };
 	end
 
 	return result, header_length;
@@ -131,13 +131,12 @@ local function build_frame(desc)
 		desc.RSV1 and 0x40 or 0,
 		desc.RSV2 and 0x20 or 0,
 		desc.RSV3 and 0x10 or 0);
-	local b2;
 
-	local length_extra
-	if #data <= 125 then -- 7-bit length
-		b2 = #data;
+	local b2 = #data;
+	local length_extra;
+	if b2 <= 125 then -- 7-bit length
 		length_extra = "";
-	elseif #data <= 0xFFFF then -- 2-byte length
+	elseif b2 <= 0xFFFF then -- 2-byte length
 		b2 = 126;
 		length_extra = pack_uint16be(#data);
 	else -- 8-byte length
