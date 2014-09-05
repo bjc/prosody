@@ -1049,6 +1049,17 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	end
 
 	if self.save then self:save(); end
+
+	module:fire_event("muc-set-affiliation", {
+		room = self;
+		actor = actor;
+		jid = jid;
+		affiliation = affiliation or "none";
+		reason = reason;
+		previous_affiliation = target_affiliation;
+		in_room = next(occupants_updated) ~= nil;
+	});
+
 	return true;
 end
 
