@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local t_concat = table.concat;
+
 local http = require "net.http";
 local frames = require "net.websocket.frames";
 local base64 = require "util.encodings".base64;
@@ -76,7 +78,7 @@ function websocket_listeners.onincoming(handler, buffer, err)
 			if frame.FIN then
 				s.databuffer = nil;
 				if s.onmessage then
-					s:onmessage(table.concat(databuffer), databuffer.type);
+					s:onmessage(t_concat(databuffer), databuffer.type);
 				end
 			end
 		else -- Control frame
@@ -187,15 +189,18 @@ local function connect(url, ex, listeners)
 
 	-- Either a single protocol string or an array of protocol strings.
 	local protocol = ex.protocol;
-	if type(protocol) == "table" then
-		protocol = table.concat(protocol, ", ");
+	if type(protocol) == "string" then
+		protocol = { protocol };
+	end
+	for _, v in ipairs(protocol) do
+		protocol[v] = true;
 	end
 
 	local headers = {
 		["Upgrade"] = "websocket";
 		["Connection"] = "Upgrade";
 		["Sec-WebSocket-Key"] = key;
-		["Sec-WebSocket-Protocol"] = protocol;
+		["Sec-WebSocket-Protocol"] = t_concat(protocol, ", ");
 		["Sec-WebSocket-Version"] = "13";
 		["Sec-WebSocket-Extensions"] = ex.extensions;
 	}
@@ -233,7 +238,7 @@ local function connect(url, ex, listeners)
 		   or r.headers["connection"]:lower() ~= "upgrade"
 		   or r.headers["upgrade"] ~= "websocket"
 		   or r.headers["sec-websocket-accept"] ~= base64.encode(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-		   -- TODO: check "Sec-WebSocket-Protocol"
+		   or not protocol[r.headers["sec-websocket-protocol"]]
 		   then
 			s.readyState = 3;
 			log("warn", "WebSocket connection to %s failed: %s", url, tostring(b));
