@@ -1111,6 +1111,8 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	return true;
 end
 
+local affiliation_notify = module:require "muc/affiliation_notify";
+
 local name = module:require "muc/name";
 room_mt.get_name = name.get;
 room_mt.set_name = name.set;
