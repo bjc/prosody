@@ -29,24 +29,25 @@ deprecated_warning"core_post_stanza";
 deprecated_warning"core_process_stanza";
 deprecated_warning"core_route_stanza";
 
+local valid_stanzas = { message = true, presence = true, iq = true };
 local function handle_unhandled_stanza(host, origin, stanza)
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
-	if name == "iq" and xmlns == "jabber:client" then
-		if stanza.attr.type == "get" or stanza.attr.type == "set" then
-			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
-			log("debug", "Stanza of type %s from %s has xmlns: %s", name, origin_type, xmlns);
-		else
-			log("debug", "Discarding %s from %s of type: %s", name, origin_type, stanza.attr.type);
-			return true;
+	if xmlns == "jabber:client" and valid_stanzas[name] then
+		-- A normal stanza
+		local st_type = stanza.attr.type;
+		if st_type == "error" or (name == "iq" and st_type == "result") then
+			log("debug", "Discarding %s from %s of type: %s", name, origin_type, st_type or '<nil>');
+			return;
 		end
-	end
-	if stanza.attr.xmlns == nil and origin.send then
-		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin.type, stanza.name, xmlns); -- we didn't handle it
-		if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+		if name == "iq" and (st_type == "get" or st_type == "set") and stanza.tags[1] then
+			xmlns = stanza.tags[1].attr.xmlns or "jabber:client";
+		end
+		log("debug", "Unhandled %s stanza: %s; xmlns=%s", origin_type, name, xmlns);
+		if origin.send then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
-		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin.type, stanza.name, xmlns, tostring(stanza)); -- we didn't handle it
+		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin_type, name, xmlns, tostring(stanza)); -- we didn't handle it
 		origin:close("unsupported-stanza-type");
 	end
 end
@@ -55,19 +56,21 @@ local iq_types = { set=true, get=true, result=true, error=true };
 function core_process_stanza(origin, stanza)
 	(origin.log or log)("debug", "Received[%s]: %s", origin.type, stanza:top_tag())
 
-	-- TODO verify validity of stanza (as well as JID validity)
-	if stanza.attr.type == "error" and #stanza.tags == 0 then return; end -- TODO invalid stanza, log
-	if stanza.name == "iq" then
-		if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
-		if not iq_types[stanza.attr.type] or ((stanza.attr.type == "set" or stanza.attr.type == "get") and (#stanza.tags ~= 1)) then
-			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
-			return;
-		end
-	end
-
 	if origin.type == "c2s" and not stanza.attr.xmlns then
+		local name, st_type = stanza.name, stanza.attr.type;
+		if st_type == "error" and #stanza.tags == 0 then
+			return handle_unhandled_stanza(origin.host, origin, stanza);
+		end
+		if name == "iq" then
+			if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
+			if not iq_types[st_type] or (st_type ~= "result" and #stanza.tags ~= 1) then
+				origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
+				return;
+			end
+		end
+
 		if not origin.full_jid
-			and not(stanza.name == "iq" and stanza.attr.type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
+			and not(name == "iq" and st_type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
 					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
 			-- authenticated client isn't bound and current stanza is not a bind request
 			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
