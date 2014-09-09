@@ -153,6 +153,7 @@ function module.add_host(module)
 			-- Stream is authenticated and we are seem to be done with feature negotiation,
 			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
 			mark_connected(session);
+			return true;
 		end
 	end, -1);
 end
