@@ -46,7 +46,7 @@ local function handle_unhandled_stanza(host, origin, stanza)
 		if origin.send then
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
-	elseif not((name == "features" or name == "error") and xmlns == "http://etherx.jabber.org/streams") then -- FIXME remove check once we handle S2S features
+	else
 		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin_type, name, xmlns, tostring(stanza)); -- we didn't handle it
 		origin:close("unsupported-stanza-type");
 	end
