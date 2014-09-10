@@ -6,69 +6,54 @@
 -- COPYING file in the source package for more information.
 --
 
-local array = require "util.array";
-
 if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
 end
 
-local muc_host = module:get_host();
-local muc_name = module:get_option("name");
-if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
-local restrict_room_creation = module:get_option("restrict_room_creation");
-if restrict_room_creation then
-	if restrict_room_creation == true then
-		restrict_room_creation = "admin";
-	elseif restrict_room_creation ~= "admin" and restrict_room_creation ~= "local" then
-		restrict_room_creation = nil;
-	end
-end
-local lock_rooms = module:get_option_boolean("muc_room_locking", false);
-local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
-
 local muclib = module:require "muc";
-local muc_new_room = muclib.new_room;
+room_mt = muclib.room_mt; -- Yes, global.
+local iterators = require "util.iterators";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
-local uuid_gen = require "util.uuid".generate;
 local um_is_admin = require "core.usermanager".is_admin;
-local hosts = prosody.hosts;
 
-rooms = {};
-local rooms = rooms;
-local persistent_rooms_storage = module:open_store("persistent");
-local persistent_rooms = persistent_rooms_storage:get() or {};
-local room_configs = module:open_store("config");
-
--- Configurable options
-muclib.set_max_history_length(module:get_option_number("max_history_messages"));
+local rooms = module:shared "rooms";
 
 module:depends("disco");
-module:add_identity("conference", "text", muc_name);
+module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
 module:add_feature("http://jabber.org/protocol/muc");
+module:depends "muc_unique"
+module:require "muc/lock";
 
 local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-room_mt = muclib.room_mt; -- Yes, global.
-local _set_affiliation = room_mt.set_affiliation;
-local _get_affiliation = room_mt.get_affiliation;
-function muclib.room_mt:get_affiliation(jid)
-	if is_admin(jid) then return "owner"; end
-	return _get_affiliation(self, jid);
-end
-function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
-	if is_admin(jid) then return nil, "modify", "not-acceptable"; end
-	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
+do -- Monkey patch to make server admins room owners
+	local _get_affiliation = room_mt.get_affiliation;
+	function room_mt:get_affiliation(jid)
+		if is_admin(jid) then return "owner"; end
+		return _get_affiliation(self, jid);
+	end
+
+	local _set_affiliation = room_mt.set_affiliation;
+	function room_mt:set_affiliation(actor, jid, ...)
+		if is_admin(jid) then return nil, "modify", "not-acceptable"; end
+		return _set_affiliation(self, actor, jid, ...);
+	end
 end
 
-local function room_route_stanza(room, stanza) module:send(stanza); end
+local persistent = module:require "muc/persistent";
+local persistent_rooms_storage = module:open_store("persistent");
+local persistent_rooms = module:open_store("persistent", "map");
+local room_configs = module:open_store("config");
+
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
-	persistent_rooms[room.jid] = room._data.persistent;
-	if room._data.persistent then
+	local is_persistent = persistent.get(room);
+	persistent_rooms:set(nil, room.jid, is_persistent);
+	if is_persistent then
 		local history = room._data.history;
 		room._data.history = nil;
 		local data = {
@@ -84,195 +69,192 @@ local function room_save(room, forced)
 			rooms[room.jid] = nil;
 		end
 	end
-	if forced then persistent_rooms_storage:set(nil, persistent_rooms); end
 end
 
-function create_room(jid)
-	local room = muc_new_room(jid);
-	room.route_stanza = room_route_stanza;
-	room.save = room_save;
-	rooms[jid] = room;
-	if lock_rooms then
-		room.locked = true;
-		if lock_room_timeout and lock_room_timeout > 0 then
-			module:add_timer(lock_room_timeout, function ()
-				if room.locked then
-					room:destroy(); -- Not unlocked in time
-				end
-			end);
-		end
+-- Automatically destroy empty non-persistent rooms
+module:hook("muc-occupant-left",function(event)
+	local room = event.room
+	if not room:has_occupant() and not persistent.get(room) then -- empty, non-persistent room
+		module:fire_event("muc-room-destroyed", { room = room });
 	end
-	module:fire_event("muc-room-created", { room = room });
-	return room;
+end);
+
+function track_room(room)
+	rooms[room.jid] = room;
+	-- When room is created, over-ride 'save' method
+	room.save = room_save;
 end
 
-local persistent_errors = false;
-for jid in pairs(persistent_rooms) do
+local function restore_room(jid)
 	local node = jid_split(jid);
 	local data = room_configs:get(node);
 	if data then
-		local room = create_room(jid);
+		local room = muclib.new_room(jid);
 		room._data = data._data;
 		room._affiliations = data._affiliations;
-	else -- missing room data
-		persistent_rooms[jid] = nil;
-		module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
-		persistent_errors = true;
+		track_room(room);
+		return room;
 	end
 end
-if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
 
-local host_room = muc_new_room(muc_host);
-host_room.route_stanza = room_route_stanza;
-host_room.save = room_save;
+function forget_room(room)
+	local room_jid = room.jid;
+	local node = jid_split(room.jid);
+	rooms[room_jid] = nil;
+	room_configs:set(node, nil);
+	if persistent.get(room) then
+		persistent_rooms:set(nil, room_jid, nil);
+	end
+end
+
+function get_room_from_jid(room_jid)
+	local room = rooms[room_jid];
+	if room == nil then
+		-- Check if in persistent storage
+		if persistent_rooms:get(nil, room_jid) then
+			room = restore_room(room_jid);
+			if room == nil then
+				module:log("error", "Missing data for room '%s', removing from persistent room list", room_jid);
+				persistent_rooms:set(nil, room_jid, nil);
+			end
+		end
+	end
+	return room
+end
+
+function each_room()
+	for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
+		if rooms[room_jid] == nil then -- Don't restore rooms that already exist
+			local room = restore_room(room_jid);
+			if room == nil then
+				module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
+			end
+		end
+	end
+	return iterators.values(rooms);
+end
 
 module:hook("host-disco-items", function(event)
 	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
-	for jid, room in pairs(rooms) do
+	for room in each_room() do
 		if not room:get_hidden() then
-			reply:tag("item", {jid=jid, name=room:get_name()}):up();
+			reply:tag("item", {jid=room.jid, name=room:get_name()}):up();
 		end
 	end
 end);
 
-local function handle_to_domain(event)
-	local origin, stanza = event.origin, event.stanza;
-	local type = stanza.attr.type;
-	if type == "error" or type == "result" then return; end
-	if stanza.name == "iq" and type == "get" then
-		local xmlns = stanza.tags[1].attr.xmlns;
-		local node = stanza.tags[1].attr.node;
-		if xmlns == "http://jabber.org/protocol/muc#unique" then
-			origin.send(st.reply(stanza):tag("unique", {xmlns = xmlns}):text(uuid_gen())); -- FIXME Random UUIDs can theoretically have collisions
-		else
-			origin.send(st.error_reply(stanza, "cancel", "service-unavailable")); -- TODO disco/etc
-		end
-	else
-		host_room:handle_stanza(origin, stanza);
-		--origin.send(st.error_reply(stanza, "cancel", "service-unavailable", "The muc server doesn't deal with messages and presence directed at it"));
+module:hook("muc-room-pre-create", function(event)
+	track_room(event.room);
+end, -1000);
+
+module:hook("muc-room-destroyed",function(event)
+	return forget_room(event.room);
+end)
+
+do
+	local restrict_room_creation = module:get_option("restrict_room_creation");
+	if restrict_room_creation == true then
+		restrict_room_creation = "admin";
 	end
-	return true;
-end
-
-function stanza_handler(event)
-	local origin, stanza = event.origin, event.stanza;
-	local bare = jid_bare(stanza.attr.to);
-	local room = rooms[bare];
-	if not room then
-		if stanza.name ~= "presence" then
-			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-			return true;
-		end
-		if not(restrict_room_creation) or
-		  is_admin(stanza.attr.from) or
-		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-			room = create_room(bare);
-		end
-	end
-	if room then
-		room:handle_stanza(origin, stanza);
-		if not next(room._occupants) and not persistent_rooms[room.jid] then -- empty, non-persistent room
-			module:fire_event("muc-room-destroyed", { room = room });
-			rooms[bare] = nil; -- discard room
-		end
-	else
-		origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
-	end
-	return true;
-end
-module:hook("iq/bare", stanza_handler, -1);
-module:hook("message/bare", stanza_handler, -1);
-module:hook("presence/bare", stanza_handler, -1);
-module:hook("iq/full", stanza_handler, -1);
-module:hook("message/full", stanza_handler, -1);
-module:hook("presence/full", stanza_handler, -1);
-module:hook("iq/host", handle_to_domain, -1);
-module:hook("message/host", handle_to_domain, -1);
-module:hook("presence/host", handle_to_domain, -1);
-
-hosts[module.host].send = function(stanza) -- FIXME do a generic fix
-	if stanza.attr.type == "result" or stanza.attr.type == "error" then
-		module:send(stanza);
-	else error("component.send only supports result and error stanzas at the moment"); end
-end
-
-hosts[module:get_host()].muc = { rooms = rooms };
-
-local saved = false;
-module.save = function()
-	saved = true;
-	return {rooms = rooms};
-end
-module.restore = function(data)
-	for jid, oldroom in pairs(data.rooms or {}) do
-		local room = create_room(jid);
-		room._jid_nick = oldroom._jid_nick;
-		room._occupants = oldroom._occupants;
-		room._data = oldroom._data;
-		room._affiliations = oldroom._affiliations;
-	end
-	hosts[module:get_host()].muc = { rooms = rooms };
-end
-
-function shutdown_room(room, stanza)
-	for nick, occupant in pairs(room._occupants) do
-		stanza.attr.from = nick;
-		for jid in pairs(occupant.sessions) do
-			stanza.attr.to = jid;
-			room:_route_stanza(stanza);
-			room._jid_nick[jid] = nil;
-		end
-		room._occupants[nick] = nil;
+	if restrict_room_creation then
+		local host_suffix = module.host:gsub("^[^%.]+%.", "");
+		module:hook("muc-room-pre-create", function(event)
+			local origin, stanza = event.origin, event.stanza;
+			local user_jid = stanza.attr.from;
+			if not is_admin(user_jid) and not (
+				restrict_room_creation == "local" and
+				select(2, jid_split(user_jid)) == host_suffix
+			) then
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				return true;
+			end
+		end);
 	end
 end
+
+for event_name, method in pairs {
+	-- Normal room interactions
+	["iq-get/bare/http://jabber.org/protocol/disco#info:query"] = "handle_disco_info_get_query" ;
+	["iq-get/bare/http://jabber.org/protocol/disco#items:query"] = "handle_disco_items_get_query" ;
+	["iq-set/bare/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_set_command" ;
+	["iq-get/bare/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_get_command" ;
+	["iq-set/bare/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_set_to_room" ;
+	["iq-get/bare/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_get_to_room" ;
+	["message/bare"] = "handle_message_to_room" ;
+	["presence/bare"] = "handle_presence_to_room" ;
+	-- Host room
+	["iq-get/host/http://jabber.org/protocol/disco#info:query"] = "handle_disco_info_get_query" ;
+	["iq-get/host/http://jabber.org/protocol/disco#items:query"] = "handle_disco_items_get_query" ;
+	["iq-set/host/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_set_command" ;
+	["iq-get/host/http://jabber.org/protocol/muc#admin:query"] = "handle_admin_query_get_command" ;
+	["iq-set/host/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_set_to_room" ;
+	["iq-get/host/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_get_to_room" ;
+	["message/host"] = "handle_message_to_room" ;
+	["presence/host"] = "handle_presence_to_room" ;
+	-- Direct to occupant (normal rooms and host room)
+	["presence/full"] = "handle_presence_to_occupant" ;
+	["iq/full"] = "handle_iq_to_occupant" ;
+	["message/full"] = "handle_message_to_occupant" ;
+} do
+	module:hook(event_name, function (event)
+		local origin, stanza = event.origin, event.stanza;
+		local room_jid = jid_bare(stanza.attr.to);
+		local room = get_room_from_jid(room_jid);
+		if room == nil then
+			-- Watch presence to create rooms
+			if stanza.attr.type == nil and stanza.name == "presence" then
+				room = muclib.new_room(room_jid);
+			else
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				return true;
+			end
+		end
+		return room[method](room, origin, stanza);
+	end, -2)
+end
+
 function shutdown_component()
-	if not saved then
-		local stanza = st.presence({type = "unavailable"})
-			:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-				:tag("item", { affiliation='none', role='none' }):up()
-				:tag("status", { code = "332"}):up();
-		for roomjid, room in pairs(rooms) do
-			shutdown_room(room, stanza);
-		end
-		shutdown_room(host_room, stanza);
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+		:tag("status", { code = "332"}):up();
+	for room in each_room() do
+		room:clear(x);
 	end
 end
-module.unload = shutdown_component;
 module:hook_global("server-stopping", shutdown_component);
 
--- Ad-hoc commands
-module:depends("adhoc")
-local t_concat = table.concat;
-local keys = require "util.iterators".keys;
-local adhoc_new = module:require "adhoc".new;
-local adhoc_initial = require "util.adhoc".new_initial_data_form;
-local dataforms_new = require "util.dataforms".new;
+do -- Ad-hoc commands
+	module:depends "adhoc";
+	local t_concat = table.concat;
+	local adhoc_new = module:require "adhoc".new;
+	local adhoc_initial = require "util.adhoc".new_initial_data_form;
+	local array = require "util.array";
+	local dataforms_new = require "util.dataforms".new;
 
-local destroy_rooms_layout = dataforms_new {
-	title = "Destroy rooms";
-	instructions = "Select the rooms to destroy";
+	local destroy_rooms_layout = dataforms_new {
+		title = "Destroy rooms";
+		instructions = "Select the rooms to destroy";
 
-	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#destroy" };
-	{ name = "rooms", type = "list-multi", required = true, label = "Rooms to destroy:"};
-};
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#destroy" };
+		{ name = "rooms", type = "list-multi", required = true, label = "Rooms to destroy:"};
+	};
 
-local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
-	return { rooms = array.collect(keys(rooms)):sort() };
-end, function(fields, errors)
-	if errors then
-		local errmsg = {};
-		for name, err in pairs(errors) do
-			errmsg[#errmsg + 1] = name .. ": " .. err;
+	local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
+		return { rooms = array.collect(each_room()):pluck("jid"):sort(); };
+	end, function(fields, errors)
+		if errors then
+			local errmsg = {};
+			for name, err in pairs(errors) do
+				errmsg[#errmsg + 1] = name .. ": " .. err;
+			end
+			return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
 		end
-		return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
-	end
-	for _, room in ipairs(fields.rooms) do
-		rooms[room]:destroy();
-		rooms[room] = nil;
-	end
-	return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
-end);
-local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
+		for _, room in ipairs(fields.rooms) do
+			get_room_from_jid(room):destroy();
+		end
+		return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
+	end);
+	local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
 
-module:provides("adhoc", destroy_rooms_desc);
+	module:provides("adhoc", destroy_rooms_desc);
+end

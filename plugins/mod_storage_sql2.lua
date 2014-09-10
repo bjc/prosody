@@ -216,6 +216,39 @@ function keyval_store:users()
 	return iterator(result);
 end
 
+local map_store = {};
+map_store.__index = map_store;
+function map_store:get(username, key)
+	local ok, result = engine:transaction(function()
+		if type(key) == "string" and key ~= "" then
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, key) do
+				return deserialize(row[1], row[2]);
+			end
+		else
+			error("TODO: non-string keys");
+		end
+	end);
+	if not ok then return nil, result; end
+	return result;
+end
+function map_store:set(username, key, data)
+	local ok, result = engine:transaction(function()
+		if type(key) == "string" and key ~= "" then
+			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				host, username or "", self.store, key);
+			if data ~= nil then
+				local t, value = assert(serialize(data));
+				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
+			end
+		else
+			error("TODO: non-string keys");
+		end
+		return true;
+	end);
+	if not ok then return nil, result; end
+	return result;
+end
+
 local archive_store = {}
 archive_store.__index = archive_store
 function archive_store:append(username, key, when, with, value)
@@ -341,6 +374,7 @@ end
 
 local stores = {
 	keyval = keyval_store;
+	map = map_store;
 	archive = archive_store;
 };
 

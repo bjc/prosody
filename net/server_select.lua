@@ -48,13 +48,14 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local luasec = use "ssl"
+local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
+local getaddrinfo = luasocket.dns.getaddrinfo
 
 --// extern lib methods //--
 
-local ssl_wrap = ( luasec and luasec.wrap )
+local ssl_wrap = ( has_luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_sleep = luasocket.sleep
 local socket_select = luasocket.select
@@ -591,7 +592,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		)
 	end
-	if luasec then
+	if has_luasec then
 		handler.starttls = function( self, _sslctx)
 			if _sslctx then
 				handler:set_sslctx(_sslctx);
@@ -644,7 +645,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
 
-	if sslctx and luasec then
+	if sslctx and has_luasec then
 		out_put "server.lua: auto-starting ssl negotiation..."
 		handler.autostart_ssl = true;
 		local ok, err = handler:starttls(sslctx);
@@ -720,22 +721,23 @@ end
 ----------------------------------// PUBLIC //--
 
 addserver = function( addr, port, listeners, pattern, sslctx ) -- this function provides a way for other scripts to reg a server
+	addr = addr or "*"
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
-	end
-	if type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
+	elseif type ( addr ) ~= "string" then
+		err = "invalid address"
+	elseif type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
 		err = "invalid port"
 	elseif _server[ addr..":"..port ] then
 		err = "listeners on '[" .. addr .. "]:" .. port .. "' already exist"
-	elseif sslctx and not luasec then
+	elseif sslctx and not has_luasec then
 		err = "luasec not found"
 	end
 	if err then
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
-	addr = addr or "*"
 	local server, err = socket_bind( addr, port, _tcpbacklog )
 	if err then
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
@@ -936,17 +938,44 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	return handler, socket
 end
 
-local addclient = function( address, port, listeners, pattern, sslctx )
-	local client, err = luasocket.tcp( )
+local addclient = function( address, port, listeners, pattern, sslctx, typ )
+	local err
+	if type( listeners ) ~= "table" then
+		err = "invalid listener table"
+	elseif type ( address ) ~= "string" then
+		err = "invalid address"
+	elseif type( port ) ~= "number" or not ( port >= 0 and port <= 65535 ) then
+		err = "invalid port"
+	elseif sslctx and not has_luasec then
+		err = "luasec not found"
+	end
+	if getaddrinfo and not typ then
+		local addrinfo, err = getaddrinfo(address)
+		if not addrinfo then return nil, err end
+		if addrinfo[1] and addrinfo[1].family == "inet6" then
+			typ = "tcp6"
+		end
+	end
+	local create = luasocket[typ or "tcp"]
+	if type( create ) ~= "function"  then
+		err = "invalid socket type"
+	end
+
+	if err then
+		out_error( "server.lua, addclient: ", err )
+		return nil, err
+	end
+
+	local client, err = create( )
 	if err then
 		return nil, err
 	end
 	client:settimeout( 0 )
-	_, err = client:connect( address, port )
-	if err then -- try again
+	local ok, err = client:connect( address, port )
+	if ok or err == "timeout" or err == "Operation already in progress" then
 		return wrapclient( client, address, port, listeners, pattern, sslctx )
 	else
-		return wrapconnection( nil, listeners, client, address, port, "clientport", pattern, sslctx )
+		return nil, err
 	end
 end
 

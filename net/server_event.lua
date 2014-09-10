@@ -44,8 +44,9 @@ local setmetatable = use "setmetatable"
 local t_insert = table.insert
 local t_concat = table.concat
 
-local ssl = use "ssl"
+local has_luasec, ssl = pcall ( require , "ssl" )
 local socket = use "socket" or require "socket"
+local getaddrinfo = socket.dns.getaddrinfo
 
 local log = require ("util.logger").init("socket")
 
@@ -128,7 +129,7 @@ do
 		return self:_destroy();
 	end
 
-	function interface_mt:_start_connection(plainssl) -- should be called from addclient
+	function interface_mt:_start_connection(plainssl) -- called from wrapclient
 			local callback = function( event )
 				if EV_TIMEOUT == event then  -- timeout during connection
 					self.fatalerror = "connection timeout"
@@ -136,7 +137,7 @@ do
 					self:_close()
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
-					if plainssl and ssl then  -- start ssl session
+					if plainssl and has_luasec then  -- start ssl session
 						self:starttls(self._sslctx, true)
 					else  -- normal connection
 						self:_start_session(true)
@@ -512,7 +513,7 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
-		if not ssl then interface.starttls = false; end
+		if not has_luasec then interface.starttls = false; end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
@@ -695,7 +696,7 @@ do
 				interface._connections = interface._connections + 1  -- increase connection count
 				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
-				if ssl and sslctx then
+				if has_luasec and sslctx then
 					clientinterface:starttls(sslctx, true)
 				else
 					clientinterface:_start_session( true )
@@ -716,24 +717,16 @@ do
 end
 
 local addserver = ( function( )
-	return function( addr, port, listener, pattern, sslcfg, startssl )  -- TODO: check arguments
-		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslcfg or "nil", startssl or "nil")
+	return function( addr, port, listener, pattern, sslctx, startssl )  -- TODO: check arguments
+		--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
+		if sslctx and not has_luasec then
+			debug "fatal error: luasec not found"
+			return nil, "luasec not found"
+		end
 		local server, err = socket.bind( addr, port, cfg.ACCEPT_QUEUE )  -- create server socket
 		if not server then
 			debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 			return nil, err
-		end
-		local sslctx
-		if sslcfg then
-			if not ssl then
-				debug "fatal error: luasec not found"
-				return nil, "luasec not found"
-			end
-			sslctx, err = sslcfg
-			if err then
-				debug( "error while creating new ssl context for server socket:", err )
-				return nil, err
-			end
 		end
 		local interface = handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- new server handler
 		debug( "new server created with id:", tostring(interface))
@@ -750,37 +743,34 @@ do
 		--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 	end
 
-	function addclient( addr, serverport, listener, pattern, localaddr, localport, sslcfg, startssl )
-		local client, err = socket.tcp()  -- creating new socket
+	function addclient( addr, serverport, listener, pattern, sslctx, typ )
+		if sslctx and not has_luasec then
+			debug "need luasec, but not available"
+			return nil, "luasec not found"
+		end
+		if getaddrinfo and not typ then
+			local addrinfo, err = getaddrinfo(addr)
+			if not addrinfo then return nil, err end
+			if addrinfo[1] and addrinfo[1].family == "inet6" then
+				typ = "tcp6"
+			end
+		end
+		local create = socket[typ or "tcp"]
+		if type( create ) ~= "function"  then
+			return nil, "invalid socket type"
+		end
+		local client, err = create()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err )
 			return nil, err
 		end
 		client:settimeout( 0 )  -- set nonblocking
-		if localaddr then
-			local res, err = client:bind( localaddr, localport, -1 )
-			if not res then
-				debug( "cannot bind client:", err )
-				return nil, err
-			end
-		end
-		local sslctx
-		if sslcfg then  -- handle ssl/new context
-			if not ssl then
-				debug "need luasec, but not available"
-				return nil, "luasec not found"
-			end
-			sslctx, err = sslcfg
-			if err then
-				debug( "cannot create new ssl context:", err )
-				return nil, err
-			end
-		end
 		local res, err = client:connect( addr, serverport )  -- connect
-		if res or ( err == "timeout" ) then
-			local ip, port = client:getsockname( )
-			local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, startssl )
-			interface:_start_connection( startssl )
+		if res or ( err == "timeout" or err == "Operation already in progress" ) then
+			if client.getsockname then
+				addr = client:getsockname( )
+			end
+			local interface = wrapclient( client, addr, serverport, listener, pattern, sslctx )
 			debug( "new connection id:", interface.id )
 			return interface, err
 		else
