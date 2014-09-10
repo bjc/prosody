@@ -190,17 +190,20 @@ local function connect(url, ex, listeners)
 	-- Either a single protocol string or an array of protocol strings.
 	local protocol = ex.protocol;
 	if type(protocol) == "string" then
-		protocol = { protocol };
-	end
-	for _, v in ipairs(protocol) do
-		protocol[v] = true;
+		protocol = { protocol, [protocol] = true };
+	elseif type(protocol) == "table" and protocol[1] then
+		for _, v in ipairs(protocol) do
+			protocol[v] = true;
+		end
+	else
+		protocol = nil;
 	end
 
 	local headers = {
 		["Upgrade"] = "websocket";
 		["Connection"] = "Upgrade";
 		["Sec-WebSocket-Key"] = key;
-		["Sec-WebSocket-Protocol"] = t_concat(protocol, ", ");
+		["Sec-WebSocket-Protocol"] = protocol and t_concat(protocol, ", ");
 		["Sec-WebSocket-Version"] = "13";
 		["Sec-WebSocket-Extensions"] = ex.extensions;
 	}
@@ -238,7 +241,7 @@ local function connect(url, ex, listeners)
 		   or r.headers["connection"]:lower() ~= "upgrade"
 		   or r.headers["upgrade"] ~= "websocket"
 		   or r.headers["sec-websocket-accept"] ~= base64.encode(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-		   or not protocol[r.headers["sec-websocket-protocol"]]
+		   or (protocol and not protocol[r.headers["sec-websocket-protocol"]])
 		   then
 			s.readyState = 3;
 			log("warn", "WebSocket connection to %s failed: %s", url, tostring(b));
