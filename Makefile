@@ -31,8 +31,9 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m755 ./prosodyctl.install $(BIN)/prosodyctl
 	install -m644 core/* $(SOURCE)/core
 	install -m644 net/*.lua $(SOURCE)/net
-	install -d $(SOURCE)/net/http
+	install -d $(SOURCE)/net/http $(SOURCE)/net/websocket
 	install -m644 net/http/*.lua $(SOURCE)/net/http
+	install -m644 net/websocket/*.lua $(SOURCE)/net/websocket
 	install -m644 util/*.lua $(SOURCE)/util
 	install -m644 util/*.so $(SOURCE)/util
 	install -d $(SOURCE)/util/sasl
