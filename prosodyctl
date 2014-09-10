@@ -736,7 +736,7 @@ function cert_commands.request(arg)
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config(arg);
-		if openssl.req{new=true, key=key_filename, utf8=true, config=conf_filename, out=req_filename} then
+		if openssl.req{new=true, key=key_filename, utf8=true, sha256=true, config=conf_filename, out=req_filename} then
 			show_message("Certificate request written to ".. req_filename);
 		else
 			show_message("There was a problem, see OpenSSL output");
@@ -757,7 +757,7 @@ function cert_commands.generate(arg)
 		local ret;
 		if key_filename and conf_filename and cert_filename
 			and openssl.req{new=true, x509=true, nodes=true, key=key_filename,
-				days=365, sha1=true, utf8=true, config=conf_filename, out=cert_filename} then
+				days=365, sha256=true, utf8=true, config=conf_filename, out=cert_filename} then
 			show_message("Certificate written to ".. cert_filename);
 		else
 			show_message("There was a problem, see OpenSSL output");
