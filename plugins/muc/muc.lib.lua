@@ -164,8 +164,11 @@ function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
 end
 
 function room_mt:broadcast_message(stanza)
-	module:fire_event("muc-broadcast-message", {room = self, stanza = stanza});
+	if module:fire_event("muc-broadcast-message", {room = self, stanza = stanza}) then
+		return true;
+	end
 	self:broadcast(stanza);
+	return true;
 end
 
 -- Broadcast a stanza to all occupants in the room.
