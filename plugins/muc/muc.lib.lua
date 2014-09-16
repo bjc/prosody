@@ -531,7 +531,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 				end
 			end
 			if session_jid == nil then return nil; end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = from_jid, session_jid, id;
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = from_occupant_jid, session_jid, id;
 		end
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
 		self:route_stanza(stanza);
