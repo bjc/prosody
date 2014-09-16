@@ -112,6 +112,7 @@ int luaopen_util_net(lua_State* L)
 		{ NULL, NULL }
 	};
 
-	luaL_register(L, "net",  exports);
+	lua_newtable(L);
+	luaL_register(L, NULL,  exports);
 	return 1;
 }

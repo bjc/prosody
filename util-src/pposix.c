@@ -768,7 +768,8 @@ int luaopen_util_pposix(lua_State *L)
 		{ NULL, NULL }
 	};
 
-	luaL_register(L, "pposix",  exports);
+	lua_newtable(L);
+	luaL_register(L, NULL,  exports);
 
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
