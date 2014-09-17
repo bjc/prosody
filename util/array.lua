@@ -14,6 +14,7 @@ local math_random = math.random;
 local math_floor = math.floor;
 local pairs, ipairs = pairs, ipairs;
 local tostring = tostring;
+local type = type;
 
 local array = {};
 local array_base = {};
