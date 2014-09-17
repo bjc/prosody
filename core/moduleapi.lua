@@ -19,6 +19,7 @@ local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select, unpack = ipairs, pairs, select, unpack;
 local tonumber, tostring = tonumber, tostring;
+local require = require;
 
 local prosody = prosody;
 local hosts = prosody.hosts;
@@ -366,7 +367,7 @@ function api:load_resource(path, mode)
 end
 
 function api:open_store(name, type)
-	return storagemanager.open(self.host, name or self.name, type);
+	return require"core.storagemanager".open(self.host, name or self.name, type);
 end
 
 return api;
