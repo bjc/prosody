@@ -19,6 +19,10 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 static int Lget_nameservers(lua_State *L) {
 	char stack_buffer[1024]; // stack allocated buffer
 	IP4_ARRAY* ips = (IP4_ARRAY*) stack_buffer;
