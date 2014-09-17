@@ -83,8 +83,7 @@ static const luaL_Reg Reg[] =
 LUALIB_API int luaopen_util_windows(lua_State *L) {
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg);
-	lua_pushliteral(L, "version");			/** version */
 	lua_pushliteral(L, "-3.14");
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "version");
 	return 1;
 }

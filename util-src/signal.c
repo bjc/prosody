@@ -391,7 +391,7 @@ int luaopen_util_signal(lua_State *L)
   /* put the signals inside the library table too,
    * they are only a reference */
   lua_pushstring(L, LUA_SIGNAL);
-  lua_createtable(L, 0, 0);
+  lua_newtable(L);
 
   while (lua_signals[i].name != NULL)
   {
