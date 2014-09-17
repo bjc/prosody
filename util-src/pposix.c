@@ -35,6 +35,10 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 #include <fcntl.h>
 #if defined(__linux__) && defined(_GNU_SOURCE)
 #include <linux/falloc.h>
