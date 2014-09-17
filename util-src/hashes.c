@@ -27,6 +27,10 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 #define HMAC_IPAD 0x36363636
 #define HMAC_OPAD 0x5c5c5c5c
 
