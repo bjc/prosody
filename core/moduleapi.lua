@@ -7,7 +7,7 @@
 --
 
 local config = require "core.configmanager";
-local modulemanager = require "modulemanager"; -- This is necessary to avoid require loops
+local modulemanager; -- This gets set from modulemanager
 local array = require "util.array";
 local set = require "util.set";
 local logger = require "util.logger";
@@ -370,4 +370,7 @@ function api:open_store(name, type)
 	return require"core.storagemanager".open(self.host, name or self.name, type);
 end
 
-return api;
+return function (mm)
+	modulemanager = mm;
+	return api;
+end
