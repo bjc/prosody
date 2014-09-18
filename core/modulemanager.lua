@@ -37,7 +37,7 @@ local _G = _G;
 
 module "modulemanager"
 
-local api = _G.require "core.moduleapi"; -- Module API container
+local api = _G.require "core.moduleapi"(_M); -- Module API container
 
 -- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };

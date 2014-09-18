@@ -7,7 +7,7 @@
 --
 
 local config = require "core.configmanager";
-local modulemanager = require "modulemanager"; -- This is necessary to avoid require loops
+local modulemanager; -- This gets set from modulemanager
 local array = require "util.array";
 local set = require "util.set";
 local logger = require "util.logger";
@@ -19,6 +19,7 @@ local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select = ipairs, pairs, select;
 local tonumber, tostring = tonumber, tostring;
+local require = require;
 local pack = table.pack or function(...) return {n=select("#",...), ...}; end -- table.pack is only in 5.2
 local unpack = table.unpack or unpack; -- renamed in 5.2
 
@@ -386,7 +387,10 @@ function api:load_resource(path, mode)
 end
 
 function api:open_store(name, type)
-	return storagemanager.open(self.host, name or self.name, type);
+	return require"core.storagemanager".open(self.host, name or self.name, type);
 end
 
-return api;
+return function (mm)
+	modulemanager = mm;
+	return api;
+end
