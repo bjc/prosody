@@ -31,8 +31,8 @@ local function seed(x)
 end
 
 local function bytes(n)
-	if #buffer < n then seed(uniq_time()); end
-	local r = buffer:sub(0, n);
+	if #buffer < n+4 then seed(uniq_time()); end
+	local r = buffer:sub(1, n);
 	buffer = buffer:sub(n+1);
 	return r;
 end
