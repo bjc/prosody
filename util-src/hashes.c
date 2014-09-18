@@ -27,6 +27,10 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 #define HMAC_IPAD 0x36363636
 #define HMAC_OPAD 0x5c5c5c5c
 
@@ -203,9 +207,9 @@ static const luaL_Reg Reg[] =
 
 LUALIB_API int luaopen_util_hashes(lua_State *L)
 {
-	luaL_register(L, "hashes", Reg);
-	lua_pushliteral(L, "version");			/** version */
+	lua_newtable(L);
+	luaL_register(L, NULL, Reg);
 	lua_pushliteral(L, "-3.14");
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "version");
 	return 1;
 }

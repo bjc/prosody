@@ -26,6 +26,10 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 /* Enumerate all locally configured IP addresses */
 
 const char * const type_strings[] = {
@@ -112,6 +116,7 @@ int luaopen_util_net(lua_State* L)
 		{ NULL, NULL }
 	};
 
-	luaL_register(L, "net",  exports);
+	lua_newtable(L);
+	luaL_register(L, NULL,  exports);
 	return 1;
 }
