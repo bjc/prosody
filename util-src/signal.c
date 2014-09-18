@@ -32,6 +32,10 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 #ifndef lsig
 
 #define lsig
@@ -384,13 +388,14 @@ int luaopen_util_signal(lua_State *L)
   int i = 0;
 
   /* add the library */
-  luaL_register(L, "signal", lsignal_lib);
+  lua_newtable(L);
+  luaL_register(L, NULL, lsignal_lib);
 
   /* push lua_signals table into the registry */
   /* put the signals inside the library table too,
    * they are only a reference */
   lua_pushstring(L, LUA_SIGNAL);
-  lua_createtable(L, 0, 0);
+  lua_newtable(L);
 
   while (lua_signals[i].name != NULL)
   {

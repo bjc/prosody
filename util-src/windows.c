@@ -19,6 +19,10 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#if (LUA_VERSION_NUM == 502)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 static int Lget_nameservers(lua_State *L) {
 	char stack_buffer[1024]; // stack allocated buffer
 	IP4_ARRAY* ips = (IP4_ARRAY*) stack_buffer;
@@ -81,9 +85,9 @@ static const luaL_Reg Reg[] =
 };
 
 LUALIB_API int luaopen_util_windows(lua_State *L) {
-	luaL_register(L, "windows", Reg);
-	lua_pushliteral(L, "version");			/** version */
+	lua_newtable(L);
+	luaL_register(L, NULL, Reg);
 	lua_pushliteral(L, "-3.14");
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "version");
 	return 1;
 }
