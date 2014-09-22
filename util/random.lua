@@ -10,7 +10,7 @@ local tostring = tostring;
 local os_time = os.time;
 local os_clock = os.clock;
 local ceil = math.ceil;
-local sha1 = require "util.hashes".sha1;
+local H = require "util.hashes".sha512;
 
 local last_uniq_time = 0;
 local function uniq_time()
@@ -21,7 +21,7 @@ local function uniq_time()
 end
 
 local function new_random(x)
-	return sha1(x..os_clock()..tostring({}));
+	return H(x..os_clock()..tostring({}));
 end
 
 local buffer = new_random(uniq_time());
@@ -31,8 +31,8 @@ local function seed(x)
 end
 
 local function bytes(n)
-	if #buffer < n then seed(uniq_time()); end
-	local r = buffer:sub(0, n);
+	if #buffer < n+4 then seed(uniq_time()); end
+	local r = buffer:sub(1, n);
 	buffer = buffer:sub(n+1);
 	return r;
 end
