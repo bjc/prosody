@@ -370,7 +370,9 @@ function api:open_store(name, type)
 	return require"core.storagemanager".open(self.host, name or self.name, type);
 end
 
-return function (mm)
+function api.init(mm)
 	modulemanager = mm;
 	return api;
 end
+
+return api;
