@@ -154,6 +154,10 @@ function module.add_host(module)
 			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
 			mark_connected(session);
 			return true;
+		elseif not session.dialback_verifying then
+			session.log("warn", "No SASL EXTERNAL offer and Dialback doesn't seem to be enabled, giving up");
+			session:close();
+			return false;
 		end
 	end, -1);
 end
