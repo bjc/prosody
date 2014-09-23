@@ -13,8 +13,6 @@ local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
-local cert_verify_identity = require "util.x509".verify_identity;
-
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local tostring = tostring;
 
@@ -122,71 +120,52 @@ module:hook_stanza("http://etherx.jabber.org/streams", "features", function (ses
 end, 150);
 
 local function s2s_external_auth(session, stanza)
+	if session.external_auth ~= "offered" then return end -- Unexpected request
+
 	local mechanism = stanza.attr.mechanism;
 
+	if mechanism ~= "EXTERNAL" then
+		session.sends2s(build_reply("failure", "invalid-mechanism"));
+		return true;
+	end
+
 	if not session.secure then
-		if mechanism == "EXTERNAL" then
-			session.sends2s(build_reply("failure", "encryption-required"))
-		else
-			session.sends2s(build_reply("failure", "invalid-mechanism"))
-		end
+		session.sends2s(build_reply("failure", "encryption-required"));
 		return true;
 	end
 
-	if mechanism ~= "EXTERNAL" or session.cert_chain_status ~= "valid" then
-		session.sends2s(build_reply("failure", "invalid-mechanism"))
-		return true;
-	end
-
-	local text = stanza[1]
+	local text = stanza[1];
 	if not text then
-		session.sends2s(build_reply("failure", "malformed-request"))
-		return true
-	end
-
-	-- Either the value is "=" and we've already verified the external
-	-- cert identity, or the value is a string and either matches the
-	-- from_host (
-
-	text = base64.decode(text)
-	if not text then
-		session.sends2s(build_reply("failure", "incorrect-encoding"))
+		session.sends2s(build_reply("failure", "malformed-request"));
 		return true;
 	end
 
-	if session.cert_identity_status == "valid" then
-		if text ~= "" and text ~= session.from_host then
-			session.sends2s(build_reply("failure", "invalid-authzid"))
-			return true
-		end
-	else
-		if text == "" then
-			session.sends2s(build_reply("failure", "invalid-authzid"))
-			return true
-		end
-
-		local cert = session.conn:socket():getpeercertificate()
-		if (cert_verify_identity(text, "xmpp-server", cert)) then
-			session.cert_identity_status = "valid"
-		else
-			session.cert_identity_status = "invalid"
-			session.sends2s(build_reply("failure", "invalid-authzid"))
-			return true
-		end
+	text = base64.decode(text);
+	if not text then
+		session.sends2s(build_reply("failure", "incorrect-encoding"));
+		return true;
 	end
 
-	session.external_auth = "succeeded"
-
-	if not session.from_host then
-		session.from_host = text;
+	-- The text value is either "" or equals session.from_host
+	if not ( text == "" or text == session.from_host ) then
+		session.sends2s(build_reply("failure", "invalid-authzid"));
+		return true;
 	end
-	session.sends2s(build_reply("success"))
 
-	local domain = text ~= "" and text or session.from_host;
-	module:log("info", "Accepting SASL EXTERNAL identity from %s", domain);
-	module:fire_event("s2s-authenticated", { session = session, host = domain });
+	-- We've already verified the external cert identity before offering EXTERNAL
+	if session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid" then
+		session.sends2s(build_reply("failure", "not-authorized"));
+		session:close();
+		return true;
+	end
+
+	-- Success!
+	session.external_auth = "succeeded";
+	session.sends2s(build_reply("success"));
+	module:log("info", "Accepting SASL EXTERNAL identity from %s", session.from_host);
+	module:fire_event("s2s-authenticated", { session = session, host = session.from_host });
 	session:reset_stream();
-	return true
+	return true;
 end
 
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
@@ -266,10 +245,10 @@ end);
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	if origin.secure and origin.type == "s2sin_unauthed" then
-		-- Offer EXTERNAL if chain is valid and either we didn't validate
-		-- the identity or it passed.
-		if origin.cert_chain_status == "valid" and origin.cert_identity_status ~= "invalid" then --TODO: Configurable
-			module:log("debug", "Offering SASL EXTERNAL")
+		-- Offer EXTERNAL only if both chain and identity is valid.
+		if origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
+			module:log("debug", "Offering SASL EXTERNAL");
+			origin.external_auth = "offered"
 			features:tag("mechanisms", { xmlns = xmlns_sasl })
 				:tag("mechanism"):text("EXTERNAL")
 			:up():up();
