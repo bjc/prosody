@@ -26,15 +26,15 @@ local xmlns_bind ='urn:ietf:params:xml:ns:xmpp-bind';
 
 local function build_reply(status, ret, err_msg)
 	local reply = st.stanza(status, {xmlns = xmlns_sasl});
-	if status == "challenge" then
-		--log("debug", "CHALLENGE: %s", ret or "");
-		reply:text(base64.encode(ret or ""));
-	elseif status == "failure" then
+	if status == "failure" then
 		reply:tag(ret):up();
 		if err_msg then reply:tag("text"):text(err_msg); end
-	elseif status == "success" then
-		--log("debug", "SUCCESS: %s", ret or "");
-		reply:text(base64.encode(ret or ""));
+	elseif status == "challenge" or status == "success" then
+		if ret == "" then
+			reply:text("=")
+		elseif ret then
+			reply:text(base64.encode(ret));
+		end
 	else
 		module:log("error", "Unknown sasl status: %s", status);
 	end
