@@ -804,25 +804,28 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 end
 
 function room_mt:handle_groupchat_to_room(origin, stanza)
-	-- Prosody has made the decision that messages with <subject/> are exclusively subject changes
-	-- e.g. body will be ignored; even if the subject change was not allowed
-	if stanza:get_child("subject") then
-		return module:fire_event("muc-subject-change", {room = self, origin = origin, stanza = stanza});
-	end
 	local from = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(from);
-	if not occupant then -- not in room
-		origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
-		return true;
-	elseif occupant.role == "visitor" then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
-		return true;
-	end
+	if module:fire_event("muc-occupant-groupchat", {
+		room = self; origin = origin; stanza = stanza; from = from; occupant = occupant;
+	}) then return true; end
 	stanza.attr.from = occupant.nick;
 	self:broadcast_message(stanza);
 	stanza.attr.from = from;
 	return true;
 end
+
+-- Role check
+module:hook("muc-occupant-groupchat", function(event)
+	local role_rank = valid_roles[event.occupant and event.occupant.role or "none"];
+	if role_rank <= valid_roles.none then
+		event.origin.send(st.error_reply(event.stanza, "cancel", "not-acceptable"));
+		return true;
+	elseif role_rank <= valid_roles.visitor then
+		event.origin.send(st.error_reply(event.stanza, "auth", "forbidden"));
+		return true;
+	end
+end, 50);
 
 -- hack - some buggy clients send presence updates to the room rather than their nick
 function room_mt:handle_presence_to_room(origin, stanza)
