@@ -743,7 +743,7 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 					reply:tag("item", {affiliation = _aff, jid = jid}):up();
 				end
 			end
-			origin.send(reply);
+			origin.send(reply:up());
 			return true;
 		else
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
