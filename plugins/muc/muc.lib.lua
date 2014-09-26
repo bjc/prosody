@@ -734,9 +734,13 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 	local affiliation = self:get_affiliation(actor);
 	local item = stanza.tags[1].tags[1];
 	local _aff = item.attr.affiliation;
+	local _aff_rank = valid_affiliations[_aff or "none"];
 	local _rol = item.attr.role;
-	if _aff and not _rol then
-		if affiliation == "owner" or (affiliation == "admin" and _aff ~= "owner" and _aff ~= "admin") then
+	if _aff and _aff_rank and not _rol then
+		-- You need to be at least an admin, and be requesting info about your affifiliation or lower
+		-- e.g. an admin can't ask for a list of owners
+		local affiliation_rank = valid_affiliations[affiliation];
+		if affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank then
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
 			for jid, affiliation in pairs(self._affiliations) do
 				if affiliation == _aff then
@@ -749,7 +753,7 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
 		end
-	elseif _rol and not _aff then
+	elseif _rol and valid_roles[_rol or "none"] and not _aff then
 		local role = self:get_role(self:get_occupant_jid(actor)) or self:get_default_role(affiliation);
 		if valid_roles[role or "none"] >= valid_roles.moderator then
 			if _rol == "none" then _rol = nil; end
