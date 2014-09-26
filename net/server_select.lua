@@ -568,6 +568,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						_ = status and status( handler, "ssl-handshake-complete" )
 						if self.autostart_ssl and listeners.onconnect then
 							listeners.onconnect(self);
+							if bufferqueuelen ~= 0 then
+								_sendlistlen = addsocket(_sendlist, client, _sendlistlen)
+							end
 						end
 						_readlistlen = addsocket(_readlist, client, _readlistlen)
 						return true
