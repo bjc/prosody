@@ -134,7 +134,7 @@ function websocket_methods:close(code, reason)
 		log("debug", "closing WebSocket with code %i: %s" , code , tostring(reason));
 		self.readyState = 2;
 		local handler = self.handler;
-		handler:write(frames.build_close(code, reason));
+		handler:write(frames.build_close(code, reason, true));
 		-- Do not close socket straight away, wait for acknowledgement from server.
 		self.close_timer = timer.add_task(close_timeout, close_timeout_cb, self);
 	elseif self.readyState == 2 then
