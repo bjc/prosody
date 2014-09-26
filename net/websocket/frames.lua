@@ -171,7 +171,7 @@ local function parse_close(data)
 	return code, message
 end
 
-local function build_close(code, message)
+local function build_close(code, message, mask)
 	local data = pack_uint16be(code);
 	if message then
 		assert(#message<=123, "Close reason must be <=123 bytes");
@@ -180,7 +180,7 @@ local function build_close(code, message)
 	return build_frame({
 		opcode = 0x8;
 		FIN = true;
-		MASK = true;
+		MASK = mask;
 		data = data;
 	});
 end
