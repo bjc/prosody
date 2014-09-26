@@ -324,6 +324,9 @@ function room_mt:handle_kickable(origin, stanza)
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
 		:tag("status", {code = "307"})
 	self:publicise_occupant_status(occupant, x);
+	if occupant.jid == real_jid then -- Was last session
+		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+	end
 	return true;
 end
 
@@ -1050,7 +1053,9 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	local is_semi_anonymous = self:get_whois() == "moderators";
 	for occupant, old_role in pairs(occupants_updated) do
 		self:publicise_occupant_status(occupant, x, nil, actor, reason);
-		if is_semi_anonymous and
+		if occupant.role == nil then
+			module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+		elseif is_semi_anonymous and
 			(old_role == "moderator" and occupant.role ~= "moderator") or
 			(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
 			-- Send everyone else's presences (as jid visibility has changed)
@@ -1122,6 +1127,9 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	occupant.role = role;
 	self:save_occupant(occupant);
 	self:publicise_occupant_status(occupant, x, nil, actor, reason);
+	if role == nil then
+		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+	end
 	return true;
 end
 
