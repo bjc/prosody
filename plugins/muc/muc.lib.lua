@@ -398,10 +398,14 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 		if orig_occupant == nil then
 			event_name = "muc-occupant-pre-join";
 			event.is_new_room = is_new_room;
+			event.occupant = dest_occupant;
 		elseif dest_occupant == nil then
 			event_name = "muc-occupant-pre-leave";
+			event.occupant = orig_occupant;
 		else
 			event_name = "muc-occupant-pre-change";
+			event.orig_occupant = orig_occupant;
+			event.dest_occupant = dest_occupant;
 		end
 		if module:fire_event(event_name, event) then return true; end
 
@@ -460,7 +464,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
 
 			if is_last_orig_session then
-				module:fire_event("muc-occupant-left", {room = self; nick = orig_occupant.nick;});
+				module:fire_event("muc-occupant-left", {room = self; nick = orig_occupant.nick; occupant = orig_occupant;});
 			end
 		end
 
@@ -498,9 +502,9 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 
 			if orig_occupant == nil then
 				if is_first_dest_session then
-					module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; stanza = stanza;});
+					module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; occupant = dest_occupant;});
 				end
-				module:fire_event("muc-occupant-session-new", {room = self; nick = dest_occupant.nick; stanza = stanza; jid = real_jid;});
+				module:fire_event("muc-occupant-session-new", {room = self; nick = dest_occupant.nick; occupant = dest_occupant; stanza = stanza; jid = real_jid;});
 			end
 		end
 	elseif type ~= 'result' then -- bad type
@@ -669,7 +673,7 @@ function room_mt:clear(x)
 	end
 	for occupant in pairs(occupants_updated) do
 		self:publicise_occupant_status(occupant, x);
-		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; });
+		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; occupant = occupant;});
 	end
 end
 
