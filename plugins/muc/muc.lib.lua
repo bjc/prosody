@@ -96,7 +96,7 @@ function room_mt:save_occupant(occupant)
 	-- Need to maintain _jid_nick secondary index
 	local old_occupant = self._occupants[id];
 	if old_occupant then
-		for real_jid in pairs(old_occupant.sessions) do
+		for real_jid in old_occupant:each_session() do
 			self._jid_nick[real_jid] = nil;
 		end
 	end
