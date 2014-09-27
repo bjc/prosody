@@ -64,6 +64,8 @@ local feature_map = {
 	get_items = { "retrieve-items" };
 	add_subscription = { "subscribe" };
 	get_subscriptions = { "retrieve-subscriptions" };
+	set_configure = { "config-node" };
+	get_default = { "retrieve-default" };
 };
 
 local function add_disco_features_from_service(service)
@@ -195,6 +197,7 @@ function module.load()
 				retract = true;
 				delete = true;
 				get_nodes = true;
+				configure = true;
 
 				subscribe = true;
 				unsubscribe = true;
@@ -212,6 +215,19 @@ function module.load()
 				be_unsubscribed = true;
 
 				set_affiliation = true;
+			};
+		};
+
+		node_config_form = require"util.dataforms".new {
+			{
+				type = "hidden";
+				name = "FORM_TYPE";
+				value = "http://jabber.org/protocol/pubsub#node_config";
+			};
+			{
+				type = "text-single";
+				name = "pubsub#max_items";
+				label = "Max # of items to persist";
 			};
 		};
 

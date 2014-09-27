@@ -6,16 +6,20 @@ module("pubsub", package.seeall);
 local service = {};
 local service_mt = { __index = service };
 
-local default_config = {
+local default_config = { __index = {
 	broadcaster = function () end;
 	get_affiliation = function () end;
 	capabilities = {};
-};
+} };
+local default_node_config = { __index = {
+	["pubsub#max_items"] = "20";
+} };
 
 function new(config)
 	config = config or {};
 	return setmetatable({
-		config = setmetatable(config, { __index = default_config });
+		config = setmetatable(config, default_config);
+		node_defaults = setmetatable(config.node_defaults or {}, default_node_config);
 		affiliations = {};
 		subscriptions = {};
 		nodes = {};
@@ -204,7 +208,7 @@ function service:get_subscription(node, actor, jid)
 	return true, node_obj.subscribers[jid];
 end
 
-function service:create(node, actor)
+function service:create(node, actor, options)
 	-- Access checking
 	if not self:may(node, actor, "create") then
 		return false, "forbidden";
@@ -218,7 +222,7 @@ function service:create(node, actor)
 	self.nodes[node] = {
 		name = node;
 		subscribers = {};
-		config = {};
+		config = setmetatable(options or {}, {__index=self.node_defaults});
 		affiliations = {};
 	};
 	setmetatable(self.nodes[node], { __index = { data = self.data[node] } }); -- COMPAT
@@ -259,6 +263,14 @@ local function remove_item_by_id(data, id)
 	end
 end
 
+local function trim_items(data, max)
+	max = tonumber(max);
+	if not max or #data <= max then return end
+	repeat
+		data[t_remove(data, 1)] = nil;
+	until #data <= max
+end
+
 function service:publish(node, actor, id, item)
 	-- Access checking
 	if not self:may(node, actor, "publish") then
@@ -278,8 +290,9 @@ function service:publish(node, actor, id, item)
 	end
 	local node_data = self.data[node];
 	remove_item_by_id(node_data, id);
-	node_data[#self.data[node] + 1] = id;
+	node_data[#node_data + 1] = id;
 	node_data[id] = item;
+	trim_items(node_data, node_obj.config["pubsub#max_items"]);
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item);
 	return true;
@@ -408,6 +421,24 @@ function service:set_node_capabilities(node, actor, capabilities)
 		return false, "item-not-found";
 	end
 	node_obj.capabilities = capabilities;
+	return true;
+end
+
+function service:set_node_config(node, actor, new_config)
+	if not self:may(node, actor, "configure") then
+		return false, "forbidden";
+	end
+
+	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
+
+	for k,v in pairs(new_config) do
+		node_obj.config[k] = v;
+	end
+	trim_items(self.data[node], node_obj.config["pubsub#max_items"]);
+
 	return true;
 end
 
