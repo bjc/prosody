@@ -3,6 +3,7 @@ local uuid_generate = require "util.uuid".generate;
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
+local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local _M = {};
 
@@ -17,6 +18,7 @@ local pubsub_errors = {
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 	["forbidden"] = { "cancel", "forbidden" };
+	["not-allowed"] = { "cancel", "not-allowed" };
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
@@ -220,6 +222,53 @@ function handlers.set_purge(origin, stanza, purge, service)
 		reply = pubsub_error_reply(stanza, ret);
 	end
 	return origin.send(reply);
+end
+
+function handlers.get_configure(origin, stanza, config, service)
+	local node = config.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
+
+	if not service:may(node, actor, "configure") then
+		return origin.send(pubsub_error_reply(stanza, "forbidden"));
+	end
+
+	local node_obj = service.nodes[node];
+	if not node_obj then
+		return origin.send(pubsub_error_reply(stanza, "item-not-found"));
+	end
+
+	local form = self.config.node_config_form;
+	if not form then
+		return origin.send(pubsub_error_reply(stanza, "not-allowed"));
+	end
+
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
+			:tag("configure", { node = node })
+				:add_child(form:form(node_obj.config));
+	return origin.send(reply);
+end
+
+function handlers.set_configure(origin, stanza, config, service)
+	local node = config.attr.node;
+	if not node then
+		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+	end
+	local form, node_obj = service:get_node_config_form(node, stanza.attr.from);
+	if not form then
+		return origin.send(pubsub_error_reply(stanza, node_obj));
+	end
+	local new_config, err = form:data(config.tags[1]);
+	if not new_config then
+		return origin.send(st.error_reply(stanza, "modify", "bad-request", err));
+	end
+	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
+	if not ok then
+		return origin.send(pubsub_error_reply(stanza, err));
+	end
+	return origin.send(st.reply(stanza));
 end
 
 return _M;
