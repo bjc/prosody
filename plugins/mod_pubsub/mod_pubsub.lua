@@ -65,6 +65,7 @@ local feature_map = {
 	add_subscription = { "subscribe" };
 	get_subscriptions = { "retrieve-subscriptions" };
 	set_configure = { "config-node" };
+	get_default = { "retrieve-default" };
 };
 
 local function add_disco_features_from_service(service)
