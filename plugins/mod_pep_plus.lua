@@ -55,10 +55,11 @@ local function get_broadcaster(name)
 end
 
 function get_pep_service(name)
-	if services[name] then
-		return services[name];
+	local service = services[name];
+	if service then
+		return service;
 	end
-	services[name] = pubsub.new({
+	service = pubsub.new({
 		capabilities = {
 			none = {
 				create = false;
@@ -166,7 +167,9 @@ function get_pep_service(name)
 
 		normalize_jid = jid_bare;
 	});
-	return services[name];
+	services[name] = service;
+	module:add_item("pep-service", { service = service, jid = name });
+	return service;
 end
 
 function handle_pubsub_iq(event)
