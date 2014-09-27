@@ -6,16 +6,16 @@ module("pubsub", package.seeall);
 local service = {};
 local service_mt = { __index = service };
 
-local default_config = {
+local default_config = { __index = {
 	broadcaster = function () end;
 	get_affiliation = function () end;
 	capabilities = {};
-};
+} };
 
 function new(config)
 	config = config or {};
 	return setmetatable({
-		config = setmetatable(config, { __index = default_config });
+		config = setmetatable(config, default_config);
 		affiliations = {};
 		subscriptions = {};
 		nodes = {};
