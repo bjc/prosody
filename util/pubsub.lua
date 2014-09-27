@@ -12,6 +12,7 @@ local default_config = { __index = {
 	capabilities = {};
 } };
 local default_node_config = { __index = {
+	["pubsub#max_items"] = "20";
 } };
 
 function new(config)
@@ -262,6 +263,14 @@ local function remove_item_by_id(data, id)
 	end
 end
 
+local function trim_items(data, max)
+	max = tonumber(max);
+	if not max or #data <= max then return end
+	repeat
+		data[t_remove(data, 1)] = nil;
+	until #data <= max
+end
+
 function service:publish(node, actor, id, item)
 	-- Access checking
 	if not self:may(node, actor, "publish") then
@@ -283,6 +292,7 @@ function service:publish(node, actor, id, item)
 	remove_item_by_id(node_data, id);
 	node_data[#node_data + 1] = id;
 	node_data[id] = item;
+	trim_items(node_data, node_obj.config["pubsub#max_items"]);
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item);
 	return true;
@@ -427,6 +437,7 @@ function service:set_node_config(node, actor, new_config)
 	for k,v in pairs(new_config) do
 		node_obj.config[k] = v;
 	end
+	trim_items(self.data[node], node_obj.config["pubsub#max_items"]);
 
 	return true;
 end
