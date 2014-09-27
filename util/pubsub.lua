@@ -11,11 +11,14 @@ local default_config = { __index = {
 	get_affiliation = function () end;
 	capabilities = {};
 } };
+local default_node_config = { __index = {
+} };
 
 function new(config)
 	config = config or {};
 	return setmetatable({
 		config = setmetatable(config, default_config);
+		node_defaults = setmetatable(config.node_defaults or {}, default_node_config);
 		affiliations = {};
 		subscriptions = {};
 		nodes = {};
@@ -204,7 +207,7 @@ function service:get_subscription(node, actor, jid)
 	return true, node_obj.subscribers[jid];
 end
 
-function service:create(node, actor)
+function service:create(node, actor, options)
 	-- Access checking
 	if not self:may(node, actor, "create") then
 		return false, "forbidden";
@@ -218,7 +221,7 @@ function service:create(node, actor)
 	self.nodes[node] = {
 		name = node;
 		subscribers = {};
-		config = {};
+		config = setmetatable(options or {}, {__index=self.node_defaults});
 		affiliations = {};
 	};
 	setmetatable(self.nodes[node], { __index = { data = self.data[node] } }); -- COMPAT
@@ -408,6 +411,23 @@ function service:set_node_capabilities(node, actor, capabilities)
 		return false, "item-not-found";
 	end
 	node_obj.capabilities = capabilities;
+	return true;
+end
+
+function service:set_node_config(node, actor, new_config)
+	if not self:may(node, actor, "configure") then
+		return false, "forbidden";
+	end
+
+	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
+
+	for k,v in pairs(new_config) do
+		node_obj.config[k] = v;
+	end
+
 	return true;
 end
 
