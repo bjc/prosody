@@ -271,4 +271,12 @@ function handlers.set_configure(origin, stanza, config, service)
 	return origin.send(st.reply(stanza));
 end
 
+function handlers.get_default(origin, stanza, default, service)
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
+			:tag("configure", { node = node })
+				:add_child(form:form(service.node_default_config));
+	return origin.send(reply);
+end
+
 return _M;
