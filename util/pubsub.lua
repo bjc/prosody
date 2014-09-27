@@ -278,7 +278,7 @@ function service:publish(node, actor, id, item)
 	end
 	local node_data = self.data[node];
 	remove_item_by_id(node_data, id);
-	node_data[#self.data[node] + 1] = id;
+	node_data[#node_data + 1] = id;
 	node_data[id] = item;
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item);
