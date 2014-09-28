@@ -1,5 +1,6 @@
 local st = require "util.stanza";
 local uuid_generate = require "util.uuid".generate;
+local dataform = require"util.dataforms".new;
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
@@ -29,6 +30,19 @@ local function pubsub_error_reply(stanza, error)
 	return reply;
 end
 _M.pubsub_error_reply = pubsub_error_reply;
+
+local node_config_form = require"util.dataforms".new {
+	{
+		type = "hidden";
+		name = "FORM_TYPE";
+		value = "http://jabber.org/protocol/pubsub#node_config";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#max_items";
+		label = "Max # of items to persist";
+	};
+};
 
 function handlers.get_items(origin, stanza, items, service)
 	local node = items.attr.node;
@@ -239,15 +253,10 @@ function handlers.get_configure(origin, stanza, config, service)
 		return origin.send(pubsub_error_reply(stanza, "item-not-found"));
 	end
 
-	local form = self.config.node_config_form;
-	if not form then
-		return origin.send(pubsub_error_reply(stanza, "not-allowed"));
-	end
-
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("configure", { node = node })
-				:add_child(form:form(node_obj.config));
+				:add_child(node_config_form:form(node_obj.config));
 	return origin.send(reply);
 end
 
@@ -256,11 +265,10 @@ function handlers.set_configure(origin, stanza, config, service)
 	if not node then
 		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 	end
-	local form, node_obj = service:get_node_config_form(node, stanza.attr.from);
-	if not form then
-		return origin.send(pubsub_error_reply(stanza, node_obj));
+	if not service:may(node, stanza.attr.from, "configure") then
+		return origin.send(pubsub_error_reply(stanza, "forbidden"));
 	end
-	local new_config, err = form:data(config.tags[1]);
+	local new_config, err = node_config_form:data(config.tags[1]);
 	if not new_config then
 		return origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 	end
