@@ -154,6 +154,10 @@ function get_pep_service(name)
 			};
 		};
 
+		node_defaults = {
+			["pubsub#max_items"] = "1";
+		};
+
 		node_config_form = require"util.dataforms".new {
 			{
 				type = "hidden";
