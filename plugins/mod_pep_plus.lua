@@ -133,6 +133,7 @@ function get_pep_service(name)
 				retract = true;
 				delete = true;
 				get_nodes = true;
+				configure = true;
 
 				subscribe = true;
 				unsubscribe = true;
@@ -150,6 +151,19 @@ function get_pep_service(name)
 				be_unsubscribed = true;
 
 				set_affiliation = true;
+			};
+		};
+
+		node_config_form = require"util.dataforms".new {
+			{
+				type = "hidden";
+				name = "FORM_TYPE";
+				value = "http://jabber.org/protocol/pubsub#node_config";
+			};
+			{
+				type = "text-single";
+				name = "pubsub#max_items";
+				label = "Max # of items to persist";
 			};
 		};
 
