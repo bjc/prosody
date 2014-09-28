@@ -230,7 +230,7 @@ function handlers.get_configure(origin, stanza, config, service)
 		return origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 	end
 
-	if not service:may(node, actor, "configure") then
+	if not service:may(node, stanza.attr.from, "configure") then
 		return origin.send(pubsub_error_reply(stanza, "forbidden"));
 	end
 
