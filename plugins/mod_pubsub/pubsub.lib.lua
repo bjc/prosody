@@ -282,8 +282,8 @@ end
 function handlers.get_default(origin, stanza, default, service)
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
-			:tag("configure", { node = node })
-				:add_child(form:form(service.node_default_config));
+			:tag("default")
+				:add_child(node_config_form:form(service.node_default_config));
 	return origin.send(reply);
 end
 
