@@ -345,7 +345,7 @@ local get_online_users_command_handler = adhoc_simple(get_online_users_layout, f
 		count = count + 1;
 		if fields.details then
 			for resource, session in pairs(user.sessions or {}) do
-				local status, priority = "unavailable", tostring(session.priority or "-");
+				local status, priority, ip = "unavailable", tostring(session.priority or "-"), session.ip or "<unknown>";
 				if session.presence then
 					status = session.presence:child_with_name("show");
 					if status then
@@ -354,7 +354,7 @@ local get_online_users_command_handler = adhoc_simple(get_online_users_layout, f
 						status = "available";
 					end
 				end
-				users[#users+1] = " - "..resource..": "..status.."("..priority..")";
+				users[#users+1] = " - "..resource..": "..status.."("..priority.."), IP: ["..ip.."]";
 			end
 		end
 	end
