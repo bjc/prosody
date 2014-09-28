@@ -158,19 +158,6 @@ function get_pep_service(name)
 			["pubsub#max_items"] = "1";
 		};
 
-		node_config_form = require"util.dataforms".new {
-			{
-				type = "hidden";
-				name = "FORM_TYPE";
-				value = "http://jabber.org/protocol/pubsub#node_config";
-			};
-			{
-				type = "text-single";
-				name = "pubsub#max_items";
-				label = "Max # of items to persist";
-			};
-		};
-
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = true;
 
