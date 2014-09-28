@@ -218,19 +218,6 @@ function module.load()
 			};
 		};
 
-		node_config_form = require"util.dataforms".new {
-			{
-				type = "hidden";
-				name = "FORM_TYPE";
-				value = "http://jabber.org/protocol/pubsub#node_config";
-			};
-			{
-				type = "text-single";
-				name = "pubsub#max_items";
-				label = "Max # of items to persist";
-			};
-		};
-
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
 
