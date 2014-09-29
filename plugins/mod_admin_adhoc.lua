@@ -162,7 +162,7 @@ local end_user_session_layout = dataforms_new{
 	instructions = "Fill out this form to end a user's session.";
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) for which to end sessions" };
+	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) for which to end sessions", required = true };
 };
 
 local end_user_session_handler = adhoc_simple(end_user_session_layout, function(fields, err)
