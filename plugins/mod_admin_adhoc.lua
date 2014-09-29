@@ -118,7 +118,7 @@ local delete_user_layout = dataforms_new{
 	instructions = "Fill out this form to delete a user.";
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) to delete" };
+	{ name = "accountjids", type = "jid-multi", required = true, label = "The Jabber ID(s) to delete" };
 };
 
 local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fields, err)
