@@ -886,6 +886,8 @@ loop = function(once) -- this is the main loop of the program
 					if not(handler.onreadtimeout) or handler:onreadtimeout() ~= true then
 						handler.disconnect( )( handler, "read timeout" )
 						handler:close( )	-- forced disconnect?
+					else
+						_readtimes[ handler ] = _currenttime -- reset timer
 					end
 				end
 			end
