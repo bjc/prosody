@@ -135,17 +135,19 @@ end
 
 local function prune(rrs, time, soft)    -- - - - - - - - - - - - - - -  prune
 	time = time or socket.gettime();
-	for i,rr in pairs(rrs) do
+	for i,rr in ipairs(rrs) do
 		if rr.tod then
 			-- rr.tod = rr.tod - 50    -- accelerated decripitude
 			rr.ttl = math.floor(rr.tod - time);
 			if rr.ttl <= 0 then
+				rrs[rr[rr.type:lower()]] = nil;
 				table.remove(rrs, i);
 				return prune(rrs, time, soft); -- Re-iterate
 			end
 		elseif soft == 'soft' then    -- What is this?  I forget!
 			assert(rr.ttl == 0);
-			rrs[i] = nil;
+			rrs[rr[rr.type:lower()]] = nil;
+			table.remove(rrs, i);
 		end
 	end
 end
@@ -188,7 +190,7 @@ end
 local rrs_metatable = {};    -- - - - - - - - - - - - - - - - - -  rrs_metatable
 function rrs_metatable.__tostring(rrs)
 	local t = {};
-	for i,rr in pairs(rrs) do
+	for i,rr in ipairs(rrs) do
 		append(t, tostring(rr)..'\n');
 	end
 	return table.concat(t);
@@ -681,7 +683,10 @@ function resolver:remember(rr, type)    -- - - - - - - - - - - - - -  remember
 	self.cache = self.cache or setmetatable({}, cache_metatable);
 	local rrs = get(self.cache, qclass, type, qname) or
 		set(self.cache, qclass, type, qname, setmetatable({}, rrs_metatable));
-	append(rrs, rr);
+	if not rrs[rr[qtype:lower()]] then
+		rrs[rr[qtype:lower()]] = true;
+		append(rrs, rr);
+	end
 
 	if type == 'MX' then self.unsorted[rrs] = true; end
 end
