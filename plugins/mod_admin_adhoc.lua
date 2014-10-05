@@ -9,6 +9,7 @@ local _G = _G;
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
 local t_concat = table.concat;
+local t_sort = table.sort;
 
 local module_host = module:get_host();
 
@@ -118,7 +119,7 @@ local delete_user_layout = dataforms_new{
 	instructions = "Fill out this form to delete a user.";
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) to delete" };
+	{ name = "accountjids", type = "jid-multi", required = true, label = "The Jabber ID(s) to delete" };
 };
 
 local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fields, err)
@@ -162,7 +163,7 @@ local end_user_session_layout = dataforms_new{
 	instructions = "Fill out this form to end a user's session.";
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) for which to end sessions" };
+	{ name = "accountjids", type = "jid-multi", label = "The Jabber ID(s) for which to end sessions", required = true };
 };
 
 local end_user_session_handler = adhoc_simple(end_user_session_layout, function(fields, err)
@@ -345,7 +346,7 @@ local get_online_users_command_handler = adhoc_simple(get_online_users_layout, f
 		count = count + 1;
 		if fields.details then
 			for resource, session in pairs(user.sessions or {}) do
-				local status, priority = "unavailable", tostring(session.priority or "-");
+				local status, priority, ip = "unavailable", tostring(session.priority or "-"), session.ip or "<unknown>";
 				if session.presence then
 					status = session.presence:child_with_name("show");
 					if status then
@@ -354,12 +355,91 @@ local get_online_users_command_handler = adhoc_simple(get_online_users_layout, f
 						status = "available";
 					end
 				end
-				users[#users+1] = " - "..resource..": "..status.."("..priority..")";
+				users[#users+1] = " - "..resource..": "..status.."("..priority.."), IP: ["..ip.."]";
 			end
 		end
 	end
 	return { status = "completed", result = {layout = get_online_users_result_layout, values = {onlineuserjids=t_concat(users, "\n")}} };
 end);
+
+-- Getting a list of S2S connections (this host)
+local list_s2s_this_result = dataforms_new {
+	title = "List of S2S connections on this host";
+
+	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/s2s#list" };
+	{ name = "sessions", type = "text-multi", label = "Connections:" };
+	{ name = "num_in", type = "text-single", label = "#incomming connections:" };
+	{ name = "num_out", type = "text-single", label = "#outgoing connections:" };
+};
+
+local function session_flags(session, line)
+	line = line or {};
+
+	if session.id then
+		line[#line+1] = "["..session.id.."]"
+	else
+		line[#line+1] = "["..session.type..(tostring(session):match("%x*$")).."]"
+	end
+
+	local flags = {};
+	if session.cert_identity_status == "valid" then
+		flags[#flags+1] = "authenticated";
+	end
+	if session.secure then
+		flags[#flags+1] = "encrypted";
+	end
+	if session.compressed then
+		flags[#flags+1] = "compressed)";
+	end
+	if session.smacks then
+		flags[#flags+1] = "sm";
+	end
+	if session.ip and session.ip:match(":") then
+		flags[#flags+1] = "IPv6";
+	end
+	line[#line+1] = "("..t_concat(flags, ", ")..")";
+
+	return t_concat(line, " ");
+end
+
+local function list_s2s_this_handler(self, data, state)
+	local count_in, count_out = 0, 0;
+	local s2s_list = {};
+
+	local s2s_sessions = module:shared"/*/s2s/sessions";
+	for _, session in pairs(s2s_sessions) do
+		local remotehost, localhost, direction;
+		if session.direction == "outgoing" then
+			direction = "->";
+			count_out = count_out + 1;
+			remotehost, localhost = session.to_host or "?", session.from_host or "?";
+		else
+			direction = "<-";
+			count_in = count_in + 1;
+			remotehost, localhost = session.from_host or "?", session.to_host or "?";
+		end
+		local sess_lines = { r = remotehost,
+			session_flags(session, { "", direction, remotehost or "?" })};
+
+		if remotehost:match(module_host) or localhost:match(module_host) then
+			s2s_list[#s2s_list+1] = sess_lines;
+		end
+	end
+
+	t_sort(s2s_list, function(a, b)
+		return a.r < b.r;
+	end);
+
+	for i, sess_lines in ipairs(s2s_list) do
+		s2s_list[i] = sess_lines[1];
+	end
+
+	return { status = "completed", result = { layout = list_s2s_this_result; values = {
+		sessions = t_concat(s2s_list, "\n"),
+		num_in = tostring(count_in),
+		num_out = tostring(count_out)
+	} } };
+end
 
 -- Getting a list of loaded modules
 local list_modules_result = dataforms_new {
@@ -727,6 +807,7 @@ local get_user_password_desc = adhoc_new("Get User Password", "http://jabber.org
 local get_user_roster_desc = adhoc_new("Get User Roster","http://jabber.org/protocol/admin#get-user-roster", get_user_roster_handler, "admin");
 local get_user_stats_desc = adhoc_new("Get User Statistics","http://jabber.org/protocol/admin#user-stats", get_user_stats_handler, "admin");
 local get_online_users_desc = adhoc_new("Get List of Online Users", "http://jabber.org/protocol/admin#get-online-users-list", get_online_users_command_handler, "admin");
+local list_s2s_this_desc = adhoc_new("List S2S connections", "http://prosody.im/protocol/s2s#list", list_s2s_this_handler, "admin");
 local list_modules_desc = adhoc_new("List loaded modules", "http://prosody.im/protocol/modules#list", list_modules_handler, "admin");
 local load_module_desc = adhoc_new("Load module", "http://prosody.im/protocol/modules#load", load_module_handler, "admin");
 local globally_load_module_desc = adhoc_new("Globally load module", "http://prosody.im/protocol/modules#global-load", globally_load_module_handler, "global_admin");
@@ -747,6 +828,7 @@ module:provides("adhoc", get_user_password_desc);
 module:provides("adhoc", get_user_roster_desc);
 module:provides("adhoc", get_user_stats_desc);
 module:provides("adhoc", get_online_users_desc);
+module:provides("adhoc", list_s2s_this_desc);
 module:provides("adhoc", list_modules_desc);
 module:provides("adhoc", load_module_desc);
 module:provides("adhoc", globally_load_module_desc);
