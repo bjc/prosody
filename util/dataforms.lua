@@ -121,7 +121,7 @@ function form_t.data(layout, stanza)
 
 	for _, field in ipairs(layout) do
 		local tag;
-		for field_tag in stanza:childtags() do
+		for field_tag in stanza:childtags("field") do
 			if field.name == field_tag.attr.var then
 				tag = field_tag;
 				break;
