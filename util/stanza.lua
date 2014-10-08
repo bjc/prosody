@@ -202,8 +202,19 @@ end
 
 local xml_escape
 do
-	local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
-	function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
+	local escape_table = {
+		["'"] = "&apos;";
+		['"'] = "&quot;";
+		["<"] = "&lt;";
+		[">"] = "&gt;";
+		["&"] = "&amp;";
+		-- escape this whitespace because [\r\n\t] change into spaces in attributes
+		-- and \r\n changes into \n in text, and we want to preserve original bytes
+		["\t"] = "&#x9;";
+		["\n"] = "&#xA;";
+		["\r"] = "&#xD;";
+	};
+	function xml_escape(str) return (s_gsub(str, "['&<>\"\t\n\r]", escape_table)); end
 	_M.xml_escape = xml_escape;
 end
 
