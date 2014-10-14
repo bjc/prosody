@@ -47,7 +47,7 @@ local bouncy_stanzas = { message = true, presence = true, iq = true };
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if not sendq then return; end
-	session.log("info", "sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
+	session.log("info", "Sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
 	local dummy = {
 		type = "s2sin";
 		send = function(s)
