@@ -39,7 +39,7 @@ local pubsub_errors = {
 	["nodeid-required"] = { "modify", "bad-request", nil, "nodeid-required" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
-	["forbidden"] = { "cancel", "forbidden" };
+	["forbidden"] = { "auth", "forbidden" };
 };
 function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
