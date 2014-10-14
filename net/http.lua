@@ -175,7 +175,7 @@ function request(u, ex, callback)
 	
 	local sslctx = false;
 	if using_https then
-		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2" } };
+		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
 	end
 
 	req.handler, req.conn = assert(server.wrapclient(conn, host, port_number, listener, "*a", sslctx));
