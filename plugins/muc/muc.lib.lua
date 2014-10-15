@@ -17,6 +17,7 @@ local iterators = require "util.iterators";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
+local jid_join = require "util.jid".join;
 local st = require "util.stanza";
 local log = require "util.logger".init("mod_muc");
 local base64 = require "util.encodings".base64;
@@ -990,7 +991,10 @@ end
 function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
-	jid = jid_bare(jid);
+	local node, host, resource = jid_split(jid);
+	if not host then return nil, "modify", "not-acceptable"; end
+	jid = jid_join(node, host); -- Bare
+	local is_host_only = node == nil;
 
 	if valid_affiliations[affiliation or "none"] == nil then
 		return nil, "modify", "not-acceptable";
@@ -1030,7 +1034,10 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	local role_rank = valid_roles[role or "none"];
 	local occupants_updated = {}; -- Filled with old roles
 	for nick, occupant in self:each_occupant() do
-		if occupant.bare_jid == jid then
+		if occupant.bare_jid == jid or (
+			-- Outcast can be by host.
+			is_host_only and affiliation == "outcast" and select(2, jid_split(occupant.bare_jid)) == host
+		) then
 			-- need to publcize in all cases; as affiliation in <item/> has changed.
 			occupants_updated[occupant] = occupant.role;
 			if occupant.role ~= role and (
