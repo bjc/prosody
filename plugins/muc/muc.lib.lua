@@ -1000,7 +1000,9 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	local target_affiliation = self._affiliations[jid]; -- Raw; don't want to check against host
 	local is_downgrade = valid_affiliations[target_affiliation or "none"] > valid_affiliations[affiliation or "none"];
 
-	if actor ~= true then
+	if actor == true then
+		actor = nil -- So we can pass it safely to 'publicise_occupant_status' below
+	else
 		local actor_affiliation = self:get_affiliation(actor);
 		if actor_affiliation == "owner" then
 			if jid_bare(actor) == jid then -- self change
@@ -1098,7 +1100,9 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	end
 	role = role ~= "none" and role or nil; -- coerces `role == false` to `nil`
 
-	if actor ~= true then
+	if actor == true then
+		actor = nil -- So we can pass it safely to 'publicise_occupant_status' below
+	else
 		-- Can't do anything to other owners or admins
 		local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
 		if occupant_affiliation == "owner" and occupant_affiliation == "admin" then
