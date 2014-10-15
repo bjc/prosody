@@ -746,10 +746,8 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		local affiliation_rank = valid_affiliations[affiliation];
 		if affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank then
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-			for jid, affiliation in pairs(self._affiliations) do
-				if affiliation == _aff then
-					reply:tag("item", {affiliation = _aff, jid = jid}):up();
-				end
+			for jid in self:each_affiliation(_aff or "none") do
+				reply:tag("item", {affiliation = _aff, jid = jid}):up();
 			end
 			origin.send(reply:up());
 			return true;
@@ -988,6 +986,21 @@ function room_mt:get_affiliation(jid)
 	return result;
 end
 
+-- Iterates over jid, affiliation pairs
+function room_mt:each_affiliation(with_affiliation)
+	if not with_affiliation then
+		return pairs(self._affiliations);
+	else
+		return function(_affiliations, jid)
+			local affiliation;
+			repeat -- Iterate until we get a match
+				jid, affiliation = next(_affiliations, jid);
+			until jid == nil or affiliation == with_affiliation
+			return jid, affiliation;
+		end, self._affiliations, nil
+	end
+end
+
 function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
@@ -1012,7 +1025,9 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 			if jid_bare(actor) == jid then -- self change
 				-- need at least one owner
 				local is_last = true;
-				for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
+				for j in self:each_affiliation("owner") do
+					if j ~= jid then is_last = false; break; end
+				end
 				if is_last then
 					return nil, "cancel", "conflict";
 				end
