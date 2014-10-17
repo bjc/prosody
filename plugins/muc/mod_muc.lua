@@ -122,12 +122,14 @@ function get_room_from_jid(room_jid)
 	return room
 end
 
-function each_room()
-	for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
-		if rooms[room_jid] == nil then -- Don't restore rooms that already exist
-			local room = restore_room(room_jid);
-			if room == nil then
-				module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
+function each_room(local_only)
+	if not local_only then
+		for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
+			if rooms[room_jid] == nil then -- Don't restore rooms that already exist
+				local room = restore_room(room_jid);
+				if room == nil then
+					module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
+				end
 			end
 		end
 	end
@@ -217,7 +219,7 @@ end
 function shutdown_component()
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 		:tag("status", { code = "332"}):up();
-	for room in each_room() do
+	for room in each_room(true) do
 		room:clear(x);
 	end
 end
