@@ -42,6 +42,7 @@ local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
+local table_insert = table.insert
 local string_sub = string.sub
 local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
@@ -832,6 +833,50 @@ addtimer = function( listener )
 	return true
 end
 
+local add_task do
+	local data = {};
+	local new_data = {};
+
+	function add_task(delay, callback)
+		local current_time = luasocket_gettime();
+		delay = delay + current_time;
+		if delay >= current_time then
+			table_insert(new_data, {delay, callback});
+		else
+			local r = callback(current_time);
+			if r and type(r) == "number" then
+				return add_task(r, callback);
+			end
+		end
+	end
+
+	addtimer(function()
+		local current_time = luasocket_gettime();
+		if #new_data > 0 then
+			for _, d in pairs(new_data) do
+				table_insert(data, d);
+			end
+			new_data = {};
+		end
+
+		local next_time = math_huge;
+		for i, d in pairs(data) do
+			local t, callback = d[1], d[2];
+			if t <= current_time then
+				data[i] = nil;
+				local r = callback(current_time);
+				if type(r) == "number" then
+					add_task(r, callback);
+					next_time = math_min(next_time, r);
+				end
+			else
+				next_time = math_min(next_time, t - current_time);
+			end
+		end
+		return next_time;
+	end);
+end
+
 stats = function( )
 	return _readtraffic, _sendtraffic, _readlistlen, _sendlistlen, _timerlistlen
 end
@@ -1007,6 +1052,7 @@ end
 
 return {
 	_addtimer = addtimer,
+	add_task = add_task;
 
 	addclient = addclient,
 	wrapclient = wrapclient,
