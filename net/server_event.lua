@@ -848,6 +848,23 @@ local function link(sender, receiver, buffersize)
 	sender:set_mode("*a");
 end
 
+local add_task do
+	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
+	local socket_gettime = socket.gettime
+	function add_task(delay, callback)
+		local event_handle;
+		event_handle = base:addevent(nil, 0, function ()
+			local ret = callback(socket_gettime());
+			if ret then
+				return 0, ret;
+			elseif event_handle then
+				return EVENT_LEAVE;
+			end
+		end
+		, delay);
+	end
+end
+
 return {
 
 	cfg = cfg,
@@ -864,6 +881,7 @@ return {
 	closeall = closeallservers,
 	get_backend = get_backend,
 	hook_signal = hook_signal,
+	add_task = add_task,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,
