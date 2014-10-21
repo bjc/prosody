@@ -16,8 +16,8 @@ local base64 = require "util.encodings".base64;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local tostring = tostring;
 
-local secure_auth_only = module:get_option("c2s_require_encryption", module:get_option("require_encryption"));
-local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
+local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", false));
+local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
 
 local log = module._log;
 
