@@ -19,6 +19,7 @@ local tostring = tostring;
 local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", false));
 local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
 local insecure_mechanisms = module:get_option_set("allow_unencrypted_sasl", allow_unencrypted_plain_auth and {} or {"PLAIN", "LOGIN"});
+local disabled_mechanisms = module:get_option_set("disable_sasl_mechanisms", {});
 
 local log = module._log;
 
@@ -187,6 +188,9 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 	if not session.secure and (secure_auth_only or insecure_mechanisms:contains(mechanism)) then
 		session.send(build_reply("failure", "encryption-required"));
 		return true;
+	elseif disabled_mechanisms:contains(mechanism) then
+		session.send(build_reply("failure", "invalid-mechanism"));
+		return true;
 	end
 	local valid_mechanism = session.sasl_handler:select(mechanism);
 	if not valid_mechanism then
@@ -232,7 +236,7 @@ module:hook("stream-features", function(event)
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
 		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
-			if (origin.secure or not insecure_mechanisms:contains(mechanism)) then
+			if (not disabled_mechanisms:contains(mechanism)) and (origin.secure or not insecure_mechanisms:contains(mechanism)) then
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end
