@@ -816,7 +816,7 @@ function commands.check(arg)
 	if not what or what == "config" then
 		print("Checking config...");
 		local deprecated = set.new({
-			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login",
+			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
