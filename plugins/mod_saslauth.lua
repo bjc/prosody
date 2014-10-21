@@ -235,7 +235,11 @@ module:hook("stream-features", function(event)
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end
-		if mechanisms[1] then features:add_child(mechanisms); end
+		if mechanisms[1] then
+			features:add_child(mechanisms);
+		else
+			(origin.log or log)("warn", "No SASL mechanisms to offer");
+		end
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
