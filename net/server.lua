@@ -24,22 +24,6 @@ local set_config;
 if server_type == "event" then
 	server = require "net.server_event";
 
-	-- Overwrite signal.signal() because we need to ask libevent to
-	-- handle them instead
-	local ok, signal = pcall(require, "util.signal");
-	if ok and signal then
-		local _signal_signal = signal.signal;
-		function signal.signal(signal_id, handler)
-			if type(signal_id) == "string" then
-				signal_id = signal[signal_id:upper()];
-			end
-			if type(signal_id) ~= "number" then
-				return false, "invalid-signal";
-			end
-			return server.hook_signal(signal_id, handler);
-		end
-	end
-
 	local defaults = {};
 	for k,v in pairs(server.cfg) do
 		defaults[k] = v;
@@ -80,6 +64,24 @@ elseif server_type == "select" then
 	end
 else
 	error("Unsupported server type")
+end
+
+-- If server.hook_signal exists, replace signal.signal()
+local ok, signal = pcall(require, "util.signal");
+if server.hook_signal then
+	if ok then
+		function signal.signal(signal_id, handler)
+			if type(signal_id) == "string" then
+				signal_id = signal[signal_id:upper()];
+			end
+			if type(signal_id) ~= "number" then
+				return false, "invalid-signal";
+			end
+			return server.hook_signal(signal_id, handler);
+		end
+	end
+else
+	server.hook_signal = signal.signal;
 end
 
 if prosody then
