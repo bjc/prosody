@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local server_type = prosody and require "core.configmanager".get("*", "server") or "select";
+local server_type = prosody and require "core.configmanager".get("*", "network_backend") or "select";
 if prosody and require "core.configmanager".get("*", "use_libevent") then
 	server_type = "event";
 end
