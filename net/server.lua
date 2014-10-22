@@ -66,9 +66,9 @@ else
 end
 
 -- If server.hook_signal exists, replace signal.signal()
-local ok, signal = pcall(require, "util.signal");
-if server.hook_signal then
-	if ok then
+local has_signal, signal = pcall(require, "util.signal");
+if has_signal then
+	if server.hook_signal then
 		function signal.signal(signal_id, handler)
 			if type(signal_id) == "string" then
 				signal_id = signal[signal_id:upper()];
@@ -78,9 +78,15 @@ if server.hook_signal then
 			end
 			return server.hook_signal(signal_id, handler);
 		end
+	else
+		server.hook_signal = signal.signal;
 	end
 else
-	server.hook_signal = signal.signal;
+	if not server.hook_signal then
+		server.hook_signal = function()
+			return false, "signal hooking not supported"
+		end
+	end
 end
 
 if prosody then
