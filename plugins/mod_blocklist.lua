@@ -43,7 +43,6 @@ end
 -- Migrates from the old mod_privacy storage
 local function migrate_privacy_list(username)
 	local migrated_data = { [false] = "not empty" };
-	module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
 	local legacy_data = module:open_store("privacy"):get(username);
 	if legacy_data and legacy_data.lists and legacy_data.default then
 		legacy_data = legacy_data.lists[legacy_data.default];
@@ -52,6 +51,7 @@ local function migrate_privacy_list(username)
 		return migrated_data;
 	end
 	if legacy_data then
+		module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
 		local item, jid;
 		for i = 1, #legacy_data do
 			item = legacy_data[i];
