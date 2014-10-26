@@ -552,7 +552,7 @@ function commands.about(arg)
 		print("  "..path);
 	end
 	print("");
-	local luarocks_status = (pcall(require, "luarocks.loader") and "Installed ("..(luarocks.cfg.program_version or "2.x+")..")")
+	local luarocks_status = (pcall(require, "luarocks.loader") and "Installed ("..(package.loaded["luarocks.cfg"].program_version or "2.x+")..")")
 		or (pcall(require, "luarocks.require") and "Installed (1.x)")
 		or "Not installed";
 	print("LuaRocks:        ", luarocks_status);
@@ -816,7 +816,7 @@ function commands.check(arg)
 	if not what or what == "config" then
 		print("Checking config...");
 		local deprecated = set.new({
-			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login",
+			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",

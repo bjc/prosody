@@ -16,8 +16,10 @@ local base64 = require "util.encodings".base64;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 local tostring = tostring;
 
-local secure_auth_only = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
-local allow_unencrypted_plain_auth = module:get_option("allow_unencrypted_plain_auth")
+local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", false));
+local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
+local insecure_mechanisms = module:get_option_set("insecure_sasl_mechanisms", allow_unencrypted_plain_auth and {} or {"PLAIN", "LOGIN"});
+local disabled_mechanisms = module:get_option_set("disable_sasl_mechanisms", {});
 
 local log = module._log;
 
@@ -183,8 +185,11 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 		session.sasl_handler = usermanager_get_sasl_handler(module.host, session);
 	end
 	local mechanism = stanza.attr.mechanism;
-	if not session.secure and (secure_auth_only or (mechanism == "PLAIN" and not allow_unencrypted_plain_auth)) then
+	if not session.secure and (secure_auth_only or insecure_mechanisms:contains(mechanism)) then
 		session.send(build_reply("failure", "encryption-required"));
+		return true;
+	elseif disabled_mechanisms:contains(mechanism) then
+		session.send(build_reply("failure", "invalid-mechanism"));
 		return true;
 	end
 	local valid_mechanism = session.sasl_handler:select(mechanism);
@@ -231,11 +236,15 @@ module:hook("stream-features", function(event)
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
 		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
-			if mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth then
+			if (not disabled_mechanisms:contains(mechanism)) and (origin.secure or not insecure_mechanisms:contains(mechanism)) then
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end
-		if mechanisms[1] then features:add_child(mechanisms); end
+		if mechanisms[1] then
+			features:add_child(mechanisms);
+		else
+			(origin.log or log)("warn", "No SASL mechanisms to offer");
+		end
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
