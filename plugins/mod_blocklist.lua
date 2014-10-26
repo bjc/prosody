@@ -149,7 +149,9 @@ local function edit_blocklist(event)
 		for jid, in_roster in pairs(new) do
 			if not blocklist[jid] and in_roster and sessions[username] then
 				for _, session in pairs(sessions[username].sessions) do
-					module:send(st.presence({ type = "unavailable", to = jid, from = session.full_jid }));
+					if session.presence then
+						module:send(st.presence({ type = "unavailable", to = jid, from = session.full_jid }));
+					end
 				end
 			end
 		end
