@@ -622,7 +622,7 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	local sock = self.socket[servernum];
 	if sock then return sock; end
 
-	local err;
+	local ok, err;
 	sock, err = socket.udp();
 	if sock and self.socket_wrapper then sock, err = self.socket_wrapper(sock, self); end
 	if not sock then
@@ -630,10 +630,14 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	end
 	sock:settimeout(0);
 	-- todo: attempt to use a random port, fallback to 0
-	sock:setsockname('*', 0);
-	sock:setpeername(self.server[servernum], 53);
 	self.socket[servernum] = sock;
 	self.socketset[sock] = servernum;
+	-- set{sock,peer}name can fail, eg because of local routing table
+	-- if so, try the next server
+	ok, err = sock:setsockname('*', 0);
+	if not ok then return self:servfail(sock, err); end
+	ok, err = sock:setpeername(self.server[servernum], 53);
+	if not ok then return self:servfail(sock, err); end
 	return sock;
 end
 
@@ -781,7 +785,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	return true;
 end
 
-function resolver:servfail(sock)
+function resolver:servfail(sock, err)
 	-- Resend all queries for this server
 
 	local num = self.socketset[sock]
@@ -804,7 +808,7 @@ function resolver:servfail(sock)
 					--print('timeout');
 					queries[question] = nil;
 				else
-					sock = self:getsocket(o.server);
+					sock, err = self:getsocket(o.server);
 					if sock then sock:send(o.packet); end
 				end
 			end
@@ -821,7 +825,7 @@ function resolver:servfail(sock)
 			self.best_server = 1;
 		end
 	end
-	return sock;
+	return sock, err;
 end
 
 function resolver:settimeout(seconds)
