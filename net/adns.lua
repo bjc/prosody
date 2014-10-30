@@ -80,8 +80,7 @@ function new_async_socket(sock, resolver)
 	handler.connect = function (_, ...) return sock:connect(...) end
 	--handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
 	handler.send = function (_, data)
-		local getpeername = sock.getpeername;
-		log("debug", "Sending DNS query to %s", (getpeername and getpeername(sock)) or "<unconnected>");
+		log("debug", "Sending DNS query to %s", peername);
 		return sock:send(data);
 	end
 	return handler;
