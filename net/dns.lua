@@ -787,7 +787,7 @@ function resolver:servfail(sock)
 	local num = self.socketset[sock]
 
 	-- Socket is dead now
-	self:voidsocket(sock);
+	sock = self:voidsocket(sock);
 
 	-- Find all requests to the down server, and retry on the next server
 	self.time = socket.gettime();
@@ -804,8 +804,8 @@ function resolver:servfail(sock)
 					--print('timeout');
 					queries[question] = nil;
 				else
-					local _a = self:getsocket(o.server);
-					if _a then _a:send(o.packet); end
+					sock = self:getsocket(o.server);
+					if sock then sock:send(o.packet); end
 				end
 			end
 		end
@@ -821,6 +821,7 @@ function resolver:servfail(sock)
 			self.best_server = 1;
 		end
 	end
+	return sock;
 end
 
 function resolver:settimeout(seconds)
