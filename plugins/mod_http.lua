@@ -45,6 +45,11 @@ local function get_base_path(host_module, app_name, default_app_path)
 		:gsub("%$(%w+)", { host = host_module.host });
 end
 
+local function redir_handler(event)
+	event.response.headers.location = event.request.path.."/";
+	return 301;
+end
+
 local ports_by_scheme = { http = 80, https = 443, };
 
 -- Helper to deduce a module's external URL
@@ -99,6 +104,9 @@ function module.add_host(module)
 						local path = event.request.path:sub(base_path_len);
 						return _handler(event, path);
 					end;
+					module:hook_object_event(server, event_name:sub(1, -3), redir_handler, -1);
+				elseif event_name:sub(-1, -1) == "/" then
+					module:hook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
 				end
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = handler;

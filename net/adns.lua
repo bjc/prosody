@@ -76,12 +76,11 @@ function new_async_socket(sock, resolver)
 
 	handler.settimeout = function () end
 	handler.setsockname = function (_, ...) return sock:setsockname(...); end
-	handler.setpeername = function (_, ...) peername = (...); local ret = sock:setpeername(...); _:set_send(dummy_send); return ret; end
+	handler.setpeername = function (_, ...) peername = (...); local ret, err = sock:setpeername(...); _:set_send(dummy_send); return ret, err; end
 	handler.connect = function (_, ...) return sock:connect(...) end
 	--handler.send = function (_, data) _:write(data);  return _.sendbuffer and _.sendbuffer(); end
 	handler.send = function (_, data)
-		local getpeername = sock.getpeername;
-		log("debug", "Sending DNS query to %s", (getpeername and getpeername(sock)) or "<unconnected>");
+		log("debug", "Sending DNS query to %s", peername);
 		return sock:send(data);
 	end
 	return handler;
