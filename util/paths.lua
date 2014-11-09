@@ -1,3 +1,5 @@
+local t_concat = table.concat;
+
 local path_sep = package.config:sub(1,1);
 
 local path_util = {}
@@ -33,6 +35,10 @@ function path_util.glob_to_pattern(glob)
 			return "%"..c;
 		end
 	end).."$";
+end
+
+function path_util.join(...)
+	return t_concat({...}, path_sep);
 end
 
 return path_util;

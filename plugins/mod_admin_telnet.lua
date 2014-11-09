@@ -27,6 +27,7 @@ local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
 local envloadfile = require "util.envload".envloadfile;
+local has_pposix, pposix = pcall(require, "util.pposix");
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -322,7 +323,7 @@ local function human(kb)
 end
 
 function def_env.server:memory()
-	if not pposix.meminfo then
+	if not has_pposix or not pposix.meminfo then
 		return true, "Lua is using "..collectgarbage("count");
 	end
 	local mem, lua_mem = pposix.meminfo(), collectgarbage("count");
