@@ -131,10 +131,10 @@ function room_mt:route_to_occupant(occupant, stanza)
 end
 
 -- actor is the attribute table
-local function add_item(x, affiliation, role, jid, nick, actor, reason)
+local function add_item(x, affiliation, role, jid, nick, actor_nick, actor_jid, reason)
 	x:tag("item", {affiliation = affiliation; role = role; jid = jid; nick = nick;})
-	if actor then
-		x:tag("actor", actor):up()
+	if actor_nick or actor_jid then
+		x:tag("actor", {nick = actor_nick; jid = actor_jid;}):up()
 	end
 	if reason then
 		x:tag("reason"):text(reason):up()
@@ -144,21 +144,14 @@ local function add_item(x, affiliation, role, jid, nick, actor, reason)
 end
 
 -- actor is (real) jid
-function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor, reason)
+function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor_nick, actor_jid, reason)
 	local affiliation = self:get_affiliation(occupant.bare_jid) or "none";
 	local role = occupant.role or "none";
-	local actor_attr;
-	if actor then
-		actor_attr = {nick = select(3,jid_split(self:get_occupant_jid(actor)))};
-	end
 	if is_anonymous then
-		add_item(x, affiliation, role, nil, nick, actor_attr, reason);
+		add_item(x, affiliation, role, nil, nick, actor_nick, actor_jid, reason);
 	else
-		if actor_attr then
-			actor_attr.jid = actor;
-		end
 		for real_jid, session in occupant:each_session() do
-			add_item(x, affiliation, role, real_jid, nick, actor_attr, reason);
+			add_item(x, affiliation, role, real_jid, nick, actor_nick, actor_jid, reason);
 		end
 	end
 	return x
@@ -211,31 +204,51 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 		reason = reason;
 	});
 
-	local function get_presence(is_anonymous)
-		local x = st.clone(base_x);
-		self:build_item_list(occupant, x, is_anonymous, nick, actor, reason);
-		return st.clone(base_presence):add_child(x), x;
+	local whois = self:get_whois();
+	local actor_nick;
+	if actor then
+		actor_nick = select(3, jid_split(self:get_occupant_jid(actor)));
 	end
 
-	local full_p, full_x = get_presence(false);
+	local full_p, full_x;
+	local function get_full_p()
+		if full_p == nil then
+			full_x = st.clone(base_x);
+			self:build_item_list(occupant, full_x, false, nick, actor_nick, actor, reason);
+			full_p = st.clone(base_presence):add_child(full_x);
+		end
+		return full_p, full_x;
+	end
 
-	-- Create anon_p lazily
 	local anon_p, anon_x;
 	local function get_anon_p()
 		if anon_p == nil then
-			anon_p, anon_x = get_presence(true);
+			anon_x = st.clone(base_x);
+			self:build_item_list(occupant, anon_x, true, nick, actor_nick, nil, reason);
+			anon_p = st.clone(base_presence):add_child(anon_x);
 		end
 		return anon_p, anon_x;
 	end
 
-	local whois = self:get_whois();
+	local self_p, self_x;
+	if can_see_real_jids(whois, occupant) then
+		self_p, self_x = get_full_p();
+	else
+		-- Can always see your own full jids
+		-- But not allowed to see actor's
+		self_x = st.clone(base_x);
+		self:build_item_list(occupant, self_x, false, nick, actor_nick, nil, reason);
+		self_p = st.clone(base_presence):add_child(self_x);
+	end
 
 	-- General populance
 	for nick, n_occupant in self:each_occupant() do
 		if nick ~= occupant.nick then
 			local pr;
-			if can_see_real_jids(whois, n_occupant) or occupant.bare_jid == n_occupant.bare_jid then
-				pr = full_p;
+			if can_see_real_jids(whois, n_occupant) then
+				pr = get_full_p();
+			elseif occupant.bare_jid == n_occupant.bare_jid then
+				pr = self_p;
 			else
 				pr = get_anon_p();
 			end
@@ -244,17 +257,16 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	end
 
 	-- Presences for occupant itself
-	full_x:tag("status", {code = "110";}):up();
+	self_x:tag("status", {code = "110";}):up();
 	if occupant.role == nil then
 		-- They get an unavailable
-		self:route_to_occupant(occupant, full_p);
+		self:route_to_occupant(occupant, self_p);
 	else
 		-- use their own presences as templates
 		for full_jid, pr in occupant:each_session() do
 			pr = st.clone(pr);
 			pr.attr.to = full_jid;
-			-- You can always see your own full jids
-			pr:add_child(full_x);
+			pr:add_child(self_x);
 			self:route_stanza(pr);
 		end
 	end
