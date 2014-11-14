@@ -198,13 +198,20 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	base_presence = base_presence or st.presence {from = occupant.nick; type = "unavailable";};
 
 	-- Fire event (before full_p and anon_p are created)
-	module:fire_event("muc-broadcast-presence", {
+	local event = {
 		room = self; stanza = base_presence; x = base_x;
 		occupant = occupant; nick = nick; actor = actor;
 		reason = reason;
-	});
+	}
+	module:fire_event("muc-broadcast-presence", event);
+
+	-- Allow muc-broadcast-presence listeners to change things
+	nick = event.nick;
+	actor = event.actor;
+	reason = event.reason;
 
 	local whois = self:get_whois();
+
 	local actor_nick;
 	if actor then
 		actor_nick = select(3, jid_split(self:get_occupant_jid(actor)));
