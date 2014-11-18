@@ -140,11 +140,11 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 								break;
 							end
 						elseif len and #buf >= len then
-                                                       if packet.code == 101 then
-                                                               packet.body, buf = buf, ""
-                                                       else
-                                                               packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
-                                                       end
+							if packet.code == 101 then
+								packet.body, buf = buf, "";
+							else
+								packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
+							end
 							state = nil; success_cb(packet);
 						else
 							break;
