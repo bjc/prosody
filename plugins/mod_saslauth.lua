@@ -215,7 +215,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
 end);
 
 local function tls_unique(self)
-	return self.userdata:getpeerfinished();
+	return self.userdata["tls-unique"]:getpeerfinished();
 end
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
@@ -237,7 +237,9 @@ module:hook("stream-features", function(event)
 				if socket.getpeerfinished then
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
 				end
-				sasl_handler["userdata"] = socket;
+				sasl_handler["userdata"] = {
+					["tls-unique"] = socket;
+				};
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
