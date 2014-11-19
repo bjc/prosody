@@ -137,8 +137,10 @@ function create_context(host, mode, ...)
 		else
 			log("error", "SSL/TLS: Error initialising for %s: %s", host, err);
 		end
+	else
+		err = nil;
 	end
-	return ctx, err;
+	return ctx, err or user_ssl_config;
 end
 
 function reload_ssl_config()
