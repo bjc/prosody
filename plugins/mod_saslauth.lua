@@ -223,19 +223,20 @@ module:hook("stream-features", function(event)
 		if secure_auth_only and not origin.secure then
 			return;
 		end
-		origin.sasl_handler = usermanager_get_sasl_handler(module.host, origin);
+		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
+		origin.sasl_handler = sasl_handler;
 		if origin.encrypted then
 			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
-			if origin.conn:socket().getpeerfinished and origin.sasl_handler.add_cb_handler then
-				origin.sasl_handler:add_cb_handler("tls-unique", function(self)
+			if origin.conn:socket().getpeerfinished and sasl_handler.add_cb_handler then
+				sasl_handler:add_cb_handler("tls-unique", function(self)
 					return self.userdata:getpeerfinished();
 				end);
-				origin.sasl_handler["userdata"] = origin.conn:socket();
+				sasl_handler["userdata"] = origin.conn:socket();
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
-		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
+		for mechanism in pairs(sasl_handler:mechanisms()) do
 			if (not disabled_mechanisms:contains(mechanism)) and (origin.secure or not insecure_mechanisms:contains(mechanism)) then
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
