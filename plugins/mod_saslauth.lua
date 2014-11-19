@@ -214,6 +214,10 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
 	return true;
 end);
 
+local function tls_unique(self)
+	return self.userdata:getpeerfinished();
+end
+
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
@@ -228,11 +232,12 @@ module:hook("stream-features", function(event)
 		if origin.encrypted then
 			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
-			if origin.conn:socket().getpeerfinished and sasl_handler.add_cb_handler then
-				sasl_handler:add_cb_handler("tls-unique", function(self)
-					return self.userdata:getpeerfinished();
-				end);
-				sasl_handler["userdata"] = origin.conn:socket();
+			if sasl_handler.add_cb_handler then
+				local socket = origin.conn:socket();
+				if socket.getpeerfinished then
+					sasl_handler:add_cb_handler("tls-unique", tls_unique);
+				end
+				sasl_handler["userdata"] = socket;
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
