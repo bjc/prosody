@@ -32,8 +32,9 @@ local hosts = prosody.hosts;
 local host = hosts[module.host];
 
 local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
+local ssl_cfg_c2s, ssl_cfg_s2sout, ssl_cfg_s2sin;
 do
-	local NULL, err = {};
+	local NULL = {};
 	local global = module:context("*");
 	local parent = module:context(module.host:match("%.(.*)$"));
 
@@ -48,12 +49,14 @@ do
 	local parent_s2s = parent:get_option("s2s_ssl", NULL);
 	local host_s2s   = module:get_option("s2s_ssl", parent_s2s);
 
-	ssl_ctx_c2s, err = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
-	if err then module:log("error", "Error creating context for c2s: %s", err); end
+	ssl_ctx_c2s, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
+	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", ssl_cfg_c2s); end
 
-	ssl_ctx_s2sin, err = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
-	ssl_ctx_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s); -- for outgoing server connections
-	if err then module:log("error", "Error creating context for s2s: %s", err); end -- Both would have the same issue
+	ssl_ctx_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s); -- for outgoing server connections
+	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", ssl_cfg_s2sin); end
+
+	ssl_ctx_s2sin, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
+	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", ssl_cfg_s2sin); end
 end
 
 local function can_do_tls(session)
@@ -64,10 +67,13 @@ local function can_do_tls(session)
 	end
 	if session.type == "c2s_unauthed" then
 		session.ssl_ctx = ssl_ctx_c2s;
+		session.ssl_cfg = ssl_cfg_c2s;
 	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
 		session.ssl_ctx = ssl_ctx_s2sin;
+		session.ssl_cfg = ssl_cfg_s2sin;
 	elseif session.direction == "outgoing" and allow_s2s_tls then
 		session.ssl_ctx = ssl_ctx_s2sout;
+		session.ssl_cfg = ssl_cfg_s2sout;
 	else
 		return false;
 	end
