@@ -11,6 +11,7 @@ local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish",
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
 local pubsub_disco_name = module:get_option("name");
 if type(pubsub_disco_name) ~= "string" then pubsub_disco_name = "Prosody PubSub Service"; end
+local expose_publisher = module:get_option_boolean("expose_publisher", false)
 
 local service;
 
@@ -36,10 +37,13 @@ function handle_pubsub_iq(event)
 	end
 end
 
-function simple_broadcast(kind, node, jids, item)
+function simple_broadcast(kind, node, jids, item, actor)
 	if item then
 		item = st.clone(item);
 		item.attr.xmlns = nil; -- Clear the pubsub namespace
+		if expose_publisher and actor then
+			item.attr.publisher = actor
+		end
 	end
 	local message = st.message({ from = module.host, type = "headline" })
 		:tag("event", { xmlns = xmlns_pubsub_event })
