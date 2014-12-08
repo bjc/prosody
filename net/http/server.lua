@@ -218,7 +218,7 @@ function handle_request(conn, request, finish_cb)
 
 	local event = request.method.." "..host..request.path:match("[^?]*");
 	local payload = { request = request, response = response };
-	--log("debug", "Firing event: %s", event);
+	log("debug", event);
 	local result = events.fire_event(event, payload);
 	if result ~= nil then
 		if result ~= true then
