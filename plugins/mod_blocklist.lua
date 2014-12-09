@@ -13,7 +13,7 @@ local user_exists = require"core.usermanager".user_exists;
 local is_contact_subscribed = require"core.rostermanager".is_contact_subscribed;
 local st = require"util.stanza";
 local st_error_reply = st.error_reply;
-local jid_prep, jid_split = import("jid", "prep", "split");
+local jid_prep, jid_split = import("util.jid", "prep", "split");
 
 local host = module.host;
 local storage = module:open_store();
