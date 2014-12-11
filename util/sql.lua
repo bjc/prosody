@@ -156,6 +156,7 @@ function engine:connect()
 	dbh:autocommit(false); -- don't commit automatically
 	self.conn = dbh;
 	self.prepared = {};
+	self:set_encoding();
 	return true;
 end
 function engine:execute(sql, ...)
