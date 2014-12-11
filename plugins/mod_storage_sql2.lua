@@ -113,8 +113,6 @@ do -- process options to get a db connection
 	--local dburi = db2uri(params);
 	engine = mod_sql:create_engine(params);
 
-	engine:set_encoding();
-
 	if module:get_option("sql_manage_tables", true) then
 		-- Automatically create table, ignore failure (table probably already exists)
 		create_table();
