@@ -974,6 +974,7 @@ function def_env.muc:list(host)
 	if not host_session or not host_session.modules.muc then
 		return nil, "Please supply the address of a local MUC component";
 	end
+	local print = self.session.print;
 	local c = 0;
 	for room in host_session.modules.muc.each_room() do
 		print(room.jid);

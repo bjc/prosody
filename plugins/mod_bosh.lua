@@ -22,6 +22,7 @@ local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
 local xpcall, tostring, type = xpcall, tostring, type;
 local traceback = debug.traceback;
+local runner = require"util.async".runner;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -228,6 +229,8 @@ local function bosh_close_stream(session, reason)
 	sm_destroy_session(session);
 end
 
+local runner_callbacks = { };
+
 -- Handle the <body> tag in the request payload.
 function stream_callbacks.streamopened(context, attr)
 	local request, response = context.request, context.response;
@@ -259,6 +262,10 @@ function stream_callbacks.streamopened(context, attr)
 			ip = get_ip_from_request(request);
 		};
 		sessions[sid] = session;
+
+		session.thread = runner(function (stanza)
+			session:dispatch_stanza(stanza);
+		end, runner_callbacks, session);
 
 		local filter = initialize_filters(session);
 
@@ -355,6 +362,11 @@ function stream_callbacks.streamopened(context, attr)
 end
 
 local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(tostring(err), 2)); end
+
+function runner_callbacks:error(err)
+	return handleerr(err);
+end
+
 function stream_callbacks.handlestanza(context, stanza)
 	if context.ignore then return; end
 	log("debug", "BOSH stanza received: %s\n", stanza:top_tag());
@@ -364,9 +376,7 @@ function stream_callbacks.handlestanza(context, stanza)
 			stanza.attr.xmlns = nil;
 		end
 		stanza = session.filter("stanzas/in", stanza);
-		if stanza then
-			return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
-		end
+		session.thread:run(stanza);
 	end
 end
 
