@@ -135,7 +135,7 @@ module:hook("muc-occupant-session-new", function(event)
 end, 50); -- Before subject(20)
 
 -- add to history
-module:hook("muc-broadcast-message", function(event)
+module:hook("muc-add-history", function(event)
 	local historic = event.stanza:get_child("body");
 	if historic then
 		local room = event.room
@@ -151,6 +151,13 @@ module:hook("muc-broadcast-message", function(event)
 		table.insert(history, entry);
 		while #history > get_historylength(room) do table.remove(history, 1) end
 	end
+	return true;
+end, -1);
+
+-- Have a single muc-add-history event, so that plugins can mark it
+-- as handled without stopping other muc-broadcast-message handlers
+module:hook("muc-broadcast-message", function(event)
+	module:fire_event("muc-add-history", event);
 end);
 
 return {
