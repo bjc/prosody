@@ -43,7 +43,11 @@ elseif server.event and server.base then -- server_event
 	cq = cqueues.new();
 	-- Only need to listen for readable; cqueues handles everything under the hood
 	local EV_READ = server.event.EV_READ;
-	server.base:addevent(cq:pollfd(), EV_READ, function(e)
+	local event_handle;
+	event_handle = server.base:addevent(cq:pollfd(), EV_READ, function(e)
+			-- Need to reference event_handle or this callback will get collected
+			-- This creates a circular reference that can only be broken if event_handle is manually :close()'d
+			local _ = event_handle;
 			assert(cq:loop(0));
 			-- Convert a cq timeout to an acceptable timeout for luaevent
 			local t = cq:timeout();
