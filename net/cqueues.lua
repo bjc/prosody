@@ -9,6 +9,7 @@
 
 local server = require "net.server";
 local cqueues = require "cqueues";
+assert(cqueues.VERSION >= 20150112, "cqueues newer than 20151013 required")
 
 -- Create a single top level cqueue
 local cq;
@@ -43,23 +44,27 @@ elseif server.event and server.base then -- server_event
 	cq = cqueues.new();
 	-- Only need to listen for readable; cqueues handles everything under the hood
 	local EV_READ = server.event.EV_READ;
+	-- Convert a cqueues timeout to an acceptable timeout for luaevent
+	local function luaevent_safe_timeout(cq)
+		local t = cq:timeout();
+		-- if you give luaevent 0 or nil, it re-uses the previous timeout.
+		if t == 0 then
+			t = 0.000001; -- 1 microsecond is the smallest that works (goes into a `struct timeval`)
+		elseif t == nil then -- pick something big if we don't have one
+			t = 0x7FFFFFFF; -- largest 32bit int
+		end
+		return t
+	end
 	local event_handle;
 	event_handle = server.base:addevent(cq:pollfd(), EV_READ, function(e)
 			-- Need to reference event_handle or this callback will get collected
 			-- This creates a circular reference that can only be broken if event_handle is manually :close()'d
 			local _ = event_handle;
+			-- Run as many cqueues things as possible (with a timeout of 0)
+			-- If an error is thrown, it will break the libevent loop; but prosody resumes after logging a top level error
 			assert(cq:loop(0));
-			-- Convert a cq timeout to an acceptable timeout for luaevent
-			local t = cq:timeout();
-			if t == 0 then -- if you give luaevent 0, it won't call this callback again
-				t = 0.000001; -- 1 microsecond is the smallest that works (goes into a `struct timeval`)
-			elseif t == nil then -- you always need to give a timeout, pick something big if we don't have one
-				t = 0x7FFFFFFF; -- largest 32bit int
-			end
-			return EV_READ, t;
-		end,
-		-- Schedule the callback to fire on first tick to ensure any cq:wrap calls that happen during start-up are serviced.
-		0.000001);
+			return EV_READ, luaevent_safe_timeout(cq);
+		end, luaevent_safe_timeout(cq));
 else
 	error "NYI"
 end
