@@ -115,8 +115,6 @@ local _checkinterval
 local _sendtimeout
 local _readtimeout
 
-local _timer
-
 local _maxselectlen
 local _maxfd
 
@@ -890,8 +888,15 @@ end
 loop = function(once) -- this is the main loop of the program
 	if quitting then return "quitting"; end
 	if once then quitting = "once"; end
-	local next_timer_time = math_huge;
+	_currenttime = luasocket_gettime( )
 	repeat
+		-- Fire timers
+		local next_timer_time = math_huge;
+		for i = 1, _timerlistlen do
+			local t = _timerlist[ i ]( _currenttime ) -- fire timers
+			if t then next_timer_time = math_min(next_timer_time, t); end
+		end
+
 		local read, write, err = socket_select( _readlist, _sendlist, math_min(_selecttimeout, next_timer_time) )
 		for i, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
@@ -938,18 +943,6 @@ loop = function(once) -- this is the main loop of the program
 					end
 				end
 			end
-		end
-
-		-- Fire timers
-		if _currenttime - _timer >= math_min(next_timer_time, 1) then
-			next_timer_time = math_huge;
-			for i = 1, _timerlistlen do
-				local t = _timerlist[ i ]( _currenttime ) -- fire timers
-				if t then next_timer_time = math_min(next_timer_time, t); end
-			end
-			_timer = _currenttime
-		else
-			next_timer_time = next_timer_time - (_currenttime - _timer);
 		end
 
 		-- wait some time (0 by default)
@@ -1037,7 +1030,6 @@ use "setmetatable" ( _socketlist, { __mode = "k" } )
 use "setmetatable" ( _readtimes, { __mode = "k" } )
 use "setmetatable" ( _writetimes, { __mode = "k" } )
 
-_timer = luasocket_gettime( )
 _starttime = luasocket_gettime( )
 
 local function setlogger(new_logger)
