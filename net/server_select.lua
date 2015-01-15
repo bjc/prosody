@@ -848,8 +848,7 @@ local add_task do
 		end
 	end
 
-	addtimer(function()
-		local current_time = luasocket_gettime();
+	addtimer(function(current_time)
 		if #new_data > 0 then
 			for _, d in pairs(new_data) do
 				table_insert(data, d);
