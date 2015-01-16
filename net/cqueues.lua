@@ -9,7 +9,7 @@
 
 local server = require "net.server";
 local cqueues = require "cqueues";
-assert(cqueues.VERSION >= 20150112, "cqueues newer than 20151013 required")
+assert(cqueues.VERSION >= 20150113, "cqueues newer than 20150113 required")
 
 -- Create a single top level cqueue
 local cq;
