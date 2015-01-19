@@ -38,7 +38,6 @@ local coroutine = use "coroutine"
 
 --// lua lib methods //--
 
-local os_difftime = os.difftime
 local math_min = math.min
 local math_huge = math.huge
 local table_concat = table.concat
@@ -891,17 +890,16 @@ loop = function(once) -- this is the main loop of the program
 		_currenttime = luasocket_gettime( )
 
 		-- Check for socket timeouts
-		local difftime = os_difftime( _currenttime - _starttime )
-		if difftime > _checkinterval then
+		if _currenttime - _starttime > _checkinterval then
 			_starttime = _currenttime
 			for handler, timestamp in pairs( _writetimes ) do
-				if os_difftime( _currenttime - timestamp ) > _sendtimeout then
+				if _currenttime - timestamp > _sendtimeout then
 					handler.disconnect( )( handler, "send timeout" )
 					handler:force_close()	 -- forced disconnect
 				end
 			end
 			for handler, timestamp in pairs( _readtimes ) do
-				if os_difftime( _currenttime - timestamp ) > _readtimeout then
+				if _currenttime - timestamp > _readtimeout then
 					if not(handler.onreadtimeout) or handler:onreadtimeout() ~= true then
 						handler.disconnect( )( handler, "read timeout" )
 						handler:close( )	-- forced disconnect?
