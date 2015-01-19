@@ -57,7 +57,6 @@ local getaddrinfo = luasocket.dns.getaddrinfo
 
 local ssl_wrap = ( has_luasec and luasec.wrap )
 local socket_bind = luasocket.bind
-local socket_sleep = luasocket.sleep
 local socket_select = luasocket.select
 
 --// functions //--
@@ -101,7 +100,6 @@ local _sendtraffic
 local _readtraffic
 
 local _selecttimeout
-local _sleeptime
 local _tcpbacklog
 
 local _starttime
@@ -138,7 +136,6 @@ _sendtraffic = 0 -- some stats
 _readtraffic = 0
 
 _selecttimeout = 1 -- timeout of socket.select
-_sleeptime = 0 -- time to wait at the end of every loop
 _tcpbacklog = 128 -- some kind of hint to the OS
 
 _maxsendlen = 51000 * 1024 -- max len of send buffer
@@ -790,7 +787,6 @@ end
 getsettings = function( )
 	return {
 		select_timeout = _selecttimeout;
-		select_sleep_time = _sleeptime;
 		tcp_backlog = _tcpbacklog;
 		max_send_buffer_size = _maxsendlen;
 		max_receive_buffer_size = _maxreadlen;
@@ -808,7 +804,6 @@ changesettings = function( new )
 		return nil, "invalid settings table"
 	end
 	_selecttimeout = tonumber( new.select_timeout ) or _selecttimeout
-	_sleeptime = tonumber( new.select_sleep_time ) or _sleeptime
 	_maxsendlen = tonumber( new.max_send_buffer_size ) or _maxsendlen
 	_maxreadlen = tonumber( new.max_receive_buffer_size ) or _maxreadlen
 	_checkinterval = tonumber( new.select_idle_check_interval ) or _checkinterval
@@ -941,9 +936,6 @@ loop = function(once) -- this is the main loop of the program
 				end
 			end
 		end
-
-		-- wait some time (0 by default)
-		socket_sleep( _sleeptime )
 	until quitting;
 	if once and quitting == "once" then quitting = nil; return; end
 	return "quitting"
