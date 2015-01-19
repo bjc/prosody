@@ -31,7 +31,6 @@ local tostring = use "tostring"
 
 --// lua libs //--
 
-local os = use "os"
 local table = use "table"
 local string = use "string"
 local coroutine = use "coroutine"
@@ -287,7 +286,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local bufferqueuelen = 0	-- end of buffer array
 
 	local toclose
-	local fatalerror
 	local needtls
 
 	local bufferlen = 0
@@ -499,7 +497,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			return dispatch( handler, buffer, err )
 		else	-- connections was closed or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
-			fatalerror = true
 			_ = handler and handler:force_close( err )
 			return false
 		end
@@ -539,7 +536,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			return true
 		else	-- connection was closed during sending or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " write error: ", tostring(err) )
-			fatalerror = true
 			_ = handler and handler:force_close( err )
 			return false
 		end
@@ -1010,8 +1006,6 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 		return nil, err
 	end
 end
-
---// EXPERIMENTAL //--
 
 ----------------------------------// BEGIN //--
 
