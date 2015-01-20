@@ -1,5 +1,5 @@
 
-local error, type, pairs = error, type, pairs;
+local type, pairs = type, pairs;
 local setmetatable = setmetatable;
 
 local config = require "core.configmanager";
