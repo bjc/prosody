@@ -8,7 +8,7 @@
 
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
-local ssl = ssl;
+local ssl = _G.ssl;
 local ssl_newcontext = ssl and ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 
