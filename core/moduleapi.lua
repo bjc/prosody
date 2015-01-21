@@ -14,6 +14,7 @@ local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
+local measure = require "core.statsmanager".measure;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -368,6 +369,10 @@ end
 
 function api:open_store(name, type)
 	return require"core.storagemanager".open(self.host, name or self.name, type);
+end
+
+function api:measure(name, type)
+	return measure(type, "/"..self.host.."/mod_"..self.name.."/"..name);
 end
 
 function api.init(mm)
