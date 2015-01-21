@@ -41,7 +41,8 @@ local function subscription_presence(user_bare, recipient)
 	return is_contact_subscribed(username, host, recipient_bare);
 end
 
-local function publish(session, node, id, item)
+module:hook("pep-publish-item", function (event)
+	local session, node, id, item = event.session, event.node, event.id, event.item;
 	item.attr.xmlns = nil;
 	local disable = #item.tags ~= 1 or #item.tags[1] == 0;
 	if #item.tags == 0 then item.name = "retract"; end
@@ -72,7 +73,8 @@ local function publish(session, node, id, item)
 			core_post_stanza(session, stanza);
 		end
 	end
-end
+end);
+
 local function publish_all(user, recipient, session)
 	local d = data[user];
 	local notify = recipients[user] and recipients[user][recipient];
@@ -172,7 +174,9 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				local id = payload.attr.id or "1";
 				payload.attr.id = id;
 				session.send(st.reply(stanza));
-				publish(session, node, id, st.clone(payload));
+				module:fire_event("pep-publish-item", {
+					node = node, actor = session.jid, id = id, session = session, item = st.clone(payload);
+				});
 				return true;
 			end
 		end

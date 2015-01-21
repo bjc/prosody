@@ -292,6 +292,7 @@ function load_secondary_libraries()
 	require "util.import"
 	require "util.xmppstream"
 	require "core.stanza_router"
+	require "core.statsmanager"
 	require "core.hostmanager"
 	require "core.portmanager"
 	require "core.modulemanager"
