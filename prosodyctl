@@ -251,6 +251,7 @@ require "socket"
 function read_version()
 	-- Try to determine version
 	local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
+	prosody.version = "unknown";
 	if version_file then
 		prosody.version = version_file:read("*a"):gsub("%s*$", "");
 		version_file:close();
@@ -258,7 +259,9 @@ function read_version()
 			prosody.version = "hg:"..prosody.version;
 		end
 	else
-		prosody.version = "unknown";
+		local hg = require"util.mercurial";
+		local hgid = hg.check_id(CFG_SOURCEDIR or ".");
+		if hgid then prosody.version = "hg:" .. hgid; end
 	end
 end
 
