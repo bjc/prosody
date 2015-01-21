@@ -15,7 +15,7 @@ local pairs = pairs;
 local tostring = tostring;
 
 local hosts = hosts;
-local bare_sessions = bare_sessions;
+local bare_sessions = prosody.bare_sessions;
 
 local datamanager = require "util.datamanager"
 local um_user_exists = require "core.usermanager".user_exists;
