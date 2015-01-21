@@ -532,17 +532,30 @@ function commands.about(arg)
 	end
 	
 	local pwd = ".";
+	local lfs = require "lfs";
 	local array = require "util.array";
 	local keys = require "util.iterators".keys;
+	local hg = require"util.mercurial";
 	local relpath = config.resolve_relative_path;
 	
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
 	print("# Prosody directories");
 	print("Data directory:     "..relpath(pwd, data_path));
-	print("Plugin directory:   "..relpath(pwd, CFG_PLUGINDIR or "."));
 	print("Config directory:   "..relpath(pwd, CFG_CONFIGDIR or "."));
 	print("Source directory:   "..relpath(pwd, CFG_SOURCEDIR or "."));
+	print("Plugin directories:")
+	print("  "..(prosody.paths.plugins:gsub("([^;]+);?", function(path)
+			local opath = path;
+			path = config.resolve_relative_path(pwd, path);
+			local hgid, hgrepo = hg.check_id(path);
+			if not hgid and hgrepo then
+				return path.." - "..hgrepo .."!\n  ";
+			end
+			hgrepo = hgrepo == "010452cfaf53" and "prosody-modules";
+			return path..(hgid and " - "..(hgrepo or "HG").." rev: "..hgid or "")
+				.."\n  ";
+		end)));
 	print("");
 	print("# Lua environment");
 	print("Lua version:             ", _G._VERSION);
