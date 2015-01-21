@@ -10,8 +10,8 @@ local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
 
 local hosts = hosts;
-local full_sessions = full_sessions;
-local bare_sessions = bare_sessions;
+local full_sessions = prosody.full_sessions;
+local bare_sessions = prosody.bare_sessions;
 
 local logger = require "util.logger";
 local log = logger.init("sessionmanager");
