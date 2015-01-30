@@ -8,7 +8,7 @@ local function percentile(arr, length, pc)
 	local n = pc/100 * (length + 1);
 	local k, d = m_floor(n), n%1;
 	if k == 0 then
-		return arr[1];
+		return arr[1] or 0;
 	elseif k >= length then
 		return arr[length];
 	end
