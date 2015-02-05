@@ -38,7 +38,7 @@ local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = luasec_major * 100 + luasec_minor;
 local luasec_has = {
 	-- TODO If LuaSec ever starts exposing these things itself, use that instead
-	cipher_server_preference = >= 2;
+	cipher_server_preference = luasec_version >= 2;
 	no_ticket = luasec_version >= 4;
 	no_compression = luasec_version >= 5;
 	single_dh_use = luasec_version >= 2;
