@@ -53,6 +53,7 @@ local global_ssl_config = configmanager.get("*", "ssl");
 -- Built-in defaults
 local core_defaults = {
 	capath = "/etc/ssl/certs";
+	depth = 9;
 	protocol = "tlsv1+";
 	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
 	options = {
