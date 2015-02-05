@@ -34,11 +34,16 @@ local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config;
 
-local luasec_has_noticket, luasec_has_verifyext, luasec_has_no_compression;
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
-luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
-luasec_has_no_compression = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
+local luasec_version = luasec_major * 100 + luasec_minor;
+local luasec_has = {
+	-- TODO If LuaSec ever starts exposing these things itself, use that instead
+	cipher_server_preference = true;
+	no_ticket = luasec_version >= 4;
+	no_compression = luasec_version >= 5;
+	single_dh_use = luasec_version >= 5;
+	single_ecdh_use = luasec_version >= 5;
+};
 
 module "certmanager"
 
@@ -51,12 +56,11 @@ local core_defaults = {
 	protocol = "tlsv1+";
 	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
 	options = {
-		cipher_server_preference = true;
-		no_ticket = luasec_has_noticket;
-		no_compression = luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true;
-		-- Has no_compression? Then it has these too...
-		single_dh_use = luasec_has_no_compression;
-		single_ecdh_use = luasec_has_no_compression;
+		cipher_server_preference = luasec_has.cipher_server_preference;
+		no_ticket = luasec_has.no_ticket;
+		no_compression = luasec_has.no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		single_dh_use = luasec_has.single_dh_use;
+		single_ecdh_use = luasec_has.single_ecdh_use;
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
@@ -151,7 +155,7 @@ end
 
 function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
-	if luasec_has_no_compression then
+	if luasec_has.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
 end
