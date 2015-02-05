@@ -6,10 +6,20 @@
 -- COPYING file in the source package for more information.
 --
 
+local softreq = require"util.dependencies".softreq;
+local ssl = softreq"ssl";
+if not ssl then
+	return {
+		create_context = function ()
+			return nil, "LuaSec (required for encryption) was not found";
+		end;
+		reload_ssl_config = function () end;
+	}
+end
+
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
-local ssl = _G.ssl;
-local ssl_newcontext = ssl and ssl.newcontext;
+local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 
 local tostring = tostring;
@@ -23,12 +33,10 @@ local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config;
 
 local luasec_has_noticket, luasec_has_verifyext, luasec_has_no_compression;
-if ssl then
-	local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-	luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
-	luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
-	luasec_has_no_compression = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
-end
+local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
+luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
+luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
+luasec_has_no_compression = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
 
 module "certmanager"
 
@@ -39,7 +47,7 @@ local global_ssl_config = configmanager.get("*", "ssl");
 local core_defaults = {
 	capath = "/etc/ssl/certs";
 	protocol = "tlsv1+";
-	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
+	verify = (ssl.x509 and { "peer", "client_once", }) or "none";
 	options = {
 		cipher_server_preference = true;
 		no_ticket = luasec_has_noticket;
@@ -56,7 +64,7 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if ssl and not luasec_has_verifyext and ssl.x509 then
+if not luasec_has_verifyext and ssl.x509 then
 	-- COMPAT mw/luasec-hg
 	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
 		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
@@ -64,8 +72,6 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 end
 
 function create_context(host, mode, ...)
-	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
-
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	cfg:apply(global_ssl_config);
