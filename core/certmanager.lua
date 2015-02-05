@@ -19,6 +19,8 @@ end
 
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
+local ssl_context = ssl.context or softreq"ssl.context";
+local ssl_x509 = ssl.x509 or softreq"ssl.x509";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 
@@ -47,7 +49,7 @@ local global_ssl_config = configmanager.get("*", "ssl");
 local core_defaults = {
 	capath = "/etc/ssl/certs";
 	protocol = "tlsv1+";
-	verify = (ssl.x509 and { "peer", "client_once", }) or "none";
+	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
 	options = {
 		cipher_server_preference = true;
 		no_ticket = luasec_has_noticket;
@@ -64,7 +66,7 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if not luasec_has_verifyext and ssl.x509 then
+if not luasec_has_verifyext and ssl_x509 then
 	-- COMPAT mw/luasec-hg
 	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
 		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
@@ -114,7 +116,7 @@ function create_context(host, mode, ...)
 	-- of it ourselves (W/A for #x)
 	if ctx and user_ssl_config.ciphers then
 		local success;
-		success, err = ssl.context.setcipher(ctx, user_ssl_config.ciphers);
+		success, err = ssl_context.setcipher(ctx, user_ssl_config.ciphers);
 		if not success then ctx = nil; end
 	end
 
