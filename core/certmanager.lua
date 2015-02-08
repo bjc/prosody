@@ -6,10 +6,22 @@
 -- COPYING file in the source package for more information.
 --
 
+local softreq = require"util.dependencies".softreq;
+local ssl = softreq"ssl";
+if not ssl then
+	return {
+		create_context = function ()
+			return nil, "LuaSec (required for encryption) was not found";
+		end;
+		reload_ssl_config = function () end;
+	}
+end
+
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
-local ssl = _G.ssl;
-local ssl_newcontext = ssl and ssl.newcontext;
+local ssl_context = ssl.context or softreq"ssl.context";
+local ssl_x509 = ssl.x509 or softreq"ssl.x509";
+local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 
 local tostring = tostring;
@@ -22,13 +34,16 @@ local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config;
 
-local luasec_has_noticket, luasec_has_verifyext, luasec_has_no_compression;
-if ssl then
-	local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-	luasec_has_noticket = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=4;
-	luasec_has_verifyext = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
-	luasec_has_no_compression = tonumber(luasec_major)>0 or tonumber(luasec_minor)>=5;
-end
+local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
+local luasec_version = luasec_major * 100 + luasec_minor;
+local luasec_has = {
+	-- TODO If LuaSec ever starts exposing these things itself, use that instead
+	cipher_server_preference = luasec_version >= 2;
+	no_ticket = luasec_version >= 4;
+	no_compression = luasec_version >= 5;
+	single_dh_use = luasec_version >= 2;
+	single_ecdh_use = luasec_version >= 2;
+};
 
 module "certmanager"
 
@@ -38,15 +53,15 @@ local global_ssl_config = configmanager.get("*", "ssl");
 -- Built-in defaults
 local core_defaults = {
 	capath = "/etc/ssl/certs";
+	depth = 9;
 	protocol = "tlsv1+";
-	verify = (ssl and ssl.x509 and { "peer", "client_once", }) or "none";
+	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
 	options = {
-		cipher_server_preference = true;
-		no_ticket = luasec_has_noticket;
-		no_compression = luasec_has_no_compression and configmanager.get("*", "ssl_compression") ~= true;
-		-- Has no_compression? Then it has these too...
-		single_dh_use = luasec_has_no_compression;
-		single_ecdh_use = luasec_has_no_compression;
+		cipher_server_preference = luasec_has.cipher_server_preference;
+		no_ticket = luasec_has.no_ticket;
+		no_compression = luasec_has.no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		single_dh_use = luasec_has.single_dh_use;
+		single_ecdh_use = luasec_has.single_ecdh_use;
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
@@ -56,7 +71,7 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if ssl and not luasec_has_verifyext and ssl.x509 then
+if luasec_version < 5 and ssl_x509 then
 	-- COMPAT mw/luasec-hg
 	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
 		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
@@ -64,8 +79,6 @@ if ssl and not luasec_has_verifyext and ssl.x509 then
 end
 
 function create_context(host, mode, ...)
-	if not ssl then return nil, "LuaSec (required for encryption) was not found"; end
-
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	cfg:apply(global_ssl_config);
@@ -108,7 +121,7 @@ function create_context(host, mode, ...)
 	-- of it ourselves (W/A for #x)
 	if ctx and user_ssl_config.ciphers then
 		local success;
-		success, err = ssl.context.setcipher(ctx, user_ssl_config.ciphers);
+		success, err = ssl_context.setcipher(ctx, user_ssl_config.ciphers);
 		if not success then ctx = nil; end
 	end
 
@@ -143,7 +156,7 @@ end
 
 function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
-	if luasec_has_no_compression then
+	if luasec_has.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
 end
