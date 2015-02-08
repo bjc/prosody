@@ -117,6 +117,16 @@ function bind_resource(session, resource)
 	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
+	local event_payload = { session = session, resource = resource };
+	if hosts[session.host].events.fire_event("pre-resource-bind", event_payload) == false then
+		local err = event_payload.error;
+		if err then return nil, err.type, err.condition, err.text; end
+		return nil, "cancel", "not-allowed";
+	else
+		-- In case a plugin wants to poke at it
+		resource = event_payload.resource;
+	end
+
 	resource = resourceprep(resource);
 	resource = resource ~= "" and resource or uuid_generate();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
