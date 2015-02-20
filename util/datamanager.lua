@@ -163,7 +163,7 @@ local function atomic_store(filename, data)
 	return nil, msg;
 end
 
-if prosody.platform ~= "posix" then
+if prosody and prosody.platform ~= "posix" then
 	-- os.rename does not overwrite existing files on Windows
 	-- TODO We could use Transactional NTFS on Vista and above
 	function atomic_store(filename, data)
