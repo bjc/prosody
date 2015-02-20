@@ -3,14 +3,14 @@ include config.unix
 
 BIN = $(DESTDIR)$(PREFIX)/bin
 CONFIG = $(DESTDIR)$(SYSCONFDIR)
-MODULES = $(DESTDIR)$(PREFIX)/lib/prosody/modules
-SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
+MODULES = $(DESTDIR)$(LIBDIR)/prosody/modules
+SOURCE = $(DESTDIR)$(LIBDIR)/prosody
 DATA = $(DESTDIR)$(DATADIR)
 MAN = $(DESTDIR)$(PREFIX)/share/man
 
-INSTALLEDSOURCE = $(PREFIX)/lib/prosody
+INSTALLEDSOURCE = $(LIBDIR)/prosody
 INSTALLEDCONFIG = $(SYSCONFDIR)
-INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
+INSTALLEDMODULES = $(LIBDIR)/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
 .PHONY: all clean install
