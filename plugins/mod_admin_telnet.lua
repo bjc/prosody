@@ -313,6 +313,7 @@ local function human(kb)
 end
 
 function def_env.server:memory()
+	local pposix = require("util.pposix");
 	if not pposix.meminfo then
 		return true, "Lua is using "..collectgarbage("count");
 	end
