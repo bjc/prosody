@@ -14,7 +14,7 @@ local type, tonumber, tostring, ipairs = type, tonumber, tostring, ipairs;
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
 
-module "portmanager";
+local _ENV = nil;
 
 --- Config
 
@@ -63,18 +63,9 @@ local function error_to_friendly_message(service_name, port, err) --luacheck: ig
 	return friendly_message;
 end
 
-prosody.events.add_handler("item-added/net-provider", function (event)
-	local item = event.item;
-	register_service(item.name, item);
-end);
-prosody.events.add_handler("item-removed/net-provider", function (event)
-	local item = event.item;
-	unregister_service(item.name, item);
-end);
-
 --- Public API
 
-function activate(service_name)
+local function activate(service_name)
 	local service_info = services[service_name][1];
 	if not service_info then
 		return nil, "Unknown service: "..service_name;
@@ -151,7 +142,7 @@ function activate(service_name)
 	return true;
 end
 
-function deactivate(service_name, service_info)
+local function deactivate(service_name, service_info)
 	for name, interface, port, n, active_service --luacheck: ignore 213/name 213/n
 		in active_services:iter(service_name or service_info and service_info.name, nil, nil, nil) do
 		if service_info == nil or active_service.service == service_info then
@@ -161,7 +152,7 @@ function deactivate(service_name, service_info)
 	log("info", "Deactivated service '%s'", service_name or service_info.name);
 end
 
-function register_service(service_name, service_info)
+local function register_service(service_name, service_info)
 	table.insert(services[service_name], service_info);
 
 	if not active_services:get(service_name) then
@@ -176,7 +167,7 @@ function register_service(service_name, service_info)
 	return true;
 end
 
-function unregister_service(service_name, service_info)
+local function unregister_service(service_name, service_info)
 	log("debug", "Unregistering service: %s", service_name);
 	local service_info_list = services[service_name];
 	for i, service in ipairs(service_info_list) do
@@ -191,7 +182,7 @@ function unregister_service(service_name, service_info)
 	fire_event("service-removed", { name = service_name, service = service_info });
 end
 
-function close(interface, port)
+local function close(interface, port)
 	local service, service_server = get_service_at(interface, port);
 	if not service then
 		return false, "port-not-open";
@@ -202,21 +193,42 @@ function close(interface, port)
 	return true;
 end
 
-function get_service_at(interface, port)
+local function get_service_at(interface, port)
 	local data = active_services:search(nil, interface, port)[1][1];
 	return data.service, data.server;
 end
 
-function get_service(service_name)
+local function get_service(service_name)
 	return (services[service_name] or {})[1];
 end
 
-function get_active_services()
+local function get_active_services()
 	return active_services;
 end
 
-function get_registered_services()
+local function get_registered_services()
 	return services;
 end
 
-return _M;
+-- Event handlers
+
+prosody.events.add_handler("item-added/net-provider", function (event)
+	local item = event.item;
+	register_service(item.name, item);
+end);
+prosody.events.add_handler("item-removed/net-provider", function (event)
+	local item = event.item;
+	unregister_service(item.name, item);
+end);
+
+return {
+	activate = activate;
+	deactivate = deactivate;
+	register_service = register_service;
+	unregister_service = unregister_service;
+	close = close;
+	get_service_at = get_service_at;
+	get_service = get_service;
+	get_active_services = get_active_services;
+	get_registered_services = get_registered_services;
+};

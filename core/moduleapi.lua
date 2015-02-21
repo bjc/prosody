@@ -7,7 +7,6 @@
 --
 
 local config = require "core.configmanager";
-local modulemanager; -- This gets set from modulemanager
 local array = require "util.array";
 local set = require "util.set";
 local it = require "util.iterators";
@@ -145,6 +144,7 @@ function api:require(lib)
 end
 
 function api:depends(name)
+	local modulemanager = require"core.modulemanager";
 	if not self.dependencies then
 		self.dependencies = {};
 		self:hook("module-reloaded", function (event)
@@ -326,6 +326,7 @@ function api:remove_item(key, value)
 end
 
 function api:get_host_items(key)
+	local modulemanager = require"core.modulemanager";
 	local result = modulemanager.get_items(key, self.host) or {};
 	return result;
 end
@@ -415,11 +416,6 @@ end
 
 function api:measure_global_event(event_name, stat_name)
 	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
-end
-
-function api.init(mm)
-	modulemanager = mm;
-	return api;
 end
 
 return api;
