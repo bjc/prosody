@@ -28,7 +28,7 @@ local pairs, select, rawget = pairs, select, rawget;
 local tostring, type = tostring, type;
 local setmetatable = setmetatable;
 
-module "hostmanager"
+local _ENV = nil;
 
 local host_mt = { }
 function host_mt:__tostring()
@@ -44,6 +44,8 @@ function host_mt:__tostring()
 end
 
 local hosts_loaded_once;
+
+local activate, deactivate;
 
 local function load_enabled_hosts(config)
 	local defined_hosts = config or configmanager.getconfig();
@@ -164,8 +166,12 @@ function deactivate(host, reason)
 	return true;
 end
 
-function get_children(host)
+local function get_children(host)
 	return disco_items:get(host) or NULL;
 end
 
-return _M;
+return {
+	activate = activate;
+	deactivate = deactivate;
+	get_children = get_children;
+}

@@ -23,9 +23,9 @@ local setmetatable = setmetatable;
 
 local default_provider = "internal_plain";
 
-module "usermanager"
+local _ENV = nil;
 
-function new_null_provider()
+local function new_null_provider()
 	local function dummy() return nil, "method not implemented"; end;
 	local function dummy_get_sasl_handler() return sasl_new(nil, {}); end
 	return setmetatable({name = "null", get_sasl_handler = dummy_get_sasl_handler}, {
@@ -35,7 +35,7 @@ end
 
 local provider_mt = { __index = new_null_provider() };
 
-function initialize_host(host)
+local function initialize_host(host)
 	local host_session = hosts[host];
 	if host_session.type ~= "local" then return; end
 
@@ -68,46 +68,46 @@ function initialize_host(host)
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
 
-function test_password(username, host, password)
+local function test_password(username, host, password)
 	return hosts[host].users.test_password(username, password);
 end
 
-function get_password(username, host)
+local function get_password(username, host)
 	return hosts[host].users.get_password(username);
 end
 
-function set_password(username, password, host)
+local function set_password(username, password, host)
 	return hosts[host].users.set_password(username, password);
 end
 
-function user_exists(username, host)
+local function user_exists(username, host)
 	return hosts[host].users.user_exists(username);
 end
 
-function create_user(username, password, host)
+local function create_user(username, password, host)
 	return hosts[host].users.create_user(username, password);
 end
 
-function delete_user(username, host)
+local function delete_user(username, host)
 	local ok, err = hosts[host].users.delete_user(username);
 	if not ok then return nil, err; end
 	prosody.events.fire_event("user-deleted", { username = username, host = host });
 	return storagemanager.purge(username, host);
 end
 
-function users(host)
+local function users(host)
 	return hosts[host].users.users();
 end
 
-function get_sasl_handler(host, session)
+local function get_sasl_handler(host, session)
 	return hosts[host].users.get_sasl_handler(session);
 end
 
-function get_provider(host)
+local function get_provider(host)
 	return hosts[host].users;
 end
 
-function is_admin(jid, host)
+local function is_admin(jid, host)
 	if host and not hosts[host] then return false; end
 	if type(jid) ~= "string" then return false; end
 
@@ -151,4 +151,17 @@ function is_admin(jid, host)
 	return is_admin or false;
 end
 
-return _M;
+return {
+	new_null_provider = new_null_provider;
+	initialize_host = initialize_host;
+	test_password = test_password;
+	get_password = get_password;
+	set_password = set_password;
+	user_exists = user_exists;
+	create_user = create_user;
+	delete_user = delete_user;
+	users = users;
+	get_sasl_handler = get_sasl_handler;
+	get_provider = get_provider;
+	is_admin = is_admin;
+};

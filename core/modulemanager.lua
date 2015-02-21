@@ -13,6 +13,7 @@ local pluginloader = require "util.pluginloader";
 local set = require "util.set";
 
 local new_multitable = require "util.multitable".new;
+local api = require "core.moduleapi"; -- Module API container
 
 local hosts = hosts;
 local prosody = prosody;
@@ -35,9 +36,9 @@ local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s
 -- We need this to let modules access the real global namespace
 local _G = _G;
 
-module "modulemanager"
+local _ENV = nil;
 
-local api = _G.require "core.moduleapi".init(_M); -- Module API container
+local load_modules_for_host, load, unload, reload, get_module, get_items, get_modules, is_loaded, module_has_method, call_module_method;
 
 -- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };
@@ -317,4 +318,15 @@ function call_module_method(module, method, ...)
 	end
 end
 
-return _M;
+return {
+	load_modules_for_host = load_modules_for_host;
+	load = load;
+	unload = unload;
+	reload = reload;
+	get_module = get_module;
+	get_items = get_items;
+	get_modules = get_modules;
+	is_loaded = is_loaded;
+	module_has_method = module_has_method;
+	call_module_method = call_module_method;
+};
