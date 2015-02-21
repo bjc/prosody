@@ -17,7 +17,7 @@ local type = type;
 local data = {};
 local new_data = {};
 
-module "timer"
+local _ENV = nil;
 
 local _add_task;
 if not server.event then
@@ -78,6 +78,6 @@ else
 	end
 end
 
-add_task = _add_task;
-
-return _M;
+return {
+	add_task = _add_task;
+};

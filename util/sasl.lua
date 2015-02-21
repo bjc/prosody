@@ -19,7 +19,7 @@ local setmetatable = setmetatable;
 local assert = assert;
 local require = require;
 
-module "sasl"
+local _ENV = nil;
 
 --[[
 Authentication Backend Prototypes:
@@ -47,7 +47,7 @@ local backend_mechanism = {};
 local mechanism_channelbindings = {};
 
 -- register a new SASL mechanims
-function registerMechanism(name, backends, f, cb_backends)
+local function registerMechanism(name, backends, f, cb_backends)
 	assert(type(name) == "string", "Parameter name MUST be a string.");
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
 	assert(type(f) == "function", "Parameter f MUST be a function.");
@@ -66,7 +66,7 @@ function registerMechanism(name, backends, f, cb_backends)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-function new(realm, profile)
+local function new(realm, profile)
 	local mechanisms = profile.mechanisms;
 	if not mechanisms then
 		mechanisms = {};
@@ -138,4 +138,7 @@ require "util.sasl.anonymous" .init(registerMechanism);
 require "util.sasl.scram"     .init(registerMechanism);
 require "util.sasl.external"  .init(registerMechanism);
 
-return _M;
+return {
+	registerMechanism = registerMechanism;
+	new = new;
+};
