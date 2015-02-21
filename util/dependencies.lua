@@ -47,10 +47,10 @@ package.preload["util.ztact"] = function ()
 end;
 
 local function check_dependencies()
-	if _VERSION ~= "Lua 5.1" then
+	if _VERSION < "Lua 5.1" then
 		print "***********************************"
 		print("Unsupported Lua version: ".._VERSION);
-		print("Only Lua 5.1 is supported.");
+		print("At least Lua 5.1 is required.");
 		print "***********************************"
 		return false;
 	end
@@ -136,6 +136,9 @@ local function check_dependencies()
 end
 
 local function log_warnings()
+	if _VERSION > "Lua 5.1" then
+		log("warn", "Support for %s is experimental, please report any issues", _VERSION);
+	end
 	local ssl = softreq"ssl";
 	if ssl then
 		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
