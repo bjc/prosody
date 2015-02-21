@@ -24,9 +24,9 @@ local uuid_generate = require "util.uuid".generate;
 local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
 
-module "sessionmanager"
+local _ENV = nil;
 
-function new_session(conn)
+local function new_session(conn)
 	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
 	local filter = initialize_filters(session);
 	local w = conn.write;
@@ -57,7 +57,7 @@ local resting_session = { -- Resting, not dead
 		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
 
-function retire_session(session)
+local function retire_session(session)
 	local log = session.log or log; --luacheck: ignore 431/log
 	for k in pairs(session) do
 		if k ~= "log" and k ~= "id" then
@@ -71,7 +71,7 @@ function retire_session(session)
 	return setmetatable(session, resting_session);
 end
 
-function destroy_session(session, err)
+local function destroy_session(session, err)
 	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
 	if session.destroyed then return; end
 
@@ -99,7 +99,7 @@ function destroy_session(session, err)
 	retire_session(session);
 end
 
-function make_authenticated(session, username)
+local function make_authenticated(session, username)
 	username = nodeprep(username);
 	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
@@ -112,7 +112,7 @@ end
 
 -- returns true, nil on success
 -- returns nil, err_type, err, err_message on failure
-function bind_resource(session, resource)
+local function bind_resource(session, resource)
 	if not session.username then return nil, "auth", "not-authorized", "Cannot bind resource before authentication"; end
 	if session.resource then return nil, "cancel", "not-allowed", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
@@ -193,7 +193,7 @@ function bind_resource(session, resource)
 	return true;
 end
 
-function send_to_available_resources(username, host, stanza)
+local function send_to_available_resources(username, host, stanza)
 	local jid = username.."@"..host;
 	local count = 0;
 	local user = bare_sessions[jid];
@@ -208,7 +208,7 @@ function send_to_available_resources(username, host, stanza)
 	return count;
 end
 
-function send_to_interested_resources(username, host, stanza)
+local function send_to_interested_resources(username, host, stanza)
 	local jid = username.."@"..host;
 	local count = 0;
 	local user = bare_sessions[jid];
@@ -223,4 +223,12 @@ function send_to_interested_resources(username, host, stanza)
 	return count;
 end
 
-return _M;
+return {
+	new_session = new_session;
+	retire_session = retire_session;
+	destroy_session = destroy_session;
+	make_authenticated = make_authenticated;
+	bind_resource = bind_resource;
+	send_to_available_resources = send_to_available_resources;
+	send_to_interested_resources = send_to_interested_resources;
+};
