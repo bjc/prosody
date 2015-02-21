@@ -16,9 +16,9 @@ local coroutine, tostring, pcall = coroutine, tostring, pcall;
 
 local function dummy_send(sock, data, i, j) return (j-i)+1; end
 
-module "adns"
+local _ENV = nil;
 
-function lookup(handler, qname, qtype, qclass)
+local function lookup(handler, qname, qtype, qclass)
 	return coroutine.wrap(function (peek)
 				if peek then
 					log("debug", "Records for %s already cached, using those...", qname);
@@ -43,12 +43,12 @@ function lookup(handler, qname, qtype, qclass)
 			end)(dns.peek(qname, qtype, qclass));
 end
 
-function cancel(handle, call_handler, reason)
+local function cancel(handle, call_handler, reason)
 	log("warn", "Cancelling DNS lookup for %s", tostring(handle[3]));
 	dns.cancel(handle[1], handle[2], handle[3], handle[4], call_handler);
 end
 
-function new_async_socket(sock, resolver)
+local function new_async_socket(sock, resolver)
 	local peername = "<unknown>";
 	local listener = {};
 	local handler = {};
@@ -88,4 +88,8 @@ end
 
 dns.socket_wrapper_set(new_async_socket);
 
-return _M;
+return {
+	lookup = lookup;
+	cancel = cancel;
+	new_async_socket = new_async_socket;
+};

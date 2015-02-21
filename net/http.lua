@@ -24,7 +24,7 @@ local assert, error = assert, error
 
 local log = require "util.logger".init("http");
 
-module "http"
+local _ENV = nil;
 
 local requests = {}; -- Open requests
 
@@ -76,6 +76,13 @@ function listener.ondetach(conn)
 	requests[conn] = nil;
 end
 
+local function destroy_request(request)
+	if request.conn then
+		request.conn = nil;
+		request.handler:close()
+	end
+end
+
 local function request_reader(request, data, err)
 	if not request.parser then
 		local function error_cb(reason)
@@ -107,7 +114,7 @@ local function request_reader(request, data, err)
 end
 
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
-function request(u, ex, callback)
+local function request(u, ex, callback)
 	local req = url.parse(u);
 
 	if not (req and req.host) then
@@ -189,17 +196,12 @@ function request(u, ex, callback)
 	return req;
 end
 
-function destroy_request(request)
-	if request.conn then
-		request.conn = nil;
-		request.handler:close()
-	end
-end
-
-local urlencode, urldecode = util_http.urlencode, util_http.urldecode;
-local formencode, formdecode = util_http.formencode, util_http.formdecode;
-
-_M.urlencode, _M.urldecode = urlencode, urldecode;
-_M.formencode, _M.formdecode = formencode, formdecode;
-
-return _M;
+return {
+	request = request;
+	
+	-- COMPAT
+	urlencode = util_http.urlencode;
+	urldecode = util_http.urldecode;
+	formencode = util_http.formencode;
+	formdecode = util_http.formdecode;
+};
