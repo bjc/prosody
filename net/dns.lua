@@ -71,8 +71,8 @@ local get, set = ztact.get, ztact.set;
 local default_timeout = 15;
 
 -------------------------------------------------- module dns
-module('dns')
-local dns = _M;
+local _ENV = nil;
+local dns = {};
 
 
 -- dns type & class codes ------------------------------ dns type & class codes
