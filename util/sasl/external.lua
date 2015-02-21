@@ -1,6 +1,6 @@
 local saslprep = require "util.encodings".stringprep.saslprep;
 
-module "sasl.external"
+local _ENV = nil;
 
 local function external(self, message)
 	message = saslprep(message);
@@ -18,8 +18,10 @@ local function external(self, message)
 	return "success";
 end
 
-function init(registerMechanism)
+local function init(registerMechanism)
 	registerMechanism("EXTERNAL", {"external"}, external);
 end
 
-return _M;
+return {
+	init = init;
+}

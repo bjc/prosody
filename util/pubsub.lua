@@ -1,8 +1,6 @@
 local events = require "util.events";
 local t_remove = table.remove;
 
-module("pubsub", package.seeall);
-
 local service = {};
 local service_mt = { __index = service };
 
@@ -15,7 +13,7 @@ local default_node_config = { __index = {
 	["pubsub#max_items"] = "20";
 } };
 
-function new(config)
+local function new(config)
 	config = config or {};
 	return setmetatable({
 		config = setmetatable(config, default_config);
@@ -442,4 +440,6 @@ function service:set_node_config(node, actor, new_config)
 	return true;
 end
 
-return _M;
+return {
+	new = new;
+};

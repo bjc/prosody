@@ -24,7 +24,7 @@ local base64 = require "util.encodings".base64;
 local log = require "util.logger".init("x509");
 local s_format = string.format;
 
-module "x509"
+local _ENV = nil;
 
 local oid_commonname = "2.5.4.3"; -- [LDAP] 2.3
 local oid_subjectaltname = "2.5.29.17"; -- [PKIX] 4.2.1.6
@@ -147,7 +147,7 @@ local function compare_srvname(host, service, asserted_names)
 	return false
 end
 
-function verify_identity(host, service, cert)
+local function verify_identity(host, service, cert)
 	if cert.setencode then
 		cert:setencode("utf8");
 	end
@@ -218,7 +218,7 @@ end
 local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n"..
 "([0-9A-Za-z+/=\r\n]*)\r?\n%-%-%-%-%-END %1%-%-%-%-%-";
 
-function pem2der(pem)
+local function pem2der(pem)
 	local typ, data = pem:match(pat);
 	if typ and data then
 		return base64.decode(data), typ;
@@ -228,10 +228,14 @@ end
 local wrap = ('.'):rep(64);
 local envelope = "-----BEGIN %s-----\n%s\n-----END %s-----\n"
 
-function der2pem(data, typ)
+local function der2pem(data, typ)
 	typ = typ and typ:upper() or "CERTIFICATE";
 	data = base64.encode(data);
 	return s_format(envelope, typ, data:gsub(wrap, '%0\n', (#data-1)/64), typ);
 end
 
-return _M;
+return {
+	verify_identity = verify_identity;
+	pem2der = pem2der;
+	der2pem = der2pem;
+};

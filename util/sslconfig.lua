@@ -1,3 +1,11 @@
+local type = type;
+local pairs = pairs;
+local rawset = rawset;
+local t_concat = table.concat;
+local t_insert = table.insert;
+local setmetatable = setmetatable;
+
+local _ENV = nil;
 
 local handlers = { };
 local finalisers = { };
@@ -34,7 +42,7 @@ finalisers.verifyext = finalisers.options;
 
 function finalisers.ciphers(a)
 	if type(a) == "table" then
-		return table.concat(a, ":");
+		return t_concat(a, ":");
 	end
 	return a;
 end
@@ -47,7 +55,7 @@ local function protocol(a)
 	if min_protocol then
 		a.protocol = "sslv23";
 		for i = 1, min_protocol do
-			table.insert(a.options, "no_"..protocols[i]);
+			t_insert(a.options, "no_"..protocols[i]);
 		end
 	end
 end

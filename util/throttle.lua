@@ -3,7 +3,7 @@ local gettime = require "socket".gettime;
 local setmetatable = setmetatable;
 local floor = math.floor;
 
-module "throttle"
+local _ENV = nil;
 
 local throttle = {};
 local throttle_mt = { __index = throttle };
@@ -39,8 +39,10 @@ function throttle:poll(cost, split)
 	end
 end
 
-function create(max, period)
+local function create(max, period)
 	return setmetatable({ rate = max / period, max = max, t = 0, balance = max }, throttle_mt);
 end
 
-return _M;
+return {
+	create = create;
+};

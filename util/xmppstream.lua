@@ -24,7 +24,7 @@ local lxp_supports_bytecount = not not lxp.new({}).getcurrentbytecount;
 
 local default_stanza_size_limit = 1024*1024*10; -- 10MB
 
-module "xmppstream"
+local _ENV = nil;
 
 local new_parser = lxp.new;
 
@@ -40,12 +40,9 @@ local xmlns_streams = "http://etherx.jabber.org/streams";
 local ns_separator = "\1";
 local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 
-_M.ns_separator = ns_separator;
-_M.ns_pattern = ns_pattern;
-
 local function dummy_cb() end
 
-function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
+local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 	local xml_handlers = {};
 
 	local cb_streamopened = stream_callbacks.streamopened;
@@ -224,7 +221,7 @@ function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 	return xml_handlers, { reset = reset, set_session = set_session };
 end
 
-function new(session, stream_callbacks, stanza_size_limit)
+local function new(session, stream_callbacks, stanza_size_limit)
 	-- Used to track parser progress (e.g. to enforce size limits)
 	local n_outstanding_bytes = 0;
 	local handle_progress;
@@ -281,4 +278,9 @@ function new(session, stream_callbacks, stanza_size_limit)
 	};
 end
 
-return _M;
+return {
+	ns_separator = ns_separator;
+	ns_pattern = ns_pattern;
+	new_sax_handlers = new_sax_handlers;
+	new = new;
+};
