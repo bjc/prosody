@@ -13,7 +13,7 @@ local DBI = require "DBI";
 DBI.Drivers();
 local build_url = require "socket.url".build;
 
-module("sql")
+local _ENV = nil;
 
 local column_mt = {};
 local table_mt = {};
@@ -21,17 +21,17 @@ local query_mt = {};
 --local op_mt = {};
 local index_mt = {};
 
-function is_column(x) return getmetatable(x)==column_mt; end
-function is_index(x) return getmetatable(x)==index_mt; end
-function is_table(x) return getmetatable(x)==table_mt; end
-function is_query(x) return getmetatable(x)==query_mt; end
-function Integer(n) return "Integer()" end
-function String(n) return "String()" end
+local function is_column(x) return getmetatable(x)==column_mt; end
+local function is_index(x) return getmetatable(x)==index_mt; end
+local function is_table(x) return getmetatable(x)==table_mt; end
+local function is_query(x) return getmetatable(x)==query_mt; end
+local function Integer(n) return "Integer()" end
+local function String(n) return "String()" end
 
-function Column(definition)
+local function Column(definition)
 	return setmetatable(definition, column_mt);
 end
-function Table(definition)
+local function Table(definition)
 	local c = {}
 	for i,col in ipairs(definition) do
 		if is_column(col) then
@@ -42,7 +42,7 @@ function Table(definition)
 	end
 	return setmetatable({ __table__ = definition, c = c, name = definition.name }, table_mt);
 end
-function Index(definition)
+local function Index(definition)
 	return setmetatable(definition, index_mt);
 end
 
@@ -302,7 +302,7 @@ function engine:set_encoding() -- to UTF-8
 end
 local engine_mt = { __index = engine };
 
-function db2uri(params)
+local function db2uri(params)
 	return build_url{
 		scheme = params.driver,
 		user = params.username,
@@ -313,8 +313,19 @@ function db2uri(params)
 	};
 end
 
-function create_engine(self, params, onconnect)
+local function create_engine(self, params, onconnect)
 	return setmetatable({ url = db2uri(params), params = params, onconnect = onconnect }, engine_mt);
 end
 
-return _M;
+return {
+	is_column = is_column;
+	is_index = is_index;
+	is_table = is_table;
+	is_query = is_query;
+	Integer = Integer;
+	String = String;
+	Column = Column;
+	Table = Table;
+	Index = Index;
+	create_engine = create_engine;
+};

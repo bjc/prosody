@@ -13,7 +13,7 @@ local termcolours = require "util.termcolours";
 local getstring = termcolours.getstring;
 local styles;
 do
-	_ = termcolours.getstyle;
+	local _ = termcolours.getstyle;
 	styles = {
 		boundary_padding = _("bright");
 		filename         = _("bright", "blue");
@@ -22,9 +22,8 @@ do
 		location         = _("yellow");
 	};
 end
-module("debugx", package.seeall);
 
-function get_locals_table(thread, level)
+local function get_locals_table(thread, level)
 	local locals = {};
 	for local_num = 1, math.huge do
 		local name, value;
@@ -39,7 +38,7 @@ function get_locals_table(thread, level)
 	return locals;
 end
 
-function get_upvalues_table(func)
+local function get_upvalues_table(func)
 	local upvalues = {};
 	if func then
 		for upvalue_num = 1, math.huge do
@@ -51,7 +50,7 @@ function get_upvalues_table(func)
 	return upvalues;
 end
 
-function string_from_var_table(var_table, max_line_len, indent_str)
+local function string_from_var_table(var_table, max_line_len, indent_str)
 	local var_string = {};
 	local col_pos = 0;
 	max_line_len = max_line_len or math.huge;
@@ -87,7 +86,7 @@ function string_from_var_table(var_table, max_line_len, indent_str)
 	end
 end
 
-function get_traceback_table(thread, start_level)
+local function get_traceback_table(thread, start_level)
 	local levels = {};
 	for level = start_level, math.huge do
 		local info;
@@ -108,20 +107,12 @@ function get_traceback_table(thread, start_level)
 	return levels;
 end
 
-function traceback(...)
-	local ok, ret = pcall(_traceback, ...);
-	if not ok then
-		return "Error in error handling: "..ret;
-	end
-	return ret;
-end
-
 local function build_source_boundary_marker(last_source_desc)
 	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
 	return getstring(styles.boundary_padding, "v"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
 end
 
-function _traceback(thread, message, level)
+local function _traceback(thread, message, level)
 
 	-- Lua manual says: debug.traceback ([thread,] [message [, level]])
 	-- I fathom this to mean one of:
@@ -192,8 +183,23 @@ function _traceback(thread, message, level)
 	return message.."stack traceback:\n"..table.concat(lines, "\n");
 end
 
-function use()
+local function traceback(...)
+	local ok, ret = pcall(_traceback, ...);
+	if not ok then
+		return "Error in error handling: "..ret;
+	end
+	return ret;
+end
+
+local function use()
 	debug.traceback = traceback;
 end
 
-return _M;
+return {
+	get_locals_table = get_locals_table;
+	get_upvalues_table = get_upvalues_table;
+	string_from_var_table = string_from_var_table;
+	get_traceback_table = get_traceback_table;
+	traceback = traceback;
+	use = use;
+};

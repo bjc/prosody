@@ -19,7 +19,7 @@ if os.getenv("WINDIR") then
 end
 local orig_color = windows and windows.get_consolecolor and windows.get_consolecolor();
 
-module "termcolours"
+local _ENV = nil;
 
 local stylemap = {
 			reset = 0; bright = 1, dim = 2, underscore = 4, blink = 5, reverse = 7, hidden = 8;
@@ -45,7 +45,7 @@ local cssmap = {
 };
 
 local fmt_string = char(0x1B).."[%sm%s"..char(0x1B).."[0m";
-function getstring(style, text)
+local function getstring(style, text)
 	if style then
 		return format(fmt_string, style, text);
 	else
@@ -53,7 +53,7 @@ function getstring(style, text)
 	end
 end
 
-function getstyle(...)
+local function getstyle(...)
 	local styles, result = { ... }, {};
 	for i, style in ipairs(styles) do
 		style = stylemap[style];
@@ -65,7 +65,7 @@ function getstyle(...)
 end
 
 local last = "0";
-function setstyle(style)
+local function setstyle(style)
 	style = style or "0";
 	if style ~= last then
 		io_write("\27["..style.."m");
@@ -95,8 +95,13 @@ local function ansi2css(ansi_codes)
 	return "</span><span style='"..t_concat(css, ";").."'>";
 end
 
-function tohtml(input)
+local function tohtml(input)
 	return input:gsub("\027%[(.-)m", ansi2css);
 end
 
-return _M;
+return {
+	getstring = getstring;
+	getstyle = getstyle;
+	setstyle = setstyle;
+	tohtml = tohtml;
+};

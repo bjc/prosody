@@ -9,7 +9,7 @@ local debug = debug;
 local t_remove = table.remove;
 local parse_xml = require "util.xml".parse;
 
-module("template")
+local _ENV = nil;
 
 local function trim_xml(stanza)
 	for i=#stanza,1,-1 do
