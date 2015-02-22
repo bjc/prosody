@@ -48,6 +48,7 @@ if stats_interval then
 	end
 
 	timer.add_task(stats_interval, collect);
+	prosody.events.add_handler("server-started", function () collect() end, -1);
 else
 	log("debug", "Statistics collection is disabled");
 	-- nop
