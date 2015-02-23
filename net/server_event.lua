@@ -44,7 +44,7 @@ local setmetatable = use "setmetatable"
 local t_insert = table.insert
 local t_concat = table.concat
 
-local ssl = use "ssl"
+local has_luasec, ssl = pcall ( require , "ssl" )
 local socket = use "socket" or require "socket"
 
 local log = require ("util.logger").init("socket")
@@ -136,7 +136,7 @@ do
 					self:_close()
 					debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
 				else
-					if plainssl and ssl then  -- start ssl session
+					if plainssl and has_luasec then  -- start ssl session
 						self:starttls(self._sslctx, true)
 					else  -- normal connection
 						self:_start_session(true)
@@ -512,7 +512,7 @@ do
 			_sslctx = sslctx; -- parameters
 			_usingssl = false;  -- client is using ssl;
 		}
-		if not ssl then interface.starttls = false; end
+		if not has_luasec then interface.starttls = false; end
 		interface.id = tostring(interface):match("%x+$");
 		interface.writecallback = function( event )  -- called on write events
 			--vdebug( "new client write event, id/ip/port:", interface, ip, port )
@@ -695,7 +695,7 @@ do
 				interface._connections = interface._connections + 1  -- increase connection count
 				local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 				--vdebug( "client id:", clientinterface, "startssl:", startssl )
-				if ssl and sslctx then
+				if has_luasec and sslctx then
 					clientinterface:starttls(sslctx, true)
 				else
 					clientinterface:_start_session( true )
@@ -725,7 +725,7 @@ local addserver = ( function( )
 		end
 		local sslctx
 		if sslcfg then
-			if not ssl then
+			if not has_luasec then
 				debug "fatal error: luasec not found"
 				return nil, "luasec not found"
 			end
@@ -766,7 +766,7 @@ do
 		end
 		local sslctx
 		if sslcfg then  -- handle ssl/new context
-			if not ssl then
+			if not has_luasec then
 				debug "need luasec, but not available"
 				return nil, "luasec not found"
 			end
