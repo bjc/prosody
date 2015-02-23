@@ -48,13 +48,13 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local luasec = use "ssl"
+local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
 
 --// extern lib methods //--
 
-local ssl_wrap = ( luasec and luasec.wrap )
+local ssl_wrap = ( has_luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_sleep = luasocket.sleep
 local socket_select = luasocket.select
@@ -594,7 +594,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 		)
 	end
-	if luasec then
+	if has_luasec then
 		handler.starttls = function( self, _sslctx)
 			if _sslctx then
 				handler:set_sslctx(_sslctx);
@@ -647,7 +647,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
 
-	if sslctx and luasec then
+	if sslctx and has_luasec then
 		out_put "server.lua: auto-starting ssl negotiation..."
 		handler.autostart_ssl = true;
 		local ok, err = handler:starttls(sslctx);
@@ -731,7 +731,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		err = "invalid port"
 	elseif _server[ addr..":"..port ] then
 		err = "listeners on '[" .. addr .. "]:" .. port .. "' already exist"
-	elseif sslctx and not luasec then
+	elseif sslctx and not has_luasec then
 		err = "luasec not found"
 	end
 	if err then
