@@ -4,6 +4,7 @@
 
 PREFIX=/usr/local
 SYSCONFDIR="$PREFIX/etc/prosody"
+LIBDIR="$PREFIX/lib"
 DATADIR="$PREFIX/var/lib/prosody"
 LUA_SUFFIX=""
 LUA_DIR="/usr"
@@ -36,6 +37,8 @@ Configure Prosody prior to building.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
                             Default is \$PREFIX/etc/prosody
+--libdir=DIR                Location where the server files should be stored.
+                            Default is \$PREFIX/lib
 --datadir=DIR               Location where the server data should be stored.
                             Default is \$PREFIX/var/lib/prosody
 --lua-suffix=SUFFIX         Versioning suffix to use in Lua filenames.
@@ -133,6 +136,10 @@ do
         LUA_INCDIR="/usr/local/include";
       fi
       ;;
+   --libdir=*)
+      LIBDIR="$value"
+      LIBDIR_SET=yes
+      ;;
    --datadir=*)
    	DATADIR="$value"
    	DATADIR_SET=yes
@@ -204,6 +211,11 @@ then
    then DATADIR=/var/lib/prosody
    else DATADIR=$PREFIX/var/lib/prosody
    fi
+fi
+
+if [ "$PREFIX_SET" = "yes" -a ! "$LIBDIR_SET" = "yes" ]
+then
+   LIBDIR=$PREFIX/lib
 fi
 
 find_program() {
@@ -337,6 +349,7 @@ cat <<EOF > config.unix
 
 PREFIX=$PREFIX
 SYSCONFDIR=$SYSCONFDIR
+LIBDIR=$LIBDIR
 DATADIR=$DATADIR
 LUA_SUFFIX=$LUA_SUFFIX
 LUA_DIR=$LUA_DIR
