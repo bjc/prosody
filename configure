@@ -138,6 +138,7 @@ do
       ;;
    --libdir=*)
       LIBDIR="$value"
+      LIBDIR_SET=yes
       ;;
    --datadir=*)
    	DATADIR="$value"
@@ -210,6 +211,11 @@ then
    then DATADIR=/var/lib/prosody
    else DATADIR=$PREFIX/var/lib/prosody
    fi
+fi
+
+if [ "$PREFIX_SET" = "yes" -a ! "$LIBDIR_SET" = "yes" ]
+then
+   LIBDIR=$PREFIX/lib
 fi
 
 find_program() {
