@@ -3,13 +3,13 @@ include ../../config.unix
 
 BIN = $(DESTDIR)$(PREFIX)/bin
 CONFIG = $(DESTDIR)$(SYSCONFDIR)
-SOURCE = $(DESTDIR)$(PREFIX)/lib/prosody
+SOURCE = $(DESTDIR)$(LIBDIR)/prosody
 DATA = $(DESTDIR)$(DATADIR)
 MAN = $(DESTDIR)$(PREFIX)/share/man
 
-INSTALLEDSOURCE = $(PREFIX)/lib/prosody
+INSTALLEDSOURCE = $(LIBDIR)/prosody
 INSTALLEDCONFIG = $(SYSCONFDIR)
-INSTALLEDMODULES = $(PREFIX)/lib/prosody/modules
+INSTALLEDMODULES = $(LIBDIR)/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
 SOURCE_FILES = migrator/*.lua
