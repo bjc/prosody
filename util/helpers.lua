@@ -12,14 +12,6 @@ local debug = require "util.debug";
 
 local log = require "util.logger".init("util.debug");
 
-local function log_host_events(host)
-	return log_events(prosody.hosts[host].events, host);
-end
-
-local function revert_log_host_events(host)
-	return revert_log_events(prosody.hosts[host].events);
-end
-
 local function log_events(events, name, logger)
 	local f = events.fire_event;
 	if not f then
@@ -37,6 +29,14 @@ end
 
 local function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
+end
+
+local function log_host_events(host)
+	return log_events(prosody.hosts[host].events, host);
+end
+
+local function revert_log_host_events(host)
+	return revert_log_events(prosody.hosts[host].events);
 end
 
 local function show_events(events, specific_event)
