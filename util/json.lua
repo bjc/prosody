@@ -13,7 +13,7 @@ local tostring, tonumber = tostring, tonumber;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
 local error = error;
-local newproxy, getmetatable, setmetatable = newproxy, getmetatable, setmetatable;
+local getmetatable, setmetatable = getmetatable, setmetatable;
 local print = print;
 
 local has_array, array = pcall(require, "util.array");
@@ -22,10 +22,7 @@ local array_mt = has_array and getmetatable(array()) or {};
 --module("json")
 local json = {};
 
-local null = newproxy and newproxy(true) or {};
-if getmetatable and getmetatable(null) then
-	getmetatable(null).__tostring = function() return "null"; end;
-end
+local null = setmetatable({}, { __tostring = function() return "null"; end; });
 json.null = null;
 
 local escapes = {
