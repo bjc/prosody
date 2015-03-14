@@ -102,6 +102,7 @@ function module.add_host(module)
 				end
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = handler;
+					module:log("debug", "Adding app '%s' to handle %s", app_name, event_name);
 					module:hook_object_event(server, event_name, handler);
 				else
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
