@@ -6,6 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
+local io = require "io"
 local string_byte, string_char = string.byte, string.char;
 local t_concat, t_insert = table.concat, table.insert;
 local type, tonumber, tostring = type, tonumber, tostring;
