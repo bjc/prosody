@@ -84,7 +84,6 @@ function module.add_host(module)
 		local app_name = event.item.name;
 		local default_app_path = event.item.default_path or "/"..app_name;
 		local app_path = get_base_path(module, app_name, default_app_path);
-		module:log("debug", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
 		if not app_name then
 			-- TODO: Link to docs
 			module:log("error", "HTTP app has no 'name', add one or use module:provides('http', app)");
