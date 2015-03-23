@@ -49,4 +49,4 @@ Should fail: F0 8F BF BF            # Overlong
 Should fail: F8 87 BF BF BF         # Overlong
 Should fail: FC 83 BF BF BF BF      # Overlong
 Should pass: EF BF BE               # U+FFFE (invalid unicode, valid UTF-8)
-Should fail: EF BF BF               # U+FFFF (invalid unicode, valid UTF-8)
+Should pass: EF BF BF               # U+FFFF (invalid unicode, valid UTF-8)
