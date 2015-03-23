@@ -69,6 +69,8 @@ function moduleapi.http_url(module, app_name, default_path)
 			return url_build(url);
 		end
 	end
+	module:log("warn", "No http ports enabled, can't generate an external URL");
+	return "http://disabled.invalid/";
 end
 
 function module.add_host(module)
