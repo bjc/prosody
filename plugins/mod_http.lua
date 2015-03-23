@@ -110,6 +110,12 @@ function module.add_host(module)
 				module:log("error", "Invalid route in %s, %q. See http://prosody.im/doc/developers/http#routes", app_name, key);
 			end
 		end
+		local services = portmanager.get_active_services();
+		if services:get("https") or services:get("http") then
+			module:log("debug", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
+		else
+			module:log("warn", "Not listening on any ports, '%s' will be unreachable", app_name);
+		end
 	end
 	
 	local function http_app_removed(event)
