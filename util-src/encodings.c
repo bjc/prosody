@@ -1,6 +1,7 @@
 /* Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
+-- Copyright (C) 1994-2015 Lua.org, PUC-Rio.
 -- 
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -116,6 +117,65 @@ static const luaL_Reg Reg_base64[] =
 	{ NULL,		NULL	}
 };
 
+/******************* UTF-8 ********************/
+
+/*
+ * Adapted from Lua 5.3
+ * Needed because libidn does not validate that input is valid UTF-8
+ */
+
+#define MAXUNICODE	0x10FFFF
+
+/*
+ * Decode one UTF-8 sequence, returning NULL if byte sequence is invalid.
+ */
+static const char *utf8_decode (const char *o, int *val) {
+	static unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
+	const unsigned char *s = (const unsigned char *)o;
+	unsigned int c = s[0];
+	unsigned int res = 0;  /* final result */
+	if (c < 0x80)  /* ascii? */
+		res = c;
+	else {
+		int count = 0;  /* to count number of continuation bytes */
+		while (c & 0x40) {  /* still have continuation bytes? */
+			int cc = s[++count];  /* read next byte */
+			if ((cc & 0xC0) != 0x80)  /* not a continuation byte? */
+				return NULL;  /* invalid byte sequence */
+			res = (res << 6) | (cc & 0x3F);  /* add lower 6 bits from cont. byte */
+			c <<= 1;  /* to test next bit */
+		}
+		res |= ((c & 0x7F) << (count * 5));  /* add first byte */
+		if (count > 3 || res > MAXUNICODE || res <= limits[count] || (0xd800 <= res && res <= 0xdfff) )
+			return NULL;  /* invalid byte sequence */
+		s += count;  /* skip continuation bytes read */
+	}
+	if (val) *val = res;
+	return (const char *)s + 1;  /* +1 to include first byte */
+}
+
+/*
+ * Check that a string is valid UTF-8
+ * Returns NULL if not
+ */
+const char* check_utf8 (lua_State *L, int idx, size_t *l) {
+	size_t pos, len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	pos = 0;
+	while (pos <= len) {
+		const char *s1 = utf8_decode(s + pos, NULL);
+		if (s1 == NULL) {  /* conversion error? */
+			return NULL;
+		}
+		pos = s1 - s;
+	}
+	if(l != NULL) {
+		*l = len;
+	}
+	return s;
+}
+
+
 /***************** STRINGPREP *****************/
 #ifdef USE_STRINGPREP_ICU
 
@@ -212,8 +272,8 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile)
 		lua_pushnil(L);
 		return 1;
 	}
-	s = lua_tolstring(L, 1, &len);
-	if (len >= 1024) {
+	s = check_utf8(L, 1, &len);
+	if (s == NULL || len >= 1024 || len != strlen(s)) {
 		lua_pushnil(L);
 		return 1; /* TODO return error message */
 	}
@@ -320,7 +380,11 @@ static int Lidna_to_unicode(lua_State *L)		/** idna.to_unicode(s) */
 static int Lidna_to_ascii(lua_State *L)		/** idna.to_ascii(s) */
 {
 	size_t len;
-	const char *s = luaL_checklstring(L, 1, &len);
+	const char *s = check_utf8(L, 1, &len);
+	if (s == NULL || len != strlen(s)) {
+		lua_pushnil(L);
+		return 1; /* TODO return error message */
+	}
 	char* output = NULL;
 	int ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
 	if (ret == IDNA_SUCCESS) {
