@@ -175,6 +175,29 @@ const char* check_utf8 (lua_State *L, int idx, size_t *l) {
 	return s;
 }
 
+static int Lutf8_valid(lua_State *L) {
+	lua_pushboolean(L, check_utf8(L, 1, NULL) != NULL);
+	return 1;
+}
+
+static int Lutf8_length(lua_State *L) {
+	size_t len;
+	if(!check_utf8(L, 1, &len)) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "invalid utf8");
+		return 2;
+	}
+	lua_pushinteger(L, len);
+	return 1;
+}
+
+static const luaL_Reg Reg_utf8[] =
+{
+	{ "valid",	Lutf8_valid	},
+	{ "length",	Lutf8_length	},
+	{ NULL,		NULL	}
+};
+
 
 /***************** STRINGPREP *****************/
 #ifdef USE_STRINGPREP_ICU
@@ -451,6 +474,11 @@ LUALIB_API int luaopen_util_encodings(lua_State *L)
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg_idna);
 	lua_settable(L,-3);
+
+	lua_pushliteral(L, "utf8");
+	lua_newtable(L);
+	luaL_register(L, NULL, Reg_utf8);
+	lua_settable(L, -3);
 
 	lua_pushliteral(L, "version");			/** version */
 	lua_pushliteral(L, "-3.14");
