@@ -512,7 +512,7 @@ function session_open_stream(session, from, to)
 		version = session.version and (session.version > 0 and "1.0" or nil),
 		["xml:lang"] = 'en',
 		id = session.streamid,
-		from = from, to = to,
+		from = from or "", to = to or "",
 	}
 	if not from or (hosts[from] and hosts[from].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
