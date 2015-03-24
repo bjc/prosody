@@ -28,6 +28,7 @@ if stats_interval then
 
 	function collect()
 		local mark_collection_done = mark_collection_start();
+		fire_event("stats-update");
 		changed_stats, stats_extra = {}, {};
 		for stat_name, getter in pairs(stats.get_stats()) do
 			local type, value, extra = getter();
