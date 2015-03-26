@@ -452,40 +452,30 @@ static const luaL_Reg Reg_idna[] =
 
 /***************** end *****************/
 
-static const luaL_Reg Reg[] =
-{
-	{ NULL,		NULL	}
-};
-
 LUALIB_API int luaopen_util_encodings(lua_State *L)
 {
 #ifdef USE_STRINGPREP_ICU
 	init_icu();
 #endif
-	luaL_register(L, "encodings", Reg);
+	lua_newtable(L);
 
-	lua_pushliteral(L, "base64");
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg_base64);
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "base64");
 
-	lua_pushliteral(L, "stringprep");
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg_stringprep);
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "stringprep");
 
-	lua_pushliteral(L, "idna");
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg_idna);
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "idna");
 
-	lua_pushliteral(L, "utf8");
 	lua_newtable(L);
 	luaL_register(L, NULL, Reg_utf8);
-	lua_settable(L, -3);
+	lua_setfield(L, -2, "utf8");
 
-	lua_pushliteral(L, "version");			/** version */
 	lua_pushliteral(L, "-3.14");
-	lua_settable(L,-3);
+	lua_setfield(L, -2, "version");
 	return 1;
 }
