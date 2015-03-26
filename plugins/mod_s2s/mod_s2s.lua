@@ -499,6 +499,12 @@ function session_stream_attrs(session, from, to, attr)
 	if not from or (hosts[from] and hosts[from].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
+	if not from then
+		attr.from = '';
+	end
+	if not to then
+		attr.to = '';
+	end
 end
 
 -- Session initialization logic shared by incoming and outgoing
