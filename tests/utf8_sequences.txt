@@ -1,0 +1,52 @@
+Should pass: 41 42 43               # Simple ASCII - abc
+Should pass: 41 42 c3 87            # "ABÇ"
+Should pass: 41 42 e1 b8 88         # "ABḈ"
+Should pass: 41 42 f0 9d 9c 8d      # "AB𝜍"
+Should pass: F4 8F BF BF            # Last valid sequence (U+10FFFF)
+Should fail: F4 90 80 80            # First invalid sequence (U+110000)
+Should fail: 80 81 82 83            # Invalid sequence (invalid start byte)
+Should fail: C2 C3                  # Invalid sequence (invalid continuation byte)
+Should fail: C0 43                  # Overlong sequence
+Should fail: F5 80 80 80            # U+140000 (out of range)
+Should fail: ED A0 80               # U+D800 (forbidden by RFC 3629)
+Should fail: ED BF BF               # U+DFFF (forbidden by RFC 3629)
+Should pass: ED 9F BF               # U+D7FF (U+D800 minus 1: allowed)
+Should pass: EE 80 80               # U+E000 (U+D7FF plus 1: allowed)
+Should fail: C0                     # Invalid start byte
+Should fail: C1                     # Invalid start byte
+Should fail: C2                     # Incomplete sequence
+Should fail: F8 88 80 80 80         # 6-byte sequence
+Should pass: 7F                     # Last valid 1-byte sequence (U+00007F)
+Should pass: DF BF                  # Last valid 2-byte sequence (U+0007FF)
+Should pass: EF BF BF               # Last valid 3-byte sequence (U+00FFFF)
+Should pass: 00                     # First valid 1-byte sequence (U+000000)
+Should pass: C2 80                  # First valid 2-byte sequence (U+000080)
+Should pass: E0 A0 80               # First valid 3-byte sequence (U+000800)
+Should pass: F0 90 80 80            # First valid 4-byte sequence (U+000800)
+Should fail: F8 88 80 80 80         # First 5-byte sequence - invalid per RFC 3629
+Should fail: FC 84 80 80 80 80      # First 6-byte sequence - invalid per RFC 3629
+Should pass: EF BF BD               # U+00FFFD (replacement character)
+Should fail: 80                     # First continuation byte
+Should fail: BF                     # Last continuation byte
+Should fail: 80 BF                  # 2 continuation bytes
+Should fail: 80 BF 80               # 3 continuation bytes
+Should fail: 80 BF 80 BF            # 4 continuation bytes
+Should fail: 80 BF 80 BF 80         # 5 continuation bytes
+Should fail: 80 BF 80 BF 80 BF      # 6 continuation bytes
+Should fail: 80 BF 80 BF 80 BF 80   # 7 continuation bytes
+Should fail: FE                     # Impossible byte
+Should fail: FF                     # Impossible byte
+Should fail: FE FE FF FF            # Impossible bytes
+Should fail: C0 AF                  # Overlong "/"
+Should fail: E0 80 AF               # Overlong "/"
+Should fail: F0 80 80 AF            # Overlong "/"
+Should fail: F8 80 80 80 AF         # Overlong "/"
+Should fail: FC 80 80 80 80 AF      # Overlong "/"
+Should fail: C0 80 AF               # Overlong "/" (invalid)
+Should fail: C1 BF                  # Overlong
+Should fail: E0 9F BF               # Overlong
+Should fail: F0 8F BF BF            # Overlong
+Should fail: F8 87 BF BF BF         # Overlong
+Should fail: FC 83 BF BF BF BF      # Overlong
+Should pass: EF BF BE               # U+FFFE (invalid unicode, valid UTF-8)
+Should pass: EF BF BF               # U+FFFF (invalid unicode, valid UTF-8)
