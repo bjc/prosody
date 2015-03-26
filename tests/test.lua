@@ -22,6 +22,7 @@ function run_all_tests()
 	dotest "util.sasl.scram"
 
 	dosingletest("test_sasl.lua", "latin1toutf8");
+	dosingletest("test_utf8.lua", "valid");
 end
 
 local verbosity = tonumber(arg[1]) or 2;
