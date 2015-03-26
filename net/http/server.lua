@@ -189,7 +189,6 @@ function handle_request(conn, request, finish_cb)
 		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
-		done = _M.finish_response;
 		finish_cb = finish_cb;
 	};
 	conn._http_open_response = response;
@@ -209,7 +208,7 @@ function handle_request(conn, request, finish_cb)
 			err_code, err = 400, "Missing or invalid 'Host' header";
 		end
 	end
-
+	
 	if err then
 		response.status_code = err_code;
 		response:send(events.fire_event("http-error", { code = err_code, message = err }));
@@ -218,7 +217,7 @@ function handle_request(conn, request, finish_cb)
 
 	local event = request.method.." "..host..request.path:match("[^?]*");
 	local payload = { request = request, response = response };
-	log("debug", event);
+	log("debug", "Firing event: %s", event);
 	local result = events.fire_event(event, payload);
 	if result ~= nil then
 		if result ~= true then
@@ -251,30 +250,24 @@ function handle_request(conn, request, finish_cb)
 	response.status_code = 404;
 	response:send(events.fire_event("http-error", { code = 404 }));
 end
-local function prepare_header(response)
+function _M.send_response(response, body)
+	if response.finished then return; end
+	response.finished = true;
+	response.conn._http_open_response = nil;
+	
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
+	body = body or response.body or "";
+	headers.content_length = #body;
+
 	local output = { status_line };
 	for k,v in pairs(headers) do
 		t_insert(output, headerfix[k]..v);
 	end
 	t_insert(output, "\r\n\r\n");
-	return output;
-end
-_M.prepare_header = prepare_header;
-function _M.send_response(response, body)
-	if response.finished then return; end
-	body = body or response.body or "";
-	response.headers.content_length = #body;
-	local output = prepare_header(response);
 	t_insert(output, body);
+
 	response.conn:write(t_concat(output));
-	response:done();
-end
-function _M.finish_response(response)
-	if response.finished then return; end
-	response.finished = true;
-	response.conn._http_open_response = nil;
 	if response.on_destroy then
 		response:on_destroy();
 		response.on_destroy = nil;
