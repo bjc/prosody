@@ -475,7 +475,6 @@ LUALIB_API int luaopen_util_encodings(lua_State *L)
 	luaL_register(L, NULL, Reg_utf8);
 	lua_setfield(L, -2, "utf8");
 
-	lua_pushliteral(L, "version");			/** version */
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
 	return 1;
