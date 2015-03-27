@@ -962,7 +962,7 @@ function def_env.muc:room(room_jid)
 	if not room_name then
 		return room_name, host;
 	end
-	local room_obj = hosts[host].modules.muc.rooms[room_jid];
+	local room_obj = hosts[host].modules.muc.get_room_from_jid(room_jid);
 	if not room_obj then
 		return nil, "No such room: "..room_jid;
 	end
@@ -976,8 +976,8 @@ function def_env.muc:list(host)
 	end
 	local print = self.session.print;
 	local c = 0;
-	for name in keys(host_session.modules.muc.rooms) do
-		print(name);
+	for room in host_session.modules.muc.each_room() do
+		print(room.jid);
 		c = c + 1;
 	end
 	return true, c.." rooms";
