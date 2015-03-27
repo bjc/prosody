@@ -114,7 +114,7 @@ end
 -- returns nil, err_type, err, err_message on failure
 function bind_resource(session, resource)
 	if not session.username then return nil, "auth", "not-authorized", "Cannot bind resource before authentication"; end
-	if session.resource then return nil, "cancel", "already-bound", "Cannot bind multiple resources on a single connection"; end
+	if session.resource then return nil, "cancel", "not-allowed", "Cannot bind multiple resources on a single connection"; end
 	-- We don't support binding multiple resources
 
 	local event_payload = { session = session, resource = resource };
