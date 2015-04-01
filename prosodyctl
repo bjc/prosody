@@ -552,6 +552,7 @@ function commands.about(arg)
 			if not hgid and hgrepo then
 				return path.." - "..hgrepo .."!\n  ";
 			end
+			-- 010452cfaf53 is the first commit in the prosody-modules repository
 			hgrepo = hgrepo == "010452cfaf53" and "prosody-modules";
 			return path..(hgid and " - "..(hgrepo or "HG").." rev: "..hgid or "")
 				.."\n  ";
