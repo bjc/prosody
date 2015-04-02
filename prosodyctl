@@ -1094,7 +1094,7 @@ function commands.check(arg)
 		local x509_verify_identity = require"util.x509".verify_identity;
 		local ssl = dependencies.softreq"ssl";
 		-- local datetime_parse = require"util.datetime".parse_x509;
-		local load_cert = ssl and ssl.x509 and ssl.x509.load;
+		local load_cert = ssl and ssl.loadcertificate;
 		-- or ssl.cert_from_pem
 		if not ssl then
 			print("LuaSec not available, can't perform certificate checks")
