@@ -6,7 +6,7 @@ static int Lcreate_table(lua_State* L) {
 	return 1;
 }
 
-int luaopen_util_table(lua_State *L) {
+int luaopen_util_table(lua_State* L) {
 	lua_newtable(L);
 	lua_pushcfunction(L, Lcreate_table);
 	lua_setfield(L, -2, "create");
