@@ -55,8 +55,8 @@ end
 prosody_events.add_handler("server-starting", load_enabled_hosts);
 
 local function host_send(stanza)
-	local name, type = stanza.name, stanza.attr.type;
-	if type == "error" or (name == "iq" and type == "result") then
+	local name, stanza_type = stanza.name, stanza.attr.type;
+	if stanza_type == "error" or (name == "iq" and stanza_type == "result") then
 		local dest_host_name = select(2, jid_split(stanza.attr.to));
 		local dest_host = hosts[dest_host_name] or { type = "unknown" };
 		log("warn", "Unhandled response sent to %s host %s: %s", dest_host.type, dest_host_name, tostring(stanza));
