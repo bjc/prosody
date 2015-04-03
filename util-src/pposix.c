@@ -45,34 +45,29 @@
 #endif
 
 #if (defined(_SVID_SOURCE) && !defined(WITHOUT_MALLINFO))
-	#include <malloc.h>
-	#define WITH_MALLINFO
+#include <malloc.h>
+#define WITH_MALLINFO
 #endif
 
 /* Daemonization support */
 
-static int lc_daemonize(lua_State *L)
-{
+static int lc_daemonize(lua_State* L) {
 
 	pid_t pid;
 
-	if ( getppid() == 1 )
-	{
+	if(getppid() == 1) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "already-daemonized");
 		return 2;
 	}
 
 	/* Attempt initial fork */
-	if((pid = fork()) < 0)
-	{
+	if((pid = fork()) < 0) {
 		/* Forking failed */
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "fork-failed");
 		return 2;
-	}
-	else if(pid != 0)
-	{
+	} else if(pid != 0) {
 		/* We are the parent process */
 		lua_pushboolean(L, 1);
 		lua_pushnumber(L, pid);
@@ -80,8 +75,7 @@ static int lc_daemonize(lua_State *L)
 	}
 
 	/* and we are the child process */
-	if(setsid() == -1)
-	{
+	if(setsid() == -1) {
 		/* We failed to become session leader */
 		/* (we probably already were) */
 		lua_pushboolean(L, 0);
@@ -99,8 +93,9 @@ static int lc_daemonize(lua_State *L)
 	open("/dev/null", O_WRONLY);
 
 	/* Final fork, use it wisely */
-	if(fork())
+	if(fork()) {
 		exit(0);
+	}
 
 	/* Show's over, let's continue */
 	lua_pushboolean(L, 1);
@@ -110,59 +105,59 @@ static int lc_daemonize(lua_State *L)
 
 /* Syslog support */
 
-const char * const facility_strings[] = {
-					"auth",
+const char* const facility_strings[] = {
+	"auth",
 #if !(defined(sun) || defined(__sun))
-					"authpriv",
+	"authpriv",
 #endif
-					"cron",
-					"daemon",
+	"cron",
+	"daemon",
 #if !(defined(sun) || defined(__sun))
-					"ftp",
+	"ftp",
 #endif
-					"kern",
-					"local0",
-					"local1",
-					"local2",
-					"local3",
-					"local4",
-					"local5",
-					"local6",
-					"local7",
-					"lpr",
-					"mail",
-					"syslog",
-					"user",
-					"uucp",
-					NULL
-				};
+	"kern",
+	"local0",
+	"local1",
+	"local2",
+	"local3",
+	"local4",
+	"local5",
+	"local6",
+	"local7",
+	"lpr",
+	"mail",
+	"syslog",
+	"user",
+	"uucp",
+	NULL
+};
 int facility_constants[] =	{
-					LOG_AUTH,
+	LOG_AUTH,
 #if !(defined(sun) || defined(__sun))
-					LOG_AUTHPRIV,
+	LOG_AUTHPRIV,
 #endif
-					LOG_CRON,
-					LOG_DAEMON,
+	LOG_CRON,
+	LOG_DAEMON,
 #if !(defined(sun) || defined(__sun))
-					LOG_FTP,
+	LOG_FTP,
 #endif
-					LOG_KERN,
-					LOG_LOCAL0,
-					LOG_LOCAL1,
-					LOG_LOCAL2,
-					LOG_LOCAL3,
-					LOG_LOCAL4,
-					LOG_LOCAL5,
-					LOG_LOCAL6,
-					LOG_LOCAL7,
-					LOG_LPR,
-					LOG_MAIL,
-					LOG_NEWS,
-					LOG_SYSLOG,
-					LOG_USER,
-					LOG_UUCP,
-					-1
-				};
+	LOG_KERN,
+	LOG_LOCAL0,
+	LOG_LOCAL1,
+	LOG_LOCAL2,
+	LOG_LOCAL3,
+	LOG_LOCAL4,
+	LOG_LOCAL5,
+	LOG_LOCAL6,
+	LOG_LOCAL7,
+	LOG_LPR,
+	LOG_MAIL,
+	LOG_NEWS,
+	LOG_SYSLOG,
+	LOG_USER,
+	LOG_UUCP,
+	-1
+};
 
 /* "
        The parameter ident in the call of openlog() is probably stored  as-is.
@@ -174,15 +169,15 @@ int facility_constants[] =	{
 */
 char* syslog_ident = NULL;
 
-int lc_syslog_open(lua_State* L)
-{
+int lc_syslog_open(lua_State* L) {
 	int facility = luaL_checkoption(L, 2, "daemon", facility_strings);
 	facility = facility_constants[facility];
 
 	luaL_checkstring(L, 1);
 
-	if(syslog_ident)
+	if(syslog_ident) {
 		free(syslog_ident);
+	}
 
 	syslog_ident = strdup(lua_tostring(L, 1));
 
@@ -190,53 +185,52 @@ int lc_syslog_open(lua_State* L)
 	return 0;
 }
 
-const char * const level_strings[] = {
-				"debug",
-				"info",
-				"notice",
-				"warn",
-				"error",
-				NULL
-			};
+const char* const level_strings[] = {
+	"debug",
+	"info",
+	"notice",
+	"warn",
+	"error",
+	NULL
+};
 int level_constants[] = 	{
-				LOG_DEBUG,
-				LOG_INFO,
-				LOG_NOTICE,
-				LOG_WARNING,
-				LOG_CRIT,
-				-1
-			};
-int lc_syslog_log(lua_State* L)
-{
+	LOG_DEBUG,
+	LOG_INFO,
+	LOG_NOTICE,
+	LOG_WARNING,
+	LOG_CRIT,
+	-1
+};
+int lc_syslog_log(lua_State* L) {
 	int level = level_constants[luaL_checkoption(L, 1, "notice", level_strings)];
 
-	if(lua_gettop(L) == 3)
+	if(lua_gettop(L) == 3) {
 		syslog(level, "%s: %s", luaL_checkstring(L, 2), luaL_checkstring(L, 3));
-	else
+	} else {
 		syslog(level, "%s", lua_tostring(L, 2));
+	}
 
 	return 0;
 }
 
-int lc_syslog_close(lua_State* L)
-{
+int lc_syslog_close(lua_State* L) {
 	closelog();
-	if(syslog_ident)
-	{
+
+	if(syslog_ident) {
 		free(syslog_ident);
 		syslog_ident = NULL;
 	}
+
 	return 0;
 }
 
-int lc_syslog_setmask(lua_State* L)
-{
+int lc_syslog_setmask(lua_State* L) {
 	int level_idx = luaL_checkoption(L, 1, "notice", level_strings);
 	int mask = 0;
-	do
-	{
+
+	do {
 		mask |= LOG_MASK(level_constants[level_idx]);
-	} while (++level_idx<=4);
+	} while(++level_idx <= 4);
 
 	setlogmask(mask);
 	return 0;
@@ -244,72 +238,67 @@ int lc_syslog_setmask(lua_State* L)
 
 /* getpid */
 
-int lc_getpid(lua_State* L)
-{
+int lc_getpid(lua_State* L) {
 	lua_pushinteger(L, getpid());
 	return 1;
 }
 
 /* UID/GID functions */
 
-int lc_getuid(lua_State* L)
-{
+int lc_getuid(lua_State* L) {
 	lua_pushinteger(L, getuid());
 	return 1;
 }
 
-int lc_getgid(lua_State* L)
-{
+int lc_getgid(lua_State* L) {
 	lua_pushinteger(L, getgid());
 	return 1;
 }
 
-int lc_setuid(lua_State* L)
-{
+int lc_setuid(lua_State* L) {
 	int uid = -1;
-	if(lua_gettop(L) < 1)
+
+	if(lua_gettop(L) < 1) {
 		return 0;
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1))
-	{
+	}
+
+	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
 		/* Passed UID is actually a string, so look up the UID */
-		struct passwd *p;
+		struct passwd* p;
 		p = getpwnam(lua_tostring(L, 1));
-		if(!p)
-		{
+
+		if(!p) {
 			lua_pushboolean(L, 0);
 			lua_pushstring(L, "no-such-user");
 			return 2;
 		}
+
 		uid = p->pw_uid;
-	}
-	else
-	{
+	} else {
 		uid = lua_tonumber(L, 1);
 	}
 
-	if(uid>-1)
-	{
+	if(uid > -1) {
 		/* Ok, attempt setuid */
 		errno = 0;
-		if(setuid(uid))
-		{
+
+		if(setuid(uid)) {
 			/* Fail */
 			lua_pushboolean(L, 0);
-			switch(errno)
-			{
-			case EINVAL:
-				lua_pushstring(L, "invalid-uid");
-				break;
-			case EPERM:
-				lua_pushstring(L, "permission-denied");
-				break;
-			default:
-				lua_pushstring(L, "unknown-error");
+
+			switch(errno) {
+				case EINVAL:
+					lua_pushstring(L, "invalid-uid");
+					break;
+				case EPERM:
+					lua_pushstring(L, "permission-denied");
+					break;
+				default:
+					lua_pushstring(L, "unknown-error");
 			}
+
 			return 2;
-		}
-		else
-		{
+		} else {
 			/* Success! */
 			lua_pushboolean(L, 1);
 			return 1;
@@ -322,52 +311,50 @@ int lc_setuid(lua_State* L)
 	return 2;
 }
 
-int lc_setgid(lua_State* L)
-{
+int lc_setgid(lua_State* L) {
 	int gid = -1;
-	if(lua_gettop(L) < 1)
+
+	if(lua_gettop(L) < 1) {
 		return 0;
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1))
-	{
+	}
+
+	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
 		/* Passed GID is actually a string, so look up the GID */
-		struct group *g;
+		struct group* g;
 		g = getgrnam(lua_tostring(L, 1));
-		if(!g)
-		{
+
+		if(!g) {
 			lua_pushboolean(L, 0);
 			lua_pushstring(L, "no-such-group");
 			return 2;
 		}
+
 		gid = g->gr_gid;
-	}
-	else
-	{
+	} else {
 		gid = lua_tonumber(L, 1);
 	}
 
-	if(gid>-1)
-	{
+	if(gid > -1) {
 		/* Ok, attempt setgid */
 		errno = 0;
-		if(setgid(gid))
-		{
+
+		if(setgid(gid)) {
 			/* Fail */
 			lua_pushboolean(L, 0);
-			switch(errno)
-			{
-			case EINVAL:
-				lua_pushstring(L, "invalid-gid");
-				break;
-			case EPERM:
-				lua_pushstring(L, "permission-denied");
-				break;
-			default:
-				lua_pushstring(L, "unknown-error");
+
+			switch(errno) {
+				case EINVAL:
+					lua_pushstring(L, "invalid-gid");
+					break;
+				case EPERM:
+					lua_pushstring(L, "permission-denied");
+					break;
+				default:
+					lua_pushstring(L, "unknown-error");
 			}
+
 			return 2;
-		}
-		else
-		{
+		} else {
 			/* Success! */
 			lua_pushboolean(L, 1);
 			return 1;
@@ -380,90 +367,89 @@ int lc_setgid(lua_State* L)
 	return 2;
 }
 
-int lc_initgroups(lua_State* L)
-{
+int lc_initgroups(lua_State* L) {
 	int ret;
 	gid_t gid;
-	struct passwd *p;
+	struct passwd* p;
 
-	if(!lua_isstring(L, 1))
-	{
+	if(!lua_isstring(L, 1)) {
 		lua_pushnil(L);
 		lua_pushstring(L, "invalid-username");
 		return 2;
 	}
+
 	p = getpwnam(lua_tostring(L, 1));
-	if(!p)
-	{
+
+	if(!p) {
 		lua_pushnil(L);
 		lua_pushstring(L, "no-such-user");
 		return 2;
 	}
-	if(lua_gettop(L) < 2)
+
+	if(lua_gettop(L) < 2) {
 		lua_pushnil(L);
-	switch(lua_type(L, 2))
-	{
-	case LUA_TNIL:
-		gid = p->pw_gid;
-		break;
-	case LUA_TNUMBER:
-		gid = lua_tointeger(L, 2);
-		break;
-	default:
-		lua_pushnil(L);
-		lua_pushstring(L, "invalid-gid");
-		return 2;
 	}
-	ret = initgroups(lua_tostring(L, 1), gid);
-	if(ret)
-	{
-		switch(errno)
-		{
-		case ENOMEM:
-			lua_pushnil(L);
-			lua_pushstring(L, "no-memory");
+
+	switch(lua_type(L, 2)) {
+		case LUA_TNIL:
+			gid = p->pw_gid;
 			break;
-		case EPERM:
-			lua_pushnil(L);
-			lua_pushstring(L, "permission-denied");
+		case LUA_TNUMBER:
+			gid = lua_tointeger(L, 2);
 			break;
 		default:
 			lua_pushnil(L);
-			lua_pushstring(L, "unknown-error");
-		}
+			lua_pushstring(L, "invalid-gid");
+			return 2;
 	}
-	else
-	{
+
+	ret = initgroups(lua_tostring(L, 1), gid);
+
+	if(ret) {
+		switch(errno) {
+			case ENOMEM:
+				lua_pushnil(L);
+				lua_pushstring(L, "no-memory");
+				break;
+			case EPERM:
+				lua_pushnil(L);
+				lua_pushstring(L, "permission-denied");
+				break;
+			default:
+				lua_pushnil(L);
+				lua_pushstring(L, "unknown-error");
+		}
+	} else {
 		lua_pushboolean(L, 1);
 		lua_pushnil(L);
 	}
+
 	return 2;
 }
 
-int lc_umask(lua_State* L)
-{
+int lc_umask(lua_State* L) {
 	char old_mode_string[7];
 	mode_t old_mode = umask(strtoul(luaL_checkstring(L, 1), NULL, 8));
 
 	snprintf(old_mode_string, sizeof(old_mode_string), "%03o", old_mode);
-	old_mode_string[sizeof(old_mode_string)-1] = 0;
+	old_mode_string[sizeof(old_mode_string) - 1] = 0;
 	lua_pushstring(L, old_mode_string);
 
 	return 1;
 }
 
-int lc_mkdir(lua_State* L)
-{
+int lc_mkdir(lua_State* L) {
 	int ret = mkdir(luaL_checkstring(L, 1), S_IRUSR | S_IWUSR | S_IXUSR
-		| S_IRGRP | S_IWGRP | S_IXGRP
-		| S_IROTH | S_IXOTH); /* mode 775 */
+	                | S_IRGRP | S_IWGRP | S_IXGRP
+	                | S_IROTH | S_IXOTH); /* mode 775 */
 
-	lua_pushboolean(L, ret==0);
-	if(ret)
-	{
+	lua_pushboolean(L, ret == 0);
+
+	if(ret) {
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
+
 	return 1;
 }
 
@@ -477,43 +463,79 @@ int lc_mkdir(lua_State* L)
  *	Example usage:
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
-int string2resource(const char *s) {
-	if (!strcmp(s, "CORE")) return RLIMIT_CORE;
-	if (!strcmp(s, "CPU")) return RLIMIT_CPU;
-	if (!strcmp(s, "DATA")) return RLIMIT_DATA;
-	if (!strcmp(s, "FSIZE")) return RLIMIT_FSIZE;
-	if (!strcmp(s, "NOFILE")) return RLIMIT_NOFILE;
-	if (!strcmp(s, "STACK")) return RLIMIT_STACK;
+int string2resource(const char* s) {
+	if(!strcmp(s, "CORE")) {
+		return RLIMIT_CORE;
+	}
+
+	if(!strcmp(s, "CPU")) {
+		return RLIMIT_CPU;
+	}
+
+	if(!strcmp(s, "DATA")) {
+		return RLIMIT_DATA;
+	}
+
+	if(!strcmp(s, "FSIZE")) {
+		return RLIMIT_FSIZE;
+	}
+
+	if(!strcmp(s, "NOFILE")) {
+		return RLIMIT_NOFILE;
+	}
+
+	if(!strcmp(s, "STACK")) {
+		return RLIMIT_STACK;
+	}
+
 #if !(defined(sun) || defined(__sun))
-	if (!strcmp(s, "MEMLOCK")) return RLIMIT_MEMLOCK;
-	if (!strcmp(s, "NPROC")) return RLIMIT_NPROC;
-	if (!strcmp(s, "RSS")) return RLIMIT_RSS;
+
+	if(!strcmp(s, "MEMLOCK")) {
+		return RLIMIT_MEMLOCK;
+	}
+
+	if(!strcmp(s, "NPROC")) {
+		return RLIMIT_NPROC;
+	}
+
+	if(!strcmp(s, "RSS")) {
+		return RLIMIT_RSS;
+	}
+
 #endif
 #ifdef RLIMIT_NICE
-	if (!strcmp(s, "NICE")) return RLIMIT_NICE;
+
+	if(!strcmp(s, "NICE")) {
+		return RLIMIT_NICE;
+	}
+
 #endif
 	return -1;
 }
 
 unsigned long int arg_to_rlimit(lua_State* L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
-	case LUA_TSTRING:
-		if(strcmp(lua_tostring(L, idx), "unlimited") == 0)
-			return RLIM_INFINITY;
-	case LUA_TNUMBER:
-		return lua_tointeger(L, idx);
-	case LUA_TNONE:
-	case LUA_TNIL:
-		return current;
-	default:
-		return luaL_argerror(L, idx, "unexpected type");
+		case LUA_TSTRING:
+
+			if(strcmp(lua_tostring(L, idx), "unlimited") == 0) {
+				return RLIM_INFINITY;
+			}
+
+		case LUA_TNUMBER:
+			return lua_tointeger(L, idx);
+		case LUA_TNONE:
+		case LUA_TNIL:
+			return current;
+		default:
+			return luaL_argerror(L, idx, "unexpected type");
 	}
 }
 
-int lc_setrlimit(lua_State *L) {
+int lc_setrlimit(lua_State* L) {
 	struct rlimit lim;
 	int arguments = lua_gettop(L);
 	int rid = -1;
+
 	if(arguments < 1 || arguments > 3) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "incorrect-arguments");
@@ -521,14 +543,15 @@ int lc_setrlimit(lua_State *L) {
 	}
 
 	rid = string2resource(luaL_checkstring(L, 1));
-	if (rid == -1) {
+
+	if(rid == -1) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "invalid-resource");
 		return 2;
 	}
 
 	/* Fetch current values to use as defaults */
-	if (getrlimit(rid, &lim)) {
+	if(getrlimit(rid, &lim)) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "getrlimit-failed");
 		return 2;
@@ -537,22 +560,23 @@ int lc_setrlimit(lua_State *L) {
 	lim.rlim_cur = arg_to_rlimit(L, 2, lim.rlim_cur);
 	lim.rlim_max = arg_to_rlimit(L, 3, lim.rlim_max);
 
-	if (setrlimit(rid, &lim)) {
+	if(setrlimit(rid, &lim)) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "setrlimit-failed");
 		return 2;
 	}
+
 	lua_pushboolean(L, 1);
 	return 1;
 }
 
-int lc_getrlimit(lua_State *L) {
+int lc_getrlimit(lua_State* L) {
 	int arguments = lua_gettop(L);
-	const char *resource = NULL;
+	const char* resource = NULL;
 	int rid = -1;
 	struct rlimit lim;
 
-	if (arguments != 1) {
+	if(arguments != 1) {
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "invalid-arguments");
 		return 2;
@@ -562,8 +586,9 @@ int lc_getrlimit(lua_State *L) {
 
 	resource = luaL_checkstring(L, 1);
 	rid = string2resource(resource);
-	if (rid != -1) {
-		if (getrlimit(rid, &lim)) {
+
+	if(rid != -1) {
+		if(getrlimit(rid, &lim)) {
 			lua_pushboolean(L, 0);
 			lua_pushstring(L, "getrlimit-failed.");
 			return 2;
@@ -574,33 +599,38 @@ int lc_getrlimit(lua_State *L) {
 		lua_pushstring(L, "invalid-resource");
 		return 2;
 	}
+
 	lua_pushboolean(L, 1);
-	if(lim.rlim_cur == RLIM_INFINITY)
+
+	if(lim.rlim_cur == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
-	else
+	} else {
 		lua_pushnumber(L, lim.rlim_cur);
-	if(lim.rlim_max == RLIM_INFINITY)
+	}
+
+	if(lim.rlim_max == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
-	else
+	} else {
 		lua_pushnumber(L, lim.rlim_max);
+	}
+
 	return 3;
 }
 
-int lc_abort(lua_State* L)
-{
+int lc_abort(lua_State* L) {
 	abort();
 	return 0;
 }
 
-int lc_uname(lua_State* L)
-{
+int lc_uname(lua_State* L) {
 	struct utsname uname_info;
-	if(uname(&uname_info) != 0)
-	{
+
+	if(uname(&uname_info) != 0) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
+
 	lua_newtable(L);
 	lua_pushstring(L, uname_info.sysname);
 	lua_setfield(L, -2, "sysname");
@@ -615,28 +645,25 @@ int lc_uname(lua_State* L)
 	return 1;
 }
 
-int lc_setenv(lua_State* L)
-{
-	const char *var = luaL_checkstring(L, 1);
-	const char *value;
+int lc_setenv(lua_State* L) {
+	const char* var = luaL_checkstring(L, 1);
+	const char* value;
 
 	/* If the second argument is nil or nothing, unset the var */
-	if(lua_isnoneornil(L, 2))
-	{
-		if(unsetenv(var) != 0)
-		{
+	if(lua_isnoneornil(L, 2)) {
+		if(unsetenv(var) != 0) {
 			lua_pushnil(L);
 			lua_pushstring(L, strerror(errno));
 			return 2;
 		}
+
 		lua_pushboolean(L, 1);
 		return 1;
 	}
 
 	value = luaL_checkstring(L, 2);
 
-	if(setenv(var, value, 1) != 0)
-	{
+	if(setenv(var, value, 1) != 0) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
@@ -647,8 +674,7 @@ int lc_setenv(lua_State* L)
 }
 
 #ifdef WITH_MALLINFO
-int lc_meminfo(lua_State* L)
-{
+int lc_meminfo(lua_State* L) {
 	struct mallinfo info = mallinfo();
 	lua_newtable(L);
 	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
@@ -676,13 +702,14 @@ int lc_meminfo(lua_State* L)
  * */
 
 #if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
-int lc_fallocate(lua_State* L)
-{
+int lc_fallocate(lua_State* L) {
 	int ret;
 	off_t offset, len;
-	FILE *f = *(FILE**) luaL_checkudata(L, 1, LUA_FILEHANDLE);
-	if (f == NULL)
+	FILE* f = *(FILE**) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+
+	if(f == NULL) {
 		luaL_error(L, "attempt to use a closed file");
+	}
 
 	offset = luaL_checkinteger(L, 2);
 	len = luaL_checkinteger(L, 3);
@@ -690,20 +717,23 @@ int lc_fallocate(lua_State* L)
 #if defined(__linux__) && defined(_GNU_SOURCE)
 	errno = 0;
 	ret = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len);
-	if(ret == 0)
-	{
+
+	if(ret == 0) {
 		lua_pushboolean(L, 1);
 		return 1;
 	}
-	/* Some old versions of Linux apparently use the return value instead of errno */
-	if(errno == 0) errno = ret;
 
-	if(errno != ENOSYS && errno != EOPNOTSUPP)
-	{
+	/* Some old versions of Linux apparently use the return value instead of errno */
+	if(errno == 0) {
+		errno = ret;
+	}
+
+	if(errno != ENOSYS && errno != EOPNOTSUPP) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
+
 #else
 #warning Only using posix_fallocate() fallback.
 #warning Linux fallocate() is strongly recommended if available: recompile with -D_GNU_SOURCE
@@ -711,13 +741,11 @@ int lc_fallocate(lua_State* L)
 #endif
 
 	ret = posix_fallocate(fileno(f), offset, len);
-	if(ret == 0)
-	{
+
+	if(ret == 0) {
 		lua_pushboolean(L, 1);
 		return 1;
-	}
-	else
-	{
+	} else {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(ret));
 		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
@@ -730,8 +758,7 @@ int lc_fallocate(lua_State* L)
 
 /* Register functions */
 
-int luaopen_util_pposix(lua_State *L)
-{
+int luaopen_util_pposix(lua_State* L) {
 	luaL_Reg exports[] = {
 		{ "abort", lc_abort },
 
