@@ -45,16 +45,16 @@ local logging_levels = { "debug", "info", "warn", "error" }
 -- This function is called automatically when a new sink type is added [see apply_sink_rules()]
 local function add_rule(sink_config)
 	local sink_maker = log_sink_types[sink_config.to];
-	if sink_maker then
-		-- Create sink
-		local sink = sink_maker(sink_config);
+	if not sink_maker then
+		return; -- No such sink type
+	end
 
-		-- Set sink for all chosen levels
-		for level in pairs(get_levels(sink_config.levels or logging_levels)) do
-			logger.add_level_sink(level, sink);
-		end
-	else
-		-- No such sink type
+	-- Create sink
+	local sink = sink_maker(sink_config);
+
+	-- Set sink for all chosen levels
+	for level in pairs(get_levels(sink_config.levels or logging_levels)) do
+		logger.add_level_sink(level, sink);
 	end
 end
 
