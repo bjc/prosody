@@ -170,7 +170,7 @@ static int LscramHi(lua_State* L) {
 	salt2 = malloc(salt_len + 4);
 
 	if(salt2 == NULL) {
-		luaL_error(L, "Out of memory in scramHi");
+		return luaL_error(L, "Out of memory in scramHi");
 	}
 
 	memcpy(salt2, salt, salt_len);

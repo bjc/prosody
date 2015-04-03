@@ -708,7 +708,7 @@ int lc_fallocate(lua_State* L) {
 	FILE* f = *(FILE**) luaL_checkudata(L, 1, LUA_FILEHANDLE);
 
 	if(f == NULL) {
-		luaL_error(L, "attempt to use a closed file");
+		return luaL_error(L, "attempt to use a closed file");
 	}
 
 	offset = luaL_checkinteger(L, 2);

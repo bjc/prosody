@@ -237,13 +237,14 @@ static int l_signal(lua_State* L) {
 		lua_gettable(L, -2);
 
 		if(!lua_isnumber(L, -1)) {
-			luaL_error(L, "invalid signal string");
+			return luaL_error(L, "invalid signal string");
 		}
 
 		sig = (int) lua_tonumber(L, -1);
 		lua_pop(L, 1); /* get rid of number we pushed */
 	} else {
 		luaL_checknumber(L, 1);    /* will always error, with good error msg */
+		return luaL_error(L, "unreachable: invalid number was accepted");
 	}
 
 	/* set handler */
@@ -313,7 +314,7 @@ static int l_raise(lua_State* L) {
 		lua_gettable(L, -2);
 
 		if(!lua_isnumber(L, -1)) {
-			luaL_error(L, "invalid signal string");
+			return luaL_error(L, "invalid signal string");
 		}
 
 		ret = (lua_Number) raise((int) lua_tonumber(L, -1));
@@ -357,7 +358,7 @@ static int l_kill(lua_State* L) {
 		lua_gettable(L, -2);
 
 		if(!lua_isnumber(L, -1)) {
-			luaL_error(L, "invalid signal string");
+			return luaL_error(L, "invalid signal string");
 		}
 
 		ret = (lua_Number) kill((int) lua_tonumber(L, 1),
