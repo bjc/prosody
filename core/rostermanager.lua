@@ -227,7 +227,7 @@ function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
 	return roster[false].pending[jid];
 end
-function set_contact_pending_in(username, host, jid, pending)
+function set_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	if item and (item.subscription == "from" or item.subscription == "both") then
