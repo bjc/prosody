@@ -106,10 +106,8 @@ function handle_normal_presence(origin, stanza)
 				res.presence.attr.to = nil;
 			end
 		end
-		if roster.pending then -- resend incoming subscription requests
-			for jid in pairs(roster.pending) do
-				origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
-			end
+		for jid in pairs(roster[false].pending) do -- resend incoming subscription requests
+			origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
 		end
 		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
