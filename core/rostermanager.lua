@@ -13,6 +13,7 @@ local log = require "util.logger".init("rostermanager");
 
 local pairs = pairs;
 local tostring = tostring;
+local type = type;
 
 local hosts = hosts;
 local bare_sessions = prosody.bare_sessions;
