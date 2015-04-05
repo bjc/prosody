@@ -86,12 +86,11 @@ local function roster_metadata(roster, err)
 		metadata = { broken = err or nil };
 		roster[false] = metadata;
 	end
-	if not metadata.pending then
-		if roster.pending and not type(roster.pending.subscription) == "string" then
-			metadata.pending, roster.pending = roster.pending, nil;
-		else
-			metadata.pending = {};
-		end
+	if roster.pending and type(roster.pending.subscription) ~= "string" then
+		metadata.pending = roster.pending;
+		roster.pending = nil;
+	elseif not metadata.pending then
+		metadata.pending = {};
 	end
 	return metadata;
 end
