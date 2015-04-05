@@ -54,6 +54,9 @@ local function bounce_sendq(session, reason)
 			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", traceback());
 		end;
 		dummy = true;
+		close = function ()
+			(session.log or log)("error", "Attempting to close the dummy origin of s2s error replies, please report this! Traceback: %s", traceback());
+		end;
 	};
 	for i, data in ipairs(sendq) do
 		local reply = data[2];
