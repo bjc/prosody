@@ -24,6 +24,8 @@ local st = require "util.stanza";
 
 local _ENV = nil;
 
+local save_roster; -- forward declaration
+
 local function add_to_roster(session, jid, item)
 	if session.roster then
 		local old_item = session.roster[jid];
@@ -121,7 +123,7 @@ local function load_roster(username, host)
 	return roster, err;
 end
 
-local function save_roster(username, host, roster)
+function save_roster(username, host, roster)
 	if not um_user_exists(username, host) then
 		log("debug", "not saving roster for %s@%s: the user doesn't exist", username, host);
 		return nil;
@@ -161,6 +163,8 @@ local function process_inbound_subscription_approval(username, host, jid)
 	end
 end
 
+local is_contact_pending_out -- forward declaration
+
 local function process_inbound_subscription_cancellation(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
@@ -182,6 +186,8 @@ local function process_inbound_subscription_cancellation(username, host, jid)
 		return save_roster(username, host, roster);
 	end
 end
+
+local is_contact_pending_in -- forward declaration
 
 local function process_inbound_unsubscribe(username, host, jid)
 	local roster = load_roster(username, host);
@@ -223,7 +229,7 @@ local function is_contact_subscribed(username, host, jid)
 	return item and (item.subscription == "from" or item.subscription == "both"), err;
 end
 
-local function is_contact_pending_in(username, host, jid)
+function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
 	return roster[false].pending[jid];
 end
@@ -236,7 +242,7 @@ local function set_contact_pending_in(username, host, jid)
 	roster[false].pending[jid] = true;
 	return save_roster(username, host, roster);
 end
-local function is_contact_pending_out(username, host, jid)
+function is_contact_pending_out(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	return item and item.ask;
