@@ -25,7 +25,7 @@ local t_concat = table.concat;
 local char = string.char;
 local byte = string.byte;
 
-module "sasl.scram"
+local _ENV = nil;
 
 --=========================
 --SASL SCRAM-SHA-1 according to RFC 5802
@@ -87,7 +87,7 @@ local function hashprep(hashname)
 	return hashname:lower():gsub("-", "_");
 end
 
-function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
+local function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	if type(password) ~= "string" or type(salt) ~= "string" or type(iteration_count) ~= "number" then
 		return false, "inappropriate argument types"
 	end
@@ -235,7 +235,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 	return scram_hash;
 end
 
-function init(registerMechanism)
+local function init(registerMechanism)
 	local function registerSCRAMMechanism(hash_name, hash, hmac_hash)
 		registerMechanism("SCRAM-"..hash_name, {"plain", "scram_"..(hashprep(hash_name))}, scram_gen(hash_name:lower(), hash, hmac_hash));
 
@@ -246,4 +246,7 @@ function init(registerMechanism)
 	registerSCRAMMechanism("SHA-1", sha1, hmac_sha1);
 end
 
-return _M;
+return {
+	getAuthenticationDatabaseSHA1 = getAuthenticationDatabaseSHA1;
+	init = init;
+}
