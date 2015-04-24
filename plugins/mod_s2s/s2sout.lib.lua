@@ -169,18 +169,6 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 			handle4 = adns.lookup(function (reply, err)
 				handle4 = nil;
 
-				-- COMPAT: This is a compromise for all you CNAME-(ab)users :)
-				if not (reply and reply[#reply] and reply[#reply].a) then
-					local count = max_dns_depth;
-					reply = dns.peek(connect_host, "CNAME", "IN");
-					while count > 0 and reply and reply[#reply] and not reply[#reply].a and reply[#reply].cname do
-						log("debug", "Looking up %s (DNS depth is %d)", tostring(reply[#reply].cname), count);
-						reply = dns.peek(reply[#reply].cname, "A", "IN") or dns.peek(reply[#reply].cname, "CNAME", "IN");
-						count = count - 1;
-					end
-				end
-				-- end of CNAME resolving
-
 				if reply and reply[#reply] and reply[#reply].a then
 					for _, ip in ipairs(reply) do
 						log("debug", "DNS reply for %s gives us %s", connect_host, ip.a);
