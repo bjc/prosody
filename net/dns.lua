@@ -694,15 +694,20 @@ local function comp_mx(a, b)    -- - - - - - - - - - - - - - - - - - - comp_mx
 end
 
 
-function resolver:peek (qname, qtype, qclass)    -- - - - - - - - - - - -  peek
+function resolver:peek (qname, qtype, qclass, n)    -- - - - - - - - - - - -  peek
 	qname, qtype, qclass = standardize(qname, qtype, qclass);
 	local rrs = get(self.cache, qclass, qtype, qname);
-	if not rrs then return nil; end
+	if not rrs then
+		if n then if n <= 0 then return end else n = 3 end
+		rrs = get(self.cache, qclass, "CNAME", qname);
+		if not (rrs and rrs[1]) then return end
+		return self:peek(rrs[1].cname, qtype, qclass, n - 1);
+	end
 	if prune(rrs, socket.gettime()) and qtype == '*' or not next(rrs) then
 		set(self.cache, qclass, qtype, qname, nil);
 		return nil;
 	end
-	if self.unsorted[rrs] then table.sort (rrs, comp_mx); end
+	if self.unsorted[rrs] then table.sort (rrs, comp_mx); self.unsorted[rrs] = nil; end
 	return rrs;
 end
 
