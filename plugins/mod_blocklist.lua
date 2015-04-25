@@ -13,11 +13,11 @@ local user_exists = require"core.usermanager".user_exists;
 local is_contact_subscribed = require"core.rostermanager".is_contact_subscribed;
 local st = require"util.stanza";
 local st_error_reply = st.error_reply;
-local jid_prep, jid_split = import("util.jid", "prep", "split");
+local jid_prep = require"util.jid".prep;
+local jid_split = require"util.jid".split;
 
-local host = module.host;
 local storage = module:open_store();
-local sessions = prosody.hosts[host].sessions;
+local sessions = prosody.hosts[module.host].sessions;
 
 -- Cache of blocklists used since module was loaded
 local cache = {};
@@ -72,7 +72,7 @@ end
 local function get_blocklist(username)
 	local blocklist = cache[username];
 	if not blocklist then
-		if not user_exists(username, host) then
+		if not user_exists(username, module.host) then
 			return null_blocklist;
 		end
 		blocklist = storage:get(username);
@@ -106,14 +106,13 @@ local function edit_blocklist(event)
 	local action = stanza.tags[1];
 	local new = {};
 
-	local jid;
 	for item in action:childtags("item") do
-		jid = jid_prep(item.attr.jid);
+		local jid = jid_prep(item.attr.jid);
 		if not jid then
 			return origin.send(st_error_reply(stanza, "modify", "jid-malformed"));
 		end
 		item.attr.jid = jid; -- echo back prepped
-		new[jid] = is_contact_subscribed(username, host, jid) or false;
+		new[jid] = is_contact_subscribed(username, module.host, jid) or false;
 	end
 
 	local mode = action.name == "block" or nil;
@@ -176,14 +175,14 @@ module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist);
 
 -- Cache invalidation, solved!
 module:hook_global("user-deleted", function (event)
-	if event.host == host then
+	if event.host == module.host then
 		cache[event.username] = nil;
 	end
 end);
 
 -- Buggy clients
 module:hook("iq-error/self/blocklist-push", function (event)
-	local type, condition, text = event.stanza:get_error();
+	local _, condition, text = event.stanza:get_error();
 	(event.origin.log or module._log)("warn", "Client returned an error in response to notification from mod_%s: %s%s%s", module.name, condition, text and ": " or "", text or "");
 	return true;
 end);
