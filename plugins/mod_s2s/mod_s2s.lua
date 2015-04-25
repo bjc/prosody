@@ -37,6 +37,8 @@ local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
 local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
 
+local measure_connections = module:measure("connections", "counter");
+
 local sessions = module:shared("sessions");
 
 local log = module._log;
@@ -574,6 +576,7 @@ local function initialize_session(session)
 end
 
 function listener.onconnect(conn)
+	measure_connections(1);
 	conn:setoption("keepalive", opt_keepalives);
 	local session = sessions[conn];
 	if not session then -- New incoming connection
@@ -605,6 +608,7 @@ function listener.onstatus(conn, status)
 end
 
 function listener.ondisconnect(conn, err)
+	measure_connections(-1);
 	local session = sessions[conn];
 	if session then
 		sessions[conn] = nil;
