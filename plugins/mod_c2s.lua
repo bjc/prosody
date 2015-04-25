@@ -28,6 +28,8 @@ local c2s_timeout = module:get_option_number("c2s_timeout");
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 
+local measure_connections = module:measure("connections", "counter");
+
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
 local hosts = prosody.hosts;
@@ -198,6 +200,7 @@ end
 
 --- Port listener
 function listener.onconnect(conn)
+	measure_connections(1);
 	local session = sm_new_session(conn);
 	sessions[conn] = session;
 
@@ -270,6 +273,7 @@ function listener.onincoming(conn, data)
 end
 
 function listener.ondisconnect(conn, err)
+	measure_connections(-1);
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err or "connection closed");
