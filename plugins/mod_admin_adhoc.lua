@@ -246,7 +246,7 @@ local get_user_roster_handler = adhoc_simple(get_user_roster_layout, function(fi
 
 	local query = st.stanza("query", { xmlns = "jabber:iq:roster" });
 	for jid in pairs(roster) do
-		if jid ~= "pending" and jid then
+		if jid then
 			query:tag("item", {
 				jid = jid,
 				subscription = roster[jid].subscription,
@@ -299,7 +299,7 @@ local get_user_stats_handler = adhoc_simple(get_user_stats_layout, function(fiel
 	local IPs = "";
 	local resources = "";
 	for jid in pairs(roster) do
-		if jid ~= "pending" and jid then
+		if jid then
 			rostersize = rostersize + 1;
 		end
 	end
