@@ -50,7 +50,7 @@ function initialize_host(host)
 			host_session.users = setmetatable(provider, provider_mt);
 		end
 		if host_session.users ~= nil and host_session.users.name ~= nil then
-			log("debug", "host '%s' now set to use user provider '%s'", host, host_session.users.name);
+			log("debug", "Host '%s' now set to use user provider '%s'", host, host_session.users.name);
 		end
 	end);
 	host_session.events.add_handler("item-removed/auth-provider", function (event)
