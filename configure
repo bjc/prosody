@@ -131,6 +131,8 @@ do
         LUA_SUFFIX_SET=yes
         LUA_DIR=/usr/local
         LUA_DIR_SET=yes
+        CC=cc
+        LD=ld
       fi
       if [ "$OSTYPE" = "openbsd" ]; then
         LUA_INCDIR="/usr/local/include";
