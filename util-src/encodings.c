@@ -21,8 +21,8 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-#if (LUA_VERSION_NUM == 502)
-#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#if (LUA_VERSION_NUM == 501)
+#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
 
 /***************** BASE64 *****************/
@@ -530,19 +530,19 @@ LUALIB_API int luaopen_util_encodings(lua_State* L) {
 	lua_newtable(L);
 
 	lua_newtable(L);
-	luaL_register(L, NULL, Reg_base64);
+	luaL_setfuncs(L, Reg_base64, 0);
 	lua_setfield(L, -2, "base64");
 
 	lua_newtable(L);
-	luaL_register(L, NULL, Reg_stringprep);
+	luaL_setfuncs(L, Reg_stringprep, 0);
 	lua_setfield(L, -2, "stringprep");
 
 	lua_newtable(L);
-	luaL_register(L, NULL, Reg_idna);
+	luaL_setfuncs(L, Reg_idna, 0);
 	lua_setfield(L, -2, "idna");
 
 	lua_newtable(L);
-	luaL_register(L, NULL, Reg_utf8);
+	luaL_setfuncs(L, Reg_utf8, 0);
 	lua_setfield(L, -2, "utf8");
 
 	lua_pushliteral(L, "-3.14");

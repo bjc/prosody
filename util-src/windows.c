@@ -19,8 +19,8 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-#if (LUA_VERSION_NUM == 502)
-#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#if (LUA_VERSION_NUM == 501)
+#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
 
 static int Lget_nameservers(lua_State* L) {
@@ -104,7 +104,7 @@ static const luaL_Reg Reg[] = {
 
 LUALIB_API int luaopen_util_windows(lua_State* L) {
 	lua_newtable(L);
-	luaL_register(L, NULL, Reg);
+	luaL_setfuncs(L, Reg, 0);
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
 	return 1;
