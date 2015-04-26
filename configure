@@ -32,7 +32,7 @@ Configure Prosody prior to building.
 
 --help                      This help.
 --ostype=OS                 Use one of the OS presets.
-                            May be one of: debian, macosx, linux, freebsd
+                            May be one of: debian, macosx, linux, freebsd, openbsd
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
