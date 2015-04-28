@@ -17,6 +17,8 @@ module "events"
 
 function new()
 	local handlers = {};
+	local global_wrappers;
+	local wrappers = {};
 	local event_map = {};
 	local function _rebuild_index(handlers, event)
 		local _handlers = event_map[event];
@@ -60,7 +62,7 @@ function new()
 			remove_handler(event, handler);
 		end
 	end;
-	local function fire_event(event_name, event_data)
+	local function _fire_event(event_name, event_data)
 		local h = handlers[event_name];
 		if h then
 			for i=1,#h do
@@ -69,11 +71,75 @@ function new()
 			end
 		end
 	end;
+	local function fire_event(event_name, event_data)
+		local w = wrappers[event_name] or global_wrappers;
+		if w then
+			local curr_wrapper = #w;
+			local function c(event_name, event_data)
+				curr_wrapper = curr_wrapper - 1;
+				if curr_wrapper == 0 then
+					if global_wrappers == nil or w == global_wrappers then
+						return _fire_event(event_name, event_data);
+					end
+					w, curr_wrapper = global_wrappers, #global_wrappers;
+					return w[curr_wrapper](c, event_name, event_data);
+				else
+					return w[curr_wrapper](c, event_name, event_data);
+				end
+			end
+			return w[curr_wrapper](c, event_name, event_data);
+		end
+		return _fire_event(event_name, event_data);
+	end
+	local function add_wrapper(event_name, wrapper)
+		local w;
+		if event_name == nil then
+			w = global_wrappers;
+			if not w then
+				w = {};
+				global_wrappers = w;
+			end
+		else
+			w = wrappers[event_name];
+			if not w then
+				w = {};
+				wrappers[event_name] = w;
+			end
+		end
+		w[#w+1] = wrapper;
+	end
+	local function remove_wrapper(event_name, wrapper)
+		local w;
+		if event_name == nil then
+			w = global_wrappers;
+		else
+			w = wrappers[event_name];
+		end
+		if not w then return; end
+		for i = #w, 1 do
+			if w[i] == wrapper then
+				table.remove(w, i);
+			end
+		end
+		if #w == 0 then
+			if event_name == nil then
+				global_wrappers = nil;
+			else
+				wrappers[event_name] = nil;
+			end
+		end
+	end
 	return {
 		add_handler = add_handler;
 		remove_handler = remove_handler;
 		add_handlers = add_handlers;
 		remove_handlers = remove_handlers;
+		wrappers = {
+			add_handler = add_wrapper;
+			remove_handler = remove_wrapper;
+		};
+		add_wrapper = add_wrapper;
+		remove_wrapper = remove_wrapper;
 		fire_event = fire_event;
 		_handlers = handlers;
 		_event_map = event_map;
