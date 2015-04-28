@@ -375,6 +375,25 @@ function api:measure(name, type)
 	return measure(type, "/"..self.host.."/mod_"..self.name.."/"..name);
 end
 
+function api:measure_object_event(events_object, event_name, stat_name)
+	local m = self:measure(stat_name or event_name, "duration");
+	local function handler(handlers, event_name, event_data)
+		local finished = m();
+		local ret = handlers(event_name, event_data);
+		finished();
+		return ret;
+	end
+	return self:hook_object_event(events_object, event_name, handler);
+end
+
+function api:measure_event(event_name, stat_name)
+	return self:hook_object_event((hosts[self.host] or prosody).events.wrappers, event_name, handler);
+end
+
+function api:measure_global_event(event_name, stat_name)
+	return self:hook_object_event(prosody.events.wrappers, event_name, handler);
+end
+
 function api.init(mm)
 	modulemanager = mm;
 	return api;
