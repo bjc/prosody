@@ -120,6 +120,18 @@ function api:unhook(event, handler)
 	return self:unhook_object_event((hosts[self.host] or prosody).events, event, handler);
 end
 
+function api:wrap_object_event(events_object, event, handler)
+	return self:hook_object_event(assert(events_object.wrappers, "no wrappers"), event, handler);
+end
+
+function api:wrap_event(event, handler)
+	return self:wrap_object_event((hosts[self.host] or prosody).events, event, handler);
+end
+
+function api:wrap_global(event, handler)
+	return self:hook_object_event(prosody.events, event, handler, priority);
+end
+
 function api:require(lib)
 	local f, n = pluginloader.load_code(self.name, lib..".lib.lua", self.environment);
 	if not f then
