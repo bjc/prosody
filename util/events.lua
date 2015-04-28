@@ -93,7 +93,7 @@ function new()
 	end
 	local function add_wrapper(event_name, wrapper)
 		local w;
-		if event_name == nil then
+		if event_name == false then
 			w = global_wrappers;
 			if not w then
 				w = {};
@@ -110,7 +110,7 @@ function new()
 	end
 	local function remove_wrapper(event_name, wrapper)
 		local w;
-		if event_name == nil then
+		if event_name == false then
 			w = global_wrappers;
 		else
 			w = wrappers[event_name];
