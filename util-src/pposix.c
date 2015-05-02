@@ -750,7 +750,10 @@ int lc_fallocate(lua_State* L) {
 		lua_pushstring(L, strerror(ret));
 		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
 		 * this assumes that offset == length of the file */
-		ftruncate(fileno(f), offset);
+		if(ftruncate(fileno(f), offset) != 0) {
+			lua_pushstring(L, strerror(errno));
+			return 3;
+		}
 		return 2;
 	}
 }
