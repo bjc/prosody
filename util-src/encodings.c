@@ -476,14 +476,15 @@ static int Lidna_to_unicode(lua_State* L) {	/** idna.to_unicode(s) */
 static int Lidna_to_ascii(lua_State* L) {	/** idna.to_ascii(s) */
 	size_t len;
 	const char* s = check_utf8(L, 1, &len);
+	char* output = NULL;
+	int ret;
 
 	if(s == NULL || len != strlen(s)) {
 		lua_pushnil(L);
 		return 1; /* TODO return error message */
 	}
 
-	char* output = NULL;
-	int ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
+	ret = idna_to_ascii_8z(s, &output, IDNA_USE_STD3_ASCII_RULES);
 
 	if(ret == IDNA_SUCCESS) {
 		lua_pushstring(L, output);
