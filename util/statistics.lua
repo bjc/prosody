@@ -88,7 +88,7 @@ local function new_registry(config)
 
 			return function (value)
 				n_actual_events = n_actual_events + 1;
-				if n_actual_events%duration_sample_interval > 0 then
+				if n_actual_events%duration_sample_interval == 1 then
 					last_event = (last_event%duration_max_samples) + 1;
 					events[last_event] = value;
 				end
@@ -113,7 +113,7 @@ local function new_registry(config)
 
 			return function ()
 				n_actual_events = n_actual_events + 1;
-				if n_actual_events%duration_sample_interval > 0 then
+				if n_actual_events%duration_sample_interval ~= 1 then
 					return nop_function;
 				end
 
