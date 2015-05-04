@@ -9,6 +9,7 @@
 
 local pairs = pairs;
 local t_insert = table.insert;
+local t_remove = table.remove;
 local t_sort = table.sort;
 local setmetatable = setmetatable;
 local next = next;
@@ -118,7 +119,7 @@ function new()
 		if not w then return; end
 		for i = #w, 1 do
 			if w[i] == wrapper then
-				table.remove(w, i);
+				t_remove(w, i);
 			end
 		end
 		if #w == 0 then
