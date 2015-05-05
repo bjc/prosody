@@ -125,10 +125,14 @@ module:hook("host-disco-items", function (event)
 end);
 
 local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
-local function get_affiliation(jid)
+local unowned_aff = module:get_option_string("default_unowned_affiliation");
+local function get_affiliation(jid, node)
 	local bare_jid = jid_bare(jid);
 	if bare_jid == module.host or usermanager.is_admin(bare_jid, module.host) then
 		return admin_aff;
+	end
+	if not node then
+		return unowned_aff;
 	end
 end
 
