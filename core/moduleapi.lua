@@ -408,11 +408,11 @@ function api:measure_object_event(events_object, event_name, stat_name)
 end
 
 function api:measure_event(event_name, stat_name)
-	return self:hook_object_event((hosts[self.host] or prosody).events.wrappers, event_name, handler);
+	return self:measure_object_event((hosts[self.host] or prosody).events.wrappers, event_name, stat_name);
 end
 
 function api:measure_global_event(event_name, stat_name)
-	return self:hook_object_event(prosody.events.wrappers, event_name, handler);
+	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
 end
 
 function api.init(mm)
