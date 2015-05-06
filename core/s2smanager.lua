@@ -49,11 +49,11 @@ local resting_session = { -- Resting, not dead
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
-		filter = function (type, data) return data; end;
+		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
 
 function retire_session(session, reason)
-	local log = session.log or log;
+	local log = session.log or log; --luacheck: ignore 431/log
 	for k in pairs(session) do
 		if k ~= "log" and k ~= "id" and k ~= "conn" then
 			session[k] = nil;

@@ -213,10 +213,10 @@ end
 function is_contact_subscribed(username, host, jid)
 	do
 		local selfjid = username.."@"..host;
-		local subscription = _get_online_roster_subscription(selfjid, jid);
-		if subscription then return (subscription == "both" or subscription == "from"); end
-		local subscription = _get_online_roster_subscription(jid, selfjid);
-		if subscription then return (subscription == "both" or subscription == "to"); end
+		local user_subscription = _get_online_roster_subscription(selfjid, jid);
+		if user_subscription then return (user_subscription == "both" or user_subscription == "from"); end
+		local contact_subscription = _get_online_roster_subscription(jid, selfjid);
+		if contact_subscription then return (contact_subscription == "both" or contact_subscription == "to"); end
 	end
 	local roster, err = load_roster(username, host);
 	local item = roster[jid];

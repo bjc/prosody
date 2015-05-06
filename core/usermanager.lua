@@ -29,7 +29,7 @@ function new_null_provider()
 	local function dummy() return nil, "method not implemented"; end;
 	local function dummy_get_sasl_handler() return sasl_new(nil, {}); end
 	return setmetatable({name = "null", get_sasl_handler = dummy_get_sasl_handler}, {
-		__index = function(self, method) return dummy; end
+		__index = function(self, method) return dummy; end --luacheck: ignore 212
 	});
 end
 

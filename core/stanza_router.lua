@@ -30,7 +30,7 @@ deprecated_warning"core_process_stanza";
 deprecated_warning"core_route_stanza";
 
 local valid_stanzas = { message = true, presence = true, iq = true };
-local function handle_unhandled_stanza(host, origin, stanza)
+local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 212/host
 	local name, xmlns, origin_type = stanza.name, stanza.attr.xmlns or "jabber:client", origin.type;
 	if xmlns == "jabber:client" and valid_stanzas[name] then
 		-- A normal stanza
@@ -221,6 +221,8 @@ function core_route_stanza(origin, stanza)
 		end
 	end
 end
+
+--luacheck: ignore 122/prosody
 prosody.core_process_stanza = core_process_stanza;
 prosody.core_post_stanza = core_post_stanza;
 prosody.core_route_stanza = core_route_stanza;
