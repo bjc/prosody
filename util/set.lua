@@ -85,9 +85,9 @@ function new(list)
 		items[item] = nil;
 	end
 
-	function set:add_list(list)
-		if list then
-			for _, item in ipairs(list) do
+	function set:add_list(item_list)
+		if item_list then
+			for _, item in ipairs(item_list) do
 				items[item] = true;
 			end
 		end
