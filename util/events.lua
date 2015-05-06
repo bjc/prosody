@@ -52,6 +52,9 @@ function new()
 			end
 		end
 	end;
+	local function get_handlers(event)
+		return handlers[event];
+	end;
 	local function add_handlers(handlers)
 		for event, handler in pairs(handlers) do
 			add_handler(event, handler);
@@ -134,6 +137,7 @@ function new()
 		remove_handler = remove_handler;
 		add_handlers = add_handlers;
 		remove_handlers = remove_handlers;
+		get_handlers = get_handlers;
 		wrappers = {
 			add_handler = add_wrapper;
 			remove_handler = remove_wrapper;
