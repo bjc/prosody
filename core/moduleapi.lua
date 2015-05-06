@@ -10,6 +10,7 @@ local config = require "core.configmanager";
 local modulemanager; -- This gets set from modulemanager
 local array = require "util.array";
 local set = require "util.set";
+local it = require "util.iterators";
 local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
@@ -360,6 +361,14 @@ end
 
 function api:send(stanza)
 	return core_post_stanza(hosts[self.host], stanza);
+end
+
+function api:broadcast(jids, stanza, iter)
+	for jid in (iter or it.values)(jids) do
+		local new_stanza = st.clone(stanza);
+		new_stanza.attr.to = jid;
+		core_post_stanza(hosts[self.host], new_stanza);
+	end
 end
 
 function api:add_timer(delay, callback)
