@@ -10,11 +10,13 @@ local config = require "core.configmanager";
 local modulemanager; -- This gets set from modulemanager
 local array = require "util.array";
 local set = require "util.set";
+local it = require "util.iterators";
 local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local measure = require "core.statsmanager".measure;
+local st = require "util.stanza";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -56,7 +58,7 @@ function api:set_global()
 	self.host = "*";
 	-- Update the logger
 	local _log = logger.init("mod_"..self.name);
-	self.log = function (self, ...) return _log(...); end;
+	self.log = function (self, ...) return _log(...); end; --luacheck: ignore self
 	self._log = _log;
 	self.global = true;
 end
@@ -64,8 +66,8 @@ end
 function api:add_feature(xmlns)
 	self:add_item("feature", xmlns);
 end
-function api:add_identity(category, type, name)
-	self:add_item("identity", {category = category, type = type, name = name});
+function api:add_identity(category, identity_type, name)
+	self:add_item("identity", {category = category, type = identity_type, name = name});
 end
 function api:add_extension(data)
 	self:add_item("extension", data);
@@ -76,9 +78,9 @@ function api:has_feature(xmlns)
 	end
 	return false;
 end
-function api:has_identity(category, type, name)
+function api:has_identity(category, identity_type, name)
 	for _, id in ipairs(self:get_host_items("identity")) do
-		if id.category == category and id.type == type and id.name == name then
+		if id.category == category and id.type == identity_type and id.name == name then
 			return true;
 		end
 	end
@@ -95,6 +97,7 @@ function api:hook_object_event(object, event, handler, priority)
 end
 
 function api:unhook_object_event(object, event, handler)
+	self.event_handlers:set(object, event, handler, nil);
 	return object.remove_handler(event, handler);
 end
 
@@ -131,7 +134,7 @@ function api:wrap_event(event, handler)
 end
 
 function api:wrap_global(event, handler)
-	return self:hook_object_event(prosody.events, event, handler, priority);
+	return self:hook_object_event(prosody.events, event, handler);
 end
 
 function api:require(lib)
@@ -329,11 +332,11 @@ function api:get_host_items(key)
 	return result;
 end
 
-function api:handle_items(type, added_cb, removed_cb, existing)
-	self:hook("item-added/"..type, added_cb);
-	self:hook("item-removed/"..type, removed_cb);
+function api:handle_items(item_type, added_cb, removed_cb, existing)
+	self:hook("item-added/"..item_type, added_cb);
+	self:hook("item-removed/"..item_type, removed_cb);
 	if existing ~= false then
-		for _, item in ipairs(self:get_host_items(type)) do
+		for _, item in ipairs(self:get_host_items(item_type)) do
 			added_cb({ item = item });
 		end
 	end
@@ -362,6 +365,14 @@ end
 
 function api:send(stanza)
 	return core_post_stanza(hosts[self.host], stanza);
+end
+
+function api:broadcast(jids, stanza, iter)
+	for jid in (iter or it.values)(jids) do
+		local new_stanza = st.clone(stanza);
+		new_stanza.attr.to = jid;
+		core_post_stanza(hosts[self.host], new_stanza);
+	end
 end
 
 local timer_methods = { }
@@ -399,19 +410,19 @@ function api:load_resource(path, mode)
 	return io.open(path, mode);
 end
 
-function api:open_store(name, type)
-	return require"core.storagemanager".open(self.host, name or self.name, type);
+function api:open_store(name, store_type)
+	return require"core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
-function api:measure(name, type)
-	return measure(type, "/"..self.host.."/mod_"..self.name.."/"..name);
+function api:measure(name, stat_type)
+	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name);
 end
 
 function api:measure_object_event(events_object, event_name, stat_name)
 	local m = self:measure(stat_name or event_name, "duration");
-	local function handler(handlers, event_name, event_data)
+	local function handler(handlers, _event_name, _event_data)
 		local finished = m();
-		local ret = handlers(event_name, event_data);
+		local ret = handlers(_event_name, _event_data);
 		finished();
 		return ret;
 	end
@@ -419,11 +430,11 @@ function api:measure_object_event(events_object, event_name, stat_name)
 end
 
 function api:measure_event(event_name, stat_name)
-	return self:hook_object_event((hosts[self.host] or prosody).events.wrappers, event_name, handler);
+	return self:measure_object_event((hosts[self.host] or prosody).events.wrappers, event_name, stat_name);
 end
 
 function api:measure_global_event(event_name, stat_name)
-	return self:hook_object_event(prosody.events.wrappers, event_name, handler);
+	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
 end
 
 function api.init(mm)

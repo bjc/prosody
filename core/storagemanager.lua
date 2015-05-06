@@ -23,7 +23,7 @@ local null_storage_driver = setmetatable(
 		name = "null",
 		open = function (self) return self; end
 	}, {
-		__index = function (self, method)
+		__index = function (self, method) --luacheck: ignore 212
 			return null_storage_method;
 		end
 	}

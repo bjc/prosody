@@ -17,13 +17,13 @@ local new_multitable = require "util.multitable".new;
 local hosts = hosts;
 local prosody = prosody;
 
-local pcall, xpcall = pcall, xpcall;
+local xpcall = xpcall;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, tostring, t_insert = ipairs, pairs, type, tostring, table.insert;
 
 local debug_traceback = debug.traceback;
 local unpack, select = unpack, select;
-pcall = function(f, ...)
+local pcall = function(f, ...)
 	local n = select("#", ...);
 	local params = {...};
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
@@ -131,7 +131,7 @@ local function do_load_module(host, module_name, state)
 			local _log = logger.init(host..":"..module_name);
 			local host_module_api = setmetatable({
 				host = host, event_handlers = new_multitable(), items = {};
-				_log = _log, log = function (self, ...) return _log(...); end;
+				_log = _log, log = function (self, ...) return _log(...); end; --luacheck: ignore 212/self
 			},{
 				__index = modulemap["*"][module_name].module;
 			});
@@ -152,8 +152,9 @@ local function do_load_module(host, module_name, state)
 
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host,
-		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable(),
-		reloading = not not state, saved_state = state~=true and state or nil }
+		_log = _log, log = function (self, ...) return _log(...); end, --luacheck: ignore 212/self
+		event_handlers = new_multitable(), reloading = not not state,
+		saved_state = state~=true and state or nil }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
