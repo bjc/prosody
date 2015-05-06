@@ -41,7 +41,7 @@ local active_services = multitable.new();
 
 --- Private helpers
 
-local function error_to_friendly_message(service_name, port, err)
+local function error_to_friendly_message(service_name, port, err) --luacheck: ignore 212/service_name
 	local friendly_message = err;
 	if err:match(" in use") then
 		-- FIXME: Use service_name here
