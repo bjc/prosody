@@ -131,7 +131,7 @@ local function do_load_module(host, module_name, state)
 			local _log = logger.init(host..":"..module_name);
 			local host_module_api = setmetatable({
 				host = host, event_handlers = new_multitable(), items = {};
-				_log = _log, log = function (self, ...) return _log(...); end;
+				_log = _log, log = function (self, ...) return _log(...); end; --luacheck: ignore 212/self
 			},{
 				__index = modulemap["*"][module_name].module;
 			});
@@ -152,8 +152,9 @@ local function do_load_module(host, module_name, state)
 
 	local _log = logger.init(host..":"..module_name);
 	local api_instance = setmetatable({ name = module_name, host = host,
-		_log = _log, log = function (self, ...) return _log(...); end, event_handlers = new_multitable(),
-		reloading = not not state, saved_state = state~=true and state or nil }
+		_log = _log, log = function (self, ...) return _log(...); end, --luacheck: ignore 212/self
+		event_handlers = new_multitable(), reloading = not not state,
+		saved_state = state~=true and state or nil }
 		, { __index = api });
 
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
