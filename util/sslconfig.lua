@@ -6,11 +6,11 @@ local id = function (v) return v end
 function handlers.options(a, k, b)
 	local o = a[k] or { };
 	if type(b) ~= "table" then b = { b } end
-	for k,v in pairs(b) do
-		if v == true or v == false then
-			o[k] = v;
+	for key, value in pairs(b) do
+		if value == true or value == false then
+			o[key] = value;
 		else
-			o[v] = true;
+			o[value] = true;
 		end
 	end
 	a[k] = o;
