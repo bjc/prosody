@@ -208,8 +208,8 @@ function send_to_available_resources(username, host, stanza)
 	return count;
 end
 
-function send_to_interested_resources(user, host, stanza)
-	local jid = user.."@"..host;
+function send_to_interested_resources(username, host, stanza)
+	local jid = username.."@"..host;
 	local count = 0;
 	local user = bare_sessions[jid];
 	if user then
