@@ -17,13 +17,13 @@ local new_multitable = require "util.multitable".new;
 local hosts = hosts;
 local prosody = prosody;
 
-local pcall, xpcall = pcall, xpcall;
+local xpcall = xpcall;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, tostring, t_insert = ipairs, pairs, type, tostring, table.insert;
 
 local debug_traceback = debug.traceback;
 local unpack, select = unpack, select;
-pcall = function(f, ...)
+local pcall = function(f, ...)
 	local n = select("#", ...);
 	local params = {...};
 	return xpcall(function() return f(unpack(params, 1, n)) end, function(e) return tostring(e).."\n"..debug_traceback(); end);
