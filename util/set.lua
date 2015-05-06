@@ -34,7 +34,7 @@ function set_mt.__div(set, func)
 	return new_set;
 end
 function set_mt.__eq(set1, set2)
-	local set1, set2 = set1._items, set2._items;
+	set1, set2 = set1._items, set2._items;
 	for item in pairs(set1) do
 		if not set2[item] then
 			return false;
