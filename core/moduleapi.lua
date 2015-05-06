@@ -130,7 +130,7 @@ function api:wrap_event(event, handler)
 end
 
 function api:wrap_global(event, handler)
-	return self:hook_object_event(prosody.events, event, handler, priority);
+	return self:hook_object_event(prosody.events, event, handler);
 end
 
 function api:require(lib)
