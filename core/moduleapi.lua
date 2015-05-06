@@ -55,7 +55,7 @@ function api:set_global()
 	self.host = "*";
 	-- Update the logger
 	local _log = logger.init("mod_"..self.name);
-	self.log = function (self, ...) return _log(...); end;
+	self.log = function (self, ...) return _log(...); end; --luacheck: ignore self
 	self._log = _log;
 	self.global = true;
 end
