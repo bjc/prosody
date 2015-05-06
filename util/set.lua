@@ -66,6 +66,9 @@ function new(list)
 	local items = setmetatable({}, items_mt);
 	local set = { _items = items };
 
+	-- We access the set through an upvalue in these methods, so ignore 'self' being unused
+	--luacheck: ignore 212/self
+
 	function set:add(item)
 		items[item] = true;
 	end
