@@ -39,7 +39,7 @@ local parse_xml = (function()
 		function handler:CharacterData(data)
 			stanza:text(data);
 		end
-		function handler:EndElement(tagname)
+		function handler:EndElement()
 			stanza:up();
 		end
 		local parser = lxp.new(handler, "\1");
