@@ -32,7 +32,7 @@ function form_t.form(layout, data, formtype)
 	if layout.instructions then
 		form:tag("instructions"):text(layout.instructions):up();
 	end
-	for n, field in ipairs(layout) do
+	for _, field in ipairs(layout) do
 		local field_type = field.type or "text-single";
 		-- Add field tag
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
