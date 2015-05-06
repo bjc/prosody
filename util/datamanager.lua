@@ -293,7 +293,7 @@ function users(host, store, typ)
 
 	local mode, err = lfs.attributes(store_dir, "mode");
 	if not mode then
-		return function() log("debug", err or (store_dir .. " does not exist")) end
+		return function() log("debug", "%s", err or (store_dir .. " does not exist")) end
 	end
 	local next, state = lfs.dir(store_dir);
 	return function(state)
