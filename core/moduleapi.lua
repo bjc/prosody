@@ -94,6 +94,7 @@ function api:hook_object_event(object, event, handler, priority)
 end
 
 function api:unhook_object_event(object, event, handler)
+	self.event_handlers:set(object, event, handler, nil);
 	return object.remove_handler(event, handler);
 end
 
