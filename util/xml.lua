@@ -11,6 +11,7 @@ local parse_xml = (function()
 	local ns_separator = "\1";
 	local ns_pattern = "^([^"..ns_separator.."]*)"..ns_separator.."?(.*)$";
 	return function(xml)
+		--luacheck: ignore 212/self
 		local handler = {};
 		local stanza = st.stanza("root");
 		function handler:StartElement(tagname, attr)
