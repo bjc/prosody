@@ -18,18 +18,35 @@ local socket = require "socket";
 local adns = require "net.adns";
 local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
-local local_addresses = require "util.net".local_addresses;
 
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
 local log = module._log;
 
-local sources = {};
+local anysource = { IPv4 = "0.0.0.0", IPv6 = "::" };
+local function get_sources(addrs)
+	local sources = {};
+	for _, IP in ipairs(addrs) do
+		local sock;
+		if IP.proto == "IPv4" then
+			sock = socket.udp();
+		elseif IP.proto == "IPv6" then
+			sock = socket.udp6();
+		end
+		sock:setpeername(IP.addr, 9);
+		local localaddr = sock:getsockname() or anysource[IP.proto];
+		sock:close();
+		if not sources[localaddr] then
+			sources[localaddr] = true;
+			t_insert(sources, new_ip(localaddr, IP.proto));
+		end
+	end
+	return sources;
+end
 local has_ipv4, has_ipv6;
 
 local dns_timeout = module:get_option_number("dns_timeout", 15);
 dns.settimeout(dns_timeout);
-local max_dns_depth = module:get_option_number("dns_max_depth", 3);
 
 local s2sout = {};
 
@@ -178,7 +195,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc6724_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, get_sources(host_session.ip_hosts));
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
@@ -214,7 +231,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 
 				if have_other_result then
 					if #IPs > 0 then
-						rfc6724_dest(host_session.ip_hosts, sources);
+						rfc6724_dest(host_session.ip_hosts, get_sources(host_session.ip_hosts));
 						for i = 1, #IPs do
 							IPs[i] = {ip = IPs[i], port = connect_port};
 						end
@@ -302,27 +319,11 @@ module:hook_global("service-added", function (event)
 		return;
 	end
 	for source, _ in pairs(s2s_sources) do
-		if source == "*" or source == "0.0.0.0" then
-			for _, addr in ipairs(local_addresses("ipv4", true)) do
-				sources[#sources + 1] = new_ip(addr, "IPv4");
-			end
-		elseif source == "::" then
-			for _, addr in ipairs(local_addresses("ipv6", true)) do
-				sources[#sources + 1] = new_ip(addr, "IPv6");
-			end
-		else
-			sources[#sources + 1] = new_ip(source, (source:find(":") and "IPv6") or "IPv4");
-		end
-	end
-	for i = 1,#sources do
-		if sources[i].proto == "IPv6" then
+		if source:find(":") then
 			has_ipv6 = true;
-		elseif sources[i].proto == "IPv4" then
+		else
 			has_ipv4 = true;
 		end
-	end
-	if not (has_ipv4 or has_ipv6)  then
-		module:log("warn", "No local IPv4 or IPv6 addresses detected, outgoing connections may fail");
 	end
 end);
 

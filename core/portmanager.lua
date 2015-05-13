@@ -152,7 +152,7 @@ function activate(service_name)
 end
 
 function deactivate(service_name, service_info)
-	for name, interface, port, n, active_service
+	for name, interface, port, n, active_service --luacheck: ignore 213/name 213/n
 		in active_services:iter(service_name or service_info and service_info.name, nil, nil, nil) do
 		if service_info == nil or active_service.service == service_info then
 			close(interface, port);
@@ -192,11 +192,11 @@ function unregister_service(service_name, service_info)
 end
 
 function close(interface, port)
-	local service, server = get_service_at(interface, port);
+	local service, service_server = get_service_at(interface, port);
 	if not service then
 		return false, "port-not-open";
 	end
-	server:close();
+	service_server:close();
 	active_services:remove(service.name, interface, port);
 	log("debug", "Removed listening service %s from [%s]:%d", service.name, interface, port);
 	return true;
@@ -211,7 +211,7 @@ function get_service(service_name)
 	return (services[service_name] or {})[1];
 end
 
-function get_active_services(...)
+function get_active_services()
 	return active_services;
 end
 
