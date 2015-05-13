@@ -147,7 +147,7 @@ end
 
 -- Stream is authorised, and ready for normal stanzas
 function mark_connected(session)
-	local sendq, send = session.sendq, session.sends2s;
+	local sendq = session.sendq;
 	
 	local from, to = session.from_host, session.to_host;
 	
@@ -170,6 +170,7 @@ function mark_connected(session)
 	if session.direction == "outgoing" then
 		if sendq then
 			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", #sendq, session.to_host);
+			local send = session.sends2s;
 			for i, data in ipairs(sendq) do
 				send(data[1]);
 				sendq[i] = nil;
@@ -269,8 +270,6 @@ local stream_callbacks = { default_ns = "jabber:server", handlestanza =  core_pr
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.streamopened(session, attr)
-	local send = session.sends2s;
-	
 	session.version = tonumber(attr.version) or 0;
 	
 	-- TODO: Rename session.secure to session.encrypted
@@ -360,7 +359,7 @@ function stream_callbacks.streamopened(session, attr)
 			end
 			
 			log("debug", "Sending stream features: %s", tostring(features));
-			send(features);
+			session.sends2s(features);
 		end
 		session.notopen = nil;
 	elseif session.direction == "outgoing" then
