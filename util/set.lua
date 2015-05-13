@@ -34,7 +34,7 @@ function set_mt.__div(set, func)
 	return new_set;
 end
 function set_mt.__eq(set1, set2)
-	local set1, set2 = set1._items, set2._items;
+	set1, set2 = set1._items, set2._items;
 	for item in pairs(set1) do
 		if not set2[item] then
 			return false;
@@ -66,6 +66,9 @@ function new(list)
 	local items = setmetatable({}, items_mt);
 	local set = { _items = items };
 
+	-- We access the set through an upvalue in these methods, so ignore 'self' being unused
+	--luacheck: ignore 212/self
+
 	function set:add(item)
 		items[item] = true;
 	end
@@ -82,9 +85,9 @@ function new(list)
 		items[item] = nil;
 	end
 
-	function set:add_list(list)
-		if list then
-			for _, item in ipairs(list) do
+	function set:add_list(item_list)
+		if item_list then
+			for _, item in ipairs(item_list) do
 				items[item] = true;
 			end
 		end
