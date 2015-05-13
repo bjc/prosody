@@ -29,7 +29,6 @@ local has_ipv4, has_ipv6;
 
 local dns_timeout = module:get_option_number("dns_timeout", 15);
 dns.settimeout(dns_timeout);
-local max_dns_depth = module:get_option_number("dns_max_depth", 3);
 
 local s2sout = {};
 
