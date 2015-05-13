@@ -348,8 +348,12 @@ end
 
 function purge(username, host)
 	local host_dir = format("%s/%s/", data_path, encode(host));
+	local ok, iter, state, var = pcall(lfs.dir, host_dir);
+	if not ok then
+		return ok, iter;
+	end
 	local errs = {};
-	for file in lfs.dir(host_dir) do
+	for file in iter, state, var do
 		if lfs.attributes(host_dir..file, "mode") == "directory" then
 			local store = decode(file);
 			local ok, err = do_remove(getpath(username, host, store));
