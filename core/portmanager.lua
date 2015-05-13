@@ -152,7 +152,7 @@ function activate(service_name)
 end
 
 function deactivate(service_name, service_info)
-	for name, interface, port, n, active_service
+	for name, interface, port, n, active_service --luacheck: ignore 213/name 213/n
 		in active_services:iter(service_name or service_info and service_info.name, nil, nil, nil) do
 		if service_info == nil or active_service.service == service_info then
 			close(interface, port);
