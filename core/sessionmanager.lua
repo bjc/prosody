@@ -198,7 +198,7 @@ function send_to_available_resources(username, host, stanza)
 	local count = 0;
 	local user = bare_sessions[jid];
 	if user then
-		for k, session in pairs(user.sessions) do
+		for _, session in pairs(user.sessions) do
 			if session.presence then
 				session.send(stanza);
 				count = count + 1;
@@ -208,12 +208,12 @@ function send_to_available_resources(username, host, stanza)
 	return count;
 end
 
-function send_to_interested_resources(user, host, stanza)
-	local jid = user.."@"..host;
+function send_to_interested_resources(username, host, stanza)
+	local jid = username.."@"..host;
 	local count = 0;
 	local user = bare_sessions[jid];
 	if user then
-		for k, session in pairs(user.sessions) do
+		for _, session in pairs(user.sessions) do
 			if session.interested then
 				session.send(stanza);
 				count = count + 1;
