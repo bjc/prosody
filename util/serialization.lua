@@ -11,11 +11,9 @@ local type = type;
 local tostring = tostring;
 local t_insert = table.insert;
 local t_concat = table.concat;
-local error = error;
 local pairs = pairs;
 local next = next;
 
-local loadstring = loadstring;
 local pcall = pcall;
 
 local debug_traceback = debug.traceback;
