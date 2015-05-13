@@ -64,6 +64,7 @@ function retire_session(session, reason)
 
 	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	session.sends2s = session.send;
 	return setmetatable(session, resting_session);
 end
 
