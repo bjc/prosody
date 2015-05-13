@@ -349,6 +349,7 @@ function stream_callbacks.streamopened(session, attr)
 		end
 
 		session:open_stream(session.to_host, session.from_host)
+		session.notopen = nil;
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
 			
@@ -361,7 +362,6 @@ function stream_callbacks.streamopened(session, attr)
 			log("debug", "Sending stream features: %s", tostring(features));
 			session.sends2s(features);
 		end
-		session.notopen = nil;
 	elseif session.direction == "outgoing" then
 		session.notopen = nil;
 		if not attr.id then
