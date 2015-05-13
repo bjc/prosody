@@ -192,11 +192,11 @@ function unregister_service(service_name, service_info)
 end
 
 function close(interface, port)
-	local service, server = get_service_at(interface, port);
+	local service, service_server = get_service_at(interface, port);
 	if not service then
 		return false, "port-not-open";
 	end
-	server:close();
+	service_server:close();
 	active_services:remove(service.name, interface, port);
 	log("debug", "Removed listening service %s from [%s]:%d", service.name, interface, port);
 	return true;
