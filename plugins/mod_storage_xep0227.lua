@@ -7,28 +7,31 @@ local t_remove = table.remove;
 local os_remove = os.remove;
 local io_open = io.open;
 
+local paths = require"util.paths";
 local st = require "util.stanza";
 local parse_xml_real = require "util.xml".parse;
 
 local function getXml(user, host)
 	local jid = user.."@"..host;
-	local path = "data/"..jid..".xml";
+	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f = io_open(path);
 	if not f then return; end
 	local s = f:read("*a");
+	f:close();
 	return parse_xml_real(s);
 end
 local function setXml(user, host, xml)
 	local jid = user.."@"..host;
-	local path = "data/"..jid..".xml";
+	local path = paths.join(prosody.paths.data, jid..".xml");
+	local f, err = io_open(path, "w");
+	if not f then return f, err; end
 	if xml then
-		local f = io_open(path, "w");
-		if not f then return; end
 		local s = tostring(xml);
 		f:write(s);
 		f:close();
 		return true;
 	else
+		f:close();
 		return os_remove(path);
 	end
 end
@@ -44,7 +47,7 @@ local function getUserElement(xml)
 	end
 end
 local function createOuterXml(user, host)
-	return st.stanza("server-data", {xmlns='http://www.xmpp.org/extensions/xep-0227.html#ns'})
+	return st.stanza("server-data", {xmlns='urn:xmpp:pie:0'})
 		:tag("host", {jid=host})
 			:tag("user", {name = user});
 end
@@ -63,19 +66,36 @@ end
 
 local handlers = {};
 
+-- In order to support mod_auth_internal_hashed
+local extended = "http://prosody.im/protocol/extended-xep0227\1";
+
 handlers.accounts = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user and user.attr.password then
 			return { password = user.attr.password };
+		elseif user then
+			local data = {};
+			for k, v in pairs(user.attr) do
+				if k:sub(1, #extended) == extended then
+					data[k:sub(#extended+1)] = v;
+				end
+			end
+			return data;
 		end
 	end;
 	set = function(self, user, data)
-		if data and data.password then
+		if data then
 			local xml = getXml(user, self.host);
 			if not xml then xml = createOuterXml(user, self.host); end
 			local usere = getUserElement(xml);
-			usere.attr.password = data.password;
+			for k, v in pairs(data) do
+				if k == "password" then
+					usere.attr.password = v;
+				else
+					usere.attr[extended..k] = v;
+				end
+			end
 			return setXml(user, self.host, xml);
 		else
 			return setXml(user, self.host, nil);
@@ -84,7 +104,7 @@ handlers.accounts = {
 };
 handlers.vcard = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user then
 			local vcard = user:get_child("vCard", 'vcard-temp');
 			if vcard then
@@ -113,7 +133,7 @@ handlers.vcard = {
 };
 handlers.private = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user then
 			local private = user:get_child("query", "jabber:iq:private");
 			if private then
@@ -147,15 +167,10 @@ handlers.private = {
 -----------------------------
 local driver = {};
 
-function driver:open(host, datastore, typ)
-	local instance = setmetatable({}, self);
-	instance.host = host;
-	instance.datastore = datastore;
+function driver:open(datastore, typ)
 	local handler = handlers[datastore];
-	if not handler then return nil; end
-	for key,val in pairs(handler) do
-		instance[key] = val;
-	end
+	if not handler then return nil, "unsupported-datastore"; end
+	local instance = setmetatable({ host = module.host; datastore = datastore; }, { __index = handler });
 	if instance.init then instance:init(); end
 	return instance;
 end
