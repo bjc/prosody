@@ -71,7 +71,7 @@ local extended = "http://prosody.im/protocol/extended-xep0227\1";
 
 handlers.accounts = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user and user.attr.password then
 			return { password = user.attr.password };
 		elseif user then
@@ -104,7 +104,7 @@ handlers.accounts = {
 };
 handlers.vcard = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user then
 			local vcard = user:get_child("vCard", 'vcard-temp');
 			if vcard then
@@ -133,7 +133,7 @@ handlers.vcard = {
 };
 handlers.private = {
 	get = function(self, user)
-		local user = getUserElement(getXml(user, self.host));
+		user = getUserElement(getXml(user, self.host));
 		if user then
 			local private = user:get_child("query", "jabber:iq:private");
 			if private then
