@@ -17,6 +17,7 @@ local function getXml(user, host)
 	local f = io_open(path);
 	if not f then return; end
 	local s = f:read("*a");
+	f:close();
 	return parse_xml_real(s);
 end
 local function setXml(user, host, xml)
