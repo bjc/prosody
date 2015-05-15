@@ -23,8 +23,8 @@ end
 local function setXml(user, host, xml)
 	local jid = user.."@"..host;
 	local path = paths.join(prosody.paths.data, jid..".xml");
-	local f = io_open(path, "w");
-	if not f then return; end
+	local f, err = io_open(path, "w");
+	if not f then return f, err; end
 	if xml then
 		local s = tostring(xml);
 		f:write(s);
