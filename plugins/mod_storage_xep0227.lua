@@ -150,15 +150,10 @@ handlers.private = {
 -----------------------------
 local driver = {};
 
-function driver:open(host, datastore, typ)
-	local instance = setmetatable({}, self);
-	instance.host = host;
-	instance.datastore = datastore;
+function driver:open(datastore, typ)
 	local handler = handlers[datastore];
-	if not handler then return nil; end
-	for key,val in pairs(handler) do
-		instance[key] = val;
-	end
+	if not handler then return nil, "unsupported-datastore"; end
+	local instance = setmetatable({ host = module.host; datastore = datastore; }, { __index = handler });
 	if instance.init then instance:init(); end
 	return instance;
 end
