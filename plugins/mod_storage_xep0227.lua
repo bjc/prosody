@@ -66,19 +66,36 @@ end
 
 local handlers = {};
 
+-- In order to support mod_auth_internal_hashed
+local extended = "http://prosody.im/protocol/extended-xep0227\1";
+
 handlers.accounts = {
 	get = function(self, user)
 		local user = getUserElement(getXml(user, self.host));
 		if user and user.attr.password then
 			return { password = user.attr.password };
+		elseif user then
+			local data = {};
+			for k, v in pairs(user.attr) do
+				if k:sub(1, #extended) == extended then
+					data[k:sub(#extended+1)] = v;
+				end
+			end
+			return data;
 		end
 	end;
 	set = function(self, user, data)
-		if data and data.password then
+		if data then
 			local xml = getXml(user, self.host);
 			if not xml then xml = createOuterXml(user, self.host); end
 			local usere = getUserElement(xml);
-			usere.attr.password = data.password;
+			for k, v in pairs(data) do
+				if k == "password" then
+					usere.attr.password = v;
+				else
+					usere.attr[extended..k] = v;
+				end
+			end
 			return setXml(user, self.host, xml);
 		else
 			return setXml(user, self.host, nil);
