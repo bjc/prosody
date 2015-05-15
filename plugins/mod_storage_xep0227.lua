@@ -47,7 +47,7 @@ local function getUserElement(xml)
 	end
 end
 local function createOuterXml(user, host)
-	return st.stanza("server-data", {xmlns='http://www.xmpp.org/extensions/xep-0227.html#ns'})
+	return st.stanza("server-data", {xmlns='urn:xmpp:pie:0'})
 		:tag("host", {jid=host})
 			:tag("user", {name = user});
 end
