@@ -7,12 +7,13 @@ local t_remove = table.remove;
 local os_remove = os.remove;
 local io_open = io.open;
 
+local paths = require"util.paths";
 local st = require "util.stanza";
 local parse_xml_real = require "util.xml".parse;
 
 local function getXml(user, host)
 	local jid = user.."@"..host;
-	local path = "data/"..jid..".xml";
+	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f = io_open(path);
 	if not f then return; end
 	local s = f:read("*a");
@@ -20,7 +21,7 @@ local function getXml(user, host)
 end
 local function setXml(user, host, xml)
 	local jid = user.."@"..host;
-	local path = "data/"..jid..".xml";
+	local path = paths.join(prosody.paths.data, jid..".xml");
 	if xml then
 		local f = io_open(path, "w");
 		if not f then return; end
