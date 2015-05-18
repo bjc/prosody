@@ -121,7 +121,7 @@ end
 do
 	local pcall = _G.pcall;
 	parsers.lua = {};
-	function parsers.lua.load(data, config_file, config)
+	function parsers.lua.load(data, config_file, config_table)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -139,17 +139,17 @@ do
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
 			name = nameprep(name);
-			if rawget(config, name) and rawget(config[name], "component_module") then
+			if rawget(config_table, name) and rawget(config_table[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
-					name, config[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
+					name, config_table[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
 			end
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
-			set(config, name or "*", "defined", true);
+			set(config_table, name or "*", "defined", true);
 			return function (config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", option_name, option_value);
+					set(config_table, name or "*", option_name, option_value);
 				end
 			end;
 		end
@@ -157,24 +157,24 @@ do
 
 		function env.Component(name)
 			name = nameprep(name);
-			if rawget(config, name) and rawget(config[name], "defined") and not rawget(config[name], "component_module") then
+			if rawget(config_table, name) and rawget(config_table[name], "defined") and not rawget(config_table[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
 			end
-			set(config, name, "component_module", "component");
+			set(config_table, name, "component_module", "component");
 			-- Don't load the global modules by default
-			set(config, name, "load_global_modules", false);
+			set(config_table, name, "load_global_modules", false);
 			rawset(env, "__currenthost", name);
 			local function handle_config_options(config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", option_name, option_value);
+					set(config_table, name or "*", option_name, option_value);
 				end
 			end
 
 			return function (module)
 					if type(module) == "string" then
-						set(config, name, "component_module", module);
+						set(config_table, name, "component_module", module);
 						return handle_config_options;
 					end
 					return handle_config_options(module);
