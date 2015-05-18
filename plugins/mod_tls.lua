@@ -61,7 +61,7 @@ do
 end
 
 local function can_do_tls(session)
-	if not session.conn.starttls then
+	if session.ssl_ctx == false or not session.conn.starttls then
 		return false;
 	elseif session.ssl_ctx then
 		return true;
