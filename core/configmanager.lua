@@ -183,6 +183,7 @@ do
 		env.component = env.Component;
 
 		function env.Include(file)
+			-- Check whether this is a wildcard Include
 			if file:match("[*?]") then
 				local lfs = deps.softreq "lfs";
 				if not lfs then
@@ -202,16 +203,17 @@ do
 						env.Include(path..path_sep..f);
 					end
 				end
-			else
-				local file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
-				local f, err = io.open(file);
-				if f then
-					local ret, err = parsers.lua.load(f:read("*a"), file, config);
-					if not ret then error(err:gsub("%[string.-%]", file), 0); end
-				end
-				if not f then error("Error loading included "..file..": "..err, 0); end
-				return f, err;
+				return;
 			end
+			-- Not a wildcard, so resolve (potentially) relative path and run through config parser
+			file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
+			local f, err = io.open(file);
+			if f then
+				local ret, err = parsers.lua.load(f:read("*a"), file, config_table);
+				if not ret then error(err:gsub("%[string.-%]", file), 0); end
+			end
+			if not f then error("Error loading included "..file..": "..err, 0); end
+			return f, err;
 		end
 		env.include = env.Include;
 
