@@ -119,8 +119,7 @@ end
 
 -- Built-in Lua parser
 do
-	local pcall, setmetatable = _G.pcall, _G.setmetatable;
-	local rawget = _G.rawget;
+	local pcall = _G.pcall;
 	parsers.lua = {};
 	function parsers.lua.load(data, config_file, config)
 		local env;
