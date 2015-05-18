@@ -177,8 +177,8 @@ end
 -- Column width for "source" (used by stdout and console)
 local sourcewidth = 20;
 
-function log_sink_types.stdout(config)
-	local timestamps = config.timestamps;
+function log_sink_types.stdout(sink_config)
+	local timestamps = sink_config.timestamps;
 
 	if timestamps == true then
 		timestamps = default_timestamp; -- Default format
@@ -207,13 +207,13 @@ do
 		logstyles["warn"] = getstyle("bold", "yellow");
 		logstyles["error"] = getstyle("bold", "red");
 	end
-	function log_sink_types.console(config)
+	function log_sink_types.console(sink_config)
 		-- Really if we don't want pretty colours then just use plain stdout
 		if not do_pretty_printing then
-			return log_sink_types.stdout(config);
+			return log_sink_types.stdout(sink_config);
 		end
 
-		local timestamps = config.timestamps;
+		local timestamps = sink_config.timestamps;
 
 		if timestamps == true then
 			timestamps = default_timestamp; -- Default format
@@ -240,15 +240,15 @@ do
 end
 
 local empty_function = function () end;
-function log_sink_types.file(config)
-	local log = config.filename;
+function log_sink_types.file(sink_config)
+	local log = sink_config.filename;
 	local logfile = io_open(log, "a+");
 	if not logfile then
 		return empty_function;
 	end
 	local write, flush = logfile.write, logfile.flush;
 
-	local timestamps = config.timestamps;
+	local timestamps = sink_config.timestamps;
 
 	if timestamps == nil or timestamps == true then
 		timestamps = default_timestamp; -- Default format
