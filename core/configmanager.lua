@@ -73,20 +73,20 @@ function _M.set(host, key, value, _oldvalue)
 	return set(config, host, key, value);
 end
 
-function load(filename, format)
-	format = format or filename:match("%w+$");
+function load(filename, config_format)
+	config_format = config_format or filename:match("%w+$");
 
-	if parsers[format] and parsers[format].load then
+	if parsers[config_format] and parsers[config_format].load then
 		local f, err = io.open(filename);
 		if f then
 			local new_config = setmetatable({ ["*"] = { } }, config_mt);
-			local ok, err = parsers[format].load(f:read("*a"), filename, new_config);
+			local ok, err = parsers[config_format].load(f:read("*a"), filename, new_config);
 			f:close();
 			if ok then
 				config = new_config;
 				fire_event("config-reloaded", {
 					filename = filename,
-					format = format,
+					format = config_format,
 					config = config
 				});
 			end
@@ -95,27 +95,24 @@ function load(filename, format)
 		return f, "file", err;
 	end
 
-	if not format then
+	if not config_format then
 		return nil, "file", "no parser specified";
 	else
-		return nil, "file", "no parser for "..(format);
+		return nil, "file", "no parser for "..(config_format);
 	end
 end
 
-function save(filename, format)
-end
-
-function addparser(format, parser)
-	if format and parser then
-		parsers[format] = parser;
+function addparser(config_format, parser)
+	if config_format and parser then
+		parsers[config_format] = parser;
 	end
 end
 
 -- _M needed to avoid name clash with local 'parsers'
 function _M.parsers()
 	local p = {};
-	for format in pairs(parsers) do
-		table.insert(p, format);
+	for config_format in pairs(parsers) do
+		table.insert(p, config_format);
 	end
 	return p;
 end
