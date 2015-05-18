@@ -54,11 +54,11 @@ function _M.rawget(host, key, _oldkey)
 	end
 end
 
-local function set(config, host, key, value)
+local function set(config_table, host, key, value)
 	if host and key then
-		local hostconfig = rawget(config, host);
+		local hostconfig = rawget(config_table, host);
 		if not hostconfig then
-			hostconfig = rawset(config, host, setmetatable({}, host_mt))[host];
+			hostconfig = rawset(config_table, host, setmetatable({}, host_mt))[host];
 		end
 		hostconfig[key] = value;
 		return true;
