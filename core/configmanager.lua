@@ -128,11 +128,11 @@ do
 			Host = true, host = true, VirtualHost = true,
 			Component = true, component = true,
 			Include = true, include = true, RunScript = true }, {
-				__index = function (t, k)
+				__index = function (_, k)
 					return rawget(_G, k);
 				end,
-				__newindex = function (t, k, v)
-					set(config, env.__currenthost or "*", k, v);
+				__newindex = function (_, k, v)
+					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
 
