@@ -13,31 +13,14 @@ local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticatio
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
+local hex = require"util.hex";
+local to_hex, from_hex = hex.to, hex.from;
 
 local log = module._log;
 local host = module.host;
 
 local accounts = module:open_store("accounts");
 
-local to_hex;
-do
-	local function replace_byte_with_hex(byte)
-		return ("%02x"):format(byte:byte());
-	end
-	function to_hex(binary_string)
-		return binary_string:gsub(".", replace_byte_with_hex);
-	end
-end
-
-local from_hex;
-do
-	local function replace_hex_with_byte(hex)
-		return string.char(tonumber(hex, 16));
-	end
-	function from_hex(hex_string)
-		return hex_string:gsub("..", replace_hex_with_byte);
-	end
-end
 
 
 -- Default; can be set per-user
