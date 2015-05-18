@@ -28,7 +28,7 @@ _M.resolve_relative_path = resolve_relative_path; -- COMPAT
 
 local parsers = {};
 
-local config_mt = { __index = function (t, k) return rawget(t, "*"); end};
+local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
 
 -- When host not found, use global
