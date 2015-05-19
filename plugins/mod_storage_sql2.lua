@@ -215,6 +215,9 @@ function keyval_store:users()
 end
 
 local archive_store = {}
+archive_store.caps = {
+	total = true;
+};
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
 	if type(when) ~= "number" then
