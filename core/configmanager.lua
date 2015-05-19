@@ -28,7 +28,7 @@ _M.resolve_relative_path = resolve_relative_path; -- COMPAT
 
 local parsers = {};
 
-local config_mt = { __index = function (t, k) return rawget(t, "*"); end};
+local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
 
 -- When host not found, use global
@@ -54,11 +54,11 @@ function _M.rawget(host, key, _oldkey)
 	end
 end
 
-local function set(config, host, key, value)
+local function set(config_table, host, key, value)
 	if host and key then
-		local hostconfig = rawget(config, host);
+		local hostconfig = rawget(config_table, host);
 		if not hostconfig then
-			hostconfig = rawset(config, host, setmetatable({}, host_mt))[host];
+			hostconfig = rawset(config_table, host, setmetatable({}, host_mt))[host];
 		end
 		hostconfig[key] = value;
 		return true;
@@ -73,20 +73,20 @@ function _M.set(host, key, value, _oldvalue)
 	return set(config, host, key, value);
 end
 
-function load(filename, format)
-	format = format or filename:match("%w+$");
+function load(filename, config_format)
+	config_format = config_format or filename:match("%w+$");
 
-	if parsers[format] and parsers[format].load then
+	if parsers[config_format] and parsers[config_format].load then
 		local f, err = io.open(filename);
 		if f then
 			local new_config = setmetatable({ ["*"] = { } }, config_mt);
-			local ok, err = parsers[format].load(f:read("*a"), filename, new_config);
+			local ok, err = parsers[config_format].load(f:read("*a"), filename, new_config);
 			f:close();
 			if ok then
 				config = new_config;
 				fire_event("config-reloaded", {
 					filename = filename,
-					format = format,
+					format = config_format,
 					config = config
 				});
 			end
@@ -95,65 +95,61 @@ function load(filename, format)
 		return f, "file", err;
 	end
 
-	if not format then
+	if not config_format then
 		return nil, "file", "no parser specified";
 	else
-		return nil, "file", "no parser for "..(format);
+		return nil, "file", "no parser for "..(config_format);
 	end
 end
 
-function save(filename, format)
-end
-
-function addparser(format, parser)
-	if format and parser then
-		parsers[format] = parser;
+function addparser(config_format, parser)
+	if config_format and parser then
+		parsers[config_format] = parser;
 	end
 end
 
 -- _M needed to avoid name clash with local 'parsers'
 function _M.parsers()
 	local p = {};
-	for format in pairs(parsers) do
-		table.insert(p, format);
+	for config_format in pairs(parsers) do
+		table.insert(p, config_format);
 	end
 	return p;
 end
 
 -- Built-in Lua parser
 do
-	local pcall, setmetatable = _G.pcall, _G.setmetatable;
-	local rawget = _G.rawget;
+	local pcall = _G.pcall;
 	parsers.lua = {};
-	function parsers.lua.load(data, config_file, config)
+	function parsers.lua.load(data, config_file, config_table)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
 			Host = true, host = true, VirtualHost = true,
 			Component = true, component = true,
 			Include = true, include = true, RunScript = true }, {
-				__index = function (t, k)
+				__index = function (_, k)
 					return rawget(_G, k);
 				end,
-				__newindex = function (t, k, v)
-					set(config, env.__currenthost or "*", k, v);
+				__newindex = function (_, k, v)
+					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
 
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
 			name = nameprep(name);
-			if rawget(config, name) and rawget(config[name], "component_module") then
+			if rawget(config_table, name) and rawget(config_table[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
-					name, config[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
+					name, config_table[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
 			end
 			rawset(env, "__currenthost", name);
 			-- Needs at least one setting to logically exist :)
-			set(config, name or "*", "defined", true);
+			set(config_table, name or "*", "defined", true);
 			return function (config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", option_name, option_value);
+					set(config_table, name or "*", option_name, option_value);
 				end
 			end;
 		end
@@ -161,24 +157,24 @@ do
 
 		function env.Component(name)
 			name = nameprep(name);
-			if rawget(config, name) and rawget(config[name], "defined") and not rawget(config[name], "component_module") then
+			if rawget(config_table, name) and rawget(config_table[name], "defined") and not rawget(config_table[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
 			end
-			set(config, name, "component_module", "component");
+			set(config_table, name, "component_module", "component");
 			-- Don't load the global modules by default
-			set(config, name, "load_global_modules", false);
+			set(config_table, name, "load_global_modules", false);
 			rawset(env, "__currenthost", name);
 			local function handle_config_options(config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
 				for option_name, option_value in pairs(config_options) do
-					set(config, name or "*", option_name, option_value);
+					set(config_table, name or "*", option_name, option_value);
 				end
 			end
 
 			return function (module)
 					if type(module) == "string" then
-						set(config, name, "component_module", module);
+						set(config_table, name, "component_module", module);
 						return handle_config_options;
 					end
 					return handle_config_options(module);
@@ -187,6 +183,7 @@ do
 		env.component = env.Component;
 
 		function env.Include(file)
+			-- Check whether this is a wildcard Include
 			if file:match("[*?]") then
 				local lfs = deps.softreq "lfs";
 				if not lfs then
@@ -206,16 +203,17 @@ do
 						env.Include(path..path_sep..f);
 					end
 				end
-			else
-				local file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
-				local f, err = io.open(file);
-				if f then
-					local ret, err = parsers.lua.load(f:read("*a"), file, config);
-					if not ret then error(err:gsub("%[string.-%]", file), 0); end
-				end
-				if not f then error("Error loading included "..file..": "..err, 0); end
-				return f, err;
+				return;
 			end
+			-- Not a wildcard, so resolve (potentially) relative path and run through config parser
+			file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
+			local f, err = io.open(file);
+			if f then
+				local ret, err = parsers.lua.load(f:read("*a"), file, config_table);
+				if not ret then error(err:gsub("%[string.-%]", file), 0); end
+			end
+			if not f then error("Error loading included "..file..": "..err, 0); end
+			return f, err;
 		end
 		env.include = env.Include;
 
