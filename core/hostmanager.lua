@@ -26,8 +26,22 @@ local core_route_stanza = _G.prosody.core_route_stanza;
 
 local pairs, select, rawget = pairs, select, rawget;
 local tostring, type = tostring, type;
+local setmetatable = setmetatable;
 
 module "hostmanager"
+
+local host_mt = { }
+function host_mt:__tostring()
+	if self.type == "component" then
+		local typ = configmanager.get(self.host, "component_module");
+		if typ == "component" then
+			return ("Component %q"):format(self.host);
+		end
+		return ("Component %q %q"):format(self.host, typ);
+	elseif self.type == "local" then
+		return ("VirtualHost %q"):format(self.host);
+	end
+end
 
 local hosts_loaded_once;
 
@@ -69,6 +83,7 @@ function activate(host, host_config)
 		send = host_send;
 		modules = {};
 	};
+	setmetatable(host_session, host_mt);
 	if not host_config.component_module then -- host
 		host_session.type = "local";
 		host_session.sessions = {};

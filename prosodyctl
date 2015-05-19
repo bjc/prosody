@@ -578,6 +578,8 @@ function commands.about(arg)
 	print("");
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
+	local luaevent =dependencies.softreq"luaevent";
+	local ssl = dependencies.softreq"ssl";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
 		and name ~= "_G" and not name:match("%.") then
