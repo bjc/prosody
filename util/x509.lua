@@ -148,6 +148,9 @@ local function compare_srvname(host, service, asserted_names)
 end
 
 function verify_identity(host, service, cert)
+	if cert.setencode then
+		cert:setencode("utf8");
+	end
 	local ext = cert:extensions()
 	if ext[oid_subjectaltname] then
 		local sans = ext[oid_subjectaltname];

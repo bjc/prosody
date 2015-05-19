@@ -21,6 +21,7 @@ end
 
 local xmlns_starttls = 'urn:ietf:params:xml:ns:xmpp-tls';
 local starttls_attr = { xmlns = xmlns_starttls };
+local starttls_initiate= st.stanza("starttls", starttls_attr);
 local starttls_proceed = st.stanza("proceed", starttls_attr);
 local starttls_failure = st.stanza("failure", starttls_attr);
 local c2s_feature = st.stanza("starttls", starttls_attr);
@@ -60,7 +61,7 @@ do
 end
 
 local function can_do_tls(session)
-	if not session.conn.starttls then
+	if session.ssl_ctx == false or not session.conn.starttls then
 		return false;
 	elseif session.ssl_ctx then
 		return true;
@@ -116,7 +117,7 @@ module:hook_stanza("http://etherx.jabber.org/streams", "features", function (ses
 	module:log("debug", "Received features element");
 	if can_do_tls(session) and stanza:get_child("starttls", xmlns_starttls) then
 		module:log("debug", "%s is offering TLS, taking up the offer...", session.to_host);
-		session.sends2s("<starttls xmlns='"..xmlns_starttls.."'/>");
+		session.sends2s(starttls_initiate);
 		return true;
 	end
 end, 500);
