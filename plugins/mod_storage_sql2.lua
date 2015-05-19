@@ -248,10 +248,13 @@ function map_store:set(username, key, data)
 end
 
 local archive_store = {}
+archive_store.caps = {
+	total = true;
+};
 archive_store.__index = archive_store
-function archive_store:append(username, key, when, with, value)
-	if value == nil then -- COMPAT early versions
-		when, with, value, key = key, when, with, value
+function archive_store:append(username, key, value, when, with)
+	if type(when) ~= "number" then
+		value, when, with = when, with, value;
 	end
 	local user,store = username,self.store;
 	return engine:transaction(function()
@@ -314,7 +317,7 @@ function archive_store:find(username, query)
 	local user,store = username,self.store;
 	local total;
 	local ok, result = engine:transaction(function()
-		local sql_query = "SELECT `key`, `type`, `value`, `when` FROM `prosodyarchive` WHERE %s ORDER BY `sort_id` %s%s;";
+		local sql_query = "SELECT `key`, `type`, `value`, `when`, `with` FROM `prosodyarchive` WHERE %s ORDER BY `sort_id` %s%s;";
 		local args = { host, user or "", store, };
 		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
 
@@ -346,7 +349,7 @@ function archive_store:find(username, query)
 	return function()
 		local row = result();
 		if row ~= nil then
-			return row[1], deserialize(row[2], row[3]), row[4];
+			return row[1], deserialize(row[2], row[3]), row[4], row[5];
 		end
 	end, total;
 end
