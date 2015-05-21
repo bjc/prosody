@@ -254,7 +254,7 @@ archive_store.caps = {
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
 	if type(when) ~= "number" then
-		value, when, with = when, with, value;
+		when, with, value = value, when, with;
 	end
 	local user,store = username,self.store;
 	return engine:transaction(function()
