@@ -163,8 +163,8 @@ engine.delete = engine.execute_update;
 engine.update = engine.execute_update;
 function engine:_transaction(func, ...)
 	if not self.conn then
-		local a,b = self:connect();
-		if not a then return a,b; end
+		local ok, err = self:connect();
+		if not ok then return ok, err; end
 	end
 	--assert(not self.__transaction, "Recursive transactions not allowed");
 	local args, n_args = {...}, select("#", ...);
@@ -184,15 +184,15 @@ function engine:_transaction(func, ...)
 	end
 end
 function engine:transaction(...)
-	local a,b = self:_transaction(...);
-	if not a then
+	local ok, ret = self:_transaction(...);
+	if not ok then
 		local conn = self.conn;
 		if not conn or not conn:ping() then
 			self.conn = nil;
-			a,b = self:_transaction(...);
+			ok, ret = self:_transaction(...);
 		end
 	end
-	return a,b;
+	return ok, ret;
 end
 function engine:_create_index(index)
 	local sql = "CREATE INDEX `"..index.name.."` ON `"..index.table.."` (";
