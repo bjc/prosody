@@ -273,7 +273,7 @@ function engine:set_encoding() -- to UTF-8
 end
 local engine_mt = { __index = engine };
 
-local function db2uri(params)
+function db2uri(params)
 	return build_url{
 		scheme = params.driver,
 		user = params.username,
