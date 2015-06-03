@@ -283,14 +283,9 @@ function db2uri(params)
 		path = params.database,
 	};
 end
-local engine_cache = {}; -- TODO make weak valued
-function create_engine(self, params)
-	local url = db2uri(params);
-	if not engine_cache[url] then
-		local engine = setmetatable({ url = url, params = params }, engine_mt);
-		engine_cache[url] = engine;
-	end
-	return engine_cache[url];
+
+function create_engine(self, params, onconnect)
+	return setmetatable({ url = db2uri(params), params = params, onconnect = onconnect }, engine_mt);
 end
 
 return _M;
