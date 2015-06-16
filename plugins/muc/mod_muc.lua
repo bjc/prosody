@@ -44,15 +44,10 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-local _set_affiliation = muc_new_room.room_mt.set_affiliation;
 local _get_affiliation = muc_new_room.room_mt.get_affiliation;
 function muclib.room_mt:get_affiliation(jid)
 	if is_admin(jid) then return "owner"; end
 	return _get_affiliation(self, jid);
-end
-function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
-	if is_admin(jid) then return nil, "modify", "not-acceptable"; end
-	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
 end
 
 local function room_route_stanza(room, stanza) module:send(stanza); end
