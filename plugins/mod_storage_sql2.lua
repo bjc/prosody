@@ -192,6 +192,8 @@ local function keyval_store_set(data)
 	return true;
 end
 
+--- Key/value store API (default store type)
+
 local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
@@ -213,6 +215,8 @@ function keyval_store:users()
 	if not ok then return ok, result end
 	return iterator(result);
 end
+
+--- Archive store API
 
 local archive_store = {}
 archive_store.__index = archive_store
@@ -341,6 +345,10 @@ local stores = {
 	keyval = keyval_store;
 	archive = archive_store;
 };
+
+--- Implement storage driver API
+
+-- FIXME: Some of these operations need to operate on the archive store(s) too
 
 local driver = {};
 
