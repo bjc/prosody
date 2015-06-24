@@ -197,7 +197,7 @@ end
 local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
-	user,store = username,self.store;
+	user, store = username, self.store;
 	local ok, result = engine:transaction(keyval_store_get);
 	if not ok then return ok, result; end
 	return result;
@@ -361,13 +361,13 @@ function driver:open(store, typ)
 end
 
 function driver:stores(username)
-	local sql = "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`" ..
+	local query = "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`" ..
 		(username == true and "!=?" or "=?");
 	if username == true or not username then
 		username = "";
 	end
 	local ok, result = engine:transaction(function()
-		return engine:select(sql, host, username);
+		return engine:select(query, host, username);
 	end);
 	if not ok then return ok, result end
 	return iterator(result);
@@ -376,7 +376,7 @@ end
 function driver:purge(username)
 	return engine:transaction(function()
 		local stmt,err = engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=?", host, username);
-		return true,err;
+		return true, err;
 	end);
 end
 
