@@ -199,8 +199,11 @@ keyval_store.__index = keyval_store;
 function keyval_store:get(username)
 	user, store = username, self.store;
 	local ok, result = engine:transaction(keyval_store_get);
-	if not ok then return ok, result; end
-	return result;
+	if not ok then
+		module:log("error", "Unable to read from database %s store for %s: %s", store, username or "<host>", result);
+		return nil, result;
+	end
+	return result;	
 end
 function keyval_store:set(username, data)
 	user,store = username,self.store;
