@@ -1,5 +1,6 @@
 
 local json = require "util.json";
+local sql = require "util.sql";
 local xml_parse = require "util.xml".parse;
 local uuid = require "util.uuid";
 local resolve_relative_path = require "util.paths".resolve_relative_path;
@@ -20,106 +21,9 @@ local function iterator(result)
 	end, result, nil;
 end
 
-local mod_sql = module:require("sql");
-local params = module:get_option("sql");
+local default_params = { driver = "SQLite3" };
 
-local engine; -- TODO create engine
-
-local function create_table()
-	local Table,Column,Index = mod_sql.Table,mod_sql.Column,mod_sql.Index;
-
-	local ProsodyTable = Table {
-		name="prosody";
-		Column { name="host", type="TEXT", nullable=false };
-		Column { name="user", type="TEXT", nullable=false };
-		Column { name="store", type="TEXT", nullable=false };
-		Column { name="key", type="TEXT", nullable=false };
-		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosody_index", "host", "user", "store", "key" };
-	};
-	engine:transaction(function()
-		ProsodyTable:create(engine);
-	end);
-
-	local ProsodyArchiveTable = Table {
-		name="prosodyarchive";
-		Column { name="sort_id", type="INTEGER", primary_key=true, auto_increment=true };
-		Column { name="host", type="TEXT", nullable=false };
-		Column { name="user", type="TEXT", nullable=false };
-		Column { name="store", type="TEXT", nullable=false };
-		Column { name="key", type="TEXT", nullable=false }; -- item id
-		Column { name="when", type="INTEGER", nullable=false }; -- timestamp
-		Column { name="with", type="TEXT", nullable=false }; -- related id
-		Column { name="type", type="TEXT", nullable=false };
-		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
-	};
-	engine:transaction(function()
-		ProsodyArchiveTable:create(engine);
-	end);
-end
-
-local function upgrade_table()
-	if params.driver == "MySQL" then
-		local success,err = engine:transaction(function()
-			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
-			if result:rowcount() > 0 then
-				module:log("info", "Upgrading database schema...");
-				engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
-				module:log("info", "Database table automatically upgraded");
-			end
-			return true;
-		end);
-		if not success then
-			module:log("error", "Failed to check/upgrade database schema (%s), please see "
-				.."http://prosody.im/doc/mysql for help",
-				err or "unknown error");
-			return false;
-		end
-		-- COMPAT w/pre-0.9: Upgrade tables to UTF-8 if not already
-		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
-		success,err = engine:transaction(function()
-			local result = engine:execute(check_encoding_query);
-			local n_bad_columns = result:rowcount();
-			if n_bad_columns > 0 then
-				module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
-				local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
-				local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
-				for row in result:rows() do
-					local column_name, column_type = unpack(row);
-					engine:execute(fix_column_query1:format(column_name, column_name));
-					engine:execute(fix_column_query2:format(column_name, column_name, column_type));
-				end
-				module:log("info", "Database encoding upgrade complete!");
-			end
-		end);
-		success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
-		if not success then
-			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
-		end
-	end
-end
-
-do -- process options to get a db connection
-	params = params or { driver = "SQLite3" };
-
-	if params.driver == "SQLite3" then
-		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
-	end
-
-	assert(params.driver and params.database, "Both the SQL driver and the database need to be specified");
-
-	--local dburi = db2uri(params);
-	engine = mod_sql:create_engine(params);
-
-	if module:get_option("sql_manage_tables", true) then
-		-- Automatically create table, ignore failure (table probably already exists)
-		create_table();
-		-- Encoding mess
-		upgrade_table();
-	end
-end
+local engine;
 
 local function serialize(value)
 	local t = type(value);
@@ -383,6 +287,117 @@ function driver:purge(username)
 	end);
 end
 
-module:provides("storage", driver);
+--- Initialization
 
 
+local function create_table(name)
+	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
+
+	local ProsodyTable = Table {
+		name= name or "prosody";
+		Column { name="host", type="TEXT", nullable=false };
+		Column { name="user", type="TEXT", nullable=false };
+		Column { name="store", type="TEXT", nullable=false };
+		Column { name="key", type="TEXT", nullable=false };
+		Column { name="type", type="TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
+		Index { name="prosody_index", "host", "user", "store", "key" };
+	};
+	engine:transaction(function()
+		ProsodyTable:create(engine);
+	end);
+
+	local ProsodyArchiveTable = Table {
+		name="prosodyarchive";
+		Column { name="sort_id", type="INTEGER", primary_key=true, auto_increment=true };
+		Column { name="host", type="TEXT", nullable=false };
+		Column { name="user", type="TEXT", nullable=false };
+		Column { name="store", type="TEXT", nullable=false };
+		Column { name="key", type="TEXT", nullable=false }; -- item id
+		Column { name="when", type="INTEGER", nullable=false }; -- timestamp
+		Column { name="with", type="TEXT", nullable=false }; -- related id
+		Column { name="type", type="TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
+		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
+	};
+	engine:transaction(function()
+		ProsodyArchiveTable:create(engine);
+	end);
+end
+
+local function upgrade_table(params, apply_changes)
+	local changes = false;
+	if params.driver == "MySQL" then
+		local success,err = engine:transaction(function()
+			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			if result:rowcount() > 0 then
+				changes = true;
+				if apply_changes then
+					module:log("info", "Upgrading database schema...");
+					engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+					module:log("info", "Database table automatically upgraded");
+				end
+			end
+			return true;
+		end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database schema (%s), please see "
+				.."http://prosody.im/doc/mysql for help",
+				err or "unknown error");
+			return false;
+		end
+
+		-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
+		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
+		success,err = engine:transaction(function()
+			local result = engine:execute(check_encoding_query);
+			local n_bad_columns = result:rowcount();
+			if n_bad_columns > 0 then
+				changes = true;
+				if apply_changes then
+					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
+					local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
+					local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
+					for row in result:rows() do
+						local column_name, column_type = unpack(row);
+						engine:execute(fix_column_query1:format(column_name, column_name));
+						engine:execute(fix_column_query2:format(column_name, column_name, column_type));
+					end
+					module:log("info", "Database encoding upgrade complete!");
+				end
+			end
+		end);
+		success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
+			return false;
+		end
+	end
+end
+
+local function normalize_params(params)
+	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
+	if params.driver == "SQLite3" then
+		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
+	end
+	return params;
+end
+
+function module.load()
+	if prosody.prosodyctl then return; end
+	local params = normalize_params(module:get_option("sql", default_params));
+	engine = sql:create_engine(params, function (engine)
+		if module:get_option("sql_manage_tables", true) then
+			-- Automatically create table, ignore failure (table probably already exists)
+			-- FIXME: we should check in information_schema, etc.
+			create_table();
+			-- Check whether the table needs upgrading
+			if not upgrade_table(params, true) then
+				module:log("error", "Old database format detected, and upgrade failed");
+				return false, "database upgrade needed";
+			end
+		end
+	end);
+
+	module:provides("storage", driver);
+end
