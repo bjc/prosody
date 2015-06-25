@@ -25,33 +25,8 @@ function is_column(x) return getmetatable(x)==column_mt; end
 function is_index(x) return getmetatable(x)==index_mt; end
 function is_table(x) return getmetatable(x)==table_mt; end
 function is_query(x) return getmetatable(x)==query_mt; end
---function is_op(x) return getmetatable(x)==op_mt; end
---function expr(...) return setmetatable({...}, op_mt); end
 function Integer(n) return "Integer()" end
 function String(n) return "String()" end
-
---[[local ops = {
-	__add = function(a, b) return "("..a.."+"..b..")" end;
-	__sub = function(a, b) return "("..a.."-"..b..")" end;
-	__mul = function(a, b) return "("..a.."*"..b..")" end;
-	__div = function(a, b) return "("..a.."/"..b..")" end;
-	__mod = function(a, b) return "("..a.."%"..b..")" end;
-	__pow = function(a, b) return "POW("..a..","..b..")" end;
-	__unm = function(a) return "NOT("..a..")" end;
-	__len = function(a) return "COUNT("..a..")" end;
-	__eq = function(a, b) return "("..a.."=="..b..")" end;
-	__lt = function(a, b) return "("..a.."<"..b..")" end;
-	__le = function(a, b) return "("..a.."<="..b..")" end;
-};
-
-local functions = {
-
-};
-
-local cmap = {
-	[Integer] = Integer();
-	[String] = String();
-};]]
 
 function Column(definition)
 	return setmetatable(definition, column_mt);
@@ -94,7 +69,6 @@ function index_mt:__tostring()
 	return s..' }';
 --	return 'Index{ name="'..self.name..'", type="'..self.type..'" }'
 end
---
 
 local function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return s_char(tonumber(c,16)); end)); end
 local function parse_url(url)
@@ -120,26 +94,6 @@ local function parse_url(url)
 		database = #database > 0 and database or nil;
 	};
 end
-
---[[local session = {};
-
-function session.query(...)
-	local rets = {...};
-	local query = setmetatable({ __rets = rets, __filters }, query_mt);
-	return query;
-end
---
-
-local function db2uri(params)
-	return build_url{
-		scheme = params.driver,
-		user = params.username,
-		password = params.password,
-		host = params.host,
-		port = params.port,
-		path = params.database,
-	};
-end]]
 
 local engine = {};
 function engine:connect()
@@ -209,8 +163,8 @@ engine.delete = engine.execute_update;
 engine.update = engine.execute_update;
 function engine:_transaction(func, ...)
 	if not self.conn then
-		local a,b = self:connect();
-		if not a then return a,b; end
+		local ok, err = self:connect();
+		if not ok then return ok, err; end
 	end
 	--assert(not self.__transaction, "Recursive transactions not allowed");
 	local args, n_args = {...}, select("#", ...);
@@ -230,15 +184,15 @@ function engine:_transaction(func, ...)
 	end
 end
 function engine:transaction(...)
-	local a,b = self:_transaction(...);
-	if not a then
+	local ok, ret = self:_transaction(...);
+	if not ok then
 		local conn = self.conn;
 		if not conn or not conn:ping() then
 			self.conn = nil;
-			a,b = self:_transaction(...);
+			ok, ret = self:_transaction(...);
 		end
 	end
-	return a,b;
+	return ok, ret;
 end
 function engine:_create_index(index)
 	local sql = "CREATE INDEX `"..index.name.."` ON `"..index.table.."` (";
@@ -319,7 +273,7 @@ function engine:set_encoding() -- to UTF-8
 end
 local engine_mt = { __index = engine };
 
-local function db2uri(params)
+function db2uri(params)
 	return build_url{
 		scheme = params.driver,
 		user = params.username,
@@ -329,55 +283,9 @@ local function db2uri(params)
 		path = params.database,
 	};
 end
-local engine_cache = {}; -- TODO make weak valued
-function create_engine(self, params)
-	local url = db2uri(params);
-	if not engine_cache[url] then
-		local engine = setmetatable({ url = url, params = params }, engine_mt);
-		engine_cache[url] = engine;
-	end
-	return engine_cache[url];
+
+function create_engine(self, params, onconnect)
+	return setmetatable({ url = db2uri(params), params = params, onconnect = onconnect }, engine_mt);
 end
-
-
---[[Users = Table {
-	name="users";
-	Column { name="user_id", type=String(), primary_key=true };
-};
-print(Users)
-print(Users.c.user_id)]]
-
---local engine = create_engine('postgresql://scott:tiger@localhost:5432/mydatabase');
---[[local engine = create_engine{ driver = "SQLite3", database = "./alchemy.sqlite" };
-
-local i = 0;
-for row in assert(engine:execute("select * from sqlite_master")):rows(true) do
-	i = i+1;
-	print(i);
-	for k,v in pairs(row) do
-		print("",k,v);
-	end
-end
-print("---")
-
-Prosody = Table {
-	name="prosody";
-	Column { name="host", type="TEXT", nullable=false };
-	Column { name="user", type="TEXT", nullable=false };
-	Column { name="store", type="TEXT", nullable=false };
-	Column { name="key", type="TEXT", nullable=false };
-	Column { name="type", type="TEXT", nullable=false };
-	Column { name="value", type="TEXT", nullable=false };
-	Index { name="prosody_index", "host", "user", "store", "key" };
-};
---print(Prosody);
-assert(engine:transaction(function()
-	assert(Prosody:create(engine));
-end));
-
-for row in assert(engine:execute("select user from prosody")):rows(true) do
-	print("username:", row['username'])
-end
---result.close();]]
 
 return _M;
