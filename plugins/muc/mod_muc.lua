@@ -51,7 +51,7 @@ function muclib.room_mt:get_affiliation(jid)
 	return _get_affiliation(self, jid);
 end
 function muclib.room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
-	if is_admin(jid) then return nil, "modify", "not-acceptable"; end
+	if affiliation ~= "owner" and is_admin(jid) then return nil, "modify", "not-acceptable"; end
 	return _set_affiliation(self, actor, jid, affiliation, callback, reason);
 end
 
