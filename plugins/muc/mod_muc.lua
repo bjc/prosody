@@ -39,7 +39,7 @@ do -- Monkey patch to make server admins room owners
 
 	local _set_affiliation = room_mt.set_affiliation;
 	function room_mt:set_affiliation(actor, jid, ...)
-		if is_admin(jid) then return nil, "modify", "not-acceptable"; end
+		if affiliation ~= "owner" and is_admin(jid) then return nil, "modify", "not-acceptable"; end
 		return _set_affiliation(self, actor, jid, ...);
 	end
 end
