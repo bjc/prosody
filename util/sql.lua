@@ -111,7 +111,11 @@ function engine:connect()
 	self.conn = dbh;
 	self.prepared = {};
 	self:set_encoding();
+	self:onconnect();
 	return true;
+end
+function engine:onconnect()
+	-- Override from create_engine()
 end
 function engine:execute(sql, ...)
 	local success, err = self:connect();
