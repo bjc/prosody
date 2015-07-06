@@ -379,10 +379,10 @@ local function upgrade_table(params, apply_changes)
 end
 
 local function normalize_params(params)
-	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
 	if params.driver == "SQLite3" then
 		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
 	end
+	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
 	return params;
 end
 
