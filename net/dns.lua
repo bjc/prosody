@@ -213,15 +213,6 @@ function cache_metatable.__tostring(cache)
 end
 
 
-function resolver:new()    -- - - - - - - - - - - - - - - - - - - - - resolver
-	local r = { active = {}, cache = {}, unsorted = {} };
-	setmetatable(r, resolver);
-	setmetatable(r.cache, cache_metatable);
-	setmetatable(r.unsorted, { __mode = 'kv' });
-	return r;
-end
-
-
 -- packet layer -------------------------------------------------- packet layer
 
 
@@ -1054,8 +1045,6 @@ end
 
 
 function dns.resolver ()    -- - - - - - - - - - - - - - - - - - - - - resolver
-	-- this function seems to be redundant with resolver.new ()
-
 	local r = { active = {}, cache = {}, unsorted = {}, wanted = {}, best_server = 1 };
 	setmetatable (r, resolver);
 	setmetatable (r.cache, cache_metatable);
