@@ -396,8 +396,8 @@ function module.load()
 			-- FIXME: we should check in information_schema, etc.
 			create_table();
 			-- Check whether the table needs upgrading
-			if not upgrade_table(params, true) then
-				module:log("error", "Old database format detected, and upgrade failed");
+			if upgrade_table(params, false) then
+				module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 				return false, "database upgrade needed";
 			end
 		end
