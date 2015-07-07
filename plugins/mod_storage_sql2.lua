@@ -13,8 +13,8 @@ local function is_stanza(x) return getmetatable(x) == stanza_mt; end
 local noop = function() end
 local unpack = unpack
 local function iterator(result)
-	return function(result)
-		local row = result();
+	return function(result_)
+		local row = result_();
 		if row ~= nil then
 			return unpack(row);
 		end
