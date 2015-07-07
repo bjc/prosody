@@ -405,3 +405,36 @@ function module.load()
 
 	module:provides("storage", driver);
 end
+
+function module.command(arg)
+	local config = require "core.configmanager";
+	local prosodyctl = require "util.prosodyctl";
+	local command = table.remove(arg, 1);
+	if command == "upgrade" then
+		-- We need to find every unique dburi in the config
+		local uris = {};
+		for host in pairs(prosody.hosts) do
+			local params = config.get(host, "sql") or default_params;
+			uris[sql.db2uri(params)] = params;
+		end
+		print("We will check and upgrade the following databases:\n");
+		for _, params in pairs(uris) do
+			print("", "["..params.driver.."] "..params.database..(params.host and " on "..params.host or ""));
+		end
+		print("");
+		print("Ensure you have working backups of the above databases before continuing! ");
+		if not prosodyctl.show_yesno("Continue with the database upgrade? [yN]") then
+			print("Ok, no upgrade. But you do have backups, don't you? ...don't you?? :-)");
+			return;
+		end
+		-- Upgrade each one
+		for _, params in pairs(uris) do
+			print("Checking "..params.database.."...");
+			engine = sql:create_engine(params);
+			upgrade_table(params, true);
+		end
+		print("All done!");
+	else
+		print("Unknown command: "..command);
+	end
+end
