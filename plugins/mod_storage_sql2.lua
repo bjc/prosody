@@ -376,6 +376,7 @@ local function upgrade_table(params, apply_changes)
 			return false;
 		end
 	end
+	return changes;
 end
 
 local function normalize_params(params)
