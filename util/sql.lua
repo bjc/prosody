@@ -111,7 +111,10 @@ function engine:connect()
 	self.conn = dbh;
 	self.prepared = {};
 	self:set_encoding();
-	self:onconnect();
+	local ok, err = self:onconnect();
+	if ok == false then
+		return ok, err;
+	end
 	return true;
 end
 function engine:onconnect()
