@@ -110,7 +110,10 @@ function engine:connect()
 	dbh:autocommit(false); -- don't commit automatically
 	self.conn = dbh;
 	self.prepared = {};
-	self:set_encoding();
+	local ok, err = self:set_encoding();
+	if not ok then
+		return ok, err;
+	end
 	local ok, err = self:onconnect();
 	if ok == false then
 		return ok, err;
