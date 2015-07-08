@@ -101,6 +101,7 @@ function engine:connect()
 
 	local params = self.params;
 	assert(params.driver, "no driver")
+	log("debug", "Connecting to [%s] %s...", params.driver, params.database);
 	local dbh, err = DBI.Connect(
 		params.driver, params.database,
 		params.username, params.password,
@@ -110,8 +111,14 @@ function engine:connect()
 	dbh:autocommit(false); -- don't commit automatically
 	self.conn = dbh;
 	self.prepared = {};
-	self:set_encoding();
-	self:onconnect();
+	local ok, err = self:set_encoding();
+	if not ok then
+		return ok, err;
+	end
+	local ok, err = self:onconnect();
+	if ok == false then
+		return ok, err;
+	end
 	return true;
 end
 function engine:onconnect()
@@ -242,7 +249,7 @@ function engine:_create_table(table)
 	if self.params.driver == "PostgreSQL" then
 		sql = sql:gsub("`", "\"");
 	elseif self.params.driver == "MySQL" then
-		sql = sql:gsub(";$", " CHARACTER SET 'utf8' COLLATE 'utf8_bin';");
+		sql = sql:gsub(";$", (" CHARACTER SET '%s' COLLATE '%s_bin';"):format(self.charset, self.charset));
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
@@ -265,15 +272,33 @@ function engine:set_encoding() -- to UTF-8
 	local set_names_query = "SET NAMES '%s';"
 	local charset = "utf8";
 	if driver == "MySQL" then
-		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
 		local ok, charsets = self:transaction(function()
 			return self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
 		end);
 		local row = ok and charsets();
 		charset = row and row[1] or charset;
+		set_names_query = set_names_query:gsub(";$", (" COLLATE '%s';"):format(charset.."_bin"));
 	end
 	self.charset = charset;
-	return self:transaction(function() return self:execute(set_names_query:format(charset)); end);
+	log("debug", "Using encoding '%s' for database connection", charset);
+	local ok, err = self:transaction(function() return self:execute(set_names_query:format(charset)); end);
+	if not ok then
+		return ok, err;
+	end
+	
+	if driver == "MySQL" then
+		local ok, actual_charset = self:transaction(function ()
+			return self:select"SHOW SESSION VARIABLES LIKE 'character_set_client'";
+		end);
+		for row in actual_charset do
+			if row[2] ~= charset then
+				log("error", "MySQL %s is actually %q (expected %q)", row[1], row[2], charset);
+				return false, "Failed to set connection encoding";
+			end
+		end
+	end
+	
+	return true;
 end
 local engine_mt = { __index = engine };
 

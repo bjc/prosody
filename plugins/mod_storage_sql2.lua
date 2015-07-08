@@ -13,8 +13,8 @@ local function is_stanza(x) return getmetatable(x) == stanza_mt; end
 local noop = function() end
 local unpack = unpack
 local function iterator(result)
-	return function(result)
-		local row = result();
+	return function(result_)
+		local row = result_();
 		if row ~= nil then
 			return unpack(row);
 		end
@@ -385,7 +385,8 @@ local function upgrade_table(params, apply_changes)
 		end
 
 		-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
-		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
+		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME` FROM `information_schema`.`columns` WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );";
+		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 		success,err = engine:transaction(function()
 			local result = engine:execute(check_encoding_query);
 			local n_bad_columns = result:rowcount();
@@ -393,12 +394,13 @@ local function upgrade_table(params, apply_changes)
 				changes = true;
 				if apply_changes then
 					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
-					local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
-					local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
+					local fix_column_query1 = "ALTER TABLE `%s` CHANGE `%s` `%s` BLOB;";
+					local fix_column_query2 = "ALTER TABLE `%s` CHANGE `%s` `%s` %s CHARACTER SET '%s' COLLATE '%s_bin';";
 					for row in result:rows() do
-						local column_name, column_type = unpack(row);
-						engine:execute(fix_column_query1:format(column_name, column_name));
-						engine:execute(fix_column_query2:format(column_name, column_name, column_type));
+						local column_name, column_type, table_name  = unpack(row);
+						module:log("debug", "Fixing column %s in table %s", column_name, table_name);
+						engine:execute(fix_column_query1:format(table_name, column_name, column_name));
+						engine:execute(fix_column_query2:format(table_name, column_name, column_name, column_type, engine.charset, engine.charset));
 					end
 					module:log("info", "Database encoding upgrade complete!");
 				end
@@ -410,6 +412,7 @@ local function upgrade_table(params, apply_changes)
 			return false;
 		end
 	end
+	return changes;
 end
 
 local function normalize_params(params)
@@ -429,12 +432,45 @@ function module.load()
 			-- FIXME: we should check in information_schema, etc.
 			create_table();
 			-- Check whether the table needs upgrading
-			if not upgrade_table(params, true) then
-				module:log("error", "Old database format detected, and upgrade failed");
+			if upgrade_table(params, false) then
+				module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 				return false, "database upgrade needed";
 			end
 		end
 	end);
 
 	module:provides("storage", driver);
+end
+
+function module.command(arg)
+	local config = require "core.configmanager";
+	local prosodyctl = require "util.prosodyctl";
+	local command = table.remove(arg, 1);
+	if command == "upgrade" then
+		-- We need to find every unique dburi in the config
+		local uris = {};
+		for host in pairs(prosody.hosts) do
+			local params = config.get(host, "sql") or default_params;
+			uris[sql.db2uri(params)] = params;
+		end
+		print("We will check and upgrade the following databases:\n");
+		for _, params in pairs(uris) do
+			print("", "["..params.driver.."] "..params.database..(params.host and " on "..params.host or ""));
+		end
+		print("");
+		print("Ensure you have working backups of the above databases before continuing! ");
+		if not prosodyctl.show_yesno("Continue with the database upgrade? [yN]") then
+			print("Ok, no upgrade. But you do have backups, don't you? ...don't you?? :-)");
+			return;
+		end
+		-- Upgrade each one
+		for _, params in pairs(uris) do
+			print("Checking "..params.database.."...");
+			engine = sql:create_engine(params);
+			upgrade_table(params, true);
+		end
+		print("All done!");
+	else
+		print("Unknown command: "..command);
+	end
 end
