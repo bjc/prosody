@@ -268,12 +268,12 @@ function engine:set_encoding() -- to UTF-8
 	local set_names_query = "SET NAMES '%s';"
 	local charset = "utf8";
 	if driver == "MySQL" then
-		set_names_query = set_names_query:gsub(";$", " COLLATE 'utf8_bin';");
 		local ok, charsets = self:transaction(function()
 			return self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
 		end);
 		local row = ok and charsets();
 		charset = row and row[1] or charset;
+		set_names_query = set_names_query:gsub(";$", (" COLLATE '%s';"):format(charset.."_bin"));
 	end
 	self.charset = charset;
 	return self:transaction(function() return self:execute(set_names_query:format(charset)); end);
