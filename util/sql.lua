@@ -279,7 +279,13 @@ function engine:set_encoding() -- to UTF-8
 		set_names_query = set_names_query:gsub(";$", (" COLLATE '%s';"):format(charset.."_bin"));
 	end
 	self.charset = charset;
-	return self:transaction(function() return self:execute(set_names_query:format(charset)); end);
+	log("debug", "Using encoding '%s' for database connection", charset);
+	local ok, err = self:transaction(function() return self:execute(set_names_query:format(charset)); end);
+	if not ok then
+		return ok, err;
+	end
+	
+	return true;
 end
 local engine_mt = { __index = engine };
 
