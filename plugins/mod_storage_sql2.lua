@@ -351,7 +351,8 @@ local function upgrade_table(params, apply_changes)
 		end
 
 		-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
-		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE` FROM `information_schema`.`columns` WHERE `TABLE_NAME`='prosody' AND ( `CHARACTER_SET_NAME`!='utf8' OR `COLLATION_NAME`!='utf8_bin' );";
+		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME` FROM `information_schema`.`columns` WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );";
+		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 		success,err = engine:transaction(function()
 			local result = engine:execute(check_encoding_query);
 			local n_bad_columns = result:rowcount();
@@ -359,12 +360,13 @@ local function upgrade_table(params, apply_changes)
 				changes = true;
 				if apply_changes then
 					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
-					local fix_column_query1 = "ALTER TABLE `prosody` CHANGE `%s` `%s` BLOB;";
-					local fix_column_query2 = "ALTER TABLE `prosody` CHANGE `%s` `%s` %s CHARACTER SET 'utf8' COLLATE 'utf8_bin';";
+					local fix_column_query1 = "ALTER TABLE `%s` CHANGE `%s` `%s` BLOB;";
+					local fix_column_query2 = "ALTER TABLE `%s` CHANGE `%s` `%s` %s CHARACTER SET '%s' COLLATE '%s_bin';";
 					for row in result:rows() do
-						local column_name, column_type = unpack(row);
-						engine:execute(fix_column_query1:format(column_name, column_name));
-						engine:execute(fix_column_query2:format(column_name, column_name, column_type));
+						local column_name, column_type, table_name  = unpack(row);
+						module:log("debug", "Fixing column %s in table %s", column_name, table_name);
+						engine:execute(fix_column_query1:format(table_name, column_name, column_name));
+						engine:execute(fix_column_query2:format(table_name, column_name, column_name, column_type, engine.charset, engine.charset));
 					end
 					module:log("info", "Database encoding upgrade complete!");
 				end
