@@ -101,7 +101,7 @@ function engine:connect()
 
 	local params = self.params;
 	assert(params.driver, "no driver")
-	log("error", "Connecting to [%s] %s...", params.driver, params.database);
+	log("debug", "Connecting to [%s] %s...", params.driver, params.database);
 	local dbh, err = DBI.Connect(
 		params.driver, params.database,
 		params.username, params.password,
