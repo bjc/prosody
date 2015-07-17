@@ -285,7 +285,7 @@ function engine:set_encoding() -- to UTF-8
 	if not ok then
 		return ok, err;
 	end
-	
+
 	if driver == "MySQL" then
 		local ok, actual_charset = self:transaction(function ()
 			return self:select"SHOW SESSION VARIABLES LIKE 'character_set_client'";
@@ -297,7 +297,7 @@ function engine:set_encoding() -- to UTF-8
 			end
 		end
 	end
-	
+
 	return true;
 end
 local engine_mt = { __index = engine };
