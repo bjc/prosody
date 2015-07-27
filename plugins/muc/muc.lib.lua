@@ -1178,57 +1178,9 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	return true;
 end
 
-local affiliation_notify = module:require "muc/affiliation_notify";
-
-local name = module:require "muc/name";
-room_mt.get_name = name.get;
-room_mt.set_name = name.set;
-
-local description = module:require "muc/description";
-room_mt.get_description = description.get;
-room_mt.set_description = description.set;
-
-local hidden = module:require "muc/hidden";
-room_mt.get_hidden = hidden.get;
-room_mt.set_hidden = hidden.set;
-function room_mt:get_public()
-	return not self:get_hidden();
-end
-function room_mt:set_public(public)
-	return self:set_hidden(not public);
-end
-
-local password = module:require "muc/password";
-room_mt.get_password = password.get;
-room_mt.set_password = password.set;
-
 local whois = module:require "muc/whois";
 room_mt.get_whois = whois.get;
 room_mt.set_whois = whois.set;
-
-local members_only = module:require "muc/members_only";
-room_mt.get_members_only = members_only.get;
-room_mt.set_members_only = members_only.set;
-
-local moderated = module:require "muc/moderated";
-room_mt.get_moderated = moderated.get;
-room_mt.set_moderated = moderated.set;
-
-local persistent = module:require "muc/persistent";
-room_mt.get_persistent = persistent.get;
-room_mt.set_persistent = persistent.set;
-
-local subject = module:require "muc/subject";
-room_mt.get_changesubject = subject.get_changesubject;
-room_mt.set_changesubject = subject.set_changesubject;
-room_mt.get_subject = subject.get;
-room_mt.set_subject = subject.set;
-room_mt.send_subject = subject.send;
-
-local history = module:require "muc/history";
-room_mt.send_history = history.send;
-room_mt.get_historylength = history.get_length;
-room_mt.set_historylength = history.set_length;
 
 local _M = {}; -- module "muc"
 
