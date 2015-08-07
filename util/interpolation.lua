@@ -24,7 +24,7 @@ local pairs, ipairs = pairs, ipairs;
 local s_sub, s_gsub, s_match = string.sub, string.gsub, string.match;
 local t_concat = table.concat;
 
-local function new_render(pat, escape)
+local function new_render(pat, escape, funcs)
 	-- assert(type(pat) == "string", "bad argument #1 to 'new_render' (string expected)");
 	-- assert(type(escape) == "function", "bad argument #2 to 'new_render' (function expected)");
 	local function render(template, values)
@@ -40,6 +40,14 @@ local function new_render(pat, escape)
 				for word in name:gmatch"[^.]+" do
 					value = value[word];
 					if not value then break; end
+				end
+			end
+			if funcs then
+				while value ~= nil and opt == '|' do
+					local f;
+					f, opt, e = s_match(block, "^([%a_][%w_.]*)(%p?)()", e);
+					f = funcs[f];
+					if f then value = f(value); end
 				end
 			end
 			if opt == '#' or opt == '%' then
