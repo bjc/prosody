@@ -85,6 +85,7 @@ function module.add_host(module)
 		session.type = "component";
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
+		module:fire_event("component-authenticated", { session = session });
 	
 		return true;
 	end
