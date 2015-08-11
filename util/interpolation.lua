@@ -1,6 +1,6 @@
 -- Simple template language
 --
--- The new() function takes a pattern and an escape function and returns 
+-- The new() function takes a pattern and an escape function and returns
 -- a render() function.  Both are required.
 --
 -- The function render() takes a string template and a table of values.
@@ -9,14 +9,14 @@
 -- symbol.
 --
 -- Variants are:
--- {name} is substituted for values["name"] and is escaped using the 
+-- {name} is substituted for values["name"] and is escaped using the
 -- second argument to new_render().  To disable the escaping, use {name!}.
 -- {name.item} can be used to access table items.
 -- To renter lists of items: {name# item number {idx} is {item} }
 -- Or key-value pairs: {name% t[ {idx} ] = {item} }
--- To show a defaults for missing values {name? sub-template } can be used, 
+-- To show a defaults for missing values {name? sub-template } can be used,
 -- which renders a sub-template if values["name"] is false-ish.
--- {name& sub-template } does the opposite, the sub-template is rendered 
+-- {name& sub-template } does the opposite, the sub-template is rendered
 -- if the selected value is anything but false or nil.
 
 local type, tostring = type, tostring;
@@ -24,7 +24,7 @@ local pairs, ipairs = pairs, ipairs;
 local s_sub, s_gsub, s_match = string.sub, string.gsub, string.match;
 local t_concat = table.concat;
 
-local function new_render(pat, escape)
+local function new_render(pat, escape, funcs)
 	-- assert(type(pat) == "string", "bad argument #1 to 'new_render' (string expected)");
 	-- assert(type(escape) == "function", "bad argument #2 to 'new_render' (function expected)");
 	local function render(template, values)
@@ -40,6 +40,14 @@ local function new_render(pat, escape)
 				for word in name:gmatch"[^.]+" do
 					value = value[word];
 					if not value then break; end
+				end
+			end
+			if funcs then
+				while value ~= nil and opt == '|' do
+					local f;
+					f, opt, e = s_match(block, "^([%a_][%w_.]*)(%p?)()", e);
+					f = funcs[f];
+					if f then value = f(value); end
 				end
 			end
 			if opt == '#' or opt == '%' then
