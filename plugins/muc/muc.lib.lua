@@ -1146,7 +1146,7 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	else
 		-- Can't do anything to other owners or admins
 		local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
-		if occupant_affiliation == "owner" and occupant_affiliation == "admin" then
+		if occupant_affiliation == "owner" or occupant_affiliation == "admin" then
 			return nil, "cancel", "not-allowed";
 		end
 
