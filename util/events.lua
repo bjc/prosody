@@ -14,9 +14,9 @@ local t_sort = table.sort;
 local setmetatable = setmetatable;
 local next = next;
 
-module "events"
+local _ENV = nil;
 
-function new()
+local function new()
 	local handlers = {};
 	local global_wrappers;
 	local wrappers = {};
@@ -151,4 +151,6 @@ function new()
 	};
 end
 
-return _M;
+return {
+	new = new;
+};

@@ -8,21 +8,11 @@
 
 local debug = require "util.debug";
 
-module("helpers", package.seeall);
-
 -- Helper functions for debugging
 
 local log = require "util.logger".init("util.debug");
 
-function log_host_events(host)
-	return log_events(prosody.hosts[host].events, host);
-end
-
-function revert_log_host_events(host)
-	return revert_log_events(prosody.hosts[host].events);
-end
-
-function log_events(events, name, logger)
+local function log_events(events, name, logger)
 	local f = events.fire_event;
 	if not f then
 		error("Object does not appear to be a util.events object");
@@ -37,11 +27,19 @@ function log_events(events, name, logger)
 	return events;
 end
 
-function revert_log_events(events)
+local function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
 end
 
-function show_events(events, specific_event)
+local function log_host_events(host)
+	return log_events(prosody.hosts[host].events, host);
+end
+
+local function revert_log_host_events(host)
+	return revert_log_events(prosody.hosts[host].events);
+end
+
+local function show_events(events, specific_event)
 	local event_handlers = events._handlers;
 	local events_array = {};
 	local event_handler_arrays = {};
@@ -70,7 +68,7 @@ function show_events(events, specific_event)
 	return table.concat(events_array, "\n");
 end
 
-function get_upvalue(f, get_name)
+local function get_upvalue(f, get_name)
 	local i, name, value = 0;
 	repeat
 		i = i + 1;
@@ -79,4 +77,11 @@ function get_upvalue(f, get_name)
 	return value;
 end
 
-return _M;
+return {
+	log_host_events = log_host_events;
+	revert_log_host_events = revert_log_host_events;
+	log_events = log_events;
+	revert_log_events = revert_log_events;
+	show_events = show_events;
+	get_upvalue = get_upvalue;
+};

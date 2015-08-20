@@ -45,7 +45,7 @@ local luasec_has = {
 	single_ecdh_use = luasec_version >= 2;
 };
 
-module "certmanager"
+local _ENV = nil;
 
 -- Global SSL options if not overridden per-host
 local global_ssl_config = configmanager.get("*", "ssl");
@@ -78,7 +78,7 @@ if luasec_version < 5 and ssl_x509 then
 	end
 end
 
-function create_context(host, mode, ...)
+local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	cfg:apply(global_ssl_config);
@@ -154,7 +154,7 @@ function create_context(host, mode, ...)
 	return ctx, err, user_ssl_config;
 end
 
-function reload_ssl_config()
+local function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
 	if luasec_has.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
@@ -163,4 +163,7 @@ end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
 
-return _M;
+return {
+	create_context = create_context;
+	reload_ssl_config = reload_ssl_config;
+};

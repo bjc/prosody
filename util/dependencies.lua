@@ -6,16 +6,14 @@
 -- COPYING file in the source package for more information.
 --
 
-module("dependencies", package.seeall)
-
-function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
+local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
 
 -- Required to be able to find packages installed with luarocks
 if not softreq "luarocks.loader" then -- LuaRocks 2.x
 	softreq "luarocks.require"; -- LuaRocks <1.x
 end
 
-function missingdep(name, sources, msg)
+local function missingdep(name, sources, msg)
 	print("");
 	print("**************************");
 	print("Prosody was unable to find "..tostring(name));
@@ -48,11 +46,11 @@ package.preload["util.ztact"] = function ()
 	end
 end;
 
-function check_dependencies()
-	if _VERSION ~= "Lua 5.1" then
+local function check_dependencies()
+	if _VERSION < "Lua 5.1" then
 		print "***********************************"
 		print("Unsupported Lua version: ".._VERSION);
-		print("Only Lua 5.1 is supported.");
+		print("At least Lua 5.1 is required.");
 		print "***********************************"
 		return false;
 	end
@@ -137,13 +135,18 @@ function check_dependencies()
 	return not fatal;
 end
 
-function log_warnings()
+local function log_warnings()
+	if _VERSION > "Lua 5.1" then
+		log("warn", "Support for %s is experimental, please report any issues", _VERSION);
+	end
+	local ssl = softreq"ssl";
 	if ssl then
 		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
 		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
 			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
 		end
 	end
+	local lxp = softreq"lxp";
 	if lxp then
 		if not pcall(lxp.new, { StartDoctypeDecl = false }) then
 			log("error", "The version of LuaExpat on your system leaves Prosody "
@@ -162,4 +165,9 @@ function log_warnings()
 	end
 end
 
-return _M;
+return {
+	softreq = softreq;
+	missingdep = missingdep;
+	check_dependencies = check_dependencies;
+	log_warnings = log_warnings;
+};

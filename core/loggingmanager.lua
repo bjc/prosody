@@ -27,7 +27,7 @@ local prosody = prosody;
 
 _G.log = logger.init("general");
 
-module "loggingmanager"
+local _ENV = nil;
 
 -- The log config used if none specified in the config file (see reload_logging for initialization)
 local default_logging;
@@ -136,7 +136,7 @@ function get_levels(criteria, set)
 end
 
 -- Initialize config, etc. --
-function reload_logging()
+local function reload_logging()
 	local old_sink_types = {};
 
 	for name, sink_maker in pairs(log_sink_types) do
@@ -267,10 +267,13 @@ function log_sink_types.file(sink_config)
 	end;
 end
 
-function register_sink_type(name, sink_maker)
+local function register_sink_type(name, sink_maker)
 	local old_sink_maker = log_sink_types[name];
 	log_sink_types[name] = sink_maker;
 	return old_sink_maker;
 end
 
-return _M;
+return {
+	reload_logging = reload_logging;
+	register_sink_type = register_sink_type;
+}

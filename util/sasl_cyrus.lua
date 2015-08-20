@@ -60,7 +60,7 @@ local sasl_errstring = {
 };
 setmetatable(sasl_errstring, { __index = function() return "undefined error!" end });
 
-module "sasl_cyrus"
+local _ENV = nil;
 
 local method = {};
 method.__index = method;
@@ -82,7 +82,7 @@ end
 --      For GSSAPI, this determines the hostname in the service ticket (after
 --      reverse DNS canonicalization, only if [libdefaults] rdns = true which
 --      is the default).
-function new(realm, service_name, app_name, host_fqdn)
+local function new(realm, service_name, app_name, host_fqdn)
 
 	init(app_name or service_name);
 
@@ -163,4 +163,6 @@ function method:process(message)
 	end
 end
 
-return _M;
+return {
+	new = new;
+};

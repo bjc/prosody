@@ -19,10 +19,11 @@ local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
 
-local have_encodings, encodings = pcall(require, "util.encodings");
-local nameprep = have_encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
+local encodings = deps.softreq"util.encodings";
+local nameprep = encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
 
-module "configmanager"
+local _M = {};
+local _ENV = nil;
 
 _M.resolve_relative_path = resolve_relative_path; -- COMPAT
 
@@ -34,11 +35,11 @@ local config = setmetatable({ ["*"] = { } }, config_mt);
 -- When host not found, use global
 local host_mt = { __index = function(_, k) return config["*"][k] end }
 
-function getconfig()
+function _M.getconfig()
 	return config;
 end
 
-function get(host, key, _oldkey)
+function _M.get(host, key, _oldkey)
 	if key == "core" then
 		key = _oldkey; -- COMPAT with code that still uses "core"
 	end
@@ -73,7 +74,7 @@ function _M.set(host, key, value, _oldvalue)
 	return set(config, host, key, value);
 end
 
-function load(filename, config_format)
+function _M.load(filename, config_format)
 	config_format = config_format or filename:match("%w+$");
 
 	if parsers[config_format] and parsers[config_format].load then
@@ -102,7 +103,7 @@ function load(filename, config_format)
 	end
 end
 
-function addparser(config_format, parser)
+function _M.addparser(config_format, parser)
 	if config_format and parser then
 		parsers[config_format] = parser;
 	end
