@@ -346,10 +346,9 @@ local function get_hosts_set(hosts, module)
 	elseif type(hosts) == "string" then
 		return set.new { hosts };
 	elseif hosts == nil then
-		local mm = require "modulemanager";
 		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
-			/ function (host) return (prosody.hosts[host].type == "local" or module and mm.is_loaded(host, module)) and host or nil; end;
-		if module and mm.get_module("*", module) then
+			/ function (host) return (prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module)) and host or nil; end;
+		if module and modulemanager.get_module("*", module) then
 			hosts_set:add("*");
 		end
 		return hosts_set;
@@ -357,15 +356,13 @@ local function get_hosts_set(hosts, module)
 end
 
 function def_env.module:load(name, hosts, config)
-	local mm = require "modulemanager";
-
 	hosts = get_hosts_set(hosts);
 
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0, nil;
 	for host in hosts do
-		if (not mm.is_loaded(host, name)) then
-			mod, err = mm.load(host, name, config);
+		if (not modulemanager.is_loaded(host, name)) then
+			mod, err = modulemanager.load(host, name, config);
 			if not mod then
 				ok = false;
 				if err == "global-module-already-loaded" then
@@ -386,15 +383,13 @@ function def_env.module:load(name, hosts, config)
 end
 
 function def_env.module:unload(name, hosts)
-	local mm = require "modulemanager";
-
 	hosts = get_hosts_set(hosts, name);
 
 	-- Unload the module for each host
 	local ok, err, count = true, nil, 0;
 	for host in hosts do
-		if mm.is_loaded(host, name) then
-			ok, err = mm.unload(host, name);
+		if modulemanager.is_loaded(host, name) then
+			ok, err = modulemanager.unload(host, name);
 			if not ok then
 				ok = false;
 				self.session.print(err or "Unknown error unloading module");
@@ -408,8 +403,6 @@ function def_env.module:unload(name, hosts)
 end
 
 function def_env.module:reload(name, hosts)
-	local mm = require "modulemanager";
-
 	hosts = array.collect(get_hosts_set(hosts, name)):sort(function (a, b)
 		if a == "*" then return true
 		elseif b == "*" then return false
@@ -419,8 +412,8 @@ function def_env.module:reload(name, hosts)
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
 	for _, host in ipairs(hosts) do
-		if mm.is_loaded(host, name) then
-			ok, err = mm.reload(host, name);
+		if modulemanager.is_loaded(host, name) then
+			ok, err = modulemanager.reload(host, name);
 			if not ok then
 				ok = false;
 				self.session.print(err or "Unknown error reloading module");
