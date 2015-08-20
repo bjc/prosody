@@ -100,6 +100,9 @@ local map_shim_mt = {
 		end;
 	};
 }
+
+local open; -- forward declaration
+
 local function create_map_shim(host, store)
 	local keyval_store, err = open(host, store, "keyval");
 	if keyval_store == nil then return nil, err end
@@ -108,7 +111,7 @@ local function create_map_shim(host, store)
 	}, map_shim_mt);
 end
 
-local function open(host, store, typ)
+function open(host, store, typ)
 	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
 	if not ret then
