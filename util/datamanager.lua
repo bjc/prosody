@@ -43,7 +43,7 @@ pcall(function()
 	fallocate = pposix.fallocate or fallocate;
 end);
 
-module "datamanager"
+local _ENV = nil;
 
 ---- utils -----
 local encode, decode;
@@ -74,7 +74,7 @@ local callbacks = {};
 
 ------- API -------------
 
-function set_data_path(path)
+local function set_data_path(path)
 	log("debug", "Setting data path to: %s", path);
 	data_path = path;
 end
@@ -87,14 +87,14 @@ local function callback(username, host, datastore, data)
 
 	return username, host, datastore, data;
 end
-function add_callback(func)
+local function add_callback(func)
 	if not callbacks[func] then -- Would you really want to set the same callback more than once?
 		callbacks[func] = true;
 		callbacks[#callbacks+1] = func;
 		return true;
 	end
 end
-function remove_callback(func)
+local function remove_callback(func)
 	if callbacks[func] then
 		for i, f in ipairs(callbacks) do
 			if f == func then
@@ -106,7 +106,7 @@ function remove_callback(func)
 	end
 end
 
-function getpath(username, host, datastore, ext, create)
+local function getpath(username, host, datastore, ext, create)
 	ext = ext or "dat";
 	host = (host and encode(host)) or "_global";
 	username = username and encode(username);
@@ -119,7 +119,7 @@ function getpath(username, host, datastore, ext, create)
 	end
 end
 
-function load(username, host, datastore)
+local function load(username, host, datastore)
 	local data, ret = envloadfile(getpath(username, host, datastore), {});
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
@@ -175,7 +175,7 @@ if prosody and prosody.platform ~= "posix" then
 	end
 end
 
-function store(username, host, datastore, data)
+local function store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
@@ -209,7 +209,7 @@ function store(username, host, datastore, data)
 	return true;
 end
 
-function list_append(username, host, datastore, data)
+local function list_append(username, host, datastore, data)
 	if not data then return; end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
@@ -235,7 +235,7 @@ function list_append(username, host, datastore, data)
 	return true;
 end
 
-function list_store(username, host, datastore, data)
+local function list_store(username, host, datastore, data)
 	if not data then
 		data = {};
 	end
@@ -259,7 +259,7 @@ function list_store(username, host, datastore, data)
 	return true;
 end
 
-function list_load(username, host, datastore)
+local function list_load(username, host, datastore)
 	local items = {};
 	local data, ret = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
 	if not data then
@@ -287,7 +287,7 @@ local type_map = {
 	list = "list";
 }
 
-function users(host, store, typ)
+local function users(host, store, typ)
 	typ = type_map[typ or "keyval"];
 	local store_dir = format("%s/%s/%s", data_path, encode(host), store);
 
@@ -306,7 +306,7 @@ function users(host, store, typ)
 	end, state;
 end
 
-function stores(username, host, typ)
+local function stores(username, host, typ)
 	typ = type_map[typ or "keyval"];
 	local store_dir = format("%s/%s/", data_path, encode(host));
 
@@ -346,7 +346,7 @@ local function do_remove(path)
 	return true
 end
 
-function purge(username, host)
+local function purge(username, host)
 	local host_dir = format("%s/%s/", data_path, encode(host));
 	local ok, iter, state, var = pcall(lfs.dir, host_dir);
 	if not ok then
@@ -366,6 +366,19 @@ function purge(username, host)
 	return #errs == 0, t_concat(errs, ", ");
 end
 
-_M.path_decode = decode;
-_M.path_encode = encode;
-return _M;
+return {
+	set_data_path = set_data_path;
+	add_callback = add_callback;
+	remove_callback = remove_callback;
+	getpath = getpath;
+	load = load;
+	store = store;
+	list_append = list_append;
+	list_store = list_store;
+	list_load = list_load;
+	users = users;
+	stores = stores;
+	purge = purge;
+	path_decode = decode;
+	path_encode = encode;
+};

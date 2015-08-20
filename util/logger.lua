@@ -11,13 +11,13 @@ local pcall = pcall;
 local find = string.find;
 local ipairs, pairs, setmetatable = ipairs, pairs, setmetatable;
 
-module "logger"
+local _ENV = nil;
 
 local level_sinks = {};
 
 local make_logger;
 
-function init(name)
+local function init(name)
 	local log_debug = make_logger(name, "debug");
 	local log_info = make_logger(name, "info");
 	local log_warn = make_logger(name, "warn");
@@ -52,7 +52,7 @@ function make_logger(source_name, level)
 	return logger;
 end
 
-function reset()
+local function reset()
 	for level, handler_list in pairs(level_sinks) do
 		-- Clear all handlers for this level
 		for i = 1, #handler_list do
@@ -61,7 +61,7 @@ function reset()
 	end
 end
 
-function add_level_sink(level, sink_function)
+local function add_level_sink(level, sink_function)
 	if not level_sinks[level] then
 		level_sinks[level] = { sink_function };
 	else
@@ -69,6 +69,10 @@ function add_level_sink(level, sink_function)
 	end
 end
 
-_M.new = make_logger;
-
-return _M;
+return {
+	init = init;
+	make_logger = make_logger;
+	reset = reset;
+	add_level_sink = add_level_sink;
+	new = make_logger;
+};

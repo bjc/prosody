@@ -17,9 +17,7 @@ end
 local io_open = io.open;
 local envload = require "util.envload".envload;
 
-module "pluginloader"
-
-function load_file(names)
+local function load_file(names)
 	local file, err, path;
 	for i=1,#plugin_dir do
 		for j=1,#names do
@@ -35,7 +33,7 @@ function load_file(names)
 	return file, err;
 end
 
-function load_resource(plugin, resource)
+local function load_resource(plugin, resource)
 	resource = resource or "mod_"..plugin..".lua";
 
 	local names = {
@@ -48,7 +46,7 @@ function load_resource(plugin, resource)
 	return load_file(names);
 end
 
-function load_code(plugin, resource, env)
+local function load_code(plugin, resource, env)
 	local content, err = load_resource(plugin, resource);
 	if not content then return content, err; end
 	local path = err;
@@ -57,4 +55,8 @@ function load_code(plugin, resource, env)
 	return f, path;
 end
 
-return _M;
+return {
+	load_file = load_file;
+	load_resource = load_resource;
+	load_code = load_code;
+};

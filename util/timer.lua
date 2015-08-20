@@ -15,10 +15,9 @@ local debug_traceback = debug.traceback;
 local tostring = tostring;
 local xpcall = xpcall;
 
-module "timer"
+local _ENV = nil;
 
 local _add_task = server.add_task;
---add_task = _add_task;
 
 local h = indexedbheap.create();
 local params = {};
@@ -41,15 +40,15 @@ local function _on_timer(now)
 		if success and type(err) == "number" then
 			h:insert(_callback, err + now, _id); -- re-add
 			params[_id] = _param;
+			end
 		end
-	end
 	next_time = peek;
 	if peek ~= nil then
 		return peek - now;
 	end
 end
-function add_task(delay, callback, param)
-	local current_time = get_time();
+local function add_task(delay, callback, param)
+		local current_time = get_time();
 	local event_time = current_time + delay;
 
 	local id = h:insert(callback, event_time);
@@ -57,22 +56,27 @@ function add_task(delay, callback, param)
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
 		_add_task(next_time - current_time, _on_timer);
-	end
+				end
 	return id;
-end
-function stop(id)
+			end
+local function stop(id)
 	params[id] = nil;
 	return h:remove(id);
-end
-function reschedule(id, delay)
+		end
+local function reschedule(id, delay)
 	local current_time = get_time();
 	local event_time = current_time + delay;
 	h:reprioritize(id, delay);
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
 		_add_task(next_time - current_time, _on_timer);
-	end
+			end
 	return id;
 end
 
-return _M;
+return {
+	add_task = add_task;
+	stop = stop;
+	reschedule = reschedule;
+};
+

@@ -22,16 +22,16 @@ prosody.incoming_s2s = incoming_s2s;
 local incoming_s2s = incoming_s2s;
 local fire_event = prosody.events.fire_event;
 
-module "s2smanager"
+local _ENV = nil;
 
-function new_incoming(conn)
+local function new_incoming(conn)
 	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
 	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
 	incoming_s2s[session] = true;
 	return session;
 end
 
-function new_outgoing(from_host, to_host)
+local function new_outgoing(from_host, to_host)
 	local host_session = { to_host = to_host, from_host = from_host, host = from_host,
 		               notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
 	hosts[from_host].s2sout[to_host] = host_session;
@@ -52,7 +52,7 @@ local resting_session = { -- Resting, not dead
 		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
 
-function retire_session(session, reason)
+local function retire_session(session, reason)
 	local log = session.log or log; --luacheck: ignore 431/log
 	for k in pairs(session) do
 		if k ~= "log" and k ~= "id" and k ~= "conn" then
@@ -68,7 +68,7 @@ function retire_session(session, reason)
 	return setmetatable(session, resting_session);
 end
 
-function destroy_session(session, reason)
+local function destroy_session(session, reason)
 	if session.destroyed then return; end
 	(session.log or log)("debug", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host)..(reason and (": "..reason) or ""));
 
@@ -96,4 +96,10 @@ function destroy_session(session, reason)
 	return true;
 end
 
-return _M;
+return {
+	incoming_s2s = incoming_s2s;
+	new_incoming = new_incoming;
+	new_outgoing = new_outgoing;
+	retire_session = retire_session;
+	destroy_session = destroy_session;
+};

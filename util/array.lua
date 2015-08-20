@@ -169,7 +169,4 @@ for method, f in pairs(array_base) do
 	end
 end
 
-_G.array = array;
-module("array");
-
 return array;

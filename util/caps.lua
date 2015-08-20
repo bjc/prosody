@@ -12,9 +12,9 @@ local sha1 = require "util.hashes".sha1;
 local t_insert, t_sort, t_concat = table.insert, table.sort, table.concat;
 local ipairs = ipairs;
 
-module "caps"
+local _ENV = nil;
 
-function calculate_hash(disco_info)
+local function calculate_hash(disco_info)
 	local identities, features, extensions = {}, {}, {};
 	for _, tag in ipairs(disco_info) do
 		if tag.name == "identity" then
@@ -58,4 +58,6 @@ function calculate_hash(disco_info)
 	return ver, S;
 end
 
-return _M;
+return {
+	calculate_hash = calculate_hash;
+};

@@ -16,7 +16,7 @@ local s_match = string.match;
 local log = require "util.logger".init("sasl");
 local generate_uuid = require "util.uuid".generate;
 
-module "sasl.anonymous"
+local _ENV = nil;
 
 --=========================
 --SASL ANONYMOUS according to RFC 4505
@@ -39,8 +39,10 @@ local function anonymous(self, message)
 	return "success"
 end
 
-function init(registerMechanism)
+local function init(registerMechanism)
 	registerMechanism("ANONYMOUS", {"anonymous"}, anonymous);
 end
 
-return _M;
+return {
+	init = init;
+}

@@ -758,18 +758,18 @@ do
 		local create = socket[typ or "tcp"]
 		if type( create ) ~= "function"  then
 			return nil, "invalid socket type"
-		end
+			end
 		local client, err = create()  -- creating new socket
 		if not client then
 			debug( "cannot create socket:", err )
-			return nil, err
-		end
+				return nil, err
+			end
 		client:settimeout( 0 )  -- set nonblocking
 		local res, err = client:connect( addr, serverport )  -- connect
 		if res or ( err == "timeout" or err == "Operation already in progress" ) then
 			if client.getsockname then
 				addr = client:getsockname( )
-			end
+		end
 			local interface = wrapclient( client, addr, serverport, listener, pattern, sslctx )
 			debug( "new connection id:", interface.id )
 			return interface, err

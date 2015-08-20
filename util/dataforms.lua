@@ -13,14 +13,14 @@ local t_concat = table.concat;
 local st = require "util.stanza";
 local jid_prep = require "util.jid".prep;
 
-module "dataforms"
+local _ENV = nil;
 
 local xmlns_forms = 'jabber:x:data';
 
 local form_t = {};
 local form_mt = { __index = form_t };
 
-function new(layout)
+local function new(layout)
 	return setmetatable(layout, form_mt);
 end
 
@@ -238,7 +238,9 @@ field_readers["hidden"] =
 		return field_tag:get_child_text("value");
 	end
 
-return _M;
+return {
+	new = new;
+};
 
 
 --[=[
