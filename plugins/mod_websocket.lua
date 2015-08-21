@@ -13,7 +13,7 @@ local base64 = require "util.encodings".base64.encode;
 local st = require "util.stanza";
 local parse_xml = require "util.xml".parse;
 local portmanager = require "core.portmanager";
-local sm_destroy_session = sessionmanager.destroy_session;
+local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
 
 local websocket_frames = require"net.websocket.frames";
