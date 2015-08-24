@@ -187,15 +187,15 @@ end
 -- Takes the x element that goes into the stanzas
 function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason)
 	-- Build real jid and (optionally) occupant jid template presences
-	local base_presence;
-	if occupant.role ~= nil then
+	local base_presence do
 		-- Try to use main jid's presence
 		local pr = occupant:get_presence();
-		if pr ~= nil then
+		if pr and (pr.attr.type ~= "unavailable" or occupant.role == nil) then
 			base_presence = st.clone(pr);
+		else -- user is leaving but didn't send a leave presence. make one for them
+			base_presence = st.presence {from = occupant.nick; type = "unavailable";};
 		end
 	end
-	base_presence = base_presence or st.presence {from = occupant.nick; type = "unavailable";};
 
 	-- Fire event (before full_p and anon_p are created)
 	local event = {
