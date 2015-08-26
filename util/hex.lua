@@ -1,6 +1,7 @@
 local s_char = string.char;
 local s_format = string.format;
 local s_gsub = string.gsub;
+local s_lower = string.lower;
 
 local char_to_hex = {};
 local hex_to_char = {};
@@ -19,7 +20,7 @@ local function to(s)
 end
 
 local function from(s)
-	return (s_gsub(s, "..", hex_to_char));
+	return (s_gsub(s_lower(s), "%X*(%x%x)%X*", hex_to_char));
 end
 
 return { to = to, from = from }
