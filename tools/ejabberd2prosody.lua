@@ -72,7 +72,22 @@ function vcard(node, host, stanza)
 	print("["..(err or "success").."] vCard: "..node.."@"..host);
 end
 function password(node, host, password)
-	local ret, err = dm.store(node, host, "accounts", {password = password});
+	local data = {};
+	if type(password) == "string" then
+		data.password = password;
+	elseif type(password) == "table" and password[1] == "scram" then
+		local unb64 = require"mime".unb64;
+		local function hex(s)
+			return s:gsub(".", function (c)
+				return ("%02x"):format(c:byte());
+			end);
+		end
+		data.stored_key = hex(unb64(password[2]));
+		data.server_key = hex(unb64(password[3]));
+		data.salt = unb64(password[4]);
+		data.iteration_count = password[5];
+	end
+	local ret, err = dm.store(node, host, "accounts", data);
 	print("["..(err or "success").."] accounts: "..node.."@"..host);
 end
 function roster(node, host, jid, item)
