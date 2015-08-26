@@ -614,6 +614,7 @@ end, function(fields, err)
 end);
 
 local function send_to_online(message, server)
+	local sessions;
 	if server then
 		sessions = { [server] = hosts[server] };
 	else
