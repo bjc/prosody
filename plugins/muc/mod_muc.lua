@@ -93,7 +93,6 @@ do -- Monkey patch to make server admins room owners
 	end
 end
 
-local persistent = module:require "muc/persistent";
 local persistent_rooms_storage = module:open_store("persistent");
 local persistent_rooms = module:open_store("persistent", "map");
 local room_configs = module:open_store("config");
