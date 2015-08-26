@@ -30,6 +30,7 @@ local modulemanager = require "core.modulemanager";
 local core_post_stanza = prosody.core_post_stanza;
 local adhoc_simple = require "util.adhoc".new_simple_form;
 local adhoc_initial = require "util.adhoc".new_initial_data_form;
+local set = require"util.set";
 
 module:depends("adhoc");
 local adhoc_new = module:require "adhoc".new;
