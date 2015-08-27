@@ -7,7 +7,7 @@ local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local xmlns_carbons = "urn:xmpp:carbons:2";
 local xmlns_forward = "urn:xmpp:forward:0";
-local full_sessions, bare_sessions = full_sessions, bare_sessions;
+local full_sessions, bare_sessions = prosody.full_sessions, prosody.bare_sessions;
 
 local function toggle_carbons(event)
 	local origin, stanza = event.origin, event.stanza;
