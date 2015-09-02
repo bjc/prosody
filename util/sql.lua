@@ -180,6 +180,7 @@ function engine:_transaction(func, ...)
 	--assert(not self.__transaction, "Recursive transactions not allowed");
 	local args, n_args = {...}, select("#", ...);
 	local function f() return func(unpack(args, 1, n_args)); end
+	log("debug", "SQL transaction begin [%s]", tostring(func));
 	self.__transaction = true;
 	local success, a, b, c = xpcall(f, debug_traceback);
 	self.__transaction = nil;
@@ -328,4 +329,5 @@ return {
 	Table = Table;
 	Index = Index;
 	create_engine = create_engine;
+	db2uri = db2uri;
 };
