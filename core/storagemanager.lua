@@ -98,9 +98,14 @@ local function purge(user, host)
 	if type(storage) == "table" then
 		-- multiple storage backends in use that we need to purge
 		local purged = {};
-		for store, driver in pairs(storage) do
-			if not purged[driver] then
-				purged[driver] = get_driver(host, store):purge(user);
+		for store, driver_name in pairs(storage) do
+			if not purged[driver_name] then
+				local driver = get_driver(host, store);
+				if driver.purge then
+					purged[driver_name] = driver:purge(user);
+				else
+					log("warn", "Storage driver %s does not support removing all user data, you may need to delete it manually", driver_name);
+				end
 			end
 		end
 	end
