@@ -136,6 +136,7 @@ return {
 	load_driver = load_driver;
 	get_driver = get_driver;
 	open = open;
+	purge = purge;
 
 	olddm = olddm;
 };
