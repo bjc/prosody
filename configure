@@ -227,7 +227,7 @@ find_program() {
    found="no"
    while [ "$item" ]
    do
-      if [ -e "$item/$1" ]
+      if [ -f "$item/$1" ]
       then
          found="yes"
          break
@@ -250,7 +250,7 @@ then
       LUA_SUFFIX="$suffix"
       if [ "$LUA_DIR_SET" = "yes" ]
       then
-         if [ -e "$LUA_DIR/bin/lua$suffix" ]
+         if [ -f "$LUA_DIR/bin/lua$suffix" ]
          then
             find_lua="$LUA_DIR"
          fi
@@ -265,7 +265,7 @@ then
    done
 fi
 
-if ! [ "$LUA_DIR_SET" = "yes" ]
+if [ "$LUA_DIR_SET" != "yes" ]
 then
    echo -n "Looking for Lua... "
    if [ ! "$find_lua" ]
@@ -284,12 +284,12 @@ then
    fi
 fi
 
-if ! [ "$LUA_INCDIR_SET" = "yes" ]
+if [ "$LUA_INCDIR_SET" != "yes" ]
 then
    LUA_INCDIR="$LUA_DIR/include"
 fi
 
-if ! [ "$LUA_LIBDIR_SET" = "yes" ]
+if [ "$LUA_LIBDIR_SET" != "yes" ]
 then
    LUA_LIBDIR="$LUA_DIR/lib"
 fi
@@ -311,7 +311,7 @@ fi
 
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
-if [ -e "$lua_h" ]
+if [ -f "$lua_h" ]
 then
    echo "lua.h found in $lua_h"
 else
