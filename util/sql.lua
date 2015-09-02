@@ -329,4 +329,5 @@ return {
 	Table = Table;
 	Index = Index;
 	create_engine = create_engine;
+	db2uri = db2uri;
 };
