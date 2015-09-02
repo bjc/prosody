@@ -121,6 +121,7 @@ end
 
 function load_libraries()
 	-- Load socket framework
+	socket = require "socket";
 	server = require "net.server"
 end	
 
