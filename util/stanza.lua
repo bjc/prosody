@@ -427,4 +427,5 @@ return {
 	reply = reply;
 	error_reply = error_reply;
 	presence = presence;
+	xml_escape = xml_escape;
 };
