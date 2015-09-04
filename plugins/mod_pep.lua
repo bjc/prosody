@@ -17,9 +17,13 @@ local type = type;
 local calculate_hash = require "util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
 
+-- Used as canonical 'empty table'
 local NULL = {};
+-- data[user_bare_jid][node] = item_stanza
 local data = {};
+--- recipients[user_bare_jid][contact_full_jid][subscribed_node] = true
 local recipients = {};
+-- hash_map[hash][subscribed_nodes] = true
 local hash_map = {};
 
 module.save = function()
