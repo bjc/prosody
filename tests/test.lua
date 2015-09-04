@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-
+local tests_passed = true;
 
 function run_all_tests()
 	package.loaded["net.connlisteners"] = { get = function () return {} end };
@@ -99,6 +99,7 @@ function dosingletest(testname, fname)
 	local success, ret = pcall(tests[fname]);
 	debug.sethook();
 	if not success then
+		tests_passed = false;
 		print("TEST FAILED! Unit: ["..testname.."] Function: ["..fname.."]");
 		print("   Location: "..ret:gsub(":%s*\n", "\n"));
 		line_info(fname, false, report_file);
@@ -171,6 +172,7 @@ function dotest(unitname)
 			local success, ret = pcall(test, f, unit);
 			debug.sethook();
 			if not success then
+				tests_passed = false;
 				print("TEST FAILED! Unit: ["..unitname.."] Function: ["..name.."]");
 				print("   Location: "..ret:gsub(":%s*\n", "\n"));
 				line_info(name, false, report_file);
@@ -190,6 +192,7 @@ function runtest(f, msg)
 	if success and verbosity >= 2 then
 		print("SUBTEST PASSED: "..(msg or "(no description)"));
 	elseif (not success) and verbosity >= 0 then
+		tests_passed = false;
 		print("SUBTEST FAILED: "..(msg or "(no description)"));
 		error(ret, 0);
 	end
@@ -237,3 +240,5 @@ function new_line_coverage_monitor(file)
 end
 
 run_all_tests()
+
+os.exit(tests_passed and 0 or 1);
