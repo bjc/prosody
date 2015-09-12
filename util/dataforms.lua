@@ -147,11 +147,12 @@ end
 
 local function simple_text(field_tag, required)
 	local data = field_tag:get_child_text("value");
-	if data and #data > 0 then
-		return data
-	elseif required then
+	-- XEP-0004 does not say if an empty string is acceptable for a required value
+	-- so we will follow HTML5 which says that empty string means missing
+	if required and (data == nil or data == "") then
 		return nil, "Required value missing";
 	end
+	return data; -- Return whatever get_child_text returned, even if empty string
 end
 
 field_readers["text-single"] = simple_text;
