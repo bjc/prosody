@@ -675,8 +675,10 @@ function room_mt:process_form(origin, stanza)
 	if form.attr.type ~= "submit" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Not a submitted form")); return; end
 
 	local fields = self:get_form_layout(stanza.attr.from):data(form);
-	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration")); return; end
-
+	if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then
+		origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration"));
+		return;
+	end
 
 	local changed = {};
 
