@@ -145,30 +145,28 @@ function form_t.data(layout, stanza)
 	return data;
 end
 
-field_readers["text-single"] =
-	function (field_tag, required)
-		local data = field_tag:get_child_text("value");
-		if data and #data > 0 then
-			return data
-		elseif required then
-			return nil, "Required value missing";
-		end
+local function simple_text(field_tag, required)
+	local data = field_tag:get_child_text("value");
+	if data and #data > 0 then
+		return data
+	elseif required then
+		return nil, "Required value missing";
 	end
+end
 
-field_readers["text-private"] =
-	field_readers["text-single"];
+field_readers["text-single"] = simple_text;
+
+field_readers["text-private"] = simple_text;
 
 field_readers["jid-single"] =
 	function (field_tag, required)
-		local raw_data = field_tag:get_child_text("value")
+		local raw_data, err = simple_text(field_tag, required);
+		if not raw_data then return raw_data, err; end
 		local data = jid_prep(raw_data);
-		if data and #data > 0 then
-			return data
-		elseif raw_data then
+		if not data then
 			return nil, "Invalid JID: " .. raw_data;
-		elseif required then
-			return nil, "Required value missing";
 		end
+		return data;
 	end
 
 field_readers["jid-multi"] =
@@ -212,8 +210,7 @@ field_readers["text-multi"] =
 		return data, err;
 	end
 
-field_readers["list-single"] =
-	field_readers["text-single"];
+field_readers["list-single"] = simple_text;
 
 local boolean_values = {
 	["1"] = true, ["true"] = true,
@@ -222,15 +219,13 @@ local boolean_values = {
 
 field_readers["boolean"] =
 	function (field_tag, required)
-		local raw_value = field_tag:get_child_text("value");
-		local value = boolean_values[raw_value ~= nil and raw_value];
-		if value ~= nil then
-			return value;
-		elseif raw_value then
-			return nil, "Invalid boolean representation";
-		elseif required then
-			return nil, "Required value missing";
+		local raw_value, err = simple_text(field_tag, required);
+		if not raw_value then return raw_value, err; end
+		local value = boolean_values[raw_value];
+		if value == nil then
+			return nil, "Invalid boolean representation:" .. raw_value;
 		end
+		return value;
 	end
 
 field_readers["hidden"] =
