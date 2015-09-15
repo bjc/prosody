@@ -7,6 +7,7 @@
 --
 
 local create_context = require "core.certmanager".create_context;
+local rawgetopt = require"core.configmanager".rawget;
 local st = require "util.stanza";
 
 local c2s_require_encryption = module:get_option("c2s_require_encryption", module:get_option("require_encryption"));
@@ -36,19 +37,20 @@ local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
 local ssl_cfg_c2s, ssl_cfg_s2sout, ssl_cfg_s2sin;
 do
 	local NULL, err = {};
-	local global = module:context("*");
-	local parent = module:context(module.host:match("%.(.*)$"));
+	local modhost = module.host;
+	local parent = modhost:match("%.(.*)$");
 
-	local parent_ssl = parent:get_option("ssl");
-	local host_ssl   = module:get_option("ssl", parent_ssl);
+	local global_ssl = rawgetopt("*",     "ssl") or NULL;
+	local parent_ssl = rawgetopt(parent,  "ssl") or NULL;
+	local host_ssl   = rawgetopt(modhost, "ssl") or parent_ssl;
 
-	local global_c2s = global:get_option("c2s_ssl", NULL);
-	local parent_c2s = parent:get_option("c2s_ssl", NULL);
-	local host_c2s   = module:get_option("c2s_ssl", parent_c2s);
+	local global_c2s = rawgetopt("*",     "c2s_ssl") or NULL;
+	local parent_c2s = rawgetopt(parent,  "c2s_ssl") or NULL;
+	local host_c2s   = rawgetopt(modhost, "c2s_ssl") or parent_ssl;
 
-	local global_s2s = global:get_option("s2s_ssl", NULL);
-	local parent_s2s = parent:get_option("s2s_ssl", NULL);
-	local host_s2s   = module:get_option("s2s_ssl", parent_s2s);
+	local global_s2s = rawgetopt("*",     "s2s_ssl") or NULL;
+	local parent_s2s = rawgetopt(parent,  "s2s_ssl") or NULL;
+	local host_s2s   = rawgetopt(modhost, "s2s_ssl") or parent_ssl;
 
 	ssl_ctx_c2s, err, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
 	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err); end
