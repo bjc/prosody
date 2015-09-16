@@ -95,7 +95,8 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 		end
 	end
 	origin.interested_blocklist = true; -- Gets notified about changes
-	return origin.send(reply);
+	origin.send(reply);
+	return true;
 end);
 
 -- Add or remove some jid(s) from the blocklist
@@ -109,7 +110,8 @@ local function edit_blocklist(event)
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
 		if not jid then
-			return origin.send(st_error_reply(stanza, "modify", "jid-malformed"));
+			origin.send(st_error_reply(stanza, "modify", "jid-malformed"));
+			return true;
 		end
 		item.attr.jid = jid; -- echo back prepped
 		new[jid] = is_contact_subscribed(username, module.host, jid) or false;
@@ -119,7 +121,8 @@ local function edit_blocklist(event)
 
 	if mode and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
-		return origin.send(st_error_reply(stanza, "modify", "bad-request"));
+		origin.send(st_error_reply(stanza, "modify", "bad-request"));
+		return true;
 	end
 
 	local blocklist = get_blocklist(username);
@@ -141,7 +144,8 @@ local function edit_blocklist(event)
 	if ok then
 		origin.send(st.reply(stanza));
 	else
-		return origin.send(st_error_reply(stanza, "wait", "internal-server-error", err));
+		origin.send(st_error_reply(stanza, "wait", "internal-server-error", err));
+		return true;
 	end
 
 	if mode then
@@ -208,7 +212,8 @@ end
 local function bounce_stanza(event)
 	local origin, stanza = event.origin, event.stanza;
 	if drop_stanza(event) then
-		return origin.send(st_error_reply(stanza, "cancel", "service-unavailable"));
+		origin.send(st_error_reply(stanza, "cancel", "service-unavailable"));
+		return true;
 	end
 end
 
@@ -244,8 +249,9 @@ local function bounce_outgoing(event)
 		return drop_outgoing(event);
 	end
 	if drop_outgoing(event) then
-		return origin.send(st_error_reply(stanza, "cancel", "not-acceptable", "You have blocked this JID")
+		origin.send(st_error_reply(stanza, "cancel", "not-acceptable", "You have blocked this JID")
 			:tag("blocked", { xmlns = "urn:xmpp:blocking:errors" }));
+		return true;
 	end
 end
 
