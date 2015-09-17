@@ -30,7 +30,7 @@ module:hook("message/offline/handle", function(event)
 	stanza.attr.stamp, stanza.attr.stamp_legacy = nil, nil;
 
 	return result;
-end);
+end, -1);
 
 module:hook("message/offline/broadcast", function(event)
 	local origin = event.origin;
@@ -48,4 +48,4 @@ module:hook("message/offline/broadcast", function(event)
 	end
 	datamanager.list_store(node, host, "offline", nil);
 	return true;
-end);
+end, -1);
