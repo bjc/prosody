@@ -747,8 +747,11 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	else
 		success, errtype, err = nil, "cancel", "bad-request";
 	end
-	if not success then origin.send(st.error_reply(stanza, errtype, err)); end
-	origin.send(st.reply(stanza));
+	if not success then
+		origin.send(st.error_reply(stanza, errtype, err));
+	else
+		origin.send(st.reply(stanza));
+	end
 	return true;
 end
 
