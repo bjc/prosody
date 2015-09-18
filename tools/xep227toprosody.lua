@@ -202,7 +202,7 @@ function lxp_handlers.StartElement(parser, elementname, attributes)
 	--count = count + 1;
 	if curr_host ~= "" then
 		-- forward to xmlhandlers
-		user_handlers:StartElement(elementname, attributes);
+		user_handlers.StartElement(parser, elementname, attributes);
 	elseif (curr_ns == xmlns_xep227) and (name == "host") then
 		curr_host = attributes["jid"]; -- start of host element
 		print("Begin parsing host "..curr_host);
@@ -226,7 +226,7 @@ function lxp_handlers.EndElement(parser, elementname)
 			curr_host = "" -- end of host element
 		else
 			-- forward to xmlhandlers
-			user_handlers:EndElement(elementname);
+			user_handlers.EndElement(parser, elementname);
 		end
 	elseif (curr_ns ~= xmlns_xep227) or (name ~= "server-data") then
 		io.stderr:write("Unhandled XML element: ", name, "\n");
@@ -237,7 +237,7 @@ end
 function lxp_handlers.CharacterData(parser, string)
 	if curr_host ~= "" then
 		-- forward to xmlhandlers
-		user_handlers:CharacterData(string);
+		user_handlers.CharacterData(parser, string);
 	end
 end
 
