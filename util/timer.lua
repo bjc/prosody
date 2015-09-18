@@ -40,15 +40,15 @@ local function _on_timer(now)
 		if success and type(err) == "number" then
 			h:insert(_callback, err + now, _id); -- re-add
 			params[_id] = _param;
-			end
 		end
+	end
 	next_time = peek;
 	if peek ~= nil then
 		return peek - now;
 	end
 end
 local function add_task(delay, callback, param)
-		local current_time = get_time();
+	local current_time = get_time();
 	local event_time = current_time + delay;
 
 	local id = h:insert(callback, event_time);
@@ -56,13 +56,13 @@ local function add_task(delay, callback, param)
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
 		_add_task(next_time - current_time, _on_timer);
-				end
+	end
 	return id;
-			end
+end
 local function stop(id)
 	params[id] = nil;
 	return h:remove(id);
-		end
+end
 local function reschedule(id, delay)
 	local current_time = get_time();
 	local event_time = current_time + delay;
@@ -70,7 +70,7 @@ local function reschedule(id, delay)
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
 		_add_task(next_time - current_time, _on_timer);
-			end
+	end
 	return id;
 end
 
