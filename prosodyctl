@@ -675,14 +675,26 @@ local lfs;
 
 local cert_commands = {};
 
-local function ask_overwrite(filename)
-	return lfs.attributes(filename) and not show_yesno("Overwrite "..filename .. "?");
+-- If a file already exists, ask if the user wants to use it or replace it
+-- Backups the old file if replaced
+local function use_existing(filename)
+	local attrs = lfs.attributes(filename);
+	if attrs then
+		if show_yesno(filename .. " exists, do you want to replace it? [y/n]") then
+			local backup = filename..".bkp~"..os.date("%FT%T", attrs.change);
+			os.rename(filename, backup);
+			show_message(filename.." backed up to "..backup);
+		else
+			-- Use the existing file
+			return true;
+		end
+	end
 end
 
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local conf_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".cnf";
-		if ask_overwrite(conf_filename) then
+		if use_existing(conf_filename) then
 			return nil, conf_filename;
 		end
 		local conf = openssl.config.new();
@@ -730,7 +742,7 @@ end
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local key_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".key";
-		if ask_overwrite(key_filename) then
+		if use_existing(key_filename) then
 			return nil, key_filename;
 		end
 		os.remove(key_filename); -- This file, if it exists is unlikely to have write permissions
@@ -752,7 +764,7 @@ end
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local req_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".req";
-		if ask_overwrite(req_filename) then
+		if use_existing(req_filename) then
 			return nil, req_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
@@ -770,7 +782,7 @@ end
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		local cert_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".crt";
-		if ask_overwrite(cert_filename) then
+		if use_existing(cert_filename) then
 			return nil, cert_filename;
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
