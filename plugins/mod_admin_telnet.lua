@@ -830,19 +830,19 @@ function def_env.s2s:close(from, to)
 			(session.close or s2smanager.destroy_session)(session);
 			count = count + 1 ;
 		end
-			end
+	end
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
 end
 
 function def_env.s2s:closeall(host)
-        local count = 0;
+	local count = 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	for _,session in pairs(s2s_sessions) do
 		if not host or session.from_host == host or session.to_host == host then
 			session:close();
-                                count = count + 1;
-                        end
-                end
+			count = count + 1;
+		end
+	end
 	if count == 0 then return false, "No sessions to close.";
 	else return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s"); end
 end
