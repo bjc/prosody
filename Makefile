@@ -66,7 +66,7 @@ prosody.cfg.lua.install: prosody.cfg.lua.dist
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' $^ > $@
 
 prosody.version: $(wildcard prosody.release .hg/dirstate)
-	test -d .hg/dirstate && \
+	test -f .hg/dirstate && \
 		hexdump -n6 -e'6/1 "%02x"' .hg/dirstate > $@ || true
 	test -f prosody.release && \
 		cp prosody.release $@ || true
