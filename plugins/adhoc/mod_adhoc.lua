@@ -34,7 +34,8 @@ module:hook("host-disco-info-node", function (event)
 			reply:tag("feature", { var = "jabber:x:data" }):up();
 			event.exists = true;
 		else
-			return origin.send(st.error_reply(stanza, "auth", "forbidden", "This item is not available to you"));
+			origin.send(st.error_reply(stanza, "auth", "forbidden", "This item is not available to you"));
+			return true;
 		end
 	elseif node == xmlns_cmd then
 		reply:tag("identity", { name = "Ad-Hoc Commands",
@@ -87,7 +88,8 @@ module:hook("iq/host/"..xmlns_cmd..":command", function (event)
 				return true
 			end
 			-- User has permission now execute the command
-			return adhoc_handle_cmd(commands[node], origin, stanza);
+			adhoc_handle_cmd(commands[node], origin, stanza);
+			return true;
 		end
 	end
 end, 500);
