@@ -17,19 +17,23 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local query = stanza.tags[1];
 	if #query.tags ~= 1 then
-		return origin.send(st.error_reply(stanza, "modify", "bad-format"));
+		origin.send(st.error_reply(stanza, "modify", "bad-format"));
+		return true;
 	end
 	local tag = query.tags[1];
 	local key = tag.name..":"..tag.attr.xmlns;
 	local data, err = private_storage:get(origin.username);
 	if err then
-		return origin.send(st.error_reply(stanza, "wait", "internal-server-error", err));
+		origin.send(st.error_reply(stanza, "wait", "internal-server-error", err));
+		return true;
 	end
 	if stanza.attr.type == "get" then
 		if data and data[key] then
-			return origin.send(st.reply(stanza):query("jabber:iq:private"):add_child(st.deserialize(data[key])));
+			origin.send(st.reply(stanza):query("jabber:iq:private"):add_child(st.deserialize(data[key])));
+			return true;
 		else
-			return origin.send(st.reply(stanza):add_child(query));
+			origin.send(st.reply(stanza):add_child(query));
+			return true;
 		end
 	else -- type == set
 		if not data then data = {}; end;
@@ -41,8 +45,10 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 		-- TODO delete datastore if empty
 		local ok, err = private_storage:set(origin.username, data);
 		if not ok then
-			return origin.send(st.error_reply(stanza, "wait", "internal-server-error", err));
+			origin.send(st.error_reply(stanza, "wait", "internal-server-error", err));
+			return true;
 		end
-		return origin.send(st.reply(stanza));
+		origin.send(st.reply(stanza));
+		return true;
 	end
 end);
