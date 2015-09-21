@@ -28,7 +28,8 @@ function handle_pubsub_iq(event)
 	local pubsub = stanza.tags[1];
 	local action = pubsub.tags[1];
 	if not action then
-		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+		return true;
 	end
 	local handler = handlers[stanza.attr.type.."_"..action.name];
 	if handler then
