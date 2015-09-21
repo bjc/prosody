@@ -14,7 +14,8 @@ local function toggle_carbons(event)
 	local state = stanza.tags[1].name;
 	module:log("debug", "%s %sd carbons", origin.full_jid, state);
 	origin.want_carbons = state == "enable" and stanza.tags[1].attr.xmlns;
-	return origin.send(st.reply(stanza));
+	origin.send(st.reply(stanza));
+	return true;
 end
 module:hook("iq-set/self/"..xmlns_carbons..":disable", toggle_carbons);
 module:hook("iq-set/self/"..xmlns_carbons..":enable", toggle_carbons);

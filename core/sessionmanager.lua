@@ -37,9 +37,15 @@ local function new_session(conn)
 		if t then
 			t = filter("bytes/out", tostring(t));
 			if t then
-				return w(conn, t);
+				local ret, err = w(conn, t);
+				if not ret then
+					session.log("error", "Write-error: %s", tostring(err));
+					return false;
+				end
+				return true;
 			end
 		end
+		return true;
 	end
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(session):match("[a-f0-9]+$");
