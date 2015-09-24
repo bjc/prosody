@@ -913,6 +913,19 @@ function commands.check(arg)
 			   	print("     For more information see: http://prosody.im/doc/dns");
 			end
 		end
+		local all_options = set.new();
+		for host in enabled_hosts() do
+			all_options:include(set.new(it.to_array(it.keys(config[host]))));
+		end
+		local ssl = nil, dependencies.softreq"ssl";
+		if not ssl then
+			if not set.intersection(all_options, set.new({"require_encryption", "c2s_require_encryption", "s2s_require_encryption"})):empty() then
+				print("");
+				print("    You require encryption but LuaSec is not available.");
+				print("    Connections will fail.");
+				ok = false;
+			end
+		end
 		
 		print("Done.\n");
 	end
