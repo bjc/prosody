@@ -351,8 +351,13 @@ function stream_callbacks.streamopened(session, attr)
 				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or session.ip or "unknown host");
 			end
 
-			log("debug", "Sending stream features: %s", tostring(features));
-			session.sends2s(features);
+			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
+				log("debug", "Sending stream features: %s", tostring(features));
+				session.sends2s(features);
+			else
+				(session.log or log)("warn", "No features to offer, giving up");
+				session:close({ condition = "undefined-condition", text = "No features to offer" });
+			end
 		end
 	elseif session.direction == "outgoing" then
 		session.notopen = nil;
