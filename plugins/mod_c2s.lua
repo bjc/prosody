@@ -83,7 +83,12 @@ function stream_callbacks.streamopened(session, attr)
 
 	local features = st.stanza("stream:features");
 	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
-	send(features);
+	if features.tags[1] or session.full_jid then
+		send(features);
+	else
+		(session.log or log)("warn", "No features to offer");
+		session:close{ condition = "undefined-condition", text = "No features to proceed with" };
+	end
 end
 
 function stream_callbacks.streamclosed(session)
