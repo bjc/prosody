@@ -925,6 +925,30 @@ function commands.check(arg)
 				print("    Connections will fail.");
 				ok = false;
 			end
+		elseif not ssl.loadcertificate then
+			if all_options:contains("s2s_secure_auth") then
+				print("");
+				print("    You have set s2s_secure_auth but your version of LuaSec does ");
+				print("    not support certificate validation, so all s2s connections will");
+				print("    fail.");
+				ok = false;
+			elseif all_options:contains("s2s_secure_domains") then
+				local secure_domains = set.new();
+				for host in enabled_hosts() do
+					if config[host].s2s_secure_auth == true then
+						secure_domains:add("*");
+					else
+						secure_domains:include(set.new(config[host].s2s_secure_domains));
+					end
+				end
+				if not secure_domains:empty() then
+					print("");
+					print("    You have set s2s_secure_domains but your version of LuaSec does ");
+					print("    not support certificate validation, so s2s connections to/from ");
+					print("    these domains will fail.");
+					ok = false;
+				end
+			end
 		end
 		
 		print("Done.\n");
