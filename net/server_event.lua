@@ -48,7 +48,7 @@ local coroutine_yield = coroutine.yield
 
 local has_luasec, ssl = pcall ( require , "ssl" )
 local socket = require "socket"
-local event = require "luaevent.core"
+local levent = require "luaevent.core"
 
 local socket_gettime = socket.gettime
 local getaddrinfo = socket.dns.getaddrinfo
@@ -78,12 +78,12 @@ local bitor = ( function( ) -- thx Rici Lake
 	end
 end )( )
 
-local base = event.new( )
+local base = levent.new( )
 local addevent = base.addevent
-local EV_READ = event.EV_READ
-local EV_WRITE = event.EV_WRITE
-local EV_TIMEOUT = event.EV_TIMEOUT
-local EV_SIGNAL = event.EV_SIGNAL
+local EV_READ = levent.EV_READ
+local EV_WRITE = levent.EV_WRITE
+local EV_TIMEOUT = levent.EV_TIMEOUT
+local EV_SIGNAL = levent.EV_SIGNAL
 
 local EV_READWRITE = bitor( EV_READ, EV_WRITE )
 
@@ -803,7 +803,7 @@ return {
 	base = base,
 	loop = loop,
 	link = link,
-	event = event,
+	event = levent,
 	event_base = base,
 	addevent = newevent,
 	addserver = addserver,
