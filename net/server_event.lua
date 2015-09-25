@@ -33,7 +33,7 @@ local cfg = {
 }
 
 local function use(x) return rawget(_G, x); end
-local ipairs = use "ipairs"
+local pairs = use "pairs"
 local string = use "string"
 local select = use "select"
 local require = use "require"
@@ -82,35 +82,7 @@ local EV_SIGNAL = event.EV_SIGNAL
 
 local EV_READWRITE = bitor( EV_READ, EV_WRITE )
 
-local interfacelist = ( function( )  -- holds the interfaces for sockets
-	local array = { }
-	local len = 0
-	return function( method, arg )
-		if "add" == method then
-			len = len + 1
-			array[ len ] = arg
-			arg:_position( len )
-			return len
-		elseif "delete" == method then
-			if len <= 0 then
-				return nil, "array is already empty"
-			end
-			local position = arg:_position()  -- get position in array
-			if position ~= len then
-				local interface = array[ len ]  -- get last interface
-				array[ position ] = interface  -- copy it into free position
-				array[ len ] = nil  -- free last position
-				interface:_position( position )  -- set new position in array
-			else  -- free last position
-				array[ len ] = nil
-			end
-			len = len - 1
-			return len
-		else
-			return array
-		end
-	end
-end )( )
+local interfacelist = { }
 
 -- Client interface methods
 local interface_mt
@@ -121,10 +93,6 @@ do
 	local coroutine_wrap, coroutine_yield = coroutine.wrap,coroutine.yield
 
 	-- Private methods
-	function interface_mt:_position(new_position)
-			self.position = new_position or self.position
-			return self.position;
-	end
 	function interface_mt:_close()
 		return self:_destroy();
 	end
@@ -266,7 +234,7 @@ do
 				self.eventread, self.eventclose = nil, nil
 				self.interface, self.readcallback = nil, nil
 			end
-			interfacelist( "delete", self )
+			interfacelist[ self ] = nil
 			return true
 	end
 
@@ -644,7 +612,7 @@ do
 
 		client:settimeout( 0 )  -- set non blocking
 		setmetatable(interface, interface_mt)
-		interfacelist( "add", interface )  -- add to interfacelist
+		interfacelist[ interface ] = true  -- add to interfacelist
 		return interface
 	end
 end
@@ -710,7 +678,7 @@ do
 
 		server:settimeout( 0 )
 		setmetatable(interface, interface_mt)
-		interfacelist( "add", interface )
+		interfacelist[ interface ] = true
 		interface:_start_session()
 		return interface
 	end
@@ -795,7 +763,7 @@ local newevent = ( function( )
 end )( )
 
 local closeallservers = function( arg )
-	for _, item in ipairs( interfacelist( ) ) do
+	for item in pairs( interfacelist ) do
 		if item.type == "server" then
 			item:close( arg )
 		end
