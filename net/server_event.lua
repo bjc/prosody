@@ -32,20 +32,24 @@ local cfg = {
 	DEBUG                 = true,  -- show debug messages
 }
 
-local function use(x) return rawget(_G, x); end
-local pairs = use "pairs"
-local string = use "string"
-local select = use "select"
-local require = use "require"
-local tostring = use "tostring"
-local coroutine = use "coroutine"
-local setmetatable = use "setmetatable"
+local pairs = pairs
+local select = select
+local require = require
+local tostring = tostring
+local setmetatable = setmetatable
 
 local t_insert = table.insert
 local t_concat = table.concat
+local s_sub = string.sub
+
+local coroutine_wrap = coroutine.wrap
+local coroutine_yield = coroutine.yield
 
 local has_luasec, ssl = pcall ( require , "ssl" )
-local socket = use "socket" or require "socket"
+local socket = require "socket"
+local event = require "luaevent.core"
+
+local socket_gettime = socket.gettime
 local getaddrinfo = socket.dns.getaddrinfo
 
 local log = require ("util.logger").init("socket")
@@ -73,8 +77,8 @@ local bitor = ( function( ) -- thx Rici Lake
 	end
 end )( )
 
-local event = require "luaevent.core"
 local base = event.new( )
+local addevent = base.addevent
 local EV_READ = event.EV_READ
 local EV_WRITE = event.EV_WRITE
 local EV_TIMEOUT = event.EV_TIMEOUT
@@ -89,8 +93,6 @@ local interface_mt
 do
 	interface_mt = {}; interface_mt.__index = interface_mt;
 
-	local addevent = base.addevent
-	local coroutine_wrap, coroutine_yield = coroutine.wrap,coroutine.yield
 
 	-- Private methods
 	function interface_mt:_close()
@@ -441,9 +443,6 @@ end
 
 local handleclient;
 do
-	local string_sub = string.sub  -- caching table lookups
-	local addevent = base.addevent
-	local socket_gettime = socket.gettime
 	function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
 		--vdebug("creating client interfacce...")
 		local interface = {
@@ -527,7 +526,7 @@ do
 					return -1
 				elseif byte and (err == "timeout" or err == "wantwrite") then  -- want write again
 					--vdebug( "writebuffer is not empty:", err )
-					interface.writebuffer[1] = string_sub( interface.writebuffer[1], byte + 1, interface.writebufferlen )  -- new buffer
+					interface.writebuffer[1] = s_sub( interface.writebuffer[1], byte + 1, interface.writebufferlen )  -- new buffer
 					interface.writebufferlen = interface.writebufferlen - byte
 					if "wantread" == err then  -- happens only with luasec
 						local callback = function( )
@@ -755,12 +754,9 @@ local loop = function( )  -- starts the event loop
 	return "quitting";
 end
 
-local newevent = ( function( )
-	local add = base.addevent
-	return function( ... )
-		return add( base, ... )
-	end
-end )( )
+local function newevent( ... )
+	return addevent( base, ... )
+end
 
 local closeallservers = function( arg )
 	for item in pairs( interfacelist ) do
