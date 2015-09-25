@@ -796,21 +796,17 @@ local function link(sender, receiver, buffersize)
 	sender:set_mode("*a");
 end
 
-local add_task do
-	local EVENT_LEAVE = (event.core and event.core.LEAVE) or -1;
-	local socket_gettime = socket.gettime
-	function add_task(delay, callback)
-		local event_handle;
-		event_handle = base:addevent(nil, 0, function ()
-			local ret = callback(socket_gettime());
-			if ret then
-				return 0, ret;
-			elseif event_handle then
-				return EVENT_LEAVE;
-			end
+local function add_task(delay, callback)
+	local event_handle;
+	event_handle = base:addevent(nil, 0, function ()
+		local ret = callback(socket_gettime());
+		if ret then
+			return 0, ret;
+		elseif event_handle then
+			return -1;
 		end
-		, delay);
 	end
+	, delay);
 end
 
 return {
