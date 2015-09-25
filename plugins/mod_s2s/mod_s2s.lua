@@ -614,6 +614,11 @@ function listener.onstatus(conn, status)
 	end
 end
 
+function listener.ontimeout(conn)
+	-- Called instead of onconnect when the connection times out
+	measure_connections(1);
+end
+
 function listener.ondisconnect(conn, err)
 	measure_connections(-1);
 	local session = sessions[conn];

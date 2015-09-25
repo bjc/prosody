@@ -620,7 +620,7 @@ function resolver:getsocket(servernum)    -- - - - - - - - - - - - - getsocket
 	if peer:find(":") then
 		sock, err = socket.udp6();
 	else
-		sock, err = socket.udp();
+		sock, err = (socket.udp4 or socket.udp)();
 	end
 	if sock and self.socket_wrapper then sock, err = self.socket_wrapper(sock, self); end
 	if not sock then
