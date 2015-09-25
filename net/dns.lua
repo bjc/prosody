@@ -853,9 +853,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					--self.print(response);
 
 					for j,rr in pairs(response.answer) do
-						if rr.name:sub(-#response.question[1].name, -1) == response.question[1].name then
-							self:remember(rr, response.question[1].type)
-						end
+						self:remember(rr, response.question[1].type)
 					end
 
 					-- retire the query
