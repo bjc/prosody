@@ -16,10 +16,15 @@ local next = next;
 local type = type;
 local calculate_hash = require "util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
+local bare_sessions = prosody.bare_sessions;
 
+-- Used as canonical 'empty table'
 local NULL = {};
+-- data[user_bare_jid][node] = item_stanza
 local data = {};
+--- recipients[user_bare_jid][contact_full_jid][subscribed_node] = true
 local recipients = {};
+-- hash_map[hash][subscribed_nodes] = true
 local hash_map = {};
 
 module.save = function()
@@ -119,6 +124,9 @@ module:hook("presence/bare", function(event)
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local t = stanza.attr.type;
 	local self = not stanza.attr.to;
+
+	-- Only cache subscriptions if user is online
+	if not bare_sessions[user] then return; end
 
 	if not t then -- available presence
 		if self or subscription_presence(user, stanza.attr.from) then
@@ -281,5 +289,13 @@ module:hook("account-disco-items", function(event)
 		for node, _ in pairs(user_data) do
 			reply:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
 		end
+	end
+end);
+
+module:hook("resource-unbind", function (event)
+	local user_bare_jid = event.session.username.."@"..event.session.host;
+	if not bare_sessions[user_bare_jid] then -- User went offline
+		-- We don't need this info cached anymore, clear it.
+		recipients[user_bare_jid] = nil;
 	end
 end);
