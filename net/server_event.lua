@@ -767,7 +767,7 @@ end
 -- being garbage-collected
 local signal_events = {}; -- [signal_num] -> event object
 local function hook_signal(signal_num, handler)
-	local function _handler(event)
+	local function _handler()
 		local ret = handler();
 		if ret ~= false then -- Continue handling this signal?
 			return EV_SIGNAL; -- Yes
