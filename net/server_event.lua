@@ -58,7 +58,7 @@ local log = require ("util.logger").init("socket")
 local function debug(...)
 	return log("debug", ("%s "):rep(select('#', ...)), ...)
 end
-local vdebug = debug;
+-- local vdebug = debug;
 
 local bitor = ( function( ) -- thx Rici Lake
 	local hasbit = function( x, p )
