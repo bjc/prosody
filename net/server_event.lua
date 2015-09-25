@@ -98,25 +98,25 @@ function interface_mt:_close()
 end
 
 function interface_mt:_start_connection(plainssl) -- should be called from addclient
-		local callback = function( event )
-			if EV_TIMEOUT == event then  -- timeout during connection
-				self.fatalerror = "connection timeout"
-				self:ontimeout()  -- call timeout listener
-				self:_close()
-				debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
-			else
-				if plainssl and has_luasec then  -- start ssl session
-					self:starttls(self._sslctx, true)
-				else  -- normal connection
-					self:_start_session(true)
-				end
-				debug( "new connection established. id:", self.id )
+	local callback = function( event )
+		if EV_TIMEOUT == event then  -- timeout during connection
+			self.fatalerror = "connection timeout"
+			self:ontimeout()  -- call timeout listener
+			self:_close()
+			debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
+		else
+			if plainssl and has_luasec then  -- start ssl session
+				self:starttls(self._sslctx, true)
+			else  -- normal connection
+				self:_start_session(true)
 			end
-			self.eventconnect = nil
-			return -1
+			debug( "new connection established. id:", self.id )
 		end
-		self.eventconnect = addevent( base, self.conn, EV_WRITE, callback, cfg.CONNECT_TIMEOUT )
-		return true
+		self.eventconnect = nil
+		return -1
+	end
+	self.eventconnect = addevent( base, self.conn, EV_WRITE, callback, cfg.CONNECT_TIMEOUT )
+	return true
 end
 function interface_mt:_start_session(call_onconnect) -- new session, for example after startssl
 	if self.type == "client" then
@@ -139,108 +139,108 @@ function interface_mt:_start_session(call_onconnect) -- new session, for example
 	return true
 end
 function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed, therefore we have to close read/write events first
-		--vdebug( "starting ssl session with client id:", self.id )
-		local _
-		_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
-		_ = self.eventwrite and self.eventwrite:close( )
-		self.eventread, self.eventwrite = nil, nil
-		local err
-		self.conn, err = ssl.wrap( self.conn, self._sslctx )
-		if err then
-			self.fatalerror = err
-			self.conn = nil  -- cannot be used anymore
-			if call_onconnect then
-				self.ondisconnect = nil  -- dont call this when client isnt really connected
-			end
-			self:_close()
-			debug( "fatal error while ssl wrapping:", err )
-			return false
+	--vdebug( "starting ssl session with client id:", self.id )
+	local _
+	_ = self.eventread and self.eventread:close( )  -- close events; this must be called outside of the event callbacks!
+	_ = self.eventwrite and self.eventwrite:close( )
+	self.eventread, self.eventwrite = nil, nil
+	local err
+	self.conn, err = ssl.wrap( self.conn, self._sslctx )
+	if err then
+		self.fatalerror = err
+		self.conn = nil  -- cannot be used anymore
+		if call_onconnect then
+			self.ondisconnect = nil  -- dont call this when client isnt really connected
 		end
-		self.conn:settimeout( 0 )  -- set non blocking
-		local handshakecallback = coroutine_wrap(
-			function( event )
-				local _, err
-				local attempt = 0
-				local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPTS
-				while attempt < maxattempt do  -- no endless loop
-					attempt = attempt + 1
-					debug( "ssl handshake of client with id:"..tostring(self)..", attempt:"..attempt )
-					if attempt > maxattempt then
-						self.fatalerror = "max handshake attempts exceeded"
-					elseif EV_TIMEOUT == event then
-						self.fatalerror = "timeout during handshake"
-					else
-						_, err = self.conn:dohandshake( )
-						if not err then
-							self:_lock( false, false, false )  -- unlock the interface; sending, closing etc allowed
-							self.send = self.conn.send  -- caching table lookups with new client object
-							self.receive = self.conn.receive
-							if not call_onconnect then  -- trigger listener
-								self:onstatus("ssl-handshake-complete");
-							end
-							self:_start_session( call_onconnect )
-							debug( "ssl handshake done" )
-							self.eventhandshake = nil
-							return -1
-						end
-						if err == "wantwrite" then
-							event = EV_WRITE
-						elseif err == "wantread" then
-							event = EV_READ
-						else
-							debug( "ssl handshake error:", err )
-							self.fatalerror = err
-						end
+		self:_close()
+		debug( "fatal error while ssl wrapping:", err )
+		return false
+	end
+	self.conn:settimeout( 0 )  -- set non blocking
+	local handshakecallback = coroutine_wrap(
+	function( event )
+		local _, err
+		local attempt = 0
+		local maxattempt = cfg.MAX_HANDSHAKE_ATTEMPTS
+		while attempt < maxattempt do  -- no endless loop
+			attempt = attempt + 1
+			debug( "ssl handshake of client with id:"..tostring(self)..", attempt:"..attempt )
+			if attempt > maxattempt then
+				self.fatalerror = "max handshake attempts exceeded"
+			elseif EV_TIMEOUT == event then
+				self.fatalerror = "timeout during handshake"
+			else
+				_, err = self.conn:dohandshake( )
+				if not err then
+					self:_lock( false, false, false )  -- unlock the interface; sending, closing etc allowed
+					self.send = self.conn.send  -- caching table lookups with new client object
+					self.receive = self.conn.receive
+					if not call_onconnect then  -- trigger listener
+						self:onstatus("ssl-handshake-complete");
 					end
-					if self.fatalerror then
-						if call_onconnect then
-							self.ondisconnect = nil  -- dont call this when client isnt really connected
-						end
-						self:_close()
-						debug( "handshake failed because:", self.fatalerror )
-						self.eventhandshake = nil
-						return -1
-					end
-					event = coroutine_yield( event, cfg.HANDSHAKE_TIMEOUT )  -- yield this monster...
+					self:_start_session( call_onconnect )
+					debug( "ssl handshake done" )
+					self.eventhandshake = nil
+					return -1
+				end
+				if err == "wantwrite" then
+					event = EV_WRITE
+				elseif err == "wantread" then
+					event = EV_READ
+				else
+					debug( "ssl handshake error:", err )
+					self.fatalerror = err
 				end
 			end
-		)
-		debug "starting handshake..."
-		self:_lock( false, true, true )  -- unlock read/write events, but keep interface locked
-		self.eventhandshake = addevent( base, self.conn, EV_READWRITE, handshakecallback, cfg.HANDSHAKE_TIMEOUT )
-		return true
+			if self.fatalerror then
+				if call_onconnect then
+					self.ondisconnect = nil  -- dont call this when client isnt really connected
+				end
+				self:_close()
+				debug( "handshake failed because:", self.fatalerror )
+				self.eventhandshake = nil
+				return -1
+			end
+			event = coroutine_yield( event, cfg.HANDSHAKE_TIMEOUT )  -- yield this monster...
+		end
+	end
+	)
+	debug "starting handshake..."
+	self:_lock( false, true, true )  -- unlock read/write events, but keep interface locked
+	self.eventhandshake = addevent( base, self.conn, EV_READWRITE, handshakecallback, cfg.HANDSHAKE_TIMEOUT )
+	return true
 end
 function interface_mt:_destroy()  -- close this interface + events and call last listener
-		debug( "closing client with id:", self.id, self.fatalerror )
-		self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
-		local _
-		_ = self.eventread and self.eventread:close( )
-		if self.type == "client" then
-			_ = self.eventwrite and self.eventwrite:close( )
-			_ = self.eventhandshake and self.eventhandshake:close( )
-			_ = self.eventstarthandshake and self.eventstarthandshake:close( )
-			_ = self.eventconnect and self.eventconnect:close( )
-			_ = self.eventsession and self.eventsession:close( )
-			_ = self.eventwritetimeout and self.eventwritetimeout:close( )
-			_ = self.eventreadtimeout and self.eventreadtimeout:close( )
-			_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)  -- call ondisconnect listener (wont be the case if handshake failed on connect)
-			_ = self.conn and self.conn:close( ) -- close connection
-			_ = self._server and self._server:counter(-1);
-			self.eventread, self.eventwrite = nil, nil
-			self.eventstarthandshake, self.eventhandshake, self.eventclose = nil, nil, nil
-			self.readcallback, self.writecallback = nil, nil
-		else
-			self.conn:close( )
-			self.eventread, self.eventclose = nil, nil
-			self.interface, self.readcallback = nil, nil
-		end
-		interfacelist[ self ] = nil
-		return true
+	debug( "closing client with id:", self.id, self.fatalerror )
+	self:_lock( true, true, true )  -- first of all, lock the interface to avoid further actions
+	local _
+	_ = self.eventread and self.eventread:close( )
+	if self.type == "client" then
+		_ = self.eventwrite and self.eventwrite:close( )
+		_ = self.eventhandshake and self.eventhandshake:close( )
+		_ = self.eventstarthandshake and self.eventstarthandshake:close( )
+		_ = self.eventconnect and self.eventconnect:close( )
+		_ = self.eventsession and self.eventsession:close( )
+		_ = self.eventwritetimeout and self.eventwritetimeout:close( )
+		_ = self.eventreadtimeout and self.eventreadtimeout:close( )
+		_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)  -- call ondisconnect listener (wont be the case if handshake failed on connect)
+		_ = self.conn and self.conn:close( ) -- close connection
+		_ = self._server and self._server:counter(-1);
+		self.eventread, self.eventwrite = nil, nil
+		self.eventstarthandshake, self.eventhandshake, self.eventclose = nil, nil, nil
+		self.readcallback, self.writecallback = nil, nil
+	else
+		self.conn:close( )
+		self.eventread, self.eventclose = nil, nil
+		self.interface, self.readcallback = nil, nil
+	end
+	interfacelist[ self ] = nil
+	return true
 end
 
 function interface_mt:_lock(nointerface, noreading, nowriting)  -- lock or unlock this interface or events
-		self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
-		return nointerface, noreading, nowriting
+	self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
+	return nointerface, noreading, nowriting
 end
 
 --TODO: Deprecate
@@ -392,11 +392,11 @@ function interface_mt:starttls(sslctx, call_onconnect)
 		self:_lock( true, true, true )  -- lock the interface, to not disturb the handshake
 		self.eventstarthandshake = addevent( base, nil, EV_TIMEOUT, self.startsslcallback, 0 )  -- add event to start handshake
 	else  -- wait until writebuffer is empty
-		self:_lock( true, true, false )
-		debug "ssl session delayed until writebuffer is empty..."
-	end
-	self.starttls = false;
-	return true
+	self:_lock( true, true, false )
+	debug "ssl session delayed until writebuffer is empty..."
+end
+self.starttls = false;
+return true
 end
 
 function interface_mt:setoption(option, value)
@@ -753,9 +753,9 @@ end
 
 local function setquitting(yes)
 	if yes then
-		 -- Quit now
-		 closeallservers();
-		 base:loopexit();
+		-- Quit now
+		closeallservers();
+		base:loopexit();
 	end
 end
 
