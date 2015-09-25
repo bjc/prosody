@@ -11,6 +11,7 @@
 			-- when using luasec, there are 4 cases of timeout errors: wantread or wantwrite during reading or writing
 
 --]]
+-- luacheck: ignore 212/self 431/err 211/ret
 
 local SCRIPT_NAME           = "server_event.lua"
 local SCRIPT_VERSION        = "0.05"
@@ -365,7 +366,7 @@ function interface_mt:set_mode(pattern)
 	return self._pattern;
 end
 
-function interface_mt:set_send(new_send)
+function interface_mt:set_send(new_send) -- luacheck: ignore 212
 	-- No-op, we always use the underlying connection's send
 end
 
