@@ -9,7 +9,7 @@ OPENSSL_LIB?=crypto
 CC?=gcc
 CXX?=g++
 LD?=gcc
-CFLAGS+=-ggdb
+CFLAGS+=-ggdb -I$(LUA_INCDIR)
 
 INSTALL_DATA=install -m644
 TARGET?=../util/
@@ -34,7 +34,7 @@ hashes.so: hashes.o
 	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
 
 .c.o:
-	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 .o.so:
 	$(LD) -o $@ $< $(LDFLAGS)
