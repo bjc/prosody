@@ -112,6 +112,7 @@ do
       	LUA_INCDIR_SET=yes
       	LUA_LIBDIR=/usr/local/lib
       	LUA_LIBDIR_SET=yes
+      	CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
       	LDFLAGS="-bundle -undefined dynamic_lookup"
     	fi
       if [ "$OSTYPE" = "linux" ]; then
