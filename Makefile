@@ -18,7 +18,7 @@ INSTALLEDDATA = $(DATADIR)
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
 ifeq ($(EXCERTS),yes)
-	$(MAKE) -C certs localhost.crt example.com.crt || true
+	-$(MAKE) -C certs localhost.crt example.com.crt
 endif
 
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
@@ -42,7 +42,7 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
 	test -f $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
-	test -f prosody.version && install -m644 prosody.version $(SOURCE)/prosody.version || true
+	-test -f prosody.version && install -m644 prosody.version $(SOURCE)/prosody.version
 	$(MAKE) install -C util-src
 
 clean:
@@ -65,8 +65,16 @@ util/%.so:
 prosody.cfg.lua.install: prosody.cfg.lua.dist
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' $^ > $@
 
-prosody.version: $(wildcard prosody.release .hg/dirstate)
-	test -f .hg/dirstate && \
-		hexdump -n6 -e'6/1 "%02x"' .hg/dirstate > $@ || true
-	test -f prosody.release && \
-		cp prosody.release $@ || true
+%.version: %.release
+	cp $^ $@
+
+%.version: .hg_archival.txt
+	sed -n 's/^node: \(............\).*/\1/p' $^ > $@
+
+%.version: .hg/dirstate
+	hexdump -n6 -e'6/1 "%02x"' $^ > $@
+
+%.version:
+	echo unknown > $@
+
+

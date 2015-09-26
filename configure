@@ -112,6 +112,7 @@ do
       	LUA_INCDIR_SET=yes
       	LUA_LIBDIR=/usr/local/lib
       	LUA_LIBDIR_SET=yes
+      	CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
       	LDFLAGS="-bundle -undefined dynamic_lookup"
     	fi
       if [ "$OSTYPE" = "linux" ]; then
@@ -309,6 +310,8 @@ then
 	IDNA_LIBS="-l$IDN_LIB"
 fi
 
+OPENSSL_LIBS="-l$OPENSSL_LIB"
+
 echo -n "Checking Lua includes... "
 lua_h="$LUA_INCDIR/lua.h"
 if [ -f "$lua_h" ]
@@ -361,7 +364,7 @@ LUA_BINDIR=$LUA_BINDIR
 REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 IDNA_LIBS=$IDNA_LIBS
-OPENSSL_LIB=$OPENSSL_LIB
+OPENSSL_LIBS=$OPENSSL_LIBS
 CFLAGS=$CFLAGS
 LDFLAGS=$LDFLAGS
 CC=$CC
