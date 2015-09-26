@@ -33,9 +33,5 @@ encodings.so: encodings.o
 hashes.so: hashes.o
 	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
 
-.c.o:
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-.o.so:
-	$(LD) -o $@ $< $(LDFLAGS)
-
+%.so: %.o
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
