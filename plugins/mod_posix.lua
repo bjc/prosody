@@ -14,8 +14,8 @@ if pposix._VERSION ~= want_pposix_version then
 	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
 end
 
-local signal = select(2, pcall(require, "util.signal"));
-if type(signal) == "string" then
+local have_signal, signal = pcall(require, "util.signal");
+if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
@@ -162,7 +162,7 @@ end
 module:hook("server-stopped", remove_pidfile);
 
 -- Set signal handlers
-if signal.signal then
+if have_signal then
 	signal.signal("SIGTERM", function ()
 		module:log("warn", "Received SIGTERM");
 		prosody.unlock_globals();
