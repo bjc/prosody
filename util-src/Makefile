@@ -21,7 +21,7 @@ clean:
 
 encodings.so: LDLIBS+=$(IDNA_LIBS)
 
-hashes.so: LDLIBS+=-l$(OPENSSL_LIB)
+hashes.so: LDLIBS+=$(OPENSSL_LIBS)
 
 %.so: %.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
