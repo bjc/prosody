@@ -11,6 +11,9 @@ CXX?=g++
 LD?=gcc
 CFLAGS+=-ggdb
 
+INSTALL_DATA=install -m644
+TARGET?=../util/
+
 ALL=encodings.so hashes.so net.so pposix.so signal.so table.so
 
 .PHONY: all install clean
@@ -19,7 +22,7 @@ ALL=encodings.so hashes.so net.so pposix.so signal.so table.so
 all: $(ALL)
 
 install: $(ALL)
-	install $^ ../util/
+	$(INSTALL_DATA) $^ $(TARGET)
 
 clean:
 	rm -f $(ALL)
