@@ -31,27 +31,27 @@ pposix.umask(umask);
 
 -- Allow switching away from root, some people like strange ports.
 module:hook("server-started", function ()
-		local uid = module:get_option("setuid");
-		local gid = module:get_option("setgid");
-		if gid then
-			local success, msg = pposix.setgid(gid);
-			if success then
-				module:log("debug", "Changed group to %s successfully.", gid);
-			else
-				module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
-				prosody.shutdown("Failed to change group to %s", gid);
-			end
+	local uid = module:get_option("setuid");
+	local gid = module:get_option("setgid");
+	if gid then
+		local success, msg = pposix.setgid(gid);
+		if success then
+			module:log("debug", "Changed group to %s successfully.", gid);
+		else
+			module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
+			prosody.shutdown("Failed to change group to %s", gid);
 		end
-		if uid then
-			local success, msg = pposix.setuid(uid);
-			if success then
-				module:log("debug", "Changed user to %s successfully.", uid);
-			else
-				module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
-				prosody.shutdown("Failed to change user to %s", uid);
-			end
+	end
+	if uid then
+		local success, msg = pposix.setuid(uid);
+		if success then
+			module:log("debug", "Changed user to %s successfully.", uid);
+		else
+			module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
+			prosody.shutdown("Failed to change user to %s", uid);
 		end
-	end);
+	end
+end);
 
 -- Don't even think about it!
 if not prosody.start_time then -- server-starting
