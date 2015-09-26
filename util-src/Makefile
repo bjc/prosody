@@ -27,11 +27,9 @@ install: $(ALL)
 clean:
 	rm -f $(ALL)
 
-encodings.so: encodings.o
-	$(CC) -o $@ $< $(LDFLAGS) $(IDNA_LIBS)
+encodings.so: LDLIBS+=$(IDNA_LIBS)
 
-hashes.so: hashes.o
-	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
+hashes.so: LDLIBS+=-l$(OPENSSL_LIB)
 
 %.so: %.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
