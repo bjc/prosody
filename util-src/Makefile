@@ -11,18 +11,18 @@ CXX?=g++
 LD?=gcc
 CFLAGS+=-ggdb
 
+ALL=encodings.so hashes.so net.so pposix.so signal.so table.so
+
 .PHONY: all install clean
 .SUFFIXES: .c .o .so
 
-all: encodings.so hashes.so net.so pposix.so signal.so table.so
+all: $(ALL)
 
-install: encodings.so hashes.so net.so pposix.so signal.so table.so
-	install *.so ../util/
+install: $(ALL)
+	install $^ ../util/
 
 clean:
-	rm -f *.o
-	rm -f *.so
-	rm -f ../util/*.so
+	rm -f $(ALL)
 
 encodings.so: encodings.o
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
