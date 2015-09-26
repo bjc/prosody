@@ -1,14 +1,6 @@
 
 include ../config.unix
 
-LUA_SUFFIX?=5.1
-LUA_INCDIR?=/usr/include/lua$(LUA_SUFFIX)
-LUA_LIB?=lua$(LUA_SUFFIX)
-IDN_LIB?=idn
-OPENSSL_LIB?=crypto
-CC?=gcc
-CXX?=g++
-LD?=gcc
 CFLAGS+=-ggdb -I$(LUA_INCDIR)
 
 INSTALL_DATA=install -m644
