@@ -61,8 +61,8 @@ function serve(opts)
 	local function serve_file(event, path)
 		local request, response = event.request, event.response;
 		local orig_path = request.path;
-		local full_path = base_path .. (path and "/"..path or "");
-		local attr = stat((full_path:gsub('%'..path_sep..'+$','')));
+		local full_path = base_path .. (path and "/"..path or ""):gsub("/", path_sep);
+		local attr = stat(full_path:match("^.*[^\\/]")); -- Strip trailing path separator because Windows
 		if not attr then
 			return 404;
 		end

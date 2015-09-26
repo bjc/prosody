@@ -14,8 +14,8 @@ if pposix._VERSION ~= want_pposix_version then
 	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
 end
 
-local signal = select(2, pcall(require, "util.signal"));
-if type(signal) == "string" then
+local have_signal, signal = pcall(require, "util.signal");
+if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
@@ -31,27 +31,27 @@ pposix.umask(umask);
 
 -- Allow switching away from root, some people like strange ports.
 module:hook("server-started", function ()
-		local uid = module:get_option("setuid");
-		local gid = module:get_option("setgid");
-		if gid then
-			local success, msg = pposix.setgid(gid);
-			if success then
-				module:log("debug", "Changed group to %s successfully.", gid);
-			else
-				module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
-				prosody.shutdown("Failed to change group to %s", gid);
-			end
+	local uid = module:get_option("setuid");
+	local gid = module:get_option("setgid");
+	if gid then
+		local success, msg = pposix.setgid(gid);
+		if success then
+			module:log("debug", "Changed group to %s successfully.", gid);
+		else
+			module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
+			prosody.shutdown("Failed to change group to %s", gid);
 		end
-		if uid then
-			local success, msg = pposix.setuid(uid);
-			if success then
-				module:log("debug", "Changed user to %s successfully.", uid);
-			else
-				module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
-				prosody.shutdown("Failed to change user to %s", uid);
-			end
+	end
+	if uid then
+		local success, msg = pposix.setuid(uid);
+		if success then
+			module:log("debug", "Changed user to %s successfully.", uid);
+		else
+			module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
+			prosody.shutdown("Failed to change user to %s", uid);
 		end
-	end);
+	end
+end);
 
 -- Don't even think about it!
 if not prosody.start_time then -- server-starting
@@ -162,7 +162,7 @@ end
 module:hook("server-stopped", remove_pidfile);
 
 -- Set signal handlers
-if signal.signal then
+if have_signal then
 	signal.signal("SIGTERM", function ()
 		module:log("warn", "Received SIGTERM");
 		prosody.unlock_globals();
