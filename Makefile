@@ -68,6 +68,9 @@ prosody.cfg.lua.install: prosody.cfg.lua.dist
 %.version: %.release
 	cp $^ $@
 
+%.version: .hg_archival.txt
+	sed -n 's/^node: \(............\).*/\1/p' $^ > $@
+
 %.version: .hg/dirstate
 	hexdump -n6 -e'6/1 "%02x"' $^ > $@
 
