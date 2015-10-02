@@ -36,7 +36,11 @@ local function split(jid)
 end
 
 local function bare(jid)
-	return jid and match(jid, "^[^/]+");
+	local node, host = _split(jid);
+	if node and host then
+		return node.."@"..host;
+	end
+	return host;
 end
 
 local function prepped_split(jid)
