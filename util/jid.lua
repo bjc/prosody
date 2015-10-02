@@ -36,7 +36,7 @@ local function split(jid)
 end
 
 local function bare(jid)
-	local node, host = _split(jid);
+	local node, host = split(jid);
 	if node and host then
 		return node.."@"..host;
 	end
