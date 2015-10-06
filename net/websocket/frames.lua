@@ -30,8 +30,9 @@ end
 -- FIXME: this may lose precision
 local function read_uint64be(str, pos)
 	local l1, l2, l3, l4, l5, l6, l7, l8 = s_byte(str, pos, pos+7);
-	return lshift(l1, 56) + lshift(l2, 48) + lshift(l3, 40) + lshift(l4, 32)
-		+ lshift(l5, 24) + lshift(l6, 16) + lshift(l7, 8) + l8;
+	local h = lshift(l1, 24) + lshift(l2, 16) + lshift(l3, 8) + l4;
+	local l = lshift(l5, 24) + lshift(l6, 16) + lshift(l7, 8) + l8;
+	return h * 2^32 + l;
 end
 local function pack_uint16be(x)
 	return s_char(rshift(x, 8), band(x, 0xFF));
@@ -40,8 +41,9 @@ local function get_byte(x, n)
 	return band(rshift(x, n), 0xFF);
 end
 local function pack_uint64be(x)
-	return s_char(rshift(x, 56), get_byte(x, 48), get_byte(x, 40), get_byte(x, 32),
-		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF));
+	local h = band(x / 2^32, 2^32-1);
+	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF));
+		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF);
 end
 
 local function parse_frame_header(frame)
