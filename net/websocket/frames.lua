@@ -49,8 +49,8 @@ local function get_byte(x, n)
 end
 local function pack_uint64be(x)
 	local h = band(x / 2^32, 2^32-1);
-	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF));
-		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF);
+	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF),
+		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF));
 end
 
 if s_pack then
