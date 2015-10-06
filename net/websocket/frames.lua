@@ -22,6 +22,13 @@ local t_concat = table.concat;
 local s_byte = string.byte;
 local s_char= string.char;
 local s_sub = string.sub;
+local s_pack = string.pack;
+local s_unpack = string.unpack;
+
+if not s_pack and softreq"struct" then
+	s_pack = softreq"struct".pack;
+	s_unpack = softreq"struct".unpack;
+end
 
 local function read_uint16be(str, pos)
 	local l1, l2 = s_byte(str, pos, pos+1);
@@ -44,6 +51,24 @@ local function pack_uint64be(x)
 	local h = band(x / 2^32, 2^32-1);
 	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF));
 		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF);
+end
+
+if s_pack then
+	function pack_uint16be(x)
+		return s_pack(">I2", x);
+	end
+	function pack_uint64be(x)
+		return s_pack(">I8", x);
+	end
+end
+
+if s_unpack then
+	function read_uint16be(str, pos)
+		return s_unpack(">I2", str, pos);
+	end
+	function read_uint64be(str, pos)
+		return s_unpack(">I8", str, pos);
+	end
 end
 
 local function parse_frame_header(frame)
