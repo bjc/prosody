@@ -10,9 +10,7 @@ local softreq = require "util.dependencies".softreq;
 local log = require "util.logger".init "websocket.frames";
 local random_bytes = require "util.random".bytes;
 
-local bit;
-pcall(function() bit = require"bit"; end);
-bit = bit or softreq"bit32"
+local bit = softreq"bit" or softreq"bit32";
 if not bit then log("error", "No bit module found. Either LuaJIT 2, lua-bitop or Lua 5.2 is required"); end
 local band = bit.band;
 local bor = bit.bor;
