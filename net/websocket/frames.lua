@@ -11,7 +11,7 @@ local log = require "util.logger".init "websocket.frames";
 local random_bytes = require "util.random".bytes;
 
 local bit = assert(softreq"bit" or softreq"bit32",
-	"No bit module found. Either LuaJIT 2, lua-bitop or Lua 5.2 is required");
+	"No bit module found. See https://prosody.im/doc/depends#bitop");
 local band = bit.band;
 local bor = bit.bor;
 local bxor = bit.bxor;
