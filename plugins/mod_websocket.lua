@@ -4,6 +4,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 431/log
 
 module:set_global();
 
@@ -130,7 +131,7 @@ local function filter_open_close(data)
 
 	return data;
 end
-function handle_request(event, path)
+function handle_request(event)
 	local request, response = event.request, event.response;
 	local conn = response.conn;
 
