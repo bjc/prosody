@@ -7,6 +7,7 @@
 
 module:set_global();
 
+local add_task = require "util.timer".add_task;
 local add_filter = require "util.filters".add_filter;
 local sha1 = require "util.hashes".sha1;
 local base64 = require "util.encodings".base64.encode;
@@ -24,6 +25,7 @@ local parse_close = websocket_frames.parse_close;
 
 local t_concat = table.concat;
 
+local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
 local cross_domain = module:get_option("cross_domain_websocket");
 if cross_domain then
