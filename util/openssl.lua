@@ -18,8 +18,8 @@ function config.new()
 	return setmetatable({
 		req = {
 			distinguished_name = "distinguished_name",
-			req_extensions = "v3_extensions",
-			x509_extensions = "v3_extensions",
+			req_extensions = "certrequest",
+			x509_extensions = "selfsigned",
 			prompt = "no",
 		},
 		distinguished_name = {
@@ -31,10 +31,14 @@ function config.new()
 			commonName = "example.com",
 			emailAddress = "xmpp@example.com",
 		},
-		v3_extensions = {
+		certrequest = {
 			basicConstraints = "CA:FALSE",
 			keyUsage = "digitalSignature,keyEncipherment",
 			extendedKeyUsage = "serverAuth,clientAuth",
+			subjectAltName = "@subject_alternative_name",
+		},
+		selfsigned = {
+			basicConstraints = "CA:TRUE",
 			subjectAltName = "@subject_alternative_name",
 		},
 		subject_alternative_name = {
