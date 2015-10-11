@@ -101,6 +101,8 @@ local function create_context(host, mode, ...)
 	for option in pairs(path_options) do
 		if type(user_ssl_config[option]) == "string" then
 			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
+		else
+			user_ssl_config[option] = nil;
 		end
 	end
 
