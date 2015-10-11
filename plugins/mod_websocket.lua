@@ -4,9 +4,11 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 431/log
 
 module:set_global();
 
+local add_task = require "util.timer".add_task;
 local add_filter = require "util.filters".add_filter;
 local sha1 = require "util.hashes".sha1;
 local base64 = require "util.encodings".base64.encode;
@@ -24,6 +26,7 @@ local parse_close = websocket_frames.parse_close;
 
 local t_concat = table.concat;
 
+local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
 local cross_domain = module:get_option("cross_domain_websocket");
 if cross_domain then
@@ -128,7 +131,7 @@ local function filter_open_close(data)
 
 	return data;
 end
-function handle_request(event, path)
+function handle_request(event)
 	local request, response = event.request, event.response;
 	local conn = response.conn;
 
