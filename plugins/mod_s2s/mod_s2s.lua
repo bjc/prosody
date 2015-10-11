@@ -349,6 +349,7 @@ function stream_callbacks.streamopened(session, attr)
 				hosts[to].events.fire_event("s2s-stream-features", { origin = session, features = features });
 			else
 				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or session.ip or "unknown host");
+				fire_global_event("s2s-stream-features-legacy", { origin = session, features = features });
 			end
 
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
