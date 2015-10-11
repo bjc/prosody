@@ -10,10 +10,8 @@ local softreq = require "util.dependencies".softreq;
 local log = require "util.logger".init "websocket.frames";
 local random_bytes = require "util.random".bytes;
 
-local bit;
-pcall(function() bit = require"bit"; end);
-bit = bit or softreq"bit32"
-if not bit then log("error", "No bit module found. Either LuaJIT 2, lua-bitop or Lua 5.2 is required"); end
+local bit = assert(softreq"bit" or softreq"bit32",
+	"No bit module found. See https://prosody.im/doc/depends#bitop");
 local band = bit.band;
 local bor = bit.bor;
 local bxor = bit.bxor;
@@ -24,6 +22,13 @@ local t_concat = table.concat;
 local s_byte = string.byte;
 local s_char= string.char;
 local s_sub = string.sub;
+local s_pack = string.pack;
+local s_unpack = string.unpack;
+
+if not s_pack and softreq"struct" then
+	s_pack = softreq"struct".pack;
+	s_unpack = softreq"struct".unpack;
+end
 
 local function read_uint16be(str, pos)
 	local l1, l2 = s_byte(str, pos, pos+1);
@@ -32,8 +37,9 @@ end
 -- FIXME: this may lose precision
 local function read_uint64be(str, pos)
 	local l1, l2, l3, l4, l5, l6, l7, l8 = s_byte(str, pos, pos+7);
-	return lshift(l1, 56) + lshift(l2, 48) + lshift(l3, 40) + lshift(l4, 32)
-		+ lshift(l5, 24) + lshift(l6, 16) + lshift(l7, 8) + l8;
+	local h = lshift(l1, 24) + lshift(l2, 16) + lshift(l3, 8) + l4;
+	local l = lshift(l5, 24) + lshift(l6, 16) + lshift(l7, 8) + l8;
+	return h * 2^32 + l;
 end
 local function pack_uint16be(x)
 	return s_char(rshift(x, 8), band(x, 0xFF));
@@ -42,8 +48,27 @@ local function get_byte(x, n)
 	return band(rshift(x, n), 0xFF);
 end
 local function pack_uint64be(x)
-	return s_char(rshift(x, 56), get_byte(x, 48), get_byte(x, 40), get_byte(x, 32),
+	local h = band(x / 2^32, 2^32-1);
+	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF),
 		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF));
+end
+
+if s_pack then
+	function pack_uint16be(x)
+		return s_pack(">I2", x);
+	end
+	function pack_uint64be(x)
+		return s_pack(">I8", x);
+	end
+end
+
+if s_unpack then
+	function read_uint16be(str, pos)
+		return s_unpack(">I2", str, pos);
+	end
+	function read_uint64be(str, pos)
+		return s_unpack(">I8", str, pos);
+	end
 end
 
 local function parse_frame_header(frame)
