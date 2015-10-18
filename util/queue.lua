@@ -18,6 +18,7 @@ local function new(size, allow_wrapping)
 	local t = have_utable and utable.create(size, 0) or {}; -- Table to hold items
 
 	return {
+		_items = t;
 		size = size;
 		count = function (self) return items; end;
 		push = function (self, item)
@@ -49,6 +50,18 @@ local function new(size, allow_wrapping)
 				return nil;
 			end
 			return t[tail];
+		end;
+		items = function (self)
+			return function (t, pos)
+				if pos >= t:count() then
+					return nil;
+				end
+				local read_pos = tail + pos;
+				if read_pos > t.size then
+					read_pos = (read_pos%size);
+				end
+				return pos+1, t._items[read_pos];
+			end, self, 0;
 		end;
 	};
 end
