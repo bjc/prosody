@@ -16,7 +16,7 @@ local function new(size, allow_wrapping)
 	local head, tail = 1, 1;
 	local items = 0; -- Number of stored items
 	local t = have_utable and utable.create(size, 0) or {}; -- Table to hold items
-
+	--luacheck: ignore 212/self
 	return {
 		_items = t;
 		size = size;
@@ -52,6 +52,7 @@ local function new(size, allow_wrapping)
 			return t[tail];
 		end;
 		items = function (self)
+			--luacheck: ignore 431/t
 			return function (t, pos)
 				if pos >= t:count() then
 					return nil;
