@@ -723,6 +723,9 @@ end
 
 function room_mt:handle_admin_query_set_command(origin, stanza)
 	local item = stanza.tags[1].tags[1];
+	if not item then
+		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+	end
 	if item.attr.jid then -- Validate provided JID
 		item.attr.jid = jid_prep(item.attr.jid);
 		if not item.attr.jid then
