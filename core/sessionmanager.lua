@@ -39,7 +39,7 @@ local function new_session(conn)
 			if t then
 				local ret, err = w(conn, t);
 				if not ret then
-					session.log("error", "Error writing to connection: %s", tostring(err));
+					session.log("debug", "Error writing to connection: %s", tostring(err));
 					return false, err;
 				end
 			end
