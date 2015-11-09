@@ -45,11 +45,11 @@ do
 
 	local global_c2s = rawgetopt("*",     "c2s_ssl") or NULL;
 	local parent_c2s = rawgetopt(parent,  "c2s_ssl") or NULL;
-	local host_c2s   = rawgetopt(modhost, "c2s_ssl") or parent_ssl;
+	local host_c2s   = rawgetopt(modhost, "c2s_ssl") or parent_c2s;
 
 	local global_s2s = rawgetopt("*",     "s2s_ssl") or NULL;
 	local parent_s2s = rawgetopt(parent,  "s2s_ssl") or NULL;
-	local host_s2s   = rawgetopt(modhost, "s2s_ssl") or parent_ssl;
+	local host_s2s   = rawgetopt(modhost, "s2s_ssl") or parent_s2s;
 
 	ssl_ctx_c2s, err, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
 	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err); end
