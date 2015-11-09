@@ -13,8 +13,8 @@ SRVName  = 1.3.6.1.5.5.7.8.7
 default_bits       = 4096
 default_keyfile    = example.com.key
 distinguished_name = distinguished_name
-req_extensions     = v3_extensions
-x509_extensions    = v3_extensions
+req_extensions     = certrequest
+x509_extensions    = selfsigned
 
 # ask about the DN?
 prompt = no
@@ -28,15 +28,21 @@ organizationName       = Your Organisation
 organizationalUnitName = XMPP Department
 emailAddress           = xmpp@example.com
 
-[ v3_extensions ]
+[ certrequest ]
 
 # for certificate requests (req_extensions)
-# and self-signed certificates (x509_extensions)
 
 basicConstraints = CA:FALSE
 keyUsage         = digitalSignature,keyEncipherment
 extendedKeyUsage = serverAuth,clientAuth
 subjectAltName   = @subject_alternative_name
+
+[ selfsigned ]
+
+# and self-signed certificates (x509_extensions)
+
+basicConstraints = CA:TRUE
+subjectAltName = @subject_alternative_name
 
 [ subject_alternative_name ]
 
