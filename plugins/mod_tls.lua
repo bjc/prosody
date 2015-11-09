@@ -40,7 +40,6 @@ do
 	local modhost = module.host;
 	local parent = modhost:match("%.(.*)$");
 
-	local global_ssl = rawgetopt("*",     "ssl") or NULL;
 	local parent_ssl = rawgetopt(parent,  "ssl") or NULL;
 	local host_ssl   = rawgetopt(modhost, "ssl") or parent_ssl;
 
