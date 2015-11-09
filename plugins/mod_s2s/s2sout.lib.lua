@@ -103,11 +103,12 @@ function s2sout.attempt_connection(host_session, err)
 		local handle;
 		handle = adns.lookup(function (answer)
 			handle = nil;
+			local srv_hosts = { answer = answer };
+			host_session.srv_hosts = srv_hosts;
+			host_session.srv_choice = 0;
 			host_session.connecting = nil;
 			if answer and #answer > 0 then
 				log("debug", "%s has SRV records, handling...", to_host);
-				local srv_hosts = { answer = answer };
-				host_session.srv_hosts = srv_hosts;
 				for _, record in ipairs(answer) do
 					t_insert(srv_hosts, record.srv);
 				end
