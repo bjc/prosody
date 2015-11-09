@@ -66,4 +66,7 @@ return {
 	get_stats = function ()
 		return latest_stats, changed_stats, stats_extra;
 	end;
+	get = function (name)
+		return latest_stats[name], stats_extra[name];
+	end;
 };
