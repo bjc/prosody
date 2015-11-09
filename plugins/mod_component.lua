@@ -36,11 +36,13 @@ function module.add_host(module)
 	
 	local env = module.environment;
 	env.connected = false;
+	env.session = false;
 
 	local send;
 
 	local function on_destroy(session, err)
 		env.connected = false;
+		env.session = false;
 		send = nil;
 		session.on_destroy = nil;
 	end
@@ -73,12 +75,18 @@ function module.add_host(module)
 		end
 		
 		if env.connected then
-			module:log("error", "Second component attempted to connect, denying connection");
-			session:close{ condition = "conflict", text = "Component already connected" };
-			return true;
+			local policy = module:get_option_string("component_conflict_resolve", "kick_new");
+			if policy == "kick_old" then
+				env.session:close{ condition = "conflict", text = "Replaced by a new connection" };
+			else -- kick_new
+				module:log("error", "Second component attempted to connect, denying connection");
+				session:close{ condition = "conflict", text = "Component already connected" };
+				return true;
+			end
 		end
 		
 		env.connected = true;
+		env.session = session;
 		send = session.send;
 		session.on_destroy = on_destroy;
 		session.component_validate_from = module:get_option_boolean("validate_from_addresses", true);

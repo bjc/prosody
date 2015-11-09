@@ -890,7 +890,7 @@ function commands.check(arg)
 			for name in pairs(options) do
 				if name:match("^interfaces?")
 				or name:match("_ports?$") or name:match("_interfaces?$")
-				or name:match("_ssl$") then
+				or (name:match("_ssl$") and not name:match("^[cs]2s_ssl$")) then
 					misplaced_options:add(name);
 				end
 			end

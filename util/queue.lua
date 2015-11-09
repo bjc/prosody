@@ -16,8 +16,9 @@ local function new(size, allow_wrapping)
 	local head, tail = 1, 1;
 	local items = 0; -- Number of stored items
 	local t = have_utable and utable.create(size, 0) or {}; -- Table to hold items
-
+	--luacheck: ignore 212/self
 	return {
+		_items = t;
 		size = size;
 		count = function (self) return items; end;
 		push = function (self, item)
@@ -49,6 +50,19 @@ local function new(size, allow_wrapping)
 				return nil;
 			end
 			return t[tail];
+		end;
+		items = function (self)
+			--luacheck: ignore 431/t
+			return function (t, pos)
+				if pos >= t:count() then
+					return nil;
+				end
+				local read_pos = tail + pos;
+				if read_pos > t.size then
+					read_pos = (read_pos%size);
+				end
+				return pos+1, t._items[read_pos];
+			end, self, 0;
 		end;
 	};
 end
