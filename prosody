@@ -372,8 +372,10 @@ function loop()
 		prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
 	end
 	
+	local sleep = require"socket".sleep;
+
 	while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
-		socket.sleep(0.2);
+		sleep(0.2);
 	end
 end
 
