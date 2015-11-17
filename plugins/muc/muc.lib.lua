@@ -546,7 +546,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	if (type == "error" or type == "result") then
 		do -- deconstruct_stanza_id
 			if not occupant then return nil; end
-			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
+			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(%Z+)%z(%Z*)%z(.+)$");
 			if not(from == from_jid or from == jid_bare(from_jid)) then return nil; end
 			local from_occupant_jid = self:get_occupant_jid(from_jid);
 			if from_occupant_jid == nil then return nil; end
