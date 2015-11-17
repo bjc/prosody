@@ -361,7 +361,7 @@ local function construct_stanza_id(room, stanza)
 end
 local function deconstruct_stanza_id(room, stanza)
 	local from_jid_possiblybare, to_nick = stanza.attr.from, stanza.attr.to;
-	local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(.+)%z(.*)%z(.+)$");
+	local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(%Z+)%z(%Z*)%z(.+)$");
 	local from_nick = room._jid_nick[from_jid];
 
 	if not(from_nick) then return; end
