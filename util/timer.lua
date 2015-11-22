@@ -43,8 +43,17 @@ local function _on_timer(now)
 			params[_id] = _param;
 		end
 	end
-	next_time = peek;
-	if peek ~= nil then
+
+	if peek ~= nil and _active_timers > 1 and peek == next_time then
+		-- Another instance of _on_timer already set next_time to the same value,
+		-- so it should be safe to not renew this timer event
+		peek = nil;
+	else
+		next_time = peek;
+	end
+
+	if peek then
+		-- peek is the time of the next event
 		return peek - now;
 	end
 	_active_timers = _active_timers - 1;
