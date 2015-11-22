@@ -229,13 +229,10 @@ end
 
 local function match(ipA, ipB, bits)
 	local common_bits = commonPrefixLength(ipA, ipB);
-	if not bits then
-		return ipA == ipB;
-	end
 	if bits and ipB.proto == "IPv4" then
 		common_bits = common_bits - 96; -- v6 mapped addresses always share these bits
 	end
-	return common_bits >= bits;
+	return common_bits >= (bits or 128);
 end
 
 return {new_ip = new_ip,
