@@ -512,6 +512,9 @@ local function session_flags(session, line)
 	if session.ip and session.ip:match(":") then
 		line[#line+1] = "(IPv6)";
 	end
+	if session.remote then
+		line[#line+1] = "(remote)";
+	end
 	return table.concat(line, " ");
 end
 
