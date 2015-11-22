@@ -807,6 +807,7 @@ local function add_task(delay, callback)
 		end
 	end
 	, delay);
+	return event_handle;
 end
 
 return {
