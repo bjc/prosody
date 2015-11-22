@@ -19,6 +19,7 @@ local _ENV = nil;
 
 local _add_task = server.add_task;
 
+local _active_timers = 0;
 local h = indexedbheap.create();
 local params = {};
 local next_time = nil;
@@ -46,6 +47,7 @@ local function _on_timer(now)
 	if peek ~= nil then
 		return peek - now;
 	end
+	_active_timers = _active_timers - 1;
 end
 local function add_task(delay, callback, param)
 	local current_time = get_time();
@@ -55,6 +57,7 @@ local function add_task(delay, callback, param)
 	params[id] = param;
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
+		_active_timers = _active_timers + 1;
 		_add_task(next_time - current_time, _on_timer);
 	end
 	return id;
