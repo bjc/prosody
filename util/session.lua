@@ -19,8 +19,15 @@ local function set_logger(session)
 	return session;
 end
 
+local function set_conn(session, conn)
+	session.conn = conn;
+	session.ip = conn:ip();
+	return session;
+end
+
 return {
 	new = new_session;
 	set_id = set_id;
 	set_logger = set_logger;
+	set_conn = set_conn;
 }
