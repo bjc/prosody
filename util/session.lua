@@ -1,3 +1,4 @@
+local logger = require "util.logger";
 
 local function new_session(typ)
 	local session = {
@@ -12,7 +13,14 @@ local function set_id(session)
 	return session;
 end
 
+local function set_logger(session)
+	local log = logger.init(id);
+	session.log = log;
+	return session;
+end
+
 return {
 	new = new_session;
 	set_id = set_id;
+	set_logger = set_logger;
 }
