@@ -19,6 +19,8 @@ local _ENV = nil;
 
 local _add_task = server.add_task;
 
+local _server_timer;
+local _active_timers = 0;
 local h = indexedbheap.create();
 local params = {};
 local next_time = nil;
@@ -42,10 +44,20 @@ local function _on_timer(now)
 			params[_id] = _param;
 		end
 	end
-	next_time = peek;
-	if peek ~= nil then
+
+	if peek ~= nil and _active_timers > 1 and peek == next_time then
+		-- Another instance of _on_timer already set next_time to the same value,
+		-- so it should be safe to not renew this timer event
+		peek = nil;
+	else
+		next_time = peek;
+	end
+
+	if peek then
+		-- peek is the time of the next event
 		return peek - now;
 	end
+	_active_timers = _active_timers - 1;
 end
 local function add_task(delay, callback, param)
 	local current_time = get_time();
@@ -55,7 +67,13 @@ local function add_task(delay, callback, param)
 	params[id] = param;
 	if next_time == nil or event_time < next_time then
 		next_time = event_time;
-		_add_task(next_time - current_time, _on_timer);
+		if _server_timer then
+			_server_timer:close();
+			_server_timer = nil;
+		else
+			_active_timers = _active_timers + 1;
+		end
+		_server_timer = _add_task(next_time - current_time, _on_timer);
 	end
 	return id;
 end
