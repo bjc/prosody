@@ -2,6 +2,8 @@ local cache_methods = {};
 local cache_mt = { __index = cache_methods };
 
 local function new(size)
+	size = assert(tonumber(size), "cache size must be a number");
+	size = math.floor(size);
 	assert(size > 0, "cache size must be greater than zero");
 	local data = {};
 	return setmetatable({ data = data, count = 0, size = size, head = nil, tail = nil }, cache_mt);
