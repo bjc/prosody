@@ -642,6 +642,10 @@ int lc_uname(lua_State* L) {
 	lua_setfield(L, -2, "version");
 	lua_pushstring(L, uname_info.machine);
 	lua_setfield(L, -2, "machine");
+#ifdef _GNU_SOURCE
+	lua_pushstring(L, uname_info.domainname);
+	lua_setfield(L, -2, "domainname");
+#endif
 	return 1;
 }
 
