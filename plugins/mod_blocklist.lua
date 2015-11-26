@@ -19,12 +19,13 @@ local jid_split = require"util.jid".split;
 local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
 
--- Cache of blocklists used since module was loaded
-local cache = {};
-if module:get_option_boolean("blocklist_weak_cache") then
-	-- Lower memory usage, more IO and latency
-	setmetatable(cache, { __mode = "v" });
-end
+-- Cache of blocklists by username may randomly expire at any time
+local cache = setmetatable({}, { __mode = "v" });
+
+-- Second level of caching, keeps a fixed number of items,
+-- also anchors items in the above cache
+local cache_size = module:get_option_number("blocklist_cache_size", 64);
+local cache2 = require"util.cache".new(cache_size);
 
 local null_blocklist = {};
 
@@ -36,6 +37,7 @@ local function set_blocklist(username, blocklist)
 		return ok, err;
 	end
 	-- Successful save, update the cache
+	cache2:set(username, blocklist);
 	cache[username] = blocklist;
 	return true;
 end
@@ -72,6 +74,9 @@ end
 local function get_blocklist(username)
 	local blocklist = cache[username];
 	if not blocklist then
+		blocklist = cache2:get(username);
+	end
+	if not blocklist then
 		if not user_exists(username, module.host) then
 			return null_blocklist;
 		end
@@ -79,8 +84,9 @@ local function get_blocklist(username)
 		if not blocklist then
 			blocklist = migrate_privacy_list(username);
 		end
-		cache[username] = blocklist;
+		cache2:set(username, blocklist);
 	end
+	cache[username] = blocklist;
 	return blocklist;
 end
 
