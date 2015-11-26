@@ -20,6 +20,7 @@ function run_all_tests()
 	dotest "util.ip"
 	dotest "util.stanza"
 	dotest "util.sasl.scram"
+	dotest "util.cache"
 
 	dosingletest("test_sasl.lua", "latin1toutf8");
 	dosingletest("test_utf8.lua", "valid");
