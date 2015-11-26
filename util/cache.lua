@@ -1,13 +1,3 @@
-local cache_methods = {};
-local cache_mt = { __index = cache_methods };
-
-local function new(size)
-	size = assert(tonumber(size), "cache size must be a number");
-	size = math.floor(size);
-	assert(size > 0, "cache size must be greater than zero");
-	local data = {};
-	return setmetatable({ data = data, count = 0, size = size, head = nil, tail = nil }, cache_mt);
-end
 
 local function _remove(list, m)
 	if m.prev then
@@ -16,29 +6,32 @@ local function _remove(list, m)
 	if m.next then
 		m.next.prev = m.prev;
 	end
-	if list.tail == m then
-		list.tail = m.prev;
+	if list._tail == m then
+		list._tail = m.prev;
 	end
-	if list.head == m then
-		list.head = m.next;
+	if list._head == m then
+		list._head = m.next;
 	end
-	list.count = list.count - 1;
+	list._count = list._count - 1;
 end
 
 local function _insert(list, m)
-	if list.head then
-		list.head.prev = m;
+	if list._head then
+		list._head.prev = m;
 	end
-	m.prev, m.next = nil, list.head;
-	list.head = m;
-	if not list.tail then
-		list.tail = m;
+	m.prev, m.next = nil, list._head;
+	list._head = m;
+	if not list._tail then
+		list._tail = m;
 	end
-	list.count = list.count + 1;
+	list._count = list._count + 1;
 end
 
+local cache_methods = {};
+local cache_mt = { __index = cache_methods };
+
 function cache_methods:set(k, v)
-	local m = self.data[k];
+	local m = self._data[k];
 	if m then
 		-- Key already exists
 		if v ~= nil then
@@ -49,27 +42,33 @@ function cache_methods:set(k, v)
 		else
 			-- Remove from list
 			_remove(self, m);
-			self.data[k] = nil;
+			self._data[k] = nil;
 		end
-		return;
+		return true;
 	end
 	-- New key
 	if v == nil then
-		return;
+		return true;
 	end
 	-- Check whether we need to remove oldest k/v
-	if self.count == self.size then
-		self.data[self.tail.key] = nil;
-		_remove(self, self.tail);
+	if self._count == self.size then
+		local tail = self._tail;
+		local on_evict = self._on_evict;
+		if on_evict then
+			on_evict(tail.key, tail.value);
+		end
+		_remove(self, tail);
+		self._data[tail.key] = nil;
 	end
 
 	m = { key = k, value = v, prev = nil, next = nil };
-	self.data[k] = m;
+	self._data[k] = m;
 	_insert(self, m);
+	return true;
 end
 
 function cache_methods:get(k)
-	local m = self.data[k];
+	local m = self._data[k];
 	if m then
 		return m.value;
 	end
@@ -77,7 +76,7 @@ function cache_methods:get(k)
 end
 
 function cache_methods:items()
-	local m = self.head;
+	local m = self._head;
 	return function ()
 		if not m then
 			return;
@@ -86,6 +85,18 @@ function cache_methods:items()
 		m = m.next;
 		return k, v;
 	end
+end
+
+function cache_methods:count()
+	return self._count;
+end
+
+local function new(size, on_evict)
+	size = assert(tonumber(size), "cache size must be a number");
+	size = math.floor(size);
+	assert(size > 0, "cache size must be greater than zero");
+	local data = {};
+	return setmetatable({ _data = data, _count = 0, size = size, _head = nil, _tail = nil, _on_evict = on_evict }, cache_mt);
 end
 
 return {
