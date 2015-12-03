@@ -158,13 +158,7 @@ module:provides("net", {
 	listener = server.listener;
 	default_port = 5281;
 	encryption = "ssl";
-	ssl_config = {
-		verify = {
-			peer = false,
-			client_once = false,
-			"none",
-		}
-	};
+	ssl_config = default_ssl_config;
 	multiplex = {
 		pattern = "^[A-Z]";
 	};
