@@ -57,8 +57,12 @@ local function load_driver(host, driver_name)
 	return stores_available:get(host, driver_name);
 end
 
+local function get_storage_config(host)
+	return config.get(host, "storage");
+end
+
 local function get_driver(host, store)
-	local storage = config.get(host, "storage");
+	local storage = get_storage_config(host);
 	local driver_name;
 	local option_type = type(storage);
 	if option_type == "string" then
@@ -94,7 +98,7 @@ local function open(host, store, typ)
 end
 
 local function purge(user, host)
-	local storage = config.get(host, "storage");
+	local storage = get_storage_config(host);
 	if type(storage) == "table" then
 		-- multiple storage backends in use that we need to purge
 		local purged = {};
