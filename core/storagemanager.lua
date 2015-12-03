@@ -58,7 +58,23 @@ local function load_driver(host, driver_name)
 end
 
 local function get_storage_config(host)
-	return config.get(host, "storage");
+	-- COMPAT w/ unreleased Prosody 0.10 and the once-experimental mod_storage_sql2 in peoples' config files
+	local storage_config = config.get(host, "storage");
+	local found_sql2;
+	if storage_config == "sql2" then
+		storage_config, found_sql2 = "sql", true;
+	elseif type(storage_config) == "table" then
+		for store_name, driver_name in pairs(storage_config) do
+			if driver_name == "sql2" then
+				storage_config[store_name] = "sql";
+				found_sql2 = true;
+			end
+		end
+	end
+	if found_sql2 then
+		log("error", "The temporary 'sql2' storage module has now been renamed to 'sql', please update your config file: https://prosody.im/doc/modules/mod_storage_sql2");
+	end
+	return storage_config;
 end
 
 local function get_driver(host, store)
