@@ -913,11 +913,34 @@ function commands.check(arg)
 			   	print("     For more information see: http://prosody.im/doc/dns");
 			end
 		end
-		local all_options = set.new();
+		local all_modules = set.new(config["*"].modules_enabled);
+		local all_options = set.new(it.to_array(it.keys(config["*"])));
 		for host in enabled_hosts() do
 			all_options:include(set.new(it.to_array(it.keys(config[host]))));
+			all_modules:include(set.new(config[host].modules_enabled));
 		end
-		local ssl = nil, dependencies.softreq"ssl";
+		for mod in all_modules do
+			if mod:match("^mod_") then
+				print("");
+				print("    Modules in modules_enabled should not have the 'mod_' prefix included.");
+				print("    Change '"..mod.."' to '"..mod:match("^mod_(.*)").."'.");
+			elseif mod:match("^auth_") then
+				print("");
+				print("    Authentication modules should not be added to modules_enabled,");
+				print("    but be specified in the 'authentication' option.");
+				print("    Remove '"..mod.."' from modules_enabled and instead add");
+				print("        authentication = '"..mod:match("^auth_(.*)").."'");
+				print("    For more information see https://prosody.im/doc/authentication");
+			elseif mod:match("^storage_") then
+				print("");
+				print("    storage modules should not be added to modules_enabled,");
+				print("    but be specified in the 'storage' option.");
+				print("    Remove '"..mod.."' from modules_enabled and instead add");
+				print("        storage = '"..mod:match("^storage_(.*)").."'");
+				print("    For more information see https://prosody.im/doc/storage");
+			end
+		end
+		local ssl = dependencies.softreq"ssl";
 		if not ssl then
 			if not set.intersection(all_options, set.new({"require_encryption", "c2s_require_encryption", "s2s_require_encryption"})):empty() then
 				print("");
