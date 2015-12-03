@@ -11,6 +11,7 @@ local setmetatable = setmetatable;
 local xpcall = xpcall;
 local traceback = debug.traceback;
 local tostring = tostring;
+local cache = require "util.cache";
 local codes = require "net.http.codes";
 
 local _M = {};
