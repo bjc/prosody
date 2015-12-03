@@ -917,7 +917,7 @@ function commands.check(arg)
 		for host in enabled_hosts() do
 			all_options:include(set.new(it.to_array(it.keys(config[host]))));
 		end
-		local ssl = nil, dependencies.softreq"ssl";
+		local ssl = dependencies.softreq"ssl";
 		if not ssl then
 			if not set.intersection(all_options, set.new({"require_encryption", "c2s_require_encryption", "s2s_require_encryption"})):empty() then
 				print("");
