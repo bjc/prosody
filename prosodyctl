@@ -913,9 +913,18 @@ function commands.check(arg)
 			   	print("     For more information see: http://prosody.im/doc/dns");
 			end
 		end
+		local all_modules = set.new(config["*"].modules_enabled);
 		local all_options = set.new(it.to_array(it.keys(config["*"])));
 		for host in enabled_hosts() do
 			all_options:include(set.new(it.to_array(it.keys(config[host]))));
+			all_modules:include(set.new(config[host].modules_enabled));
+		end
+		for mod in all_modules do
+			if mod:match("^mod_") then
+				print("");
+				print("    Modules in modules_enabled should not have the 'mod_' prefix included.");
+				print("    Change '"..mod.."' to '"..mod:match("^mod_(.*)").."'.");
+			end
 		end
 		local ssl = dependencies.softreq"ssl";
 		if not ssl then
