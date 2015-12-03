@@ -913,7 +913,7 @@ function commands.check(arg)
 			   	print("     For more information see: http://prosody.im/doc/dns");
 			end
 		end
-		local all_options = set.new();
+		local all_options = set.new(it.to_array(it.keys(config["*"])));
 		for host in enabled_hosts() do
 			all_options:include(set.new(it.to_array(it.keys(config[host]))));
 		end
