@@ -924,6 +924,20 @@ function commands.check(arg)
 				print("");
 				print("    Modules in modules_enabled should not have the 'mod_' prefix included.");
 				print("    Change '"..mod.."' to '"..mod:match("^mod_(.*)").."'.");
+			elseif mod:match("^auth_") then
+				print("");
+				print("    Authentication modules should not be added to modules_enabled,");
+				print("    but be specified in the 'authentication' option.");
+				print("    Remove '"..mod.."' from modules_enabled and instead add");
+				print("        authentication = '"..mod:match("^auth_(.*)").."'");
+				print("    For more information see https://prosody.im/doc/authentication");
+			elseif mod:match("^storage_") then
+				print("");
+				print("    storage modules should not be added to modules_enabled,");
+				print("    but be specified in the 'storage' option.");
+				print("    Remove '"..mod.."' from modules_enabled and instead add");
+				print("        storage = '"..mod:match("^storage_(.*)").."'");
+				print("    For more information see https://prosody.im/doc/storage");
 			end
 		end
 		local ssl = dependencies.softreq"ssl";
