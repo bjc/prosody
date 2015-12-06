@@ -162,7 +162,7 @@ local function edit_blocklist(event)
 
 	if is_blocking then
 		for jid, in_roster in pairs(new) do
-			if not blocklist[jid] and in_roster and sessions[username] then
+			if not blocklist[jid] and in_roster then
 				for _, session in pairs(sessions[username].sessions) do
 					if session.presence then
 						module:send(st.presence({ type = "unavailable", to = jid, from = session.full_jid }));
@@ -171,15 +171,14 @@ local function edit_blocklist(event)
 			end
 		end
 	end
-	if sessions[username] then
-		local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
-			:add_child(action); -- I am lazy
 
-		for _, session in pairs(sessions[username].sessions) do
-			if session.interested_blocklist then
-				blocklist_push.attr.to = session.full_jid;
-				session.send(blocklist_push);
-			end
+	local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
+		:add_child(action); -- I am lazy
+
+	for _, session in pairs(sessions[username].sessions) do
+		if session.interested_blocklist then
+			blocklist_push.attr.to = session.full_jid;
+			session.send(blocklist_push);
 		end
 	end
 
