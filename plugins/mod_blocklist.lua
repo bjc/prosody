@@ -116,8 +116,8 @@ end);
 local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
-	local action = stanza.tags[1];
-	local new = {};
+	local action = stanza.tags[1]; -- "block" or "unblock"
+	local new = {}; -- JIDs to block depending or unblock on action
 
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
