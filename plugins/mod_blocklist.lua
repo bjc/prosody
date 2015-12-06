@@ -19,11 +19,17 @@ local jid_split = require"util.jid".split;
 local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
 
--- Cache of blocklists by username may randomly expire at any time
+-- First level cache of blocklists by username.
+-- Weak table so may randomly expire at any time.
 local cache = setmetatable({}, { __mode = "v" });
 
--- Second level of caching, keeps a fixed number of items,
--- also anchors items in the above cache
+-- Second level of caching, keeps a fixed number of items, also anchors
+-- items in the above cache.
+--
+-- The size of this affects how often we will need to load a blocklist from
+-- disk, which we want to avoid during routing. On the other hand, we don't
+-- want to use too much memory either, so this can be tuned by advanced
+-- users. TODO use science to figure out a better default, 64 is just a guess.
 local cache_size = module:get_option_number("blocklist_cache_size", 64);
 local cache2 = require"util.cache".new(cache_size);
 
