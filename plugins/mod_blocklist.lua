@@ -119,6 +119,13 @@ local function edit_blocklist(event)
 	local action = stanza.tags[1]; -- "block" or "unblock"
 	local new = {}; -- JIDs to block depending or unblock on action
 
+	-- XEP-0191 sayeth:
+	-- > When the user blocks communications with the contact, the user's
+	-- > server MUST send unavailable presence information to the contact (but
+	-- > only if the contact is allowed to receive presence notifications [...]
+	-- So contacts we need to do that for are added to the set below.
+	local send_unavailable = {};
+
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
 		if not jid then
@@ -126,7 +133,10 @@ local function edit_blocklist(event)
 			return true;
 		end
 		item.attr.jid = jid; -- echo back prepped
-		new[jid] = is_contact_subscribed(username, module.host, jid) or false;
+		new[jid] = true;
+		if is_contact_subscribed(username, module.host, jid) then
+			send_unavailable[jid] = true;
+		end
 	end
 
 	local is_blocking = action.name == "block" or nil; -- nil if unblocking
@@ -161,8 +171,8 @@ local function edit_blocklist(event)
 	end
 
 	if is_blocking then
-		for jid, in_roster in pairs(new) do
-			if not blocklist[jid] and in_roster then
+		for jid in pairs(send_unavailable) do
+			if not blocklist[jid] then
 				for _, session in pairs(sessions[username].sessions) do
 					if session.presence then
 						module:send(st.presence({ type = "unavailable", to = jid, from = session.full_jid }));
