@@ -10,7 +10,11 @@
 --
 
 local user_exists = require"core.usermanager".user_exists;
-local is_contact_subscribed = require"core.rostermanager".is_contact_subscribed;
+local rostermanager = require"core.rostermanager";
+local is_contact_subscribed = rostermanager.is_contact_subscribed;
+local is_contact_pending_in = rostermanager.is_contact_pending_in;
+local load_roster = rostermanager.load_roster;
+local save_roster = rostermanager.save_roster;
 local st = require"util.stanza";
 local st_error_reply = st.error_reply;
 local jid_prep = require"util.jid".prep;
@@ -126,6 +130,10 @@ local function edit_blocklist(event)
 	-- So contacts we need to do that for are added to the set below.
 	local send_unavailable = {};
 
+	-- Because blocking someone currently also blocks the ability to reject
+	-- subscription requests, we'll preemptively reject such
+	local remove_pending = {};
+
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
 		if not jid then
@@ -136,6 +144,8 @@ local function edit_blocklist(event)
 		new[jid] = true;
 		if is_contact_subscribed(username, module.host, jid) then
 			send_unavailable[jid] = true;
+		elseif is_contact_pending_in(username, module.host, jid) then
+			remove_pending[jid] = true;
 		end
 	end
 
@@ -179,6 +189,15 @@ local function edit_blocklist(event)
 					end
 				end
 			end
+		end
+
+		if next(remove_pending) then
+			local roster = load_roster(username, module.host);
+			for jid in pairs(remove_pending) do
+				roster[false].pending[jid] = nil;
+			end
+			save_roster(username, module.host, roster);
+			-- Not much we can do about save failing here
 		end
 	end
 
