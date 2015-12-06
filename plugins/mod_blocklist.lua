@@ -121,6 +121,7 @@ local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	local action = stanza.tags[1]; -- "block" or "unblock"
+	local is_blocking = action.name == "block" or nil; -- nil if unblocking
 	local new = {}; -- JIDs to block depending or unblock on action
 
 	-- XEP-0191 sayeth:
@@ -128,11 +129,11 @@ local function edit_blocklist(event)
 	-- > server MUST send unavailable presence information to the contact (but
 	-- > only if the contact is allowed to receive presence notifications [...]
 	-- So contacts we need to do that for are added to the set below.
-	local send_unavailable = {};
+	local send_unavailable = is_blocking and {};
 
 	-- Because blocking someone currently also blocks the ability to reject
 	-- subscription requests, we'll preemptively reject such
-	local remove_pending = {};
+	local remove_pending = is_blocking and {};
 
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
@@ -142,14 +143,14 @@ local function edit_blocklist(event)
 		end
 		item.attr.jid = jid; -- echo back prepped
 		new[jid] = true;
-		if is_contact_subscribed(username, module.host, jid) then
-			send_unavailable[jid] = true;
-		elseif is_contact_pending_in(username, module.host, jid) then
-			remove_pending[jid] = true;
+		if is_blocking then
+			if is_contact_subscribed(username, module.host, jid) then
+				send_unavailable[jid] = true;
+			elseif is_contact_pending_in(username, module.host, jid) then
+				remove_pending[jid] = true;
+			end
 		end
 	end
-
-	local is_blocking = action.name == "block" or nil; -- nil if unblocking
 
 	if is_blocking and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
