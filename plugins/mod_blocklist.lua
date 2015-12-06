@@ -123,9 +123,9 @@ local function edit_blocklist(event)
 		new[jid] = is_contact_subscribed(username, module.host, jid) or false;
 	end
 
-	local mode = action.name == "block" or nil;
+	local is_blocking = action.name == "block" or nil; -- nil if unblocking
 
-	if mode and not next(new) then
+	if is_blocking and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
 		origin.send(st_error_reply(stanza, "modify", "bad-request"));
 		return true;
@@ -135,12 +135,12 @@ local function edit_blocklist(event)
 
 	local new_blocklist = {};
 
-	if mode or next(new) then
+	if is_blocking or next(new) then
 		for jid in pairs(blocklist) do
 			new_blocklist[jid] = true;
 		end
 		for jid in pairs(new) do
-			new_blocklist[jid] = mode;
+			new_blocklist[jid] = is_blocking;
 		end
 		-- else empty the blocklist
 	end
@@ -154,7 +154,7 @@ local function edit_blocklist(event)
 		return true;
 	end
 
-	if mode then
+	if is_blocking then
 		for jid, in_roster in pairs(new) do
 			if not blocklist[jid] and in_roster and sessions[username] then
 				for _, session in pairs(sessions[username].sessions) do
