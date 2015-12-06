@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2009-2010 Matthew Wild
 -- Copyright (C) 2009-2010 Waqas Hussain
--- Copyright (C) 2014 Kim Alvefur
+-- Copyright (C) 2014-2015 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -10,7 +10,11 @@
 --
 
 local user_exists = require"core.usermanager".user_exists;
-local is_contact_subscribed = require"core.rostermanager".is_contact_subscribed;
+local rostermanager = require"core.rostermanager";
+local is_contact_subscribed = rostermanager.is_contact_subscribed;
+local is_contact_pending_in = rostermanager.is_contact_pending_in;
+local load_roster = rostermanager.load_roster;
+local save_roster = rostermanager.save_roster;
 local st = require"util.stanza";
 local st_error_reply = st.error_reply;
 local jid_prep = require"util.jid".prep;
@@ -19,11 +23,17 @@ local jid_split = require"util.jid".split;
 local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
 
--- Cache of blocklists by username may randomly expire at any time
+-- First level cache of blocklists by username.
+-- Weak table so may randomly expire at any time.
 local cache = setmetatable({}, { __mode = "v" });
 
--- Second level of caching, keeps a fixed number of items,
--- also anchors items in the above cache
+-- Second level of caching, keeps a fixed number of items, also anchors
+-- items in the above cache.
+--
+-- The size of this affects how often we will need to load a blocklist from
+-- disk, which we want to avoid during routing. On the other hand, we don't
+-- want to use too much memory either, so this can be tuned by advanced
+-- users. TODO use science to figure out a better default, 64 is just a guess.
 local cache_size = module:get_option_number("blocklist_cache_size", 64);
 local cache2 = require"util.cache".new(cache_size);
 
@@ -110,8 +120,20 @@ end);
 local function edit_blocklist(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
-	local action = stanza.tags[1];
-	local new = {};
+	local action = stanza.tags[1]; -- "block" or "unblock"
+	local is_blocking = action.name == "block" or nil; -- nil if unblocking
+	local new = {}; -- JIDs to block depending or unblock on action
+
+	-- XEP-0191 sayeth:
+	-- > When the user blocks communications with the contact, the user's
+	-- > server MUST send unavailable presence information to the contact (but
+	-- > only if the contact is allowed to receive presence notifications [...]
+	-- So contacts we need to do that for are added to the set below.
+	local send_unavailable = is_blocking and {};
+
+	-- Because blocking someone currently also blocks the ability to reject
+	-- subscription requests, we'll preemptively reject such
+	local remove_pending = is_blocking and {};
 
 	for item in action:childtags("item") do
 		local jid = jid_prep(item.attr.jid);
@@ -120,12 +142,17 @@ local function edit_blocklist(event)
 			return true;
 		end
 		item.attr.jid = jid; -- echo back prepped
-		new[jid] = is_contact_subscribed(username, module.host, jid) or false;
+		new[jid] = true;
+		if is_blocking then
+			if is_contact_subscribed(username, module.host, jid) then
+				send_unavailable[jid] = true;
+			elseif is_contact_pending_in(username, module.host, jid) then
+				remove_pending[jid] = true;
+			end
+		end
 	end
 
-	local mode = action.name == "block" or nil;
-
-	if mode and not next(new) then
+	if is_blocking and not next(new) then
 		-- <block/> element does not contain at least one <item/> child element
 		origin.send(st_error_reply(stanza, "modify", "bad-request"));
 		return true;
@@ -135,12 +162,12 @@ local function edit_blocklist(event)
 
 	local new_blocklist = {};
 
-	if mode or next(new) then
+	if is_blocking or next(new) then
 		for jid in pairs(blocklist) do
 			new_blocklist[jid] = true;
 		end
 		for jid in pairs(new) do
-			new_blocklist[jid] = mode;
+			new_blocklist[jid] = is_blocking;
 		end
 		-- else empty the blocklist
 	end
@@ -154,9 +181,9 @@ local function edit_blocklist(event)
 		return true;
 	end
 
-	if mode then
-		for jid, in_roster in pairs(new) do
-			if not blocklist[jid] and in_roster and sessions[username] then
+	if is_blocking then
+		for jid in pairs(send_unavailable) do
+			if not blocklist[jid] then
 				for _, session in pairs(sessions[username].sessions) do
 					if session.presence then
 						module:send(st.presence({ type = "unavailable", to = jid, from = session.full_jid }));
@@ -164,16 +191,24 @@ local function edit_blocklist(event)
 				end
 			end
 		end
-	end
-	if sessions[username] then
-		local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
-			:add_child(action); -- I am lazy
 
-		for _, session in pairs(sessions[username].sessions) do
-			if session.interested_blocklist then
-				blocklist_push.attr.to = session.full_jid;
-				session.send(blocklist_push);
+		if next(remove_pending) then
+			local roster = load_roster(username, module.host);
+			for jid in pairs(remove_pending) do
+				roster[false].pending[jid] = nil;
 			end
+			save_roster(username, module.host, roster);
+			-- Not much we can do about save failing here
+		end
+	end
+
+	local blocklist_push = st.iq({ type = "set", id = "blocklist-push" })
+		:add_child(action); -- I am lazy
+
+	for _, session in pairs(sessions[username].sessions) do
+		if session.interested_blocklist then
+			blocklist_push.attr.to = session.full_jid;
+			session.send(blocklist_push);
 		end
 	end
 
@@ -186,6 +221,7 @@ module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist);
 -- Cache invalidation, solved!
 module:hook_global("user-deleted", function (event)
 	if event.host == module.host then
+		cache:set(event.username, nil);
 		cache[event.username] = nil;
 	end
 end);
@@ -276,6 +312,9 @@ module:hook("pre-message/bare", bounce_outgoing, prio_out);
 module:hook("pre-message/full", bounce_outgoing, prio_out);
 module:hook("pre-message/host", bounce_outgoing, prio_out);
 
+-- Note: MUST bounce these, but we don't because this would produce
+-- lots of error replies due to server-generated presence.
+-- FIXME some day, likely needing changes to mod_presence
 module:hook("pre-presence/bare", drop_outgoing, prio_out);
 module:hook("pre-presence/full", drop_outgoing, prio_out);
 module:hook("pre-presence/host", drop_outgoing, prio_out);
