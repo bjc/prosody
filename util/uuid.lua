@@ -7,7 +7,6 @@
 --
 
 
-local m_random = math.random;
 local tostring = tostring;
 local os_time = os.time;
 local os_clock = os.clock;
