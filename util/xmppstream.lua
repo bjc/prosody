@@ -196,6 +196,29 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 		end
 	end
 
+	if stream_callbacks.track_namespaces then
+		local namespaces = {}
+		function xml_handlers:StartNamespaceDecl(prefix, url)
+			if prefix ~= nil then
+				namespaces[prefix] = url
+			end
+		end
+		function xml_handlers:EndNamespaceDecl(prefix)
+			if prefix ~= nil then
+				namespaces[prefix] = nil
+			end
+		end
+		local old_startelement = xml_handlers.StartElement
+		function xml_handlers:StartElement(tagname, attr)
+			old_startelement(self, tagname, attr)
+			local n = {}
+			for prefix, url in pairs(namespaces) do
+				n[prefix] = url
+			end
+			stanza.namespaces = n
+		end
+	end
+
 	local function restricted_handler(parser)
 		cb_error(session, "parse-error", "restricted-xml", "Restricted XML, see RFC 6120 section 11.1.");
 		if not parser.stop or not parser:stop() then
