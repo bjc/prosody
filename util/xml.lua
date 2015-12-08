@@ -14,6 +14,17 @@ local parse_xml = (function()
 		--luacheck: ignore 212/self
 		local handler = {};
 		local stanza = st.stanza("root");
+		local namespaces = {}
+		function handler:StartNamespaceDecl(prefix, url)
+			if prefix ~= nil then
+				namespaces[prefix] = url
+			end
+		end
+		function handler:EndNamespaceDecl(prefix)
+			if prefix ~= nil then
+				namespaces[prefix] = nil
+			end
+		end
 		function handler:StartElement(tagname, attr)
 			local curr_ns,name = tagname:match(ns_pattern);
 			if name == "" then
@@ -34,7 +45,11 @@ local parse_xml = (function()
 					end
 				end
 			end
-			stanza:tag(name, attr);
+			local n = {}
+			for prefix, url in pairs(namespaces) do
+				n[prefix] = url
+			end
+			stanza:tag(name, attr, n);
 		end
 		function handler:CharacterData(data)
 			stanza:text(data);

@@ -40,8 +40,8 @@ local _ENV = nil;
 local stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
 
-local function stanza(name, attr)
-	local stanza = { name = name, attr = attr or {}, tags = {} };
+local function stanza(name, attr, namespaces)
+	local stanza = { name = name, attr = attr or {}, namespaces = namespaces, tags = {} };
 	return setmetatable(stanza, stanza_mt);
 end
 local stanza = stanza;
@@ -54,8 +54,8 @@ function stanza_mt:body(text, attr)
 	return self:tag("body", attr):text(text);
 end
 
-function stanza_mt:tag(name, attrs)
-	local s = stanza(name, attrs);
+function stanza_mt:tag(name, attr, namespaces)
+	local s = stanza(name, attr, namespaces);
 	local last_add = self.last_add;
 	if not last_add then last_add = {}; self.last_add = last_add; end
 	(last_add[#last_add] or self):add_direct_child(s);
@@ -333,7 +333,12 @@ end
 local function clone(stanza)
 	local attr, tags = {}, {};
 	for k,v in pairs(stanza.attr) do attr[k] = v; end
-	local new = { name = stanza.name, attr = attr, tags = tags };
+	local old_namespaces, namespaces = stanza.namespaces;
+	if old_namespaces then
+		namespaces = {};
+		for k,v in pairs(old_namespaces) do namespaces[k] = v; end
+	end
+	local new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
 	for i=1,#stanza do
 		local child = stanza[i];
 		if child.name then
