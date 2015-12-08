@@ -111,10 +111,10 @@ local function activate(service_name)
 					local global_ssl_config = config.get("*", "ssl") or {};
 					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
 					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server",
-						service_info.ssl_config or {},
 						prefix_ssl_config[interface],
 						prefix_ssl_config[port],
 						prefix_ssl_config,
+						service_info.ssl_config or {},
 						global_ssl_config[interface],
 						global_ssl_config[port]);
 					if not ssl then
