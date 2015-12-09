@@ -683,8 +683,8 @@ function room_mt:process_form(origin, stanza)
 	local changed = {};
 
 	local function handle_option(name, field, allowed)
-		local new, err, included = fields[field], errors[field], present[field];
-		if not included then return; end
+		if not present[field] then return; end
+		local new = fields[field];
 		if allowed and not allowed[new] then return; end
 		if new == self["get_"..name](self) then return; end
 		changed[name] = true;
