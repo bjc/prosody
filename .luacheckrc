@@ -1,5 +1,5 @@
 cache = true
-read_globals = { "prosody", "hosts" }
+read_globals = { "prosody", "hosts", "import" }
 globals = { "_M" }
 allow_defined_top = true
 module = true

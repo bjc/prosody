@@ -111,7 +111,6 @@ local function is_admin(jid, host)
 	if host and not hosts[host] then return false; end
 	if type(jid) ~= "string" then return false; end
 
-	local is_admin;
 	jid = jid_bare(jid);
 	host = host or "*";
 
@@ -122,8 +121,7 @@ local function is_admin(jid, host)
 		if type(host_admins) == "table" then
 			for _,admin in ipairs(host_admins) do
 				if jid_prep(admin) == jid then
-					is_admin = true;
-					break;
+					return true;
 				end
 			end
 		elseif host_admins then
@@ -131,12 +129,11 @@ local function is_admin(jid, host)
 		end
 	end
 
-	if not is_admin and global_admins then
+	if global_admins then
 		if type(global_admins) == "table" then
 			for _,admin in ipairs(global_admins) do
 				if jid_prep(admin) == jid then
-					is_admin = true;
-					break;
+					return true;
 				end
 			end
 		elseif global_admins then
@@ -145,10 +142,10 @@ local function is_admin(jid, host)
 	end
 
 	-- Still not an admin, check with auth provider
-	if not is_admin and host ~= "*" and hosts[host].users and hosts[host].users.is_admin then
-		is_admin = hosts[host].users.is_admin(jid);
+	if host ~= "*" and hosts[host].users and hosts[host].users.is_admin then
+		return hosts[host].users.is_admin(jid);
 	end
-	return is_admin or false;
+	return false;
 end
 
 return {
