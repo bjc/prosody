@@ -43,6 +43,12 @@ if CFG_DATADIR then
 	end
 end
 
+if #arg > 0 and arg[1] ~= "--config" then
+	print("Unknown command-line option: "..tostring(arg[1]));
+	print("Perhaps you meant to use prosodyctl instead?");
+	return 1;
+end
+
 -- Global 'prosody' object
 local prosody = { events = require "util.events".new(); };
 _G.prosody = prosody;

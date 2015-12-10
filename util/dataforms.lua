@@ -118,6 +118,7 @@ local field_readers = {};
 function form_t.data(layout, stanza)
 	local data = {};
 	local errors = {};
+	local present = {};
 
 	for _, field in ipairs(layout) do
 		local tag;
@@ -133,6 +134,7 @@ function form_t.data(layout, stanza)
 				errors[field.name] = "Required value missing";
 			end
 		else
+			present[field.name] = true;
 			local reader = field_readers[field.type];
 			if reader then
 				data[field.name], errors[field.name] = reader(tag, field.required);
@@ -140,9 +142,9 @@ function form_t.data(layout, stanza)
 		end
 	end
 	if next(errors) then
-		return data, errors;
+		return data, errors, present;
 	end
-	return data;
+	return data, nil, present;
 end
 
 local function simple_text(field_tag, required)
