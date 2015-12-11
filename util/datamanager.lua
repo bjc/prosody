@@ -234,7 +234,7 @@ local function list_append(username, host, datastore, data)
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
 
-	local data = "item(" ..  serialize(data) .. ");\n";
+	data = "item(" ..  serialize(data) .. ");\n";
 	local ok, msg = append(username, host, datastore, "list", data);
 	if not ok then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
