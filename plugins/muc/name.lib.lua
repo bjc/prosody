@@ -34,9 +34,8 @@ module:hook("muc-config-form", function(event)
 	});
 end);
 
-module:hook("muc-config-submitted", function(event)
-	local new = event.fields["muc#roomconfig_roomname"];
-	if new ~= nil and set_name(event.room, new) then
+module:hook("muc-config-submitted/muc#roomconfig_roomname", function(event)
+	if set_name(event.room, event.value) then
 		event.status_codes["104"] = true;
 	end
 end);

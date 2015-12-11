@@ -23,7 +23,9 @@ local function get_historylength(room)
 end
 
 local function set_historylength(room, length)
-	length = assert(tonumber(length), "Length not a valid number");
+	if length then
+		length = assert(tonumber(length), "Length not a valid number");
+	end
 	if length == default_history_length then length = nil; end
 	room._data.history_length = length;
 	return true;
@@ -38,9 +40,8 @@ module:hook("muc-config-form", function(event)
 	});
 end);
 
-module:hook("muc-config-submitted", function(event)
-	local new = event.fields["muc#roomconfig_historylength"];
-	if new ~= nil and set_historylength(event.room, new) then
+module:hook("muc-config-submitted/muc#roomconfig_historylength", function(event)
+	if set_historylength(event.room, event.value) then
 		event.status_codes["104"] = true;
 	end
 end);
