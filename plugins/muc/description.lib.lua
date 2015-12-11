@@ -30,9 +30,8 @@ end
 module:hook("muc-disco#info", add_form_option);
 module:hook("muc-config-form", add_form_option);
 
-module:hook("muc-config-submitted", function(event)
-	local new = event.fields["muc#roomconfig_roomdesc"];
-	if new ~= nil and set_description(event.room, new) then
+module:hook("muc-config-submitted/muc#roomconfig_roomdesc", function(event)
+	if set_description(event.room, event.value) then
 		event.status_codes["104"] = true;
 	end
 end);
