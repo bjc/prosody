@@ -232,9 +232,9 @@ local function append(username, host, datastore, ext, data)
 		f:seek("set", pos);
 	end
 
-	if ok then
-		f:write(data);
-	else
+	ok, msg = f:write(data);
+	if not ok then
+		f:close();
 		return ok, msg;
 	end
 
