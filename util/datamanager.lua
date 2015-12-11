@@ -402,6 +402,7 @@ return {
 	getpath = getpath;
 	load = load;
 	store = store;
+	append_raw = append;
 	list_append = list_append;
 	list_store = list_store;
 	list_load = list_load;
