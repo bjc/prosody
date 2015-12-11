@@ -211,6 +211,7 @@ end
 
 -- Append a blob of data to a file
 local function append(username, host, datastore, ext, data)
+	if type(data) ~= "string" then return; end
 	local filename = getpath(username, host, datastore, ext, true);
 
 	local ok;
