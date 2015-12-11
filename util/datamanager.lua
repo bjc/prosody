@@ -214,9 +214,9 @@ local function append(username, host, datastore, ext, data)
 	local f, msg = io_open(filename, "r+");
 	if not f then
 		f, msg = io_open(filename, "w");
-	end
-	if not f then
-		return nil, msg;
+		if not f then
+			return nil, msg;
+		end
 	end
 	local pos = f:seek("end");
 	local ok, msg = fallocate(f, pos, #data);
