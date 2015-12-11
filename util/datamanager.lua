@@ -220,7 +220,7 @@ local function append(username, host, datastore, ext, data)
 		-- File did probably not exist, let's create it
 		f, msg = io_open(filename, "w");
 		if not f then
-			return nil, msg;
+			return nil, msg, "open";
 		end
 	end
 
@@ -239,7 +239,7 @@ local function append(username, host, datastore, ext, data)
 	ok, msg = f:write(data);
 	if not ok then
 		f:close();
-		return ok, msg;
+		return ok, msg, "write";
 	end
 
 	ok, msg = f:close();
@@ -247,7 +247,7 @@ local function append(username, host, datastore, ext, data)
 		return ok, msg;
 	end
 
-	return true;
+	return true, pos;
 end
 
 local function list_append(username, host, datastore, data)
