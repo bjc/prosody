@@ -209,29 +209,37 @@ local function store(username, host, datastore, data)
 	return true;
 end
 
-local function list_append(username, host, datastore, data)
-	if not data then return; end
-	if callback(username, host, datastore) == false then return true; end
-	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, "list", true), "r+");
+local function append(username, host, datastore, ext, data)
+	local f, msg = io_open(getpath(username, host, datastore, ext, true), "r+");
 	if not f then
-		f, msg = io_open(getpath(username, host, datastore, "list", true), "w");
+		f, msg = io_open(getpath(username, host, datastore, ext, true), "w");
 	end
 	if not f then
-		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
-		return;
+		return nil, msg;
 	end
-	local data = "item(" ..  serialize(data) .. ");\n";
 	local pos = f:seek("end");
 	local ok, msg = fallocate(f, pos, #data);
 	f:seek("set", pos);
 	if ok then
 		f:write(data);
 	else
-		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return ok, msg;
 	end
 	f:close();
+	return true;
+end
+
+local function list_append(username, host, datastore, data)
+	if not data then return; end
+	if callback(username, host, datastore) == false then return true; end
+	-- save the datastore
+
+	local data = "item(" ..  serialize(data) .. ");\n";
+	local ok, msg = append(username, host, datastore, "list", data);
+	if not ok then
+		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
+		return ok, msg;
+	end
 	return true;
 end
 
