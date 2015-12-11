@@ -209,17 +209,20 @@ local function store(username, host, datastore, data)
 	return true;
 end
 
+-- Append a blob of data to a file
 local function append(username, host, datastore, ext, data)
 	local filename = getpath(username, host, datastore, ext, true);
 
 	local ok;
 	local f, msg = io_open(filename, "r+");
 	if not f then
+		-- File did probably not exist, let's create it
 		f, msg = io_open(filename, "w");
 		if not f then
 			return nil, msg;
 		end
 	end
+
 	local pos = f:seek("end");
 	ok, msg = fallocate(f, pos, #data);
 	if not ok then
