@@ -210,9 +210,10 @@ local function store(username, host, datastore, data)
 end
 
 local function append(username, host, datastore, ext, data)
-	local f, msg = io_open(getpath(username, host, datastore, ext, true), "r+");
+	local filename = getpath(username, host, datastore, ext, true);
+	local f, msg = io_open(filename, "r+");
 	if not f then
-		f, msg = io_open(getpath(username, host, datastore, ext, true), "w");
+		f, msg = io_open(filename, "w");
 	end
 	if not f then
 		return nil, msg;
@@ -225,7 +226,12 @@ local function append(username, host, datastore, ext, data)
 	else
 		return ok, msg;
 	end
-	f:close();
+
+	ok, msg = f:close();
+	if not ok then
+		return ok, msg;
+	end
+
 	return true;
 end
 
