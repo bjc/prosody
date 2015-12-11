@@ -211,6 +211,8 @@ end
 
 local function append(username, host, datastore, ext, data)
 	local filename = getpath(username, host, datastore, ext, true);
+
+	local ok;
 	local f, msg = io_open(filename, "r+");
 	if not f then
 		f, msg = io_open(filename, "w");
@@ -219,7 +221,7 @@ local function append(username, host, datastore, ext, data)
 		end
 	end
 	local pos = f:seek("end");
-	local ok, msg = fallocate(f, pos, #data);
+	ok, msg = fallocate(f, pos, #data);
 	f:seek("set", pos);
 	if ok then
 		f:write(data);
