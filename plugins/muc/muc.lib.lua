@@ -644,11 +644,11 @@ function room_mt:process_form(origin, stanza)
 	if form.attr.type == "cancel" then
 		origin.send(st.reply(stanza));
 	elseif form.attr.type == "submit" then
-		local fields;
+		local fields, errors, present;
 		if form.tags[1] == nil then -- Instant room
-			fields = {};
+			fields, present = {}, {};
 		else
-			fields = self:get_form_layout(stanza.attr.from):data(form);
+			fields, errors, present = self:get_form_layout(stanza.attr.from):data(form);
 			if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then
 				origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration"));
 				return true;
@@ -666,6 +666,11 @@ function room_mt:process_form(origin, stanza)
 			return true;
 		end
 		module:fire_event("muc-config-submitted", event);
+		for submitted_field in pairs(present) do
+			event.field, event.value = submitted_field, fields[submitted_field];
+			module:fire_event("muc-config-submitted/"..submitted_field, event);
+		end
+		event.field, event.value = nil, nil;
 
 		if self.save then self:save(true); end
 		origin.send(st.reply(stanza));
