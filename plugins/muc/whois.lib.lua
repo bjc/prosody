@@ -41,9 +41,8 @@ module:hook("muc-config-form", function(event)
 	});
 end);
 
-module:hook("muc-config-submitted", function(event)
-	local new = event.fields["muc#roomconfig_whois"];
-	if new ~= nil and set_whois(event.room, new) then
+module:hook("muc-config-submitted/muc#roomconfig_whois", function(event)
+	if set_whois(event.room, event.value) then
 		local code = (new == 'moderators') and "173" or "172";
 		event.status_codes[code] = true;
 	end
