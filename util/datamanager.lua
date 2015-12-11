@@ -222,7 +222,16 @@ local function append(username, host, datastore, ext, data)
 	end
 	local pos = f:seek("end");
 	ok, msg = fallocate(f, pos, #data);
-	f:seek("set", pos);
+	if not ok then
+		log("warn", "fallocate() failed: %s", tostring(msg));
+		-- This doesn't work on every file system
+	end
+
+	if f:seek() ~= pos then
+		log("debug", "fallocate() changed file position");
+		f:seek("set", pos);
+	end
+
 	if ok then
 		f:write(data);
 	else
