@@ -20,7 +20,7 @@ keysize=2048
 # Self signed
 %.crt: %.cnf %.key
 	openssl req -new -x509 -nodes -key $(lastword $^) -days 365 \
-		-sha1 -out $@ -utf8 -config $(firstword $^)
+		-sha512 -out $@ -utf8 -config $(firstword $^)
 
 %.cnf:
 	sed 's,example\.com,$*,g' openssl.cnf > $@
