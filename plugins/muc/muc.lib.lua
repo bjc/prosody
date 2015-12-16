@@ -736,7 +736,7 @@ function room_mt:process_form(origin, stanza)
 
 	if dirty or whois_changed then
 		local msg = st.message({type='groupchat', from=self.jid})
-			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'}):up()
+			:tag('x', {xmlns='http://jabber.org/protocol/muc#user'});
 
 		if dirty then
 			msg.tags[1]:tag('status', {code = '104'}):up();
@@ -745,6 +745,7 @@ function room_mt:process_form(origin, stanza)
 			local code = (whois == 'moderators') and "173" or "172";
 			msg.tags[1]:tag('status', {code = code}):up();
 		end
+		msg:up();
 
 		self:broadcast_message(msg, false)
 	end
