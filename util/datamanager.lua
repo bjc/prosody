@@ -209,29 +209,58 @@ local function store(username, host, datastore, data)
 	return true;
 end
 
+-- Append a blob of data to a file
+local function append(username, host, datastore, ext, data)
+	if type(data) ~= "string" then return; end
+	local filename = getpath(username, host, datastore, ext, true);
+
+	local ok;
+	local f, msg = io_open(filename, "r+");
+	if not f then
+		-- File did probably not exist, let's create it
+		f, msg = io_open(filename, "w");
+		if not f then
+			return nil, msg, "open";
+		end
+	end
+
+	local pos = f:seek("end");
+	ok, msg = fallocate(f, pos, #data);
+	if not ok then
+		log("warn", "fallocate() failed: %s", tostring(msg));
+		-- This doesn't work on every file system
+	end
+
+	if f:seek() ~= pos then
+		log("debug", "fallocate() changed file position");
+		f:seek("set", pos);
+	end
+
+	ok, msg = f:write(data);
+	if not ok then
+		f:close();
+		return ok, msg, "write";
+	end
+
+	ok, msg = f:close();
+	if not ok then
+		return ok, msg;
+	end
+
+	return true, pos;
+end
+
 local function list_append(username, host, datastore, data)
 	if not data then return; end
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
-	local f, msg = io_open(getpath(username, host, datastore, "list", true), "r+");
-	if not f then
-		f, msg = io_open(getpath(username, host, datastore, "list", true), "w");
-	end
-	if not f then
-		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
-		return;
-	end
-	local data = "item(" ..  serialize(data) .. ");\n";
-	local pos = f:seek("end");
-	local ok, msg = fallocate(f, pos, #data);
-	f:seek("set", pos);
-	if ok then
-		f:write(data);
-	else
+
+	data = "item(" ..  serialize(data) .. ");\n";
+	local ok, msg = append(username, host, datastore, "list", data);
+	if not ok then
 		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
 		return ok, msg;
 	end
-	f:close();
 	return true;
 end
 
@@ -373,6 +402,7 @@ return {
 	getpath = getpath;
 	load = load;
 	store = store;
+	append_raw = append;
 	list_append = list_append;
 	list_store = list_store;
 	list_load = list_load;
