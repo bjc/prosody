@@ -417,7 +417,9 @@ end
 
 local function normalize_params(params)
 	if params.driver == "SQLite3" then
-		params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
+		if params.database ~= ":memory:" then
+			params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
+		end
 	end
 	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
 	return params;

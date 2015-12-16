@@ -137,25 +137,25 @@ end
 
 local function log_warnings()
 	if _VERSION > "Lua 5.1" then
-		log("warn", "Support for %s is experimental, please report any issues", _VERSION);
+		prosody.log("warn", "Support for %s is experimental, please report any issues", _VERSION);
 	end
 	local ssl = softreq"ssl";
 	if ssl then
 		local major, minor, veryminor, patched = ssl._VERSION:match("(%d+)%.(%d+)%.?(%d*)(M?)");
 		if not major or ((tonumber(major) == 0 and (tonumber(minor) or 0) <= 3 and (tonumber(veryminor) or 0) <= 2) and patched ~= "M") then
-			log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
+			prosody.log("error", "This version of LuaSec contains a known bug that causes disconnects, see http://prosody.im/doc/depends");
 		end
 	end
 	local lxp = softreq"lxp";
 	if lxp then
 		if not pcall(lxp.new, { StartDoctypeDecl = false }) then
-			log("error", "The version of LuaExpat on your system leaves Prosody "
+			prosody.log("error", "The version of LuaExpat on your system leaves Prosody "
 				.."vulnerable to denial-of-service attacks. You should upgrade to "
 				.."LuaExpat 1.3.0 or higher as soon as possible. See "
 				.."http://prosody.im/doc/depends#luaexpat for more information.");
 		end
 		if not lxp.new({}).getcurrentbytecount then
-			log("error", "The version of LuaExpat on your system does not support "
+			prosody.log("error", "The version of LuaExpat on your system does not support "
 				.."stanza size limits, which may leave servers on untrusted "
 				.."networks (e.g. the internet) vulnerable to denial-of-service "
 				.."attacks. You should upgrade to LuaExpat 1.3.0 or higher as "
