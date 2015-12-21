@@ -84,6 +84,7 @@ end);
 
 local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
+	local log = session.log or module._log;
 
 	local query = stanza.tags[1];
 	if stanza.attr.type == "get" then
@@ -106,13 +107,13 @@ local function handle_registration_stanza(event)
 			local ok, err = usermanager_delete_user(username, host);
 
 			if not ok then
-				module:log("debug", "Removing user account %s@%s failed: %s", username, host, err);
+				log("debug", "Removing user account %s@%s failed: %s", username, host, err);
 				session.close = old_session_close;
 				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
 				return true;
 			end
 
-			module:log("info", "User removed their account: %s@%s", username, host);
+			log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
 			local username = nodeprep(query:get_child_text("username"));
@@ -177,6 +178,7 @@ local blacklisted_ips = module:get_option_set("registration_blacklist", {})._ite
 
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
+	local log = session.log or module._log;
 
 	if not(allow_registration) or session.type ~= "c2s_unauthed" then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
@@ -196,7 +198,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 				else
 					-- Check that the user is not blacklisted or registering too often
 					if not session.ip then
-						module:log("debug", "User's IP not known; can't apply blacklist/whitelist");
+						log("debug", "User's IP not known; can't apply blacklist/whitelist");
 					elseif blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return true;
@@ -238,7 +240,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 								return true;
 							end
 							session.send(st.reply(stanza)); -- user created!
-							module:log("info", "User account created: %s@%s", username, host);
+							log("info", "User account created: %s@%s", username, host);
 							module:fire_event("user-registered", {
 								username = username, host = host, source = "mod_register",
 								session = session });
