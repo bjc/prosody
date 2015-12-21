@@ -98,6 +98,7 @@ local function handle_registration_stanza(event)
 		if query.tags[1] and query.tags[1].name == "remove" then
 			local username, host = session.username, session.host;
 
+			-- This one weird trick sends a reply to this stanza before the user is deleted
 			local old_session_close = session.close;
 			session.close = function(session, ...)
 				session.send(st.reply(stanza));
