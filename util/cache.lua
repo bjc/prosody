@@ -51,19 +51,20 @@ function cache_methods:set(k, v)
 		return true;
 	end
 	-- Check whether we need to remove oldest k/v
+	local on_evict, evicted_key, evicted_value;
 	if self._count == self.size then
 		local tail = self._tail;
-		local on_evict = self._on_evict;
-		if on_evict then
-			on_evict(tail.key, tail.value);
-		end
+		on_evict, evicted_key, evicted_value = self._on_evict, tail.key, tail.value;
 		_remove(self, tail);
-		self._data[tail.key] = nil;
+		self._data[evicted_key] = nil;
 	end
 
 	m = { key = k, value = v, prev = nil, next = nil };
 	self._data[k] = m;
 	_insert(self, m);
+	if on_evict and evicted_key then
+		on_evict(evicted_key, evicted_value, self);
+	end
 	return true;
 end
 
