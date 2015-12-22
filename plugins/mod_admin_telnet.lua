@@ -1081,6 +1081,33 @@ function def_env.dns:cache()
 	return true, "Cache:\n"..tostring(dns.cache())
 end
 
+def_env.http = {};
+
+function def_env.http:list()
+	local print = self.session.print;
+
+	for host in pairs(prosody.hosts) do
+		local http_apps = modulemanager.get_items("http-provider", host);
+		if #http_apps > 0 then
+			local http_host = module:context(host):get_option("http_host");
+			print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
+			for _, provider in ipairs(http_apps) do
+				local url = module:context(host):http_url(provider.name);
+				print("", url);
+			end
+			print("");
+		end
+	end
+
+	local default_host = module:get_option("http_default_host");
+	if not default_host then
+		print("HTTP requests to unknown hosts will return 404 Not Found");
+	else
+		print("HTTP requests to unknown hosts will be handled by "..default_host);
+	end
+	return true;
+end
+
 -------------
 
 function printbanner(session)
