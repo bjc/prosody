@@ -144,7 +144,7 @@ end
 
 do -- Lua to shell calls.
 	local function shell_escape(s)
-		return s:gsub("'",[['\'']]);
+		return "'" .. tostring(s):gsub("'",[['\'']]) .. "'";
 	end
 
 	local function serialize(f,o)
@@ -153,12 +153,12 @@ do -- Lua to shell calls.
 			if type(k) == "string" then
 				t_insert(r, ("-%s"):format(k));
 				if v ~= true then
-					t_insert(r, ("'%s'"):format(shell_escape(tostring(v))));
+					t_insert(r, shell_escape(v));
 				end
 			end
 		end
 		for _,v in ipairs(o) do
-			t_insert(r, ("'%s'"):format(shell_escape(tostring(v))));
+			t_insert(r, shell_escape(v));
 		end
 		return t_concat(r, " ");
 	end
