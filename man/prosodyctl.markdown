@@ -1,6 +1,7 @@
 ---
 author:
 - 'Dwayne Bent <dbb.1@liqd.org>'
+- Kim Alvefur
 date: '2015-12-23'
 section: 1
 title: PROSODYCTL
@@ -71,6 +72,10 @@ stop
 restart
 :   Restarts the prosody server daemon. Equivalent to running prosodyctl
     stop followed by prosodyctl start.
+
+reload
+:   Signals the prosody server daemon to reload configuration and reopen
+    log files.
 
 status
 :   Prints the current execution status of the prosody server daemon.

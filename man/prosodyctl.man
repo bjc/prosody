@@ -76,6 +76,12 @@ Equivalent to running prosodyctl stop followed by prosodyctl start.
 .RS
 .RE
 .TP
+.B reload
+Signals the prosody server daemon to reload configuration and reopen log
+files.
+.RS
+.RE
+.TP
 .B status
 Prints the current execution status of the prosody server daemon.
 .RS
@@ -113,4 +119,4 @@ server daemon and to determine if a host has been configured.
 .PP
 More information may be found online at: <https://prosody.im/>
 .SH AUTHORS
-Dwayne Bent <dbb.1@liqd.org>.
+Dwayne Bent <dbb.1@liqd.org>; Kim Alvefur.
