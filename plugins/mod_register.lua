@@ -13,9 +13,9 @@ local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_set_password = require "core.usermanager".set_password;
 local usermanager_delete_user = require "core.usermanager".delete_user;
-local os_time = os.time;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
+local create_throttle = require "util.throttle".create;
 
 local compat = module:get_option_boolean("registration_compat", true);
 local allow_registration = module:get_option_boolean("allow_registration", false);
@@ -177,6 +177,19 @@ local whitelist_only = module:get_option_boolean("whitelist_registration_only");
 local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1" })._items;
 local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
 
+local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
+local throttle_period = module:get_option_number("registration_throttle_period", min_seconds_between_registrations);
+
+local function check_throttle(ip)
+	if not throttle_max then return true end
+	local throttle = recent_ips[ip];
+	if not throttle then
+		throttle = create_throttle(throttle_max, throttle_period);
+		recent_ips[ip] = throttle;
+	end
+	return throttle:poll(1);
+end
+
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
 	local log = session.log or module._log;
@@ -204,18 +217,9 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return true;
 					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
-						if not recent_ips[session.ip] then
-							recent_ips[session.ip] = { time = os_time(), count = 1 };
-						else
-							local ip = recent_ips[session.ip];
-							ip.count = ip.count + 1;
-
-							if os_time() - ip.time < min_seconds_between_registrations then
-								ip.time = os_time();
-								session.send(st.error_reply(stanza, "wait", "not-acceptable"));
-								return true;
-							end
-							ip.time = os_time();
+						if check_throttle(session.ip) then
+							session.send(st.error_reply(stanza, "wait", "not-acceptable"));
+							return true;
 						end
 					end
 					local username, password = nodeprep(data.username), data.password;
