@@ -147,27 +147,27 @@ do -- Lua to shell calls.
 		return "'" .. tostring(s):gsub("'",[['\'']]) .. "'";
 	end
 
-	local function serialize(f,o)
-		local r = {"openssl", f};
-		for k,v in pairs(o) do
+	local function serialize(command, args)
+		local commandline = { "openssl", command };
+		for k, v in pairs(args) do
 			if type(k) == "string" then
-				t_insert(r, ("-%s"):format(k));
+				t_insert(commandline, ("-%s"):format(k));
 				if v ~= true then
-					t_insert(r, shell_escape(v));
+					t_insert(commandline, shell_escape(v));
 				end
 			end
 		end
-		for _,v in ipairs(o) do
-			t_insert(r, shell_escape(v));
+		for _, v in ipairs(args) do
+			t_insert(commandline, shell_escape(v));
 		end
-		return t_concat(r, " ");
+		return t_concat(commandline, " ");
 	end
 
 	local os_execute = os.execute;
 	setmetatable(_M, {
 		__index=function(_,f)
 			return function(opts)
-				return 0 == os_execute(serialize(f, type(opts) == "table" and opts or {}));
+				return 0 == os_execute(serialize(command, type(opts) == "table" and opts or {}));
 			end;
 		end;
 	});
