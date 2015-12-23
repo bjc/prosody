@@ -12,7 +12,7 @@ local config = {};
 _M.config = config;
 
 local ssl_config = {};
-local ssl_config_mt = {__index=ssl_config};
+local ssl_config_mt = { __index = ssl_config };
 
 function config.new()
 	return setmetatable({
@@ -65,12 +65,12 @@ function ssl_config:serialize()
 		s = s .. ("[%s]\n"):format(k);
 		if k == "subject_alternative_name" then
 			for san, n in pairs(t) do
-				for i = 1,#n do
+				for i = 1, #n do
 					s = s .. s_format("%s.%d = %s\n", san, i -1, n[i]);
 				end
 			end
 		elseif k == "distinguished_name" then
-			for i=1,#DN_order do
+			for i=1, #DN_order do
 				local k = DN_order[i]
 				local v = t[k];
 				if v then
@@ -107,7 +107,7 @@ end
 
 function ssl_config:add_sRVName(host, service)
 	t_insert(self.subject_alternative_name.otherName,
-		s_format("%s;%s", oid_dnssrv, ia5string("_" .. service .."." .. idna_to_ascii(host))));
+		s_format("%s;%s", oid_dnssrv, ia5string("_" .. service .. "." .. idna_to_ascii(host))));
 end
 
 function ssl_config:add_xmppAddr(host)
@@ -118,10 +118,10 @@ end
 function ssl_config:from_prosody(hosts, config, certhosts)
 	-- TODO Decide if this should go elsewhere
 	local found_matching_hosts = false;
-	for i = 1,#certhosts do
+	for i = 1, #certhosts do
 		local certhost = certhosts[i];
 		for name in pairs(hosts) do
-			if name == certhost or name:sub(-1-#certhost) == "."..certhost then
+			if name == certhost or name:sub(-1-#certhost) == "." .. certhost then
 				found_matching_hosts = true;
 				self:add_dNSName(name);
 				--print(name .. "#component_module: " .. (config.get(name, "component_module") or "nil"));
@@ -165,7 +165,7 @@ do -- Lua to shell calls.
 
 	local os_execute = os.execute;
 	setmetatable(_M, {
-		__index=function(_,f)
+		__index = function(_, command)
 			return function(opts)
 				return 0 == os_execute(serialize(command, type(opts) == "table" and opts or {}));
 			end;
