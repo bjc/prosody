@@ -80,6 +80,21 @@ reload
 status
 :   Prints the current execution status of the prosody server daemon.
 
+Debugging
+---------
+
+prosodyctl can also show some information about the environment,
+dependencies and such to aid in debugging.
+
+about
+:   Shows environment, various paths used by Prosody and
+    installed dependencies.
+
+check \[what\]
+:   Performs various sanity checks on the configuration, DNS setup and
+    configured TLS certificates. `what` can be one of `config`, `dns`
+    and `certs` to run only that check.
+
 Ejabberd Compatibility
 ----------------------
 

@@ -86,6 +86,24 @@ files.
 Prints the current execution status of the prosody server daemon.
 .RS
 .RE
+.SS Debugging
+.PP
+prosodyctl can also show some information about the environment,
+dependencies and such to aid in debugging.
+.TP
+.B about
+Shows environment, various paths used by Prosody and installed
+dependencies.
+.RS
+.RE
+.TP
+.B check [what]
+Performs various sanity checks on the configuration, DNS setup and
+configured TLS certificates.
+\f[C]what\f[] can be one of \f[C]config\f[], \f[C]dns\f[] and
+\f[C]certs\f[] to run only that check.
+.RS
+.RE
 .SS Ejabberd Compatibility
 .PP
 ejabberd is another XMPP server which provides a comparable control
