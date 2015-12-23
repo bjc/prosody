@@ -16,6 +16,7 @@ local usermanager_delete_user = require "core.usermanager".delete_user;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
 local create_throttle = require "util.throttle".create;
+local new_cache = require "util.cache".new;
 
 local compat = module:get_option_boolean("registration_compat", true);
 local allow_registration = module:get_option_boolean("allow_registration", false);
@@ -171,7 +172,6 @@ local function parse_response(query)
 	end
 end
 
-local recent_ips = {};
 local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
 local whitelist_only = module:get_option_boolean("whitelist_registration_only");
 local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1" })._items;
@@ -179,14 +179,17 @@ local blacklisted_ips = module:get_option_set("registration_blacklist", {})._ite
 
 local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
 local throttle_period = module:get_option_number("registration_throttle_period", min_seconds_between_registrations);
+local throttle_cache_size = module:get_option_number("registration_throttle_cache_size", 100);
+
+local throttle_cache = new_cache(throttle_cache_size);
 
 local function check_throttle(ip)
 	if not throttle_max then return true end
-	local throttle = recent_ips[ip];
+	local throttle = throttle_cache:get(ip);
 	if not throttle then
 		throttle = create_throttle(throttle_max, throttle_period);
-		recent_ips[ip] = throttle;
 	end
+	throttle_cache:set(ip, throttle);
 	return throttle:poll(1);
 end
 
