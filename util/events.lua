@@ -17,10 +17,15 @@ local next = next;
 local _ENV = nil;
 
 local function new()
+	-- Map event name to ordered list of handlers (lazily built): handlers[event_name] = array_of_handler_functions
 	local handlers = {};
+	-- Array of wrapper functions that wrap all events (nil if empty)
 	local global_wrappers;
+	-- Per-event wrappers: wrappers[event_name] = wrapper_function
 	local wrappers = {};
+	-- Event map: event_map[handler_function] = priority_number
 	local event_map = {};
+	-- Called on-demand to build handlers entries
 	local function _rebuild_index(handlers, event)
 		local _handlers = event_map[event];
 		if not _handlers or next(_handlers) == nil then return; end
