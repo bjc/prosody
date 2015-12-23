@@ -26,5 +26,5 @@ keysize=2048
 	sed 's,example\.com,$*,g' openssl.cnf > $@
 
 %.key:
-	openssl genrsa $(keysize) > $@
-	@chmod 400 $@
+	umask 0077 && openssl genrsa -out $@ $(keysize)
+	@chmod 400 $@ -c
