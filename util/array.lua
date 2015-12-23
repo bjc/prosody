@@ -128,11 +128,7 @@ function array_methods:push(x)
 	return self;
 end
 
-function array_methods:pop(x)
-	local v = self[x];
-	t_remove(self, x);
-	return v;
-end
+array_methods.pop = t_remove;
 
 function array_methods:concat(sep)
 	return t_concat(array.map(self, tostring), sep);
