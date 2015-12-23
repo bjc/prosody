@@ -79,7 +79,16 @@ local function add_task(delay, callback, param)
 end
 local function stop(id)
 	params[id] = nil;
-	return h:remove(id);
+	local result, item, result_sync = h:remove(id);
+	local peek = h:peek();
+	if peek ~= next_time and _server_timer then
+		next_time = peek;
+		_server_timer:close();
+		if next_time ~= nil then
+			_server_timer = _add_task(next_time - get_time(), _on_timer);
+		end
+	end
+	return result, item, result_sync;
 end
 local function reschedule(id, delay)
 	local current_time = get_time();
