@@ -45,8 +45,7 @@ keysize=2048
 	@chmod 400 $*.key -c
 
 %.crt: %.key
-	openssl req -new -x509 -nodes -key $^ -days 365 \
-		-sha256 -out $@ -utf8 -config $(firstword $^)
+	openssl req -new -x509 -key $^ -days 365 -sha256 -utf8 -subj /CN=$* -out $@
 
 %.crt:
 	umask 0077 && touch $*.key
