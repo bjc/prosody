@@ -37,7 +37,7 @@ setmetatable(array, { __call = new_array });
 
 -- Read-only methods
 function array_methods:random()
-	return self[math_random(1,#self)];
+	return self[math_random(1, #self)];
 end
 
 -- These methods can be called two ways:
@@ -45,7 +45,7 @@ end
 --   existing_array:method([params, ...]) -- Transform existing array into result
 --
 function array_base.map(outa, ina, func)
-	for k,v in ipairs(ina) do
+	for k, v in ipairs(ina) do
 		outa[k] = func(v);
 	end
 	return outa;
@@ -54,7 +54,7 @@ end
 function array_base.filter(outa, ina, func)
 	local inplace, start_length = ina == outa, #ina;
 	local write = 1;
-	for read=1,start_length do
+	for read = 1, start_length do
 		local v = ina[read];
 		if func(v) then
 			outa[write] = v;
@@ -63,7 +63,7 @@ function array_base.filter(outa, ina, func)
 	end
 
 	if inplace and write <= start_length then
-		for i=write,start_length do
+		for i = write, start_length do
 			outa[i] = nil;
 		end
 	end
@@ -80,7 +80,7 @@ function array_base.sort(outa, ina, ...)
 end
 
 function array_base.pluck(outa, ina, key)
-	for i=1,#ina do
+	for i = 1, #ina do
 		outa[i] = ina[i][key];
 	end
 	return outa;
@@ -108,16 +108,16 @@ end
 --- These methods only mutate the array
 function array_methods:shuffle(outa, ina)
 	local len = #self;
-	for i=1,#self do
-		local r = math_random(i,len);
+	for i = 1, #self do
+		local r = math_random(i, len);
 		self[i], self[r] = self[r], self[i];
 	end
 	return self;
 end
 
 function array_methods:append(array)
-	local len,len2  = #self, #array;
-	for i=1,len2 do
+	local len, len2 = #self, #array;
+	for i = 1, len2 do
 		self[len+i] = array[i];
 	end
 	return self;
@@ -128,11 +128,7 @@ function array_methods:push(x)
 	return self;
 end
 
-function array_methods:pop(x)
-	local v = self[x];
-	t_remove(self, x);
-	return v;
-end
+array_methods.pop = t_remove;
 
 function array_methods:concat(sep)
 	return t_concat(array.map(self, tostring), sep);
@@ -147,7 +143,7 @@ function array.collect(f, s, var)
 	local t = {};
 	while true do
 		var = f(s, var);
-	        if var == nil then break; end
+		if var == nil then break; end
 		t_insert(t, var);
 	end
 	return setmetatable(t, array_mt);
