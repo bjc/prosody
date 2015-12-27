@@ -12,7 +12,7 @@ local config = {};
 _M.config = config;
 
 local ssl_config = {};
-local ssl_config_mt = {__index=ssl_config};
+local ssl_config_mt = { __index = ssl_config };
 
 function config.new()
 	return setmetatable({
@@ -65,12 +65,12 @@ function ssl_config:serialize()
 		s = s .. ("[%s]\n"):format(k);
 		if k == "subject_alternative_name" then
 			for san, n in pairs(t) do
-				for i = 1,#n do
+				for i = 1, #n do
 					s = s .. s_format("%s.%d = %s\n", san, i -1, n[i]);
 				end
 			end
 		elseif k == "distinguished_name" then
-			for i=1,#DN_order do
+			for i=1, #DN_order do
 				local k = DN_order[i]
 				local v = t[k];
 				if v then
@@ -107,7 +107,7 @@ end
 
 function ssl_config:add_sRVName(host, service)
 	t_insert(self.subject_alternative_name.otherName,
-		s_format("%s;%s", oid_dnssrv, ia5string("_" .. service .."." .. idna_to_ascii(host))));
+		s_format("%s;%s", oid_dnssrv, ia5string("_" .. service .. "." .. idna_to_ascii(host))));
 end
 
 function ssl_config:add_xmppAddr(host)
@@ -118,10 +118,10 @@ end
 function ssl_config:from_prosody(hosts, config, certhosts)
 	-- TODO Decide if this should go elsewhere
 	local found_matching_hosts = false;
-	for i = 1,#certhosts do
+	for i = 1, #certhosts do
 		local certhost = certhosts[i];
 		for name in pairs(hosts) do
-			if name == certhost or name:sub(-1-#certhost) == "."..certhost then
+			if name == certhost or name:sub(-1-#certhost) == "." .. certhost then
 				found_matching_hosts = true;
 				self:add_dNSName(name);
 				--print(name .. "#component_module: " .. (config.get(name, "component_module") or "nil"));
@@ -144,30 +144,30 @@ end
 
 do -- Lua to shell calls.
 	local function shell_escape(s)
-		return s:gsub("'",[['\'']]);
+		return "'" .. tostring(s):gsub("'",[['\'']]) .. "'";
 	end
 
-	local function serialize(f,o)
-		local r = {"openssl", f};
-		for k,v in pairs(o) do
+	local function serialize(command, args)
+		local commandline = { "openssl", command };
+		for k, v in pairs(args) do
 			if type(k) == "string" then
-				t_insert(r, ("-%s"):format(k));
+				t_insert(commandline, ("-%s"):format(k));
 				if v ~= true then
-					t_insert(r, ("'%s'"):format(shell_escape(tostring(v))));
+					t_insert(commandline, shell_escape(v));
 				end
 			end
 		end
-		for _,v in ipairs(o) do
-			t_insert(r, ("'%s'"):format(shell_escape(tostring(v))));
+		for _, v in ipairs(args) do
+			t_insert(commandline, shell_escape(v));
 		end
-		return t_concat(r, " ");
+		return t_concat(commandline, " ");
 	end
 
 	local os_execute = os.execute;
 	setmetatable(_M, {
-		__index=function(_,f)
+		__index = function(_, command)
 			return function(opts)
-				return 0 == os_execute(serialize(f, type(opts) == "table" and opts or {}));
+				return 0 == os_execute(serialize(command, type(opts) == "table" and opts or {}));
 			end;
 		end;
 	});
