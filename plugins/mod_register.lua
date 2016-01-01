@@ -180,7 +180,7 @@ local blacklisted_ips = module:get_option_set("registration_blacklist", {})._ite
 local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
 local throttle_period = module:get_option_number("registration_throttle_period", min_seconds_between_registrations);
 local throttle_cache_size = module:get_option_number("registration_throttle_cache_size", 100);
-local blacklist_overflow = module_get_option_boolean("blacklist_on_registration_throttle_overload", false);
+local blacklist_overflow = module:get_option_boolean("blacklist_on_registration_throttle_overload", false);
 
 local throttle_cache = new_cache(throttle_cache_size, blacklist_overflow and function (ip, throttle)
 	if not throttle:peek() then
