@@ -934,6 +934,7 @@ loop = function(once) -- this is the main loop of the program
 		end
 	until quitting;
 	if once and quitting == "once" then quitting = nil; return; end
+	closeall();
 	return "quitting"
 end
 

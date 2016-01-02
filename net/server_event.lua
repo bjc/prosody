@@ -614,6 +614,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 	local interface = {
 		_connections = 0;
 
+		type = "server";
 		conn = server;
 		onconnect = listener.onconnect;  -- will be called when new client connected
 		eventread = false;  -- read event handler
