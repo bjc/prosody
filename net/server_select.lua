@@ -589,8 +589,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 						coroutine_yield( ) -- handshake not finished
 					end
 				end
-				out_put( "server.lua: ssl handshake error: ", tostring(err or "handshake too long") )
-				_ = handler and handler:force_close("ssl handshake failed")
+				err = "ssl handshake error: " .. ( err or "handshake too long" );
+				out_put( "server.lua: ", err );
+				_ = handler and handler:force_close(err)
 				return false, err -- handshake failed
 			end
 		)
