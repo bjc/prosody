@@ -422,7 +422,7 @@ local function list_s2s_this_handler(self, data, state)
 		local sess_lines = { r = remotehost,
 			session_flags(session, { "", direction, remotehost or "?" })};
 
-		if remotehost:match(module_host) or localhost:match(module_host) then
+		if localhost == module_host then
 			s2s_list[#s2s_list+1] = sess_lines;
 		end
 	end
