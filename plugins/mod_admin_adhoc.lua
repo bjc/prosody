@@ -390,7 +390,7 @@ local function session_flags(session, line)
 		flags[#flags+1] = "encrypted";
 	end
 	if session.compressed then
-		flags[#flags+1] = "compressed)";
+		flags[#flags+1] = "compressed";
 	end
 	if session.smacks then
 		flags[#flags+1] = "sm";
