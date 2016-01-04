@@ -25,6 +25,10 @@ local function new_ip(ipStr, proto)
 	elseif proto ~= "IPv4" and proto ~= "IPv6" then
 		return nil, "invalid protocol";
 	end
+	local zone;
+	if proto == "IPv6" and ipStr:find('%', 1, true) then
+		ipStr, zone = ipStr:match("^(.-)%%(.*)");
+	end
 	if proto == "IPv6" and ipStr:find('.', 1, true) then
 		local changed;
 		ipStr, changed = ipStr:gsub(":(%d+)%.(%d+)%.(%d+)%.(%d+)$", function(a,b,c,d)
@@ -33,7 +37,7 @@ local function new_ip(ipStr, proto)
 		if changed ~= 1 then return nil, "invalid-address"; end
 	end
 
-	return setmetatable({ addr = ipStr, proto = proto }, ip_mt);
+	return setmetatable({ addr = ipStr, proto = proto, zone = zone }, ip_mt);
 end
 
 local function toBits(ip)
