@@ -390,7 +390,7 @@ local function session_flags(session, line)
 		flags[#flags+1] = "encrypted";
 	end
 	if session.compressed then
-		flags[#flags+1] = "compressed)";
+		flags[#flags+1] = "compressed";
 	end
 	if session.smacks then
 		flags[#flags+1] = "sm";
@@ -422,7 +422,7 @@ local function list_s2s_this_handler(self, data, state)
 		local sess_lines = { r = remotehost,
 			session_flags(session, { "", direction, remotehost or "?" })};
 
-		if remotehost:match(module_host) or localhost:match(module_host) then
+		if localhost == module_host then
 			s2s_list[#s2s_list+1] = sess_lines;
 		end
 	end
