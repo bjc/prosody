@@ -272,6 +272,8 @@ function stream_callbacks.streamopened(context, attr)
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 
+		hosts[session.host].events.fire_event("bosh-session", { session = session, request = request });
+
 		-- Send creation response
 		local creating_session = true;
 
