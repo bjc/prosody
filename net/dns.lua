@@ -600,7 +600,7 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 		if resolv_conf then
 			for line in resolv_conf:lines() do
 				line = line:gsub("#.*$", "")
-					:match('^%s*nameserver%s+([%x:%.]*)%s*$');
+					:match('^%s*nameserver%s+([%x:%.]*%%?%S*)%s*$');
 				if line then
 					local ip = new_ip(line);
 					if ip then
