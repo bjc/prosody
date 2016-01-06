@@ -6,44 +6,33 @@
 -- COPYING file in the source package for more information.
 --
 
-
-local tostring = tostring;
-local os_time = os.time;
-local os_clock = os.clock;
-local sha1 = require "util.hashes".sha1;
+local error = error;
+local round_up = math.ceil;
+local urandom, urandom_err = io.open("/dev/urandom", "r+");
 
 module "uuid"
 
-local last_uniq_time = 0;
-local function uniq_time()
-	local new_uniq_time = os_time();
-	if last_uniq_time >= new_uniq_time then new_uniq_time = last_uniq_time + 1; end
-	last_uniq_time = new_uniq_time;
-	return new_uniq_time;
-end
-
-local function new_random(x)
-	return sha1(x..os_clock()..tostring({}), true);
-end
-
-local buffer = new_random(uniq_time());
-local function _seed(x)
-	buffer = new_random(buffer..x);
-end
 local function get_nibbles(n)
-	if #buffer < n then _seed(uniq_time()); end
-	local r = buffer:sub(0, n);
-	buffer = buffer:sub(n+1);
-	return r;
+	local binary_random = urandom:read(round_up(n/2));
+	local hex_random = binary_random:gsub(".",
+		function (x) return ("%02x"):format(x:byte()) end);
+	return hex_random:sub(1, n);
 end
 local function get_twobits()
-	return ("%x"):format(get_nibbles(1):byte() % 4 + 8);
+	return ("%x"):format(urandom:read(1):byte() % 4 + 8);
 end
 
 function generate()
+	if not urandom then
+		error("Unable to obtain a secure random number generator, please see https://prosody.im/doc/random ("..urandom_err..")");
+	end
 	-- generate RFC 4122 complaint UUIDs (version 4 - random)
 	return get_nibbles(8).."-"..get_nibbles(4).."-4"..get_nibbles(3).."-"..(get_twobits())..get_nibbles(3).."-"..get_nibbles(12);
 end
-seed = _seed;
+
+function seed(x)
+	urandom:write(x);
+	urandom:flush();
+end
 
 return _M;
