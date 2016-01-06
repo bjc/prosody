@@ -137,7 +137,10 @@ function dotest(unitname)
 	end
 	
 	local oldmodule, old_M = _fakeG.module, _fakeG._M;
-	_fakeG.module = function () _M = _G end
+	_fakeG.module = function ()
+		setmetatable(unit, nil);
+		unit._M = unit;
+	end
 	setfenv(chunk, unit);
 	local success, err = pcall(chunk);
 	_fakeG.module, _fakeG._M = oldmodule, old_M;
