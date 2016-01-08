@@ -49,6 +49,34 @@ if not mime_map then
 	end
 end
 
+local forbidden_chars_pattern = "[/%z]";
+if prosody.platform == "windows" then
+	forbidden_chars_pattern = "[/%z\001-\031\127\"*:<>?|]"
+end
+
+local urldecode = require "util.http".urldecode;
+function sanitize_path(path)
+	local out = {};
+
+	local c = 0;
+	for component in path:gmatch("([^/]+)") do
+		component = urldecode(component);
+		if component:find(forbidden_chars_pattern) then
+			return nil;
+		elseif component == ".." then
+			if c <= 0 then
+				return nil;
+			end
+			out[c] = nil;
+			c = c - 1;
+		elseif component ~= "." then
+			c = c + 1;
+			out[c] = component;
+		end
+	end
+	return "/"..table.concat(out, "/");
+end
+
 local cache = setmetatable({}, { __mode = "kv" }); -- Let the garbage collector have it if it wants to.
 
 function serve(opts)
@@ -60,7 +88,11 @@ function serve(opts)
 	local directory_index = opts.directory_index;
 	local function serve_file(event, path)
 		local request, response = event.request, event.response;
-		local orig_path = request.path;
+		path = sanitize_path(path);
+		if not path then
+			return 400;
+		end
+		local orig_path = sanitize_path(request.path);
 		local full_path = base_path .. (path and "/"..path or ""):gsub("/", path_sep);
 		local attr = stat(full_path:match("^.*[^\\/]")); -- Strip trailing path separator because Windows
 		if not attr then

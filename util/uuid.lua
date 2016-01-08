@@ -16,7 +16,7 @@ local function get_nibbles(n)
 end
 
 local function get_twobits()
-	return ("%x"):format(get_nibbles(1):byte() % 4 + 8);
+	return ("%x"):format(random_bytes(1):byte() % 4 + 8);
 end
 
 local function generate()
