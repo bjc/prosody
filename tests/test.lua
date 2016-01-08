@@ -14,7 +14,6 @@ function run_all_tests()
 	dotest "util.multitable"
 	dotest "util.rfc6724"
 	dotest "util.http"
-	dotest "core.modulemanager"
 	dotest "core.stanza_router"
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
