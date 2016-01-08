@@ -591,7 +591,7 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 		if resolv_conf then
 			for line in resolv_conf:lines() do
 				line = line:gsub("#.*$", "")
-					:match('^%s*nameserver%s+([%x:%.]*)%s*$');
+					:match('^%s*nameserver%s+([%x:%.]*%%?%S*)%s*$');
 				if line then
 					local ip = new_ip(line);
 					if ip then
@@ -853,7 +853,9 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					--self.print(response);
 
 					for j,rr in pairs(response.answer) do
-						self:remember(rr, response.question[1].type)
+						if rr.name:sub(-#response.question[1].name, -1) == response.question[1].name then
+							self:remember(rr, response.question[1].type)
+						end
 					end
 
 					-- retire the query
