@@ -568,13 +568,7 @@ local function show_c2s(callback)
 end
 
 function def_env.c2s:count(match_jid)
-	local count = 0;
-	show_c2s(function (jid, session)
-		if (not match_jid) or jid:match(match_jid) then
-			count = count + 1;
-		end
-	end);
-	return true, "Total: "..count.." clients";
+	return true, "Total: "..  iterators.count(values(module:shared"/*/c2s/sessions")) .." clients";
 end
 
 function def_env.c2s:show(match_jid, annotate)
