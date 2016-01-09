@@ -1125,8 +1125,8 @@ end
 -------------
 
 function printbanner(session)
-	local option = module:get_option("console_banner");
-	if option == nil or option == "full" or option == "graphic" then
+	local option = module:get_option_string("console_banner", "full");
+	if option == "full" or option == "graphic" then
 		session.print [[
                    ____                \   /     _
                     |  _ \ _ __ ___  ___  _-_   __| |_   _
@@ -1137,17 +1137,13 @@ function printbanner(session)
 
 ]]
 	end
-	if option == nil or option == "short" or option == "full" then
+	if option == "short" or option == "full" then
 	session.print("Welcome to the Prosody administration console. For a list of commands, type: help");
 	session.print("You may find more help on using this console in our online documentation at ");
 	session.print("http://prosody.im/doc/console\n");
 	end
-	if option and option ~= "short" and option ~= "full" and option ~= "graphic" then
-		if type(option) == "string" then
-			session.print(option)
-		elseif type(option) == "function" then
-			module:log("warn", "Using functions as value for the console_banner option is no longer supported");
-		end
+	if option ~= "short" and option ~= "full" and option ~= "graphic" then
+		session.print(option);
 	end
 end
 
