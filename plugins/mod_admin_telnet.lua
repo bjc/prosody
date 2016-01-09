@@ -543,7 +543,13 @@ local function get_jid(session)
 	if session.username then
 		return session.full_jid or jid_join(session.username, session.host, session.resource);
 	end
-	return "(unknown)";
+
+	local conn = session.conn;
+	local ip = session.ip or "?";
+	local clientport = conn and conn:clientport() or "?";
+	local serverip = conn and conn.server and conn:server():ip() or "?";
+	local serverport = conn and conn:serverport() or "?"
+	return jid_join("["..ip.."]:"..clientport, session.host or "["..serverip.."]:"..serverport);
 end
 
 local function show_c2s(callback)
