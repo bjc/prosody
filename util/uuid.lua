@@ -8,7 +8,7 @@
 
 local error = error;
 local round_up = math.ceil;
-local urandom, urandom_err = io.open("/dev/urandom", "r+");
+local urandom, urandom_err = io.open("/dev/urandom", "r");
 
 module "uuid"
 
@@ -30,9 +30,7 @@ function generate()
 	return get_nibbles(8).."-"..get_nibbles(4).."-4"..get_nibbles(3).."-"..(get_twobits())..get_nibbles(3).."-"..get_nibbles(12);
 end
 
-function seed(x)
-	urandom:write(x);
-	urandom:flush();
+function seed()
 end
 
 return _M;
