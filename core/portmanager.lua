@@ -29,7 +29,7 @@ if socket.tcp6 and config.get("*", "use_ipv6") ~= false then
 	table.insert(default_local_interfaces, "::1");
 end
 
-local default_mode = config.get("*", "network_default_read_size") or 4096;
+local default_mode = config.get("*", "network_default_read_size") or "*a";
 
 --- Private state
 
