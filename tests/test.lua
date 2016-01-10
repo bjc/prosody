@@ -22,6 +22,7 @@ function run_all_tests()
 	dotest "util.sasl.scram"
 	dotest "util.cache"
 	dotest "util.throttle"
+	dotest "util.uuid"
 
 	dosingletest("test_sasl.lua", "latin1toutf8");
 	dosingletest("test_utf8.lua", "valid");
