@@ -145,10 +145,10 @@ function dotest(unitname)
 		unit._M = unit;
 	end
 	setfenv(chunk, unit);
-	local success, err = pcall(chunk);
+	local success, ret = pcall(chunk);
 	_fakeG.module, _fakeG._M = oldmodule, old_M;
 	if not success then
-		print("WARNING: ", "Failed to initialise module: "..unitname, err);
+		print("WARNING: ", "Failed to initialise module: "..unitname, ret);
 		return;
 	end
 
