@@ -52,6 +52,9 @@ clean:
 	rm -f prosody.version
 	$(MAKE) clean -C util-src
 
+test:
+	cd tests && ./run_tests.sh
+
 util/%.so:
 	$(MAKE) install -C util-src
 

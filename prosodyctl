@@ -792,6 +792,8 @@ function cert_commands.generate(arg)
 			and openssl.req{new=true, x509=true, nodes=true, key=key_filename,
 				days=365, sha256=true, utf8=true, config=conf_filename, out=cert_filename} then
 			show_message("Certificate written to ".. cert_filename);
+			print();
+			show_message(("Example config:\n\nssl = {\n\tcertificate = %q;\n\tkey = %q;\n}"):format(cert_filename, key_filename));
 		else
 			show_message("There was a problem, see OpenSSL output");
 		end

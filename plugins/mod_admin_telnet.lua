@@ -22,7 +22,7 @@ local console_listener = { default_port = 5582; default_mode = "*a"; interface =
 
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare, jid_split = import("util.jid", "bare", "prepped_split");
+local jid_bare, jid_split, jid_join = import("util.jid", "bare", "prepped_split", "join");
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
@@ -576,35 +576,46 @@ end
 
 def_env.c2s = {};
 
-local function show_c2s(callback)
-	for hostname, host in pairs(hosts) do
-		for username, user in pairs(host.sessions or {}) do
-			for resource, session in pairs(user.sessions or {}) do
-				local jid = username.."@"..hostname.."/"..resource;
-				callback(jid, session);
-			end
-		end
+local function get_jid(session)
+	if session.username then
+		return session.full_jid or jid_join(session.username, session.host, session.resource);
 	end
+
+	local conn = session.conn;
+	local ip = session.ip or "?";
+	local clientport = conn and conn:clientport() or "?";
+	local serverip = conn and conn.server and conn:server():ip() or "?";
+	local serverport = conn and conn:serverport() or "?"
+	return jid_join("["..ip.."]:"..clientport, session.host or "["..serverip.."]:"..serverport);
+end
+
+local function show_c2s(callback)
+	local c2s = array.collect(values(module:shared"/*/c2s/sessions"));
+	c2s:sort(function(a, b)
+		if a.host == b.host then
+			if a.username == b.username then
+				return a.resource or "" > b.resource or "";
+			end
+			return a.username or "" > b.username or "";
+		end
+		return a.host or "" > b.host or "";
+	end):map(function (session)
+		callback(get_jid(session), session)
+	end);
 end
 
 function def_env.c2s:count(match_jid)
-	local count = 0;
-	show_c2s(function (jid, session)
-		if (not match_jid) or jid:match(match_jid) then
-			count = count + 1;
-		end
-	end);
-	return true, "Total: "..count.." clients";
+	return true, "Total: "..  iterators.count(values(module:shared"/*/c2s/sessions")) .." clients";
 end
 
 function def_env.c2s:show(match_jid, annotate)
 	local print, count = self.session.print, 0;
 	annotate = annotate or session_flags;
-	local curr_host;
+	local curr_host = false;
 	show_c2s(function (jid, session)
 		if curr_host ~= session.host then
 			curr_host = session.host;
-			print(curr_host);
+			print(curr_host or "(not connected to any host yet)");
 		end
 		if (not match_jid) or jid:match(match_jid) then
 			count = count + 1;
@@ -1162,8 +1173,8 @@ end
 -------------
 
 function printbanner(session)
-	local option = module:get_option("console_banner");
-	if option == nil or option == "full" or option == "graphic" then
+	local option = module:get_option_string("console_banner", "full");
+	if option == "full" or option == "graphic" then
 		session.print [[
                    ____                \   /     _
                     |  _ \ _ __ ___  ___  _-_   __| |_   _
@@ -1174,17 +1185,13 @@ function printbanner(session)
 
 ]]
 	end
-	if option == nil or option == "short" or option == "full" then
+	if option == "short" or option == "full" then
 	session.print("Welcome to the Prosody administration console. For a list of commands, type: help");
 	session.print("You may find more help on using this console in our online documentation at ");
 	session.print("http://prosody.im/doc/console\n");
 	end
-	if option and option ~= "short" and option ~= "full" and option ~= "graphic" then
-		if type(option) == "string" then
-			session.print(option)
-		elseif type(option) == "function" then
-			module:log("warn", "Using functions as value for the console_banner option is no longer supported");
-		end
+	if option ~= "short" and option ~= "full" and option ~= "graphic" then
+		session.print(option);
 	end
 end
 
