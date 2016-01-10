@@ -391,6 +391,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		out_put "server.lua: closed client handler and removed socket from list"
 		return true
 	end
+	handler.server = function ( )
+		return server
+	end
 	handler.ip = function( )
 		return ip
 	end

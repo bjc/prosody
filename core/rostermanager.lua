@@ -300,17 +300,17 @@ local function unsubscribed(username, host, jid)
 	if pending then
 		roster[false].pending[jid] = nil;
 	end
-	local subscribed;
+	local is_subscribed;
 	if item then
 		if item.subscription == "from" then
 			item.subscription = "none";
-			subscribed = true;
+			is_subscribed = true;
 		elseif item.subscription == "both" then
 			item.subscription = "to";
-			subscribed = true;
+			is_subscribed = true;
 		end
 	end
-	local success = (pending or subscribed) and save_roster(username, host, roster);
+	local success = (pending or is_subscribed) and save_roster(username, host, roster);
 	return success, pending, subscribed;
 end
 
