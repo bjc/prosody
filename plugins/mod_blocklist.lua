@@ -221,7 +221,7 @@ module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist);
 -- Cache invalidation, solved!
 module:hook_global("user-deleted", function (event)
 	if event.host == module.host then
-		cache:set(event.username, nil);
+		cache2:set(event.username, nil);
 		cache[event.username] = nil;
 	end
 end);
