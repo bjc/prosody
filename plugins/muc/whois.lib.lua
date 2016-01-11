@@ -43,7 +43,7 @@ end);
 
 module:hook("muc-config-submitted/muc#roomconfig_whois", function(event)
 	if set_whois(event.room, event.value) then
-		local code = (new == 'moderators') and "173" or "172";
+		local code = (event.value == 'moderators') and "173" or "172";
 		event.status_codes[code] = true;
 	end
 end);
