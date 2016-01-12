@@ -1080,8 +1080,8 @@ function commands.check(arg)
 				target_hosts:remove("localhost");
 			end
 			
-			local modules = set.new(it.to_array(it.values(host_options.modules_enabled)))
-			                + set.new(it.to_array(it.values(config.get("*", "modules_enabled"))))
+			local modules = set.new(it.to_array(it.values(host_options.modules_enabled or {})))
+			                + set.new(it.to_array(it.values(config.get("*", "modules_enabled") or {})))
 			                + set.new({ config.get(host, "component_module") });
 
 			if modules:contains("proxy65") then
