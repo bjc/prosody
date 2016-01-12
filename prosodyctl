@@ -877,6 +877,20 @@ function commands.check(arg)
 				print("    All hosts are disabled. Remove enabled = false from at least one VirtualHost section")
 			end
 		end
+		if not config["*"].modules_enabled then
+			print("    No global modules_enabled is set?");
+			local suggested_global_modules;
+			for host, options in enabled_hosts() do
+				if not options.component_module and options.modules_enabled then
+					suggested_global_modules = set.intersection(suggested_global_modules or set.new(options.modules_enabled), set.new(options.modules_enabled));
+				end
+			end
+			if not suggested_global_modules:empty() then
+				print("    Consider moving these modules into modules_enabled in the global section:")
+				print("    "..tostring(suggested_global_modules / function (x) return ("%q"):format(x) end));
+			end
+			print();
+		end
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
 		local deprecated_global_options = set.intersection(global_options, deprecated);
