@@ -6,11 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local urandom = assert(io.open("/dev/urandom", "r+"));
+local urandom = assert(io.open("/dev/urandom", "r"));
 
-local function seed(x)
-	urandom:write(x);
-	urandom:flush();
+local function seed()
 end
 
 local function bytes(n)
