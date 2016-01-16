@@ -272,10 +272,14 @@ function init_global_state()
 	end
 
 	-- Function to initiate prosody shutdown
-	function prosody.shutdown(reason)
+	function prosody.shutdown(reason, code)
 		log("info", "Shutting down: %s", reason or "unknown reason");
 		prosody.shutdown_reason = reason;
-		prosody.events.fire_event("server-stopping", {reason = reason});
+		prosody.shutdown_code = code;
+		prosody.events.fire_event("server-stopping", {
+			reason = reason;
+			code = code;
+		});
 		server.setquitting(true);
 	end
 end
@@ -418,3 +422,4 @@ cleanup();
 prosody.events.fire_event("server-stopped");
 log("info", "Shutdown complete");
 
+os.exit(prosody.shutdown_code)
