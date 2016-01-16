@@ -294,7 +294,7 @@ function _M.remove_handler(event, handler)
 end
 
 function _M.listen_on(port, interface, ssl)
-	addserver(interface or "*", port, listener, "*a", ssl);
+	return addserver(interface or "*", port, listener, "*a", ssl);
 end
 function _M.add_host(host)
 	hosts[host] = true;
