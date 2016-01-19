@@ -12,6 +12,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local sha256_hmac = require "util.hashes".hmac_sha256;
 local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
@@ -19,7 +20,7 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
 function generate_dialback(id, to, from)
-	return sha256_hash(id..to..from..hosts[from].dialback_secret, true);
+	return sha256_hmac(sha256_hash(hosts[from].dialback_secret), to .. ' ' .. from .. ' ' .. id, true);
 end
 
 function initiate_dialback(session)
