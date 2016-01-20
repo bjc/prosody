@@ -13,7 +13,7 @@ end
 local muclib = module:require "muc";
 room_mt = muclib.room_mt; -- Yes, global.
 
-local affiliation_notify = module:require "muc/affiliation_notify";
+local affiliation_notify = module:require "muc/affiliation_notify"; -- luacheck: ignore 211
 
 local name = module:require "muc/name";
 room_mt.get_name = name.get;
@@ -102,7 +102,7 @@ local function room_save(room, forced)
 	local is_persistent = persistent.get(room);
 	persistent_rooms:set(nil, room.jid, is_persistent);
 	if is_persistent then
-		local history = room._data.history;
+		local room_history = room._data.history;
 		room._data.history = nil;
 		local data = {
 			jid = room.jid;
@@ -110,7 +110,7 @@ local function room_save(room, forced)
 			_affiliations = room._affiliations;
 		};
 		room_configs:set(node, data);
-		room._data.history = history;
+		room._data.history = room_history;
 	elseif forced then
 		room_configs:set(node, nil);
 		if not next(room._occupants) then -- Room empty
@@ -294,8 +294,8 @@ do -- Ad-hoc commands
 	end, function(fields, errors)
 		if errors then
 			local errmsg = {};
-			for name, err in pairs(errors) do
-				errmsg[#errmsg + 1] = name .. ": " .. err;
+			for field, err in pairs(errors) do
+				errmsg[#errmsg + 1] = field .. ": " .. err;
 			end
 			return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
 		end

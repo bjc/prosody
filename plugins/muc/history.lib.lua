@@ -105,7 +105,7 @@ module:hook("muc-get-history", function(event)
 	end
 
 	local i = history_len-n+1
-	function event:next_stanza()
+	function event.next_stanza()
 		if i > history_len then return nil end
 		local entry = history[i];
 		local msg = entry.stanza;
