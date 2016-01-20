@@ -1,4 +1,3 @@
-local next = next;
 local pairs = pairs;
 local setmetatable = setmetatable;
 local st = require "util.stanza";

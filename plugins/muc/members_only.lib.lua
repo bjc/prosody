@@ -10,7 +10,7 @@
 local st = require "util.stanza";
 
 local muc_util = module:require "muc/util";
-local valid_roles, valid_affiliations = muc_util.valid_roles, muc_util.valid_affiliations;
+local valid_affiliations = muc_util.valid_affiliations;
 
 local function get_members_only(room)
 	return room._data.members_only;
@@ -29,7 +29,7 @@ local function set_members_only(room, members_only)
 		as well as any remaining occupants.
 		]]
 		local occupants_changed = {};
-		for nick, occupant in room:each_occupant() do
+		for _, occupant in room:each_occupant() do
 			local affiliation = room:get_affiliation(occupant.bare_jid);
 			if valid_affiliations[affiliation or "none"] <= valid_affiliations.none then
 				occupant.role = nil;
