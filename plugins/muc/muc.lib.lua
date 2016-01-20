@@ -8,7 +8,7 @@
 --
 
 local select = select;
-local pairs, ipairs = pairs, ipairs;
+local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
 
@@ -75,7 +75,8 @@ do
 		if next_occupant_jid == nil then return nil end
 		return next_occupant_jid, occupant_lib.copy(raw_occupant);
 	end
-	function room_mt:each_occupant(read_only)
+	-- FIXME Explain what 'read_only' is supposed to be
+	function room_mt:each_occupant(read_only) -- luacheck: ignore 212
 		return next_copied_occupant, self._occupants, nil;
 	end
 end
@@ -123,7 +124,7 @@ end
 
 function room_mt:route_to_occupant(occupant, stanza)
 	local to = stanza.attr.to;
-	for jid, pr in occupant:each_session() do
+	for jid in occupant:each_session() do
 		stanza.attr.to = jid;
 		self:route_stanza(stanza);
 	end
@@ -150,7 +151,7 @@ function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor_nick, ac
 	if is_anonymous then
 		add_item(x, affiliation, role, nil, nick, actor_nick, actor_jid, reason);
 	else
-		for real_jid, session in occupant:each_session() do
+		for real_jid in occupant:each_session() do
 			add_item(x, affiliation, role, real_jid, nick, actor_nick, actor_jid, reason);
 		end
 	end
@@ -249,8 +250,8 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	end
 
 	-- General populance
-	for nick, n_occupant in self:each_occupant() do
-		if nick ~= occupant.nick then
+	for occupant_nick, n_occupant in self:each_occupant() do
+		if occupant_nick ~= occupant.nick then
 			local pr;
 			if can_see_real_jids(whois, n_occupant) then
 				pr = get_full_p();
@@ -329,7 +330,7 @@ function room_mt:get_disco_items(stanza)
 	return reply;
 end
 
-function room_mt:handle_kickable(origin, stanza)
+function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	local real_jid = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(real_jid);
 	if occupant == nil then return nil; end
@@ -388,7 +389,8 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 		end
 		local is_first_dest_session;
-		if type == "unavailable" then
+		if type == "unavailable" then -- luacheck: ignore 542
+			-- FIXME Why the empty if branch?
 			-- dest_occupant = nil
 		elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
 			log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
@@ -504,7 +506,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 
 			if orig_occupant == nil then
 				-- Send occupant list to newly joined user
-				self:send_occupant_list(real_jid, function(nick, occupant)
+				self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
 					-- Don't include self
 					return occupant:get_presence(real_jid) == nil;
 				end)
@@ -546,7 +548,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	if (type == "error" or type == "result") then
 		do -- deconstruct_stanza_id
 			if not occupant then return nil; end
-			local from_jid, id, to_jid_hash = (base64.decode(stanza.attr.id) or ""):match("^(%Z+)%z(%Z*)%z(.+)$");
+			local from_jid, orig_id, to_jid_hash = (base64.decode(id) or ""):match("^(%Z+)%z(%Z*)%z(.+)$");
 			if not(from == from_jid or from == jid_bare(from_jid)) then return nil; end
 			local from_occupant_jid = self:get_occupant_jid(from_jid);
 			if from_occupant_jid == nil then return nil; end
@@ -558,7 +560,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 				end
 			end
 			if session_jid == nil then return nil; end
-			stanza.attr.from, stanza.attr.to, stanza.attr.id = from_occupant_jid, session_jid, id;
+			stanza.attr.from, stanza.attr.to, stanza.attr.id = from_occupant_jid, session_jid, orig_id;
 		end
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, stanza.attr.to);
 		self:route_stanza(stanza);
@@ -694,7 +696,7 @@ end
 function room_mt:clear(x)
 	x = x or st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
 	local occupants_updated = {};
-	for nick, occupant in self:each_occupant() do
+	for nick, occupant in self:each_occupant() do -- luacheck: ignore 213
 		occupant.role = nil;
 		self:save_occupant(occupant);
 		occupants_updated[occupant] = true;
@@ -883,7 +885,7 @@ end
 -- Need visitor role or higher to invite
 module:hook("muc-pre-invite", function(event)
 	local room, stanza = event.room, event.stanza;
-	local _from, _to = stanza.attr.from, stanza.attr.to;
+	local _from = stanza.attr.from;
 	local inviter = room:get_occupant_by_real_jid(_from);
 	local role = inviter and inviter.role or room:get_default_role(room:get_affiliation(_from));
 	if valid_roles[role or "none"] <= valid_roles.visitor then
@@ -955,7 +957,7 @@ function room_mt:handle_mediated_decline(origin, stanza)
 			:up()
 		:up();
 	if not module:fire_event("muc-decline", {room = self, stanza = decline, origin = origin, incoming = stanza}) then
-		local declinee = decline.attr.to; -- re-fetch, in case event modified it
+		declinee = decline.attr.to; -- re-fetch, in case event modified it
 		local occupant
 		if jid_bare(declinee) == self.jid then -- declinee jid is already an in-room jid
 			occupant = self:get_occupant_by_nick(declinee);
@@ -991,7 +993,7 @@ function room_mt:handle_message_to_room(origin, stanza)
 		local x = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 		if x then
 			local payload = x.tags[1];
-			if payload == nil then
+			if payload == nil then --luacheck: ignore 542
 				-- fallthrough
 			elseif payload.name == "invite" and payload.attr.to then
 				return self:handle_mediated_invite(origin, stanza)
@@ -1004,7 +1006,7 @@ function room_mt:handle_message_to_room(origin, stanza)
 	end
 end
 
-function room_mt:route_stanza(stanza)
+function room_mt:route_stanza(stanza) -- luacheck: ignore 212
 	module:send(stanza);
 end
 
@@ -1078,7 +1080,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 	local role = self:get_default_role(affiliation);
 	local role_rank = valid_roles[role or "none"];
 	local occupants_updated = {}; -- Filled with old roles
-	for nick, occupant in self:each_occupant() do
+	for nick, occupant in self:each_occupant() do -- luacheck: ignore 213
 		if occupant.bare_jid == jid or (
 			-- Outcast can be by host.
 			is_host_only and affiliation == "outcast" and select(2, jid_split(occupant.bare_jid)) == host
@@ -1114,7 +1116,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 			(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
 			-- Send everyone else's presences (as jid visibility has changed)
 			for real_jid in occupant:each_session() do
-				self:send_occupant_list(real_jid, function(occupant_jid, occupant)
+				self:send_occupant_list(real_jid, function(occupant_jid, occupant) --luacheck: ignore 212 433
 					return occupant.bare_jid ~= jid;
 				end);
 			end
@@ -1195,7 +1197,8 @@ room_mt.set_whois = whois.set;
 
 local _M = {}; -- module "muc"
 
-function _M.new_room(jid, config)
+function _M.new_room(jid, config) -- luacheck: ignore 212
+	-- TODO use config?
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
