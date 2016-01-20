@@ -12,6 +12,7 @@ local log = module._log;
 
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
+local sha256_hmac = require "util.hashes".hmac_sha256;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local check_cert_status = module:depends"s2s".check_cert_status;
 local uuid_gen = require"util.uuid".generate;
@@ -20,7 +21,7 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
-local dialback_secret = module.host .. module:get_option_string("dialback_secret", uuid_gen());
+local dialback_secret = sha256_hash(module:get_option_string("dialback_secret", uuid_gen()), true);
 local dwd = module:get_option_boolean("dialback_without_dialback", false);
 
 function module.save()
@@ -32,7 +33,7 @@ function module.restore(state)
 end
 
 function generate_dialback(id, to, from)
-	return sha256_hash(id..to..dialback_secret, true);
+	return sha256_hmac(dialback_secret, to .. ' ' .. from .. ' ' .. id, true);
 end
 
 function initiate_dialback(session)
