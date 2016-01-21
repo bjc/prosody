@@ -763,16 +763,16 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	self.active[id] = self.active[id] or {};
 	self.active[id][question] = o;
 
-	-- remember which coroutine wants the answer
-	if co then
-		set(self.wanted, qclass, qtype, qname, co, true);
-	end
-
 	local conn, err = self:getsocket(o.server)
 	if not conn then
 		return nil, err;
 	end
 	conn:send (o.packet)
+
+	-- remember which coroutine wants the answer
+	if co then
+		set(self.wanted, qclass, qtype, qname, co, true);
+	end
 	
 	if timer and self.timeout then
 		local num_servers = #self.server;
