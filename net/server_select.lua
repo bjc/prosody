@@ -89,6 +89,7 @@ local _socketlist
 local _closelist
 local _readtimes
 local _writetimes
+local _fullservers
 
 --// simple data types //--
 
@@ -103,6 +104,7 @@ local _readtraffic
 local _selecttimeout
 local _sleeptime
 local _tcpbacklog
+local _accepretry
 
 local _starttime
 local _currenttime
@@ -131,6 +133,7 @@ _socketlist = { } -- key = socket, value = wrapped socket (handlers)
 _readtimes = { } -- key = handler, value = timestamp of last data reading
 _writetimes = { } -- key = handler, value = timestamp of last data writing/sending
 _closelist = { } -- handlers to close
+_fullservers = { } -- servers in a paused state while there are too many clients
 
 _readlistlen = 0 -- length of readlist
 _sendlistlen = 0 -- length of sendlist
@@ -142,6 +145,7 @@ _readtraffic = 0
 _selecttimeout = 1 -- timeout of socket.select
 _sleeptime = 0 -- time to wait at the end of every loop
 _tcpbacklog = 128 -- some kind of hint to the OS
+_accepretry = 10 -- seconds to wait until the next attempt of a full server to accept
 
 _maxsendlen = 51000 * 1024 -- max len of send buffer
 _maxreadlen = 25000 * 1024 -- max len of read buffer
@@ -210,6 +214,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 				socket = nil;
 			end
 			handler.paused = true;
+			out_put("server.lua: server [", ip, "]:", serverport, " paused")
 		end
 	end
 	handler.resume = function( )
@@ -220,7 +225,9 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			end
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
 			_socketlist[ socket ] = handler
+			_fullservers[ handler ] = nil
 			handler.paused = false;
+			out_put("server.lua: server [", ip, "]:", serverport, " resumed")
 		end
 	end
 	handler.ip = function( )
@@ -235,6 +242,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 	handler.readbuffer = function( )
 		if _readlistlen >= _maxselectlen or _sendlistlen >= _maxselectlen then
 			handler.pause( )
+			_fullservers[ handler ] = _currenttime
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
 		end
@@ -253,6 +261,8 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			return;
 		elseif err then -- maybe timeout or something else
 			out_put( "server.lua: error with new client connection: ", tostring(err) )
+			handler.pause( )
+			_fullservers[ handler ] = _currenttime
 			return false
 		end
 	end
@@ -265,6 +275,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
 		socket:close( ) -- Should we send some kind of error here?
 		if server then
+			_fullservers[ server ] = _currenttime
 			server.pause( )
 		end
 		return nil, nil, "fd-too-large"
@@ -806,6 +817,7 @@ getsettings = function( )
 		max_connections = _maxselectlen;
 		max_ssl_handshake_roundtrips = _maxsslhandshake;
 		highest_allowed_fd = _maxfd;
+		accept_retry_interval = _accepretry;
 	}
 end
 
@@ -821,6 +833,7 @@ changesettings = function( new )
 	_tcpbacklog = tonumber( new.tcp_backlog ) or _tcpbacklog
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
+	_accepretry = tonumber( new.accept_retry_interval ) or _accepretry
 	_maxselectlen = new.max_connections or _maxselectlen
 	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
 	_maxfd = new.highest_allowed_fd or _maxfd
@@ -909,6 +922,13 @@ loop = function(once) -- this is the main loop of the program
 			_timer = _currenttime
 		else
 			next_timer_time = next_timer_time - (_currenttime - _timer);
+		end
+
+		for server, paused_time in pairs( _fullservers ) do
+			if _currenttime - paused_time > _accepretry then
+				_fullservers[ server ] = nil;
+				server.resume();
+			end
 		end
 
 		-- wait some time (0 by default)
