@@ -103,6 +103,7 @@ local _readtraffic
 local _selecttimeout
 local _sleeptime
 local _tcpbacklog
+local _accepretry
 
 local _starttime
 local _currenttime
@@ -143,6 +144,7 @@ _readtraffic = 0
 _selecttimeout = 1 -- timeout of socket.select
 _sleeptime = 0 -- time to wait at the end of every loop
 _tcpbacklog = 128 -- some kind of hint to the OS
+_accepretry = 10 -- seconds to wait until the next attempt of a full server to accept
 
 _maxsendlen = 51000 * 1024 -- max len of send buffer
 _maxreadlen = 25000 * 1024 -- max len of read buffer
@@ -798,6 +800,7 @@ getsettings = function( )
 		max_connections = _maxselectlen;
 		max_ssl_handshake_roundtrips = _maxsslhandshake;
 		highest_allowed_fd = _maxfd;
+		accept_retry_interval = _accepretry;
 	}
 end
 
@@ -813,6 +816,7 @@ changesettings = function( new )
 	_tcpbacklog = tonumber( new.tcp_backlog ) or _tcpbacklog
 	_sendtimeout = tonumber( new.send_timeout ) or _sendtimeout
 	_readtimeout = tonumber( new.read_timeout ) or _readtimeout
+	_accepretry = tonumber( new.accept_retry_interval ) or _accepretry
 	_maxselectlen = new.max_connections or _maxselectlen
 	_maxsslhandshake = new.max_ssl_handshake_roundtrips or _maxsslhandshake
 	_maxfd = new.highest_allowed_fd or _maxfd
@@ -899,6 +903,13 @@ loop = function(once) -- this is the main loop of the program
 			_timer = _currenttime
 		else
 			next_timer_time = next_timer_time - (_currenttime - _timer);
+		end
+
+		for server, paused_time in pairs( _fullservers ) do
+			if _currenttime - paused_time > _accepretry then
+				_fullservers[ server ] = nil;
+				server.resume();
+			end
 		end
 
 		-- wait some time (0 by default)
