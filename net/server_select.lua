@@ -213,6 +213,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 				socket = nil;
 			end
 			handler.paused = true;
+			out_put("server.lua: server [", ip, "]:", serverport, " paused")
 		end
 	end
 	handler.resume = function( )
@@ -225,6 +226,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			_socketlist[ socket ] = handler
 			_fullservers[ handler ] = nil
 			handler.paused = false;
+			out_put("server.lua: server [", ip, "]:", serverport, " resumed")
 		end
 	end
 	handler.ip = function( )
