@@ -594,11 +594,11 @@ local function show_c2s(callback)
 	c2s:sort(function(a, b)
 		if a.host == b.host then
 			if a.username == b.username then
-				return a.resource or "" > b.resource or "";
+				return (a.resource or "") > (b.resource or "");
 			end
-			return a.username or "" > b.username or "";
+			return (a.username or "") > (b.username or "");
 		end
-		return a.host or "" > b.host or "";
+		return (a.host or "") > (b.host or "");
 	end):map(function (session)
 		callback(get_jid(session), session)
 	end);
