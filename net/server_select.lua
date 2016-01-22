@@ -258,6 +258,8 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			return;
 		elseif err then -- maybe timeout or something else
 			out_put( "server.lua: error with new client connection: ", tostring(err) )
+			handler.pause( )
+			_fullservers[ handler ] = _currenttime
 			return false
 		end
 	end
