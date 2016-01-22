@@ -88,6 +88,7 @@ local _socketlist
 local _closelist
 local _readtimes
 local _writetimes
+local _fullservers
 
 --// simple data types //--
 
@@ -130,6 +131,7 @@ _socketlist = { } -- key = socket, value = wrapped socket (handlers)
 _readtimes = { } -- key = handler, value = timestamp of last data reading
 _writetimes = { } -- key = handler, value = timestamp of last data writing/sending
 _closelist = { } -- handlers to close
+_fullservers = { } -- servers in a paused state while there are too many clients
 
 _readlistlen = 0 -- length of readlist
 _sendlistlen = 0 -- length of sendlist
@@ -219,6 +221,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 			end
 			_readlistlen = addsocket(_readlist, socket, _readlistlen)
 			_socketlist[ socket ] = handler
+			_fullservers[ handler ] = nil
 			handler.paused = false;
 		end
 	end
@@ -234,6 +237,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 	handler.readbuffer = function( )
 		if _readlistlen >= _maxselectlen or _sendlistlen >= _maxselectlen then
 			handler.pause( )
+			_fullservers[ handler ] = _currenttime
 			out_put( "server.lua: refused new client connection: server full" )
 			return false
 		end
@@ -264,6 +268,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
 		socket:close( ) -- Should we send some kind of error here?
 		if server then
+			_fullservers[ server ] = _currenttime
 			server.pause( )
 		end
 		return nil, nil, "fd-too-large"
