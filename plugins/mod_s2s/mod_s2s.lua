@@ -671,7 +671,7 @@ module:hook("server-stopping", function(event)
 	for _, session in pairs(sessions) do
 		session:close{ condition = "system-shutdown", text = reason };
 	end
-end,500);
+end, -200);
 
 
 
