@@ -1,0 +1,24 @@
+0.10.not-released-yet
+=====================
+
+**YYYY-MM-DD**
+
+New features
+------------
+
+-   Rewritten SQL storage module with Archive support
+-   SCRAM-SHA-1-PLUS
+-   `prosodyctl check`
+-   Statistics
+-   Improved TLS configuration
+-   Lua 5.2 support
+-   mod\_blocklist (XEP-0191)
+-   mod\_carbons (XEP-0280)
+-   Asynchronous operations
+-   Pluggable connection timeout handling
+
+Removed
+-------
+
+-   mod\_privacy (XEP-0016)
+
