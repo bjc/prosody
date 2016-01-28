@@ -42,6 +42,8 @@ local _realG = _G;
 
 require "util.import"
 
+local envloadfile = require "util.envload".envloadfile;
+
 local env_mt = { __index = function (t,k) return rawget(_realG, k) or print("WARNING: Attempt to access nil global '"..tostring(k).."'"); end };
 function testlib_new_env(t)
 	return setmetatable(t or {}, env_mt);
@@ -79,13 +81,12 @@ function dosingletest(testname, fname)
 	local tests = setmetatable({}, { __index = _realG });
 	tests.__unit = testname;
 	tests.__test = fname;
-	local chunk, err = loadfile(testname);
+	local chunk, err = envloadfile(testname, tests);
 	if not chunk then
 		print("WARNING: ", "Failed to load tests for "..testname, err);
 		return;
 	end
 
-	setfenv(chunk, tests);
 	local success, err = pcall(chunk);
 	if not success then
 		print("WARNING: ", "Failed to initialise tests for "..testname, err);
@@ -119,13 +120,12 @@ function dotest(unitname)
 	_fakeG._G = _fakeG;
 	local tests = setmetatable({}, { __index = _fakeG });
 	tests.__unit = unitname;
-	local chunk, err = loadfile("test_"..unitname:gsub("%.", "_")..".lua");
+	local chunk, err = envloadfile("test_"..unitname:gsub("%.", "_")..".lua", tests);
 	if not chunk then
 		print("WARNING: ", "Failed to load tests for "..unitname, err);
 		return;
 	end
 
-	setfenv(chunk, tests);
 	local success, err = pcall(chunk);
 	if not success then
 		print("WARNING: ", "Failed to initialise tests for "..unitname, err);
@@ -134,7 +134,7 @@ function dotest(unitname)
 	if tests.env then setmetatable(tests.env, { __index = _realG }); end
 	local unit = setmetatable({}, { __index = setmetatable({ _G = tests.env or _fakeG }, { __index = tests.env or _fakeG }) });
 	local fn = "../"..unitname:gsub("%.", "/")..".lua";
-	local chunk, err = loadfile(fn);
+	local chunk, err = envloadfile(fn, unit);
 	if not chunk then
 		print("WARNING: ", "Failed to load module: "..unitname, err);
 		return;
@@ -145,7 +145,6 @@ function dotest(unitname)
 		setmetatable(unit, nil);
 		unit._M = unit;
 	end
-	setfenv(chunk, unit);
 	local success, ret = pcall(chunk);
 	_fakeG.module, _fakeG._M = oldmodule, old_M;
 	if not success then
