@@ -16,6 +16,7 @@ New features
 -   mod\_carbons (XEP-0280)
 -   Asynchronous operations
 -   Pluggable connection timeout handling
+-   mod\_websocket (RFC 7395)
 
 Removed
 -------
