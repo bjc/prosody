@@ -137,10 +137,7 @@ function api:wrap_global(event, handler)
 end
 
 function api:require(lib)
-	local f, n = pluginloader.load_code(self.name, lib..".lib.lua", self.environment);
-	if not f then
-		f, n = pluginloader.load_code(lib, lib..".lib.lua", self.environment);
-	end
+	local f, n = pluginloader.load_code_ext(self.name, lib, "lib.lua", self.environment);
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
 	return f();
 end
