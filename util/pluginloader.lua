@@ -55,8 +55,23 @@ local function load_code(plugin, resource, env)
 	return f, path;
 end
 
+local function load_code_ext(plugin, resource, extension, env)
+	local content, err = load_resource(plugin, resource.."."..extension);
+	if not content then
+		content, err = load_resource(resource, resource.."."..extension);
+		if not content then
+			return content, err;
+		end
+	end
+	local path = err;
+	local f, err = envload(content, "@"..path, env);
+	if not f then return f, err; end
+	return f, path;
+end
+
 return {
 	load_file = load_file;
 	load_resource = load_resource;
 	load_code = load_code;
+	load_code_ext = load_code_ext;
 };
