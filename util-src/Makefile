@@ -1,12 +1,12 @@
 
 include ../config.unix
 
-CFLAGS+=-ggdb -I$(LUA_INCDIR)
+CFLAGS+=-ggdb -Wall -pedantic -I$(LUA_INCDIR)
 
 INSTALL_DATA=install -m644
 TARGET?=../util/
 
-ALL=encodings.so hashes.so net.so pposix.so signal.so table.so
+ALL=encodings.so hashes.so net.so pposix.so signal.so table.so ringbuffer.so
 
 .PHONY: all install clean
 .SUFFIXES: .c .o .so
