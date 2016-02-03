@@ -23,6 +23,7 @@ local ssl_context = ssl.context or softreq"ssl.context";
 local ssl_x509 = ssl.x509 or softreq"ssl.x509";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
+local stat = require "lfs".attributes;
 
 local tostring = tostring;
 local pairs = pairs;
@@ -49,6 +50,32 @@ local _ENV = nil;
 
 -- Global SSL options if not overridden per-host
 local global_ssl_config = configmanager.get("*", "ssl");
+
+local global_certificates = configmanager.get("*", "certificates") or "certs";
+
+local crt_try = { "", "/%s.crt", "/%s/fullchain.pem", "/%s.pem", };
+local key_try = { "", "/%s.key", "/%s/privkey.pem",   "/%s.pem", };
+
+local function find_cert(host)
+	local certs = configmanager.get(host, "certificate") or global_certificates;
+	certs = resolve_path(config_path, certs);
+	for i = 1, #crt_try do
+		local crt_path = certs .. crt_try[i]:format(host);
+		local key_path = certs .. key_try[i]:format(host);
+
+		if stat(crt_path, "mode") == "file" then
+			if stat(key_path, "mode") == "file" then
+				return { certificate = crt_path, key = key_path };
+			end
+			if key_path:sub(-4) == ".crt" then
+				key_path = key_path:sub(1, -4) .. "key";
+				if stat(key_path, "mode") == "file" then
+					return { certificate = crt_path, key = key_path };
+				end
+			end
+		end
+	end
+end
 
 -- Built-in defaults
 local core_defaults = {
@@ -82,6 +109,7 @@ local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	cfg:apply(global_ssl_config);
+	cfg:apply(find_cert(host) or find_cert(host:match("%.(.*)")));
 	cfg:apply({
 		mode = mode,
 		-- We can't read the password interactively when daemonized
