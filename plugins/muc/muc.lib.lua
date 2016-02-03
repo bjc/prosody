@@ -310,16 +310,17 @@ function room_mt:get_disco_info(stanza)
 	local form = dataform.new {
 		{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" };
 	};
-	module:fire_event("muc-disco#info", {room = self; reply = reply; form = form;});
-	reply:add_child(form:form(nil, "result"));
+	local formdata = {};
+	module:fire_event("muc-disco#info", {room = self; reply = reply; form = form, formdata = formdata ;});
+	reply:add_child(form:form(formdata, "result"));
 	return reply;
 end
 module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
 end);
 module:hook("muc-disco#info", function(event)
-	local count = iterators.count(event.room:each_occupant());
-	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) });
+	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants" });
+	event.formdata["muc#roominfo_occupants"] = tostring(iterators.count(event.room:each_occupant()));
 end);
 
 function room_mt:get_disco_items(stanza)
