@@ -196,7 +196,7 @@ end
 
 function room_mt:get_disco_info(stanza)
 	local count = 0; for _ in pairs(self._occupants) do count = count + 1; end
-	return st.reply(stanza):query("http://jabber.org/protocol/disco#info")
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info")
 		:tag("identity", {category="conference", type="text", name=self:get_name()}):up()
 		:tag("feature", {var="http://jabber.org/protocol/muc"}):up()
 		:tag("feature", {var=self:get_password() and "muc_passwordprotected" or "muc_unsecured"}):up()
@@ -205,12 +205,19 @@ function room_mt:get_disco_info(stanza)
 		:tag("feature", {var=self:get_persistent() and "muc_persistent" or "muc_temporary"}):up()
 		:tag("feature", {var=self:get_hidden() and "muc_hidden" or "muc_public"}):up()
 		:tag("feature", {var=self._data.whois ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up()
-		:add_child(dataform.new({
-			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
-			{ name = "muc#roominfo_description", label = "Description", value = "" },
-			{ name = "muc#roominfo_occupants", label = "Number of occupants", value = tostring(count) }
-		}):form({["muc#roominfo_description"] = self:get_description()}, 'result'))
 	;
+	local dataform = dataform.new({
+		{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" },
+		{ name = "muc#roominfo_description", label = "Description", value = "" },
+		{ name = "muc#roominfo_occupants", label = "Number of occupants", value = "" }
+	});
+	local formdata = {
+		["muc#roominfo_description"] = self:get_description(),
+		["muc#roominfo_occupants"] = tostring(count),
+	};
+	module:fire_event("muc-disco#info", { room = self, reply = reply, form = dataform, formdata = formdata });
+	reply:add_child(dataform:form(formdata, 'result'))
+	return reply;
 end
 function room_mt:get_disco_items(stanza)
 	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
