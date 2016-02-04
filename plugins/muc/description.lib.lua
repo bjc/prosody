@@ -24,8 +24,8 @@ local function add_form_option(event)
 		name = "muc#roomconfig_roomdesc";
 		type = "text-single";
 		label = "Description";
+		value = get_description(event.room) or "";
 	});
-	event.formdata["muc#roomconfig_roomdesc"] = get_description(event.room) or "";
 end
 module:hook("muc-disco#info", add_form_option);
 module:hook("muc-config-form", add_form_option);

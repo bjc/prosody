@@ -30,8 +30,8 @@ module:hook("muc-config-form", function(event)
 		name = "muc#roomconfig_roomname";
 		type = "text-single";
 		label = "Name";
+		value = get_name(event.room) or "";
 	});
-	event.formdata["muc#roomconfig_roomname"] = get_name(event.room) or "";
 end);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomname", function(event)
