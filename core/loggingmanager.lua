@@ -16,13 +16,6 @@ local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 
--- COMPAT: This should no longer be needed since the addition of setvbuf calls
-if os.getenv("__FLUSH_LOG") then
-	local io_flush = io.flush;
-	local _io_write = io_write;
-	io_write = function(...) _io_write(...); io_flush(); end
-end
-
 local config = require "core.configmanager";
 local logger = require "util.logger";
 local prosody = prosody;
