@@ -15,6 +15,8 @@ local io_open = io.open;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local tostring = tostring;
+local unpack = table.unpack or unpack;
 
 local config = require "core.configmanager";
 local logger = require "util.logger";
@@ -192,17 +194,22 @@ local function log_to_file(sink_config, logfile)
 	local sourcewidth = sink_config.source_width;
 
 	return function (name, level, message, ...)
+		local n = select('#', ...);
+		if n ~= 0 then
+			local arg = { ... };
+			for i = 1, n do
+				arg[i] = tostring(arg[i]);
+			end
+			message = format(message, unpack(arg, 1, n));
+		end
+
 		if sourcewidth then
 			sourcewidth = math_max(#name+2, sourcewidth);
 			name = name ..  rep(" ", sourcewidth-#name);
 		else
 			name = name .. "\t";
 		end
-		if ... then
-			write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", format(message, ...), "\n");
-		else
-			write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", message, "\n");
-		end
+		write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", message, "\n");
 	end
 end
 log_sink_types.file = log_to_file;
