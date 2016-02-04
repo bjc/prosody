@@ -193,9 +193,18 @@ local function log_to_file(sink_config, logfile)
 		logfile:setvbuf(sink_config.buffer_mode or "line");
 	end
 
+	-- Column width for "source" (used by stdout and console)
+	local sourcewidth = sink_config.source_width;
+
 	return function (name, level, message, ...)
 		if timestamps then
 			write(logfile, os_date(timestamps), " ");
+		end
+		if sourcewidth then
+			sourcewidth = math_max(#name+2, sourcewidth);
+			name = name ..  rep(" ", sourcewidth-#name);
+		else
+			name = name .. "\t";
 		end
 		if ... then
 			write(logfile, name, level, "\t", format(message, ...), "\n");
@@ -206,19 +215,12 @@ local function log_to_file(sink_config, logfile)
 end
 log_sink_types.file = log_to_file;
 
--- Column width for "source" (used by stdout and console)
-local sourcewidth = 20;
-
 local function log_to_stdout(sink_config)
 	if not sink_config.timestamps then
 		sink_config.timestamps = false;
 	end
-	local logtofile = log_to_file(sink_config, stdout);
-	return function (name, level, message, ...)
-		sourcewidth = math_max(#name+2, sourcewidth);
-		name = name ..  rep(" ", sourcewidth-#name);
-		return logtofile(name, level, message, ...);
-	end
+	sink_config.source_width = 20;
+	return log_to_file(sink_config, stdout);
 end
 log_sink_types.stdout = log_to_stdout;
 
