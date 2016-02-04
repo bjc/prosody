@@ -6,10 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local pcall = pcall;
-
-local find = string.find;
-local ipairs, pairs, setmetatable = ipairs, pairs, setmetatable;
+local pairs = pairs;
 
 local _ENV = nil;
 
