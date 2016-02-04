@@ -15,6 +15,7 @@ local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, setstyle = require "util.termcolours".getstyle, require "util.termcolours".setstyle;
 
+-- COMPAT: This should no longer be needed since the addition of setvbuf calls
 if os.getenv("__FLUSH_LOG") then
 	local io_flush = io.flush;
 	local _io_write = io_write;
@@ -157,7 +158,6 @@ local function reload_logging()
 
 	logging_config = config.get("*", "log") or default_logging;
 
-
 	for name, sink_maker in pairs(old_sink_types) do
 		log_sink_types[name] = sink_maker;
 	end
@@ -183,6 +183,10 @@ function log_sink_types.stdout(sink_config)
 
 	if timestamps == true then
 		timestamps = default_timestamp; -- Default format
+	end
+
+	if sink_config.buffer_mode ~= false then
+		io.stdout:setvbuf(sink_config.buffer_mode or "line");
 	end
 
 	return function (name, level, message, ...)
@@ -220,6 +224,10 @@ do
 			timestamps = default_timestamp; -- Default format
 		end
 
+		if sink_config.buffer_mode ~= false then
+			io.stdout:setvbuf(sink_config.buffer_mode or "line");
+		end
+
 		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
 			local namelen = #name;
@@ -247,7 +255,12 @@ function log_sink_types.file(sink_config)
 	if not logfile then
 		return empty_function;
 	end
-	local write, flush = logfile.write, logfile.flush;
+
+	if sink_config.buffer_mode ~= false then
+		logfile:setvbuf(sink_config.buffer_mode or "line");
+	end
+
+	local write = logfile.write;
 
 	local timestamps = sink_config.timestamps;
 
@@ -264,7 +277,6 @@ function log_sink_types.file(sink_config)
 		else
 			write(logfile, name, "\t" , level, "\t", message, "\n");
 		end
-		flush(logfile);
 	end;
 end
 
