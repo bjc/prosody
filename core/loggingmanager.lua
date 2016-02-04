@@ -219,7 +219,9 @@ local function log_to_stdout(sink_config)
 	if not sink_config.timestamps then
 		sink_config.timestamps = false;
 	end
-	sink_config.source_width = 20;
+	if sink_config.source_width == nil then
+		sink_config.source_width = 20;
+	end
 	return log_to_file(sink_config, stdout);
 end
 log_sink_types.stdout = log_to_stdout;
