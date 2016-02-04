@@ -13,7 +13,7 @@ local setmetatable, rawset, pairs, ipairs, type =
 local io_open, io_write = io.open, io.write;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
-local getstyle, setstyle = require "util.termcolours".getstyle, require "util.termcolours".setstyle;
+local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 
 -- COMPAT: This should no longer be needed since the addition of setvbuf calls
 if os.getenv("__FLUSH_LOG") then
@@ -235,9 +235,7 @@ do
 				io_write(os_date(timestamps), " ");
 			end
 			io_write(name, rep(" ", sourcewidth-namelen));
-			setstyle(logstyles[level]);
-			io_write(level);
-			setstyle();
+			io_write(getstring(logstyles[level], level));
 			if ... then
 				io_write("\t", format(message, ...), "\n");
 			else
