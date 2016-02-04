@@ -35,7 +35,7 @@ local _ENV = nil;
 -- The log config used if none specified in the config file (see reload_logging for initialization)
 local default_logging;
 local default_file_logging;
-local default_timestamp = "%b %d %H:%M:%S";
+local default_timestamp = "%b %d %H:%M:%S ";
 -- The actual config loggingmanager is using
 local logging_config;
 
@@ -187,6 +187,8 @@ local function log_to_file(sink_config, logfile)
 
 	if timestamps == true then
 		timestamps = default_timestamp; -- Default format
+	elseif timestamps then
+		timestamps = timestamps .. " ";
 	end
 
 	if sink_config.buffer_mode ~= false then
@@ -197,9 +199,6 @@ local function log_to_file(sink_config, logfile)
 	local sourcewidth = sink_config.source_width;
 
 	return function (name, level, message, ...)
-		if timestamps then
-			write(logfile, os_date(timestamps), " ");
-		end
 		if sourcewidth then
 			sourcewidth = math_max(#name+2, sourcewidth);
 			name = name ..  rep(" ", sourcewidth-#name);
@@ -207,9 +206,9 @@ local function log_to_file(sink_config, logfile)
 			name = name .. "\t";
 		end
 		if ... then
-			write(logfile, name, level, "\t", format(message, ...), "\n");
+			write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", format(message, ...), "\n");
 		else
-			write(logfile, name, level, "\t", message, "\n");
+			write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", message, "\n");
 		end
 	end
 end
