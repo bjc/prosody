@@ -154,7 +154,6 @@ local function reload_logging()
 	default_file_logging = {
 		{ to = "file", levels = { min = (debug_mode and "debug") or "info" }, timestamps = true }
 	};
-	default_timestamp = "%b %d %H:%M:%S";
 
 	logging_config = config.get("*", "log") or default_logging;
 
