@@ -10,7 +10,8 @@
 local format = string.format;
 local setmetatable, rawset, pairs, ipairs, type =
 	setmetatable, rawset, pairs, ipairs, type;
-local io_open, io_write = io.open, io.write;
+local stdout = io.stdout;
+local io_open = io.open;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
@@ -170,14 +171,18 @@ prosody.events.add_handler("config-reloaded", reload_logging);
 --- Definition of built-in logging sinks ---
 
 -- Null sink, must enter log_sink_types *first*
-function log_sink_types.nowhere()
+local function log_to_nowhere()
 	return function () return false; end;
 end
+log_sink_types.nowhere = log_to_nowhere;
 
--- Column width for "source" (used by stdout and console)
-local sourcewidth = 20;
+local function log_to_file(sink_config, logfile)
+	logfile = logfile or io_open(sink_config.filename, "a+");
+	if not logfile then
+		return log_to_nowhere(sink_config);
+	end
+	local write = logfile.write;
 
-function log_sink_types.stdout(sink_config)
 	local timestamps = sink_config.timestamps;
 
 	if timestamps == true then
@@ -185,84 +190,7 @@ function log_sink_types.stdout(sink_config)
 	end
 
 	if sink_config.buffer_mode ~= false then
-		io.stdout:setvbuf(sink_config.buffer_mode or "line");
-	end
-
-	return function (name, level, message, ...)
-		sourcewidth = math_max(#name+2, sourcewidth);
-		local namelen = #name;
-		if timestamps then
-			io_write(os_date(timestamps), " ");
-		end
-		if ... then
-			io_write(name, rep(" ", sourcewidth-namelen), level, "\t", format(message, ...), "\n");
-		else
-			io_write(name, rep(" ", sourcewidth-namelen), level, "\t", message, "\n");
-		end
-	end
-end
-
-do
-	local do_pretty_printing = true;
-
-	local logstyles = {};
-	if do_pretty_printing then
-		logstyles["info"] = getstyle("bold");
-		logstyles["warn"] = getstyle("bold", "yellow");
-		logstyles["error"] = getstyle("bold", "red");
-	end
-	function log_sink_types.console(sink_config)
-		-- Really if we don't want pretty colours then just use plain stdout
-		if not do_pretty_printing then
-			return log_sink_types.stdout(sink_config);
-		end
-
-		local timestamps = sink_config.timestamps;
-
-		if timestamps == true then
-			timestamps = default_timestamp; -- Default format
-		end
-
-		if sink_config.buffer_mode ~= false then
-			io.stdout:setvbuf(sink_config.buffer_mode or "line");
-		end
-
-		return function (name, level, message, ...)
-			sourcewidth = math_max(#name+2, sourcewidth);
-			local namelen = #name;
-
-			if timestamps then
-				io_write(os_date(timestamps), " ");
-			end
-			io_write(name, rep(" ", sourcewidth-namelen));
-			io_write(getstring(logstyles[level], level));
-			if ... then
-				io_write("\t", format(message, ...), "\n");
-			else
-				io_write("\t", message, "\n");
-			end
-		end
-	end
-end
-
-local empty_function = function () end;
-function log_sink_types.file(sink_config)
-	local log = sink_config.filename;
-	local logfile = io_open(log, "a+");
-	if not logfile then
-		return empty_function;
-	end
-
-	if sink_config.buffer_mode ~= false then
 		logfile:setvbuf(sink_config.buffer_mode or "line");
-	end
-
-	local write = logfile.write;
-
-	local timestamps = sink_config.timestamps;
-
-	if timestamps == nil or timestamps == true then
-		timestamps = default_timestamp; -- Default format
 	end
 
 	return function (name, level, message, ...)
@@ -270,12 +198,55 @@ function log_sink_types.file(sink_config)
 			write(logfile, os_date(timestamps), " ");
 		end
 		if ... then
-			write(logfile, name, "\t", level, "\t", format(message, ...), "\n");
+			write(logfile, name, level, "\t", format(message, ...), "\n");
 		else
-			write(logfile, name, "\t" , level, "\t", message, "\n");
+			write(logfile, name, level, "\t", message, "\n");
 		end
-	end;
+	end
 end
+log_sink_types.file = log_to_file;
+
+-- Column width for "source" (used by stdout and console)
+local sourcewidth = 20;
+
+local function log_to_stdout(sink_config)
+	if not sink_config.timestamps then
+		sink_config.timestamps = false;
+	end
+	local logtofile = log_to_file(sink_config, stdout);
+	return function (name, level, message, ...)
+		sourcewidth = math_max(#name+2, sourcewidth);
+		name = name ..  rep(" ", sourcewidth-#name);
+		return logtofile(name, level, message, ...);
+	end
+end
+log_sink_types.stdout = log_to_stdout;
+
+local do_pretty_printing = true;
+
+local logstyles;
+if do_pretty_printing then
+	logstyles = {};
+	logstyles["info"] = getstyle("bold");
+	logstyles["warn"] = getstyle("bold", "yellow");
+	logstyles["error"] = getstyle("bold", "red");
+end
+
+local function log_to_console(sink_config)
+	-- Really if we don't want pretty colours then just use plain stdout
+	local logstdout = log_to_stdout(sink_config);
+	if not do_pretty_printing then
+		return logstdout;
+	end
+	return function (name, level, message, ...)
+		local logstyle = logstyles[level];
+		if logstyle then
+			level = getstring(logstyle, level);
+		end
+		return logstdout(name, level, message, ...);
+	end
+end
+log_sink_types.console = log_to_console;
 
 local function register_sink_type(name, sink_maker)
 	local old_sink_maker = log_sink_types[name];
