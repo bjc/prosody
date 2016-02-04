@@ -10,8 +10,6 @@
 local groups;
 local members;
 
-local groups_file;
-
 local jid, datamanager = require "util.jid", require "util.datamanager";
 local jid_prep = jid.prep;
 
@@ -82,7 +80,7 @@ function remove_virtual_contacts(username, host, datastore, data)
 end
 
 function module.load()
-	groups_file = module:get_option_path("groups_file", nil, "config");
+	local groups_file = module:get_option_path("groups_file", nil, "config");
 	if not groups_file then return; end
 
 	module:hook("roster-load", inject_roster_contacts);
