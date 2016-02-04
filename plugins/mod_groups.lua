@@ -82,7 +82,7 @@ function remove_virtual_contacts(username, host, datastore, data)
 end
 
 function module.load()
-	groups_file = module:get_option_string("groups_file");
+	groups_file = module:get_option_path("groups_file", nil, "config");
 	if not groups_file then return; end
 
 	module:hook("roster-load", inject_roster_contacts);
