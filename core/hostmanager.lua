@@ -12,8 +12,6 @@ local events_new = require "util.events".new;
 local disco_items = require "util.multitable".new();
 local NULL = {};
 
-local jid_split = require "util.jid".split;
-
 local log = require "util.logger".init("hostmanager");
 
 local hosts = prosody.hosts;
@@ -24,7 +22,7 @@ end
 local incoming_s2s = _G.prosody.incoming_s2s;
 local core_route_stanza = _G.prosody.core_route_stanza;
 
-local pairs, select, rawget = pairs, select, rawget;
+local pairs, rawget = pairs, rawget;
 local tostring, type = tostring, type;
 local setmetatable = setmetatable;
 
