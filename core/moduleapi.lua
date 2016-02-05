@@ -303,6 +303,20 @@ function api:get_option_inherited_set(name, ...)
 	return value;
 end
 
+function api:get_option_path(name, default, parent)
+	if parent == nil then
+		parent = parent or self:get_directory();
+	elseif prosody.paths[parent] then
+		parent = prosody.paths[parent];
+	end
+	local value = self:get_option_string(name, default);
+	if value == nil then
+		return nil;
+	end
+	return resolve_relative_path(parent, value);
+end
+
+
 function api:context(host)
 	return setmetatable({host=host or "*"}, {__index=self,__newindex=self});
 end
