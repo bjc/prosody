@@ -63,14 +63,13 @@ local function find_cert(user_certs, name)
 		local key_path = certs .. key_try[i]:format(name);
 
 		if stat(crt_path, "mode") == "file" then
-			if stat(key_path, "mode") == "file" then
-				return { certificate = crt_path, key = key_path };
-			end
 			if key_path:sub(-4) == ".crt" then
 				key_path = key_path:sub(1, -4) .. "key";
 				if stat(key_path, "mode") == "file" then
 					return { certificate = crt_path, key = key_path };
 				end
+			elseif stat(key_path, "mode") == "file" then
+				return { certificate = crt_path, key = key_path };
 			end
 		end
 	end
