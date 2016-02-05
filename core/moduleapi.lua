@@ -399,7 +399,7 @@ function timer_methods:reschedule(delay)
 	timer.reschedule(self.id, delay)
 end
 
-local function timer_callback(now, id, t)
+local function timer_callback(now, id, t) --luacheck: ignore 212/id
 	if t.module_env.loaded == false then return; end
 	return t.callback(now, unpack(t, 1, t.n));
 end
