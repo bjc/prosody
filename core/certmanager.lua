@@ -56,12 +56,11 @@ local global_certificates = configmanager.get("*", "certificates") or "certs";
 local crt_try = { "", "/%s.crt", "/%s/fullchain.pem", "/%s.pem", };
 local key_try = { "", "/%s.key", "/%s/privkey.pem",   "/%s.pem", };
 
-local function find_cert(host)
-	local certs = configmanager.get(host, "certificate") or global_certificates;
-	certs = resolve_path(config_path, certs);
+local function find_cert(user_certs, name)
+	local certs = resolve_path(config_path, user_certs or global_certificates);
 	for i = 1, #crt_try do
-		local crt_path = certs .. crt_try[i]:format(host);
-		local key_path = certs .. key_try[i]:format(host);
+		local crt_path = certs .. crt_try[i]:format(name);
+		local key_path = certs .. key_try[i]:format(name);
 
 		if stat(crt_path, "mode") == "file" then
 			if stat(key_path, "mode") == "file" then
@@ -75,6 +74,19 @@ local function find_cert(host)
 			end
 		end
 	end
+end
+
+local function find_host_cert(host)
+	if not host then return nil; end
+	return find_cert(configmanager.get(host, "certificate"), host) or find_host_cert(host:match("%.(.+)$"));
+end
+
+local function find_service_cert(service, port)
+	local cert_config = configmanager.get("*", service.."_certificate");
+	if type(cert_config) == "table" then
+		cert_config = cert_config[port] or cert_config.default;
+	end
+	return find_cert(cert_config, service);
 end
 
 -- Built-in defaults
@@ -109,7 +121,12 @@ local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	cfg:apply(global_ssl_config);
-	cfg:apply(find_cert(host) or find_cert(host:match("%.(.*)")));
+	local service_name, port = host:match("^(%w+) port (%d+)$");
+	if service_name then
+		cfg:apply(find_service_cert(service_name, tonumber(port)));
+	else
+		cfg:apply(find_host_cert(host));
+	end
 	cfg:apply({
 		mode = mode,
 		-- We can't read the password interactively when daemonized
