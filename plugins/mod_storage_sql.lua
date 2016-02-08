@@ -134,7 +134,10 @@ function map_store:get(username, key)
 				return deserialize(row[1], row[2]);
 			end
 		else
-			error("TODO: non-string keys");
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+				local data = deserialize(row[1], row[2]);
+				return data and data[key] or nil;
+			end
 		end
 	end);
 	if not ok then return nil, result; end
@@ -150,7 +153,16 @@ function map_store:set(username, key, data)
 				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
 			end
 		else
-			error("TODO: non-string keys");
+			local extradata = {};
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+				extradata = deserialize(row[1], row[2]);
+				break;
+			end
+			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				host, username or "", self.store, "");
+			extradata[key] = data;
+			local t, value = assert(serialize(extradata));
+			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, "", t, value);
 		end
 		return true;
 	end);
