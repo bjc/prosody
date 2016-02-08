@@ -364,8 +364,8 @@ function commands.deluser(arg)
 	end
 	local user, host = jid_split(arg[1]);
 	if not user and host then
-		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
-		show_usage [[passwd user@host]]
+		show_message [[Failed to understand JID, please supply the JID to the user account you want to delete]]
+		show_usage [[deluser user@host]]
 		return 1;
 	end
 	
