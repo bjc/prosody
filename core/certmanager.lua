@@ -63,14 +63,13 @@ local function find_cert(user_certs, name)
 		local key_path = certs .. key_try[i]:format(name);
 
 		if stat(crt_path, "mode") == "file" then
-			if stat(key_path, "mode") == "file" then
-				return { certificate = crt_path, key = key_path };
-			end
 			if key_path:sub(-4) == ".crt" then
 				key_path = key_path:sub(1, -4) .. "key";
 				if stat(key_path, "mode") == "file" then
 					return { certificate = crt_path, key = key_path };
 				end
+			elseif stat(key_path, "mode") == "file" then
+				return { certificate = crt_path, key = key_path };
 			end
 		end
 	end
@@ -120,7 +119,6 @@ end
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
-	cfg:apply(global_ssl_config);
 	local service_name, port = host:match("^(%w+) port (%d+)$");
 	if service_name then
 		cfg:apply(find_service_cert(service_name, tonumber(port)));
@@ -132,6 +130,7 @@ local function create_context(host, mode, ...)
 		-- We can't read the password interactively when daemonized
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
+	cfg:apply(global_ssl_config);
 
 	for i = select('#', ...), 1, -1 do
 		cfg:apply(select(i, ...));
