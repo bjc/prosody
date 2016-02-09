@@ -118,6 +118,23 @@ local map_shim_mt = {
 			current[key] = data;
 			return self.keyval_store:set(username, current);
 		end;
+		set_keys = function (self, username, keydatas)
+			local current, err = self.keyval_store:get(username);
+			if current == nil then
+				if err then
+					return nil, err;
+				else
+					current = keydatas;
+				end
+			else
+				for k,v in pairs(keydatas) do
+					if v == self.remove then v = nil; end
+					current[k] = v;
+				end
+			end
+			return self.keyval_store:set(username, current);
+		end;
+		remove = {};
 	};
 }
 
