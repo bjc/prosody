@@ -18,7 +18,6 @@ local type = type;
 local hosts = hosts;
 local bare_sessions = prosody.bare_sessions;
 
-local datamanager = require "util.datamanager"
 local um_user_exists = require "core.usermanager".user_exists;
 local st = require "util.stanza";
 
@@ -109,7 +108,8 @@ local function load_roster(username, host)
 	else -- Attempt to load roster for non-loaded user
 		log("debug", "load_roster: loading for offline user: %s@%s", username, host);
 	end
-	local data, err = datamanager.load(username, host, "roster");
+	local roster_store = require "core.storagemanager".open(host, "roster", "keyval");
+	local data, err = roster_store:get(username);
 	roster = data or {};
 	if user then user.roster = roster; end
 	roster_metadata(roster, err);
@@ -143,7 +143,8 @@ function save_roster(username, host, roster)
 			metadata.version = (metadata.version or 0) + 1;
 		end
 		if metadata.broken then return nil, "Not saving broken roster" end
-		return datamanager.store(username, host, "roster", roster);
+		local roster_store = require "core.storagemanager".open(host, "roster", "keyval");
+		return roster_store:set(username, roster);
 	end
 	log("warn", "save_roster: user had no roster to save");
 	return nil;
