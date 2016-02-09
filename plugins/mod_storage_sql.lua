@@ -1,4 +1,6 @@
 
+-- luacheck: ignore 212/self
+
 local json = require "util.json";
 local sql = require "util.sql";
 local xml_parse = require "util.xml".parse;
@@ -125,6 +127,7 @@ end
 
 --- Archive store API
 
+-- luacheck: ignore 512 431/user 431/store
 local map_store = {};
 map_store.__index = map_store;
 map_store.remove = {};
