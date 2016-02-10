@@ -1,4 +1,6 @@
 
+-- luacheck: ignore 212/self
+
 local json = require "util.json";
 local sql = require "util.sql";
 local xml_parse = require "util.xml".parse;
@@ -125,8 +127,10 @@ end
 
 --- Archive store API
 
+-- luacheck: ignore 512 431/user 431/store
 local map_store = {};
 map_store.__index = map_store;
+map_store.remove = {};
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
 		if type(key) == "string" and key ~= "" then
@@ -134,23 +138,40 @@ function map_store:get(username, key)
 				return deserialize(row[1], row[2]);
 			end
 		else
-			error("TODO: non-string keys");
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+				local data = deserialize(row[1], row[2]);
+				return data and data[key] or nil;
+			end
 		end
 	end);
 	if not ok then return nil, result; end
 	return result;
 end
 function map_store:set(username, key, data)
+	return self:set_keys(username, { [key] = data or self.remove });
+end
+function map_store:set_keys(username, keydatas)
 	local ok, result = engine:transaction(function()
-		if type(key) == "string" and key ~= "" then
-			engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
-				host, username or "", self.store, key);
-			if data ~= nil then
-				local t, value = assert(serialize(data));
-				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
+		for key, data in pairs(keydatas) do
+			if type(key) == "string" and key ~= "" then
+				engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+					host, username or "", self.store, key);
+				if data ~= self.remove then
+					local t, value = assert(serialize(data));
+					engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
+				end
+			else
+				local extradata = {};
+				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+					extradata = deserialize(row[1], row[2]);
+					break;
+				end
+				engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+					host, username or "", self.store, "");
+				extradata[key] = data;
+				local t, value = assert(serialize(extradata));
+				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, "", t, value);
 			end
-		else
-			error("TODO: non-string keys");
 		end
 		return true;
 	end);
