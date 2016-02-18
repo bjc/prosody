@@ -24,7 +24,7 @@ local ipairs, pairs, type, tostring, t_insert = ipairs, pairs, type, tostring, t
 
 local debug_traceback = debug.traceback;
 local select = select;
-local unpack = table.unpack or unpack;
+local unpack = table.unpack or unpack; --luacheck: ignore 113
 local pcall = function(f, ...)
 	local n = select("#", ...);
 	local params = {...};
