@@ -53,7 +53,7 @@ clean:
 	$(MAKE) clean -C util-src
 
 test:
-	cd tests && ./run_tests.sh
+	cd tests && $(RUNWITH) test.lua
 
 util/%.so:
 	$(MAKE) install -C util-src
