@@ -25,7 +25,7 @@ local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
 
-local tostring = tostring;
+local tonumber, tostring = tonumber, tostring;
 local pairs = pairs;
 local type = type;
 local io_open = io.open;
