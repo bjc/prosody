@@ -16,7 +16,7 @@ local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
 local tostring = tostring;
-local unpack = table.unpack or unpack;
+local select, unpack = select, table.unpack or unpack;
 
 local config = require "core.configmanager";
 local logger = require "util.logger";
