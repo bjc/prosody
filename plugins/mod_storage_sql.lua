@@ -148,7 +148,8 @@ function map_store:get(username, key)
 	return result;
 end
 function map_store:set(username, key, data)
-	return self:set_keys(username, { [key] = data or self.remove });
+	if data == nil then data = self.remove; end
+	return self:set_keys(username, { [key] = data });
 end
 function map_store:set_keys(username, keydatas)
 	local ok, result = engine:transaction(function()
