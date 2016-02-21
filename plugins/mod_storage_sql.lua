@@ -453,7 +453,7 @@ function module.load()
 	local params = normalize_params(module:get_option("sql", default_params));
 	engine = engines[sql.db2uri(params)];
 	if not engine then
-		module:log("info", "Creating new engine");
+		module:log("debug", "Creating new engine");
 		engine = sql:create_engine(params, function (engine)
 			if module:get_option("sql_manage_tables", true) then
 				-- Automatically create table, ignore failure (table probably already exists)
