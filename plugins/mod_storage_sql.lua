@@ -275,7 +275,6 @@ function archive_store:find(username, query)
 		end
 
 		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
-		module:log("debug", sql_query);
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result end
@@ -301,7 +300,6 @@ function archive_store:delete(username, query)
 		archive_where(query, args, where);
 		archive_where_id_range(query, args, where);
 		sql_query = sql_query:format(t_concat(where, " AND "));
-		module:log("debug", sql_query);
 		return engine:delete(sql_query, unpack(args));
 	end);
 end
