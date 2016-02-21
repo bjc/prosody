@@ -148,7 +148,8 @@ function map_store:get(username, key)
 	return result;
 end
 function map_store:set(username, key, data)
-	return self:set_keys(username, { [key] = data or self.remove });
+	if data == nil then data = self.remove; end
+	return self:set_keys(username, { [key] = data });
 end
 function map_store:set_keys(username, keydatas)
 	local ok, result = engine:transaction(function()
@@ -448,19 +449,25 @@ end
 
 function module.load()
 	if prosody.prosodyctl then return; end
+	local engines = module:shared("/*/sql/connections");
 	local params = normalize_params(module:get_option("sql", default_params));
-	engine = sql:create_engine(params, function (engine)
-		if module:get_option("sql_manage_tables", true) then
-			-- Automatically create table, ignore failure (table probably already exists)
-			-- FIXME: we should check in information_schema, etc.
-			create_table();
-			-- Check whether the table needs upgrading
-			if upgrade_table(params, false) then
-				module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
-				return false, "database upgrade needed";
+	engine = engines[sql.db2uri(params)];
+	if not engine then
+		module:log("info", "Creating new engine");
+		engine = sql:create_engine(params, function (engine)
+			if module:get_option("sql_manage_tables", true) then
+				-- Automatically create table, ignore failure (table probably already exists)
+				-- FIXME: we should check in information_schema, etc.
+				create_table();
+				-- Check whether the table needs upgrading
+				if upgrade_table(params, false) then
+					module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
+					return false, "database upgrade needed";
+				end
 			end
-		end
-	end);
+		end);
+		engines[sql.db2uri(params)] = engine;
+	end
 
 	module:provides("storage", driver);
 end
