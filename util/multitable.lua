@@ -8,7 +8,8 @@
 
 local select = select;
 local t_insert = table.insert;
-local unpack, pairs, next, type = unpack, pairs, next, type;
+local pairs, next, type = pairs, next, type;
+local unpack = table.unpack or unpack; --luacheck: ignore 113
 
 local _ENV = nil;
 
