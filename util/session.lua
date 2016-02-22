@@ -9,13 +9,13 @@ local function new_session(typ)
 end
 
 local function set_id(session)
-	local id = typ .. tostring(session):match("%x+$"):lower();
+	local id = session.type .. tostring(session):match("%x+$"):lower();
 	session.id = id;
 	return session;
 end
 
 local function set_logger(session)
-	local log = logger.init(id);
+	local log = logger.init(session.id);
 	session.log = log;
 	return session;
 end
@@ -30,7 +30,7 @@ local function set_send(session)
 	local conn = session.conn;
 	if not conn then
 		function session.send(data)
-			log("debug", "Discarding data sent to unconnected session: %s", tostring(data));
+			session.log("debug", "Discarding data sent to unconnected session: %s", tostring(data));
 			return false;
 		end
 		return session;
