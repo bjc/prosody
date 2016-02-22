@@ -1,6 +1,9 @@
 -- Variables ending with these names will not
 -- have their values printed ('password' includes
 -- 'new_password', etc.)
+--
+-- luacheck: ignore 122/debug
+
 local censored_names = {
 	password = true;
 	passwd = true;
