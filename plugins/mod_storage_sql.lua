@@ -235,12 +235,12 @@ local function archive_where_id_range(query, args, where)
 	local args_len = #args
 	-- Before or after specific item, exclusive
 	if query.after then  -- keys better be unique!
-		where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1)"
+		where[#where+1] = "`sort_id` > COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), 0)"
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.after, args[1], args[2], args[3];
 		args_len = args_len + 4
 	end
 	if query.before then
-		where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1)"
+		where[#where+1] = "`sort_id` < COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), (SELECT MAX(`sort_id`)+1 FROM `prosodyarchive`))"
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.before, args[1], args[2], args[3];
 	end
 end
@@ -275,7 +275,6 @@ function archive_store:find(username, query)
 		end
 
 		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
-		module:log("debug", sql_query);
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result end
@@ -301,7 +300,6 @@ function archive_store:delete(username, query)
 		archive_where(query, args, where);
 		archive_where_id_range(query, args, where);
 		sql_query = sql_query:format(t_concat(where, " AND "));
-		module:log("debug", sql_query);
 		return engine:delete(sql_query, unpack(args));
 	end);
 end
@@ -453,7 +451,7 @@ function module.load()
 	local params = normalize_params(module:get_option("sql", default_params));
 	engine = engines[sql.db2uri(params)];
 	if not engine then
-		module:log("info", "Creating new engine");
+		module:log("debug", "Creating new engine");
 		engine = sql:create_engine(params, function (engine)
 			if module:get_option("sql_manage_tables", true) then
 				-- Automatically create table, ignore failure (table probably already exists)
