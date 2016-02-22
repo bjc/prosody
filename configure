@@ -19,6 +19,8 @@ CXX=g++
 LD=gcc
 RUNWITH=lua
 EXCERTS=yes
+PRNG=
+PRNGLIBS=
 
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
@@ -58,6 +60,11 @@ Configure Prosody prior to building.
                             icu: use ICU from IBM
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
+--with-random=METHOD        CSPRNG backend to use. One of
+                            getrandom: Linux kernel
+                            arc4random: OpenBSD kernel
+                            openssl: OpenSSL RAND method
+                            Default is to use /dev/urandom
 --cflags=FLAGS              Flags to pass to the compiler
                             Default is $CFLAGS
 --ldflags=FLAGS             Flags to pass to the linker
@@ -173,6 +180,16 @@ do
 		;;
    --with-ssl=*)
       OPENSSL_LIB="$value"
+      ;;
+  --with-random=getrandom)
+      PRNG=GETRANDOM
+      ;;
+  --with-random=openssl)
+      PRNG=OPENSSL
+      PRNGLIBS=-lcrypto
+      ;;
+  --with-random=arc4random)
+      PRNG=ARC4RANDOM
       ;;
    --cflags=*)
       CFLAGS="$value"
@@ -372,6 +389,9 @@ CXX=$CXX
 LD=$LD
 RUNWITH=$RUNWITH
 EXCERTS=$EXCERTS
+RANDOM=$PRNG
+RANDOM_LIBS=$PRNGLIBS
+
 
 EOF
 
