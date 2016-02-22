@@ -235,12 +235,12 @@ local function archive_where_id_range(query, args, where)
 	local args_len = #args
 	-- Before or after specific item, exclusive
 	if query.after then  -- keys better be unique!
-		where[#where+1] = "`sort_id` > (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1)"
+		where[#where+1] = "`sort_id` > COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), 0)"
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.after, args[1], args[2], args[3];
 		args_len = args_len + 4
 	end
 	if query.before then
-		where[#where+1] = "`sort_id` < (SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1)"
+		where[#where+1] = "`sort_id` < COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), (SELECT MAX(`sort_id`)+1 FROM `prosodyarchive`))"
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.before, args[1], args[2], args[3];
 	end
 end
