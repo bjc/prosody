@@ -81,6 +81,7 @@ local function set_password(username, password, host)
 end
 
 local function user_exists(username, host)
+	if hosts[host].sessions[username] then return true; end
 	return hosts[host].users.user_exists(username);
 end
 

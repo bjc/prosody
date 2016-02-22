@@ -147,6 +147,11 @@ local result_mt = { __index = {
 	rowcount = function(self) return self.__stmt:rowcount(); end;
 } };
 
+local function debugquery(where, sql, ...)
+	local i = 0; local a = {...}
+	log("debug", "[%s] %s", where, sql:gsub("%?", function () i = i + 1; local v = a[i]; if type(v) == "string" then v = ("%q"):format(v); end return tostring(v); end));
+end
+
 function engine:execute_query(sql, ...)
 	if self.params.driver == "PostgreSQL" then
 		sql = sql:gsub("`", "\"");
@@ -172,6 +177,26 @@ engine.insert = engine.execute_update;
 engine.select = engine.execute_query;
 engine.delete = engine.execute_update;
 engine.update = engine.execute_update;
+local function debugwrap(name, f)
+	return function (self, sql, ...)
+		debugquery(name, sql, ...)
+		return f(self, sql, ...)
+	end
+end
+function engine:debug(enable)
+	self._debug = enable;
+	if enable then
+		engine.insert = debugwrap("insert", engine.execute_update);
+		engine.select = debugwrap("select", engine.execute_query);
+		engine.delete = debugwrap("delete", engine.execute_update);
+		engine.update = debugwrap("update", engine.execute_update);
+	else
+		engine.insert = engine.execute_update;
+		engine.select = engine.execute_query;
+		engine.delete = engine.execute_update;
+		engine.update = engine.execute_update;
+	end
+end
 function engine:_transaction(func, ...)
 	if not self.conn then
 		local ok, err = self:connect();
@@ -221,7 +246,9 @@ function engine:_create_index(index)
 	if index.unique then
 		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
 	end
-	--print(sql);
+	if self._debug then
+		debugquery("create", sql);
+	end
 	return self:execute(sql);
 end
 function engine:_create_table(table)
@@ -251,6 +278,9 @@ function engine:_create_table(table)
 		sql = sql:gsub("`", "\"");
 	elseif self.params.driver == "MySQL" then
 		sql = sql:gsub(";$", (" CHARACTER SET '%s' COLLATE '%s_bin';"):format(self.charset, self.charset));
+	end
+	if self._debug then
+		debugquery("create", sql);
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
