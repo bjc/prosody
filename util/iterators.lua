@@ -11,7 +11,8 @@
 local it = {};
 
 local t_insert = table.insert;
-local select, unpack, next = select, unpack, next;
+local select, next = select, next;
+local unpack = table.unpack or unpack; --luacheck: ignore 113
 local function pack(...) return { n = select("#", ...), ... }; end
 
 -- Reverse an iterator
