@@ -23,7 +23,7 @@
  * TODO: Decide on fixed size or dynamically allocated buffer
  */
 #if 1
-#include <malloc.h>
+#include <stdlib.h>
 #else
 #define BUFLEN 256
 #endif
