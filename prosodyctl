@@ -233,6 +233,7 @@ local function make_host(hostname)
 		type = "local",
 		events = prosody.events,
 		modules = {},
+		sessions = {},
 		users = require "core.usermanager".new_null_provider(hostname)
 	};
 end
