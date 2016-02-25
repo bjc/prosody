@@ -5,6 +5,8 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+--
+-- luacheck: ignore 213/i
 
 
 local t_concat, t_insert = table.concat, table.insert;
