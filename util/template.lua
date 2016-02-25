@@ -1,4 +1,4 @@
-
+-- luacheck: ignore 213/i
 local stanza_mt = require "util.stanza".stanza_mt;
 local setmetatable = setmetatable;
 local pairs = pairs;
