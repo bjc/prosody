@@ -698,30 +698,43 @@ function cert_commands.config(arg)
 		if use_existing(conf_filename) then
 			return nil, conf_filename;
 		end
+		local distinguished_name;
+		if arg[#arg]:find("^/") then
+			distinguished_name = table.remove(arg);
+		end
 		local conf = openssl.config.new();
 		conf:from_prosody(hosts, config, arg);
-		show_message("Please provide details to include in the certificate config file.");
-		show_message("Leave the field empty to use the default value or '.' to exclude the field.")
-		for i, k in ipairs(openssl._DN_order) do
-			local v = conf.distinguished_name[k];
-			if v then
-				local nv;
-				if k == "commonName" then
-					v = arg[1]
-				elseif k == "emailAddress" then
-					v = "xmpp@" .. arg[1];
-				elseif k == "countryName" then
-					local tld = arg[1]:match"%.([a-z]+)$";
-					if tld and #tld == 2 and tld ~= "uk" then
-						v = tld:upper();
+		if distinguished_name then
+			local dn = {};
+			for k, v in distinguished_name:gmatch("/([^=/]+)=([^/]+)") do
+				table.insert(dn, k);
+				dn[k] = v;
+			end
+			conf.distinguished_name = dn;
+		else
+			show_message("Please provide details to include in the certificate config file.");
+			show_message("Leave the field empty to use the default value or '.' to exclude the field.")
+			for i, k in ipairs(openssl._DN_order) do
+				local v = conf.distinguished_name[k];
+				if v then
+					local nv;
+					if k == "commonName" then
+						v = arg[1]
+					elseif k == "emailAddress" then
+						v = "xmpp@" .. arg[1];
+					elseif k == "countryName" then
+						local tld = arg[1]:match"%.([a-z]+)$";
+						if tld and #tld == 2 and tld ~= "uk" then
+							v = tld:upper();
+						end
 					end
+					nv = show_prompt(("%s (%s):"):format(k, nv or v));
+					nv = (not nv or nv == "") and v or nv;
+					if nv:find"[\192-\252][\128-\191]+" then
+						conf.req.string_mask = "utf8only"
+					end
+					conf.distinguished_name[k] = nv ~= "." and nv or nil;
 				end
-				nv = show_prompt(("%s (%s):"):format(k, nv or v));
-				nv = (not nv or nv == "") and v or nv;
-				if nv:find"[\192-\252][\128-\191]+" then
-					conf.req.string_mask = "utf8only"
-				end
-				conf.distinguished_name[k] = nv ~= "." and nv or nil;
 			end
 		end
 		local conf_file, err = io.open(conf_filename, "w");
