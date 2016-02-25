@@ -152,6 +152,7 @@ local function atomic_store(filename, data)
 		if not ok then break end
 
 		ok, msg = f:close();
+		f = nil; -- no longer valid
 		if not ok then break end
 
 		return os_rename(scratch, filename);
