@@ -67,12 +67,12 @@ end
 local function create_cloner(stanza, chunkname)
 	local lookup = {};
 	local name = create_clone_string(stanza, lookup, "");
-	local f = "local setmetatable,stanza_mt=...;return function(data)";
+	local src = "local setmetatable,stanza_mt=...;return function(data)";
 	for i=1,#lookup do
-		f = f.."local _"..i.."="..lookup[i]..";";
+		src = src.."local _"..i.."="..lookup[i]..";";
 	end
-	f = f.."return "..name..";end";
-	local f,err = loadstring(f, chunkname);
+	src = src.."return "..name..";end";
+	local f,err = loadstring(src, chunkname);
 	if not f then error(err); end
 	return f(setmetatable, stanza_mt);
 end
