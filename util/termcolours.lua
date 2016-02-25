@@ -84,7 +84,7 @@ if windows then
 		end
 	end
 	if not orig_color then
-		function setstyle(style) end
+		function setstyle() end
 	end
 end
 
