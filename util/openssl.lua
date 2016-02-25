@@ -70,8 +70,7 @@ function ssl_config:serialize()
 				end
 			end
 		elseif k == "distinguished_name" then
-			for i=1, #DN_order do
-				local k = DN_order[i]
+			for i, k in ipairs(t[1] and t or DN_order) do
 				local v = t[k];
 				if v then
 					s = s .. ("%s = %s\n"):format(k, v);
