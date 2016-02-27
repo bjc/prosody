@@ -80,6 +80,18 @@ setmetatable(stylemap, { __index = function(_, style)
 	return g .. color(hex2rgb(style));
 end } );
 
+local csscolors = {
+	red = "ff0000"; fuchsia = "ff00ff"; green = "008000"; white = "ffffff";
+	lime = "00ff00"; yellow = "ffff00"; purple = "800080"; blue = "0000ff";
+	aqua = "00ffff"; olive  = "808000"; black  = "000000"; navy = "000080";
+	teal = "008080"; silver = "c0c0c0"; maroon = "800000"; gray = "808080";
+}
+for color, rgb in pairs(csscolors) do
+	stylemap[color] = stylemap[color] or stylemap[rgb];
+	color, rgb = color .. " background", rgb .. " background"
+	stylemap[color] = stylemap[color] or stylemap[rgb];
+end
+
 local function getstyle(...)
 	local styles, result = { ... }, {};
 	for i, style in ipairs(styles) do
