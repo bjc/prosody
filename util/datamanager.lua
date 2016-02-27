@@ -144,24 +144,26 @@ end
 local function atomic_store(filename, data)
 	local scratch = filename.."~";
 	local f, ok, msg;
-	repeat
-		f, msg = io_open(scratch, "w");
-		if not f then break end
 
-		ok, msg = f:write(data);
-		if not ok then break end
+	f, msg = io_open(scratch, "w");
+	if not f then
+		return nil, msg;
+	end
 
-		ok, msg = f:close();
-		f = nil; -- no longer valid
-		if not ok then break end
+	ok, msg = f:write(data);
+	if not ok then
+		f:close();
+		os_remove(scratch);
+		return nil, msg;
+	end
 
-		return os_rename(scratch, filename);
-	until false;
+	ok, msg = f:close();
+	if not ok then
+		os_remove(scratch);
+		return nil, msg;
+	end
 
-	-- Cleanup
-	if f then f:close(); end
-	os_remove(scratch);
-	return nil, msg;
+	return os_rename(scratch, filename);
 end
 
 if prosody and prosody.platform ~= "posix" then
