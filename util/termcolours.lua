@@ -14,6 +14,7 @@ local char, format = string.char, string.format;
 local tonumber = tonumber;
 local ipairs = ipairs;
 local io_write = io.write;
+local m_floor = math.floor;
 
 local windows;
 if os.getenv("WINDIR") then
@@ -54,6 +55,30 @@ local function getstring(style, text)
 		return text;
 	end
 end
+
+local function gray(n)
+	return m_floor(n*3/32)+0xe8;
+end
+local function color(r,g,b)
+	if r == g and g == b then
+		return gray(r);
+	end
+	r = m_floor(r*3/128);
+	g = m_floor(g*3/128);
+	b = m_floor(b*3/128);
+	return 0x10 + ( r * 36 ) + ( g * 6 ) + ( b );
+end
+local function hex2rgb(hex)
+	local r = tonumber(hex:sub(1,2),16);
+	local g = tonumber(hex:sub(3,4),16);
+	local b = tonumber(hex:sub(5,6),16);
+	return r,g,b;
+end
+
+setmetatable(stylemap, { __index = function(_, style)
+	local g = style:sub(7) == " background" and "48;5;" or "38;5;";
+	return g .. color(hex2rgb(style));
+end } );
 
 local function getstyle(...)
 	local styles, result = { ... }, {};
