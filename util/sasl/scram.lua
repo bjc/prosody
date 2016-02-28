@@ -150,9 +150,9 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			-- retreive credentials
 			local stored_key, server_key, salt, iteration_count;
 			if self.profile.plain then
-				local password, state = self.profile.plain(self, username, self.realm)
-				if state == nil then return "failure", "not-authorized"
-				elseif state == false then return "failure", "account-disabled" end
+				local password, status = self.profile.plain(self, username, self.realm)
+				if status == nil then return "failure", "not-authorized"
+				elseif status == false then return "failure", "account-disabled" end
 
 				password = saslprep(password);
 				if not password then
@@ -170,8 +170,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 					return "failure", "temporary-auth-failure";
 				end
 			elseif self.profile[profile_name] then
-				local state;
-				stored_key, server_key, iteration_count, salt, state = self.profile[profile_name](self, username, self.realm);
+				local status;
+				stored_key, server_key, iteration_count, salt, status = self.profile[profile_name](self, username, self.realm);
 				if state == nil then return "failure", "not-authorized"
 				elseif state == false then return "failure", "account-disabled" end
 			end
