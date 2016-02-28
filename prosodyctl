@@ -1220,10 +1220,10 @@ function commands.check(arg)
 					print("  Error: "..err);
 					cert_ok = false
 				elseif not ssl_config.certificate then
-					print("  No 'certificate' set in ssl option for "..host)
+					print("  No 'certificate' found for "..host)
 					cert_ok = false
 				elseif not ssl_config.key then
-					print("  No 'key' set in ssl option for "..host)
+					print("  No 'key' found for for "..host)
 					cert_ok = false
 				else
 					local key, err = io.open(ssl_config.key); -- Permissions check only
