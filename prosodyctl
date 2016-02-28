@@ -1197,6 +1197,7 @@ function commands.check(arg)
 		local cert_ok;
 		print"Checking certificates..."
 		local x509_verify_identity = require"util.x509".verify_identity;
+		local create_context = require "core.certmanager".create_context;
 		local ssl = dependencies.softreq"ssl";
 		-- local datetime_parse = require"util.datetime".parse_x509;
 		local load_cert = ssl and ssl.loadcertificate;
@@ -1211,19 +1212,18 @@ function commands.check(arg)
 			for host in enabled_hosts() do
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
-				local ssl_config = config.rawget(host, "ssl");
-				if not ssl_config then
-					local base_host = host:match("%.(.*)");
-					ssl_config = config.get(base_host, "ssl");
-				end
-				if not ssl_config then
-					print("  No 'ssl' option defined for "..host)
+				local host_ssl_config = config.rawget(host, "ssl")
+					or config.rawget(host:match("%.(.*)"), "ssl");
+				local global_ssl_config = config.rawget("*", "ssl");
+				local ok, err, ssl_config = create_context(host, "server", host_ssl_config, global_ssl_config);
+				if not ok then
+					print("  Error: "..err);
 					cert_ok = false
 				elseif not ssl_config.certificate then
-					print("  No 'certificate' set in ssl option for "..host)
+					print("  No 'certificate' found for "..host)
 					cert_ok = false
 				elseif not ssl_config.key then
-					print("  No 'key' set in ssl option for "..host)
+					print("  No 'key' found for for "..host)
 					cert_ok = false
 				else
 					local key, err = io.open(ssl_config.key); -- Permissions check only
@@ -1243,6 +1243,13 @@ function commands.check(arg)
 						if not cert:validat(os.time()) then
 							print("    Certificate has expired.")
 							cert_ok = false
+						elseif not cert:validat(os.time() + 86400) then
+							print("    Certificate expires within one day.")
+							cert_ok = false
+						elseif not cert:validat(os.time() + 86400*7) then
+							print("    Certificate expires within one week.")
+						elseif not cert:validat(os.time() + 86400*13) then
+							print("    Certificate expires within one month.")
 						end
 						if config.get(host, "component_module") == nil
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
