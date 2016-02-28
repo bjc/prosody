@@ -1248,7 +1248,7 @@ function commands.check(arg)
 							cert_ok = false
 						elseif not cert:validat(os.time() + 86400*7) then
 							print("    Certificate expires within one week.")
-						elseif not cert:validat(os.time() + 86400*13) then
+						elseif not cert:validat(os.time() + 86400*31) then
 							print("    Certificate expires within one month.")
 						end
 						if config.get(host, "component_module") == nil
