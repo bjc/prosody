@@ -172,8 +172,8 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			elseif self.profile[profile_name] then
 				local status;
 				stored_key, server_key, iteration_count, salt, status = self.profile[profile_name](self, username, self.realm);
-				if state == nil then return "failure", "not-authorized"
-				elseif state == false then return "failure", "account-disabled" end
+				if status == nil then return "failure", "not-authorized"
+				elseif status == false then return "failure", "account-disabled" end
 			end
 
 			local nonce = clientnonce .. generate_uuid();
