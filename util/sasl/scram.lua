@@ -163,7 +163,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				salt = generate_uuid();
 				iteration_count = default_i;
 
-				local succ = false;
+				local succ;
 				succ, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, iteration_count);
 				if not succ then
 					log("error", "Generating authentication database failed. Reason: %s", stored_key);
