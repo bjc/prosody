@@ -91,10 +91,10 @@ local csscolors = {
 	aqua = "00ffff"; olive  = "808000"; black  = "000000"; navy = "000080";
 	teal = "008080"; silver = "c0c0c0"; maroon = "800000"; gray = "808080";
 }
-for color, rgb in pairs(csscolors) do
-	stylemap[color] = stylemap[color] or stylemap[rgb];
-	color, rgb = color .. " background", rgb .. " background"
-	stylemap[color] = stylemap[color] or stylemap[rgb];
+for colorname, rgb in pairs(csscolors) do
+	stylemap[colorname] = stylemap[colorname] or stylemap[rgb];
+	colorname, rgb = colorname .. " background", rgb .. " background"
+	stylemap[colorname] = stylemap[colorname] or stylemap[rgb];
 end
 
 local function getstyle(...)
