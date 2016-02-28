@@ -15,6 +15,9 @@ local tonumber = tonumber;
 local ipairs = ipairs;
 local io_write = io.write;
 local m_floor = math.floor;
+local type = type;
+local setmetatable = setmetatable;
+local pairs = pairs;
 
 local windows;
 if os.getenv("WINDIR") then
@@ -76,8 +79,10 @@ local function hex2rgb(hex)
 end
 
 setmetatable(stylemap, { __index = function(_, style)
-	local g = style:sub(7) == " background" and "48;5;" or "38;5;";
-	return g .. color(hex2rgb(style));
+	if type(style) == "string" and style:find("%x%x%x%x%x%x") == 1 then
+		local g = style:sub(7) == " background" and "48;5;" or "38;5;";
+		return g .. color(hex2rgb(style));
+	end
 end } );
 
 local csscolors = {
