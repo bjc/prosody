@@ -1243,6 +1243,13 @@ function commands.check(arg)
 						if not cert:validat(os.time()) then
 							print("    Certificate has expired.")
 							cert_ok = false
+						elseif not cert:validat(os.time() + 86400) then
+							print("    Certificate expires within one day.")
+							cert_ok = false
+						elseif not cert:validat(os.time() + 86400*7) then
+							print("    Certificate expires within one week.")
+						elseif not cert:validat(os.time() + 86400*13) then
+							print("    Certificate expires within one month.")
 						end
 						if config.get(host, "component_module") == nil
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
