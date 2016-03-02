@@ -238,8 +238,8 @@ function interface_mt:_destroy()  -- close this interface + events and call last
 end
 
 function interface_mt:_lock(nointerface, noreading, nowriting)  -- lock or unlock this interface or events
-		self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
-		return nointerface, noreading, nowriting
+	self.nointerface, self.noreading, self.nowriting = nointerface, noreading, nowriting
+	return nointerface, noreading, nowriting
 end
 
 --TODO: Deprecate
@@ -257,8 +257,9 @@ end
 
 function interface_mt:resume()
 	self:_lock(self.nointerface, false, self.nowriting);
-	if not self.eventread then
+		if self.readcallback and not self.eventread then
 		self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
+			return true;
 	end
 end
 
@@ -740,7 +741,7 @@ end
 
 local function newevent( ... )
 	return addevent( base, ... )
-	end
+end
 
 local function closeallservers ( arg )
 	for item in pairs( interfacelist ) do
@@ -752,9 +753,9 @@ end
 
 local function setquitting(yes)
 	if yes then
-		 -- Quit now
-		 closeallservers();
-		 base:loopexit();
+		-- Quit now
+		closeallservers();
+		base:loopexit();
 	end
 end
 
