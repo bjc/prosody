@@ -289,7 +289,7 @@ do
 
 	function interface_mt:resume()
 		self:_lock(self.nointerface, false, self.nowriting);
-		if not self.eventread then
+		if self.readcallback and not self.eventread then
 			self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
 		end
 	end
