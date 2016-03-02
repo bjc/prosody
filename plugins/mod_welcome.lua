@@ -7,7 +7,7 @@
 --
 
 local host = module:get_host();
-local welcome_text = module:get_option_string("welcome_message") or "Hello $username, welcome to the $host IM server!";
+local welcome_text = module:get_option_string("welcome_message", "Hello $username, welcome to the $host IM server!");
 
 local st = require "util.stanza";
 
