@@ -75,6 +75,9 @@ function sanitize_path(path)
 			out[c] = component;
 		end
 	end
+	if path:sub(-1,-1) == "/" then
+		out[c+1] = "";
+	end
 	return "/"..table.concat(out, "/");
 end
 
