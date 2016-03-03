@@ -56,6 +56,7 @@ end
 
 local urldecode = require "util.http".urldecode;
 function sanitize_path(path)
+	if not path then return end
 	local out = {};
 
 	local c = 0;
@@ -88,10 +89,11 @@ function serve(opts)
 	local directory_index = opts.directory_index;
 	local function serve_file(event, path)
 		local request, response = event.request, event.response;
-		path = sanitize_path(path);
-		if not path then
+		local sanitized_path = sanitize_path(path);
+		if path and not sanitized_path then
 			return 400;
 		end
+		path = sanitized_path;
 		local orig_path = sanitize_path(request.path);
 		local full_path = base_path .. (path and "/"..path or ""):gsub("/", path_sep);
 		local attr = stat(full_path:match("^.*[^\\/]")); -- Strip trailing path separator because Windows
