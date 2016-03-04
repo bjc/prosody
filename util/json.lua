@@ -145,7 +145,9 @@ end
 
 function simplesave(o, buffer)
 	local t = type(o);
-	if t == "number" then
+	if o == null then
+		t_insert(buffer, "null");
+	elseif t == "number" then
 		t_insert(buffer, tostring(o));
 	elseif t == "string" then
 		stringsave(o, buffer);
