@@ -18,6 +18,7 @@ function run_all_tests()
 	dotest "core.s2smanager"
 	dotest "core.configmanager"
 	dotest "util.ip"
+	dotest "util.json"
 	dotest "util.stanza"
 	dotest "util.sasl.scram"
 	dotest "util.cache"
