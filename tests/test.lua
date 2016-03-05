@@ -25,6 +25,8 @@ function run_all_tests()
 	dotest "util.throttle"
 	dotest "util.uuid"
 	dotest "util.random"
+	dotest "util.xml"
+	dotest "util.xmppstream"
 
 	dosingletest("test_sasl.lua", "latin1toutf8");
 	dosingletest("test_utf8.lua", "valid");
