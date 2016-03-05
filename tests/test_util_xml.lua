@@ -9,4 +9,5 @@ function parse(parse)
 ]]
 	local stanza = parse(x);
 	assert_equal(stanza.tags[2].attr.xmlns, "b");
+	assert_equal(stanza.tags[2].namespaces["a"], "b");
 end
