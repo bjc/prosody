@@ -123,14 +123,12 @@ local map_shim_mt = {
 			if current == nil then
 				if err then
 					return nil, err;
-				else
-					current = keydatas;
 				end
-			else
-				for k,v in pairs(keydatas) do
-					if v == self.remove then v = nil; end
-					current[k] = v;
-				end
+				current = {};
+			end
+			for k,v in pairs(keydatas) do
+				if v == self.remove then v = nil; end
+				current[k] = v;
 			end
 			return self.keyval_store:set(username, current);
 		end;
