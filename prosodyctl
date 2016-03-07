@@ -594,7 +594,7 @@ function commands.about(arg)
 		module_versions["libevent"] = luaevent.core.libevent_version();
 	end
 	local sorted_keys = array.collect(keys(module_versions)):sort();
-	for _, name in ipairs(array.collect(keys(module_versions)):sort()) do
+	for _, name in ipairs(sorted_keys) do
 		print(name..":"..string.rep(" ", longest_name-#name), module_versions[name]);
 	end
 	print("");
