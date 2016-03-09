@@ -1080,7 +1080,7 @@ function commands.check(arg)
 				else
 					if c2s_srv_required then
 						print("    No _xmpp-client SRV record found for "..host..", but it looks like you need one.");
-						all_targst_ok = false;
+						all_targets_ok = false;
 					else
 						target_hosts:add(host);
 					end
