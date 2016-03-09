@@ -40,11 +40,10 @@ local _ENV = nil;
 local stanza_mt = { __type = "stanza" };
 stanza_mt.__index = stanza_mt;
 
-local function stanza(name, attr)
+local function new_stanza(name, attr)
 	local stanza = { name = name, attr = attr or {}, tags = {} };
 	return setmetatable(stanza, stanza_mt);
 end
-local stanza = stanza;
 
 function stanza_mt:query(xmlns)
 	return self:tag("query", { xmlns = xmlns });
@@ -55,7 +54,7 @@ function stanza_mt:body(text, attr)
 end
 
 function stanza_mt:tag(name, attrs)
-	local s = stanza(name, attrs);
+	local s = new_stanza(name, attrs);
 	local last_add = self.last_add;
 	if not last_add then last_add = {}; self.last_add = last_add; end
 	(last_add[#last_add] or self):add_direct_child(s);
@@ -202,7 +201,7 @@ end
 local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
 local function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
 
-local function _dostring(t, buf, self, xml_escape, parentns)
+local function _dostring(t, buf, self, _xml_escape, parentns)
 	local nsid = 0;
 	local name = t.name
 	t_insert(buf, "<"..name);
@@ -210,9 +209,9 @@ local function _dostring(t, buf, self, xml_escape, parentns)
 		if s_find(k, "\1", 1, true) then
 			local ns, attrk = s_match(k, "^([^\1]*)\1?(.*)$");
 			nsid = nsid + 1;
-			t_insert(buf, " xmlns:ns"..nsid.."='"..xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='"..xml_escape(v).."'");
+			t_insert(buf, " xmlns:ns"..nsid.."='".._xml_escape(ns).."' ".."ns"..nsid..":"..attrk.."='".._xml_escape(v).."'");
 		elseif not(k == "xmlns" and v == parentns) then
-			t_insert(buf, " "..k.."='"..xml_escape(v).."'");
+			t_insert(buf, " "..k.."='".._xml_escape(v).."'");
 		end
 	end
 	local len = #t;
@@ -223,9 +222,9 @@ local function _dostring(t, buf, self, xml_escape, parentns)
 		for n=1,len do
 			local child = t[n];
 			if child.name then
-				self(child, buf, self, xml_escape, t.attr.xmlns);
+				self(child, buf, self, _xml_escape, t.attr.xmlns);
 			else
-				t_insert(buf, xml_escape(child));
+				t_insert(buf, _xml_escape(child));
 			end
 		end
 		t_insert(buf, "</"..name..">");
@@ -252,13 +251,13 @@ function stanza_mt.get_text(t)
 end
 
 function stanza_mt.get_error(stanza)
-	local type, condition, text;
+	local error_type, condition, text;
 
 	local error_tag = stanza:get_child("error");
 	if not error_tag then
 		return nil, nil, nil;
 	end
-	type = error_tag.attr.type;
+	error_type = error_tag.attr.type;
 
 	for _, child in ipairs(error_tag.tags) do
 		if child.attr.xmlns == xmlns_stanzas then
@@ -272,7 +271,7 @@ function stanza_mt.get_error(stanza)
 			end
 		end
 	end
-	return type, condition or "undefined-condition", text;
+	return error_type, condition or "undefined-condition", text;
 end
 
 local id = 0;
@@ -347,32 +346,32 @@ end
 
 local function message(attr, body)
 	if not body then
-		return stanza("message", attr);
+		return new_stanza("message", attr);
 	else
-		return stanza("message", attr):tag("body"):text(body):up();
+		return new_stanza("message", attr):tag("body"):text(body):up();
 	end
 end
 local function iq(attr)
 	if attr and not attr.id then attr.id = new_id(); end
-	return stanza("iq", attr or { id = new_id() });
+	return new_stanza("iq", attr or { id = new_id() });
 end
 
 local function reply(orig)
-	return stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
+	return new_stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
 end
 
 local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };
-local function error_reply(orig, type, condition, message)
+local function error_reply(orig, error_type, condition, error_message)
 	local t = reply(orig);
 	t.attr.type = "error";
-	t:tag("error", {type = type}) --COMPAT: Some day xmlns:stanzas goes here
+	t:tag("error", {type = error_type}) --COMPAT: Some day xmlns:stanzas goes here
 	:tag(condition, xmpp_stanzas_attr):up();
-	if (message) then t:tag("text", xmpp_stanzas_attr):text(message):up(); end
+	if error_message then t:tag("text", xmpp_stanzas_attr):text(error_message):up(); end
 	return t; -- stanza ready for adding app-specific errors
 end
 
 local function presence(attr)
-	return stanza("presence", attr);
+	return new_stanza("presence", attr);
 end
 
 if do_pretty_printing then
@@ -387,7 +386,7 @@ if do_pretty_printing then
 	local tag_format = top_tag_format.."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
 	function stanza_mt.pretty_print(t)
 		local children_text = "";
-		for n, child in ipairs(t) do
+		for _, child in ipairs(t) do
 			if type(child) == "string" then
 				children_text = children_text .. xml_escape(child);
 			else
@@ -417,7 +416,7 @@ end
 
 return {
 	stanza_mt = stanza_mt;
-	stanza = stanza;
+	stanza = new_stanza;
 	new_id = new_id;
 	preserialize = preserialize;
 	deserialize = deserialize;
