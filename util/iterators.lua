@@ -93,7 +93,7 @@ function it.head(n, f, s, var)
 		end
 		c = c + 1;
 		return f(s, var);
-	end, s;
+	end, s, var;
 end
 
 -- Skip the first n items an iterator returns
