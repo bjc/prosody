@@ -12,7 +12,6 @@ local s_char = string.char;
 local tostring, tonumber = tostring, tonumber;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
-local error = error;
 local getmetatable, setmetatable = getmetatable, setmetatable;
 local print = print;
 
@@ -20,10 +19,10 @@ local has_array, array = pcall(require, "util.array");
 local array_mt = has_array and getmetatable(array()) or {};
 
 --module("json")
-local json = {};
+local module = {};
 
 local null = setmetatable({}, { __tostring = function() return "null"; end; });
-json.null = null;
+module.null = null;
 
 local escapes = {
 	["\""] = "\\\"", ["\\"] = "\\\\", ["\b"] = "\\b",
@@ -70,7 +69,7 @@ end
 function arraysave(o, buffer)
 	t_insert(buffer, "[");
 	if next(o) then
-		for i,v in ipairs(o) do
+		for _, v in ipairs(o) do
 			simplesave(v, buffer);
 			t_insert(buffer, ",");
 		end
@@ -165,17 +164,17 @@ function simplesave(o, buffer)
 	end
 end
 
-function json.encode(obj)
+function module.encode(obj)
 	local t = {};
 	simplesave(obj, t);
 	return t_concat(t);
 end
-function json.encode_ordered(obj)
+function module.encode_ordered(obj)
 	local t = { ordered = true };
 	simplesave(obj, t);
 	return t_concat(t);
 end
-function json.encode_array(obj)
+function module.encode_array(obj)
 	local t = {};
 	arraysave(obj, t);
 	return t_concat(t);
@@ -191,7 +190,7 @@ local function _fixobject(obj)
 	local __array = obj.__array;
 	if __array then
 		obj.__array = nil;
-		for i,v in ipairs(__array) do
+		for _, v in ipairs(__array) do
 			t_insert(obj, v);
 		end
 	end
@@ -199,7 +198,7 @@ local function _fixobject(obj)
 	if __hash then
 		obj.__hash = nil;
 		local k;
-		for i,v in ipairs(__hash) do
+		for _, v in ipairs(__hash) do
 			if k ~= nil then
 				obj[k] = v; k = nil;
 			else
@@ -344,7 +343,7 @@ local first_escape = {
 	["\\u" ] = "\\u";
 };
 
-function json.decode(json)
+function module.decode(json)
 	json = json:gsub("\\.", first_escape) -- get rid of all escapes except \uXXXX, making string parsing much simpler
 		--:gsub("[\r\n]", "\t"); -- \r\n\t are equivalent, we care about none of them, and none of them can be in strings
 
@@ -357,10 +356,10 @@ function json.decode(json)
 	return val;
 end
 
-function json.test(object)
-	local encoded = json.encode(object);
-	local decoded = json.decode(encoded);
-	local recoded = json.encode(decoded);
+function module.test(object)
+	local encoded = module.encode(object);
+	local decoded = module.decode(encoded);
+	local recoded = module.encode(decoded);
 	if encoded ~= recoded then
 		print("FAILED");
 		print("encoded:", encoded);
@@ -371,4 +370,4 @@ function json.test(object)
 	return encoded == recoded;
 end
 
-return json;
+return module;

@@ -29,10 +29,10 @@ function it.reverse(f, s, var)
 
 	-- Then return our reverse one
 	local i,max = 0, #results;
-	return function (results)
+	return function (_results)
 			if i<max then
 				i = i + 1;
-				return unpack(results[i]);
+				return unpack(_results[i]);
 			end
 		end, results;
 end
@@ -48,8 +48,8 @@ end
 -- Iterate only over values in a table
 function it.values(t)
 	local key, val;
-	return function (t)
-		key, val = next(t, key);
+	return function (_t)
+		key, val = next(_t, key);
 		return val;
 	end, t;
 end
@@ -87,18 +87,18 @@ end
 -- Return the first n items an iterator returns
 function it.head(n, f, s, var)
 	local c = 0;
-	return function (s, var)
+	return function (_s, _var)
 		if c >= n then
 			return nil;
 		end
 		c = c + 1;
-		return f(s, var);
-	end, s;
+		return f(_s, _var);
+	end, s, var;
 end
 
 -- Skip the first n items an iterator returns
 function it.skip(n, f, s, var)
-	for i=1,n do
+	for _ = 1, n do
 		var = f(s, var);
 	end
 	return f, s, var;
@@ -132,9 +132,9 @@ function it.filter(filter, f, s, var)
 		local filter_value = filter;
 		function filter(x) return x ~= filter_value; end
 	end
-	return function (s, var)
+	return function (_s, _var)
 		local ret;
-		repeat ret = pack(f(s, var));
+		repeat ret = pack(f(_s, _var));
 			var = ret[1];
 		until var == nil or filter(unpack(ret, 1, ret.n));
 		return unpack(ret, 1, ret.n);
@@ -154,7 +154,7 @@ end
 
 -- Convert the values returned by an iterator to an array
 function it.to_array(f, s, var)
-	local t, var = {};
+	local t = {};
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
