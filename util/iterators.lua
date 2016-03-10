@@ -154,7 +154,7 @@ end
 
 -- Convert the values returned by an iterator to an array
 function it.to_array(f, s, var)
-	local t, var = {};
+	local t = {};
 	while true do
 		var = f(s, var);
 	        if var == nil then break; end
