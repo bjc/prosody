@@ -12,7 +12,6 @@ local s_char = string.char;
 local tostring, tonumber = tostring, tonumber;
 local pairs, ipairs = pairs, ipairs;
 local next = next;
-local error = error;
 local getmetatable, setmetatable = getmetatable, setmetatable;
 local print = print;
 
