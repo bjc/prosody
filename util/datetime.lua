@@ -12,7 +12,6 @@
 local os_date = os.date;
 local os_time = os.time;
 local os_difftime = os.difftime;
-local error = error;
 local tonumber = tonumber;
 
 local _ENV = nil;

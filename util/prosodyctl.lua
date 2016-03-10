@@ -22,7 +22,7 @@ local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
 local io, os = io, os;
 local print = print;
-local tostring, tonumber = tostring, tonumber;
+local tonumber = tonumber;
 
 local CFG_SOURCEDIR = _G.CFG_SOURCEDIR;
 
@@ -149,7 +149,7 @@ local function adduser(params)
 end
 
 local function user_exists(params)
-	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
+	local user, host = nodeprep(params.user), nameprep(params.host);
 
 	storagemanager.initialize_host(host);
 	local provider = prosody.hosts[host].users;
