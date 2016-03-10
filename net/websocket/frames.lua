@@ -7,7 +7,6 @@
 --
 
 local softreq = require "util.dependencies".softreq;
-local log = require "util.logger".init "websocket.frames";
 local random_bytes = require "util.random".bytes;
 
 local bit = assert(softreq"bit" or softreq"bit32",
