@@ -101,7 +101,7 @@ local function check_dependencies()
 
 	local encodings, err = softreq "util.encodings"
 	if not encodings then
-		if err:match("not found") then
+		if err:match("module '[^']*' not found") then
 			missingdep("util.encodings", { ["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
 		 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
 		 			});
@@ -118,7 +118,7 @@ local function check_dependencies()
 
 	local hashes, err = softreq "util.hashes"
 	if not hashes then
-		if err:match("not found") then
+		if err:match("module '[^']*' not found") then
 			missingdep("util.hashes", { ["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
 		 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
 		 			});
