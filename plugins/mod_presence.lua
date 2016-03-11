@@ -51,7 +51,7 @@ local function recalc_resource_map(user)
 	end
 end
 
-local ignore_presence_priority = module:get_option("ignore_presence_priority");
+local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
 
 function handle_normal_presence(origin, stanza)
 	if ignore_presence_priority then
