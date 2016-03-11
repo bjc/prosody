@@ -19,9 +19,10 @@ local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local jid_join = require "util.jid".join;
 local st = require "util.stanza";
-local log = require "util.logger".init("mod_muc");
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
+
+local log = module._log;
 
 local occupant_lib = module:require "muc/occupant"
 local muc_util = module:require "muc/util";
