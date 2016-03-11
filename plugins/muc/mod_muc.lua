@@ -13,8 +13,7 @@ if module:get_host_type() ~= "component" then
 end
 
 local muc_host = module:get_host();
-local muc_name = module:get_option("name");
-if type(muc_name) ~= "string" then muc_name = "Prosody Chatrooms"; end
+local muc_name = module:get_option_string("name", "Prosody Chatrooms");
 local restrict_room_creation = module:get_option("restrict_room_creation");
 if restrict_room_creation then
 	if restrict_room_creation == true then
