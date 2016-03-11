@@ -11,7 +11,7 @@ local host = module:get_host();
 local jid_prep = require "util.jid".prep;
 
 local registration_watchers = module:get_option_set("registration_watchers", module:get_option("admins", {})) / jid_prep;
-local registration_notification = module:get_option("registration_notification", "User $username just registered on $host from $ip");
+local registration_notification = module:get_option_string("registration_notification", "User $username just registered on $host from $ip");
 
 local st = require "util.stanza";
 
