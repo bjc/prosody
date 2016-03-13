@@ -134,11 +134,11 @@ map_store.remove = {};
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
 		if type(key) == "string" and key ~= "" then
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, key) do
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, key) do
 				return deserialize(row[1], row[2]);
 			end
 		else
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
 				local data = deserialize(row[1], row[2]);
 				return data and data[key] or nil;
 			end
@@ -163,7 +163,7 @@ function map_store:set_keys(username, keydatas)
 				end
 			else
 				local extradata = {};
-				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
 					extradata = deserialize(row[1], row[2]);
 					break;
 				end
