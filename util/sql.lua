@@ -124,6 +124,14 @@ end
 function engine:onconnect()
 	-- Override from create_engine()
 end
+
+function engine:prepquery(sql)
+	if self.params.driver == "PostgreSQL" then
+		sql = sql:gsub("`", "\"");
+	end
+	return sql;
+end
+
 function engine:execute(sql, ...)
 	local success, err = self:connect();
 	if not success then return success, err; end
@@ -153,17 +161,13 @@ local function debugquery(where, sql, ...)
 end
 
 function engine:execute_query(sql, ...)
-	if self.params.driver == "PostgreSQL" then
-		sql = sql:gsub("`", "\"");
-	end
+	sql = self:prepquery(sql);
 	local stmt = assert(self.conn:prepare(sql));
 	assert(stmt:execute(...));
 	return stmt:rows();
 end
 function engine:execute_update(sql, ...)
-	if self.params.driver == "PostgreSQL" then
-		sql = sql:gsub("`", "\"");
-	end
+	sql = self:prepquery(sql);
 	local prepared = self.prepared;
 	local stmt = prepared[sql];
 	if not stmt then
