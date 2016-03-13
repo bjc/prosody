@@ -299,19 +299,21 @@ function engine:set_encoding() -- to UTF-8
 	local driver = self.params.driver;
 	if driver == "SQLite3" then
 		return self:transaction(function()
-			if self:select"PRAGMA encoding;"()[1] == "UTF-8" then
-				self.charset = "utf8";
+			for encoding in self:select"PRAGMA encoding;" do
+				if encoding[1] == "UTF-8" then
+					self.charset = "utf8";
+				end
 			end
 		end);
 	end
 	local set_names_query = "SET NAMES '%s';"
 	local charset = "utf8";
 	if driver == "MySQL" then
-		local ok, charsets = self:transaction(function()
-			return self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;";
+		self:transaction(function()
+			for row in self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;" do
+				charset = row and row[1] or charset;
+			end
 		end);
-		local row = ok and charsets();
-		charset = row and row[1] or charset;
 		set_names_query = set_names_query:gsub(";$", (" COLLATE '%s';"):format(charset.."_bin"));
 	end
 	self.charset = charset;
@@ -325,11 +327,15 @@ function engine:set_encoding() -- to UTF-8
 		local ok, actual_charset = self:transaction(function ()
 			return self:select"SHOW SESSION VARIABLES LIKE 'character_set_client'";
 		end);
+		local charset_ok;
 		for row in actual_charset do
 			if row[2] ~= charset then
 				log("error", "MySQL %s is actually %q (expected %q)", row[1], row[2], charset);
-				return false, "Failed to set connection encoding";
+				charset_ok = false;
 			end
+		end
+		if not charset_ok then
+			return false, "Failed to set connection encoding";
 		end
 	end
 
