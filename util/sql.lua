@@ -25,8 +25,8 @@ local function is_column(x) return getmetatable(x)==column_mt; end
 local function is_index(x) return getmetatable(x)==index_mt; end
 local function is_table(x) return getmetatable(x)==table_mt; end
 local function is_query(x) return getmetatable(x)==query_mt; end
-local function Integer(n) return "Integer()" end
-local function String(n) return "String()" end
+local function Integer() return "Integer()" end
+local function String() return "String()" end
 
 local function Column(definition)
 	return setmetatable(definition, column_mt);
