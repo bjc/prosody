@@ -10,7 +10,7 @@ local log = module._log;
 
 local require = require;
 local pairs = pairs;
-local t_concat, t_insert = table.concat, table.insert;
+local t_concat = table.concat;
 local s_find = string.find;
 local tonumber = tonumber;
 
@@ -27,29 +27,7 @@ local NULL = {};
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
 
-local function select_top_resources(user)
-	local priority = 0;
-	local recipients = {};
-	for _, session in pairs(user.sessions) do -- find resource with greatest priority
-		if session.presence then
-			-- TODO check active privacy list for session
-			local p = session.priority;
-			if p > priority then
-				priority = p;
-				recipients = {session};
-			elseif p == priority then
-				t_insert(recipients, session);
-			end
-		end
-	end
-	return recipients;
-end
-local function recalc_resource_map(user)
-	if user then
-		user.top_resources = select_top_resources(user);
-		if #user.top_resources == 0 then user.top_resources = nil; end
-	end
-end
+local recalc_resource_map = require "util.presencepriority".recalc_resource_map;
 
 local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
 
