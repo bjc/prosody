@@ -363,7 +363,7 @@ function stream_callbacks.streamopened(session, attr)
 	elseif session.direction == "outgoing" then
 		session.notopen = nil;
 		if not attr.id then
-			log("error", "Stream response did not give us a stream id!");
+			log("error", "Stream response from %s did not give us a stream id!", session.to_host);
 			session:close({ condition = "undefined-condition", text = "Missing stream ID" });
 			return;
 		end
