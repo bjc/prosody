@@ -27,7 +27,7 @@ local NULL = {};
 local rostermanager = require "core.rostermanager";
 local sessionmanager = require "core.sessionmanager";
 
-local recalc_resource_map = require "util.presencepriority".recalc_resource_map;
+local recalc_resource_map = require "util.presence".recalc_resource_map;
 
 local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
 
