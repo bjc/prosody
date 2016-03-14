@@ -133,15 +133,17 @@ map_store.__index = map_store;
 map_store.remove = {};
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
+		local data;
 		if type(key) == "string" and key ~= "" then
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, key) do
-				return deserialize(row[1], row[2]);
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, key) do
+				data = deserialize(row[1], row[2]);
 			end
+			return data;
 		else
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
-				local data = deserialize(row[1], row[2]);
-				return data and data[key] or nil;
+			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
+				data = deserialize(row[1], row[2]);
 			end
+			return data and data[key] or nil;
 		end
 	end);
 	if not ok then return nil, result; end
@@ -163,9 +165,8 @@ function map_store:set_keys(username, keydatas)
 				end
 			else
 				local extradata = {};
-				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, username or "", self.store, "") do
+				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
 					extradata = deserialize(row[1], row[2]);
-					break;
 				end
 				engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
 					host, username or "", self.store, "");
@@ -260,8 +261,9 @@ function archive_store:find(username, query)
 		if query.total then
 			local stats = engine:select("SELECT COUNT(*) FROM `prosodyarchive` WHERE " .. t_concat(where, " AND "), unpack(args));
 			if stats then
-				local _total = stats()
-				total = _total and _total[1];
+				for row in stats do
+					total = row[1];
+				end
 			end
 			if query.limit == 0 then -- Skip the real query
 				return noop, total;
