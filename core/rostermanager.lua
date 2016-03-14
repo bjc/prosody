@@ -75,7 +75,6 @@ local function roster_push(username, host, jid)
 		-- stanza ready
 		for _, session in pairs(hosts[host].sessions[username].sessions) do
 			if session.interested then
-				-- FIXME do we need to set stanza.attr.to?
 				session.send(stanza);
 			end
 		end
