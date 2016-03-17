@@ -275,7 +275,7 @@ function handle_request(event)
 			attr["xmlns:stream"] = attr["xmlns:stream"] or xmlns_streams;
 		end
 		return stanza;
-	end);
+	end, -1000);
 
 	add_filter(session, "bytes/out", function(data)
 		return build_frame({ FIN = true, opcode = 0x01, data = tostring(data)});
