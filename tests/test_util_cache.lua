@@ -1,21 +1,44 @@
-
 function new(new)
 	local c = new(5);
+
+	local function expect_kv(key, value, actual_key, actual_value)
+		assert_equal(key, actual_key, "key incorrect");
+		assert_equal(value, actual_value, "value incorrect");
+	end
+
+	expect_kv(nil, nil, c:head());
+	expect_kv(nil, nil, c:tail());
 
 	assert_equal(c:count(), 0);
 	
 	c:set("one", 1)
 	assert_equal(c:count(), 1);
+	expect_kv("one", 1, c:head());
+	expect_kv("one", 1, c:tail());
+
 	c:set("two", 2)
+	expect_kv("two", 2, c:head());
+	expect_kv("one", 1, c:tail());
+
 	c:set("three", 3)
+	expect_kv("three", 3, c:head());
+	expect_kv("one", 1, c:tail());
+
 	c:set("four", 4)
 	c:set("five", 5);
 	assert_equal(c:count(), 5);
+	expect_kv("five", 5, c:head());
+	expect_kv("one", 1, c:tail());
 	
 	c:set("foo", nil);
 	assert_equal(c:count(), 5);
+	expect_kv("five", 5, c:head());
+	expect_kv("one", 1, c:tail());
 	
 	assert_equal(c:get("one"), 1);
+	expect_kv("five", 5, c:head());
+	expect_kv("one", 1, c:tail());
+
 	assert_equal(c:get("two"), 2);
 	assert_equal(c:get("three"), 3);
 	assert_equal(c:get("four"), 4);
@@ -26,6 +49,8 @@ function new(new)
 	
 	c:set("six", 6);
 	assert_equal(c:count(), 5);
+	expect_kv("six", 6, c:head());
+	expect_kv("two", 2, c:tail());
 	
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), 2);
