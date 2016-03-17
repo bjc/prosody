@@ -271,4 +271,28 @@ function new(new)
 	expect_kv("c", 3, c4:head());
 	expect_kv("a", 1, c4:tail());
 
+	local c5 = new(3, function (k, v)
+		if k == "a" then
+			return nil;
+		elseif k == "b" then
+			return true;
+		end
+		return false;
+	end);
+	
+	assert_equal(c5:set("a", 1), true);
+	assert_equal(c5:set("a", 1), true);
+	assert_equal(c5:set("a", 1), true);
+	assert_equal(c5:set("a", 1), true);
+	assert_equal(c5:set("b", 2), true);
+	assert_equal(c5:set("c", 3), true);
+	assert_equal(c5:set("d", 4), true); -- "a" evicted (cb returned nil)
+	assert_equal(c5:set("d", 4), true); -- nop
+	assert_equal(c5:set("d", 4), true); -- nop
+	assert_equal(c5:set("e", 5), true); -- "b" evicted (cb returned true)
+	assert_equal(c5:set("f", 6), false); -- "c" won't evict (cb returned false)
+
+	expect_kv("e", 5, c5:head());
+	expect_kv("c", 3, c5:tail());
+
 end
