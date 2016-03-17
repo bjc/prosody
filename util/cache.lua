@@ -92,6 +92,18 @@ function cache_methods:count()
 	return self._count;
 end
 
+function cache_methods:head()
+	local head = self._head;
+	if not head then return nil, nil; end
+	return head.key, head.value;
+end
+
+function cache_methods:tail()
+	local tail = self._tail;
+	if not tail then return nil, nil; end
+	return tail.key, tail.value;
+end
+
 local function new(size, on_evict)
 	size = assert(tonumber(size), "cache size must be a number");
 	size = math.floor(size);
