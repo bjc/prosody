@@ -15,10 +15,9 @@ local sessionmanager = require "core.sessionmanager";
 local st = require "util.stanza";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
 local uuid_generate = require "util.uuid".generate;
-local runner = require "util.async".runner;
 
 local xpcall, tostring, type = xpcall, tostring, type;
-local t_insert, t_remove = table.insert, table.remove;
+local traceback = debug.traceback;
 
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
@@ -36,7 +35,6 @@ local hosts = prosody.hosts;
 
 local stream_callbacks = { default_ns = "jabber:client" };
 local listener = {};
-local runner_callbacks = {};
 
 --- Stream events handlers
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
@@ -123,9 +121,12 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
+local function handleerr(err) log("error", "Traceback[c2s]: %s", traceback(tostring(err), 2)); end
 function stream_callbacks.handlestanza(session, stanza)
 	stanza = session.filter("stanzas/in", stanza);
-	session.thread:run(stanza);
+	if stanza then
+		return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
+	end
 end
 
 --- Session methods
@@ -191,18 +192,6 @@ module:hook_global("user-deleted", function(event)
 	end
 end, 200);
 
-function runner_callbacks:ready()
-	self.data.conn:resume();
-end
-
-function runner_callbacks:waiting()
-	self.data.conn:pause();
-end
-
-function runner_callbacks:error(err)
-	(self.data.log or log)("error", "Traceback[c2s]: %s", err);
-end
-
 --- Port listener
 function listener.onconnect(conn)
 	measure_connections(1);
@@ -239,10 +228,6 @@ function listener.onconnect(conn)
 		session.notopen = true;
 		session.stream:reset();
 	end
-
-	session.thread = runner(function (stanza)
-		core_process_stanza(session, stanza);
-	end, runner_callbacks, session);
 
 	local filter = session.filter;
 	function session.data(data)
