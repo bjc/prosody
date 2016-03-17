@@ -222,22 +222,21 @@ function new(new)
 	local c3 = new(1, function (_key, _value, c3)
 		evicted_key, evicted_value = _key, _value;
 		if _key == "a" then
-			-- Put it back in...
-			-- Check that the newest key/value was set before on_evict was called
-			assert_equal(c3:get("b"), 2);
 			-- Sanity check for what we're evicting
 			assert_equal(_key, "a");
 			assert_equal(_value, 1);
-			-- Re-insert the evicted key (causes this evict function to run again with "b",2)
-			c3:set(_key, _value)
-			assert_equal(c3:get(_key), _value)
+			-- We're going to block eviction of this key/value, so set to nil...
+			evicted_key, evicted_value = nil, nil;
+			-- Returning false to block eviction
+			return false
 		end
 	end);
 	local function set(k, v, should_evict_key, should_evict_value)
 		evicted_key, evicted_value = nil, nil;
-		c3:set(k, v);
+		local ret = c3:set(k, v);
 		assert_equal(evicted_key, should_evict_key);
 		assert_equal(evicted_value, should_evict_value);
+		return ret;
 	end
 	set("a", 1)
 	set("a", 1)
@@ -245,10 +244,31 @@ function new(new)
 	set("a", 1)
 	set("a", 1)
 
-	-- The evict handler re-inserts "a"->1, so "b" gets evicted:
-	set("b", 2, "b", 2)
+	-- Our on_evict prevents "a" from being evicted, causing this to fail...
+	assert_equal(set("b", 2), false, "Failed to prevent eviction, or signal result");
+	
+	expect_kv("a", 1, c3:head());
+	expect_kv("a", 1, c3:tail());
+	
 	-- Check the final state is what we expect
 	assert_equal(c3:get("a"), 1);
 	assert_equal(c3:get("b"), nil);
 	assert_equal(c3:count(), 1);
+
+
+	local c4 = new(3, false);
+	
+	assert_equal(c4:set("a", 1), true);
+	assert_equal(c4:set("a", 1), true);
+	assert_equal(c4:set("a", 1), true);
+	assert_equal(c4:set("a", 1), true);
+	assert_equal(c4:set("b", 2), true);
+	assert_equal(c4:set("c", 3), true);
+	assert_equal(c4:set("d", 4), false);
+	assert_equal(c4:set("d", 4), false);
+	assert_equal(c4:set("d", 4), false);
+
+	expect_kv("c", 3, c4:head());
+	expect_kv("a", 1, c4:tail());
+
 end

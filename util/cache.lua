@@ -51,10 +51,13 @@ function cache_methods:set(k, v)
 		return true;
 	end
 	-- Check whether we need to remove oldest k/v
-	local on_evict, evicted_key, evicted_value;
 	if self._count == self.size then
 		local tail = self._tail;
-		on_evict, evicted_key, evicted_value = self._on_evict, tail.key, tail.value;
+		local on_evict, evicted_key, evicted_value = self._on_evict, tail.key, tail.value;
+		if on_evict ~= nil and (on_evict == false or on_evict(evicted_key, evicted_value) == false) then
+			-- Cache is full, and we're not allowed to evict
+			return false;
+		end
 		_remove(self, tail);
 		self._data[evicted_key] = nil;
 	end
@@ -62,9 +65,6 @@ function cache_methods:set(k, v)
 	m = { key = k, value = v, prev = nil, next = nil };
 	self._data[k] = m;
 	_insert(self, m);
-	if on_evict and evicted_key then
-		on_evict(evicted_key, evicted_value, self);
-	end
 	return true;
 end
 
