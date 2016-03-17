@@ -187,7 +187,7 @@ local throttle_cache = new_cache(throttle_cache_size, blacklist_overflow and fun
 		module:log("info", "Adding ip %s to registration blacklist", ip);
 		blacklisted_ips[ip] = true;
 	end
-end);
+end or nil);
 
 local function check_throttle(ip)
 	if not throttle_max then return true end
