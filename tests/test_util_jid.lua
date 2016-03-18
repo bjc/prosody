@@ -71,3 +71,73 @@ function compare(compare)
 	assert_equal(compare("user@other-host", "host"), false, "host should not match");
 	assert_equal(compare("user@other-host", "user@host"), false, "host should not match");
 end
+
+function node(node)
+	local function test(jid, expected_node)
+		assert_equal(node(jid), expected_node, "Unexpected node for "..tostring(jid));
+	end
+
+	test("example.com", nil);
+	test("foo.example.com", nil);
+	test("foo.example.com/resource", nil);
+	test("foo.example.com/some resource", nil);
+	test("foo.example.com/some@resource", nil);
+
+	test("foo@foo.example.com/some@resource", "foo");
+	test("foo@example/some@resource", "foo");
+
+	test("foo@example/@resource", "foo");
+	test("foo@example@resource", nil);
+	test("foo@example", "foo");
+	test("foo", nil);
+
+	test(nil, nil);
+end
+
+function host(host)
+	local function test(jid, expected_host)
+		assert_equal(host(jid), expected_host, "Unexpected host for "..tostring(jid));
+	end
+
+	test("example.com", "example.com");
+	test("foo.example.com", "foo.example.com");
+	test("foo.example.com/resource", "foo.example.com");
+	test("foo.example.com/some resource", "foo.example.com");
+	test("foo.example.com/some@resource", "foo.example.com");
+
+	test("foo@foo.example.com/some@resource", "foo.example.com");
+	test("foo@example/some@resource", "example");
+
+	test("foo@example/@resource", "example");
+	test("foo@example@resource", nil);
+	test("foo@example", "example");
+	test("foo", "foo");
+
+	test(nil, nil);
+end
+
+function resource(resource)
+	local function test(jid, expected_resource)
+		assert_equal(resource(jid), expected_resource, "Unexpected resource for "..tostring(jid));
+	end
+
+	test("example.com", nil);
+	test("foo.example.com", nil);
+	test("foo.example.com/resource", "resource");
+	test("foo.example.com/some resource", "some resource");
+	test("foo.example.com/some@resource", "some@resource");
+
+	test("foo@foo.example.com/some@resource", "some@resource");
+	test("foo@example/some@resource", "some@resource");
+
+	test("foo@example/@resource", "@resource");
+	test("foo@example@resource", nil);
+	test("foo@example", nil);
+	test("foo", nil);
+	test("/foo", nil);
+	test("@x/foo", nil);
+	test("@/foo", nil);
+
+	test(nil, nil);
+end
+
