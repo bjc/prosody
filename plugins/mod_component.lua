@@ -40,7 +40,7 @@ function module.add_host(module)
 
 	local send;
 
-	local function on_destroy(session, err)
+	local function on_destroy(session, err) --luacheck: ignore 212/err
 		env.connected = false;
 		env.session = false;
 		send = nil;
@@ -149,7 +149,7 @@ local stream_callbacks = { default_ns = xmlns_component };
 
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
-function stream_callbacks.error(session, error, data, data2)
+function stream_callbacks.error(session, error, data)
 	if session.destroyed then return; end
 	module:log("warn", "Error processing component stream: %s", tostring(error));
 	if error == "no-stream" then
@@ -295,7 +295,7 @@ function listener.onconnect(conn)
 		session.stream:reset();
 	end
 
-	function session.data(conn, data)
+	function session.data(_, data)
 		local ok, err = stream:feed(data);
 		if ok then return; end
 		module:log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
@@ -323,7 +323,6 @@ function listener.ondisconnect(conn, err)
 			end
 		end
 		session.destroyed = true;
-		session = nil;
 	end
 end
 
