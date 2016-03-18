@@ -11,10 +11,10 @@
 
 -- Will be modified by configure script if run --
 
-CFG_SOURCEDIR=os.getenv("PROSODY_SRCDIR");
-CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
-CFG_PLUGINDIR=os.getenv("PROSODY_PLUGINDIR");
-CFG_DATADIR=os.getenv("PROSODY_DATADIR");
+CFG_SOURCEDIR=CFG_SOURCEDIR or os.getenv("PROSODY_SRCDIR");
+CFG_CONFIGDIR=CFG_CONFIGDIR or os.getenv("PROSODY_CFGDIR");
+CFG_PLUGINDIR=CFG_PLUGINDIR or os.getenv("PROSODY_PLUGINDIR");
+CFG_DATADIR=CFG_DATADIR or os.getenv("PROSODY_DATADIR");
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
