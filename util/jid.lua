@@ -93,6 +93,18 @@ local function compare(jid, acl)
 	return false
 end
 
+local function node(jid)
+	return (select(1, split(jid)));
+end
+
+local function host(jid)
+	return (select(2, split(jid)));
+end
+
+local function resource(jid)
+	return (select(3, split(jid)));
+end
+
 local function escape(s) return s and (s:gsub(".", escapes)); end
 local function unescape(s) return s and (s:gsub("\\%x%x", unescapes)); end
 
@@ -103,6 +115,9 @@ return {
 	join = join;
 	prep = prep;
 	compare = compare;
+	node = node;
+	host = host;
+	resource = resource;
 	escape = escape;
 	unescape = unescape;
 };
