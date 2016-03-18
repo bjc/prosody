@@ -314,6 +314,7 @@ function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));
+		module:fire_event("component-disconnected", { session = session, reason = err });
 		if session.on_destroy then session:on_destroy(err); end
 		sessions[conn] = nil;
 		for k in pairs(session) do
