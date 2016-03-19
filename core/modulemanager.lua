@@ -125,7 +125,9 @@ local function do_load_module(host, module_name, state)
 	end
 
 	if modulemap[host][module_name] then
-		log("debug", "%s is already loaded for %s, so not loading again", module_name, host);
+		if not modulemap["*"][module_name] then
+			log("debug", "%s is already loaded for %s, so not loading again", module_name, host);
+		end
 		return nil, "module-already-loaded";
 	elseif modulemap["*"][module_name] then
 		local mod = modulemap["*"][module_name];
