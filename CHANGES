@@ -8,6 +8,7 @@ New features
 
 -   Rewritten more extensible MUC module
 -   mod\_pep\_plus
+-   Asynchronous operations
 
 0.10.not-released-yet
 =====================
@@ -25,7 +26,6 @@ New features
 -   Lua 5.2 support
 -   mod\_blocklist (XEP-0191)
 -   mod\_carbons (XEP-0280)
--   Asynchronous operations
 -   Pluggable connection timeout handling
 -   mod\_websocket (RFC 7395)
 
