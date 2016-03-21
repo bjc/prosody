@@ -135,8 +135,8 @@ function it.filter(filter, f, s, var)
 	return function (_s, _var)
 		local ret;
 		repeat ret = pack(f(_s, _var));
-			var = ret[1];
-		until var == nil or filter(unpack(ret, 1, ret.n));
+			_var = ret[1];
+		until _var == nil or filter(unpack(ret, 1, ret.n));
 		return unpack(ret, 1, ret.n);
 	end, s, var;
 end
