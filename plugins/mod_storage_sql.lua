@@ -82,16 +82,14 @@ local function keyval_store_set(data)
 		local extradata = {};
 		for key, value in pairs(data) do
 			if type(key) == "string" and key ~= "" then
-				local t, value = serialize(value);
-				assert(t, value);
+				local t, value = assert(serialize(value));
 				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, key, t, value);
 			else
 				extradata[key] = value;
 			end
 		end
 		if next(extradata) ~= nil then
-			local t, extradata = serialize(extradata);
-			assert(t, extradata);
+			local t, extradata = assert(serialize(extradata));
 			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, "", t, extradata);
 		end
 	end
@@ -197,7 +195,7 @@ function archive_store:append(username, key, value, when, with)
 		else
 			key = uuid.generate();
 		end
-		local t, value = serialize(value);
+		local t, value = assert(serialize(value));
 		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
 		return key;
 	end);
