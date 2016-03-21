@@ -102,11 +102,12 @@ function engine:connect()
 	local params = self.params;
 	assert(params.driver, "no driver")
 	log("debug", "Connecting to [%s] %s...", params.driver, params.database);
-	local dbh, err = DBI.Connect(
+	local ok, dbh, err = pcall(DBI.Connect,
 		params.driver, params.database,
 		params.username, params.password,
 		params.host, params.port
 	);
+	if not ok then return ok, dbh; end
 	if not dbh then return nil, err; end
 	dbh:autocommit(false); -- don't commit automatically
 	self.conn = dbh;
