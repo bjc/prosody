@@ -1063,11 +1063,15 @@ function commands.check(arg)
 		
 		local v6_supported = not not socket.tcp6;
 		
-		for host, host_options in enabled_hosts() do
+		for jid, host_options in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
+			local node, host = jid_split(jid);
 			
 			local is_component = not not host_options.component_module;
-			print("Checking DNS for "..(is_component and "component" or "host").." "..host.."...");
+			print("Checking DNS for "..(is_component and "component" or "host").." "..jid.."...");
+			if node then
+				print("Only the domain part ("..host..") is used in DNS.")
+			end
 			local target_hosts = set.new();
 			if not is_component then
 				local res = dns.lookup("_xmpp-client._tcp."..idna.to_ascii(host)..".", "SRV");
