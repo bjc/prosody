@@ -290,6 +290,12 @@ function handle_request(event)
 	return "";
 end
 
+local function keepalive(event)
+	return conn:write(build_frame({ opcode = 0x9, }));
+end
+
+module:hook("c2s-read-timeout", keepalive, -0.9);
+
 function module.add_host(module)
 	module:depends("http");
 	module:provides("http", {
@@ -300,4 +306,5 @@ function module.add_host(module)
 			["GET /"] = handle_request;
 		};
 	});
+	module:hook("c2s-read-timeout", keepalive, -0.9);
 end
