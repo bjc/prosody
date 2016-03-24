@@ -226,8 +226,7 @@ function handle_request(event)
 			frame.opcode = 0xA;
 			conn:write(build_frame(frame));
 			return "";
-		elseif opcode == 0xA then -- Pong frame
-			module:log("warn", "Received unexpected pong frame: " .. tostring(frame.data));
+		elseif opcode == 0xA then -- Pong frame, MAY be sent unsolicited, eg as keepalive
 			return "";
 		else
 			log("warn", "Received frame with unsupported opcode %i", opcode);
@@ -291,6 +290,12 @@ function handle_request(event)
 	return "";
 end
 
+local function keepalive(event)
+	return conn:write(build_frame({ opcode = 0x9, }));
+end
+
+module:hook("c2s-read-timeout", keepalive, -0.9);
+
 function module.add_host(module)
 	module:depends("http");
 	module:provides("http", {
@@ -301,4 +306,5 @@ function module.add_host(module)
 			["GET /"] = handle_request;
 		};
 	});
+	module:hook("c2s-read-timeout", keepalive, -0.9);
 end
