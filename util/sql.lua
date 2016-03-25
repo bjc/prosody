@@ -202,6 +202,10 @@ function engine:debug(enable)
 		engine.update = engine.execute_update;
 	end
 end
+local function handleerr(err)
+	log("error", "Error in SQL transaction: %s", debug_traceback(err, 3));
+	return err;
+end
 function engine:_transaction(func, ...)
 	if not self.conn then
 		local ok, err = self:connect();
@@ -212,7 +216,7 @@ function engine:_transaction(func, ...)
 	local function f() return func(unpack(args, 1, n_args)); end
 	log("debug", "SQL transaction begin [%s]", tostring(func));
 	self.__transaction = true;
-	local success, a, b, c = xpcall(f, debug_traceback);
+	local success, a, b, c = xpcall(f, handleerr);
 	self.__transaction = nil;
 	if success then
 		log("debug", "SQL transaction success [%s]", tostring(func));
