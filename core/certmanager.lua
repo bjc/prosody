@@ -36,7 +36,7 @@ local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config;
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-local luasec_version = luasec_major * 100 + luasec_minor;
+local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
 local luasec_has = {
 	-- TODO If LuaSec ever starts exposing these things itself, use that instead
 	cipher_server_preference = luasec_version >= 2;
