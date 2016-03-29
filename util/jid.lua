@@ -8,6 +8,7 @@
 
 
 
+local select = select;
 local match, sub = string.match, string.sub;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local nameprep = require "util.encodings".stringprep.nameprep;

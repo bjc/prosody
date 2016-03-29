@@ -22,8 +22,8 @@ local is_windows = (_ and windows) or os.getenv("WINDIR");
 local coroutine, io, math, string, table =
       coroutine, io, math, string, table;
 
-local ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type=
-      ipairs, next, pairs, print, setmetatable, tostring, assert, error, unpack, select, type;
+local ipairs, next, pairs, print, setmetatable, tostring, assert, error, select, type, unpack=
+      ipairs, next, pairs, print, setmetatable, tostring, assert, error, select, type, table.unpack or unpack;
 
 local ztact = { -- public domain 20080404 lua@ztact.com
 	get = function(parent, ...)
