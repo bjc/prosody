@@ -279,6 +279,7 @@ function stream_callbacks.streamopened(context, attr)
 			end
 			s = filter("stanzas/out", s);
 			--log("debug", "Sending BOSH data: %s", tostring(s));
+			if not s then return true end
 			t_insert(session.send_buffer, tostring(s));
 
 			local oldest_request = r[1];
