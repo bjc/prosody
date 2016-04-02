@@ -196,7 +196,7 @@ end
 function datamanager.users(host, datastore, typ)
 	local driver = open(host, datastore, typ);
 	if not driver.users then
-		return function() log("warn", "storage driver %s does not support listing users", driver.name) end
+		return function() log("warn", "Storage driver %s does not support listing users", driver.name) end
 	end
 	return driver:users();
 end
