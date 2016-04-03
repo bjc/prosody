@@ -178,6 +178,9 @@ local function session_close(session, reason)
 			sm_destroy_session(session, reason);
 			conn:close();
 		end
+	else
+		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
+		sm_destroy_session(session, reason);
 	end
 end
 
