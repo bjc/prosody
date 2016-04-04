@@ -374,6 +374,7 @@ module:hook("roster-item-removed", function (event)
 	end
 
 	if subscription == "both" or subscription == "to" or ask then
+		send_presence_of_available_resources(username, module.host, jid, session, st.presence({type="unavailable"}));
 		core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=jid}));
 	end
 
