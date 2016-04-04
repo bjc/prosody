@@ -134,17 +134,15 @@ end);
 
 module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
+	local origin = event.origin or prosody.hosts[host];
 	if host ~= module.host then return end
 	local bare = username .. "@" .. host;
 	local roster = rm_load_roster(username, host);
 	for jid, item in pairs(roster) do
 		if jid then
-			if item.subscription == "both" or item.subscription == "from" or roster[false].pending[jid] then
-				module:send(st.presence({type="unsubscribed", from=bare, to=jid}));
-			end
-			if item.subscription == "both" or item.subscription == "to" or item.ask then
-				module:send(st.presence({type="unsubscribe", from=bare, to=jid}));
-			end
+			module:fire_event("roster-item-removed", {
+				username = username, jid = jid, item = item, roster = roster, origin = origin,
+			});
 		end
 	end
 end, 300);
