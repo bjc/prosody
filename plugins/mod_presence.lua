@@ -357,3 +357,25 @@ module:hook("resource-unbind", function(event)
 		session.directed = nil;
 	end
 end);
+
+module:hook("roster-item-removed", function (event)
+	local username = event.username;
+	local session = event.origin;
+	local roster = event.roster or session and session.roster;
+	local jid = event.jid;
+	local item = event.item;
+
+	local subscription = item and item.subscription or "none";
+	local ask = item and item.ask;
+	local pending = roster and roster[false].pending[jid];
+
+	if subscription == "both" or subscription == "from" or pending then
+		core_post_stanza(session, st.presence({type="unsubscribed", from=session.full_jid, to=jid}));
+	end
+
+	if subscription == "both" or subscription == "to" or ask then
+		core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=jid}));
+	end
+
+end, -1);
+
