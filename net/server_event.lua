@@ -257,9 +257,9 @@ end
 
 function interface_mt:resume()
 	self:_lock(self.nointerface, false, self.nowriting);
-		if self.readcallback and not self.eventread then
+	if self.readcallback and not self.eventread then
 		self.eventread = addevent( base, self.conn, EV_READ, self.readcallback, cfg.READ_TIMEOUT );  -- register callback
-			return true;
+		return true;
 	end
 end
 
@@ -391,7 +391,8 @@ function interface_mt:starttls(sslctx, call_onconnect)
 	if not self.eventwrite then
 		self:_lock( true, true, true )  -- lock the interface, to not disturb the handshake
 		self.eventstarthandshake = addevent( base, nil, EV_TIMEOUT, self.startsslcallback, 0 )  -- add event to start handshake
-	else  -- wait until writebuffer is empty
+	else
+		-- wait until writebuffer is empty
 		self:_lock( true, true, false )
 		debug "ssl session delayed until writebuffer is empty..."
 	end
@@ -408,10 +409,13 @@ end
 
 function interface_mt:setlistener(listener)
 	self:ondetach(); -- Notify listener that it is no longer responsible for this connection
-	self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout,
-	self.onreadtimeout, self.onstatus, self.ondetach
-		= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout,
-		  listener.onreadtimeout, listener.onstatus, listener.ondetach;
+	self.onconnect = listener.onconnect;
+	self.ondisconnect = listener.ondisconnect;
+	self.onincoming = listener.onincoming;
+	self.ontimeout = listener.ontimeout;
+	self.onreadtimeout = listener.onreadtimeout;
+	self.onstatus = listener.onstatus;
+	self.ondetach = listener.ondetach;
 end
 
 -- Stub handlers
@@ -581,9 +585,9 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 					interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
 				end
 				interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
-					function( )
-						interface:_close()
-					end, cfg.READ_TIMEOUT
+				function( )
+					interface:_close()
+				end, cfg.READ_TIMEOUT
 				)
 				debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
 				-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
@@ -703,14 +707,16 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 		debug "need luasec, but not available"
 		return nil, "luasec not found"
 	end
-	if getaddrinfo and not typ then
+	if not typ then
 		local addrinfo, err = getaddrinfo(addr)
 		if not addrinfo then return nil, err end
 		if addrinfo[1] and addrinfo[1].family == "inet6" then
 			typ = "tcp6"
+		else
+			typ = "tcp"
 		end
 	end
-	local create = socket[typ or "tcp"]
+	local create = socket[typ]
 	if type( create ) ~= "function"  then
 		return nil, "invalid socket type"
 	end
@@ -721,11 +727,10 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 	end
 	client:settimeout( 0 )  -- set nonblocking
 	local res, err = client:connect( addr, serverport )  -- connect
-	if res or ( err == "timeout" or err == "Operation already in progress" ) then
-		if client.getsockname then
-			addr = client:getsockname( )
-		end
-		local interface = wrapclient( client, addr, serverport, listener, pattern, sslctx )
+	if res or ( err == "timeout" ) then
+		local ip, port = client:getsockname( )
+		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
+		interface:_start_connection( sslctx )
 		debug( "new connection id:", interface.id )
 		return interface, err
 	else
