@@ -75,13 +75,9 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 						local roster = session.roster;
 						local r_item = roster[jid];
 						if r_item then
-							local to_bare = node and (node.."@"..host) or host; -- bare JID
-							if r_item.subscription == "both" or r_item.subscription == "from" or roster[false].pending[jid] then
-								core_post_stanza(session, st.presence({type="unsubscribed", from=session.full_jid, to=to_bare}));
-							end
-							if r_item.subscription == "both" or r_item.subscription == "to" or r_item.ask then
-								core_post_stanza(session, st.presence({type="unsubscribe", from=session.full_jid, to=to_bare}));
-							end
+							module:fire_event("roster-item-removed", {
+								username = node, jid = jid, item = r_item, origin = session, roster = roster,
+							});
 							local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, jid);
 							if success then
 								session.send(st.reply(stanza));
@@ -138,16 +134,20 @@ end);
 
 module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
+	local origin = event.origin or prosody.hosts[host];
 	if host ~= module.host then return end
 	local bare = username .. "@" .. host;
 	local roster = rm_load_roster(username, host);
 	for jid, item in pairs(roster) do
 		if jid then
-			if item.subscription == "both" or item.subscription == "from" or roster[false].pending[jid] then
-				module:send(st.presence({type="unsubscribed", from=bare, to=jid}));
-			end
-			if item.subscription == "both" or item.subscription == "to" or item.ask then
-				module:send(st.presence({type="unsubscribe", from=bare, to=jid}));
+			module:fire_event("roster-item-removed", {
+				username = username, jid = jid, item = item, roster = roster, origin = origin,
+			});
+		else
+			for jid in pairs(item.pending) do
+				module:fire_event("roster-item-removed", {
+					username = username, jid = jid, roster = roster, origin = origin,
+				});
 			end
 		end
 	end
