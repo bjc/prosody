@@ -409,10 +409,13 @@ end
 
 function interface_mt:setlistener(listener)
 	self:ondetach(); -- Notify listener that it is no longer responsible for this connection
-	self.onconnect, self.ondisconnect, self.onincoming, self.ontimeout,
-	self.onreadtimeout, self.onstatus, self.ondetach
-		= listener.onconnect, listener.ondisconnect, listener.onincoming, listener.ontimeout,
-		  listener.onreadtimeout, listener.onstatus, listener.ondetach;
+	self.onconnect = listener.onconnect;
+	self.ondisconnect = listener.ondisconnect;
+	self.onincoming = listener.onincoming;
+	self.ontimeout = listener.ontimeout;
+	self.onreadtimeout = listener.onreadtimeout;
+	self.onstatus = listener.onstatus;
+	self.ondetach = listener.ondetach;
 end
 
 -- Stub handlers
