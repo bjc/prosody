@@ -291,7 +291,10 @@ function handle_request(event)
 end
 
 local function keepalive(event)
-	return conn:write(build_frame({ opcode = 0x9, }));
+	local session = event.session;
+	if session.open_stream == session_open_stream then
+		return session.conn:write(build_frame({ opcode = 0x9, }));
+	end
 end
 
 module:hook("c2s-read-timeout", keepalive, -0.9);
