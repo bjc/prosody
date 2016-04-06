@@ -374,8 +374,8 @@ function api:provides(name, item)
 	self:add_item(name.."-provider", item);
 end
 
-function api:send(stanza)
-	return core_post_stanza(hosts[self.host], stanza);
+function api:send(stanza, origin)
+	return core_post_stanza(origin or hosts[self.host], stanza);
 end
 
 function api:broadcast(jids, stanza, iter)
