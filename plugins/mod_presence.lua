@@ -364,7 +364,7 @@ module:hook("roster-item-removed", function (event)
 	local roster = event.roster or session and session.roster;
 	local jid = event.jid;
 	local item = event.item;
-	local from_jid = origin.full_jid or (username .. "@" .. module.host);
+	local from_jid = session.full_jid or (username .. "@" .. module.host);
 
 	local subscription = item and item.subscription or "none";
 	local ask = item and item.ask;
