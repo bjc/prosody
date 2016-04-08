@@ -491,7 +491,11 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
 
 			if is_last_orig_session then
-				module:fire_event("muc-occupant-left", {room = self; nick = orig_occupant.nick; occupant = orig_occupant;});
+				module:fire_event("muc-occupant-left", {
+					room = self;
+					nick = orig_occupant.nick;
+					occupant = orig_occupant;
+				});
 			end
 		end
 
@@ -529,9 +533,20 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 
 			if orig_occupant == nil then
 				if is_first_dest_session then
-					module:fire_event("muc-occupant-joined", {room = self; nick = dest_occupant.nick; occupant = dest_occupant;});
+					module:fire_event("muc-occupant-joined", {
+						room = self;
+						nick = dest_occupant.nick;
+						occupant = dest_occupant;
+					});
 				end
-				module:fire_event("muc-occupant-session-new", {room = self; nick = dest_occupant.nick; occupant = dest_occupant; stanza = stanza; jid = real_jid;});
+				module:fire_event("muc-occupant-session-new", {
+					room = self;
+					nick = dest_occupant.nick;
+					occupant = dest_occupant;
+					stanza = stanza;
+					origin = origin;
+					jid = real_jid;
+				});
 			end
 		end
 	elseif type ~= 'result' then -- bad type
