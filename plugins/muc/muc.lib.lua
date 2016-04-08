@@ -495,6 +495,8 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 					room = self;
 					nick = orig_occupant.nick;
 					occupant = orig_occupant;
+					origin = origin;
+					stanza = stanza;
 				});
 			end
 		end
@@ -537,6 +539,8 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 						room = self;
 						nick = dest_occupant.nick;
 						occupant = dest_occupant;
+						stanza = stanza;
+						origin = origin;
 					});
 				end
 				module:fire_event("muc-occupant-session-new", {
