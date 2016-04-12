@@ -102,15 +102,12 @@ local function room_save(room, forced)
 	local is_persistent = persistent.get(room);
 	persistent_rooms:set(nil, room.jid, is_persistent);
 	if is_persistent then
-		local room_history = room._data.history;
-		room._data.history = nil;
 		local data = {
 			jid = room.jid;
 			_data = room._data;
 			_affiliations = room._affiliations;
 		};
 		room_configs:set(node, data);
-		room._data.history = room_history;
 	elseif forced then
 		room_configs:set(node, nil);
 		if not next(room._occupants) then -- Room empty
