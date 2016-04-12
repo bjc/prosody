@@ -79,7 +79,7 @@ end
 
 module:hook("muc-get-history", function(event)
 	local room = event.room;
-	local history = room._data["history"]; -- send discussion history
+	local history = room._history; -- send discussion history
 	if not history then return nil end
 	local history_len = #history;
 
@@ -140,8 +140,8 @@ module:hook("muc-add-history", function(event)
 	local historic = event.stanza:get_child("body");
 	if historic then
 		local room = event.room
-		local history = room._data["history"];
-		if not history then history = {}; room._data["history"] = history; end
+		local history = room._history;
+		if not history then history = {}; room._history = history; end
 		local stanza = st.clone(event.stanza);
 		stanza.attr.to = "";
 		local ts = gettime();
