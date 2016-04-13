@@ -23,18 +23,18 @@ function it.reverse(f, s, var)
 	while true do
 		local ret = { f(s, var) };
 		var = ret[1];
-	        if var == nil then break; end
+		if var == nil then break; end
 		t_insert(results, 1, ret);
 	end
 
 	-- Then return our reverse one
 	local i,max = 0, #results;
 	return function (_results)
-			if i<max then
-				i = i + 1;
-				return unpack(_results[i]);
-			end
-		end, results;
+		if i<max then
+			i = i + 1;
+			return unpack(_results[i]);
+		end
+	end, results;
 end
 
 -- Iterate only over keys in a table
@@ -62,8 +62,8 @@ function it.unique(f, s, var)
 		while true do
 			local ret = pack(f(s, var));
 			var = ret[1];
-		        if var == nil then break; end
-		        if not set[var] then
+			if var == nil then break; end
+			if not set[var] then
 				set[var] = true;
 				return unpack(ret, 1, ret.n);
 			end
@@ -77,7 +77,7 @@ function it.count(f, s, var)
 
 	while true do
 		var = f(s, var);
-	        if var == nil then break; end
+		if var == nil then break; end
 		x = x + 1;
 	end
 
@@ -110,7 +110,7 @@ function it.tail(n, f, s, var)
 	while true do
 		local ret = pack(f(s, var));
 		var = ret[1];
-	        if var == nil then break; end
+		if var == nil then break; end
 		results[(count%n)+1] = ret;
 		count = count + 1;
 	end
@@ -157,7 +157,7 @@ function it.to_array(f, s, var)
 	local t = {};
 	while true do
 		var = f(s, var);
-	        if var == nil then break; end
+		if var == nil then break; end
 		t_insert(t, var);
 	end
 	return t;
@@ -169,7 +169,7 @@ function it.to_table(f, s, var)
 	local t, var2 = {};
 	while true do
 		var, var2 = f(s, var);
-	        if var == nil then break; end
+		if var == nil then break; end
 		t[var] = var2;
 	end
 	return t;
