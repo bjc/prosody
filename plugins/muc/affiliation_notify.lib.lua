@@ -24,7 +24,7 @@ local function set_affiliation_notify(room, affiliation_notify)
 	affiliation_notify = affiliation_notify and true or nil;
 	if room._data.affiliation_notify == affiliation_notify then return false; end
 	room._data.affiliation_notify = affiliation_notify;
-	if room.save then room:save(true); end
+	room:save(true);
 	return true;
 end
 

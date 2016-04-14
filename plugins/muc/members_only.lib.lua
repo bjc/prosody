@@ -44,7 +44,7 @@ local function set_members_only(room, members_only)
 			module:fire_event("muc-occupant-left", {room = room; nick = occupant.nick; occupant = occupant;});
 		end
 	end
-	if room.save then room:save(true); end
+	room:save(true);
 	return true;
 end
 
