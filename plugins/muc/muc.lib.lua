@@ -36,6 +36,10 @@ function room_mt:__tostring()
 	return "MUC room ("..self.jid..")";
 end
 
+function room_mt.save()
+	-- overriden by mod_muc.lua
+end
+
 function room_mt:get_occupant_jid(real_jid)
 	return self._jid_nick[real_jid]
 end
@@ -695,7 +699,7 @@ function room_mt:process_form(origin, stanza)
 		end
 		event.field, event.value = nil, nil;
 
-		if self.save then self:save(true); end
+		self:save(true);
 		origin.send(st.reply(stanza));
 
 		if next(event.status_codes) then

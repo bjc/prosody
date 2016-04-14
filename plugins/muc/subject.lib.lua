@@ -25,7 +25,7 @@ local function set_changesubject(room, changesubject)
 	changesubject = changesubject and true or nil;
 	if get_changesubject(room) == changesubject then return false; end
 	room._data.changesubject = changesubject;
-	if room.save then room:save(true); end
+	room:save(true);
 	return true;
 end
 
@@ -61,7 +61,7 @@ local function set_subject(room, from, subject)
 	if old_subject == subject and old_from == from then return false; end
 	room._data.subject_from = from;
 	room._data.subject = subject;
-	if room.save then room:save(); end
+	room:save();
 	local msg = create_subject_message(from, subject);
 	room:broadcast_message(msg);
 	return true;
