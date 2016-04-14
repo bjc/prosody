@@ -15,7 +15,7 @@ local function set_moderated(room, moderated)
 	moderated = moderated and true or nil;
 	if get_moderated(room) == moderated then return false; end
 	room._data.moderated = moderated;
-	if room.save then room:save(true); end
+	room:save(true);
 	return true;
 end
 
