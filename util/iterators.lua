@@ -54,6 +54,15 @@ function it.values(t)
 	end, t;
 end
 
+-- Iterate over the n:th return value
+function it.select(n, f, s, var)
+	return function (_s)
+		local ret = pack(f(_s, var));
+		var = ret[1];
+		return ret[n];
+	end, s, var;
+end
+
 -- Given an iterator, iterate only over unique items
 function it.unique(f, s, var)
 	local set = {};
