@@ -17,7 +17,6 @@ local function set_name(room, name)
 	if name == "" or name == (jid_split(room.jid)) then name = nil; end
 	if room._data.name == name then return false; end
 	room._data.name = name;
-	room:save(true);
 	return true;
 end
 

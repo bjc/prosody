@@ -17,7 +17,6 @@ local function set_password(room, password)
 	if password == "" then password = nil; end
 	if room._data.password == password then return false; end
 	room._data.password = password;
-	room:save(true);
 	return true;
 end
 

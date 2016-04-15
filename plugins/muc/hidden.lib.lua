@@ -15,7 +15,6 @@ local function set_hidden(room, hidden)
 	hidden = hidden and true or nil;
 	if get_hidden(room) == hidden then return false; end
 	room._data.hidden = hidden;
-	room:save(true);
 	return true;
 end
 
