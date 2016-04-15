@@ -88,6 +88,18 @@ function cache_methods:items()
 	end
 end
 
+function cache_methods:values()
+	local m = self._head;
+	return function ()
+		if not m then
+			return;
+		end
+		local v = m.value;
+		m = m.next;
+		return v;
+	end
+end
+
 function cache_methods:count()
 	return self._count;
 end
