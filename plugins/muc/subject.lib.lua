@@ -82,6 +82,7 @@ module:hook("muc-occupant-groupchat", function(event)
 		if role_rank >= valid_roles.moderator or
 			( role_rank >= valid_roles.participant and get_changesubject(event.room) ) then -- and participant
 			set_subject(event.room, occupant.nick, subject:get_text());
+			room:save();
 			return true;
 		else
 			event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
