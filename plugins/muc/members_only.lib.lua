@@ -44,7 +44,6 @@ local function set_members_only(room, members_only)
 			module:fire_event("muc-occupant-left", {room = room; nick = occupant.nick; occupant = occupant;});
 		end
 	end
-	room:save(true);
 	return true;
 end
 
@@ -118,6 +117,7 @@ module:hook("muc-invite", function(event)
 				from, invitee, room.jid);
 			-- This might fail; ignore for now
 			room:set_affiliation(from, invitee, "member", "Invited by " .. from);
+			room:save();
 		end
 	end
 end);

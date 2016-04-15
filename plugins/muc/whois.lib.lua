@@ -20,7 +20,6 @@ local function set_whois(room, whois)
 	assert(valid_whois[whois], "Invalid whois value")
 	if get_whois(room) == whois then return false; end
 	room._data.whois = whois;
-	room:save(true);
 	return true;
 end
 

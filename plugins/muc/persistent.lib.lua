@@ -15,7 +15,6 @@ local function set_persistent(room, persistent)
 	persistent = persistent and true or nil;
 	if get_persistent(room) == persistent then return false; end
 	room._data.persistent = persistent;
-	room:save(true);
 	return true;
 end
 

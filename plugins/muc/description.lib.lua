@@ -15,7 +15,6 @@ local function set_description(room, description)
 	if description == "" then description = nil; end
 	if get_description(room) == description then return false; end
 	room._data.description = description;
-	room:save(true);
 	return true;
 end
 
