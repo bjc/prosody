@@ -782,6 +782,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	else
 		success, errtype, err = nil, "cancel", "bad-request";
 	end
+	room:save();
 	if not success then
 		origin.send(st.error_reply(stanza, errtype, err));
 	else
@@ -1148,7 +1149,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 		end
 	end
 
-	if self.save then self:save(); end
+	self:save(true);
 
 	module:fire_event("muc-set-affiliation", {
 		room = self;
