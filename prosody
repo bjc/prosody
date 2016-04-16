@@ -111,7 +111,7 @@ function read_config()
 			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
 			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
 		end
-		print("More help on configuring Prosody can be found at http://prosody.im/doc/configure");
+		print("More help on configuring Prosody can be found at https://prosody.im/doc/configure");
 		print("Good luck!");
 		print("**************************");
 		print("");

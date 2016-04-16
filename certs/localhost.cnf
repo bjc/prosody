@@ -13,7 +13,7 @@ otherName.2 = 1.3.6.1.5.5.7.8.5;FORMAT:UTF8,UTF8:localhost
 [distinguished_name]
 countryName = GB
 organizationName = Prosody IM
-organizationalUnitName = http://prosody.im/doc/certificates
+organizationalUnitName = https://prosody.im/doc/certificates
 commonName = Example certificate
 
 [req]
