@@ -7,7 +7,7 @@
 --
 
 if module:get_host_type() ~= "component" then
-	error("MUC should be loaded as a component, please see http://prosody.im/doc/components", 0);
+	error("MUC should be loaded as a component, please see https://prosody.im/doc/components", 0);
 end
 
 local muclib = module:require "muc";

@@ -146,7 +146,7 @@ module:hook("s2s-read-timeout", keepalive, -1);
 
 function module.add_host(module)
 	if module:get_option_boolean("disallow_s2s", false) then
-		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see http://prosody.im/doc/s2s#disabling");
+		module:log("warn", "The 'disallow_s2s' config option is deprecated, please see https://prosody.im/doc/s2s#disabling");
 		return nil, "This host has disallow_s2s set";
 	end
 	module:hook("route/remote", route_to_existing_session, -1);

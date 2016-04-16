@@ -1188,7 +1188,7 @@ function printbanner(session)
 	if option == "short" or option == "full" then
 	session.print("Welcome to the Prosody administration console. For a list of commands, type: help");
 	session.print("You may find more help on using this console in our online documentation at ");
-	session.print("http://prosody.im/doc/console\n");
+	session.print("https://prosody.im/doc/console\n");
 	end
 	if option ~= "short" and option ~= "full" and option ~= "graphic" then
 		session.print(option);
