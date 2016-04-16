@@ -399,7 +399,7 @@ local function upgrade_table(params, apply_changes)
 		end);
 		if not success then
 			module:log("error", "Failed to check/upgrade database schema (%s), please see "
-				.."http://prosody.im/doc/mysql for help",
+				.."https://prosody.im/doc/mysql for help",
 				err or "unknown error");
 			return false;
 		end

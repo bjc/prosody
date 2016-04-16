@@ -12,7 +12,7 @@ local tostring = tostring;
 local tonumber = tonumber;
 
 if not have_DBI then
-	error("LuaDBI (required for SQL support) was not found, please see http://prosody.im/doc/depends#luadbi", 0);
+	error("LuaDBI (required for SQL support) was not found, please see https://prosody.im/doc/depends#luadbi", 0);
 end
 
 module "prosody_sql"
