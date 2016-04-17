@@ -1235,6 +1235,14 @@ function _M.new_room(jid, config) -- luacheck: ignore 212
 	}, room_mt);
 end
 
+function room_mt:freeze()
+	return {
+		jid = self.jid;
+		_data = self._data;
+		_affiliations = self._affiliations;
+	}
+end
+
 _M.room_mt = room_mt;
 
 return _M;
