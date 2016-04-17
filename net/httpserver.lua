@@ -5,7 +5,7 @@ local traceback = debug.traceback;
 local _ENV = nil;
 
 function fail()
-	log("error", "Attempt to use legacy HTTP API. For more info see http://prosody.im/doc/developers/legacy_http");
+	log("error", "Attempt to use legacy HTTP API. For more info see https://prosody.im/doc/developers/legacy_http");
 	log("error", "Legacy HTTP API usage, %s", traceback("", 2));
 end
 

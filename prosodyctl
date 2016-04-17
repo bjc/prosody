@@ -103,7 +103,7 @@ do
 			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
 			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
 		end
-		print("More help on configuring Prosody can be found at http://prosody.im/doc/configure");
+		print("More help on configuring Prosody can be found at https://prosody.im/doc/configure");
 		print("Good luck!");
 		print("**************************");
 		print("");
@@ -168,7 +168,7 @@ if ok and pposix then
 	pposix.setenv("PROSODY_CONFIG", ENV_CONFIG);
 else
 	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
-	print("For more help send the below error to us through http://prosody.im/discuss");
+	print("For more help send the below error to us through https://prosody.im/discuss");
 	print(tostring(pposix))
 	os.exit(1);
 end
@@ -219,9 +219,9 @@ local error_messages = setmetatable({
 		["no-such-user"] = "The given user does not exist on the server";
 		["no-such-host"] = "The given hostname does not exist in the config";
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
-		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see http://prosody.im/doc/prosodyctl#pidfile for help";
-		["invalid-pidfile"] = "The 'pidfile' option in the configuration file is not a string, see http://prosody.im/doc/prosodyctl#pidfile for help";
-		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see http://prosody.im/doc/prosodyctl for more info";
+		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see https://prosody.im/doc/prosodyctl#pidfile for help";
+		["invalid-pidfile"] = "The 'pidfile' option in the configuration file is not a string, see https://prosody.im/doc/prosodyctl#pidfile for help";
+		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see https://prosody.im/doc/prosodyctl for more info";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
@@ -882,7 +882,7 @@ function commands.check(arg)
 			ok = false;
 			print("");
 			print("    No global options defined. Perhaps you have put a host definition at the top")
-			print("    of the config file? They should be at the bottom, see http://prosody.im/doc/configure#overview");
+			print("    of the config file? They should be at the bottom, see https://prosody.im/doc/configure#overview");
 		end
 		if it.count(enabled_hosts()) == 0 then
 			ok = false;
@@ -934,7 +934,7 @@ function commands.check(arg)
 				local n = it.count(misplaced_options);
 				print("    You have "..n.." option"..(n>1 and "s " or " ").."set under "..host.." that should be");
 				print("    in the global section of the config file, above any VirtualHost or Component definitions,")
-				print("    see http://prosody.im/doc/configure#overview for more information.")
+				print("    see https://prosody.im/doc/configure#overview for more information.")
 				print("");
 				print("    You need to move the following option"..(n>1 and "s" or "")..": "..table.concat(it.to_array(misplaced_options), ", "));
 			end
@@ -944,7 +944,7 @@ function commands.check(arg)
 			   	print("");
 			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
 			   	print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
-			   	print("     For more information see: http://prosody.im/doc/dns");
+			   	print("     For more information see: https://prosody.im/doc/dns");
 			end
 		end
 		local all_modules = set.new(config["*"].modules_enabled);
@@ -1182,7 +1182,7 @@ function commands.check(arg)
 				end
 				if host_ok_v6 and not v6_supported then
 					print("    Host "..host.." has AAAA records, but your version of LuaSocket does not support IPv6.");
-					print("      Please see http://prosody.im/doc/ipv6 for more information.");
+					print("      Please see https://prosody.im/doc/ipv6 for more information.");
 				end
 			end
 			if not all_targets_ok then
@@ -1196,7 +1196,7 @@ function commands.check(arg)
 		end
 		if not problem_hosts:empty() then
 			print("");
-			print("For more information about DNS configuration please see http://prosody.im/doc/dns");
+			print("For more information about DNS configuration please see https://prosody.im/doc/dns");
 			print("");
 			ok = false;
 		end
@@ -1275,7 +1275,7 @@ function commands.check(arg)
 			end
 			if cert_ok == false then
 				print("")
-				print("For more information about certificates please see http://prosody.im/doc/certificates");
+				print("For more information about certificates please see https://prosody.im/doc/certificates");
 				ok = false
 			end
 		end

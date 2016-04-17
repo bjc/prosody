@@ -31,7 +31,7 @@ local function pubsub_error_reply(stanza, error)
 end
 _M.pubsub_error_reply = pubsub_error_reply;
 
-local node_config_form = require"util.dataforms".new {
+local node_config_form = dataform {
 	{
 		type = "hidden";
 		name = "FORM_TYPE";
