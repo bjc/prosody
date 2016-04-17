@@ -5,7 +5,7 @@ local traceback = debug.traceback;
 local _ENV = nil;
 
 local function fail()
-	log("error", "Attempt to use legacy connlisteners API. For more info see http://prosody.im/doc/developers/network");
+	log("error", "Attempt to use legacy connlisteners API. For more info see https://prosody.im/doc/developers/network");
 	log("error", "Legacy connlisteners API usage, %s", traceback("", 2));
 end
 

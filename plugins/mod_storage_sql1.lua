@@ -130,7 +130,7 @@ local function create_table()
 						module:log("info", "Database table automatically upgraded");
 					else
 						module:log("error", "Failed to upgrade database schema (%s), please see "
-							.."http://prosody.im/doc/mysql for help",
+							.."https://prosody.im/doc/mysql for help",
 							err or "unknown error");
 					end
 				end
@@ -139,7 +139,7 @@ local function create_table()
 		end
 	elseif params.driver ~= "SQLite3" then -- SQLite normally fails to prepare for existing table
 		module:log("warn", "Prosody was not able to automatically check/create the database table (%s), "
-			.."see http://prosody.im/doc/modules/mod_storage_sql#table_management for help.",
+			.."see https://prosody.im/doc/modules/mod_storage_sql#table_management for help.",
 			err or "unknown error");
 	end
 end
@@ -151,7 +151,7 @@ do -- process options to get a db connection
 	if not ok then
 		package.loaded["DBI"] = {};
 		module:log("error", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
-		module:log("error", "More information on installing LuaDBI can be found at http://prosody.im/doc/depends#luadbi");
+		module:log("error", "More information on installing LuaDBI can be found at https://prosody.im/doc/depends#luadbi");
 	end
 	prosody.lock_globals();
 	if not ok or not DBI.Connect then

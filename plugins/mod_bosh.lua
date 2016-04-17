@@ -439,7 +439,7 @@ local GET_response = {
 	};
 	body = [[<html><body>
 	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
-	<p>For more information see <a href="http://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
 	</body></html>]];
 };
 

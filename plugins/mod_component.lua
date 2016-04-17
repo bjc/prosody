@@ -31,7 +31,7 @@ local sessions = module:shared("sessions");
 
 function module.add_host(module)
 	if module:get_host_type() ~= "component" then
-		error("Don't load mod_component manually, it should be for a component, please see http://prosody.im/doc/components", 0);
+		error("Don't load mod_component manually, it should be for a component, please see https://prosody.im/doc/components", 0);
 	end
 	
 	local env = module.environment;

@@ -9,29 +9,29 @@ rapidly prototype new protocols.
 
 ## Useful links
 
-Homepage:        http://prosody.im/
-Download:        http://prosody.im/download
-Documentation:   http://prosody.im/doc/
+Homepage:        https://prosody.im/
+Download:        https://prosody.im/download
+Documentation:   https://prosody.im/doc/
 
 Jabber/XMPP Chat:
                Address:
                  prosody@conference.prosody.im
                Web interface:
-                 http://prosody.im/webchat
+                 https://prosody.im/webchat
                
 Mailing lists:
                User support and discussion:
-                 http://groups.google.com/group/prosody-users
+                 https://groups.google.com/group/prosody-users
                
                Development discussion:
-                 http://groups.google.com/group/prosody-dev
+                 https://groups.google.com/group/prosody-dev
                
                Issue tracker changes:
-                 http://groups.google.com/group/prosody-issues
+                 https://groups.google.com/group/prosody-issues
 
 ## Installation
 
 See the accompanying INSTALL file for help on building Prosody from source. Alternatively 
-see our guide at http://prosody.im/doc/install
+see our guide at https://prosody.im/doc/install
 
 
