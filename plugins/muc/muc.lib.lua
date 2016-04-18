@@ -1252,6 +1252,13 @@ function room_mt:freeze()
 	}
 end
 
+function _M.restore_room(frozen)
+	local room_jid = frozen.jid;
+	local room = _M.new_room(room_jid, frozen._data);
+	room._affiliations = frozen._affiliations;
+	return room;
+end
+
 _M.room_mt = room_mt;
 
 return _M;
