@@ -1245,17 +1245,33 @@ function _M.new_room(jid, config)
 end
 
 function room_mt:freeze()
-	return {
-		jid = self.jid;
+	local frozen = {
+		_jid = self.jid;
 		_data = self._data;
-		_affiliations = self._affiliations;
-	}
+	};
+	for user, affiliation in pairs(self._affiliations) do
+		frozen[user] = affiliation;
+	end
+	return frozen;
 end
 
 function _M.restore_room(frozen)
-	local room_jid = frozen.jid;
+	-- COMPAT
+	if frozen.jid and frozen._affiliations then
+		local room = _M.new_room(frozen.jid, frozen._data);
+		room._affiliations = frozen._affiliations;
+		return room;
+	end
+
+	local room_jid = frozen._jid;
 	local room = _M.new_room(room_jid, frozen._data);
-	room._affiliations = frozen._affiliations;
+
+	for jid, data in pairs(frozen) do
+		local node, host = jid_split(jid);
+		if node or host:sub(1,1) ~= "_" then
+			room._affiliations[jid] = data;
+		end
+	end
 	return room;
 end
 
