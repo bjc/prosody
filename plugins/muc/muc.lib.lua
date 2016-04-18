@@ -1244,13 +1244,25 @@ function _M.new_room(jid, config)
 	}, room_mt);
 end
 
-function room_mt:freeze()
+function room_mt:freeze(live)
 	local frozen = {
 		_jid = self.jid;
 		_data = self._data;
 	};
 	for user, affiliation in pairs(self._affiliations) do
 		frozen[user] = affiliation;
+	end
+	if live then
+		for nick, occupant in self:each_occupant() do
+			frozen[nick] = {
+				bare_jid = occupant.bare_jid;
+				role = occupant.role;
+				jid = occupant.jid;
+			}
+			for jid, presence in occupant:each_session() do
+				frozen[jid] = st.preserialize(presence);
+			end
+		end
 	end
 	return frozen;
 end
@@ -1266,12 +1278,52 @@ function _M.restore_room(frozen)
 	local room_jid = frozen._jid;
 	local room = _M.new_room(room_jid, frozen._data);
 
+	local occupants = {};
+	local occupant_sessions = {};
+	local room_name, room_host = jid_split(room_jid);
 	for jid, data in pairs(frozen) do
-		local node, host = jid_split(jid);
+		local node, host, resource = jid_split(jid);
 		if node or host:sub(1,1) ~= "_" then
-			room._affiliations[jid] = data;
+			if not resource then
+				-- bare jid: affiliation
+				room._affiliations[jid] = data;
+			elseif host == room_host and node == room_name then
+				-- full room jid: bare real jid and role
+				local bare_jid = data.bare_jid;
+				local	occupant = occupant_lib.new(bare_jid, jid);
+				occupant.jid = data.jid;
+				occupant.role = data.role;
+				occupants[bare_jid] = occupant;
+				local sessions = occupant_sessions[bare_jid];
+				if sessions then
+					for full_jid, presence in pairs(sessions) do
+						occupant:set_session(full_jid, presence);
+					end
+				end
+				occupant_sessions[bare_jid] = nil;
+			else
+				-- full user jid: presence
+				local presence = st.deserialize(data);
+				local bare_jid = jid_bare(jid);
+				local occupant = occupants[bare_jid];
+				local sessions = occupant_sessions[bare_jid];
+				if occupant then
+					occupant:set_session(jid, presence);
+				elseif sessions then
+					sessions[jid] = presence;
+				else
+					occupant_sessions[bare_jid] = {
+						[jid] = presence;
+					};
+				end
+			end
 		end
 	end
+
+	for _, occupant in pairs(occupants) do
+		room:save_occupant(occupant);
+	end
+
 	return room;
 end
 
