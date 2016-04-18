@@ -95,9 +95,12 @@ local persistent_rooms_storage = module:open_store("persistent");
 local persistent_rooms = module:open_store("persistent", "map");
 local room_configs = module:open_store("config");
 
+local room_items_cache = {};
+
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	local is_persistent = persistent.get(room);
+	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
 	if is_persistent or forced then
 		persistent_rooms:set(nil, room.jid, true);
 		local data = room:freeze(forced);
@@ -147,6 +150,7 @@ function delete_room(room)
 	module:log("debug", "Deleting %s", room);
 	room_configs:set(jid_split(room.jid), nil);
 	persistent_rooms:set(nil, room.jid, nil);
+	room_items_cache[room.jid] = nil;
 end
 
 function module.unload()
@@ -191,9 +195,17 @@ end
 module:hook("host-disco-items", function(event)
 	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
-	for room in each_room() do
-		if not room:get_hidden() then
-			reply:tag("item", {jid=room.jid, name=room:get_name()}):up();
+	if next(room_items_cache) ~= nil then
+		for jid, room_name in pairs(room_items_cache) do
+			reply:tag("item", { jid = jid, name = room_name }):up();
+		end
+	else
+		for room in each_room() do
+			if not room:get_hidden() then
+				local jid, room_name = room.jid, room:get_name();
+				room_items_cache[jid] = name;
+				reply:tag("item", { jid = jid, name = room_name }):up();
+			end
 		end
 	end
 end);
