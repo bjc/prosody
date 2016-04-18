@@ -1223,14 +1223,12 @@ room_mt.set_whois = whois.set;
 
 local _M = {}; -- module "muc"
 
-function _M.new_room(jid, config) -- luacheck: ignore 212
-	-- TODO use config?
+function _M.new_room(jid, config)
 	return setmetatable({
 		jid = jid;
 		_jid_nick = {};
 		_occupants = {};
-		_data = {
-		};
+		_data = config or {};
 		_affiliations = {};
 	}, room_mt);
 end
