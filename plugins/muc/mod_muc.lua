@@ -130,9 +130,7 @@ local function restore_room(jid)
 	local node = jid_split(jid);
 	local data = room_configs:get(node);
 	if data then
-		local room = muclib.new_room(jid);
-		room._data = data._data;
-		room._affiliations = data._affiliations;
+		local room = muclib.restore_room(data);
 		track_room(room);
 		return room;
 	end
