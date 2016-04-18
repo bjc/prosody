@@ -727,6 +727,7 @@ function room_mt:clear(x)
 		occupants_updated[occupant] = true;
 	end
 	for occupant in pairs(occupants_updated) do
+		occupant:set_session(occupant.jid, st.presence({type="unavailable"}), true);
 		self:publicise_occupant_status(occupant, x);
 		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; occupant = occupant;});
 	end
