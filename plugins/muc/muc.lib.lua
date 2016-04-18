@@ -357,6 +357,16 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	return true;
 end
 
+if not module:get_option_boolean("muc_compat_create", true) then
+	module:hook("muc-room-pre-create", function(event)
+		local origin, stanza = event.origin, event.stanza;
+		if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+			return true;
+		end
+	end, -1);
+end
+
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
