@@ -7,6 +7,8 @@ New features
 ------------
 
 -   Rewritten more extensible MUC module
+    -   Store inactive rooms to disk
+    -   Store rooms to disk on shutdown
 -   mod\_pep\_plus
 -   Asynchronous operations
 
