@@ -285,10 +285,8 @@ for event_name, method in pairs {
 end
 
 function shutdown_component()
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-		:tag("status", { code = "332"}):up();
 	for room in each_room(true) do
-		room:clear(x);
+		room:save(true);
 	end
 end
 module:hook_global("server-stopping", shutdown_component);
