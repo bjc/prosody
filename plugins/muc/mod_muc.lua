@@ -61,13 +61,11 @@ room_mt.send_history = history.send;
 room_mt.get_historylength = history.get_length;
 room_mt.set_historylength = history.set_length;
 
-local iterators = require "util.iterators";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
+local cache = require "util.cache";
 local um_is_admin = require "core.usermanager".is_admin;
-
-local rooms = module:shared "rooms";
 
 module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
@@ -100,17 +98,20 @@ local room_configs = module:open_store("config");
 local function room_save(room, forced)
 	local node = jid_split(room.jid);
 	local is_persistent = persistent.get(room);
-	persistent_rooms:set(nil, room.jid, is_persistent);
-	if is_persistent then
-		local data = room:freeze();
-		room_configs:set(node, data);
-	elseif forced then
-		room_configs:set(node, nil);
-		if not next(room._occupants) then -- Room empty
-			rooms[room.jid] = nil;
-		end
+	if is_persistent or forced then
+		persistent_rooms:set(nil, room.jid, true);
+		local data = room:freeze(forced);
+		return room_configs:set(node, data);
+	else
+		persistent_rooms:set(nil, room.jid, nil);
+		return room_configs:set(node, nil);
 	end
 end
+
+local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (_, room)
+	module:log("debug", "%s evicted", room);
+	room_save(room, true); -- Force to disk
+end);
 
 -- Automatically destroy empty non-persistent rooms
 module:hook("muc-occupant-left",function(event)
@@ -121,7 +122,7 @@ module:hook("muc-occupant-left",function(event)
 end);
 
 function track_room(room)
-	rooms[room.jid] = room;
+	rooms:set(room.jid, room);
 	-- When room is created, over-ride 'save' method
 	room.save = room_save;
 end
@@ -137,42 +138,54 @@ local function restore_room(jid)
 end
 
 function forget_room(room)
-	local room_jid = room.jid;
-	local node = jid_split(room.jid);
-	rooms[room_jid] = nil;
-	room_configs:set(node, nil);
-	if persistent.get(room) then
-		persistent_rooms:set(nil, room_jid, nil);
+	module:log("debug", "Forgetting %s", room);
+	rooms.save = nil;
+	rooms:set(room.jid, nil);
+end
+
+function delete_room(room)
+	module:log("debug", "Deleting %s", room);
+	room_configs:set(jid_split(room.jid), nil);
+	persistent_rooms:set(nil, room.jid, nil);
+end
+
+function module.unload()
+	for room in rooms:values() do
+		room:save(true);
+		forget_room(room);
 	end
 end
 
 function get_room_from_jid(room_jid)
-	local room = rooms[room_jid];
-	if room == nil then
-		-- Check if in persistent storage
-		if persistent_rooms:get(nil, room_jid) then
-			room = restore_room(room_jid);
-			if room == nil then
-				module:log("error", "Missing data for room '%s', removing from persistent room list", room_jid);
-				persistent_rooms:set(nil, room_jid, nil);
-			end
-		end
+	local room = rooms:get(room_jid);
+	if room then
+		rooms:set(room_jid, room); -- bump to top;
+		return room;
 	end
-	return room
+	return restore_room(room_jid);
 end
 
 function each_room(local_only)
-	if not local_only then
+	if local_only then
+		return rooms:values();
+	end
+	return coroutine.wrap(function ()
+		local seen = {}; -- Don't iterate over persistent rooms twice
+		for room in rooms:values() do
+			coroutine.yield(room);
+			seen[room.jid] = true;
+		end
 		for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
-			if rooms[room_jid] == nil then -- Don't restore rooms that already exist
+			if seen[room_jid] then
 				local room = restore_room(room_jid);
 				if room == nil then
 					module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
+				else
+					coroutine.yield(room);
 				end
 			end
 		end
-	end
-	return iterators.values(rooms);
+	end);
 end
 
 module:hook("host-disco-items", function(event)
@@ -190,8 +203,10 @@ module:hook("muc-room-pre-create", function(event)
 end, -1000);
 
 module:hook("muc-room-destroyed",function(event)
-	return forget_room(event.room);
-end)
+	local room = event.room;
+	forget_room(room);
+	delete_room(room);
+end);
 
 do
 	local restrict_room_creation = module:get_option("restrict_room_creation");
