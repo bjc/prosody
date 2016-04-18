@@ -76,12 +76,13 @@ module:hook("muc-occupant-groupchat", function(event)
 	local stanza = event.stanza;
 	local subject = stanza:get_child("subject");
 	if subject then
+		local room = event.room;
 		local occupant = event.occupant;
 		-- Role check for subject changes
 		local role_rank = valid_roles[occupant and occupant.role or "none"];
 		if role_rank >= valid_roles.moderator or
-			( role_rank >= valid_roles.participant and get_changesubject(event.room) ) then -- and participant
-			set_subject(event.room, occupant.nick, subject:get_text());
+			( role_rank >= valid_roles.participant and get_changesubject(room) ) then -- and participant
+			set_subject(room, occupant.nick, subject:get_text());
 			room:save();
 			return true;
 		else
