@@ -126,8 +126,9 @@ function handle_POST(event)
 	-- In particular, the streamopened() stream callback is where
 	-- much of the session logic happens, because it's where we first
 	-- get to see the 'sid' of this request.
-	if not stream:feed(body) then
-		module:log("warn", "Error parsing BOSH payload")
+	local ok, err = stream:feed(body);
+	if not ok then
+		module:log("warn", "Error parsing BOSH payload; %s", err)
 		return 400;
 	end
 
