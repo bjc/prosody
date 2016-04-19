@@ -244,8 +244,9 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session request
 		context.notopen = nil; -- Signals that we accept this opening tag
 
-		-- TODO: Sanity checks here (rid, to, known host, etc.)
 		local to_host = nameprep(attr.to);
+		local rid = tonumber(attr.rid);
+		local wait = tonumber(attr.wait);
 		if not to_host then
 			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
@@ -260,12 +261,22 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
+		if not rid or (not wait and attr.wait or wait < 0) then
+			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
+		rid = rid - 1;
+		wait = math_min(wait, bosh_max_wait);
 
 		-- New session
 		sid = new_uuid();
 		local session = {
-			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
-			bosh_version = attr.ver, bosh_wait = math_min(attr.wait, bosh_max_wait), streamid = sid,
+			type = "c2s_unauthed", conn = {}, sid = sid, rid = rid-1, host = attr.to,
+			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
