@@ -25,7 +25,7 @@ module:hook("muc-config-form", function(event)
 		label = "Make Room Persistent?";
 		value = get_persistent(event.room);
 	});
-end);
+end, 100-3);
 
 module:hook("muc-config-submitted/muc#roomconfig_persistentroom", function(event)
 	if set_persistent(event.room, event.value) then

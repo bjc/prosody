@@ -38,7 +38,7 @@ module:hook("muc-config-form", function(event)
 		label = "Maximum Number of History Messages Returned by Room";
 		value = tostring(get_historylength(event.room));
 	});
-end);
+end, 100-10);
 
 module:hook("muc-config-submitted/muc#roomconfig_historylength", function(event)
 	if set_historylength(event.room, event.value) then

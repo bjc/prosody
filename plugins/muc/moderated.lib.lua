@@ -29,7 +29,7 @@ module:hook("muc-config-form", function(event)
 		label = "Make Room Moderated?";
 		value = get_moderated(event.room);
 	});
-end);
+end, 100-4);
 
 module:hook("muc-config-submitted/muc#roomconfig_moderatedroom", function(event)
 	if set_moderated(event.room, event.value) then

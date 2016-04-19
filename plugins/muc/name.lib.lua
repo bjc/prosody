@@ -31,7 +31,7 @@ module:hook("muc-config-form", function(event)
 		label = "Name";
 		value = get_name(event.room) or "";
 	});
-end);
+end, 100-1);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomname", function(event)
 	if set_name(event.room, event.value) then
