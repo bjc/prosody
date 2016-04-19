@@ -22,7 +22,6 @@ local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
 local xpcall, tostring, type = xpcall, tostring, type;
 local traceback = debug.traceback;
-local runner = require"util.async".runner;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -63,11 +62,13 @@ local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
 
 -- All sessions, and sessions that have no requests open
-local sessions = module:shared("sessions");
+local sessions, inactive_sessions = module:shared("sessions", "inactive_sessions");
 
 -- Used to respond to idle sessions (those with waiting requests)
+local waiting_requests = module:shared("waiting_requests");
 function on_destroy_request(request)
 	log("debug", "Request destroyed: %s", tostring(request));
+	waiting_requests[request] = nil;
 	local session = sessions[request.context.sid];
 	if session then
 		local requests = session.requests;
@@ -81,24 +82,9 @@ function on_destroy_request(request)
 		-- If this session now has no requests open, mark it as inactive
 		local max_inactive = session.bosh_max_inactive;
 		if max_inactive and #requests == 0 then
-			if session.inactive_timer then
-				session.inactive_timer:stop();
-			end
-			session.inactive_timer = module:add_timer(max_inactive, check_inactive, session, request.context,
-				"BOSH client silent for over "..max_inactive.." seconds");
+			inactive_sessions[session] = os_time() + max_inactive;
 			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
-		if session.bosh_wait_timer then
-			session.bosh_wait_timer:stop();
-			session.bosh_wait_timer = nil;
-		end
-	end
-end
-
-function check_inactive(now, session, context, reason)
-	if not sessions.destroyed then
-		sessions[context.sid] = nil;
-		sm_destroy_session(session, reason);
 	end
 end
 
@@ -132,7 +118,7 @@ function handle_POST(event)
 	local headers = response.headers;
 	headers.content_type = "text/xml; charset=utf-8";
 
-	if cross_domain and request.headers.origin then
+	if cross_domain and event.request.headers.origin then
 		set_cross_domain_headers(response);
 	end
 
@@ -141,9 +127,12 @@ function handle_POST(event)
 	-- In particular, the streamopened() stream callback is where
 	-- much of the session logic happens, because it's where we first
 	-- get to see the 'sid' of this request.
-	if not stream:feed(body) then
-		module:log("warn", "Error parsing BOSH payload")
-		return 400;
+	local ok, err = stream:feed(body);
+	if not ok then
+		module:log("warn", "Error parsing BOSH payload; %s", err)
+		local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+			["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+		return tostring(close_reply);
 	end
 
 	-- Stanzas (if any) in the request have now been processed, and
@@ -200,9 +189,13 @@ function handle_POST(event)
 		else
 			return true; -- Inform http server we shall reply later
 		end
+	elseif response.finished then
+		return; -- A response has been sent already
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
-	return 400;
+	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+		["xmlns:stream"] = xmlns_streams, condition = "item-not-found" });
+	return tostring(close_reply) .. "\n";
 end
 
 function after_bosh_wait(now, request, session)
@@ -263,8 +256,16 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session request
 		context.notopen = nil; -- Signals that we accept this opening tag
 
-		-- TODO: Sanity checks here (rid, to, known host, etc.)
-		if not hosts[attr.to] then
+		local to_host = nameprep(attr.to);
+		local rid = tonumber(attr.rid);
+		local wait = tonumber(attr.wait);
+		if not to_host then
+			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		elseif not hosts[to_host] then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
@@ -272,12 +273,22 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
+		if not rid or (not wait and attr.wait or wait < 0 or wait % 1 ~= 0) then
+			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
+		rid = rid - 1;
+		wait = math_min(wait, bosh_max_wait);
 
 		-- New session
 		sid = new_uuid();
 		local session = {
-			type = "c2s_unauthed", conn = {}, sid = sid, rid = tonumber(attr.rid)-1, host = attr.to,
-			bosh_version = attr.ver, bosh_wait = math_min(attr.wait, bosh_max_wait), streamid = sid,
+			type = "c2s_unauthed", conn = {}, sid = sid, rid = rid-1, host = attr.to,
+			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
 			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
@@ -420,8 +431,9 @@ function stream_callbacks.error(context, error)
 	log("debug", "Error parsing BOSH request payload; %s", error);
 	if not context.sid then
 		local response = context.response;
-		response.status_code = 400;
-		response:send();
+		local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+			["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+		response:send(tostring(close_reply));
 		return;
 	end
 
