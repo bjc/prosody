@@ -548,6 +548,10 @@ do
 					elseif interface.eventreadtimeout then
 						return EV_WRITE, EV_TIMEOUT
 					end
+					if interface.writebuffer ~= 0 then
+						-- data possibly written from ondrain
+						return EV_WRITE, cfg.WRITE_TIMEOUT
+					end
 					interface.eventwrite = nil
 					return -1
 				elseif byte and (err == "timeout" or err == "wantwrite") then  -- want write again
