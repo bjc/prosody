@@ -22,6 +22,8 @@ local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
 local xpcall, tostring, type = xpcall, tostring, type;
 local traceback = debug.traceback;
+local runner = require"util.async".runner;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
