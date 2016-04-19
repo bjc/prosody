@@ -412,8 +412,9 @@ function stream_callbacks.error(context, error)
 	log("debug", "Error parsing BOSH request payload; %s", error);
 	if not context.sid then
 		local response = context.response;
-		response.status_code = 400;
-		response:send();
+		local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+			["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+		response:send(tostring(close_reply));
 		return;
 	end
 
