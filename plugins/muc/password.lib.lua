@@ -31,7 +31,7 @@ module:hook("muc-config-form", function(event)
 		label = "Password";
 		value = get_password(event.room) or "";
 	});
-end);
+end, 100-7);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomsecret", function(event)
 	if set_password(event.room, event.value) then

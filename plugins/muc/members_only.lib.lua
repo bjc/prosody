@@ -58,7 +58,7 @@ module:hook("muc-config-form", function(event)
 		label = "Make Room Members-Only?";
 		value = get_members_only(event.room);
 	});
-end);
+end, 100-6);
 
 module:hook("muc-config-submitted/muc#roomconfig_membersonly", function(event)
 	if set_members_only(event.room, event.value) then
