@@ -25,7 +25,7 @@ module:hook("muc-config-form", function(event)
 		label = "Make Room Publicly Searchable?";
 		value = not get_hidden(event.room);
 	});
-end);
+end, 100-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_publicroom", function(event)
 	if set_hidden(event.room, not event.value) then

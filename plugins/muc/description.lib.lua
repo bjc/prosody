@@ -27,7 +27,7 @@ local function add_form_option(event)
 	});
 end
 module:hook("muc-disco#info", add_form_option);
-module:hook("muc-config-form", add_form_option);
+module:hook("muc-config-form", add_form_option, 100-2);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomdesc", function(event)
 	if set_description(event.room, event.value) then

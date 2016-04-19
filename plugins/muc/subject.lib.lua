@@ -35,7 +35,7 @@ module:hook("muc-config-form", function(event)
 		label = "Allow Occupants to Change Subject?";
 		value = get_changesubject(event.room);
 	});
-end);
+end, 100-8);
 
 module:hook("muc-config-submitted/muc#roomconfig_changesubject", function(event)
 	if set_changesubject(event.room, event.value) then
