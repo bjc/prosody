@@ -545,12 +545,11 @@ do
 					elseif interface.startsslcallback then  -- start ssl connection if needed
 						debug "starting ssl handshake after writing"
 						interface.eventstarthandshake = addevent( base, nil, EV_TIMEOUT, interface.startsslcallback, 0 )
-					elseif interface.eventreadtimeout then
-						return EV_WRITE, EV_TIMEOUT
-					end
-					if interface.writebuffer ~= 0 then
+					elseif interface.writebuffer ~= 0 then
 						-- data possibly written from ondrain
 						return EV_WRITE, cfg.WRITE_TIMEOUT
+					elseif interface.eventreadtimeout then
+						return EV_WRITE, EV_TIMEOUT
 					end
 					interface.eventwrite = nil
 					return -1
