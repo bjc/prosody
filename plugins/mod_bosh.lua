@@ -261,7 +261,7 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
-		if not rid or (not wait and attr.wait or wait < 0) then
+		if not rid or (not wait and attr.wait or wait < 0 or wait % 1 ~= 0) then
 			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
