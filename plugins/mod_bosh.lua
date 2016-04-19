@@ -13,7 +13,6 @@ local new_xmpp_stream = require "util.xmppstream".new;
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
 local new_uuid = require "util.uuid".generate;
-local fire_event = prosody.events.fire_event;
 local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local logger = require "util.logger";
