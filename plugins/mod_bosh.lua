@@ -179,6 +179,8 @@ function handle_POST(event)
 		else
 			return true; -- Inform http server we shall reply later
 		end
+	elseif response.finished then
+		return; -- A response has been sent already
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
 	return 400;
