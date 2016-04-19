@@ -1184,7 +1184,7 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end
 
 	local occupant = self:get_occupant_by_nick(occupant_jid);
-	if not occupant then return nil, "modify", "not-acceptable"; end
+	if not occupant then return nil, "modify", "item-not-found"; end
 
 	if valid_roles[role or "none"] == nil then
 		return nil, "modify", "not-acceptable";
