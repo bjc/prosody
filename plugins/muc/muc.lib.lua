@@ -196,7 +196,7 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	local base_presence do
 		-- Try to use main jid's presence
 		local pr = occupant:get_presence();
-		if pr and (pr.attr.type ~= "unavailable" or occupant.role == nil) then
+		if pr and (pr.attr.type ~= "unavailable" and occupant.role ~= nil) then
 			base_presence = st.clone(pr);
 		else -- user is leaving but didn't send a leave presence. make one for them
 			base_presence = st.presence {from = occupant.nick; type = "unavailable";};
@@ -737,7 +737,6 @@ function room_mt:clear(x)
 		occupants_updated[occupant] = true;
 	end
 	for occupant in pairs(occupants_updated) do
-		occupant:set_session(occupant.jid, st.presence({type="unavailable"}), true);
 		self:publicise_occupant_status(occupant, x);
 		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; occupant = occupant;});
 	end
