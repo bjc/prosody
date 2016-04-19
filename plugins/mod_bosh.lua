@@ -199,7 +199,7 @@ function handle_POST(event)
 	return tostring(close_reply) .. "\n";
 end
 
-function after_bosh_wait(now, request, session)
+function after_bosh_wait(now, request, session) -- luacheck: ignore 212
 	if request.conn then
 		session.send("");
 	end
@@ -401,7 +401,7 @@ end
 
 local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(tostring(err), 2)); end
 
-function runner_callbacks:error(err)
+function runner_callbacks:error(err) -- luacheck: ignore 212/self
 	return handleerr(err);
 end
 
