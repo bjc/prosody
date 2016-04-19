@@ -549,7 +549,7 @@ do
 						-- data possibly written from ondrain
 						return EV_WRITE, cfg.WRITE_TIMEOUT
 					elseif interface.eventreadtimeout then
-						return EV_WRITE, EV_TIMEOUT
+						return EV_WRITE, cfg.WRITE_TIMEOUT
 					end
 					interface.eventwrite = nil
 					return -1
