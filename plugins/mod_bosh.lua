@@ -21,6 +21,7 @@ local initialize_filters = require "util.filters".initialize;
 local math_min = math.min;
 local xpcall, tostring, type = xpcall, tostring, type;
 local traceback = debug.traceback;
+local nameprep = require "util.encodings".stringprep.nameprep;
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -244,7 +245,14 @@ function stream_callbacks.streamopened(context, attr)
 		context.notopen = nil; -- Signals that we accept this opening tag
 
 		-- TODO: Sanity checks here (rid, to, known host, etc.)
-		if not hosts[attr.to] then
+		local to_host = nameprep(attr.to);
+		if not to_host then
+			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		elseif not hosts[to_host] then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
