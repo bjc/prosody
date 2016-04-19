@@ -129,7 +129,9 @@ function handle_POST(event)
 	local ok, err = stream:feed(body);
 	if not ok then
 		module:log("warn", "Error parsing BOSH payload; %s", err)
-		return 400;
+		local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+			["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
+		return tostring(close_reply);
 	end
 
 	-- Stanzas (if any) in the request have now been processed, and
@@ -184,7 +186,9 @@ function handle_POST(event)
 		return; -- A response has been sent already
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
-	return 400;
+	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+		["xmlns:stream"] = xmlns_streams, condition = "item-not-found" });
+	return tostring(close_reply) .. "\n";
 end
 
 
