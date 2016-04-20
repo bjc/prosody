@@ -709,7 +709,7 @@ function room_mt:process_form(origin, stanza)
 		end
 		event.field, event.value = nil, nil;
 
-		self:save(true);
+		self:save();
 		origin.send(st.reply(stanza));
 
 		if next(event.status_codes) then
@@ -1159,7 +1159,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 		end
 	end
 
-	self:save(true);
+	self:save();
 
 	module:fire_event("muc-set-affiliation", {
 		room = self;
