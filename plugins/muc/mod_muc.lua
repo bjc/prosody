@@ -180,7 +180,7 @@ function each_room(local_only)
 			seen[room.jid] = true;
 		end
 		for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
-			if seen[room_jid] then
+			if not seen[room_jid] then
 				local room = restore_room(room_jid);
 				if room == nil then
 					module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
