@@ -1283,10 +1283,10 @@ function _M.restore_room(frozen)
 	for jid, data in pairs(frozen) do
 		local node, host, resource = jid_split(jid);
 		if node or host:sub(1,1) ~= "_" then
-			if not resource then
+			if not resource and type(data) == "string" then
 				-- bare jid: affiliation
 				room._affiliations[jid] = data;
-			elseif host == room_host and node == room_name then
+			elseif host == room_host and node == room_name and resource then
 				-- full room jid: bare real jid and role
 				local bare_jid = data.bare_jid;
 				local	occupant = occupant_lib.new(bare_jid, jid);
