@@ -203,7 +203,7 @@ module:hook("host-disco-items", function(event)
 		for room in each_room() do
 			if not room:get_hidden() then
 				local jid, room_name = room.jid, room:get_name();
-				room_items_cache[jid] = name;
+				room_items_cache[jid] = room_name;
 				reply:tag("item", { jid = jid, name = room_name }):up();
 			end
 		end
