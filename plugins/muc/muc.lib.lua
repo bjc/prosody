@@ -384,197 +384,203 @@ module:hook("muc-occupant-pre-join", function(event)
 	end
 end, -10);
 
-function room_mt:handle_presence_to_occupant(origin, stanza)
+function room_mt:handle_normal_presence(origin, stanza)
 	local type = stanza.attr.type;
-	if type == "error" then -- error, kick em out!
-		return self:handle_kickable(origin, stanza)
-	elseif type == nil or type == "unavailable" then
-		local real_jid = stanza.attr.from;
-		local bare_jid = jid_bare(real_jid);
-		local orig_occupant, dest_occupant;
-		local is_new_room = next(self._affiliations) == nil;
-		if is_new_room then
-			if type == "unavailable" then return true; end -- Unavailable from someone not in the room
-			if module:fire_event("muc-room-pre-create", {
-					room = self;
-					origin = origin;
-					stanza = stanza;
-				}) then return true; end
+	local real_jid = stanza.attr.from;
+	local bare_jid = jid_bare(real_jid);
+	local orig_occupant, dest_occupant;
+	local is_new_room = next(self._affiliations) == nil;
+	if is_new_room then
+		if type == "unavailable" then return true; end -- Unavailable from someone not in the room
+		if module:fire_event("muc-room-pre-create", {
+				room = self;
+				origin = origin;
+				stanza = stanza;
+			}) then return true; end
+	else
+		orig_occupant = self:get_occupant_by_real_jid(real_jid);
+		if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
+	end
+	local is_first_dest_session;
+	if type == "unavailable" then -- luacheck: ignore 542
+		-- FIXME Why the empty if branch?
+		-- dest_occupant = nil
+	elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
+		log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
+		dest_occupant = orig_occupant;
+	else
+		local dest_jid = stanza.attr.to;
+		dest_occupant = self:get_occupant_by_nick(dest_jid);
+		if dest_occupant == nil then
+			log("debug", "no occupant found for %s; creating new occupant object for %s", dest_jid, real_jid);
+			is_first_dest_session = true;
+			dest_occupant = self:new_occupant(bare_jid, dest_jid);
 		else
-			orig_occupant = self:get_occupant_by_real_jid(real_jid);
-			if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
+			is_first_dest_session = false;
 		end
-		local is_first_dest_session;
-		if type == "unavailable" then -- luacheck: ignore 542
-			-- FIXME Why the empty if branch?
-			-- dest_occupant = nil
-		elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
-			log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
-			dest_occupant = orig_occupant;
-		else
-			local dest_jid = stanza.attr.to;
-			dest_occupant = self:get_occupant_by_nick(dest_jid);
-			if dest_occupant == nil then
-				log("debug", "no occupant found for %s; creating new occupant object for %s", dest_jid, real_jid);
-				is_first_dest_session = true;
-				dest_occupant = self:new_occupant(bare_jid, dest_jid);
-			else
-				is_first_dest_session = false;
-			end
-		end
-		local is_last_orig_session;
-		if orig_occupant ~= nil then
-			-- Is there are least 2 sessions?
-			local iter, ob, last = orig_occupant:each_session();
-			is_last_orig_session = iter(ob, iter(ob, last)) == nil;
-		end
+	end
+	local is_last_orig_session;
+	if orig_occupant ~= nil then
+		-- Is there are least 2 sessions?
+		local iter, ob, last = orig_occupant:each_session();
+		is_last_orig_session = iter(ob, iter(ob, last)) == nil;
+	end
 
-		-- TODO Handle these cases sensibly
-		local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
-		if orig_occupant == nil and not muc_x then
-			module:log("debug", "Join without <x>, possibly desynced");
-		elseif orig_occupant ~= nil and muc_x then
-			module:log("debug", "Presence update with <x>, possibly desynced");
-		end
+	-- TODO Handle these cases sensibly
+	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
+	if orig_occupant == nil and not muc_x then
+		module:log("debug", "Join without <x>, possibly desynced");
+	elseif orig_occupant ~= nil and muc_x then
+		module:log("debug", "Presence update with <x>, possibly desynced");
+	end
 
-		local event, event_name = {
-			room = self;
-			origin = origin;
-			stanza = stanza;
-			is_first_session = is_first_dest_session;
-			is_last_session = is_last_orig_session;
-		};
-		if orig_occupant == nil then
-			event_name = "muc-occupant-pre-join";
-			event.is_new_room = is_new_room;
-			event.occupant = dest_occupant;
-		elseif dest_occupant == nil then
-			event_name = "muc-occupant-pre-leave";
-			event.occupant = orig_occupant;
-		else
-			event_name = "muc-occupant-pre-change";
-			event.orig_occupant = orig_occupant;
-			event.dest_occupant = dest_occupant;
-		end
-		if module:fire_event(event_name, event) then return true; end
+	local event, event_name = {
+		room = self;
+		origin = origin;
+		stanza = stanza;
+		is_first_session = is_first_dest_session;
+		is_last_session = is_last_orig_session;
+	};
+	if orig_occupant == nil then
+		event_name = "muc-occupant-pre-join";
+		event.is_new_room = is_new_room;
+		event.occupant = dest_occupant;
+	elseif dest_occupant == nil then
+		event_name = "muc-occupant-pre-leave";
+		event.occupant = orig_occupant;
+	else
+		event_name = "muc-occupant-pre-change";
+		event.orig_occupant = orig_occupant;
+		event.dest_occupant = dest_occupant;
+	end
+	if module:fire_event(event_name, event) then return true; end
 
-		-- Check for nick conflicts
-		if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
-			log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
-			local reply = st.error_reply(stanza, "cancel", "conflict"):up();
-			reply.tags[1].attr.code = "409";
-			origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
-			return true;
-		end
+	-- Check for nick conflicts
+	if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
+		log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
+		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+		reply.tags[1].attr.code = "409";
+		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		return true;
+	end
 
-		-- Send presence stanza about original occupant
-		if orig_occupant ~= nil and orig_occupant ~= dest_occupant then
-			local orig_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-			local dest_nick;
-			if dest_occupant == nil then -- Session is leaving
-				log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
-				if is_last_orig_session then
-					orig_occupant.role = nil;
-				end
-				orig_occupant:set_session(real_jid, stanza);
-			else
-				log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
-				local generated_unavail = st.presence {from = orig_occupant.nick, to = real_jid, type = "unavailable"};
-				orig_occupant:set_session(real_jid, generated_unavail);
-				dest_nick = select(3, jid_split(dest_occupant.nick));
-				if not is_first_dest_session then -- User is swapping into another pre-existing session
-					log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
-					-- Show the other session leaving
-					local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
-						:tag("status"):text("you are joining pre-existing session " .. dest_nick):up();
-					add_item(x, self:get_affiliation(bare_jid), "none");
-					local pr = st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}
-						:add_child(x);
-					self:route_stanza(pr);
-				end
-				if is_first_dest_session and is_last_orig_session then -- Normal nick change
-					log("debug", "no sessions in %s left; publically marking as nick change", orig_occupant.nick);
-					orig_x:tag("status", {code = "303";}):up();
-				else -- The session itself always needs to see a nick change
-					-- don't want to get our old nick's available presence,
-					-- so remove our session from there, and manually generate an unavailable
-					orig_occupant:remove_session(real_jid);
-					log("debug", "generating nick change for %s", real_jid);
-					local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-					-- self:build_item_list(orig_occupant, x, false, dest_nick); -- COMPAT: clients get confused if they see other items besides their own
-					add_item(x, self:get_affiliation(bare_jid), orig_occupant.role, real_jid, dest_nick);
-					x:tag("status", {code = "303";}):up();
-					x:tag("status", {code = "110";}):up();
-					self:route_stanza(generated_unavail:add_child(x));
-					dest_nick = nil; -- set dest_nick to nil; so general populance doesn't see it for whole orig_occupant
-				end
-			end
-			self:save_occupant(orig_occupant);
-			self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
-
+	-- Send presence stanza about original occupant
+	if orig_occupant ~= nil and orig_occupant ~= dest_occupant then
+		local orig_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+		local dest_nick;
+		if dest_occupant == nil then -- Session is leaving
+			log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
 			if is_last_orig_session then
-				module:fire_event("muc-occupant-left", {
-					room = self;
-					nick = orig_occupant.nick;
-					occupant = orig_occupant;
-					origin = origin;
-					stanza = stanza;
-				});
+				orig_occupant.role = nil;
 			end
-		end
-
-		if dest_occupant ~= nil then
-			dest_occupant:set_session(real_jid, stanza);
-			local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-			if is_new_room then
-				dest_x:tag("status", {code = "201"}):up();
-			end
-			if orig_occupant == nil and self:get_whois() == "anyone" then
-				dest_x:tag("status", {code = "100"}):up();
-			end
-			self:save_occupant(dest_occupant);
-
-			if orig_occupant == nil then
-				-- Send occupant list to newly joined user
-				self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
-					-- Don't include self
-					return occupant:get_presence(real_jid) == nil;
-				end)
-			end
-			self:publicise_occupant_status(dest_occupant, dest_x);
-
-			if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
-				log("debug", "session %s split nicks; showing %s rejoining", real_jid, orig_occupant.nick);
-				-- Show the original nick joining again
-				local pr = st.clone(orig_occupant:get_presence());
-				pr.attr.to = real_jid;
-				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-				self:build_item_list(orig_occupant, x, false);
-				-- TODO: new status code to inform client this was the multi-session it left?
-				pr:add_child(x);
+			orig_occupant:set_session(real_jid, stanza);
+		else
+			log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
+			local generated_unavail = st.presence {from = orig_occupant.nick, to = real_jid, type = "unavailable"};
+			orig_occupant:set_session(real_jid, generated_unavail);
+			dest_nick = select(3, jid_split(dest_occupant.nick));
+			if not is_first_dest_session then -- User is swapping into another pre-existing session
+				log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
+				-- Show the other session leaving
+				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
+					:tag("status"):text("you are joining pre-existing session " .. dest_nick):up();
+				add_item(x, self:get_affiliation(bare_jid), "none");
+				local pr = st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}
+					:add_child(x);
 				self:route_stanza(pr);
 			end
+			if is_first_dest_session and is_last_orig_session then -- Normal nick change
+				log("debug", "no sessions in %s left; publically marking as nick change", orig_occupant.nick);
+				orig_x:tag("status", {code = "303";}):up();
+			else -- The session itself always needs to see a nick change
+				-- don't want to get our old nick's available presence,
+				-- so remove our session from there, and manually generate an unavailable
+				orig_occupant:remove_session(real_jid);
+				log("debug", "generating nick change for %s", real_jid);
+				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+				-- self:build_item_list(orig_occupant, x, false, dest_nick); -- COMPAT: clients get confused if they see other items besides their own
+				add_item(x, self:get_affiliation(bare_jid), orig_occupant.role, real_jid, dest_nick);
+				x:tag("status", {code = "303";}):up();
+				x:tag("status", {code = "110";}):up();
+				self:route_stanza(generated_unavail:add_child(x));
+				dest_nick = nil; -- set dest_nick to nil; so general populance doesn't see it for whole orig_occupant
+			end
+		end
+		self:save_occupant(orig_occupant);
+		self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
 
-			if orig_occupant == nil then
-				if is_first_dest_session then
-					module:fire_event("muc-occupant-joined", {
-						room = self;
-						nick = dest_occupant.nick;
-						occupant = dest_occupant;
-						stanza = stanza;
-						origin = origin;
-					});
-				end
-				module:fire_event("muc-occupant-session-new", {
+		if is_last_orig_session then
+			module:fire_event("muc-occupant-left", {
+				room = self;
+				nick = orig_occupant.nick;
+				occupant = orig_occupant;
+				origin = origin;
+				stanza = stanza;
+			});
+		end
+	end
+
+	if dest_occupant ~= nil then
+		dest_occupant:set_session(real_jid, stanza);
+		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+		if is_new_room then
+			dest_x:tag("status", {code = "201"}):up();
+		end
+		if orig_occupant == nil and self:get_whois() == "anyone" then
+			dest_x:tag("status", {code = "100"}):up();
+		end
+		self:save_occupant(dest_occupant);
+
+		if orig_occupant == nil then
+			-- Send occupant list to newly joined user
+			self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
+				-- Don't include self
+				return occupant:get_presence(real_jid) == nil;
+			end)
+		end
+		self:publicise_occupant_status(dest_occupant, dest_x);
+
+		if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
+			log("debug", "session %s split nicks; showing %s rejoining", real_jid, orig_occupant.nick);
+			-- Show the original nick joining again
+			local pr = st.clone(orig_occupant:get_presence());
+			pr.attr.to = real_jid;
+			local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+			self:build_item_list(orig_occupant, x, false);
+			-- TODO: new status code to inform client this was the multi-session it left?
+			pr:add_child(x);
+			self:route_stanza(pr);
+		end
+
+		if orig_occupant == nil then
+			if is_first_dest_session then
+				module:fire_event("muc-occupant-joined", {
 					room = self;
 					nick = dest_occupant.nick;
 					occupant = dest_occupant;
 					stanza = stanza;
 					origin = origin;
-					jid = real_jid;
 				});
 			end
+			module:fire_event("muc-occupant-session-new", {
+				room = self;
+				nick = dest_occupant.nick;
+				occupant = dest_occupant;
+				stanza = stanza;
+				origin = origin;
+				jid = real_jid;
+			});
 		end
+	end
+	return true;
+end
+
+function room_mt:handle_presence_to_occupant(origin, stanza)
+	local type = stanza.attr.type;
+	if type == "error" then -- error, kick em out!
+		return self:handle_kickable(origin, stanza)
+	elseif type == nil or type == "unavailable" then
+		return self:handle_normal_presence(origin, stanza);
 	elseif type ~= 'result' then -- bad type
 		if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
 			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
