@@ -273,6 +273,7 @@ for event_name, method in pairs {
 			-- Watch presence to create rooms
 			if stanza.attr.type == nil and stanza.name == "presence" then
 				room = muclib.new_room(room_jid);
+				return room:handle_first_presence(origin, stanza);
 			elseif stanza.attr.type ~= "error" then
 				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 				return true;

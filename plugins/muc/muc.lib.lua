@@ -384,24 +384,68 @@ module:hook("muc-occupant-pre-join", function(event)
 	end
 end, -10);
 
+function room_mt:handle_first_presence(origin, stanza)
+	local real_jid = stanza.attr.from;
+	local dest_jid = stanza.attr.to;
+	local bare_jid = jid_bare(real_jid);
+	if module:fire_event("muc-room-pre-create", {
+			room = self;
+			origin = origin;
+			stanza = stanza;
+		}) then return true; end
+	local is_first_dest_session = true;
+	local dest_occupant = self:new_occupant(bare_jid, dest_jid);
+
+	-- TODO Handle this case sensibly
+	if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+		module:log("debug", "Room creation without <x>, possibly desynced");
+	end
+
+	if module:fire_event("muc-occupant-pre-join", {
+		room = self;
+		origin = origin;
+		stanza = stanza;
+		is_first_session = is_first_dest_session;
+		is_new_room = true;
+		occupant = dest_occupant;
+	}) then return true; end
+
+	dest_occupant:set_session(real_jid, stanza);
+	local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+	dest_x:tag("status", {code = "201"}):up();
+	if self:get_whois() == "anyone" then
+		dest_x:tag("status", {code = "100"}):up();
+	end
+	self:save_occupant(dest_occupant);
+
+	self:publicise_occupant_status(dest_occupant, dest_x);
+
+	module:fire_event("muc-occupant-joined", {
+		room = self;
+		nick = dest_occupant.nick;
+		occupant = dest_occupant;
+		stanza = stanza;
+		origin = origin;
+	});
+	module:fire_event("muc-occupant-session-new", {
+		room = self;
+		nick = dest_occupant.nick;
+		occupant = dest_occupant;
+		stanza = stanza;
+		origin = origin;
+		jid = real_jid;
+	});
+	return true;
+end
+
 function room_mt:handle_normal_presence(origin, stanza)
 	local type = stanza.attr.type;
 	local real_jid = stanza.attr.from;
 	local bare_jid = jid_bare(real_jid);
-	local orig_occupant, dest_occupant;
-	local is_new_room = next(self._affiliations) == nil;
-	if is_new_room then
-		if type == "unavailable" then return true; end -- Unavailable from someone not in the room
-		if module:fire_event("muc-room-pre-create", {
-				room = self;
-				origin = origin;
-				stanza = stanza;
-			}) then return true; end
-	else
-		orig_occupant = self:get_occupant_by_real_jid(real_jid);
-		if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
-	end
+	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
+	if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 	local is_first_dest_session;
+	local dest_occupant;
 	if type == "unavailable" then -- luacheck: ignore 542
 		-- FIXME Why the empty if branch?
 		-- dest_occupant = nil
@@ -443,7 +487,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 	};
 	if orig_occupant == nil then
 		event_name = "muc-occupant-pre-join";
-		event.is_new_room = is_new_room;
 		event.occupant = dest_occupant;
 	elseif dest_occupant == nil then
 		event_name = "muc-occupant-pre-leave";
@@ -523,9 +566,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 	if dest_occupant ~= nil then
 		dest_occupant:set_session(real_jid, stanza);
 		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-		if is_new_room then
-			dest_x:tag("status", {code = "201"}):up();
-		end
 		if orig_occupant == nil and self:get_whois() == "anyone" then
 			dest_x:tag("status", {code = "100"}):up();
 		end
