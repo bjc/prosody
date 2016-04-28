@@ -429,6 +429,14 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 			is_last_orig_session = iter(ob, iter(ob, last)) == nil;
 		end
 
+		-- TODO Handle these cases sensibly
+		local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
+		if orig_occupant == nil and not muc_x then
+			module:log("debug", "Join without <x>, possibly desynced");
+		elseif orig_occupant ~= nil and muc_x then
+			module:log("debug", "Presence update with <x>, possibly desynced");
+		end
+
 		local event, event_name = {
 			room = self;
 			origin = origin;
