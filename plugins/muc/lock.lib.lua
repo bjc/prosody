@@ -14,14 +14,14 @@ local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300)
 
 local function lock(room)
 	module:fire_event("muc-room-locked", {room = room;});
-	room.locked = true;
+	room._data.locked = true;
 end
 local function unlock(room)
 	module:fire_event("muc-room-unlocked", {room = room;});
-	room.locked = nil;
+	room._data.locked = nil;
 end
 local function is_locked(room)
-	return not not room.locked;
+	return not not room._data.locked;
 end
 
 if lock_rooms then
