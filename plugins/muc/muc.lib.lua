@@ -435,6 +435,12 @@ function room_mt:handle_first_presence(origin, stanza)
 		origin = origin;
 		jid = real_jid;
 	});
+	module:fire_event("muc-room-created", {
+		room = self;
+		creator = dest_occupant;
+		stanza = stanza;
+		origin = origin;
+	});
 	return true;
 end
 
