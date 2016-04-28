@@ -210,7 +210,7 @@ module:hook("host-disco-items", function(event)
 	end
 end);
 
-module:hook("muc-room-pre-create", function(event)
+module:hook("muc-room-created", function(event)
 	track_room(event.room);
 end, -1000);
 
