@@ -1322,6 +1322,11 @@ function room_mt:freeze(live)
 				frozen[jid] = st.preserialize(presence);
 			end
 		end
+		local history = self._history;
+		if history then
+			frozen._last_message = st.preserialize(history[#history].stanza);
+			frozen._last_message_at = history[#history].timestamp;
+		end
 	end
 	return frozen;
 end
@@ -1336,6 +1341,13 @@ function _M.restore_room(frozen)
 
 	local room_jid = frozen._jid;
 	local room = _M.new_room(room_jid, frozen._data);
+
+	if frozen._last_message and frozen._last_message_at then
+		room._history = {
+			{ stanza = st.deserialize(frozen._last_message),
+			  timestamp = frozen._last_message_at, },
+		};
+	end
 
 	local occupants = {};
 	local occupant_sessions = {};
