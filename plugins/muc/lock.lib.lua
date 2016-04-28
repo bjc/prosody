@@ -14,14 +14,19 @@ local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300)
 
 local function lock(room)
 	module:fire_event("muc-room-locked", {room = room;});
-	room._data.locked = true;
+	room._data.locked = os.time() + lock_room_timeout;
 end
 local function unlock(room)
 	module:fire_event("muc-room-unlocked", {room = room;});
 	room._data.locked = nil;
 end
 local function is_locked(room)
-	return not not room._data.locked;
+	local ts = room._data.locked or false;
+	if ts then
+		if ts < os.time() then return true; end
+		unlock(room);
+	end
+	return false;
 end
 
 if lock_rooms then
@@ -31,13 +36,6 @@ if lock_rooms then
 		-- Lock room at creation
 		local room = event.room;
 		lock(room);
-		if lock_room_timeout and lock_room_timeout > 0 then
-			module:add_timer(lock_room_timeout, function ()
-				if is_locked(room) then
-					room:destroy(); -- Not unlocked in time
-				end
-			end);
-		end
 	end, 10);
 end
 
