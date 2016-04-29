@@ -97,15 +97,15 @@ local room_configs = module:open_store("config");
 
 local room_items_cache = {};
 
-local function room_save(room, forced)
+local function room_save(room, forced, savestate)
 	local node = jid_split(room.jid);
 	local is_persistent = persistent.get(room);
 	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
-	if is_persistent or forced then
+	if is_persistent or savestate then
 		persistent_rooms:set(nil, room.jid, true);
-		local data = room:freeze(forced);
+		local data = room:freeze(savestate);
 		return room_configs:set(node, data);
-	else
+	elseif forced then
 		persistent_rooms:set(nil, room.jid, nil);
 		return room_configs:set(node, nil);
 	end
@@ -113,7 +113,7 @@ end
 
 local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (_, room)
 	module:log("debug", "%s evicted", room);
-	room_save(room, true); -- Force to disk
+	room_save(room, nil, true); -- Force to disk
 end);
 
 -- Automatically destroy empty non-persistent rooms
@@ -155,7 +155,7 @@ end
 
 function module.unload()
 	for room in rooms:values() do
-		room:save(true);
+		room:save(nil, true);
 		forget_room(room);
 	end
 end
@@ -287,7 +287,7 @@ end
 
 function shutdown_component()
 	for room in each_room(true) do
-		room:save(true);
+		room:save(nil, true);
 	end
 end
 module:hook_global("server-stopping", shutdown_component);
