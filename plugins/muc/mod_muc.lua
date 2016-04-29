@@ -94,6 +94,7 @@ end
 local persistent_rooms_storage = module:open_store("persistent");
 local persistent_rooms = module:open_store("persistent", "map");
 local room_configs = module:open_store("config");
+local room_state = module:open_store("state");
 
 local room_items_cache = {};
 
@@ -103,10 +104,12 @@ local function room_save(room, forced, savestate)
 	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
 	if is_persistent or savestate then
 		persistent_rooms:set(nil, room.jid, true);
-		local data = room:freeze(savestate);
+		local data, state = room:freeze(savestate);
+		room_state:set(node, state);
 		return room_configs:set(node, data);
 	elseif forced then
 		persistent_rooms:set(nil, room.jid, nil);
+		room_state:set(node, nil);
 		return room_configs:set(node, nil);
 	end
 end
@@ -133,8 +136,9 @@ end
 local function restore_room(jid)
 	local node = jid_split(jid);
 	local data = room_configs:get(node);
+	local state = room_state:get(node);
 	if data then
-		local room = muclib.restore_room(data);
+		local room = muclib.restore_room(data, state);
 		track_room(room);
 		return room;
 	end
