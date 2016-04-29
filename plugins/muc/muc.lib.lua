@@ -769,7 +769,7 @@ function room_mt:process_form(origin, stanza)
 		end
 		event.field, event.value = nil, nil;
 
-		self:save();
+		self:save(true);
 		origin.send(st.reply(stanza));
 
 		if next(event.status_codes) then
@@ -852,7 +852,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	else
 		success, errtype, err = nil, "cancel", "bad-request";
 	end
-	self:save();
+	self:save(true);
 	if not success then
 		origin.send(st.error_reply(stanza, errtype, err));
 	else
@@ -1219,7 +1219,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 		end
 	end
 
-	self:save();
+	self:save(true);
 
 	module:fire_event("muc-set-affiliation", {
 		room = self;
