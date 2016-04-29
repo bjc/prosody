@@ -1358,7 +1358,7 @@ function _M.restore_room(frozen)
 			if not resource and type(data) == "string" then
 				-- bare jid: affiliation
 				room._affiliations[jid] = data;
-			elseif host == room_host and node == room_name and resource then
+			elseif host == room_host and node == room_name and resource and type(data) == "table" then
 				-- full room jid: bare real jid and role
 				local bare_jid = data.bare_jid;
 				local	occupant = occupant_lib.new(bare_jid, jid);
@@ -1372,7 +1372,7 @@ function _M.restore_room(frozen)
 					end
 				end
 				occupant_sessions[bare_jid] = nil;
-			else
+			elseif type(data) == "table" and data.name then
 				-- full user jid: presence
 				local presence = st.deserialize(data);
 				local bare_jid = jid_bare(jid);
