@@ -1304,7 +1304,7 @@ function _M.new_room(jid, config)
 end
 
 function room_mt:freeze(live)
-	local frozen = {
+	local frozen, state = {
 		_jid = self.jid;
 		_data = self._data;
 	};
@@ -1312,26 +1312,27 @@ function room_mt:freeze(live)
 		frozen[user] = affiliation;
 	end
 	if live then
+		state = {};
 		for nick, occupant in self:each_occupant() do
-			frozen[nick] = {
+			state[nick] = {
 				bare_jid = occupant.bare_jid;
 				role = occupant.role;
 				jid = occupant.jid;
 			}
 			for jid, presence in occupant:each_session() do
-				frozen[jid] = st.preserialize(presence);
+				state[jid] = st.preserialize(presence);
 			end
 		end
 		local history = self._history;
 		if history then
-			frozen._last_message = st.preserialize(history[#history].stanza);
-			frozen._last_message_at = history[#history].timestamp;
+			state._last_message = st.preserialize(history[#history].stanza);
+			state._last_message_at = history[#history].timestamp;
 		end
 	end
-	return frozen;
+	return frozen, state;
 end
 
-function _M.restore_room(frozen)
+function _M.restore_room(frozen, state)
 	-- COMPAT
 	if frozen.jid and frozen._affiliations then
 		local room = _M.new_room(frozen.jid, frozen._data);
@@ -1354,11 +1355,15 @@ function _M.restore_room(frozen)
 	local room_name, room_host = jid_split(room_jid);
 	for jid, data in pairs(frozen) do
 		local node, host, resource = jid_split(jid);
+		if host:sub(1,1) ~= "_" and not resource and type(data) == "string" then
+			-- bare jid: affiliation
+			room._affiliations[jid] = data;
+		end
+	end
+	for jid, data in pairs(state or frozen) do
+		local node, host, resource = jid_split(jid);
 		if node or host:sub(1,1) ~= "_" then
-			if not resource and type(data) == "string" then
-				-- bare jid: affiliation
-				room._affiliations[jid] = data;
-			elseif host == room_host and node == room_name and resource and type(data) == "table" then
+			if host == room_host and node == room_name and resource and type(data) == "table" then
 				-- full room jid: bare real jid and role
 				local bare_jid = data.bare_jid;
 				local	occupant = occupant_lib.new(bare_jid, jid);
