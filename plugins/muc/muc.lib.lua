@@ -1343,10 +1343,10 @@ function _M.restore_room(frozen, state)
 	local room_jid = frozen._jid;
 	local room = _M.new_room(room_jid, frozen._data);
 
-	if frozen._last_message and frozen._last_message_at then
+	if state and state._last_message and state._last_message_at then
 		room._history = {
-			{ stanza = st.deserialize(frozen._last_message),
-			  timestamp = frozen._last_message_at, },
+			{ stanza = st.deserialize(state._last_message),
+			  timestamp = state._last_message_at, },
 		};
 	end
 
