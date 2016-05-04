@@ -30,6 +30,7 @@ local cfg = {
 	WRITE_TIMEOUT         = 180,  -- timeout in seconds for write data on socket
 	CONNECT_TIMEOUT       = 20,  -- timeout in seconds for connection attempts
 	CLEAR_DELAY           = 5,  -- seconds to wait for clearing interface list (and calling ondisconnect listeners)
+	READ_RETRY_DELAY      = 1e-06, -- if, after reading, there is still data in buffer, wait this long and continue reading
 	DEBUG                 = true,  -- show debug messages
 }
 
@@ -559,7 +560,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 			interface.eventread = nil
 			return -1
 		end
-		if EV_TIMEOUT == event and interface:onreadtimeout() ~= true then
+		if EV_TIMEOUT == event and not interface.conn:dirty() and interface:onreadtimeout() ~= true then
 			return -1 -- took too long to get some data from client -> disconnect
 		end
 		if interface._usingssl then  -- handle luasec
@@ -588,10 +589,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 					interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
 				end
 				interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
-				function( )
-					interface:_close()
-				end, cfg.READ_TIMEOUT
-				)
+					function( ) interface:_close() end, cfg.READ_TIMEOUT)
 				debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
 				-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
 			else  -- connection was closed or fatal error
@@ -607,6 +605,9 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 		if interface.noreading then
 			interface.eventread = nil;
 			return -1;
+		end
+		if interface.conn:dirty() then -- still data left in buffer
+			return EV_TIMEOUT, cfg.READ_RETRY_DELAY;
 		end
 		return EV_READ, cfg.READ_TIMEOUT
 	end
