@@ -125,7 +125,7 @@ module:hook("muc-occupant-left",function(event)
 	if not room:has_occupant() and not persistent.get(room) then -- empty, non-persistent room
 		module:fire_event("muc-room-destroyed", { room = room });
 	end
-end);
+end, -1);
 
 function track_room(room)
 	rooms:set(room.jid, room);
