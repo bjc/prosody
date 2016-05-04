@@ -588,10 +588,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 					interface.eventwrite = addevent( base, interface.conn, EV_WRITE, interface.writecallback, cfg.WRITE_TIMEOUT )
 				end
 				interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
-				function( )
-					interface:_close()
-				end, cfg.READ_TIMEOUT
-				)
+					function( ) interface:_close() end, cfg.READ_TIMEOUT)
 				debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
 				-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
 			else  -- connection was closed or fatal error
