@@ -531,10 +531,10 @@ function room_mt:handle_normal_presence(origin, stanza)
 			if not is_first_dest_session then -- User is swapping into another pre-existing session
 				log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
 				-- Show the other session leaving
-				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
-					:tag("status"):text("you are joining pre-existing session " .. dest_nick):up();
+				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
 				add_item(x, self:get_affiliation(bare_jid), "none");
 				local pr = st.presence{from = dest_occupant.nick, to = real_jid, type = "unavailable"}
+					:tag("status"):text("you are joining pre-existing session " .. dest_nick):up()
 					:add_child(x);
 				self:route_stanza(pr);
 			end
