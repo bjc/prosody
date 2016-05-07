@@ -446,6 +446,7 @@ end
 
 function room_mt:handle_normal_presence(origin, stanza)
 	local type = stanza.attr.type;
+	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	local real_jid = stanza.attr.from;
 	local bare_jid = jid_bare(real_jid);
 	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
@@ -455,13 +456,18 @@ function room_mt:handle_normal_presence(origin, stanza)
 	if type == "unavailable" then -- luacheck: ignore 542
 		-- FIXME Why the empty if branch?
 		-- dest_occupant = nil
-	elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
+	elseif orig_occupant and not muc_x and orig_occupant.nick == stanza.attr.to then -- Just a presence update
 		log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
 		dest_occupant = orig_occupant;
 	else
 		local dest_jid = stanza.attr.to;
 		dest_occupant = self:get_occupant_by_nick(dest_jid);
-		if dest_occupant == nil then
+		if muc_x then
+			dest_occupant = self:new_occupant(bare_jid, dest_jid);
+			if dest_occupant == nil then
+				is_first_dest_session = true;
+			end
+		elseif dest_occupant == nil then
 			log("debug", "no occupant found for %s; creating new occupant object for %s", dest_jid, real_jid);
 			is_first_dest_session = true;
 			dest_occupant = self:new_occupant(bare_jid, dest_jid);
@@ -477,7 +483,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 	end
 
 	-- TODO Handle these cases sensibly
-	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	if orig_occupant == nil and not muc_x then
 		module:log("debug", "Join without <x>, possibly desynced");
 	elseif orig_occupant ~= nil and muc_x then
