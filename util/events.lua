@@ -131,7 +131,7 @@ local function new()
 			end
 		end
 		if #w == 0 then
-			if event_name == nil then
+			if event_name == false then
 				global_wrappers = nil;
 			else
 				wrappers[event_name] = nil;
