@@ -577,7 +577,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		end
 		self:save_occupant(dest_occupant);
 
-		if orig_occupant == nil then
+		if orig_occupant == nil or muc_x then
 			-- Send occupant list to newly joined user
 			self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
 				-- Don't include self
@@ -598,7 +598,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 			self:route_stanza(pr);
 		end
 
-		if orig_occupant == nil then
+		if orig_occupant == nil or muc_x then
 			if is_first_dest_session then
 				module:fire_event("muc-occupant-joined", {
 					room = self;
