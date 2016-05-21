@@ -201,6 +201,7 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		end
 		core_post_stanza(origin, stanza);
 		send_presence_of_available_resources(node, host, to_bare, origin);
+		core_post_stanza(origin, st.presence({ type = "probe", from = from_bare, to = to_bare }));
 	elseif stanza.attr.type == "unsubscribed" then
 		-- 1. send unavailable
 		-- 2. route stanza
