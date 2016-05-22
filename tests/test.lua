@@ -21,6 +21,7 @@ function run_all_tests()
 	dotest "util.json"
 	dotest "util.stanza"
 	dotest "util.sasl.scram"
+	dotest "util.async"
 	dotest "util.cache"
 	dotest "util.throttle"
 	dotest "util.uuid"
