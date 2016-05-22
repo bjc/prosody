@@ -116,6 +116,28 @@ function cache_methods:tail()
 	return tail.key, tail.value;
 end
 
+function cache_methods:table()
+	if not self.proxy_table then
+		self.proxy_table = setmetatable({}, {
+			__index = function (t, k)
+				return self:get(k);
+			end;
+			__newindex = function (t, k, v)
+				if not self:set(k, v) then
+					error("failed to insert key into cache - full");
+				end
+			end;
+			__pairs = function (t)
+				return self:items();
+			end;
+			__len = function (t)
+				return self:count();
+			end;
+		});
+	end
+	return self.proxy_table;
+end
+
 local function new(size, on_evict)
 	size = assert(tonumber(size), "cache size must be a number");
 	size = math.floor(size);
