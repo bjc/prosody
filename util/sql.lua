@@ -2,6 +2,7 @@
 local setmetatable, getmetatable = setmetatable, getmetatable;
 local ipairs, unpack, select = ipairs, table.unpack or unpack, select; --luacheck: ignore 113
 local tonumber, tostring = tonumber, tostring;
+local type = type;
 local assert, pcall, xpcall, debug_traceback = assert, pcall, xpcall, debug.traceback;
 local t_concat = table.concat;
 local s_char = string.char;
