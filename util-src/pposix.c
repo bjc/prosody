@@ -49,6 +49,19 @@
 #define WITH_MALLINFO
 #endif
 
+#if defined(RFPROC) && defined(EV_SET)
+/*
+ * On *BSD, calling fork() is equivalent to rfork(RFPROC | RFFDG).
+ *
+ * RFFDG being set means that the file descriptor table is copied,
+ * otherwise it's shared. We want the later, otherwise libevent gets
+ * messed up.
+ *
+ * See issue #412
+ */
+#define fork() rfork(RFPROC)
+#endif
+
 /* Daemonization support */
 
 static int lc_daemonize(lua_State* L) {
