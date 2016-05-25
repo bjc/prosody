@@ -106,7 +106,7 @@ int Lrandom(lua_State *L) {
 
 #endif
 
-	lua_pushlstring(L, buf, ret);
+	lua_pushlstring(L, (const char *)buf, ret);
 #ifndef BUFLEN
 	free(buf);
 #endif
