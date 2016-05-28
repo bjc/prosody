@@ -69,10 +69,10 @@ function form_t.form(layout, data, formtype)
 				end
 			elseif field_type == "list-single" then
 				local has_default = false;
-				for _, val in ipairs(value) do
+				for _, val in ipairs(field.options or value) do
 					if type(val) == "table" then
 						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
-						if val.default and (not has_default) then
+						if value == val.value or field.options and val.default and (not has_default) then
 							form:tag("value"):text(val.value):up();
 							has_default = true;
 						end
@@ -80,15 +80,23 @@ function form_t.form(layout, data, formtype)
 						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
 					end
 				end
+				if field.options and value then
+					form:tag("value"):text(value):up();
+				end
 			elseif field_type == "list-multi" then
-				for _, val in ipairs(value) do
+				for _, val in ipairs(field.options or value) do
 					if type(val) == "table" then
 						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
-						if val.default then
+						if not field.options and val.default then
 							form:tag("value"):text(val.value):up();
 						end
 					else
 						form:tag("option", { label= val }):tag("value"):text(tostring(val)):up():up();
+					end
+				end
+				if field.options and value then
+					for _, val in ipairs(value) do
+						form:tag("value"):text(val):up();
 					end
 				end
 			end
