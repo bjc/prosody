@@ -872,7 +872,8 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		-- You need to be at least an admin, and be requesting info about your affifiliation or lower
 		-- e.g. an admin can't ask for a list of owners
 		local affiliation_rank = valid_affiliations[affiliation or "none"];
-		if affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank then
+		if affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank
+		or self:get_members_only() and self:get_whois() == "anyone" and affiliation_rank >= valid_affiliations.member then
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
 			for jid in self:each_affiliation(_aff or "none") do
 				reply:tag("item", {affiliation = _aff, jid = jid}):up();
