@@ -803,7 +803,8 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					local _aff = item.attr.affiliation;
 					local _rol = item.attr.role;
 					if _aff and not _rol then
-						if affiliation == "owner" or (affiliation == "admin" and _aff ~= "owner" and _aff ~= "admin") then
+						if affiliation == "owner" or (affiliation == "admin" and _aff ~= "owner" and _aff ~= "admin")
+						or (affiliation and affiliation ~= "outcast" and self:get_members_only() and self:get_whois() == "anyone") then
 							local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
 							for jid, affiliation in pairs(self._affiliations) do
 								if affiliation == _aff then
