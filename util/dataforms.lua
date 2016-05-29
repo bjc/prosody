@@ -72,7 +72,7 @@ function form_t.form(layout, data, formtype)
 				for _, val in ipairs(field.options or value) do
 					if type(val) == "table" then
 						form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
-						if value == val.value or field.options and val.default and (not has_default) then
+						if value == val.value or val.default and (not has_default) then
 							form:tag("value"):text(val.value):up();
 							has_default = true;
 						end
