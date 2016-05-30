@@ -62,7 +62,6 @@ function core_process_stanza(origin, stanza)
 			return handle_unhandled_stanza(origin.host, origin, stanza);
 		end
 		if name == "iq" then
-			if not stanza.attr.id then stanza.attr.id = ""; end -- COMPAT Jabiru doesn't send the id attribute on roster requests
 			if not iq_types[st_type] or ((st_type == "set" or st_type == "get") and (#stanza.tags ~= 1)) then
 				origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
 				return;
