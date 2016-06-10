@@ -182,7 +182,7 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				payload.attr.id = id;
 				session.send(st.reply(stanza));
 				module:fire_event("pep-publish-item", {
-					node = node, user = jid_bare(session.jid), actor = session.jid, id = id, session = session, item = st.clone(payload);
+					node = node, user = jid_bare(session.full_jid), actor = session.jid, id = id, session = session, item = st.clone(payload);
 				});
 				return true;
 			end
