@@ -47,11 +47,10 @@ local function subscription_presence(user_bare, recipient)
 end
 
 module:hook("pep-publish-item", function (event)
-	local session, node, id, item = event.session, event.node, event.id, event.item;
+	local session, bare, node, id, item = event.session, event.user, event.node, event.id, event.item;
 	item.attr.xmlns = nil;
 	local disable = #item.tags ~= 1 or #item.tags[1] == 0;
 	if #item.tags == 0 then item.name = "retract"; end
-	local bare = session.username..'@'..session.host;
 	local stanza = st.message({from=bare, type='headline'})
 		:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
 			:tag('items', {node=node})
@@ -183,7 +182,7 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				payload.attr.id = id;
 				session.send(st.reply(stanza));
 				module:fire_event("pep-publish-item", {
-					node = node, actor = session.jid, id = id, session = session, item = st.clone(payload);
+					node = node, user = jid_bare(session.full_jid), actor = session.jid, id = id, session = session, item = st.clone(payload);
 				});
 				return true;
 			end
