@@ -397,7 +397,7 @@ function preCheckIncoming(e)
 			local prio = 0;
 			if bare_sessions[node.."@"..host] ~= nil then
 				for resource, session_ in pairs(bare_sessions[node.."@"..host].sessions) do
-					if session_.priority ~= nil and session_.priority > prio then
+					if session_.priority ~= nil and session_.priority >= prio then
 						session = session_;
 						prio = session_.priority;
 					end
