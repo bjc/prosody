@@ -43,6 +43,16 @@ local sessions = module:shared("sessions");
 
 local log = module._log;
 
+do
+	-- Connection counter resets to 0 on load and reload
+	-- Bump it up to current value
+	local count = 0;
+	for _ in pairs(sessions) do
+		count = count + 1;
+	end
+	measure_connections(count);
+end
+
 --- Handle stanzas to remote domains
 
 local bouncy_stanzas = { message = true, presence = true, iq = true };
