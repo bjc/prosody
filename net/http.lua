@@ -27,6 +27,8 @@ local _ENV = nil;
 
 local requests = {}; -- Open requests
 
+local function make_id(req) return (tostring(req):match("%x+$")); end
+
 local listener = { default_port = 80, default_mode = "*a" };
 
 function listener.onconnect(conn)
@@ -124,6 +126,8 @@ local function request(u, ex, callback)
 	if not req.path then
 		req.path = "/";
 	end
+
+	req.id = ex and ex.id or make_id(req);
 
 	local method, headers, body;
 
