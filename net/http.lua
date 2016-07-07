@@ -115,6 +115,13 @@ local function request_reader(request, data, err)
 end
 
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
+local function log_if_failed(id, ret, ...)
+	if not ret then
+		log("error", "Request %s: error in callback: %s", id, tostring((...)));
+	end
+	return ...;
+end
+
 local function request(u, ex, callback)
 	local req = url.parse(u);
 
@@ -165,6 +172,8 @@ local function request(u, ex, callback)
 		end
 	end
 
+	log("debug", "Making %s %s request %s to %s", req.scheme, method or "GET", req.id, (ex and ex.suppress_url and host_header) or u);
+
 	-- Attach to request object
 	req.method, req.headers, req.body = method, headers, body;
 
@@ -187,7 +196,10 @@ local function request(u, ex, callback)
 	req.handler, req.conn = handler, conn
 	req.write = function (...) return req.handler:write(...); end
 
-	req.callback = function (content, code, request, response) log("debug", "Calling callback, status %s", code or "---"); return select(2, xpcall(function () return callback(content, code, request, response) end, handleerr)); end
+	req.callback = function (content, code, request, response)
+		log("debug", "request %s: Calling callback, status %s", req.id, code or "---");
+		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
+	end
 	req.reader = request_reader;
 	req.state = "status";
 
