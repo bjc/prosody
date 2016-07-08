@@ -769,7 +769,6 @@ local function print_errors(print, errors)
 end
 
 function def_env.s2s:showcert(domain)
-	local ser = require "util.serialization".serialize;
 	local print = self.session.print;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	local domain_sessions = set.new(array.collect(values(s2s_sessions)))
@@ -994,11 +993,11 @@ local function check_muc(jid)
 end
 
 function def_env.muc:create(room_jid)
-	local room, host = check_muc(room_jid);
+	local room_name, host = check_muc(room_jid);
 	if not room_name then
 		return room_name, host;
 	end
-	if not room then return nil, host end
+	if not room_name then return nil, host end
 	if hosts[host].modules.muc.rooms[room_jid] then return nil, "Room exists already" end
 	return hosts[host].modules.muc.create_room(room_jid);
 end

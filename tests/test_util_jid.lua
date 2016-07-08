@@ -19,7 +19,7 @@ end
 
 
 function split(split)
-	function test(input_jid, expected_node, expected_server, expected_resource)
+	local function test(input_jid, expected_node, expected_server, expected_resource)
 		local rnode, rserver, rresource = split(input_jid);
 		assert_equal(expected_node, rnode, "split("..tostring(input_jid)..") failed");
 		assert_equal(expected_server, rserver, "split("..tostring(input_jid)..") failed");
