@@ -904,7 +904,7 @@ loop = function(once) -- this is the main loop of the program
 		end
 
 		local read, write, err = socket_select( _readlist, _sendlist, math_min(_selecttimeout, next_timer_time) )
-		for i, socket in ipairs( write ) do -- send data waiting in writequeues
+		for _, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
 			if handler then
 				handler.sendbuffer( )
@@ -913,7 +913,7 @@ loop = function(once) -- this is the main loop of the program
 				out_put "server.lua: found no handler and closed socket (writelist)"	-- this should not happen
 			end
 		end
-		for i, socket in ipairs( read ) do -- receive data
+		for _, socket in ipairs( read ) do -- receive data
 			local handler = _socketlist[ socket ]
 			if handler then
 				handler.readbuffer( )
