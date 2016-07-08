@@ -38,6 +38,16 @@ local stream_callbacks = { default_ns = "jabber:client" };
 local listener = {};
 local runner_callbacks = {};
 
+do
+	-- Connection counter resets to 0 on load and reload
+	-- Bump it up to current value
+	local count = 0;
+	for _ in pairs(sessions) do
+		count = count + 1;
+	end
+	measure_connections(count);
+end
+
 --- Stream events handlers
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 
