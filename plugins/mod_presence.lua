@@ -130,7 +130,7 @@ function send_presence_of_available_resources(user, host, jid, recipient_session
 	if h and h.type == "local" then
 		local u = h.sessions[user];
 		if u then
-			for k, session in pairs(u.sessions) do
+			for _, session in pairs(u.sessions) do
 				local pres = session.presence;
 				if pres then
 					if stanza then pres = stanza; pres.attr.from = session.full_jid; end
