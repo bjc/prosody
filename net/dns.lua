@@ -190,7 +190,7 @@ end
 local rrs_metatable = {};    -- - - - - - - - - - - - - - - - - -  rrs_metatable
 function rrs_metatable.__tostring(rrs)
 	local t = {};
-	for i,rr in ipairs(rrs) do
+	for _, rr in ipairs(rrs) do
 		append(t, tostring(rr)..'\n');
 	end
 	return table.concat(t);
@@ -841,7 +841,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 	rset = rset or self.socket;
 
 	local response;
-	for i,sock in pairs(rset) do
+	for _, sock in pairs(rset) do
 
 		if self.socketset[sock] then
 			local packet = sock:receive();
@@ -852,7 +852,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					--print('received response');
 					--self.print(response);
 
-					for j,rr in pairs(response.answer) do
+					for _, rr in pairs(response.answer) do
 						if rr.name:sub(-#response.question[1].name, -1) == response.question[1].name then
 							self:remember(rr, response.question[1].type)
 						end
@@ -894,7 +894,7 @@ function resolver:feed(sock, packet, force)
 		--print('received response');
 		--self.print(response);
 
-		for j,rr in pairs(response.answer) do
+		for _, rr in pairs(response.answer) do
 			self:remember(rr, response.question[1].type);
 		end
 
