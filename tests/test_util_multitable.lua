@@ -8,7 +8,7 @@
 
 
 function new(new, multitable)
-	mt = new();
+	local mt = new();
 	assert_table(mt, "Multitable is a table");
 	assert_function(mt.add, "Multitable has method add");
 	assert_function(mt.get, "Multitable has method get");
@@ -40,7 +40,7 @@ function get(get, multitable)
 		return assert_equal(select(2, has_items(list, ...)), "has-all", message or "List has all expected items, and no more", 2);
 	end
 
-	mt = multitable.new();
+	local mt = multitable.new();
 
 	local trigger1, trigger2, trigger3 = {}, {}, {};
 	local item1, item2, item3 = {}, {}, {};
