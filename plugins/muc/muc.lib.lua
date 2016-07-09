@@ -1304,13 +1304,24 @@ function _M.new_room(jid, config)
 	}, room_mt);
 end
 
+local new_format = module:get_option_boolean("new_muc_storage_format", false);
+
 function room_mt:freeze(live)
-	local frozen, state = {
-		_jid = self.jid;
-		_data = self._data;
-	};
-	for user, affiliation in pairs(self._affiliations) do
-		frozen[user] = affiliation;
+	local frozen, state;
+	if new_format then
+		frozen = {
+			_jid = self.jid;
+			_data = self._data;
+		};
+		for user, affiliation in pairs(self._affiliations) do
+			frozen[user] = affiliation;
+		end
+	else
+		frozen = {
+			jid = self.jid;
+			_data = self._data;
+			_affiliations = self._affiliations;
+		};
 	end
 	if live then
 		state = {};
