@@ -717,7 +717,7 @@ function cert_commands.config(arg)
 		else
 			show_message("Please provide details to include in the certificate config file.");
 			show_message("Leave the field empty to use the default value or '.' to exclude the field.")
-			for i, k in ipairs(openssl._DN_order) do
+			for _, k in ipairs(openssl._DN_order) do
 				local v = conf.distinguished_name[k];
 				if v then
 					local nv;
