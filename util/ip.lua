@@ -58,8 +58,8 @@ local function toBits(ip)
 			for _ = 1, 4 - field:len() do
 				result = result .. "0000";
 			end
-			for i = 1, field:len() do
-				result = result .. hex2bits[field:sub(i,i)];
+			for j = 1, field:len() do
+				result = result .. hex2bits[field:sub(j, j)];
 			end
 		end
 	end
