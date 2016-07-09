@@ -196,12 +196,12 @@ function new(new)
 	assert_equal(i, 4);
 	
 	local evicted_key, evicted_value;
-	local c = new(3, function (_key, _value)
+	local c2 = new(3, function (_key, _value)
 		evicted_key, evicted_value = _key, _value;
 	end);
 	local function set(k, v, should_evict_key, should_evict_value)
 		evicted_key, evicted_value = nil, nil;
-		c:set(k, v);
+		c2:set(k, v);
 		assert_equal(evicted_key, should_evict_key);
 		assert_equal(evicted_value, should_evict_value);
 	end
