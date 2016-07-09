@@ -219,7 +219,7 @@ function new(new)
 	
 
 	local evicted_key, evicted_value;
-	local c3 = new(1, function (_key, _value, c3)
+	local c3 = new(1, function (_key, _value)
 		evicted_key, evicted_value = _key, _value;
 		if _key == "a" then
 			-- Sanity check for what we're evicting
