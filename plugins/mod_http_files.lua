@@ -18,6 +18,7 @@ local path_sep = package.config:sub(1,1);
 
 local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path"));
 local cache_size = module:get_option_number("http_files_cache_size", 128);
+local cache_max_file_size = module:get_option_number("http_files_cache_max_file_size", 4096);
 local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
 local directory_index = module:get_option_boolean("http_dir_listing");
 
@@ -148,18 +149,22 @@ function serve(opts)
 
 		else
 			local f, err = open(full_path, "rb");
-			if f then
-				data, err = f:read("*a");
-				f:close();
-			end
-			if not data then
-				module:log("debug", "Could not open or read %s. Error was %s", full_path, err);
+			if not f then
+				module:log("debug", "Could not open %s. Error was %s", full_path, err);
 				return 403;
 			end
 			local ext = full_path:match("%.([^./]+)$");
 			local content_type = ext and mime_map[ext];
-			cache:set(orig_path, { data = data; content_type = content_type; etag = etag });
 			response_headers.content_type = content_type;
+			if attr.size > cache_max_file_size then
+				response_headers.content_length = attr.size;
+				module:log("debug", "%d > cache_max_file_size", attr.size);
+				return response:send_file(f);
+			else
+				data = f:read("*a");
+				f:close();
+			end
+			cache:set(orig_path, { data = data; content_type = content_type; etag = etag });
 		end
 
 		return response:send(data);
