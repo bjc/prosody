@@ -27,6 +27,7 @@ function run_all_tests()
 	dotest "util.random"
 	dotest "util.xml"
 	dotest "util.xmppstream"
+	dotest "net.http.parser"
 
 	dosingletest("test_sasl.lua", "latin1toutf8");
 	dosingletest("test_utf8.lua", "valid");
