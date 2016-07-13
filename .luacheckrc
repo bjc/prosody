@@ -8,16 +8,18 @@ codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV" }
 
 files["plugins/"] = {
-	ignore = { "122/module" };
+	globals = { "module" };
 }
 files["tests/"] = {
-	ignore = {
-		"113/assert_equal",
-		"113/assert_table",
-		"113/assert_function",
-		"113/assert_string",
-		"113/assert_boolean",
-		"113/assert_is",
-		"113/assert_is_not",
+	read_globals = {
+		"testlib_new_env",
+		"assert_equal",
+		"assert_table",
+		"assert_function",
+		"assert_string",
+		"assert_boolean",
+		"assert_is",
+		"assert_is_not",
+		"runtest",
 	};
 }

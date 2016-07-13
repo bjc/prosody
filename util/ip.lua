@@ -51,15 +51,15 @@ local function toBits(ip)
 	if not ip:match(":$") then fields[#fields] = nil; end
 	for i, field in ipairs(fields) do
 		if field:len() == 0 and i ~= 1 and i ~= #fields then
-			for i = 1, 16 * (9 - #fields) do
+			for _ = 1, 16 * (9 - #fields) do
 				result = result .. "0";
 			end
 		else
-			for i = 1, 4 - field:len() do
+			for _ = 1, 4 - field:len() do
 				result = result .. "0000";
 			end
-			for i = 1, field:len() do
-				result = result .. hex2bits[field:sub(i,i)];
+			for j = 1, field:len() do
+				result = result .. hex2bits[field:sub(j, j)];
 			end
 		end
 	end
