@@ -13,10 +13,12 @@ local traceback = debug.traceback;
 local tostring = tostring;
 local cache = require "util.cache";
 local codes = require "net.http.codes";
+local blocksize = require "socket".BLOCKSIZE or 2048;
 
 local _M = {};
 
 local sessions = {};
+local incomplete = {};
 local listener = {};
 local hosts = {};
 local default_host;
@@ -140,15 +142,24 @@ function listener.ondisconnect(conn)
 		open_response.finished = true;
 		open_response:on_destroy();
 	end
+	incomplete[conn] = nil;
 	sessions[conn] = nil;
 end
 
 function listener.ondetach(conn)
 	sessions[conn] = nil;
+	incomplete[conn] = nil;
 end
 
 function listener.onincoming(conn, data)
 	sessions[conn]:feed(data);
+end
+
+function listener.ondrain(conn)
+	local response = incomplete[conn];
+	if response and response._send_more then
+		response._send_more();
+	end
 end
 
 local headerfix = setmetatable({}, {
@@ -190,6 +201,7 @@ function handle_request(conn, request, finish_cb)
 		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
+		send_file = _M.send_file;
 		done = _M.finish_response;
 		finish_cb = finish_cb;
 	};
@@ -271,6 +283,36 @@ function _M.send_response(response, body)
 	t_insert(output, body);
 	response.conn:write(t_concat(output));
 	response:done();
+end
+function _M.send_file(response, f)
+	if response.finished then return; end
+	local chunked = not response.headers.content_length;
+	if chunked then response.headers.transfer_encoding = "chunked"; end
+	incomplete[response.conn] = response;
+	response._send_more = function ()
+		if response.finished then
+			incomplete[response.conn] = nil;
+			return;
+		end
+		local chunk = f:read(blocksize);
+		if chunk then
+			if chunked then
+				chunk = ("%x\r\n%s\r\n"):format(#chunk, chunk);
+			end
+			-- io.write("."); io.flush();
+			response.conn:write(chunk);
+		else
+			if chunked then
+				response.conn:write("0\r\n\r\n");
+			end
+			-- io.write("\n");
+			if f.close then f:close(); end
+			incomplete[response.conn] = nil;
+			return response:done();
+		end
+	end
+	response.conn:write(t_concat(prepare_header(response)));
+	return true;
 end
 function _M.finish_response(response)
 	if response.finished then return; end
