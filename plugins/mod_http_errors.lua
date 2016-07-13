@@ -43,7 +43,8 @@ local html = [[
         <p>$message</p>
         <p>$extra</p>
 </body>
-</html>]];
+</html>
+]];
 html = html:gsub("%s%s+", "");
 
 local entities = {

@@ -1011,7 +1011,7 @@ end
 
 
 function resolver.print(response)    -- - - - - - - - - - - - - resolver.print
-	for s,s in pairs { 'id', 'qr', 'opcode', 'aa', 'tc', 'rd', 'ra', 'z',
+	for _, s in pairs { 'id', 'qr', 'opcode', 'aa', 'tc', 'rd', 'ra', 'z',
 						'rcode', 'qdcount', 'ancount', 'nscount', 'arcount' } do
 		print( string.format('%-30s', 'header.'..s), response.header[s], hint(response.header, s) );
 	end
@@ -1024,7 +1024,7 @@ function resolver.print(response)    -- - - - - - - - - - - - - resolver.print
 
 	local common = { name=1, type=1, class=1, ttl=1, rdlength=1, rdata=1 };
 	local tmp;
-	for s,s in pairs({'answer', 'authority', 'additional'}) do
+	for _, s in pairs({'answer', 'authority', 'additional'}) do
 		for i,rr in pairs(response[s]) do
 			for j,t in pairs({ 'name', 'type', 'class', 'ttl', 'rdlength' }) do
 				tmp = string.format('%s[%i].%s', s, i, t);
