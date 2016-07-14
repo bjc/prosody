@@ -63,13 +63,11 @@ local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local os_time = os.time;
 
 -- All sessions, and sessions that have no requests open
-local sessions, inactive_sessions = module:shared("sessions", "inactive_sessions");
+local sessions = module:shared("sessions");
 
 -- Used to respond to idle sessions (those with waiting requests)
-local waiting_requests = module:shared("waiting_requests");
 function on_destroy_request(request)
 	log("debug", "Request destroyed: %s", tostring(request));
-	waiting_requests[request] = nil;
 	local session = sessions[request.context.sid];
 	if session then
 		local requests = session.requests;
@@ -83,9 +81,24 @@ function on_destroy_request(request)
 		-- If this session now has no requests open, mark it as inactive
 		local max_inactive = session.bosh_max_inactive;
 		if max_inactive and #requests == 0 then
-			inactive_sessions[session] = os_time() + max_inactive;
+			if session.inactive_timer then
+				session.inactive_timer:stop();
+			end
+			session.inactive_timer = module:add_timer(max_inactive, check_inactive, session, request.context,
+				"BOSH client silent for over "..max_inactive.." seconds");
 			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
+		if session.bosh_wait_timer then
+			session.bosh_wait_timer:stop();
+			session.bosh_wait_timer = nil;
+		end
+	end
+end
+
+function check_inactive(now, session, context, reason)
+	if not sessions.destroyed then
+		sessions[context.sid] = nil;
+		sm_destroy_session(session, reason);
 	end
 end
 
@@ -119,7 +132,7 @@ function handle_POST(event)
 	local headers = response.headers;
 	headers.content_type = "text/xml; charset=utf-8";
 
-	if cross_domain and event.request.headers.origin then
+	if cross_domain and request.headers.origin then
 		set_cross_domain_headers(response);
 	end
 
