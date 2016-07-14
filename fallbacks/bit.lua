@@ -68,7 +68,7 @@ local function _rshift1(t)
 end
 function rshift(a, i)
 	local t = {a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]};
-	for n = 1,i do _rshift1(t); end
+	for _ = 1, i do _rshift1(t); end
 	return setmetatable(t, bit_mt);
 end
 local function _arshift1(t)
@@ -81,7 +81,7 @@ local function _arshift1(t)
 end
 function arshift(a, i)
 	local t = {a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]};
-	for n = 1,i do _arshift1(t); end
+	for _ = 1, i do _arshift1(t); end
 	return setmetatable(t, bit_mt);
 end
 local function _lshift1(t)
@@ -94,7 +94,7 @@ local function _lshift1(t)
 end
 function lshift(a, i)
 	local t = {a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]};
-	for n = 1,i do _lshift1(t); end
+	for _ = 1, i do _lshift1(t); end
 	return setmetatable(t, bit_mt);
 end
 
