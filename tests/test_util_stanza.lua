@@ -80,63 +80,73 @@ function presence(presence)
 end
 
 function reply(reply, _M)
-	-- Test stanza
-	local s = _M.stanza("s", { to = "touser", from = "fromuser", id = "123" })
-		:tag("child1");
-	-- Make reply stanza
-	local r = reply(s);
-	assert_equal(r.name, s.name);
-	assert_equal(r.id, s.id);
-	assert_equal(r.attr.to, s.attr.from);
-	assert_equal(r.attr.from, s.attr.to);
-	assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	do
+		-- Test stanza
+		local s = _M.stanza("s", { to = "touser", from = "fromuser", id = "123" })
+			:tag("child1");
+		-- Make reply stanza
+		local r = reply(s);
+		assert_equal(r.name, s.name);
+		assert_equal(r.id, s.id);
+		assert_equal(r.attr.to, s.attr.from);
+		assert_equal(r.attr.from, s.attr.to);
+		assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	end
 
-	-- Test stanza
-	local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "get" })
-		:tag("child1");
-	-- Make reply stanza
-	local r = reply(s);
-	assert_equal(r.name, s.name);
-	assert_equal(r.id, s.id);
-	assert_equal(r.attr.to, s.attr.from);
-	assert_equal(r.attr.from, s.attr.to);
-	assert_equal(r.attr.type, "result");
-	assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	do
+		-- Test stanza
+		local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "get" })
+			:tag("child1");
+		-- Make reply stanza
+		local r = reply(s);
+		assert_equal(r.name, s.name);
+		assert_equal(r.id, s.id);
+		assert_equal(r.attr.to, s.attr.from);
+		assert_equal(r.attr.from, s.attr.to);
+		assert_equal(r.attr.type, "result");
+		assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	end
 
-	-- Test stanza
-	local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "set" })
-		:tag("child1");
-	-- Make reply stanza
-	local r = reply(s);
-	assert_equal(r.name, s.name);
-	assert_equal(r.id, s.id);
-	assert_equal(r.attr.to, s.attr.from);
-	assert_equal(r.attr.from, s.attr.to);
-	assert_equal(r.attr.type, "result");
-	assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	do
+		-- Test stanza
+		local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "set" })
+			:tag("child1");
+		-- Make reply stanza
+		local r = reply(s);
+		assert_equal(r.name, s.name);
+		assert_equal(r.id, s.id);
+		assert_equal(r.attr.to, s.attr.from);
+		assert_equal(r.attr.from, s.attr.to);
+		assert_equal(r.attr.type, "result");
+		assert_equal(#r.tags, 0, "A reply should not include children of the original stanza");
+	end
 end
 
 function error_reply(error_reply, _M)
-	-- Test stanza
-	local s = _M.stanza("s", { to = "touser", from = "fromuser", id = "123" })
-		:tag("child1");
-	-- Make reply stanza
-	local r = error_reply(s);
-	assert_equal(r.name, s.name);
-	assert_equal(r.id, s.id);
-	assert_equal(r.attr.to, s.attr.from);
-	assert_equal(r.attr.from, s.attr.to);
-	assert_equal(#r.tags, 1);
-	
-	-- Test stanza
-	local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "get" })
-		:tag("child1");
-	-- Make reply stanza
-	local r = error_reply(s);
-	assert_equal(r.name, s.name);
-	assert_equal(r.id, s.id);
-	assert_equal(r.attr.to, s.attr.from);
-	assert_equal(r.attr.from, s.attr.to);
-	assert_equal(r.attr.type, "error");
-	assert_equal(#r.tags, 1);
+	do
+		-- Test stanza
+		local s = _M.stanza("s", { to = "touser", from = "fromuser", id = "123" })
+			:tag("child1");
+		-- Make reply stanza
+		local r = error_reply(s);
+		assert_equal(r.name, s.name);
+		assert_equal(r.id, s.id);
+		assert_equal(r.attr.to, s.attr.from);
+		assert_equal(r.attr.from, s.attr.to);
+		assert_equal(#r.tags, 1);
+	end
+
+	do
+		-- Test stanza
+		local s = _M.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "get" })
+			:tag("child1");
+		-- Make reply stanza
+		local r = error_reply(s);
+		assert_equal(r.name, s.name);
+		assert_equal(r.id, s.id);
+		assert_equal(r.attr.to, s.attr.from);
+		assert_equal(r.attr.from, s.attr.to);
+		assert_equal(r.attr.type, "error");
+		assert_equal(#r.tags, 1);
+	end
 end

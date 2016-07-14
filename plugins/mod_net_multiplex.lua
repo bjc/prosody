@@ -19,7 +19,7 @@ module:hook("service-added", function (event) add_service(event.service); end);
 module:hook("service-removed", function (event)	available_services[event.service] = nil; end);
 
 for service_name, services in pairs(portmanager.get_registered_services()) do
-	for i, service in ipairs(services) do
+	for _, service in ipairs(services) do
 		add_service(service);
 	end
 end
