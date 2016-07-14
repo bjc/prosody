@@ -117,143 +117,154 @@ function new(new)
 	assert_equal(c:get("eight"), 8);
 	assert_equal(c:get("nine"), 9);
 
-	local keys = { "nine", "four", "eight", "seven", "six" };
-	local values = { 9, 4, 8, 7, 6 };
-	local i = 0;	
-	for k, v in c:items() do
-		i = i + 1;
-		assert_equal(k, keys[i]);
-		assert_equal(v, values[i]);
-	end
-	assert_equal(i, 5);
-	
-	c:set("four", "2+2");
-	assert_equal(c:count(), 5);
-
-	assert_equal(c:get("one"), nil);
-	assert_equal(c:get("two"), nil);
-	assert_equal(c:get("three"), nil);
-	assert_equal(c:get("four"), "2+2");
-	assert_equal(c:get("five"), nil);
-	assert_equal(c:get("six"), 6);
-	assert_equal(c:get("seven"), 7);
-	assert_equal(c:get("eight"), 8);
-	assert_equal(c:get("nine"), 9);
-
-	local keys = { "four", "nine", "eight", "seven", "six" };
-	local values = { "2+2", 9, 8, 7, 6 };
-	local i = 0;	
-	for k, v in c:items() do
-		i = i + 1;
-		assert_equal(k, keys[i]);
-		assert_equal(v, values[i]);
-	end
-	assert_equal(i, 5);
-	
-	c:set("foo", nil);
-	assert_equal(c:count(), 5);
-
-	assert_equal(c:get("one"), nil);
-	assert_equal(c:get("two"), nil);
-	assert_equal(c:get("three"), nil);
-	assert_equal(c:get("four"), "2+2");
-	assert_equal(c:get("five"), nil);
-	assert_equal(c:get("six"), 6);
-	assert_equal(c:get("seven"), 7);
-	assert_equal(c:get("eight"), 8);
-	assert_equal(c:get("nine"), 9);
-
-	local keys = { "four", "nine", "eight", "seven", "six" };
-	local values = { "2+2", 9, 8, 7, 6 };
-	local i = 0;	
-	for k, v in c:items() do
-		i = i + 1;
-		assert_equal(k, keys[i]);
-		assert_equal(v, values[i]);
-	end
-	assert_equal(i, 5);
-	
-	c:set("four", nil);
-	
-	assert_equal(c:get("one"), nil);
-	assert_equal(c:get("two"), nil);
-	assert_equal(c:get("three"), nil);
-	assert_equal(c:get("four"), nil);
-	assert_equal(c:get("five"), nil);
-	assert_equal(c:get("six"), 6);
-	assert_equal(c:get("seven"), 7);
-	assert_equal(c:get("eight"), 8);
-	assert_equal(c:get("nine"), 9);
-
-	local keys = { "nine", "eight", "seven", "six" };
-	local values = { 9, 8, 7, 6 };
-	local i = 0;	
-	for k, v in c:items() do
-		i = i + 1;
-		assert_equal(k, keys[i]);
-		assert_equal(v, values[i]);
-	end
-	assert_equal(i, 4);
-	
-	local evicted_key, evicted_value;
-	local c2 = new(3, function (_key, _value)
-		evicted_key, evicted_value = _key, _value;
-	end);
-	local function set(k, v, should_evict_key, should_evict_value)
-		evicted_key, evicted_value = nil, nil;
-		c2:set(k, v);
-		assert_equal(evicted_key, should_evict_key);
-		assert_equal(evicted_value, should_evict_value);
-	end
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
-
-	set("b", 2)
-	set("c", 3)
-	set("b", 2)
-	set("d", 4, "a", 1)
-	set("e", 5, "c", 3)
-	
-
-	local evicted_key, evicted_value;
-	local c3 = new(1, function (_key, _value)
-		evicted_key, evicted_value = _key, _value;
-		if _key == "a" then
-			-- Sanity check for what we're evicting
-			assert_equal(_key, "a");
-			assert_equal(_value, 1);
-			-- We're going to block eviction of this key/value, so set to nil...
-			evicted_key, evicted_value = nil, nil;
-			-- Returning false to block eviction
-			return false
+	do
+		local keys = { "nine", "four", "eight", "seven", "six" };
+		local values = { 9, 4, 8, 7, 6 };
+		local i = 0;
+		for k, v in c:items() do
+			i = i + 1;
+			assert_equal(k, keys[i]);
+			assert_equal(v, values[i]);
 		end
-	end);
-	local function set(k, v, should_evict_key, should_evict_value)
-		evicted_key, evicted_value = nil, nil;
-		local ret = c3:set(k, v);
-		assert_equal(evicted_key, should_evict_key);
-		assert_equal(evicted_value, should_evict_value);
-		return ret;
-	end
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
-	set("a", 1)
+		assert_equal(i, 5);
 
-	-- Our on_evict prevents "a" from being evicted, causing this to fail...
-	assert_equal(set("b", 2), false, "Failed to prevent eviction, or signal result");
-	
-	expect_kv("a", 1, c3:head());
-	expect_kv("a", 1, c3:tail());
-	
-	-- Check the final state is what we expect
-	assert_equal(c3:get("a"), 1);
-	assert_equal(c3:get("b"), nil);
-	assert_equal(c3:count(), 1);
+		c:set("four", "2+2");
+		assert_equal(c:count(), 5);
+
+		assert_equal(c:get("one"), nil);
+		assert_equal(c:get("two"), nil);
+		assert_equal(c:get("three"), nil);
+		assert_equal(c:get("four"), "2+2");
+		assert_equal(c:get("five"), nil);
+		assert_equal(c:get("six"), 6);
+		assert_equal(c:get("seven"), 7);
+		assert_equal(c:get("eight"), 8);
+		assert_equal(c:get("nine"), 9);
+	end
+
+	do
+		local keys = { "four", "nine", "eight", "seven", "six" };
+		local values = { "2+2", 9, 8, 7, 6 };
+		local i = 0;
+		for k, v in c:items() do
+			i = i + 1;
+			assert_equal(k, keys[i]);
+			assert_equal(v, values[i]);
+		end
+		assert_equal(i, 5);
+
+		c:set("foo", nil);
+		assert_equal(c:count(), 5);
+
+		assert_equal(c:get("one"), nil);
+		assert_equal(c:get("two"), nil);
+		assert_equal(c:get("three"), nil);
+		assert_equal(c:get("four"), "2+2");
+		assert_equal(c:get("five"), nil);
+		assert_equal(c:get("six"), 6);
+		assert_equal(c:get("seven"), 7);
+		assert_equal(c:get("eight"), 8);
+		assert_equal(c:get("nine"), 9);
+	end
+
+	do
+		local keys = { "four", "nine", "eight", "seven", "six" };
+		local values = { "2+2", 9, 8, 7, 6 };
+		local i = 0;
+		for k, v in c:items() do
+			i = i + 1;
+			assert_equal(k, keys[i]);
+			assert_equal(v, values[i]);
+		end
+		assert_equal(i, 5);
+
+		c:set("four", nil);
+
+		assert_equal(c:get("one"), nil);
+		assert_equal(c:get("two"), nil);
+		assert_equal(c:get("three"), nil);
+		assert_equal(c:get("four"), nil);
+		assert_equal(c:get("five"), nil);
+		assert_equal(c:get("six"), 6);
+		assert_equal(c:get("seven"), 7);
+		assert_equal(c:get("eight"), 8);
+		assert_equal(c:get("nine"), 9);
+	end
+
+	do
+		local keys = { "nine", "eight", "seven", "six" };
+		local values = { 9, 8, 7, 6 };
+		local i = 0;
+		for k, v in c:items() do
+			i = i + 1;
+			assert_equal(k, keys[i]);
+			assert_equal(v, values[i]);
+		end
+		assert_equal(i, 4);
+	end
+
+	do
+		local evicted_key, evicted_value;
+		local c2 = new(3, function (_key, _value)
+			evicted_key, evicted_value = _key, _value;
+		end);
+		local function set(k, v, should_evict_key, should_evict_value)
+			evicted_key, evicted_value = nil, nil;
+			c2:set(k, v);
+			assert_equal(evicted_key, should_evict_key);
+			assert_equal(evicted_value, should_evict_value);
+		end
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+
+		set("b", 2)
+		set("c", 3)
+		set("b", 2)
+		set("d", 4, "a", 1)
+		set("e", 5, "c", 3)
+	end
+
+	do
+		local evicted_key, evicted_value;
+		local c3 = new(1, function (_key, _value)
+			evicted_key, evicted_value = _key, _value;
+			if _key == "a" then
+				-- Sanity check for what we're evicting
+				assert_equal(_key, "a");
+				assert_equal(_value, 1);
+				-- We're going to block eviction of this key/value, so set to nil...
+				evicted_key, evicted_value = nil, nil;
+				-- Returning false to block eviction
+				return false
+			end
+		end);
+		local function set(k, v, should_evict_key, should_evict_value)
+			evicted_key, evicted_value = nil, nil;
+			local ret = c3:set(k, v);
+			assert_equal(evicted_key, should_evict_key);
+			assert_equal(evicted_value, should_evict_value);
+			return ret;
+		end
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+		set("a", 1)
+
+		-- Our on_evict prevents "a" from being evicted, causing this to fail...
+		assert_equal(set("b", 2), false, "Failed to prevent eviction, or signal result");
+
+		expect_kv("a", 1, c3:head());
+		expect_kv("a", 1, c3:tail());
+
+		-- Check the final state is what we expect
+		assert_equal(c3:get("a"), 1);
+		assert_equal(c3:get("b"), nil);
+		assert_equal(c3:count(), 1);
+	end
 
 
 	local c4 = new(3, false);
