@@ -386,7 +386,7 @@ end
 
 function resolver:AAAA(rr)
 	local addr = {};
-	for i = 1, rr.rdlength, 2 do
+	for _ = 1, rr.rdlength, 2 do
 		local b1, b2 = self:byte(2);
 		table.insert(addr, ("%02x%02x"):format(b1, b2));
 	end
@@ -523,7 +523,7 @@ end
 
 function resolver:rrs (count)    -- - - - - - - - - - - - - - - - - - - - - rrs
 	local rrs = {};
-	for i = 1,count do append(rrs, self:rr()); end
+	for _ = 1, count do append(rrs, self:rr()); end
 	return rrs;
 end
 
@@ -536,7 +536,7 @@ function resolver:decode(packet, force)    -- - - - - - - - - - - - - - decode
 
 	response.question = {};
 	local offset = self.offset;
-	for i = 1,response.header.qdcount do
+	for _ = 1, response.header.qdcount do
 		append(response.question, self:question());
 	end
 	response.question.raw = string.sub(self.packet, offset, self.offset - 1);
@@ -1026,7 +1026,7 @@ function resolver.print(response)    -- - - - - - - - - - - - - resolver.print
 	local tmp;
 	for _, s in pairs({'answer', 'authority', 'additional'}) do
 		for i,rr in pairs(response[s]) do
-			for j,t in pairs({ 'name', 'type', 'class', 'ttl', 'rdlength' }) do
+			for _, t in pairs({ 'name', 'type', 'class', 'ttl', 'rdlength' }) do
 				tmp = string.format('%s[%i].%s', s, i, t);
 				print(string.format('%-30s', tmp), rr[t], hint(rr, t));
 			end
