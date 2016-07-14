@@ -1,3 +1,3 @@
 #!/bin/sh
 rm reports/*.report
-exec lua test.lua $*
+exec lua test.lua "$@"
