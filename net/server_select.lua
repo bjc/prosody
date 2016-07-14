@@ -570,7 +570,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		local read, wrote
 		handshake = coroutine_wrap( function( client ) -- create handshake coroutine
 				local err
-				for i = 1, _maxsslhandshake do
+				for _ = 1, _maxsslhandshake do
 					_sendlistlen = ( wrote and removesocket( _sendlist, client, _sendlistlen ) ) or _sendlistlen
 					_readlistlen = ( read and removesocket( _readlist, client, _readlistlen ) ) or _readlistlen
 					read, wrote = nil, nil
