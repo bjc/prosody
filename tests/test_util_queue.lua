@@ -42,9 +42,9 @@ function new(new)
 		end
 		assert_equal(q:pop(), 1002);
 		assert_is(q:push(1));
-		for i = 1, 1000000 do
-			q:pop();
-			q:push(i+1);
+		for i = 1, 1000 do
+			assert_equal(q:pop(), i);
+			assert_is(q:push(i+1));
 		end
 	end
 
