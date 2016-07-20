@@ -46,6 +46,8 @@ function new(new)
 			assert_equal(q:pop(), i);
 			assert_is(q:push(i+1));
 		end
+		assert_equal(q:pop(), 1001);
+		assert_equal(q:count(), 0);
 	end
 
 	do
