@@ -11,7 +11,6 @@ function valid()
 		if expect ~= "pass" and expect ~= "fail" then
 			error("unknown expectation: "..line:match("^[^:]+"));
 		end
-		local prefix, style = "  ", valid_style;
 		local valid = utf8.valid(data);
 		assert_equal(valid, utf8.valid(data.." "));
 		assert_equal(valid, expect == "pass", line);
