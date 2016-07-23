@@ -49,7 +49,7 @@ end
 
 function table_mt:__tostring()
 	local s = { 'name="'..self.__table__.name..'"' }
-	for i,col in ipairs(self.__table__) do
+	for _, col in ipairs(self.__table__) do
 		s[#s+1] = tostring(col);
 	end
 	return 'Table{ '..t_concat(s, ", ")..' }'
@@ -294,7 +294,7 @@ function engine:_create_table(table)
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
-	for i,v in ipairs(table.__table__) do
+	for _, v in ipairs(table.__table__) do
 		if is_index(v) then
 			self:_create_index(v);
 		end
