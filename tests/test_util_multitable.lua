@@ -27,7 +27,7 @@ function get(get, multitable)
 			return true, "has-all";
 		end
 		for n=1,select('#', ...) do should_have[select(n, ...)] = true; end
-		for n, item in ipairs(list) do
+		for _, item in ipairs(list) do
 			if not should_have[item] then return false, "too-many"; end
 			should_have[item] = nil;
 		end
