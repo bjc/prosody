@@ -13,7 +13,7 @@ local pattern = "^" .. table.concat({
 }, "%-") .. "$";
 
 function generate(generate)
-	for i = 1, 100 do
+	for _ = 1, 100 do
 		assert_is(generate():match(pattern));
 	end
 end
