@@ -47,9 +47,9 @@ end
 
 local function redir_handler(event)
 	event.response.headers.location = event.request.path.."/";
- if event.request.url.query then
- event.response.headers.location = event.response.headers.location .. "?" .. event.request.url.query
- end
+	if event.request.url.query then
+		event.response.headers.location = event.response.headers.location .. "?" .. event.request.url.query
+	end
 	return 301;
 end
 
