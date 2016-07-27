@@ -56,15 +56,17 @@ if stats then
 end
 
 if stats_interval then
-	if stats.get_stats then
-		log("debug", "Statistics collection is enabled every %d seconds", stats_interval);
+	log("debug", "Statistics collection is enabled every %d seconds", stats_interval);
 
-		local mark_collection_start = measure("times", "stats.collection");
-		local mark_processing_start = measure("times", "stats.processing");
+	local mark_collection_start = measure("times", "stats.collection");
+	local mark_processing_start = measure("times", "stats.processing");
 
-		function collect()
-			local mark_collection_done = mark_collection_start();
-			fire_event("stats-update");
+	function collect()
+		local mark_collection_done = mark_collection_start();
+		fire_event("stats-update");
+		mark_collection_done();
+
+		if stats.get_stats then
 			changed_stats, stats_extra = {}, {};
 			for stat_name, getter in pairs(stats.get_stats()) do
 				local type, value, extra = getter();
@@ -77,17 +79,14 @@ if stats_interval then
 					stats_extra[stat_name] = extra;
 				end
 			end
-			mark_collection_done();
 			local mark_processing_done = mark_processing_start();
 			fire_event("stats-updated", { stats = latest_stats, changed_stats = changed_stats, stats_extra = stats_extra });
 			mark_processing_done();
-			return stats_interval;
 		end
-		timer.add_task(stats_interval, collect);
-		prosody.events.add_handler("server-started", function () collect() end, -1);
-	else
-		log("error", "statistics_interval specified, but the selected statistics_provider (%s) does not support statistics collection", stats_provider_config or "internal");
+		return stats_interval;
 	end
+	timer.add_task(stats_interval, collect);
+	prosody.events.add_handler("server-started", function () collect() end, -1);
 end
 
 if not stats_interval and stats_provider == "util.statistics" then
