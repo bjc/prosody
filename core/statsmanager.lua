@@ -15,6 +15,7 @@ local stats_provider = stats_provider_config or "internal";
 
 local builtin_providers = {
 	internal = "util.statistics";
+	statsd = "util.statsd";
 };
 
 if stats_provider:match("^library:") then
