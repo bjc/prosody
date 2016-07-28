@@ -31,7 +31,6 @@ local tostring = use "tostring"
 
 --// lua libs //--
 
-local os = use "os"
 local table = use "table"
 local string = use "string"
 local coroutine = use "coroutine"
