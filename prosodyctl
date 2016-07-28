@@ -268,7 +268,6 @@ end
 
 local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
 local show_usage = prosodyctl.show_usage;
-local getchar, getpass = prosodyctl.getchar, prosodyctl.getpass;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
@@ -547,7 +546,6 @@ function commands.about(arg)
 	print("Source directory:   "..relpath(pwd, CFG_SOURCEDIR or "."));
 	print("Plugin directories:")
 	print("  "..(prosody.paths.plugins:gsub("([^;]+);?", function(path)
-			local opath = path;
 			path = config.resolve_relative_path(pwd, path);
 			local hgid, hgrepo = hg.check_id(path);
 			if not hgid and hgrepo then
@@ -804,7 +802,6 @@ function cert_commands.generate(arg)
 		end
 		local _, key_filename = cert_commands.key({arg[1]});
 		local _, conf_filename = cert_commands.config(arg);
-		local ret;
 		if key_filename and conf_filename and cert_filename
 			and openssl.req{new=true, x509=true, nodes=true, key=key_filename,
 				days=365, sha256=true, utf8=true, config=conf_filename, out=cert_filename} then
