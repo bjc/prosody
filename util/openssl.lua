@@ -61,15 +61,15 @@ local DN_order = {
 _M._DN_order = DN_order;
 function ssl_config:serialize()
 	local s = "";
-	for k, t in pairs(self) do
-		s = s .. ("[%s]\n"):format(k);
-		if k == "subject_alternative_name" then
+	for section, t in pairs(self) do
+		s = s .. ("[%s]\n"):format(section);
+		if section == "subject_alternative_name" then
 			for san, n in pairs(t) do
 				for i = 1, #n do
 					s = s .. s_format("%s.%d = %s\n", san, i -1, n[i]);
 				end
 			end
-		elseif k == "distinguished_name" then
+		elseif section == "distinguished_name" then
 			for _, k in ipairs(t[1] and t or DN_order) do
 				local v = t[k];
 				if v then
