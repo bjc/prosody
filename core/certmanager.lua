@@ -33,7 +33,7 @@ local select = select;
 
 local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
-local config_path = prosody.paths.config;
+local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
