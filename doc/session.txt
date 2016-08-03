@@ -20,7 +20,7 @@ session {
 	
 	-- methods --
 	send(x) -- converts x to a string, and writes it to the connection
-	disconnect(x) -- Disconnect the user and clean up the session, best call sessionmanager.destroy_session() instead of this in most cases
+	close(x) -- Disconnect the user and clean up the session, best call sessionmanager.destroy_session() instead of this in most cases
 }
 
 if session.full_jid (also session.roster and session.resource) then this is a "connected resource"
