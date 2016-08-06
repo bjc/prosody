@@ -145,7 +145,7 @@ local function restore_room(jid)
 end
 
 function forget_room(room)
-	module:log("debug", "Forgetting %s", room);
+	module:log("debug", "Forgetting %s", room.jid);
 	rooms.save = nil;
 	rooms:set(room.jid, nil);
 end
