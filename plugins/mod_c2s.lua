@@ -294,7 +294,10 @@ function listener.onreadtimeout(conn)
 end
 
 local function keepalive(event)
-	return event.session.send(' ');
+	local session = event.session;
+	if not session.notopen then
+		return event.session.send(' ');
+	end
 end
 
 function listener.associate_session(conn, session)
