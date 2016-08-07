@@ -246,9 +246,9 @@ function listener.onconnect(conn)
 	function session.data(data)
 		-- Parse the data, which will store stanzas in session.pending_stanzas
 		if data then
-		data = filter("bytes/in", data);
-		if data then
-			local ok, err = stream:feed(data);
+			data = filter("bytes/in", data);
+			if data then
+				local ok, err = stream:feed(data);
 				if not ok then
 					log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 					session:close("not-well-formed");
