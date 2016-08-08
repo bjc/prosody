@@ -13,7 +13,7 @@ local traceback = debug.traceback;
 local tostring = tostring;
 local cache = require "util.cache";
 local codes = require "net.http.codes";
-local blocksize = require "socket".BLOCKSIZE or 2048;
+local blocksize = 2^16;
 
 local _M = {};
 
