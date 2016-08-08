@@ -673,8 +673,8 @@ end
 
 function listener.onreadtimeout(conn)
 	local session = sessions[conn];
-	local host = session.host or session.to_host;
 	if session then
+		local host = session.host or session.to_host;
 		return (hosts[host] or prosody).events.fire_event("s2s-read-timeout", { session = session });
 	end
 end
