@@ -216,6 +216,8 @@ function interface:setflags(r, w)
 		op = "add";
 	end
 	local ok, err = epoll.ctl(op, fd, flags);
+	log("debug", "epoll_ctl(%q, %d, %q) -> %s" .. (err and ", %q" or ""),
+		op, fd, flags or "", tostring(ok), err);
 	if not ok then return ok, err end
 	self._flags = flags;
 	return true;
