@@ -253,14 +253,12 @@ function interface:onwriteable()
 		else
 			self:setwritetimeout();
 		end
-		self._writable = true;
 	elseif partial then
 		buffer[1] = data:sub(partial+1)
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
 		end
 		self:setwritetimeout();
-		self._writable = false;
 	end
 	if err == "wantwrite" or err == "timeout" then
 		self:setflags(nil, true);
@@ -290,12 +288,8 @@ function interface:write(data)
 	else
 		self.writebuffer = { data };
 	end
-	if self._writable and false then
-		self:onwriteable();
-	else
-		self:setwritetimeout();
-		self:setflags(nil, true);
-	end
+	self:setwritetimeout();
+	self:setflags(nil, true);
 	return #data;
 end
 interface.send = interface.write;
