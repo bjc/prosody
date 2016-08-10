@@ -28,24 +28,24 @@ if server_type == "event" then
 		defaults[k] = v;
 	end
 	function set_config(settings)
-			local event_settings = {
-				ACCEPT_DELAY = settings.accept_retry_interval;
-				ACCEPT_QUEUE = settings.tcp_backlog;
-				CLEAR_DELAY = settings.event_clear_interval;
-				CONNECT_TIMEOUT = settings.connect_timeout;
-				DEBUG = settings.debug;
-				HANDSHAKE_TIMEOUT = settings.ssl_handshake_timeout;
-				MAX_CONNECTIONS = settings.max_connections;
-				MAX_HANDSHAKE_ATTEMPTS = settings.max_ssl_handshake_roundtrips;
-				MAX_READ_LENGTH = settings.max_receive_buffer_size;
-				MAX_SEND_LENGTH = settings.max_send_buffer_size;
-				READ_TIMEOUT = settings.read_timeout;
-				WRITE_TIMEOUT = settings.send_timeout;
-			};
+		local event_settings = {
+			ACCEPT_DELAY = settings.accept_retry_interval;
+			ACCEPT_QUEUE = settings.tcp_backlog;
+			CLEAR_DELAY = settings.event_clear_interval;
+			CONNECT_TIMEOUT = settings.connect_timeout;
+			DEBUG = settings.debug;
+			HANDSHAKE_TIMEOUT = settings.ssl_handshake_timeout;
+			MAX_CONNECTIONS = settings.max_connections;
+			MAX_HANDSHAKE_ATTEMPTS = settings.max_ssl_handshake_roundtrips;
+			MAX_READ_LENGTH = settings.max_receive_buffer_size;
+			MAX_SEND_LENGTH = settings.max_send_buffer_size;
+			READ_TIMEOUT = settings.read_timeout;
+			WRITE_TIMEOUT = settings.send_timeout;
+		};
 
-			for k,default in pairs(defaults) do
-				server.cfg[k] = event_settings[k] or default;
-			end
+		for k,default in pairs(defaults) do
+			server.cfg[k] = event_settings[k] or default;
+		end
 	end
 elseif server_type == "select" then
 	server = require "net.server_select";
@@ -55,12 +55,12 @@ elseif server_type == "select" then
 		defaults[k] = v;
 	end
 	function set_config(settings)
-			local select_settings = {};
-			for k,default in pairs(defaults) do
-				select_settings[k] = settings[k] or default;
-			end
-			server.changesettings(select_settings);
+		local select_settings = {};
+		for k,default in pairs(defaults) do
+			select_settings[k] = settings[k] or default;
 		end
+		server.changesettings(select_settings);
+	end
 else
 	error("Unsupported server type")
 end
