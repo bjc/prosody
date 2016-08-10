@@ -447,21 +447,21 @@ local function addserver(addr, port, listeners, pattern, tls)
 end
 
 -- COMPAT
-local function wrapclient(client, addr, port, listeners, mode, tls)
-	local conn = setmetatable({
-		conn = client;
+local function wrapclient(conn, addr, port, listeners, pattern, tls)
+	local client = setmetatable({
+		conn = conn;
 		created = gettime();
 		listeners = listeners;
-		_pattern = mode;
+		_pattern = pattern;
 		writebuffer = {};
 		tls = tls;
 		onreadable = interface.onconnect;
 		onwriteable = interface.onconnect;
 		peer = { addr, port };
 	}, interface_mt);
-	fds[conn:getfd()] = conn;
-	conn:setflags(true, true);
-	return conn;
+	fds[client:getfd()] = client;
+	client:setflags(false, true);
+	return client;
 end
 
 local function link(from, to)
