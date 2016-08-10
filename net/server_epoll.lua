@@ -298,8 +298,10 @@ interface.send = interface.write;
 
 function interface:close()
 	if self._wantwrite then
+		log("debug", "Close %s after writing", tostring(self));
 		self._toclose = true;
 	else
+		log("debug", "Close %s", tostring(self));
 		self.close = noop;
 		self.listeners.ondisconnect(self);
 		self:destroy();
