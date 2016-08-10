@@ -89,7 +89,7 @@ else
 	end
 end
 
-if prosody then
+if prosody and set_config then
 	local config_get = require "core.configmanager".get;
 	local function load_config()
 		local settings = config_get("*", "network_settings") or {};
