@@ -473,7 +473,7 @@ local function addclient(addr, port, listeners, pattern, tls)
 	else
 		client:setflags(true, true);
 	end
-	return client;
+	return client, conn;
 end
 
 local function link(from, to)
