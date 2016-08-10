@@ -424,12 +424,6 @@ function interface:onconnect()
 	self.listeners.onconnect(self);
 end
 
-local function addclient(addr, port, listeners, pattern, tls)
-	local conn, err = socket.connect(addr, port);
-	if not conn then return conn, err; end
-	return wrapsocket(conn, nil, pattern, listeners, tls);
-end
-
 local function addserver(addr, port, listeners, pattern, tls)
 	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
 	if not conn then return conn, err; end
@@ -463,6 +457,20 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls)
 	}, interface_mt);
 	fds[client:getfd()] = client;
 	client:setflags(false, true);
+	return client;
+end
+
+local function addclient(addr, port, listeners, pattern, tls)
+	local conn, err = socket.connect(addr, port);
+	if not conn then return conn, err; end
+	conn:settimeout(0);
+	local client = wrapclient(conn, addr, port, listeners, pattern, tls);
+	if tls then
+		client._tls = false;
+		client:starttls();
+	else
+		client:setflags(true, true);
+	end
 	return client;
 end
 
