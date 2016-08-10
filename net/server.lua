@@ -62,7 +62,8 @@ elseif server_type == "select" then
 		server.changesettings(select_settings);
 	end
 else
-	error("Unsupported server type")
+	server = require("net.server_"..server_type);
+	set_config = server.set_config;
 end
 
 -- If server.hook_signal exists, replace signal.signal()
