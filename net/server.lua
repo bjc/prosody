@@ -64,6 +64,11 @@ elseif server_type == "select" then
 else
 	server = require("net.server_"..server_type);
 	set_config = server.set_config;
+	if not server.get_backend then
+		function server.get_backend()
+			return server_type;
+		end
+	end
 end
 
 -- If server.hook_signal exists, replace signal.signal()
