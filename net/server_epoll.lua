@@ -374,6 +374,7 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 		created = gettime();
 		listeners = listeners;
 		_pattern = pattern or server._pattern;
+		onwriteable = interface.onconnect;
 		writebuffer = {};
 		tls = tls;
 	}, interface_mt);
@@ -397,8 +398,7 @@ function interface:onacceptable()
 		client._tls = false;
 		client:starttls();
 	else
-		self.listeners.onconnect(client);
-		client:setflags(true);
+		client:setflags(false, true);
 	end
 	client:setreadtimeout();
 end
@@ -419,9 +419,10 @@ function interface:pausefor(t)
 end
 
 function interface:onconnect()
-	self.onreadable = nil;
 	self.onwriteable = nil;
 	self.listeners.onconnect(self);
+	self:setflags(true);
+	return self:onwriteable();
 end
 
 local function addserver(addr, port, listeners, pattern, tls)
@@ -451,7 +452,6 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls)
 		_pattern = pattern;
 		writebuffer = {};
 		tls = tls;
-		onreadable = interface.onconnect;
 		onwriteable = interface.onconnect;
 		peer = { addr, port };
 	}, interface_mt);
