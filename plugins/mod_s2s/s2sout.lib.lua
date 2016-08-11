@@ -22,6 +22,8 @@ local local_addresses = require "util.net".local_addresses;
 
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 
+local default_mode = module:get_option("network_default_read_size", 4096);
+
 local log = module._log;
 
 local sources = {};
@@ -282,7 +284,7 @@ function s2sout.make_connect(host_session, connect_host, connect_port)
 		return false, err;
 	end
 
-	conn = wrapclient(conn, connect_host.addr, connect_port, s2s_listener, "*a");
+	conn = wrapclient(conn, connect_host.addr, connect_port, s2s_listener, default_mode);
 	host_session.conn = conn;
 
 	-- Register this outgoing connection so that xmppserver_listener knows about it
