@@ -412,10 +412,15 @@ function interface:resume()
 end
 
 function interface:pausefor(t)
-	if self._wantread then
-		self:setflags(false);
-		addtimer(t, function () self:setflags(true); end);
+	if self._pausefor then
+		self._pausefor:close();
 	end
+	if t == false then return; end
+	self:setflags(false);
+	self._pausefor = addtimer(t, function ()
+		self._pausefor = nil;
+		self:setflags(true);
+	end);
 end
 
 function interface:onconnect()
