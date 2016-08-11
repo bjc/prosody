@@ -232,7 +232,7 @@ function interface:onreadable()
 		self:setflags(true, nil);
 	elseif err == "wantwrite" then
 		self:setflags(nil, true);
-	elseif err ~= "timeout" then
+	elseif not data and err ~= "timeout" then
 		self.listeners.ondisconnect(self, err);
 		self:destroy()
 		return;
