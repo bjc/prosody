@@ -28,6 +28,7 @@ local cfg = {
 	write_timeout = 7;
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
+	read_retry_delay = 1e-06;
 };
 
 local fds = createtable(10, 0); -- FD -> conn
@@ -236,6 +237,9 @@ function interface:onreadable()
 		return;
 	end
 	self:setreadtimeout();
+	if self.conn:dirty() then
+		self:pausefor(cfg.read_retry_delay);
+	end
 end
 
 function interface:onwriteable()
@@ -420,6 +424,9 @@ function interface:pausefor(t)
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
 		self:setflags(true);
+		if self.conn:dirty() then
+			self:onreadable();
+		end
 	end);
 end
 
