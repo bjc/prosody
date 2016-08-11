@@ -79,24 +79,22 @@ local function runtimers()
 			if diff < next_delay then
 				next_delay = diff;
 			end
-			return next_delay;
+			break;
 		end
 		local new_timeout = f(now);
 		if new_timeout then
-			local t_diff = t + new_timeout - now;
-			if t_diff < 1e-6 then
-				t_diff = 1e-6;
-			end
-			if t_diff < next_delay then
-				next_delay = t_diff;
-			end
 			timer[1] = t + new_timeout;
 			resort_timers = true;
 		else
 			t_remove(timers, i);
 		end
 	end
-	if next_delay < 1e-6 then
+	if resort_timers or next_delay < 1e-6 then
+		-- Timers may be added from within a timer callback.
+		-- Those would not be considered for next_dela,
+		-- and we might sleep for too long, so instead
+		-- we return a shorter timeout so we can
+		-- properly sort all new timers.
 		next_delay = 1e-6;
 	end
 	return next_delay;
