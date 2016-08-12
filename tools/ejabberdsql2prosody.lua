@@ -215,7 +215,7 @@ for name, data in pairs(t) do
 end
 --print(serialize(t));
 
-for i, row in ipairs(t["users"] or NULL) do
+for _, row in ipairs(t["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, host, "accounts", {password = password});
 	print("["..(err or "success").."] accounts: "..node.."@"..host);
@@ -254,7 +254,7 @@ function offline_msg(node, host, t, stanza)
 	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));
 	print("["..(err or "success").."] offline: " ..node.."@"..host.." - "..os.date("!%Y-%m-%dT%H:%M:%SZ", t));
 end
-for i, row in ipairs(t["rosterusers"] or NULL) do
+for _, row in ipairs(t["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
 	local name = row.nick;
 	if name == "" then name = nil; end
@@ -283,10 +283,10 @@ for i, row in ipairs(t["rosterusers"] or NULL) do
 	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
 	roster(node, host, contact, item);
 end
-for i, row in ipairs(t["rostergroups"] or NULL) do
+for _, row in ipairs(t["rostergroups"] or NULL) do
 	roster_group(row.username, host, row.jid, row.grp);
 end
-for i, row in ipairs(t["vcard"] or NULL) do
+for _, row in ipairs(t["vcard"] or NULL) do
 	local stanza, err = parse_xml(row.vcard);
 	if stanza then
 		local ret, err = dm.store(row.username, host, "vcard", st.preserialize(stanza));
@@ -295,7 +295,7 @@ for i, row in ipairs(t["vcard"] or NULL) do
 		print("[error] vCard XML parse failed: "..row.username.."@"..host);
 	end
 end
-for i, row in ipairs(t["private_storage"] or NULL) do
+for _, row in ipairs(t["private_storage"] or NULL) do
 	local stanza, err = parse_xml(row.data);
 	if stanza then
 		private_storage(row.username, host, row.namespace, stanza);
@@ -309,7 +309,7 @@ local date_parse = function(s)
 	local year, month, day, hour, min, sec = s:match("(....)-?(..)-?(..)T(..):(..):(..)");
 	return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec-time_offset});
 end
-for i, row in ipairs(t["spool"] or NULL) do
+for _, row in ipairs(t["spool"] or NULL) do
 	local stanza, err = parse_xml(row.xml);
 	if stanza then
 		local last_child = stanza.tags[#stanza.tags];
