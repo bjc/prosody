@@ -42,10 +42,6 @@ local function read(expected)
 	if expected and ch ~= expected then error("expected: "..expected.."; got: "..(ch or "nil").." on line "..line); end
 	return ch;
 end
-local function pushback(ch)
-	if last then error(); end
-	last = ch;
-end
 local function peek()
 	if not last then last = read(); end
 	return last;
