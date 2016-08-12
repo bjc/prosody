@@ -197,8 +197,8 @@ local map = {
 	--["vcard_search"] = {};
 }
 local NULL = {};
-local t = parseFile(arg);
-for name, data in pairs(t) do
+local parsed = parseFile(arg);
+for name, data in pairs(parsed) do
 	local m = map[name];
 	if m then
 		if #data > 0 and #data[1] ~= #m then
@@ -215,7 +215,7 @@ for name, data in pairs(t) do
 end
 --print(serialize(t));
 
-for _, row in ipairs(t["users"] or NULL) do
+for _, row in ipairs(parsed["users"] or NULL) do
 	local node, password = row.username, row.password;
 	local ret, err = dm.store(node, hostname, "accounts", {password = password});
 	print("["..(err or "success").."] accounts: "..node.."@"..hostname);
@@ -254,7 +254,7 @@ function offline_msg(node, host, t, stanza)
 	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));
 	print("["..(err or "success").."] offline: " ..node.."@"..host.." - "..os.date("!%Y-%m-%dT%H:%M:%SZ", t));
 end
-for _, row in ipairs(t["rosterusers"] or NULL) do
+for _, row in ipairs(parsed["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
 	local name = row.nick;
 	if name == "" then name = nil; end
@@ -283,10 +283,10 @@ for _, row in ipairs(t["rosterusers"] or NULL) do
 	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
 	roster(node, hostname, contact, item);
 end
-for _, row in ipairs(t["rostergroups"] or NULL) do
+for _, row in ipairs(parsed["rostergroups"] or NULL) do
 	roster_group(row.username, hostname, row.jid, row.grp);
 end
-for _, row in ipairs(t["vcard"] or NULL) do
+for _, row in ipairs(parsed["vcard"] or NULL) do
 	local stanza, err = parse_xml(row.vcard);
 	if stanza then
 		local ret, err = dm.store(row.username, hostname, "vcard", st.preserialize(stanza));
@@ -295,7 +295,7 @@ for _, row in ipairs(t["vcard"] or NULL) do
 		print("[error] vCard XML parse failed: "..row.username.."@"..hostname);
 	end
 end
-for _, row in ipairs(t["private_storage"] or NULL) do
+for _, row in ipairs(parsed["private_storage"] or NULL) do
 	local stanza, err = parse_xml(row.data);
 	if stanza then
 		private_storage(row.username, hostname, row.namespace, stanza);
@@ -303,13 +303,13 @@ for _, row in ipairs(t["private_storage"] or NULL) do
 		print("[error] Private XML parse failed: "..row.username.."@"..hostname);
 	end
 end
-table.sort(t["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
+table.sort(parsed["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
 local time_offset = os.difftime(os.time(os.date("!*t")), os.time(os.date("*t"))) -- to deal with timezones
 local date_parse = function(s)
 	local year, month, day, hour, min, sec = s:match("(....)-?(..)-?(..)T(..):(..):(..)");
 	return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec-time_offset});
 end
-for _, row in ipairs(t["spool"] or NULL) do
+for _, row in ipairs(parsed["spool"] or NULL) do
 	local stanza, err = parse_xml(row.xml);
 	if stanza then
 		local last_child = stanza.tags[#stanza.tags];
