@@ -155,7 +155,7 @@ function interface:setreadtimeout(t)
 			if self:onreadtimeout() then
 				return cfg.read_timeout;
 			else
-				self.listeners.ondisconnect(self, "read timeout");
+				self:ondisconnect("read timeout");
 				self:destroy();
 			end
 		end);
@@ -330,7 +330,7 @@ function interface:starttls(ctx)
 		self:setflags(false, false);
 		local conn, err = luasec.wrap(self.conn, ctx or self.tls);
 		if not conn then
-			self.listeners.ondisconnect(self, err);
+			self:ondisconnect(err);
 			self:destroy();
 		end
 		conn:settimeout(0);
@@ -365,7 +365,7 @@ function interface:tlshandskake()
 		self:setreadtimeout(false);
 		self:setwritetimeout(cfg.handshake_timeout);
 	else
-		self.listeners.ondisconnect(self, err);
+		self:ondisconnect(err);
 		self:destroy();
 	end
 end
@@ -430,9 +430,17 @@ function interface:pausefor(t)
 	end);
 end
 
+function interface:ondisconnect(err)
+	if self.listeners.ondisconnect then
+		self.listeners.ondisconnect(self, err);
+	end
+end
+
 function interface:onconnect()
 	self.onwriteable = nil;
-	self.listeners.onconnect(self);
+	if self.listeners.onconnect then
+		self.listeners.onconnect(self);
+	end
 	self:setflags(true);
 	return self:onwriteable();
 end
