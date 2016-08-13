@@ -35,7 +35,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local have_body;
 	local error;
 	return {
-		feed = function(self, data)
+		feed = function(_, data)
 			if error then return nil, "parse has failed"; end
 			if not data then -- EOF
 				if state and client and not len then -- reading client body until EOF
