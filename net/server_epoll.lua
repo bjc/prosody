@@ -250,13 +250,9 @@ function interface:onwriteable()
 		for i = #buffer, 1, -1 do
 			buffer[i] = nil;
 		end
-		self:ondrain();
-		if not buffer[1] then
-			self:setflags(nil, false);
-			self:setwritetimeout(false);
-		else
-			self:setwritetimeout();
-		end
+		self:setflags(nil, false);
+		self:setwritetimeout(false);
+		self:ondrain(); -- Be aware of writes in ondrain
 	elseif partial then
 		buffer[1] = data:sub(partial+1)
 		for i = #buffer, 2, -1 do
