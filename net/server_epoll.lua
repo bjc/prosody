@@ -40,17 +40,24 @@ local function closetimer(t)
 	t[2] = noop;
 end
 
+-- Set to true when timers have changed
 local resort_timers = false;
+
+-- Add absolute timer
 local function at(time, f)
 	local timer = { time, f, close = closetimer };
 	t_insert(timers, timer);
 	resort_timers = true;
 	return timer;
 end
+
+-- Add relative timer
 local function addtimer(timeout, f)
 	return at(gettime() + timeout, f);
 end
 
+-- Run callbacks of expired timers
+-- Return time until next timeout
 local function runtimers()
 	if resort_timers then
 		-- Sort earliest timers to the end
@@ -76,6 +83,7 @@ local function runtimers()
 		local t, f = timer[1], timer[2];
 		local now = gettime(); -- inside or before the loop?
 		if t > now then
+			-- This timer should not fire yet
 			local diff = t - now;
 			if diff < next_delay then
 				next_delay = diff;
@@ -92,7 +100,7 @@ local function runtimers()
 	end
 	if resort_timers or next_delay < 1e-6 then
 		-- Timers may be added from within a timer callback.
-		-- Those would not be considered for next_dela,
+		-- Those would not be considered for next_delay,
 		-- and we might sleep for too long, so instead
 		-- we return a shorter timeout so we can
 		-- properly sort all new timers.
@@ -222,6 +230,7 @@ function interface:setflags(r, w)
 	return true;
 end
 
+-- Called when socket is readable
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self._pattern);
 	if data or partial then
@@ -242,6 +251,7 @@ function interface:onreadable()
 	end
 end
 
+-- Called when socket is writable
 function interface:onwriteable()
 	local buffer = self.writebuffer;
 	local data = t_concat(buffer);
