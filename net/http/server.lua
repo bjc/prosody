@@ -19,6 +19,7 @@ local sessions = {};
 local listener = {};
 local hosts = {};
 local default_host;
+local options = {};
 
 local function is_wildcard_event(event)
 	return event:sub(-2, -1) == "/*";
@@ -130,7 +131,10 @@ function listener.onconnect(conn)
 		sessions[conn] = nil;
 		conn:close();
 	end
-	sessions[conn] = parser_new(success_cb, error_cb);
+	local function options_cb()
+		return options;
+	end
+	sessions[conn] = parser_new(success_cb, error_cb, "server", options_cb);
 end
 
 function listener.ondisconnect(conn)
@@ -299,6 +303,9 @@ function _M.set_default_host(host)
 end
 function _M.fire_event(event, ...)
 	return events.fire_event(event, ...);
+end
+function _M.set_option(name, value)
+	options[name] = value;
 end
 
 _M.listener = listener;
