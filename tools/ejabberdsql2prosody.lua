@@ -42,10 +42,6 @@ local function read(expected)
 	if expected and ch ~= expected then error("expected: "..expected.."; got: "..(ch or "nil").." on line "..line); end
 	return ch;
 end
-local function pushback(ch)
-	if last then error(); end
-	last = ch;
-end
 local function peek()
 	if not last then last = read(); end
 	return last;
@@ -176,9 +172,9 @@ return readFile(filename);
 ------
 end
 
-local arg, host = ...;
+local arg, hostname = ...;
 local help = "/? -? ? /h -h /help -help --help";
-if not(arg and host) or help:find(arg, 1, true) then
+if not(arg and hostname) or help:find(arg, 1, true) then
 	print([[ejabberd SQL DB dump importer for Prosody
 
   Usage: ejabberdsql2prosody.lua filename.txt hostname
@@ -201,8 +197,8 @@ local map = {
 	--["vcard_search"] = {};
 }
 local NULL = {};
-local t = parseFile(arg);
-for name, data in pairs(t) do
+local parsed = parseFile(arg);
+for name, data in pairs(parsed) do
 	local m = map[name];
 	if m then
 		if #data > 0 and #data[1] ~= #m then
@@ -219,10 +215,10 @@ for name, data in pairs(t) do
 end
 --print(serialize(t));
 
-for i, row in ipairs(t["users"] or NULL) do
+for _, row in ipairs(parsed["users"] or NULL) do
 	local node, password = row.username, row.password;
-	local ret, err = dm.store(node, host, "accounts", {password = password});
-	print("["..(err or "success").."] accounts: "..node.."@"..host);
+	local ret, err = dm.store(node, hostname, "accounts", {password = password});
+	print("["..(err or "success").."] accounts: "..node.."@"..hostname);
 end
 
 function roster(node, host, jid, item)
@@ -258,7 +254,7 @@ function offline_msg(node, host, t, stanza)
 	local ret, err = dm.list_append(node, host, "offline", st.preserialize(stanza));
 	print("["..(err or "success").."] offline: " ..node.."@"..host.." - "..os.date("!%Y-%m-%dT%H:%M:%SZ", t));
 end
-for i, row in ipairs(t["rosterusers"] or NULL) do
+for _, row in ipairs(parsed["rosterusers"] or NULL) do
 	local node, contact = row.username, row.jid;
 	local name = row.nick;
 	if name == "" then name = nil; end
@@ -278,42 +274,42 @@ for i, row in ipairs(t["rosterusers"] or NULL) do
 	elseif ask == "O" then
 		ask = "subscribe";
 	elseif ask == "I" then
-		roster_pending(node, host, contact);
+		roster_pending(node, hostname, contact);
 		ask = nil;
 	elseif ask == "B" then
-		roster_pending(node, host, contact);
+		roster_pending(node, hostname, contact);
 		ask = "subscribe";
 	else error("Unknown ask type: "..ask); end
 	local item = {name = name, ask = ask, subscription = subscription, groups = {}};
-	roster(node, host, contact, item);
+	roster(node, hostname, contact, item);
 end
-for i, row in ipairs(t["rostergroups"] or NULL) do
-	roster_group(row.username, host, row.jid, row.grp);
+for _, row in ipairs(parsed["rostergroups"] or NULL) do
+	roster_group(row.username, hostname, row.jid, row.grp);
 end
-for i, row in ipairs(t["vcard"] or NULL) do
+for _, row in ipairs(parsed["vcard"] or NULL) do
 	local stanza, err = parse_xml(row.vcard);
 	if stanza then
-		local ret, err = dm.store(row.username, host, "vcard", st.preserialize(stanza));
-		print("["..(err or "success").."] vCard: "..row.username.."@"..host);
+		local ret, err = dm.store(row.username, hostname, "vcard", st.preserialize(stanza));
+		print("["..(err or "success").."] vCard: "..row.username.."@"..hostname);
 	else
-		print("[error] vCard XML parse failed: "..row.username.."@"..host);
+		print("[error] vCard XML parse failed: "..row.username.."@"..hostname);
 	end
 end
-for i, row in ipairs(t["private_storage"] or NULL) do
+for _, row in ipairs(parsed["private_storage"] or NULL) do
 	local stanza, err = parse_xml(row.data);
 	if stanza then
-		private_storage(row.username, host, row.namespace, stanza);
+		private_storage(row.username, hostname, row.namespace, stanza);
 	else
-		print("[error] Private XML parse failed: "..row.username.."@"..host);
+		print("[error] Private XML parse failed: "..row.username.."@"..hostname);
 	end
 end
-table.sort(t["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
+table.sort(parsed["spool"] or NULL, function(a,b) return a.seq < b.seq; end); -- sort by sequence number, just in case
 local time_offset = os.difftime(os.time(os.date("!*t")), os.time(os.date("*t"))) -- to deal with timezones
 local date_parse = function(s)
 	local year, month, day, hour, min, sec = s:match("(....)-?(..)-?(..)T(..):(..):(..)");
 	return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec-time_offset});
 end
-for i, row in ipairs(t["spool"] or NULL) do
+for _, row in ipairs(parsed["spool"] or NULL) do
 	local stanza, err = parse_xml(row.xml);
 	if stanza then
 		local last_child = stanza.tags[#stanza.tags];
@@ -321,8 +317,8 @@ for i, row in ipairs(t["spool"] or NULL) do
 		if last_child.name ~= "x" and last_child.attr.xmlns ~= "jabber:x:delay" then error("Last child of offline message is not a timestamp"); end
 		stanza[#stanza], stanza.tags[#stanza.tags] = nil, nil;
 		local t = date_parse(last_child.attr.stamp);
-		offline_msg(row.username, host, t, stanza);
+		offline_msg(row.username, hostname, t, stanza);
 	else
-		print("[error] Offline message XML parsing failed: "..row.username.."@"..host);
+		print("[error] Offline message XML parsing failed: "..row.username.."@"..hostname);
 	end
 end
