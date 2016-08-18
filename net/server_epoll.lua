@@ -293,7 +293,7 @@ function interface:onwriteable()
 		self:ondrain(); -- Be aware of writes in ondrain
 		return;
 	elseif partial then
-		buffer[1] = data:sub(partial+1)
+		buffer[1] = data:sub(partial+1);
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
 		end
@@ -416,6 +416,7 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 		writebuffer = {};
 		tls = tls;
 	}, interface_mt);
+
 	if client.getpeername then
 		conn.peername, conn.peerport = client:getpeername();
 	end
