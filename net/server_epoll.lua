@@ -377,6 +377,7 @@ function interface:starttls(ctx)
 		if not conn then
 			self:on("disconnect", err);
 			self:destroy();
+			return conn, err;
 		end
 		conn:settimeout(0);
 		self.conn = conn;
