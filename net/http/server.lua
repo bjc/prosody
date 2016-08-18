@@ -22,6 +22,7 @@ local incomplete = {};
 local listener = {};
 local hosts = {};
 local default_host;
+local options = {};
 
 local function is_wildcard_event(event)
 	return event:sub(-2, -1) == "/*";
@@ -31,7 +32,7 @@ local function is_wildcard_match(wildcard_event, event)
 end
 
 local _handlers = events._handlers;
-local recent_wildcard_events = cache.new(10000, function (key, value)
+local recent_wildcard_events = cache.new(10000, function (key, value) -- luacheck: ignore 212/value
 	rawset(_handlers, key, nil);
 end);
 
@@ -133,7 +134,10 @@ function listener.onconnect(conn)
 		sessions[conn] = nil;
 		conn:close();
 	end
-	sessions[conn] = parser_new(success_cb, error_cb);
+	local function options_cb()
+		return options;
+	end
+	sessions[conn] = parser_new(success_cb, error_cb, "server", options_cb);
 end
 
 function listener.ondisconnect(conn)
@@ -170,7 +174,7 @@ local headerfix = setmetatable({}, {
 	end
 });
 
-function _M.hijack_response(response, listener)
+function _M.hijack_response(response, listener) -- luacheck: ignore
 	error("TODO");
 end
 function handle_request(conn, request, finish_cb)
@@ -349,6 +353,9 @@ function _M.set_default_host(host)
 end
 function _M.fire_event(event, ...)
 	return events.fire_event(event, ...);
+end
+function _M.set_option(name, value)
+	options[name] = value;
 end
 
 _M.listener = listener;
