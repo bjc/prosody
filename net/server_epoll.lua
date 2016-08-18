@@ -404,8 +404,11 @@ function interface:tlshandskake()
 		self._tls = true;
 		self.starttls = false;
 		if old == false then
-			self:on("connect");
+			self.onwriteable = interface.onconnect;
+			self:setflags(false, true);
+			self:setwritetimeout();
 		else
+			self:setflags(true, true);
 			self:on("status", "ssl-handshake-complete");
 		end
 	elseif err == "wantread" then
