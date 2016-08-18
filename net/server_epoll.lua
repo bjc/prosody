@@ -268,6 +268,12 @@ end
 -- Called when socket is readable
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self._pattern);
+	if self.conn:dirty() then
+		self:setreadtimeout(false);
+		self:pausefor(cfg.read_retry_delay);
+	else
+		self:setreadtimeout();
+	end
 	if data or partial then
 		self:on("incoming", data or partial, err);
 	end
@@ -279,12 +285,6 @@ function interface:onreadable()
 		self:on("disconnect", err);
 		self:destroy()
 		return;
-	end
-	if self.conn:dirty() then
-		self:setreadtimeout(false);
-		self:pausefor(cfg.read_retry_delay);
-	else
-		self:setreadtimeout();
 	end
 end
 
