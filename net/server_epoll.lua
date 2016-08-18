@@ -14,6 +14,7 @@ local t_remove = table.remove;
 local t_concat = table.concat;
 local setmetatable = setmetatable;
 local tostring = tostring;
+local pcall = pcall;
 local log = require "util.logger".init("server_epoll");
 local epoll = require "epoll";
 local socket = require "socket";
@@ -127,6 +128,20 @@ function interface:setlistener(listeners)
 	self.listeners = listeners;
 end
 
+-- Call callback
+function interface:on(what, ...)
+	local listener = self.listeners["on"..what];
+	if not listener then
+		-- log("debug", "Missing listener 'on%s'", what); -- uncomment for development and debugging
+		return;
+	end
+	local ok, err = pcall(listener, self, ...);
+	if not ok then
+		log("error", "Error calling on%s: %s", what, err);
+	end
+	return err;
+end
+
 function interface:getfd()
 	return self.conn:getfd();
 end
@@ -160,19 +175,13 @@ function interface:setreadtimeout(t)
 		resort_timers = true;
 	else
 		self._readtimeout = addtimer(t, function ()
-			if self:onreadtimeout() then
+			if self:on("readtimeout") then
 				return cfg.read_timeout;
 			else
-				self:ondisconnect("read timeout");
+				self:on("disconnect", "read timeout");
 				self:destroy();
 			end
 		end);
-	end
-end
-
-function interface:onreadtimeout()
-	if self.listeners.onreadtimeout then
-		return self.listeners.onreadtimeout(self);
 	end
 end
 
@@ -190,7 +199,7 @@ function interface:setwritetimeout(t)
 		resort_timers = true;
 	else
 		self._writetimeout = addtimer(t, function ()
-			self.listeners.ondisconnect(self, "write timeout");
+			self:on("disconnect", "write timeout");
 			self:destroy();
 		end);
 	end
@@ -234,14 +243,14 @@ end
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self._pattern);
 	if data or partial then
-		self.listeners.onincoming(self, data or partial, err);
+		self:on("incoming", data or partial, err);
 	end
 	if err == "wantread" then
 		self:setflags(true, nil);
 	elseif err == "wantwrite" then
 		self:setflags(nil, true);
 	elseif not data and err ~= "timeout" then
-		self.listeners.ondisconnect(self, err);
+		self:on("disconnect", err);
 		self:destroy()
 		return;
 	end
@@ -275,15 +284,13 @@ function interface:onwriteable()
 	elseif err == "wantread" then
 		self:setflags(true, nil);
 	elseif err and err ~= "timeout" then
-		self.listeners.ondisconnect(self, err);
+		self:on("disconnect", err);
 		self:destroy();
 	end
 end
 
 function interface:ondrain()
-	if self.listeners.ondrain then
-		self.listeners.ondrain(self);
-	end
+	self:on("drain");
 	if self._starttls then
 		self:starttls();
 	elseif self._toclose then
@@ -311,7 +318,7 @@ function interface:close()
 	else
 		log("debug", "Close %s", tostring(self));
 		self.close = noop;
-		self.listeners.ondisconnect(self);
+		self:on("disconnect");
 		self:destroy();
 	end
 end
@@ -336,7 +343,7 @@ function interface:starttls(ctx)
 		self:setflags(false, false);
 		local conn, err = luasec.wrap(self.conn, ctx or self.tls);
 		if not conn then
-			self:ondisconnect(err);
+			self:on("disconnect", err);
 			self:destroy();
 		end
 		conn:settimeout(0);
@@ -358,9 +365,9 @@ function interface:tlshandskake()
 		self._tls = true;
 		self.starttls = false;
 		if old == false then
-			self:onconnect();
-		elseif self.listeners.onstatus then
-			self.listeners.onstatus(self, "ssl-handshake-complete");
+			self:on("connect");
+		else
+			self:on("status", "ssl-handshake-complete");
 		end
 	elseif err == "wantread" then
 		self:setflags(true, false);
@@ -371,7 +378,7 @@ function interface:tlshandskake()
 		self:setreadtimeout(false);
 		self:setwritetimeout(cfg.handshake_timeout);
 	else
-		self:ondisconnect(err);
+		self:on("disconnect", err);
 		self:destroy();
 	end
 end
@@ -436,17 +443,9 @@ function interface:pausefor(t)
 	end);
 end
 
-function interface:ondisconnect(err)
-	if self.listeners.ondisconnect then
-		self.listeners.ondisconnect(self, err);
-	end
-end
-
 function interface:onconnect()
 	self.onwriteable = nil;
-	if self.listeners.onconnect then
-		self.listeners.onconnect(self);
-	end
+	self:on("connect");
 	self:setflags(true);
 	return self:onwriteable();
 end
