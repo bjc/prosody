@@ -127,6 +127,7 @@ function interface_mt:__tostring()
 end
 
 function interface:setlistener(listeners)
+	self:on("detach");
 	self.listeners = listeners;
 end
 
