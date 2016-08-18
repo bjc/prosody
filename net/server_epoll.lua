@@ -141,7 +141,10 @@ function interface:on(what, ...)
 end
 
 function interface:getfd()
-	return self.conn:getfd();
+	if self.conn then
+		return self.conn:getfd();
+	end
+	return -1;
 end
 
 function interface:ip()
