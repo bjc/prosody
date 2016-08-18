@@ -399,7 +399,7 @@ end
 function interface:onacceptable()
 	local conn, err = self.conn:accept();
 	if not conn then
-		log(debug, "Error accepting new client: %s, server will be paused for %ds", err, cfg.accept_retry_interval);
+		log("debug", "Error accepting new client: %s, server will be paused for %ds", err, cfg.accept_retry_interval);
 		self:pausefor(cfg.accept_retry_interval);
 		return;
 	end
