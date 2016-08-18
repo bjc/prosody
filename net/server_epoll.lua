@@ -30,6 +30,7 @@ local cfg = {
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
 	read_retry_delay = 1e-06;
+	handshake_timeout = 60;
 };
 
 local fds = createtable(10, 0); -- FD -> conn
@@ -385,10 +386,13 @@ function interface:starttls(ctx)
 		self.onwriteable = interface.tlshandskake;
 		self.onreadable = interface.tlshandskake;
 		self:setflags(true, true);
+		self:setwritetimeout(cfg.handshake_timeout);
 	end
 end
 
 function interface:tlshandskake()
+	self:setwritetimeout(false);
+	self:setreadtimeout(false);
 	local ok, err = self.conn:dohandshake();
 	if ok then
 		log("debug", "TLS handshake on %s complete", tostring(self));
@@ -406,12 +410,10 @@ function interface:tlshandskake()
 	elseif err == "wantread" then
 		log("debug", "TLS handshake on %s to wait until readable", tostring(self));
 		self:setflags(true, false);
-		self:setwritetimeout(false);
 		self:setreadtimeout(cfg.handshake_timeout);
 	elseif err == "wantwrite" then
 		log("debug", "TLS handshake on %s to wait until writable", tostring(self));
 		self:setflags(false, true);
-		self:setreadtimeout(false);
 		self:setwritetimeout(cfg.handshake_timeout);
 	else
 		log("debug", "TLS handshake error on %s: %s", tostring(self), err);
