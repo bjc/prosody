@@ -1,5 +1,6 @@
 local tonumber = tonumber;
 local assert = assert;
+local t_insert, t_concat = table.insert, table.concat;
 local url_parse = require "socket.url".parse;
 local urldecode = require "util.http".urldecode;
 
@@ -27,7 +28,9 @@ local httpstream = {};
 function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local client = true;
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
-	local buf = "";
+	local buf, buflen, buftable = {}, 0, true;
+	local bodylimit = tonumber(options_cb and options_cb().body_size_limit) or 10*1024*1024;
+	local buflimit = tonumber(options_cb and options_cb().buffer_size_limit) or bodylimit * 2;
 	local chunked, chunk_size, chunk_start;
 	local state = nil;
 	local packet;
@@ -38,6 +41,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 		feed = function(_, data)
 			if error then return nil, "parse has failed"; end
 			if not data then -- EOF
+				if buftable then buf, buftable = t_concat(buf), false; end
 				if state and client and not len then -- reading client body until EOF
 					packet.body = buf;
 					success_cb(packet);
@@ -46,9 +50,17 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 				end
 				return;
 			end
-			buf = buf..data;
-			while #buf > 0 do
+			if buftable then
+				t_insert(buf, data);
+			else
+				buf = { buf, data };
+				buftable = true;
+			end
+			buflen = buflen + #data;
+			if buflen > buflimit then error = true; return error_cb("max-buffer-size-exceeded"); end
+			while buflen > 0 do
 				if state == nil then -- read request
+					if buftable then buf, buftable = t_concat(buf), false; end
 					local index = buf:find("\r\n\r\n", nil, true);
 					if not index then return; end -- not enough data
 					local method, path, httpversion, status_code, reason_phrase;
@@ -79,6 +91,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if not first_line then error = true; return error_cb("invalid-status-line"); end
 					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
+					if len and len > bodylimit then error = true; return error_cb("content-length-limit-exceeded"); end
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
 						if not have_body then len = 0; end
@@ -115,11 +128,13 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 						};
 					end
 					buf = buf:sub(index + 4);
+					buflen = #buf;
 					state = true;
 				end
 				if state then -- read body
 					if client then
 						if chunked then
+							if buftable then buf, buftable = t_concat(buf), false; end
 							if not buf:find("\r\n", nil, true) then
 								return;
 							end -- not enough data
@@ -132,25 +147,29 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 								state, chunk_size = nil, nil;
 								buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
 								success_cb(packet);
-							elseif #buf - chunk_start - 2 >= chunk_size then -- we have a chunk
+							elseif buflen - chunk_start - 2 >= chunk_size then -- we have a chunk
 								packet.body = packet.body..buf:sub(chunk_start, chunk_start + (chunk_size-1));
 								buf = buf:sub(chunk_start + chunk_size + 2);
 								chunk_size, chunk_start = nil, nil;
 							else -- Partial chunk remaining
 								break;
 							end
-						elseif len and #buf >= len then
+						elseif len and buflen >= len then
+							if buftable then buf, buftable = t_concat(buf), false; end
 							if packet.code == 101 then
-								packet.body, buf = buf, "";
+								packet.body, buf, buflen, buftable = buf, {}, 0, true;
 							else
 								packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
+								buflen = #buf;
 							end
 							state = nil; success_cb(packet);
 						else
 							break;
 						end
-					elseif #buf >= len then
+					elseif buflen >= len then
+						if buftable then buf, buftable = t_concat(buf), false; end
 						packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
+						buflen = #buf;
 						state = nil; success_cb(packet);
 					else
 						break;
