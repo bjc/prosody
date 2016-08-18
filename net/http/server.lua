@@ -32,7 +32,7 @@ local function is_wildcard_match(wildcard_event, event)
 end
 
 local _handlers = events._handlers;
-local recent_wildcard_events = cache.new(10000, function (key, value)
+local recent_wildcard_events = cache.new(10000, function (key, value) -- luacheck: ignore 212/value
 	rawset(_handlers, key, nil);
 end);
 
@@ -174,7 +174,7 @@ local headerfix = setmetatable({}, {
 	end
 });
 
-function _M.hijack_response(response, listener)
+function _M.hijack_response(response, listener) -- luacheck: ignore
 	error("TODO");
 end
 function handle_request(conn, request, finish_cb)
