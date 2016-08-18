@@ -378,6 +378,7 @@ function interface:starttls(ctx)
 	if self.writebuffer and self.writebuffer[1] then
 		log("debug", "Start TLS on %s after write", tostring(self));
 		self._starttls = true;
+		self:setflags(nil, true); -- make sure wantwrite is set
 	else
 		log("debug", "Start TLS on %s now", tostring(self));
 		self:setflags(false, false);
