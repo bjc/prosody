@@ -30,6 +30,7 @@ local cfg = {
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
 	read_retry_delay = 1e-06;
+	connect_timeout = 20;
 	handshake_timeout = 60;
 };
 
@@ -464,8 +465,8 @@ function interface:init()
 		return self:starttls();
 	else
 		self:setflags(false, true);
+		self:setwritetimeout(cfg.connect_timeout);
 	end
-	self:setreadtimeout();
 end
 
 function interface:pause()
