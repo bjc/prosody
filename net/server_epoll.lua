@@ -22,6 +22,8 @@ local luasec = require "ssl";
 local gettime = require "util.time".now;
 local createtable = require "util.table".create;
 
+assert(socket.tcp6 and socket.tcp4, "Incompatible LuaSocket version");
+
 local _ENV = nil;
 
 local cfg = {
