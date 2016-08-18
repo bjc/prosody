@@ -289,6 +289,7 @@ function interface:onwriteable()
 		self:setflags(nil, false);
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
+		return;
 	elseif partial then
 		buffer[1] = data:sub(partial+1)
 		for i = #buffer, 2, -1 do
