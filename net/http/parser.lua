@@ -29,6 +29,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local client = true;
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
 	local buf, buflen, buftable = {}, 0, true;
+	local bodylimit = 10*1024*1024;
 	local chunked, chunk_size, chunk_start;
 	local state = nil;
 	local packet;
@@ -88,6 +89,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if not first_line then error = true; return error_cb("invalid-status-line"); end
 					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
+					if len and len > bodylimit then error = true; return error_cb("content-length-limit-exceeded"); end
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
 						if not have_body then len = 0; end
