@@ -334,10 +334,13 @@ interface.send = interface.write;
 
 function interface:close()
 	if self._wantwrite then
+		self:setflags(false, true); -- Flush final buffer contents
+		self.write, self.send = noop, noop; -- No more writing
 		log("debug", "Close %s after writing", tostring(self));
 		self._toclose = true;
 	else
 		log("debug", "Close %s now", tostring(self));
+		self.write, self.send = noop, noop;
 		self.close = noop;
 		self:on("disconnect");
 		self:destroy();
