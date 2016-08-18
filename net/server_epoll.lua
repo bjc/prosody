@@ -246,6 +246,10 @@ function interface:setflags(r, w)
 		return true;
 	end
 	local fd = self:getfd();
+	if fd < 0 then
+		self._wantread, self._wantwrite = nil, nil;
+		return nil, "invalid fd";
+	end
 	local op = "mod";
 	if not flags then
 		op = "del";
