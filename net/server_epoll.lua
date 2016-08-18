@@ -307,11 +307,12 @@ function interface:onwriteable()
 end
 
 function interface:ondrain()
-	self:on("drain");
-	if self._starttls then
-		self:starttls();
-	elseif self._toclose then
-		self:close();
+	if self._toclose then
+		return self:close();
+	elseif self._starttls then
+		return self:starttls();
+	else
+		return self:on("drain");
 	end
 end
 
