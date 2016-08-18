@@ -55,6 +55,7 @@ local response_codes = {
 	[428] = "Precondition Required";
 	[429] = "Too Many Requests";
 	[431] = "Request Header Fields Too Large";
+	[451] = "Unavailable For Legal Reasons";
 
 	[500] = "Internal Server Error";
 	[501] = "Not Implemented";
@@ -70,4 +71,4 @@ local response_codes = {
 };
 
 for k,v in pairs(response_codes) do response_codes[k] = k.." "..v; end
-return setmetatable(response_codes, { __index = function(t, k) return k.." Unassigned"; end })
+return setmetatable(response_codes, { __index = function(_, k) return k.." Unassigned"; end })
