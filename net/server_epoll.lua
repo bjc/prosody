@@ -114,11 +114,11 @@ local interface = {};
 local interface_mt = { __index = interface };
 
 function interface_mt:__tostring()
-	if self.peer then
+	if self.peername then
 		if self.conn then
 			return ("%d %s [%s]:%d"):format(self:getfd(), tostring(self.conn), self.peer[1], self.peer[2]);
 		else
-			return ("%d [%s]:%d"):format(self:getfd(), self.peer[1], self.peer[2]);
+			return ("%d [%s]:%d"):format(self:getfd(), self.peername, self.peerport);
 		end
 	end
 	return tostring(self:getfd());
@@ -147,7 +147,23 @@ function interface:getfd()
 end
 
 function interface:ip()
-	return self.peer[1];
+	return self.peername or self.sockname;
+end
+
+function interface:port()
+	return self.sockport or self.peerport;
+end
+
+function interface:clientport()
+	return self.sockport;
+end
+
+function interface:serverport()
+	if self.sockport then
+		return self.sockport;
+	elseif self.server then
+		self.server:port();
+	end
 end
 
 function interface:socket()
@@ -396,7 +412,10 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 		tls = tls;
 	}, interface_mt);
 	if client.getpeername then
-		conn.peer = {client:getpeername()}
+		conn.peername, conn.peerport = client:getpeername();
+	end
+	if client.getsockname then
+		conn.sockname, conn.sockport = client:getsockname();
 	end
 
 	fds[conn:getfd()] = conn;
@@ -461,7 +480,8 @@ local function addserver(addr, port, listeners, pattern, tls)
 		_pattern = pattern;
 		onreadable = interface.onacceptable;
 		tls = tls;
-		peer = { addr, port };
+		sockname = addr;
+		sockport = port;
 	}, interface_mt);
 	server:setflags(true, false);
 	fds[server:getfd()] = server;
