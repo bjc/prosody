@@ -529,9 +529,10 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls)
 end
 
 local function addclient(addr, port, listeners, pattern, tls)
-	local conn, err = socket.connect(addr, port);
+	local conn, err = socket.tcp();
 	if not conn then return conn, err; end
 	conn:settimeout(0);
+	conn:connect(addr, port);
 	local client = wrapclient(conn, addr, port, listeners, pattern, tls);
 	if tls then
 		client._tls = false;
