@@ -337,7 +337,7 @@ function interface:close()
 		log("debug", "Close %s after writing", tostring(self));
 		self._toclose = true;
 	else
-		log("debug", "Close %s", tostring(self));
+		log("debug", "Close %s now", tostring(self));
 		self.close = noop;
 		self:on("disconnect");
 		self:destroy();
@@ -359,8 +359,10 @@ end
 function interface:starttls(ctx)
 	if ctx then self.tls = ctx; end
 	if self.writebuffer and self.writebuffer[1] then
+		log("debug", "Start TLS on %s after write", tostring(self));
 		self._starttls = true;
 	else
+		log("debug", "Start TLS on %s now", tostring(self));
 		self:setflags(false, false);
 		local conn, err = luasec.wrap(self.conn, ctx or self.tls);
 		if not conn then
@@ -379,6 +381,7 @@ end
 function interface:tlshandskake()
 	local ok, err = self.conn:dohandshake();
 	if ok then
+		log("debug", "TLS handshake on %s complete", tostring(self));
 		self.onwriteable = nil;
 		self.onreadable = nil;
 		self:setflags(true, true);
@@ -391,14 +394,17 @@ function interface:tlshandskake()
 			self:on("status", "ssl-handshake-complete");
 		end
 	elseif err == "wantread" then
+		log("debug", "TLS handshake on %s to wait until readable", tostring(self));
 		self:setflags(true, false);
 		self:setwritetimeout(false);
 		self:setreadtimeout(cfg.handshake_timeout);
 	elseif err == "wantwrite" then
+		log("debug", "TLS handshake on %s to wait until writable", tostring(self));
 		self:setflags(false, true);
 		self:setreadtimeout(false);
 		self:setwritetimeout(cfg.handshake_timeout);
 	else
+		log("debug", "TLS handshake error on %s: %s", tostring(self), err);
 		self:on("disconnect", err);
 		self:destroy();
 	end
@@ -436,6 +442,7 @@ function interface:onacceptable()
 		return;
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners, self.tls);
+	log("debug", "New connection %s", tostring(client));
 	if self.tls then
 		client._tls = false;
 		client:starttls();
