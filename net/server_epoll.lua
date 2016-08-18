@@ -351,8 +351,14 @@ function interface:destroy()
 	self:setflags(false, false);
 	self:setwritetimeout(false);
 	self:setreadtimeout(false);
+	self.onreadable = noop;
+	self.onwriteable = noop;
+	self.destroy = noop;
+	self.close = noop;
+	self.on = noop;
 	fds[self:getfd()] = nil;
-	return self.conn:close();
+	self.conn:close();
+	self.conn = nil;
 end
 
 function interface:ssl()
