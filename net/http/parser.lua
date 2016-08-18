@@ -29,8 +29,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local client = true;
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
 	local buf, buflen, buftable = {}, 0, true;
-	local bodylimit = 10*1024*1024;
-	local buflimit = bodylimit * 2;
+	local bodylimit = tonumber(options_cb and options_cb().body_size_limit) or 10*1024*1024;
+	local buflimit = tonumber(options_cb and options_cb().buffer_size_limit) or bodylimit * 2;
 	local chunked, chunk_size, chunk_start;
 	local state = nil;
 	local packet;
