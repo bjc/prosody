@@ -453,13 +453,17 @@ function interface:onacceptable()
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners, self.tls);
 	log("debug", "New connection %s", tostring(client));
-	if self.tls then
-		client._tls = false;
-		client:starttls();
+	client:init();
+end
+
+function interface:init()
+	if self.tls and not self._tls then
+		self._tls = false; -- This means we should call onconnect when TLS is up
+		return self:starttls();
 	else
-		client:setflags(false, true);
+		self:setflags(false, true);
 	end
-	client:setreadtimeout();
+	self:setreadtimeout();
 end
 
 function interface:pause()
@@ -513,18 +517,11 @@ end
 
 -- COMPAT
 local function wrapclient(conn, addr, port, listeners, pattern, tls)
-	local client = setmetatable({
-		conn = conn;
-		created = gettime();
-		listeners = listeners;
-		_pattern = pattern;
-		writebuffer = {};
-		tls = tls;
-		onwriteable = interface.onconnect;
-		peer = { addr, port };
-	}, interface_mt);
-	fds[client:getfd()] = client;
-	client:setflags(false, true);
+	local client = wrapsocket(conn, nil, pattern, listeners, tls);
+	if not client.peername then
+		client.peername, client.peerport = addr, port;
+	end
+	client:init();
 	return client;
 end
 
@@ -533,13 +530,8 @@ local function addclient(addr, port, listeners, pattern, tls)
 	if not conn then return conn, err; end
 	conn:settimeout(0);
 	conn:connect(addr, port);
-	local client = wrapclient(conn, addr, port, listeners, pattern, tls);
-	if tls then
-		client._tls = false;
-		client:starttls();
-	else
-		client:setflags(true, true);
-	end
+	local client = wrapsocket(conn, nil, pattern, listeners, tls)
+	client:init();
 	return client, conn;
 end
 
