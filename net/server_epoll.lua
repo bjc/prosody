@@ -114,14 +114,12 @@ local interface = {};
 local interface_mt = { __index = interface };
 
 function interface_mt:__tostring()
-	if self.peername then
-		if self.conn then
-			return ("%d %s [%s]:%d"):format(self:getfd(), tostring(self.conn), self.peer[1], self.peer[2]);
-		else
-			return ("%d [%s]:%d"):format(self:getfd(), self.peername, self.peerport);
-		end
+	if self.sockname and self.peername then
+		return ("FD %d (%s, %d, %s, %d)"):format(self:getfd(), self.peername, self.peerport, self.sockname, self.sockport);
+	elseif self.sockname or self.peername then
+		return ("FD %d (%s, %d)"):format(self:getfd(), self.sockname or self.peername, self.sockport or self.peerport);
 	end
-	return tostring(self:getfd());
+	return ("%s FD %d"):format(tostring(self.conn), self:getfd());
 end
 
 function interface:setlistener(listeners)
