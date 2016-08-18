@@ -30,6 +30,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
 	local buf, buflen, buftable = {}, 0, true;
 	local bodylimit = 10*1024*1024;
+	local buflimit = bodylimit * 2;
 	local chunked, chunk_size, chunk_start;
 	local state = nil;
 	local packet;
@@ -56,6 +57,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 				buftable = true;
 			end
 			buflen = buflen + #data;
+			if buflen > buflimit then error = true; return error_cb("max-buffer-size-exceeded"); end
 			while buflen > 0 do
 				if state == nil then -- read request
 					if buftable then buf, buftable = t_concat(buf), false; end
