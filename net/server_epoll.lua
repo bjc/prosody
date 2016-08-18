@@ -271,9 +271,11 @@ function interface:onreadable()
 		self:destroy()
 		return;
 	end
-	self:setreadtimeout();
 	if self.conn:dirty() then
+		self:setreadtimeout(false);
 		self:pausefor(cfg.read_retry_delay);
+	else
+		self:setreadtimeout();
 	end
 end
 
