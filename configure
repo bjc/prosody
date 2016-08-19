@@ -342,26 +342,6 @@ else
    exit 1
 fi
 
-find_helper() {
-   explanation="$1"
-   shift
-   tried="$*"
-   while [ "$1" ]
-   do
-      found=`find_program "$1"`
-      if [ "$found" ]
-      then
-         echo "$1 found at $found"
-         HELPER=$1
-         return
-      fi
-      shift
-   done
-   echo "Could not find a $explanation. Tried: $tried."
-   echo "Make sure one of them is installed and available in your PATH."
-   exit 1
-}
-
 # Write config
 
 echo "Writing configuration..."
