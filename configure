@@ -146,6 +146,20 @@ do
          LUA_INCDIR="/usr/local/include";
          LUA_INCDIR_SET="yes"
       fi
+      if [ "$OSTYPE" = "pkg-config" ]; then
+         if [ "$LUA_SUFFIX_SET" != "yes" ]; then
+            LUA_SUFFIX="5.1";
+            LUA_SUFFIX_SET=yes
+         fi
+         LUA_CF="$(pkg-config --cflags-only-I lua$LUA_SUFFIX)"
+         LUA_CF="${LUA_CF#*-I}"
+         LUA_CF="${LUA_CF%% *}"
+         if [ "$LUA_CF" != "" ]; then
+            LUA_INCDIR="$LUA_CF"
+            LUA_INCDIR_SET=yes
+         fi
+         CFLAGS="$CFLAGS -D_GNU_SOURCE"
+      fi
       ;;
    --libdir=*)
       LIBDIR="$value"
