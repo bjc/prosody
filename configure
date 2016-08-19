@@ -2,7 +2,7 @@
 
 # Defaults
 
-PREFIX=/usr/local
+PREFIX="/usr/local"
 SYSCONFDIR="$PREFIX/etc/prosody"
 LIBDIR="$PREFIX/lib"
 DATADIR="$PREFIX/var/lib/prosody"
@@ -11,20 +11,20 @@ LUA_DIR="/usr"
 LUA_BINDIR="/usr/bin"
 LUA_INCDIR="/usr/include"
 LUA_LIBDIR="/usr/lib"
-IDN_LIB=idn
+IDN_LIB="idn"
 ICU_FLAGS="-licui18n -licudata -licuuc"
-OPENSSL_LIB=crypto
-CC=gcc
-LD=gcc
-RUNWITH=lua
-EXCERTS=yes
+OPENSSL_LIB="crypto"
+CC="gcc"
+LD="gcc"
+RUNWITH="lua"
+EXCERTS="yes"
 PRNG=
 PRNGLIBS=
 
-CFLAGS="-fPIC -Wall"
+CFLAGS="-fPIC -Wall -pedantic -std=c89"
 LDFLAGS="-shared"
 
-IDN_LIBRARY=idn
+IDN_LIBRARY="idn"
 # Help
 
 show_help() {
@@ -106,43 +106,59 @@ do
       OSTYPE="$value"
       OSTYPE_SET=yes
       if [ "$OSTYPE" = "debian" ]; then
-        LUA_SUFFIX="5.1";
-      	LUA_SUFFIX_SET=yes
-      	RUNWITH="lua5.1"
-      	LUA_INCDIR=/usr/include/lua5.1;
-      	LUA_INCDIR_SET=yes
-      	CFLAGS="$CFLAGS -D_GNU_SOURCE"
-    	fi
-    	if [ "$OSTYPE" = "macosx" ]; then
-        LUA_INCDIR=/usr/local/include;
-      	LUA_INCDIR_SET=yes
-      	LUA_LIBDIR=/usr/local/lib
-      	LUA_LIBDIR_SET=yes
-      	CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
-      	LDFLAGS="-bundle -undefined dynamic_lookup"
-    	fi
+         if [ "$LUA_SUFFIX_SET" != "yes" ]; then
+            LUA_SUFFIX="5.1";
+            LUA_SUFFIX_SET=yes
+         fi
+         RUNWITH="lua$LUA_SUFFIX"
+         LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
+         LUA_INCDIR_SET=yes
+         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
+      fi
+      if [ "$OSTYPE" = "macosx" ]; then
+         LUA_INCDIR=/usr/local/include;
+         LUA_INCDIR_SET=yes
+         LUA_LIBDIR=/usr/local/lib
+         LUA_LIBDIR_SET=yes
+         CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
+         LDFLAGS="-bundle -undefined dynamic_lookup"
+      fi
       if [ "$OSTYPE" = "linux" ]; then
-        LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yes
-        LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yes
-        CFLAGS="-Wall -fPIC -D_GNU_SOURCE"
-        LDFLAGS="-shared"
+         LUA_INCDIR=/usr/local/include;
+         LUA_INCDIR_SET=yes
+         LUA_LIBDIR=/usr/local/lib
+         LUA_LIBDIR_SET=yes
+         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
       fi
       if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]; then
-        LUA_INCDIR="/usr/local/include/lua51"
-        LUA_INCDIR_SET=yes
-        CFLAGS="-Wall -fPIC -I/usr/local/include"
-        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-        LUA_SUFFIX="-5.1"
-        LUA_SUFFIX_SET=yes
-        LUA_DIR=/usr/local
-        LUA_DIR_SET=yes
-        CC=cc
-        LD=ld
+         LUA_INCDIR="/usr/local/include/lua51"
+         LUA_INCDIR_SET=yes
+         CFLAGS="-Wall -fPIC -I/usr/local/include"
+         LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+         LUA_SUFFIX="-5.1"
+         LUA_SUFFIX_SET=yes
+         LUA_DIR=/usr/local
+         LUA_DIR_SET=yes
+         CC=cc
+         LD=ld
       fi
       if [ "$OSTYPE" = "openbsd" ]; then
-        LUA_INCDIR="/usr/local/include";
+         LUA_INCDIR="/usr/local/include";
+         LUA_INCDIR_SET="yes"
+      fi
+      if [ "$OSTYPE" = "pkg-config" ]; then
+         if [ "$LUA_SUFFIX_SET" != "yes" ]; then
+            LUA_SUFFIX="5.1";
+            LUA_SUFFIX_SET=yes
+         fi
+         LUA_CF="$(pkg-config --cflags-only-I lua$LUA_SUFFIX)"
+         LUA_CF="${LUA_CF#*-I}"
+         LUA_CF="${LUA_CF%% *}"
+         if [ "$LUA_CF" != "" ]; then
+            LUA_INCDIR="$LUA_CF"
+            LUA_INCDIR_SET=yes
+         fi
+         CFLAGS="$CFLAGS -D_GNU_SOURCE"
       fi
       ;;
    --libdir=*)
@@ -150,8 +166,8 @@ do
       LIBDIR_SET=yes
       ;;
    --datadir=*)
-   	DATADIR="$value"
-   	DATADIR_SET=yes
+      DATADIR="$value"
+      DATADIR_SET=yes
       ;;
    --require-config)
       REQUIRE_CONFIG=yes
@@ -174,9 +190,9 @@ do
    --with-idn=*)
       IDN_LIB="$value"
       ;;
-	--idn-library=*)
-		IDN_LIBRARY="$value"
-		;;
+   --idn-library=*)
+      IDN_LIBRARY="$value"
+      ;;
    --with-ssl=*)
       OPENSSL_LIB="$value"
       ;;
@@ -207,6 +223,10 @@ do
       ;;
     --no-example-certs)
       EXCERTS=
+      ;;
+   --compiler-wrapper=*)
+      CC="$value $CC"
+      LD="$value $LD"
       ;;
    *)
       echo "Error: Unknown flag: $1"
@@ -318,12 +338,12 @@ fi
 
 if [ "$IDN_LIBRARY" = "icu" ]
 then
-	IDNA_LIBS="$ICU_FLAGS"
-	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
+   IDNA_LIBS="$ICU_FLAGS"
+   CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
 fi
 if [ "$IDN_LIBRARY" = "idn" ]
 then
-	IDNA_LIBS="-l$IDN_LIB"
+   IDNA_LIBS="-l$IDN_LIB"
 fi
 
 OPENSSL_LIBS="-l$OPENSSL_LIB"
@@ -338,26 +358,6 @@ else
    echo "You may want to use the flag --with-lua-include. See --help."
    exit 1
 fi
-
-find_helper() {
-   explanation="$1"
-   shift
-   tried="$*"
-   while [ "$1" ]
-   do
-      found=`find_program "$1"`
-      if [ "$found" ]
-      then
-         echo "$1 found at $found"
-         HELPER=$1
-         return
-      fi
-      shift
-   done
-   echo "Could not find a $explanation. Tried: $tried."
-   echo "Make sure one of them is installed and available in your PATH."
-   exit 1
-}
 
 # Write config
 
