@@ -1,7 +1,7 @@
 
 include ../config.unix
 
-CFLAGS+=-ggdb -Wall -pedantic -I$(LUA_INCDIR)
+CFLAGS+=-I$(LUA_INCDIR)
 
 INSTALL_DATA=install -m644
 TARGET?=../util/
