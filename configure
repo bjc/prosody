@@ -145,6 +145,7 @@ do
       fi
       if [ "$OSTYPE" = "openbsd" ]; then
          LUA_INCDIR="/usr/local/include";
+         LUA_INCDIR_SET="yes"
       fi
       ;;
    --libdir=*)
