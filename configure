@@ -106,43 +106,43 @@ do
       OSTYPE="$value"
       OSTYPE_SET=yes
       if [ "$OSTYPE" = "debian" ]; then
-        LUA_SUFFIX="5.1";
-      	LUA_SUFFIX_SET=yes
-      	RUNWITH="lua5.1"
-      	LUA_INCDIR=/usr/include/lua5.1;
-      	LUA_INCDIR_SET=yes
-      	CFLAGS="$CFLAGS -D_GNU_SOURCE"
-    	fi
-    	if [ "$OSTYPE" = "macosx" ]; then
-        LUA_INCDIR=/usr/local/include;
-      	LUA_INCDIR_SET=yes
-      	LUA_LIBDIR=/usr/local/lib
-      	LUA_LIBDIR_SET=yes
-      	CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
-      	LDFLAGS="-bundle -undefined dynamic_lookup"
-    	fi
+         LUA_SUFFIX="5.1";
+         LUA_SUFFIX_SET=yes
+         RUNWITH="lua5.1"
+         LUA_INCDIR=/usr/include/lua5.1;
+         LUA_INCDIR_SET=yes
+         CFLAGS="$CFLAGS -D_GNU_SOURCE"
+      fi
+      if [ "$OSTYPE" = "macosx" ]; then
+         LUA_INCDIR=/usr/local/include;
+         LUA_INCDIR_SET=yes
+         LUA_LIBDIR=/usr/local/lib
+         LUA_LIBDIR_SET=yes
+         CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
+         LDFLAGS="-bundle -undefined dynamic_lookup"
+      fi
       if [ "$OSTYPE" = "linux" ]; then
-        LUA_INCDIR=/usr/local/include;
-        LUA_INCDIR_SET=yes
-        LUA_LIBDIR=/usr/local/lib
-        LUA_LIBDIR_SET=yes
-        CFLAGS="-Wall -fPIC -D_GNU_SOURCE"
-        LDFLAGS="-shared"
+         LUA_INCDIR=/usr/local/include;
+         LUA_INCDIR_SET=yes
+         LUA_LIBDIR=/usr/local/lib
+         LUA_LIBDIR_SET=yes
+         CFLAGS="-Wall -fPIC -D_GNU_SOURCE"
+         LDFLAGS="-shared"
       fi
       if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]; then
-        LUA_INCDIR="/usr/local/include/lua51"
-        LUA_INCDIR_SET=yes
-        CFLAGS="-Wall -fPIC -I/usr/local/include"
-        LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-        LUA_SUFFIX="-5.1"
-        LUA_SUFFIX_SET=yes
-        LUA_DIR=/usr/local
-        LUA_DIR_SET=yes
-        CC=cc
-        LD=ld
+         LUA_INCDIR="/usr/local/include/lua51"
+         LUA_INCDIR_SET=yes
+         CFLAGS="-Wall -fPIC -I/usr/local/include"
+         LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+         LUA_SUFFIX="-5.1"
+         LUA_SUFFIX_SET=yes
+         LUA_DIR=/usr/local
+         LUA_DIR_SET=yes
+         CC=cc
+         LD=ld
       fi
       if [ "$OSTYPE" = "openbsd" ]; then
-        LUA_INCDIR="/usr/local/include";
+         LUA_INCDIR="/usr/local/include";
       fi
       ;;
    --libdir=*)
@@ -150,8 +150,8 @@ do
       LIBDIR_SET=yes
       ;;
    --datadir=*)
-   	DATADIR="$value"
-   	DATADIR_SET=yes
+      DATADIR="$value"
+      DATADIR_SET=yes
       ;;
    --require-config)
       REQUIRE_CONFIG=yes
@@ -174,9 +174,9 @@ do
    --with-idn=*)
       IDN_LIB="$value"
       ;;
-	--idn-library=*)
-		IDN_LIBRARY="$value"
-		;;
+   --idn-library=*)
+      IDN_LIBRARY="$value"
+      ;;
    --with-ssl=*)
       OPENSSL_LIB="$value"
       ;;
@@ -318,12 +318,12 @@ fi
 
 if [ "$IDN_LIBRARY" = "icu" ]
 then
-	IDNA_LIBS="$ICU_FLAGS"
-	CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
+   IDNA_LIBS="$ICU_FLAGS"
+   CFLAGS="$CFLAGS -DUSE_STRINGPREP_ICU"
 fi
 if [ "$IDN_LIBRARY" = "idn" ]
 then
-	IDNA_LIBS="-l$IDN_LIB"
+   IDNA_LIBS="-l$IDN_LIB"
 fi
 
 OPENSSL_LIBS="-l$OPENSSL_LIB"
