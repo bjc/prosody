@@ -2,7 +2,7 @@
 
 # Defaults
 
-PREFIX=/usr/local
+PREFIX="/usr/local"
 SYSCONFDIR="$PREFIX/etc/prosody"
 LIBDIR="$PREFIX/lib"
 DATADIR="$PREFIX/var/lib/prosody"
@@ -11,20 +11,20 @@ LUA_DIR="/usr"
 LUA_BINDIR="/usr/bin"
 LUA_INCDIR="/usr/include"
 LUA_LIBDIR="/usr/lib"
-IDN_LIB=idn
+IDN_LIB="idn"
 ICU_FLAGS="-licui18n -licudata -licuuc"
-OPENSSL_LIB=crypto
-CC=gcc
-LD=gcc
-RUNWITH=lua
-EXCERTS=yes
+OPENSSL_LIB="crypto"
+CC="gcc"
+LD="gcc"
+RUNWITH="lua"
+EXCERTS="yes"
 PRNG=
 PRNGLIBS=
 
 CFLAGS="-fPIC -Wall"
 LDFLAGS="-shared"
 
-IDN_LIBRARY=idn
+IDN_LIBRARY="idn"
 # Help
 
 show_help() {
