@@ -128,8 +128,7 @@ do
          LUA_INCDIR_SET=yes
          LUA_LIBDIR=/usr/local/lib
          LUA_LIBDIR_SET=yes
-         CFLAGS="-Wall -fPIC -D_GNU_SOURCE"
-         LDFLAGS="-shared"
+         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
       fi
       if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]; then
          LUA_INCDIR="/usr/local/include/lua51"
