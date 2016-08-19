@@ -113,7 +113,7 @@ do
          RUNWITH="lua$LUA_SUFFIX"
          LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
          LUA_INCDIR_SET=yes
-         CFLAGS="$CFLAGS -D_GNU_SOURCE"
+         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
       fi
       if [ "$OSTYPE" = "macosx" ]; then
          LUA_INCDIR=/usr/local/include;
