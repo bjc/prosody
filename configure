@@ -224,6 +224,10 @@ do
     --no-example-certs)
       EXCERTS=
       ;;
+   --compiler-wrapper=*)
+      CC="$value $CC"
+      LD="$value $LD"
+      ;;
    *)
       echo "Error: Unknown flag: $1"
       exit 1
