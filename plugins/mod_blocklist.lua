@@ -302,6 +302,7 @@ local prio_in, prio_out = 100, 100;
 module:hook("presence/bare", drop_stanza, prio_in);
 module:hook("presence/full", drop_stanza, prio_in);
 
+-- FIXME See #690
 module:hook("message/bare", bounce_message, prio_in);
 module:hook("message/full", bounce_message, prio_in);
 
@@ -312,9 +313,9 @@ module:hook("pre-message/bare", bounce_outgoing, prio_out);
 module:hook("pre-message/full", bounce_outgoing, prio_out);
 module:hook("pre-message/host", bounce_outgoing, prio_out);
 
--- Note: MUST bounce these, but we don't because this would produce
--- lots of error replies due to server-generated presence.
--- FIXME some day, likely needing changes to mod_presence
+-- FIXME See #575 -- We MUST bounce these, but we don't because this
+-- would produce lots of error replies due to server-generated presence.
+-- This will likely need changes to mod_presence
 module:hook("pre-presence/bare", drop_outgoing, prio_out);
 module:hook("pre-presence/full", drop_outgoing, prio_out);
 module:hook("pre-presence/host", drop_outgoing, prio_out);
