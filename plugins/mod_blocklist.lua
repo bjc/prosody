@@ -113,7 +113,7 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	origin.interested_blocklist = true; -- Gets notified about changes
 	origin.send(reply);
 	return true;
-end);
+end, -1);
 
 -- Add or remove some jid(s) from the blocklist
 -- We want this to be atomic and not do a partial update
@@ -215,8 +215,8 @@ local function edit_blocklist(event)
 	return true;
 end
 
-module:hook("iq-set/self/urn:xmpp:blocking:block", edit_blocklist);
-module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist);
+module:hook("iq-set/self/urn:xmpp:blocking:block", edit_blocklist, -1);
+module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist, -1);
 
 -- Cache invalidation, solved!
 module:hook_global("user-deleted", function (event)
