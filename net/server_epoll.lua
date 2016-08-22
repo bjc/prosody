@@ -85,7 +85,8 @@ local function runtimers(next_delay)
 	for i = #timers, 1, -1 do
 		local timer = timers[i];
 		local t, f = timer[1], timer[2];
-		local now = gettime(); -- inside or before the loop?
+		-- Get time for every iteration to increase accuracy
+		local now = gettime();
 		if t > now then
 			-- This timer should not fire yet
 			local diff = t - now;
@@ -96,6 +97,8 @@ local function runtimers(next_delay)
 		end
 		local new_timeout = f(now);
 		if new_timeout then
+			-- Schedlue for 'delay' from the time actually sheduled,
+			-- not from now, in order to prevent timer drift.
 			timer[1] = t + new_timeout;
 			resort_timers = true;
 		else
@@ -487,6 +490,7 @@ function interface:resume()
 	self:setflags(true);
 end
 
+-- Pause connection for some time
 function interface:pausefor(t)
 	if self._pausefor then
 		self._pausefor:close();
