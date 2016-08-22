@@ -34,6 +34,7 @@ local cfg = {
 	read_retry_delay = 1e-06;
 	connect_timeout = 20;
 	handshake_timeout = 60;
+	max_wait = 86400;
 };
 
 local fds = createtable(10, 0); -- FD -> conn
@@ -63,7 +64,7 @@ end
 
 -- Run callbacks of expired timers
 -- Return time until next timeout
-local function runtimers()
+local function runtimers(next_delay)
 	if resort_timers then
 		-- Sort earliest timers to the end
 		t_sort(timers, function (a, b) return a[1] > b[1]; end);
@@ -79,8 +80,6 @@ local function runtimers()
 		end
 	end
 	--]]
-
-	local next_delay = 86400;
 
 	-- Iterate from the end and remove completed timers
 	for i = #timers, 1, -1 do
@@ -579,7 +578,7 @@ end
 
 local function loop()
 	repeat
-		local t = runtimers();
+		local t = runtimers(cfg.max_wait);
 		local fd, r, w = epoll.wait(t);
 		if fd then
 			local conn = fds[fd];
