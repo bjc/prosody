@@ -263,6 +263,11 @@ function interface:setflags(r, w)
 --	log("debug", "epoll_ctl(%q, %d, %q) -> %s" .. (err and ", %q" or ""),
 --		op, fd, flags or "", tostring(ok), err);
 	if not ok then return ok, err end
+	if op == "add" then
+		fds[fd] = self;
+	elseif op == "del" then
+		fds[fd] = nil;
+	end
 	self._flags = flags;
 	return true;
 end
@@ -367,7 +372,6 @@ function interface:destroy()
 	self.destroy = noop;
 	self.close = noop;
 	self.on = noop;
-	fds[self:getfd()] = nil;
 	self.conn:close();
 	self.conn = nil;
 end
@@ -455,8 +459,6 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 	if client.getsockname then
 		conn.sockname, conn.sockport = client:getsockname();
 	end
-
-	fds[conn:getfd()] = conn;
 	return conn;
 end
 
@@ -528,7 +530,6 @@ local function addserver(addr, port, listeners, pattern, tls)
 		sockport = port;
 	}, interface_mt);
 	server:setflags(true, false);
-	fds[server:getfd()] = server;
 	return server;
 end
 
