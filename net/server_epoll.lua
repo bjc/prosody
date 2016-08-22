@@ -479,17 +479,18 @@ function interface:init()
 		self._tls = false; -- This means we should call onconnect when TLS is up
 		return self:starttls();
 	else
-		self:setflags(false, true);
-		self:setwritetimeout(cfg.connect_timeout);
+		self.onwriteable = interface.onconnect;
+		self:setwritetimeout();
+		return self:setflags(false, true);
 	end
 end
 
 function interface:pause()
-	self:setflags(false);
+	return self:setflags(false);
 end
 
 function interface:resume()
-	self:setflags(true);
+	return self:setflags(true);
 end
 
 -- Pause connection for some time
@@ -501,10 +502,10 @@ function interface:pausefor(t)
 	self:setflags(false);
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
-		self:setflags(true);
 		if self.conn:dirty() then
 			self:onreadable();
 		end
+		return self:setflags(true);
 	end);
 end
 
