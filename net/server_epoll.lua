@@ -418,9 +418,7 @@ function interface:tlshandskake()
 		self._tls = true;
 		self.starttls = false;
 		if old == false then
-			self.onwriteable = interface.onconnect;
-			self:setflags(false, true);
-			self:setwritetimeout();
+			self:init();
 		else
 			self:setflags(true, true);
 			self:on("status", "ssl-handshake-complete");
@@ -448,7 +446,6 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 		created = gettime();
 		listeners = listeners;
 		_pattern = pattern or server._pattern;
-		onwriteable = interface.onconnect;
 		writebuffer = {};
 		tls = tls;
 	}, interface_mt);
