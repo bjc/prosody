@@ -1345,14 +1345,7 @@ function room_mt:freeze(live)
 end
 
 function _M.restore_room(frozen, state)
-	-- COMPAT
-	if frozen.jid and frozen._affiliations then
-		local room = _M.new_room(frozen.jid, frozen._data);
-		room._affiliations = frozen._affiliations;
-		return room;
-	end
-
-	local room_jid = frozen._jid;
+	local room_jid = frozen._jid or frozen.jid;
 	local room = _M.new_room(room_jid, frozen._data);
 
 	if state and state._last_message and state._last_message_at then
@@ -1365,11 +1358,16 @@ function _M.restore_room(frozen, state)
 	local occupants = {};
 	local occupant_sessions = {};
 	local room_name, room_host = jid_split(room_jid);
-	for jid, data in pairs(frozen) do
-		local node, host, resource = jid_split(jid);
-		if host:sub(1,1) ~= "_" and not resource and type(data) == "string" then
-			-- bare jid: affiliation
-			room._affiliations[jid] = data;
+
+	if frozen.jid and frozen._affiliations then
+		room._affiliations = frozen._affiliations;
+	else
+		for jid, data in pairs(frozen) do
+			local node, host, resource = jid_split(jid);
+			if host:sub(1,1) ~= "_" and not resource and type(data) == "string" then
+				-- bare jid: affiliation
+				room._affiliations[jid] = data;
+			end
 		end
 	end
 	for jid, data in pairs(state or frozen) do
