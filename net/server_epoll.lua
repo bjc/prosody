@@ -65,6 +65,11 @@ end
 -- Run callbacks of expired timers
 -- Return time until next timeout
 local function runtimers(next_delay)
+	-- Any timers at all?
+	if not timers[1] then
+		return next_delay;
+	end
+
 	if resort_timers then
 		-- Sort earliest timers to the end
 		t_sort(timers, function (a, b) return a[1] > b[1]; end);
