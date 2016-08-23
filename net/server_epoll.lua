@@ -76,16 +76,6 @@ local function runtimers(next_delay)
 		resort_timers = false;
 	end
 
-	--[[ Is it worth it to skip the noop calls?
-	for i = #timers, 1, -1 do
-		if timers[i][2] == noop then
-			timers[i] = nil;
-		else
-			break;
-		end
-	end
-	--]]
-
 	-- Iterate from the end and remove completed timers
 	for i = #timers, 1, -1 do
 		local timer = timers[i];
