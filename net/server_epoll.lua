@@ -502,7 +502,7 @@ function interface:pausefor(t)
 		if self.conn:dirty() then
 			self:onreadable();
 		end
-		return self:setflags(true);
+		self:setflags(true);
 	end);
 end
 
