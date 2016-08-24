@@ -32,8 +32,8 @@ cat <<EOF
 Configure Prosody prior to building.
 
 --help                      This help.
---ostype=OS                 Use one of the OS presets.
-                            May be one of: debian, macosx, linux, freebsd, openbsd
+--ostype=OS                 Use one of the OS presets. May be one of:
+                            debian, macosx, linux, freebsd, openbsd, netbsd
 --prefix=DIR                Prefix where Prosody should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
@@ -145,6 +145,15 @@ do
       if [ "$OSTYPE" = "openbsd" ]; then
          LUA_INCDIR="/usr/local/include";
          LUA_INCDIR_SET="yes"
+      fi
+      if [ "$OSTYPE" = "netbsd" ]; then
+         RUNWITH="lua5.1"
+         LUA_INCDIR="/usr/pkg/include/lua-5.1"
+         LUA_INCDIR_SET=yes
+         LUA_LIBDIR="/usr/pkg/lib/lua/5.1"
+         LUA_LIBDIR_SET=yes
+         CFLAGS="-Wall -fPIC -I/usr/pkg/include"
+         LDFLAGS="-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib -shared"
       fi
       if [ "$OSTYPE" = "pkg-config" ]; then
          if [ "$LUA_SUFFIX_SET" != "yes" ]; then
