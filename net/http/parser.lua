@@ -134,6 +134,9 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 				if state then -- read body
 					if client then
 						if chunked then
+							if chunk_start and buflen - chunk_start - 2 < chunk_size then
+								return;
+							end -- not enough data
 							if buftable then buf, buftable = t_concat(buf), false; end
 							if not buf:find("\r\n", nil, true) then
 								return;
