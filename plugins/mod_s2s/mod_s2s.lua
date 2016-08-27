@@ -634,6 +634,7 @@ function listener.ondisconnect(conn, err)
 			if s2sout.attempt_connection(session, err) then
 				return; -- Session lives for now
 			end
+			hosts[session.from_host].events.fire_event("s2s-connect-failure", { session = session, err = err });
 		end
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
 		s2s_destroy_session(session, err);
