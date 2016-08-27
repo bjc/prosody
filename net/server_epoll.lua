@@ -38,6 +38,9 @@ local cfg = {
 };
 
 local fds = createtable(10, 0); -- FD -> conn
+
+-- Timer and scheduling --
+
 local timers = {};
 
 local function noop() end
@@ -92,7 +95,7 @@ local function runtimers(next_delay)
 		end
 		local new_timeout = f(now);
 		if new_timeout then
-			-- Schedlue for 'delay' from the time actually sheduled,
+			-- Schedule for 'delay' from the time actually scheduled,
 			-- not from now, in order to prevent timer drift.
 			timer[1] = t + new_timeout;
 			resort_timers = true;
@@ -111,6 +114,8 @@ local function runtimers(next_delay)
 	return next_delay;
 end
 
+-- Socket handler interface
+
 local interface = {};
 local interface_mt = { __index = interface };
 
@@ -123,12 +128,13 @@ function interface_mt:__tostring()
 	return ("%s FD %d"):format(tostring(self.conn), self:getfd());
 end
 
+-- Replace the listener and tell the old one
 function interface:setlistener(listeners)
 	self:on("detach");
 	self.listeners = listeners;
 end
 
--- Call callback
+-- Call a listener callback
 function interface:on(what, ...)
 	local listener = self.listeners["on"..what];
 	if not listener then
@@ -142,6 +148,7 @@ function interface:on(what, ...)
 	return err;
 end
 
+-- Return the file descriptor number
 function interface:getfd()
 	if self.conn then
 		return self.conn:getfd();
@@ -149,18 +156,22 @@ function interface:getfd()
 	return -1;
 end
 
+-- Get IP address
 function interface:ip()
 	return self.peername or self.sockname;
 end
 
+-- Get a port number, doesn't matter which
 function interface:port()
 	return self.sockport or self.peerport;
 end
 
+-- Get local port number
 function interface:clientport()
 	return self.sockport;
 end
 
+-- Get remote port
 function interface:serverport()
 	if self.sockport then
 		return self.sockport;
@@ -169,6 +180,7 @@ function interface:serverport()
 	end
 end
 
+-- Return underlying socket
 function interface:socket()
 	return self.conn;
 end
@@ -180,6 +192,7 @@ function interface:setoption(k, v)
 	end
 end
 
+-- Timeout for detecting dead or idle sockets
 function interface:setreadtimeout(t)
 	if t == false then
 		if self._readtimeout then
@@ -204,6 +217,7 @@ function interface:setreadtimeout(t)
 	end
 end
 
+-- Timeout for detecting dead sockets
 function interface:setwritetimeout(t)
 	if t == false then
 		if self._writetimeout then
@@ -224,6 +238,7 @@ function interface:setwritetimeout(t)
 	end
 end
 
+-- lua-epoll flag for currently requested poll state
 function interface:flags()
 	if self._wantread then
 		if self._wantwrite then
@@ -235,6 +250,7 @@ function interface:flags()
 	end
 end
 
+-- Add or remove sockets or modify epoll flags
 function interface:setflags(r, w)
 	if r ~= nil then self._wantread = r; end
 	if w ~= nil then self._wantwrite = w; end
@@ -320,6 +336,7 @@ function interface:onwriteable()
 	end
 end
 
+-- The write buffer has been successfully emptied
 function interface:ondrain()
 	if self._toclose then
 		return self:close();
@@ -330,6 +347,7 @@ function interface:ondrain()
 	end
 end
 
+-- Add data to write buffer and set flag for wanting to write
 function interface:write(data)
 	local buffer = self.writebuffer;
 	if buffer then
@@ -343,6 +361,7 @@ function interface:write(data)
 end
 interface.send = interface.write;
 
+-- Close, possibly after writing is done
 function interface:close()
 	if self._wantwrite then
 		self:setflags(false, true); -- Flush final buffer contents
@@ -454,6 +473,8 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 	return conn;
 end
 
+-- A server interface has new incoming connections waiting
+-- This replaces the onreadable callback
 function interface:onacceptable()
 	local conn, err = self.conn:accept();
 	if not conn then
@@ -466,6 +487,7 @@ function interface:onacceptable()
 	client:init();
 end
 
+-- Initialization
 function interface:init()
 	if self.tls and not self._tls then
 		self._tls = false; -- This means we should call onconnect when TLS is up
@@ -501,6 +523,7 @@ function interface:pausefor(t)
 	end);
 end
 
+-- Connected!
 function interface:onconnect()
 	self.onwriteable = nil;
 	self:on("connect");
@@ -570,10 +593,12 @@ end
 
 local quitting = nil;
 
+-- Signal main loop about shutdown via above upvalue
 local function setquitting()
 	quitting = "quitting";
 end
 
+-- Main loop
 local function loop()
 	repeat
 		local t = runtimers(cfg.max_wait);
