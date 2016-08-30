@@ -173,6 +173,18 @@ function get_room_from_jid(room_jid)
 	return restore_room(room_jid);
 end
 
+function create_room(room_jid)
+	local exists = get_room_from_jid(room_jid);
+	if exists then
+		return nil, "room-exists";
+	end
+	local room = muclib.new_room(room_jid);
+	module:fire_event("muc-room-created", {
+		room = room;
+	});
+	return room;
+end
+
 function each_room(local_only)
 	if local_only then
 		return rooms:values();
