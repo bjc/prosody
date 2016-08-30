@@ -998,7 +998,7 @@ function def_env.muc:create(room_jid)
 		return room_name, host;
 	end
 	if not room_name then return nil, host end
-	if hosts[host].modules.muc.rooms[room_jid] then return nil, "Room exists already" end
+	if hosts[host].modules.muc.get_room_from_jid(room_jid) then return nil, "Room exists already" end
 	return hosts[host].modules.muc.create_room(room_jid);
 end
 
