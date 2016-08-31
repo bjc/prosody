@@ -153,13 +153,18 @@ function open(host, store, typ)
 		if err == "unsupported-store" then
 			if typ == "map" then -- Use shim on top of keyval store
 				log("debug", "map storage driver unavailable, using shim on top of keyval store.");
-				return create_map_shim(host, store);
+				ret, err = create_map_shim(host, store);
+			else
+				log("debug", "Storage driver %s does not support store %s (%s), falling back to null driver",
+					driver_name, store, typ or "<nil>");
+				ret, err = null_storage_driver, nil;
 			end
-			log("debug", "Storage driver %s does not support store %s (%s), falling back to null driver",
-				driver_name, store, typ or "<nil>");
-			ret = null_storage_driver;
-			err = nil;
 		end
+	end
+	if ret then
+		local event_data = { host = host, store_name = store, store_type = typ, store = ret };
+		prosody.hosts[host].events.fire_event("store-opened", event_data);
+		ret, err = event_data.store, event_data.store_err;
 	end
 	return ret, err;
 end
