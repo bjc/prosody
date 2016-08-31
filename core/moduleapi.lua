@@ -412,7 +412,7 @@ function api:measure(name, stat_type)
 end
 
 function api:measure_object_event(events_object, event_name, stat_name)
-	local m = self:measure(stat_name or event_name, "duration");
+	local m = self:measure(stat_name or event_name, "times");
 	local function handler(handlers, _event_name, _event_data)
 		local finished = m();
 		local ret = handlers(_event_name, _event_data);
