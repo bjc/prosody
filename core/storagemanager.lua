@@ -161,6 +161,11 @@ function open(host, store, typ)
 			end
 		end
 	end
+	if ret then
+		local event_data = { host = host, store_name = store, store_type = typ, store = ret };
+		prosody.hosts[host].fire_event("store-opened", event_data);
+		ret, err = event_data.store, event_data.store_err;
+	end
 	return ret, err;
 end
 
