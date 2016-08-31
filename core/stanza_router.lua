@@ -36,7 +36,12 @@ local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 
 		-- A normal stanza
 		local st_type = stanza.attr.type;
 		if st_type == "error" or (name == "iq" and st_type == "result") then
-			log("debug", "Discarding %s from %s of type: %s", name, origin_type, st_type or '<nil>');
+			if st_type == "error" then
+				local err_type, err_condition, err_message = stanza:get_error();
+				log("debug", "Discarding unhandled error %s (%s, %s) from %s: %s", name, err_type, err_condition or "unknown condition", origin_type, stanza:top_tag());
+			else
+				log("debug", "Discarding %s from %s of type: %s", name, origin_type, st_type or '<nil>');
+			end
 			return;
 		end
 		if name == "iq" and (st_type == "get" or st_type == "set") and stanza.tags[1] then
