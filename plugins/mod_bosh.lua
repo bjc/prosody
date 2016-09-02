@@ -30,10 +30,16 @@ local xmlns_bosh = "http://jabber.org/protocol/httpbind"; -- (hard-coded into a 
 local stream_callbacks = {
 	stream_ns = xmlns_bosh, stream_tag = "body", default_ns = "jabber:client" };
 
-local BOSH_DEFAULT_HOLD = module:get_option_number("bosh_default_hold", 1);
-local BOSH_DEFAULT_INACTIVITY = module:get_option_number("bosh_max_inactivity", 60);
-local BOSH_DEFAULT_POLLING = module:get_option_number("bosh_max_polling", 5);
-local BOSH_DEFAULT_REQUESTS = module:get_option_number("bosh_max_requests", 2);
+-- These constants are implicitly assumed within the code, and cannot be changed
+local BOSH_HOLD = 1;
+local BOSH_MAX_REQUESTS = 2;
+
+-- The number of seconds a BOSH session should remain open with no requests
+local bosh_max_inactivity = module:get_option_number("bosh_max_inactivity", 60);
+-- The minimum amount of time between requests with no payload
+local bosh_max_polling = module:get_option_number("bosh_max_polling", 5);
+-- The maximum amount of time that the server will hold onto a request before replying
+-- (the client can set this to a lower value when it connects, if it chooses)
 local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
@@ -147,9 +153,9 @@ function handle_POST(event)
 		end
 
 		local r = session.requests;
-		log("debug", "Session %s has %d out of %d requests open", context.sid, #r, session.bosh_hold);
+		log("debug", "Session %s has %d out of %d requests open", context.sid, #r, BOSH_HOLD);
 		log("debug", "and there are %d things in the send_buffer:", #session.send_buffer);
-		if #r > session.bosh_hold then
+		if #r > BOSH_HOLD then
 			-- We are holding too many requests, send what's in the buffer,
 			log("debug", "We are holding too many requests, so...");
 			if #session.send_buffer > 0 then
@@ -277,7 +283,7 @@ function stream_callbacks.streamopened(context, attr)
 		local session = {
 			type = "c2s_unauthed", conn = {}, sid = sid, rid = rid, host = attr.to,
 			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
-			bosh_hold = BOSH_DEFAULT_HOLD, bosh_max_inactive = BOSH_DEFAULT_INACTIVITY,
+			bosh_max_inactive = bosh_max_inactivity,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
 			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
@@ -317,11 +323,11 @@ function stream_callbacks.streamopened(context, attr)
 				};
 				if creating_session then
 					creating_session = nil;
-					body_attr.inactivity = tostring(BOSH_DEFAULT_INACTIVITY);
-					body_attr.polling = tostring(BOSH_DEFAULT_POLLING);
-					body_attr.requests = tostring(BOSH_DEFAULT_REQUESTS);
+					body_attr.requests = tostring(BOSH_MAX_REQUESTS);
+					body_attr.hold = tostring(BOSH_HOLD);
+					body_attr.inactivity = tostring(bosh_max_inactivity);
+					body_attr.polling = tostring(bosh_max_polling);
 					body_attr.wait = tostring(session.bosh_wait);
-					body_attr.hold = tostring(session.bosh_hold);
 					body_attr.authid = sid;
 					body_attr.secure = "true";
 					body_attr.ver  = '1.6';
