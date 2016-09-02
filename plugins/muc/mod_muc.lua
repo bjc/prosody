@@ -114,8 +114,8 @@ local function room_save(room, forced, savestate)
 	end
 end
 
-local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (_, room)
-	module:log("debug", "%s evicted", room);
+local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (jid, room)
+	module:log("debug", "%s evicted", jid);
 	room_save(room, nil, true); -- Force to disk
 end);
 
@@ -151,7 +151,7 @@ function forget_room(room)
 end
 
 function delete_room(room)
-	module:log("debug", "Deleting %s", room);
+	module:log("debug", "Deleting %s", room.jid);
 	room_configs:set(jid_split(room.jid), nil);
 	persistent_rooms:set(nil, room.jid, nil);
 	room_items_cache[room.jid] = nil;
