@@ -102,7 +102,7 @@ function on_destroy_request(request)
 end
 
 function check_inactive(now, session, context, reason)
-	if not sessions.destroyed then
+	if not session.destroyed then
 		sessions[context.sid] = nil;
 		sm_destroy_session(session, reason);
 	end
