@@ -349,15 +349,27 @@ function stream_callbacks.streamopened(context, attr)
 	if session.rid then
 		local rid = tonumber(attr.rid);
 		local diff = rid - session.rid;
-		if diff > 1 then
-			session.log("warn", "rid too large (means a request was lost). Last rid: %d New rid: %s", session.rid, attr.rid);
-		elseif diff <= 0 then
-			-- Repeated, ignore
-			session.log("debug", "rid repeated, ignoring: %s (diff %d)", session.rid, diff);
-			context.notopen = nil;
-			context.ignore = true;
+		-- Diff should be 1 for a healthy request
+		if diff ~= 1 then
 			context.sid = sid;
-			t_insert(session.requests, response);
+			context.notopen = nil;
+			if diff == 2 then
+				-- Hold request, but don't process it (ouch!)
+				session.log("debug", "rid skipped: %d, deferring this request", rid-1)
+				context.defer = true;
+				session.bosh_deferred = { context = context, sid = sid, rid = rid, terminate = attr.type == "terminate" };
+				return;
+			end
+			context.ignore = true;
+			if diff == 0 then
+				-- Re-send previous response, ignore stanzas in this request
+				session.log("debug", "rid repeated, ignoring: %s (diff %d)", session.rid, diff);
+				response:send(session.bosh_last_response);
+				return;
+			end
+			-- Session broken, destroy it
+			session.log("debug", "rid out of range: %d (diff %d)", rid, diff);
+			response:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
 			return;
 		end
 		session.rid = rid;
@@ -391,9 +403,14 @@ function stream_callbacks.handlestanza(context, stanza)
 		if stanza.attr.xmlns == xmlns_bosh then
 			stanza.attr.xmlns = nil;
 		end
-		stanza = session.filter("stanzas/in", stanza);
-		if stanza then
-			return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
+		if context.defer and session.bosh_deferred then
+			log("debug", "Deferring this stanza");
+			t_insert(session.bosh_deferred, stanza);
+		else
+			stanza = session.filter("stanzas/in", stanza);
+			if stanza then
+				return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
+			end
 		end
 	end
 end
@@ -401,6 +418,21 @@ end
 function stream_callbacks.streamclosed(context)
 	local session = sessions[context.sid];
 	if session then
+		if not context.defer and session.bosh_deferred then
+			-- Handle deferred stanzas now
+			local deferred_stanzas = session.bosh_deferred;
+			local context = deferred_stanzas.context;
+			session.bosh_deferred = nil;
+			log("debug", "Handling deferred stanzas from rid %d", deferred_stanzas.rid);
+			session.rid = deferred_stanzas.rid;
+			t_insert(session.requests, context.response);
+			for _, stanza in ipairs(deferred_stanzas) do
+				stream_callbacks.handlestanza(context, stanza);
+			end
+			if deferred_stanzas.terminate then
+				session.bosh_terminate = true;
+			end
+		end
 		session.bosh_processing = false;
 		if #session.send_buffer > 0 then
 			session.send("");
