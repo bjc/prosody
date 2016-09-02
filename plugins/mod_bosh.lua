@@ -412,6 +412,8 @@ function stream_callbacks.handlestanza(context, stanza)
 				return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
 			end
 		end
+	else
+		log("debug", "No session for this stanza! (sid: %s)", context.sid or "none!");
 	end
 end
 
