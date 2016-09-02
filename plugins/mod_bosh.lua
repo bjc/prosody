@@ -197,9 +197,6 @@ function handle_POST(event)
 		if not response.finished then
 			-- We're keeping this request open, to respond later
 			log("debug", "Have nothing to say, so leaving request unanswered for now");
-			if session.bosh_wait then
-				session.bosh_wait_timer = module:add_timer(session.bosh_wait, after_bosh_wait, request, session)
-			end
 		end
 
 		if session.bosh_terminate then
@@ -207,6 +204,10 @@ function handle_POST(event)
 			session:close();
 			return nil;
 		else
+			if session.bosh_wait and #session.requests > 0 then
+				session.bosh_wait_timer = module:add_timer(session.bosh_wait, after_bosh_wait, session.requests[1], session)
+			end
+
 			return true; -- Inform http server we shall reply later
 		end
 	elseif response.finished then
