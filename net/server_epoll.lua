@@ -26,7 +26,7 @@ assert(socket.tcp6 and socket.tcp4, "Incompatible LuaSocket version");
 
 local _ENV = nil;
 
-local cfg = {
+local default_config = { __index = {
 	read_timeout = 900;
 	write_timeout = 7;
 	tcp_backlog = 128;
@@ -35,7 +35,8 @@ local cfg = {
 	connect_timeout = 20;
 	handshake_timeout = 60;
 	max_wait = 86400;
-};
+}};
+local cfg = default_config.__index;
 
 local fds = createtable(10, 0); -- FD -> conn
 
@@ -633,6 +634,9 @@ return {
 	setquitting = setquitting;
 	wrapclient = wrapclient;
 	link = link;
+	set_config = function (newconfig)
+		cfg = setmetatable(newconfig, default_config);
+	end;
 
 	-- libevent emulation
 	event = { EV_READ = "r", EV_WRITE = "w", EV_READWRITE = "rw", EV_LEAVE = -1 };
