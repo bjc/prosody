@@ -35,6 +35,7 @@ local default_config = { __index = {
 	connect_timeout = 20;
 	handshake_timeout = 60;
 	max_wait = 86400;
+	min_wait = 1e-06;
 }};
 local cfg = default_config.__index;
 
@@ -68,7 +69,7 @@ end
 
 -- Run callbacks of expired timers
 -- Return time until next timeout
-local function runtimers(next_delay)
+local function runtimers(next_delay, min_wait)
 	-- Any timers at all?
 	if not timers[1] then
 		return next_delay;
@@ -104,14 +105,16 @@ local function runtimers(next_delay)
 			t_remove(timers, i);
 		end
 	end
-	if resort_timers or next_delay < 1e-6 then
+
+	if resort_timers or next_delay < min_wait then
 		-- Timers may be added from within a timer callback.
 		-- Those would not be considered for next_delay,
 		-- and we might sleep for too long, so instead
 		-- we return a shorter timeout so we can
 		-- properly sort all new timers.
-		next_delay = 1e-6;
+		next_delay = min_wait;
 	end
+
 	return next_delay;
 end
 
@@ -602,7 +605,7 @@ end
 -- Main loop
 local function loop()
 	repeat
-		local t = runtimers(cfg.max_wait);
+		local t = runtimers(cfg.max_wait, cfg.min_wait);
 		local fd, r, w = epoll.wait(t);
 		if fd then
 			local conn = fds[fd];
