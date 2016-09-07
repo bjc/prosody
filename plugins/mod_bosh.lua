@@ -335,7 +335,8 @@ function stream_callbacks.streamopened(context, attr)
 					body_attr["xmlns:xmpp"] = "urn:xmpp:xbosh";
 					body_attr["xmpp:version"] = "1.0";
 				end
-				oldest_request:send(st.stanza("body", body_attr):top_tag()..t_concat(session.send_buffer).."</body>");
+				session.bosh_last_response = st.stanza("body", body_attr):top_tag()..t_concat(session.send_buffer).."</body>";
+				oldest_request:send(session.bosh_last_response);
 				session.send_buffer = {};
 			end
 			return true;
