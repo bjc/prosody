@@ -1356,7 +1356,6 @@ function _M.restore_room(frozen, state)
 	end
 
 	local occupants = {};
-	local occupant_sessions = {};
 	local room_name, room_host = jid_split(room_jid);
 
 	if frozen.jid and frozen._affiliations then
@@ -1375,33 +1374,19 @@ function _M.restore_room(frozen, state)
 		if node or host:sub(1,1) ~= "_" then
 			if host == room_host and node == room_name and resource and type(data) == "table" then
 				-- full room jid: bare real jid and role
-				local bare_jid = data.bare_jid;
-				local	occupant = occupant_lib.new(bare_jid, jid);
-				occupant.jid = data.jid;
+				local nick = jid;
+				local occupant = occupants[nick] or occupant_lib.new(data.bare_jid, nick);
+				occupant.bare_jid = data.bare_jid;
 				occupant.role = data.role;
-				occupants[bare_jid] = occupant;
-				local sessions = occupant_sessions[bare_jid];
-				if sessions then
-					for full_jid, presence in pairs(sessions) do
-						occupant:set_session(full_jid, presence);
-					end
-				end
-				occupant_sessions[bare_jid] = nil;
-			elseif type(data) == "table" and data.name then
+				occupant.jid = data.jid; -- Primary session JID
+				occupants[nick] = occupant;
+			elseif type(data) == "table" and data.name == "presence" then
 				-- full user jid: presence
+				local nick = data.attr.from;
+				local occupant = occupants[nick] or occupant_lib.new(nil, nick);
 				local presence = st.deserialize(data);
-				local bare_jid = jid_bare(jid);
-				local occupant = occupants[bare_jid];
-				local sessions = occupant_sessions[bare_jid];
-				if occupant then
-					occupant:set_session(jid, presence);
-				elseif sessions then
-					sessions[jid] = presence;
-				else
-					occupant_sessions[bare_jid] = {
-						[jid] = presence;
-					};
-				end
+				occupant:set_session(jid, presence);
+				occupants[nick] = occupant;
 			end
 		end
 	end
