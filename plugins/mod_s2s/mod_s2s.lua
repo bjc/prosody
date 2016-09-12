@@ -38,7 +38,7 @@ local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
 local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
 
-local measure_connections = module:measure("connections", "counter");
+local measure_connections = module:measure("connections", "amount");
 
 local sessions = module:shared("sessions");
 
@@ -46,7 +46,7 @@ local runner_callbacks = {};
 
 local log = module._log;
 
-do
+module:hook("stats-update", function ()
 	-- Connection counter resets to 0 on load and reload
 	-- Bump it up to current value
 	local count = 0;
@@ -54,7 +54,7 @@ do
 		count = count + 1;
 	end
 	measure_connections(count);
-end
+end);
 
 --- Handle stanzas to remote domains
 
@@ -619,7 +619,6 @@ function runner_callbacks:error(err)
 end
 
 function listener.onconnect(conn)
-	measure_connections(1);
 	conn:setoption("keepalive", opt_keepalives);
 	local session = sessions[conn];
 	if not session then -- New incoming connection
@@ -650,13 +649,7 @@ function listener.onstatus(conn, status)
 	end
 end
 
-function listener.ontimeout(conn)
-	-- Called instead of onconnect when the connection times out
-	measure_connections(1);
-end
-
 function listener.ondisconnect(conn, err)
-	measure_connections(-1);
 	local session = sessions[conn];
 	if session then
 		sessions[conn] = nil;
