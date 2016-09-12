@@ -103,7 +103,16 @@ local core_defaults = {
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
-	ciphers = "HIGH+kEDH:HIGH+kEECDH:HIGH:!PSK:!SRP:!3DES:!aNULL";
+	ciphers = {      -- Enabled ciphers in order of preference:
+		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
+		"HIGH+kEECDH", -- Ephemeral Elliptic curve Diffie-Hellman key exchange
+		"HIGH",        -- Other "High strength" ciphers
+		               -- Disabled cipher suites:
+		"!PSK",        -- Pre-Shared Key - not used for XMPP
+		"!SRP",        -- Secure Remote Password - not used for XMPP
+		"!3DES",       -- 3DES - slow and of questionable security
+		"!aNULL",      -- Ciphers that does not authenticate the connection
+	};
 }
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
