@@ -6,7 +6,7 @@ local fire_event = prosody.events.fire_event;
 
 local stats_interval_config = config.get("*", "statistics_interval");
 local stats_interval = tonumber(stats_interval_config);
-if stats_config and not stats_interval then
+if stats_interval_config and not stats_interval then
 	log("error", "Invalid 'statistics_interval' setting, statistics will be disabled");
 end
 
