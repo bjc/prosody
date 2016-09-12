@@ -27,7 +27,7 @@ local c2s_timeout = module:get_option_number("c2s_timeout");
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 
-local measure_connections = module:measure("connections", "counter");
+local measure_connections = module:measure("connections", "amount");
 
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
@@ -36,7 +36,7 @@ local hosts = prosody.hosts;
 local stream_callbacks = { default_ns = "jabber:client" };
 local listener = {};
 
-do
+module:hook("stats-update", function ()
 	-- Connection counter resets to 0 on load and reload
 	-- Bump it up to current value
 	local count = 0;
@@ -44,7 +44,7 @@ do
 		count = count + 1;
 	end
 	measure_connections(count);
-end
+end);
 
 --- Stream events handlers
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
@@ -207,7 +207,6 @@ end, 200);
 
 --- Port listener
 function listener.onconnect(conn)
-	measure_connections(1);
 	local session = sm_new_session(conn);
 	sessions[conn] = session;
 
@@ -276,7 +275,6 @@ function listener.onincoming(conn, data)
 end
 
 function listener.ondisconnect(conn, err)
-	measure_connections(-1);
 	local session = sessions[conn];
 	if session then
 		(session.log or log)("info", "Client disconnected: %s", err or "connection closed");
