@@ -321,7 +321,7 @@ local type_map = {
 	list = "list";
 }
 
-local function users(host, store, typ)
+local function users(host, store, typ) -- luacheck: ignore 431/store
 	typ = type_map[typ or "keyval"];
 	local store_dir = format("%s/%s/%s", data_path, encode(host), store);
 
@@ -329,8 +329,8 @@ local function users(host, store, typ)
 	if not mode then
 		return function() log("debug", "%s", err or (store_dir .. " does not exist")) end
 	end
-	local next, state = lfs.dir(store_dir);
-	return function(state)
+	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
+	return function(state) -- luacheck: ignore 431/state
 		for node in next, state do
 			local file, ext = node:match("^(.*)%.([dalist]+)$");
 			if file and ext == typ then
@@ -348,8 +348,8 @@ local function stores(username, host, typ)
 	if not mode then
 		return function() log("debug", err or (store_dir .. " does not exist")) end
 	end
-	local next, state = lfs.dir(store_dir);
-	return function(state)
+	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
+	return function(state) -- luacheck: ignore 431/state
 		for node in next, state do
 			if not node:match"^%." then
 				if username == true then
