@@ -37,7 +37,7 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	install -m644 util/*.lua $(SOURCE)/util
 	install -m644 util/*.so $(SOURCE)/util
 	install -d $(SOURCE)/util/sasl
-	install -m644 util/sasl/* $(SOURCE)/util/sasl
+	install -m644 util/sasl/*.lua $(SOURCE)/util/sasl
 	umask 0022 && cp -r plugins/* $(MODULES)
 	install -m644 certs/* $(CONFIG)/certs
 	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
