@@ -756,6 +756,7 @@ function room_mt:destroy(newjid, reason, password)
 	end
 	self:set_persistent(false);
 	module:fire_event("muc-room-destroyed", { room = self });
+	return true;
 end
 
 function room_mt:handle_to_room(origin, stanza) -- presence changes and groupchat messages, along with disco/etc
