@@ -491,7 +491,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 		is_first_session = is_first_dest_session;
 		is_last_session = is_last_orig_session;
 	};
-	local orig_nick = dest_occupant and dest_occupant.nick;
 	if orig_occupant == nil then
 		event_name = "muc-occupant-pre-join";
 		event.occupant = dest_occupant;
@@ -504,7 +503,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 		event.dest_occupant = dest_occupant;
 	end
 	if module:fire_event(event_name, event) then return true; end
-	local nick_overridden = orig_nick and orig_nick ~= dest_occupant.nick;
 
 	-- Check for nick conflicts
 	if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
@@ -577,9 +575,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
 		if orig_occupant == nil and self:get_whois() == "anyone" then
 			dest_x:tag("status", {code = "100"}):up();
-		end
-		if nick_overridden then
-			dest_x:tag("status", {code = "210"}):up();
 		end
 		self:save_occupant(dest_occupant);
 
