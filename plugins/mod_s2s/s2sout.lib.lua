@@ -176,6 +176,8 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 						log("debug", "DNS reply for %s gives us %s", connect_host, ip.a);
 						IPs[#IPs+1] = new_ip(ip.a, "IPv4");
 					end
+				elseif err then
+					log("debug", "Error in DNS lookup: %s", err);
 				end
 
 				if have_other_result then
@@ -212,6 +214,8 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 						log("debug", "DNS reply for %s gives us %s", connect_host, ip.aaaa);
 						IPs[#IPs+1] = new_ip(ip.aaaa, "IPv6");
 					end
+				elseif err then
+					log("debug", "Error in DNS lookup: %s", err);
 				end
 
 				if have_other_result then
