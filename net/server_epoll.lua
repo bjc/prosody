@@ -290,23 +290,27 @@ end
 -- Called when socket is readable
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self._pattern);
+	if data then
+		self:on("incoming", data);
+	else
+		if partial then
+			self:on("incoming", partial, err);
+		end
+		if err == "wantread" then
+			self:setflags(true, nil);
+		elseif err == "wantwrite" then
+			self:setflags(nil, true);
+		elseif err ~= "timeout" then
+			self:on("disconnect", err);
+			self:destroy()
+			return;
+		end
+	end
 	if self.conn:dirty() then
 		self:setreadtimeout(false);
 		self:pausefor(cfg.read_retry_delay);
 	else
 		self:setreadtimeout();
-	end
-	if data or partial then
-		self:on("incoming", data or partial, err);
-	end
-	if err == "wantread" then
-		self:setflags(true, nil);
-	elseif err == "wantwrite" then
-		self:setflags(nil, true);
-	elseif not data and err ~= "timeout" then
-		self:on("disconnect", err);
-		self:destroy()
-		return;
 	end
 end
 
@@ -323,7 +327,8 @@ function interface:onwriteable()
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
 		return;
-	elseif partial then
+	end
+	if partial then
 		buffer[1] = data:sub(partial+1);
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
@@ -334,7 +339,7 @@ function interface:onwriteable()
 		self:setflags(nil, true);
 	elseif err == "wantread" then
 		self:setflags(true, nil);
-	elseif err and err ~= "timeout" then
+	elseif err ~= "timeout" then
 		self:on("disconnect", err);
 		self:destroy();
 	end
