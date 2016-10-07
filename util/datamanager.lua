@@ -122,15 +122,15 @@ local function getpath(username, host, datastore, ext, create)
 end
 
 local function load(username, host, datastore)
-	local data, ret = envloadfile(getpath(username, host, datastore), {});
+	local data, err = envloadfile(getpath(username, host, datastore), {});
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
+			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
+			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
 			return nil, "Error reading storage";
 		end
 	end
@@ -295,15 +295,15 @@ end
 
 local function list_load(username, host, datastore)
 	local items = {};
-	local data, ret = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
+	local data, err = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
 	if not data then
 		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
 		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
+			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
 			return nil;
 		else -- file exists, but can't be read
 			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, ret, username or "nil", host or "nil");
+			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
 			return nil, "Error reading storage";
 		end
 	end
@@ -321,7 +321,7 @@ local type_map = {
 	list = "list";
 }
 
-local function users(host, store, typ)
+local function users(host, store, typ) -- luacheck: ignore 431/store
 	typ = type_map[typ or "keyval"];
 	local store_dir = format("%s/%s/%s", data_path, encode(host), store);
 
@@ -329,8 +329,8 @@ local function users(host, store, typ)
 	if not mode then
 		return function() log("debug", "%s", err or (store_dir .. " does not exist")) end
 	end
-	local next, state = lfs.dir(store_dir);
-	return function(state)
+	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
+	return function(state) -- luacheck: ignore 431/state
 		for node in next, state do
 			local file, ext = node:match("^(.*)%.([dalist]+)$");
 			if file and ext == typ then
@@ -348,8 +348,8 @@ local function stores(username, host, typ)
 	if not mode then
 		return function() log("debug", err or (store_dir .. " does not exist")) end
 	end
-	local next, state = lfs.dir(store_dir);
-	return function(state)
+	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
+	return function(state) -- luacheck: ignore 431/state
 		for node in next, state do
 			if not node:match"^%." then
 				if username == true then
@@ -357,9 +357,9 @@ local function stores(username, host, typ)
 						return decode(node);
 					end
 				elseif username then
-					local store = decode(node)
-					if lfs.attributes(getpath(username, host, store, typ), "mode") then
-						return store;
+					local store_name = decode(node);
+					if lfs.attributes(getpath(username, host, store_name, typ), "mode") then
+						return store_name;
 					end
 				elseif lfs.attributes(node, "mode") == "file" then
 					local file, ext = node:match("^(.*)%.([dalist]+)$");
@@ -389,11 +389,11 @@ local function purge(username, host)
 	local errs = {};
 	for file in iter, state, var do
 		if lfs.attributes(host_dir..file, "mode") == "directory" then
-			local store = decode(file);
-			local ok, err = do_remove(getpath(username, host, store));
+			local store_name = decode(file);
+			local ok, err = do_remove(getpath(username, host, store_name));
 			if not ok then errs[#errs+1] = err; end
 
-			local ok, err = do_remove(getpath(username, host, store, "list"));
+			local ok, err = do_remove(getpath(username, host, store_name, "list"));
 			if not ok then errs[#errs+1] = err; end
 		end
 	end

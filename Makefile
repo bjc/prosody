@@ -13,6 +13,12 @@ INSTALLEDCONFIG = $(SYSCONFDIR)
 INSTALLEDMODULES = $(LIBDIR)/prosody/modules
 INSTALLEDDATA = $(DATADIR)
 
+INSTALL=install -p
+INSTALL_DATA=$(INSTALL) -m644
+INSTALL_EXEC=$(INSTALL) -m755
+MKDIR=install -d
+MKDIR_PRIVATE=$(MKDIR) -m750
+
 .PHONY: all clean install
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
@@ -22,27 +28,32 @@ ifeq ($(EXCERTS),yes)
 endif
 
 install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
-	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
-	install -m750 -d $(DATA)
-	install -d $(MAN)/man1
-	install -d $(CONFIG)/certs
-	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
-	install -m755 ./prosody.install $(BIN)/prosody
-	install -m755 ./prosodyctl.install $(BIN)/prosodyctl
-	install -m644 core/*.lua $(SOURCE)/core
-	install -m644 net/*.lua $(SOURCE)/net
-	install -d $(SOURCE)/net/http $(SOURCE)/net/websocket
-	install -m644 net/http/*.lua $(SOURCE)/net/http
-	install -m644 net/websocket/*.lua $(SOURCE)/net/websocket
-	install -m644 util/*.lua $(SOURCE)/util
-	install -m644 util/*.so $(SOURCE)/util
-	install -d $(SOURCE)/util/sasl
-	install -m644 util/sasl/* $(SOURCE)/util/sasl
-	umask 0022 && cp -r plugins/* $(MODULES)
-	install -m644 certs/* $(CONFIG)/certs
-	install -m644 man/prosodyctl.man $(MAN)/man1/prosodyctl.1
-	test -f $(CONFIG)/prosody.cfg.lua || install -m644 prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
-	-test -f prosody.version && install -m644 prosody.version $(SOURCE)/prosody.version
+	$(MKDIR) $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
+	$(MKDIR_PRIVATE) $(DATA)
+	$(MKDIR) $(MAN)/man1
+	$(MKDIR) $(CONFIG)/certs
+	$(MKDIR) $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
+	$(INSTALL_EXEC) ./prosody.install $(BIN)/prosody
+	$(INSTALL_EXEC) ./prosodyctl.install $(BIN)/prosodyctl
+	$(INSTALL_DATA) core/*.lua $(SOURCE)/core
+	$(INSTALL_DATA) net/*.lua $(SOURCE)/net
+	$(MKDIR) $(SOURCE)/net/http $(SOURCE)/net/websocket
+	$(INSTALL_DATA) net/http/*.lua $(SOURCE)/net/http
+	$(INSTALL_DATA) net/websocket/*.lua $(SOURCE)/net/websocket
+	$(INSTALL_DATA) util/*.lua $(SOURCE)/util
+	$(INSTALL_DATA) util/*.so $(SOURCE)/util
+	$(MKDIR) $(SOURCE)/util/sasl
+	$(INSTALL_DATA) util/sasl/*.lua $(SOURCE)/util/sasl
+	$(MKDIR) $(MODULES)/mod_s2s $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc
+	$(INSTALL_DATA) plugins/*.lua $(MODULES)
+	$(INSTALL_DATA) plugins/mod_s2s/*.lua $(MODULES)
+	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)
+	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)
+	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)
+	$(INSTALL_DATA) certs/* $(CONFIG)/certs
+	$(INSTALL_DATA) man/prosodyctl.man $(MAN)/man1/prosodyctl.1
+	test -f $(CONFIG)/prosody.cfg.lua || $(INSTALL_DATA) prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
+	-test -f prosody.version && $(INSTALL_DATA) prosody.version $(SOURCE)/prosody.version
 	$(MAKE) install -C util-src
 
 clean:

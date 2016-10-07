@@ -1,5 +1,5 @@
 -- XEP-0280: Message Carbons implementation for Prosody
--- Copyright (C) 2011 Kim Alvefur
+-- Copyright (C) 2011-2016 Kim Alvefur
 --
 -- This file is MIT/X11 licensed.
 
@@ -67,7 +67,7 @@ local function message_handler(event, c2s)
 	elseif stanza:get_child("no-copy", "urn:xmpp:hints") then
 		module:log("debug", "Message has no-copy hint, ignoring");
 		return
-	elseif stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
+	elseif not c2s and bare_jid == orig_from and stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
 		module:log("debug", "MUC PM, ignoring");
 		return
 	end
