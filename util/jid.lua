@@ -46,7 +46,7 @@ end
 
 local function prepped_split(jid)
 	local node, host, resource = split(jid);
-	if host then
+	if host and host ~= "." then
 		if sub(host, -1, -1) == "." then -- Strip empty root label
 			host = sub(host, 1, -2);
 		end

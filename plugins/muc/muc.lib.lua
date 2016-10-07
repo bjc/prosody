@@ -812,6 +812,7 @@ function room_mt:destroy(newjid, reason, password)
 	x:up();
 	self:clear(x);
 	module:fire_event("muc-room-destroyed", { room = self });
+	return true;
 end
 
 function room_mt:handle_disco_info_get_query(origin, stanza)
