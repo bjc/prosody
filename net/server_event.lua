@@ -561,6 +561,10 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 			return -1
 		end
 		if EV_TIMEOUT == event and not interface.conn:dirty() and interface:onreadtimeout() ~= true then
+			interface.fatalerror = "timeout during receiving"
+			debug( "connection failed:", interface.fatalerror )
+			interface:_close()
+			interface.eventread = nil
 			return -1 -- took too long to get some data from client -> disconnect
 		end
 		if interface._usingssl then  -- handle luasec
