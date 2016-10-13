@@ -1,7 +1,5 @@
 [v3_extensions]
-extendedKeyUsage = serverAuth,clientAuth
-keyUsage = digitalSignature,keyEncipherment
-basicConstraints = CA:FALSE
+basicConstraints = CA:TRUE
 subjectAltName = @subject_alternative_name
 
 [subject_alternative_name]
