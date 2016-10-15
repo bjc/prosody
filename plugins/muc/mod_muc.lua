@@ -306,7 +306,7 @@ function shutdown_component()
 		room:save(nil, true);
 	end
 end
-module:hook_global("server-stopping", shutdown_component);
+module:hook_global("server-stopping", shutdown_component, -300);
 
 do -- Ad-hoc commands
 	module:depends "adhoc";
