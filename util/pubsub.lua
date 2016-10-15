@@ -1,5 +1,5 @@
 local events = require "util.events";
-local t_remove = table.remove;
+local cache = require "util.cache";
 
 local service = {};
 local service_mt = { __index = service };
@@ -216,14 +216,13 @@ function service:create(node, actor, options)
 		return false, "conflict";
 	end
 
-	self.data[node] = {};
 	self.nodes[node] = {
 		name = node;
 		subscribers = {};
 		config = setmetatable(options or {}, {__index=self.node_defaults});
 		affiliations = {};
 	};
-	setmetatable(self.nodes[node], { __index = { data = self.data[node] } }); -- COMPAT
+	self.data[node] = cache.new(self.nodes[node].config["pubsub#max_items"]);
 	self.events.fire_event("node-created", { node = node, actor = actor });
 	local ok, err = self:set_affiliation(node, true, actor, "owner");
 	if not ok then
@@ -250,25 +249,6 @@ function service:delete(node, actor)
 	return true;
 end
 
-local function remove_item_by_id(data, id)
-	if not data[id] then return end
-	data[id] = nil;
-	for i, _id in ipairs(data) do
-		if id == _id then
-			t_remove(data, i);
-			return i;
-		end
-	end
-end
-
-local function trim_items(data, max)
-	max = tonumber(max);
-	if not max or #data <= max then return end
-	repeat
-		data[t_remove(data, 1)] = nil;
-	until #data <= max
-end
-
 function service:publish(node, actor, id, item)
 	-- Access checking
 	if not self:may(node, actor, "publish") then
@@ -287,10 +267,10 @@ function service:publish(node, actor, id, item)
 		node_obj = self.nodes[node];
 	end
 	local node_data = self.data[node];
-	remove_item_by_id(node_data, id);
-	node_data[#node_data + 1] = id;
-	node_data[id] = item;
-	trim_items(node_data, node_obj.config["pubsub#max_items"]);
+	local ok = node_data:set(id, item);
+	if not ok then
+		return nil, "internal-server-error";
+	end
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item, actor);
 	return true;
@@ -303,11 +283,14 @@ function service:retract(node, actor, id, retract)
 	end
 	--
 	local node_obj = self.nodes[node];
-	if (not node_obj) or (not self.data[node][id]) then
+	if (not node_obj) or (not self.data[node]:get(id)) then
 		return false, "item-not-found";
 	end
+	local ok = self.data[node]:set(id, nil);
+	if not ok then
+		return nil, "internal-server-error";
+	end
 	self.events.fire_event("item-retracted", { node = node, actor = actor, id = id });
-	remove_item_by_id(self.data[node], id);
 	if retract then
 		self.config.broadcaster("items", node, node_obj.subscribers, retract);
 	end
@@ -324,7 +307,7 @@ function service:purge(node, actor, notify)
 	if not node_obj then
 		return false, "item-not-found";
 	end
-	self.data[node] = {}; -- Purge
+	self.data[node] = cache.new(node_obj.config["pubsub#max_items"]); -- Purge
 	self.events.fire_event("node-purged", { node = node, actor = actor });
 	if notify then
 		self.config.broadcaster("purge", node, node_obj.subscribers);
@@ -343,9 +326,13 @@ function service:get_items(node, actor, id)
 		return false, "item-not-found";
 	end
 	if id then -- Restrict results to a single specific item
-		return true, { id, [id] = self.data[node][id] };
+		return true, { id, [id] = self.data[node]:get(id) };
 	else
-		return true, self.data[node];
+		local data = {}
+		for key, value in self.data[node]:items() do
+			data[key] = value;
+		end
+		return true, data;
 	end
 end
 
@@ -435,8 +422,11 @@ function service:set_node_config(node, actor, new_config)
 	for k,v in pairs(new_config) do
 		node_obj.config[k] = v;
 	end
-	trim_items(self.data[node], node_obj.config["pubsub#max_items"]);
-
+	local new_data = cache.new(node_obj.config["pubsub#max_items"]);
+	for key, value in self.data[node]:items() do
+		new_data:set(key, value);
+	end
+	self.data[node] = new_data;
 	return true;
 end
 
