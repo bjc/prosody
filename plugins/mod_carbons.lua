@@ -26,7 +26,7 @@ local function message_handler(event, c2s)
 	local orig_from = stanza.attr.from;
 	local orig_to = stanza.attr.to;
 	
-	if not(orig_type == "chat" or orig_type == "normal" and stanza:get_child("body")) then
+	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body"))) then
 		return -- Only chat type messages
 	end
 
