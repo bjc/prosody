@@ -117,6 +117,7 @@ function cache_methods:tail()
 end
 
 function cache_methods:table()
+	--luacheck: ignore 212/t
 	if not self.proxy_table then
 		self.proxy_table = setmetatable({}, {
 			__index = function (t, k)
