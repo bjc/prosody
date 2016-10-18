@@ -371,13 +371,13 @@ function service:get_subscriptions(node, actor, jid)
 	-- a get_subscription() call for each node.
 	local ret = {};
 	if subs then
-		for jid, subscribed_nodes in pairs(subs) do
+		for subscribed_jid, subscribed_nodes in pairs(subs) do
 			if node then -- Return only subscriptions to this node
 				if subscribed_nodes[node] then
 					ret[#ret+1] = {
 						node = node;
-						jid = jid;
-						subscription = node_obj.subscribers[jid];
+						jid = subscribed_jid;
+						subscription = node_obj.subscribers[subscribed_jid];
 					};
 				end
 			else -- Return subscriptions to all nodes
@@ -385,8 +385,8 @@ function service:get_subscriptions(node, actor, jid)
 				for subscribed_node in pairs(subscribed_nodes) do
 					ret[#ret+1] = {
 						node = subscribed_node;
-						jid = jid;
-						subscription = nodes[subscribed_node].subscribers[jid];
+						jid = subscribed_jid;
+						subscription = nodes[subscribed_node].subscribers[subscribed_jid];
 					};
 				end
 			end
