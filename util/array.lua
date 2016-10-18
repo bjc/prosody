@@ -106,7 +106,7 @@ function array_base.reverse(outa, ina)
 end
 
 --- These methods only mutate the array
-function array_methods:shuffle(outa, ina)
+function array_methods:shuffle()
 	local len = #self;
 	for i = 1, #self do
 		local r = math_random(i, len);
