@@ -44,7 +44,7 @@ local function new(config)
 			end
 			return function (new_v) send_gauge(name, new_v); end
 		end;
-		counter = function (name, initial)
+		counter = function (name, initial) --luacheck: ignore 212/initial
 			return function (delta)
 				send_gauge(name, delta, true);
 			end;
