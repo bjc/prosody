@@ -19,7 +19,7 @@ local type = type;
 local array = {};
 local array_base = {};
 local array_methods = {};
-local array_mt = { __index = array_methods, __tostring = function (array) return "{"..array:concat(", ").."}"; end };
+local array_mt = { __index = array_methods, __tostring = function (self) return "{"..self:concat(", ").."}"; end };
 
 local function new_array(self, t, _s, _var)
 	if type(t) == "function" then -- Assume iterator
@@ -115,10 +115,10 @@ function array_methods:shuffle(outa, ina)
 	return self;
 end
 
-function array_methods:append(array)
-	local len, len2 = #self, #array;
+function array_methods:append(ina)
+	local len, len2 = #self, #ina;
 	for i = 1, len2 do
-		self[len+i] = array[i];
+		self[len+i] = ina[i];
 	end
 	return self;
 end
