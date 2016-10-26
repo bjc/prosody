@@ -191,7 +191,8 @@ end
 
 -- Broadcasts an occupant's presence to the whole room
 -- Takes the x element that goes into the stanzas
-function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason)
+function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
+	local base_x = x.base or x;
 	-- Build real jid and (optionally) occupant jid template presences
 	local base_presence do
 		-- Try to use main jid's presence
@@ -226,7 +227,7 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	local full_p, full_x;
 	local function get_full_p()
 		if full_p == nil then
-			full_x = st.clone(base_x);
+			full_x = st.clone(x.full or base_x);
 			self:build_item_list(occupant, full_x, false, nick, actor_nick, actor, reason);
 			full_p = st.clone(base_presence):add_child(full_x);
 		end
@@ -236,7 +237,7 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	local anon_p, anon_x;
 	local function get_anon_p()
 		if anon_p == nil then
-			anon_x = st.clone(base_x);
+			anon_x = st.clone(x.anon or base_x);
 			self:build_item_list(occupant, anon_x, true, nick, actor_nick, nil, reason);
 			anon_p = st.clone(base_presence):add_child(anon_x);
 		end
@@ -249,7 +250,7 @@ function room_mt:publicise_occupant_status(occupant, base_x, nick, actor, reason
 	else
 		-- Can always see your own full jids
 		-- But not allowed to see actor's
-		self_x = st.clone(base_x);
+		self_x = st.clone(x.self or base_x);
 		self:build_item_list(occupant, self_x, false, nick, actor_nick, nil, reason);
 		self_p = st.clone(base_presence):add_child(self_x);
 	end
