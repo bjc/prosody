@@ -402,6 +402,7 @@ function room_mt:handle_first_presence(origin, stanza)
 		module:log("debug", "Room creation without <x>, possibly desynced");
 	end
 
+	local orig_nick = dest_occupant.nick;
 	if module:fire_event("muc-occupant-pre-join", {
 		room = self;
 		origin = origin;
@@ -410,6 +411,7 @@ function room_mt:handle_first_presence(origin, stanza)
 		is_new_room = true;
 		occupant = dest_occupant;
 	}) then return true; end
+	local nick_changed = orig_nick ~= dest_occupant.nick;
 
 	dest_occupant:set_session(real_jid, stanza);
 	local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
@@ -417,9 +419,14 @@ function room_mt:handle_first_presence(origin, stanza)
 	if self:get_whois() == "anyone" then
 		dest_x:tag("status", {code = "100"}):up();
 	end
+	local self_x;
+	if nick_changed then
+		self_x = st.clone(dest_x);
+		self_x:tag("status", {code = "210"}):up();
+	end
 	self:save_occupant(dest_occupant);
 
-	self:publicise_occupant_status(dest_occupant, dest_x);
+	self:publicise_occupant_status(dest_occupant, {base = dest_x, self = self_x});
 
 	module:fire_event("muc-occupant-joined", {
 		room = self;
@@ -485,6 +492,8 @@ function room_mt:handle_normal_presence(origin, stanza)
 		module:log("debug", "Presence update with <x>, possibly desynced");
 	end
 
+	local orig_nick = dest_occupant and dest_occupant.nick;
+
 	local event, event_name = {
 		room = self;
 		origin = origin;
@@ -504,6 +513,8 @@ function room_mt:handle_normal_presence(origin, stanza)
 		event.dest_occupant = dest_occupant;
 	end
 	if module:fire_event(event_name, event) then return true; end
+
+	local nick_changed = dest_occupant and orig_nick ~= dest_occupant.nick;
 
 	-- Check for nick conflicts
 	if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
@@ -586,7 +597,12 @@ function room_mt:handle_normal_presence(origin, stanza)
 				return occupant:get_presence(real_jid) == nil;
 			end)
 		end
-		self:publicise_occupant_status(dest_occupant, dest_x);
+		local self_x;
+		if nick_changed then
+			self_x = st.clone(dest_x);
+			self_x:tag("status", {code="210"}):up();
+		end
+		self:publicise_occupant_status(dest_occupant, {base=dest_x,self=self_x});
 
 		if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
 			log("debug", "session %s split nicks; showing %s rejoining", real_jid, orig_occupant.nick);
