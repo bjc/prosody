@@ -526,7 +526,7 @@ function interface:pausefor(t)
 	self:setflags(false);
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
-		if self.conn:dirty() then
+		if self.conn and self.conn:dirty() then
 			self:onreadable();
 		end
 		self:setflags(true);
