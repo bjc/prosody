@@ -101,9 +101,9 @@ local function handle_registration_stanza(event)
 
 			-- This one weird trick sends a reply to this stanza before the user is deleted
 			local old_session_close = session.close;
-			session.close = function(session, ...)
-				session.send(st.reply(stanza));
-				return old_session_close(session, ...);
+			session.close = function(self, ...)
+				self.send(st.reply(stanza));
+				return old_session_close(self, ...);
 			end
 
 			local ok, err = usermanager_delete_user(username, host);
