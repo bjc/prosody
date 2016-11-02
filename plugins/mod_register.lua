@@ -230,7 +230,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					elseif blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return true;
-					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
+					elseif throttle_max and not whitelisted_ips[session.ip] then
 						if not check_throttle(session.ip) then
 							log("debug", "Registrations over limit for ip %s", session.ip or "?");
 							session.send(st.error_reply(stanza, "wait", "not-acceptable"));
