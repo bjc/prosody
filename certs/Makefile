@@ -27,4 +27,4 @@ keysize=2048
 
 %.key:
 	umask 0077 && openssl genrsa -out $@ $(keysize)
-	@chmod 400 $@ -c
+	@chmod 400 $@
