@@ -22,7 +22,7 @@ keysize=2048
 	umask 0077 && touch $*.key
 	openssl req -new -newkey rsa:$(keysize) -nodes -keyout $*.key \
 		-sha256 -utf8 -config $^ -out $@
-	@chmod 400 $*.key -c
+	@chmod 400 $*.key
 
 %.csr: %.key
 	openssl req -new -key $^ -utf8 -subj /CN=$* -out $@
@@ -31,7 +31,7 @@ keysize=2048
 	umask 0077 && touch $*.key
 	openssl req -new -newkey rsa:$(keysize) -nodes -keyout $*.key \
 		-utf8 -subj /CN=$* -out $@
-	@chmod 400 $*.key -c
+	@chmod 400 $*.key
 
 # Self signed
 %.crt: %.cnf %.key
@@ -42,7 +42,7 @@ keysize=2048
 	umask 0077 && touch $*.key
 	openssl req -new -x509 -newkey rsa:$(keysize) -nodes -keyout $*.key \
 		-days 365 -sha256 -utf8 -config $(firstword $^) -out $@
-	@chmod 400 $*.key -c
+	@chmod 400 $*.key
 
 %.crt: %.key
 	openssl req -new -x509 -key $^ -days 365 -sha256 -utf8 -subj /CN=$* -out $@
@@ -51,7 +51,7 @@ keysize=2048
 	umask 0077 && touch $*.key
 	openssl req -new -x509 -newkey rsa:$(keysize) -nodes -keyout $*.key \
 		-days 365 -sha256 -out $@ -utf8 -subj /CN=$*
-	@chmod 400 $*.key -c
+	@chmod 400 $*.key
 
 # Generate a config from the example
 %.cnf:
