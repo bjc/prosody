@@ -101,9 +101,9 @@ local function handle_registration_stanza(event)
 
 			-- This one weird trick sends a reply to this stanza before the user is deleted
 			local old_session_close = session.close;
-			session.close = function(session, ...)
-				session.send(st.reply(stanza));
-				return old_session_close(session, ...);
+			session.close = function(self, ...)
+				self.send(st.reply(stanza));
+				return old_session_close(self, ...);
 			end
 
 			local ok, err = usermanager_delete_user(username, host);
@@ -204,6 +204,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local log = session.log or module._log;
 
 	if not(allow_registration) or session.type ~= "c2s_unauthed" then
+		log("debug", "Attempted registration when disabled or already authenticated");
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	else
 		local query = stanza.tags[1];
@@ -217,6 +218,10 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 			else
 				local data, errors = parse_response(query);
 				if errors then
+					log("debug", "Error parsing registration form:");
+					for field, err in pairs(errors) do
+						log("debug", "Field %q: %s", field, err);
+					end
 					session.send(st.error_reply(stanza, "modify", "not-acceptable"));
 				else
 					-- Check that the user is not blacklisted or registering too often
@@ -225,8 +230,9 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					elseif blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return true;
-					elseif min_seconds_between_registrations and not whitelisted_ips[session.ip] then
+					elseif throttle_max and not whitelisted_ips[session.ip] then
 						if not check_throttle(session.ip) then
+							log("debug", "Registrations over limit for ip %s", session.ip or "?");
 							session.send(st.error_reply(stanza, "wait", "not-acceptable"));
 							return true;
 						end
@@ -235,20 +241,24 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					data.username, data.password = nil, nil;
 					local host = module.host;
 					if not username or username == "" then
+						log("debug", "The requested username is invalid.");
 						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
 						return true;
 					end
 					local user = { username = username , host = host, allowed = true }
 					module:fire_event("user-registering", user);
 					if not user.allowed then
+						log("debug", "Registration disallowed by module");
 						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is forbidden."));
 					elseif usermanager_user_exists(username, host) then
+						log("debug", "Attempt to register with existing username");
 						session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
 					else
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?
 						local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
 						if usermanager_create_user(username, password, host) then
 							if next(data) and not account_details:set(username, data) then
+								log("debug", "Could not store extra details");
 								usermanager_delete_user(username, host);
 								session.send(error_reply);
 								return true;
@@ -259,6 +269,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 								username = username, host = host, source = "mod_register",
 								session = session });
 						else
+							log("debug", "Could not create user");
 							session.send(error_reply);
 						end
 					end
