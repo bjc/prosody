@@ -293,7 +293,7 @@ end
 local function keepalive(event)
 	local session = event.session;
 	if session.open_stream == session_open_stream then
-		return session.conn:write(build_frame({ opcode = 0x9, }));
+		return session.conn:write(build_frame({ opcode = 0x9, FIN = true }));
 	end
 end
 

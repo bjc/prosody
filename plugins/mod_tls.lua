@@ -123,7 +123,7 @@ module:hook_stanza("http://etherx.jabber.org/streams", "features", function (ses
 	end
 end, 500);
 
-module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza)
+module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza) -- luacheck: ignore 212/stanza
 	module:log("debug", "Proceeding with TLS on s2sout...");
 	session:reset_stream();
 	session.conn:starttls(session.ssl_ctx);
