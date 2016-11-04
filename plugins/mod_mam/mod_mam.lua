@@ -3,7 +3,7 @@
 --
 -- This file is MIT/X11 licensed.
 
-local xmlns_mam     = "urn:xmpp:mam:0";
+local xmlns_mam     = "urn:xmpp:mam:1";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 
@@ -142,7 +142,6 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	end
 	local total = tonumber(err);
 
-	origin.send(st.reply(stanza));
 	local msg_reply_attr = { to = stanza.attr.from, from = stanza.attr.to };
 
 	local results = {};
@@ -188,7 +187,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	-- That's all folks!
 	module:log("debug", "Archive query %s completed", tostring(qid));
 
-	origin.send(st.message(msg_reply_attr)
+	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
 			:add_child(rsm.generate {
 				first = first, last = last, count = total }));
