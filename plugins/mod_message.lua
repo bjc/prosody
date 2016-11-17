@@ -73,13 +73,13 @@ module:hook("message/full", function(data)
 	else -- resource not online
 		return process_to_bare(jid_bare(stanza.attr.to), origin, stanza);
 	end
-end);
+end, -1);
 
 module:hook("message/bare", function(data)
 	-- message to bare JID recieved
 	local origin, stanza = data.origin, data.stanza;
 
 	return process_to_bare(stanza.attr.to or (origin.username..'@'..origin.host), origin, stanza);
-end);
+end, -1);
 
 module:add_feature("msgoffline");
