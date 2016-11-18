@@ -319,11 +319,11 @@ if cleanup_after ~= "never" then
 end
 
 -- Stanzas sent by local clients
-module:hook("pre-message/bare", c2s_message_handler, 2);
-module:hook("pre-message/full", c2s_message_handler, 2);
+module:hook("pre-message/bare", c2s_message_handler, 0);
+module:hook("pre-message/full", c2s_message_handler, 0);
 -- Stanszas to local clients
-module:hook("message/bare", message_handler, 2);
-module:hook("message/full", message_handler, 2);
+module:hook("message/bare", message_handler, 0);
+module:hook("message/full", message_handler, 0);
 
 module:add_feature(xmlns_mam); -- COMPAT with XEP-0313 v 0.1
 
