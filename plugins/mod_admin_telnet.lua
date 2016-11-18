@@ -32,7 +32,6 @@ local has_pposix, pposix = pcall(require, "util.pposix");
 local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
-local core_post_stanza = prosody.core_post_stanza;
 
 local function redirect_output(_G, session)
 	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
@@ -1062,9 +1061,8 @@ def_env.xmpp = {};
 local st = require "util.stanza";
 function def_env.xmpp:ping(localhost, remotehost)
 	if hosts[localhost] then
-		core_post_stanza(hosts[localhost],
-			st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
-				:tag("ping", {xmlns="urn:xmpp:ping"}));
+		module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
+				:tag("ping", {xmlns="urn:xmpp:ping"}), hosts[localhost]);
 		return true, "Sent ping";
 	else
 		return nil, "No such host";
