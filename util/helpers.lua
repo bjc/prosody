@@ -43,14 +43,14 @@ local function show_events(events, specific_event)
 	local event_handlers = events._handlers;
 	local events_array = {};
 	local event_handler_arrays = {};
-	for event in pairs(events._event_map) do
+	for event, priorities in pairs(events._event_map) do
 		local handlers = event_handlers[event];
 		if handlers and (event == specific_event or not specific_event) then
 			table.insert(events_array, event);
 			local handler_strings = {};
 			for i, handler in ipairs(handlers) do
 				local upvals = debug.string_from_var_table(debug.get_upvalues_table(handler));
-				handler_strings[i] = "  "..i..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
+				handler_strings[i] = "  "..priorities[handler]..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
 			end
 			event_handler_arrays[event] = handler_strings;
 		end
