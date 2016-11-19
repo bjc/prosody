@@ -331,6 +331,7 @@ function service:get_items(node, actor, id)
 	else
 		local data = {}
 		for key, value in self.data[node]:items() do
+			data[#data+1] = key;
 			data[key] = value;
 		end
 		return true, data;
