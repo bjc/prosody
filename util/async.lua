@@ -126,8 +126,8 @@ function runner_mt:run(input)
 		local consumed;
 		-- Loop through queue items, and attempt to run them
 		for i = 1,n do
-			local input = q[i];
-			local ok, new_state = coroutine.resume(thread, input);
+			local queued_input = q[i];
+			local ok, new_state = coroutine.resume(thread, queued_input);
 			if not ok then
 				-- There was an error running the coroutine, save the error, mark runner as ready to begin again
 				consumed, state, err = i, "ready", debug.traceback(thread, new_state);
