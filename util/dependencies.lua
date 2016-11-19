@@ -136,7 +136,7 @@ local function check_dependencies()
 end
 
 local function log_warnings()
-	if _VERSION > "Lua 5.1" then
+	if _VERSION > "Lua 5.2" then
 		prosody.log("warn", "Support for %s is experimental, please report any issues", _VERSION);
 	end
 	local ssl = softreq"ssl";
