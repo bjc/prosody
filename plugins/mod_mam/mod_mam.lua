@@ -272,6 +272,7 @@ local function message_handler(event, c2s)
 		-- And stash it
 		local ok, id = archive:append(store_user, nil, stanza, time_now(), with);
 		if ok then
+			stanza:tag("stanza-id", { xmlns = "urn:xmpp:sid:0", by = store_user.."@"..host, id = id }):up();
 			if cleanup then cleanup[store_user] = true; end
 			module:fire_event("archive-message-added", { origin = origin, stanza = stanza, for_user = store_user, id = id });
 		end
