@@ -233,6 +233,11 @@ local function message_handler(event, c2s)
 	local orig_to = stanza.attr.to or orig_from;
 	-- Stanza without 'to' are treated as if it was to their own bare jid
 
+	-- Whos storage do we put it in?
+	local store_user = c2s and origin.username or jid_split(orig_to);
+	-- And who are they chatting with?
+	local with = jid_bare(c2s and orig_to or orig_from);
+
 	-- We store chat messages or normal messages that have a body
 	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
 		log("debug", "Not archiving stanza: %s (type)", stanza:top_tag());
@@ -247,11 +252,6 @@ local function message_handler(event, c2s)
 			return;
 		end
 	end
-
-	-- Whos storage do we put it in?
-	local store_user = c2s and origin.username or jid_split(orig_to);
-	-- And who are they chatting with?
-	local with = jid_bare(c2s and orig_to or orig_from);
 
 	-- Check with the users preferences
 	if shall_store(store_user, with) then
