@@ -85,7 +85,7 @@ local runner_mt = {};
 runner_mt.__index = runner_mt;
 
 local function runner_create_thread(func, self)
-	local thread = coroutine.create(function (self)
+	local thread = coroutine.create(function (self) -- luacheck: ignore 432/self
 		while true do
 			func(coroutine.yield("ready", self));
 		end
