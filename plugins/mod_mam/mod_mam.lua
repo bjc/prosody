@@ -240,12 +240,12 @@ local function message_handler(event, c2s)
 	end
 
 	-- or if hints suggest we shouldn't
-	if stanza:get_child("no-permanent-storage", "urn:xmpp:hints") -- The XEP needs to decide on "store" or "storage"
-	or stanza:get_child("no-permanent-store", "urn:xmpp:hints")
-	or stanza:get_child("no-storage", "urn:xmpp:hints")
-	or stanza:get_child("no-store", "urn:xmpp:hints") then
-		log("debug", "Not archiving stanza: %s (hint)", stanza:top_tag());
-		return;
+	if not stanza:get_child("store", "urn:xmpp:hints") then -- No hint telling us we should store
+		if stanza:get_child("no-permanent-store", "urn:xmpp:hints")
+			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
+			log("debug", "Not archiving stanza: %s (hint)", stanza:top_tag());
+			return;
+		end
 	end
 
 	-- Whos storage do we put it in?
