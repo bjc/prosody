@@ -16,6 +16,7 @@ local prefs_to_stanza = module:require"mamprefsxml".tostanza;
 local prefs_from_stanza = module:require"mamprefsxml".fromstanza;
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
+local jid_prepped_split = require "util.jid".prepped_split;
 local dataform = require "util.dataforms".new;
 local host = module.host;
 
@@ -237,6 +238,17 @@ local function message_handler(event, c2s)
 	local store_user = c2s and origin.username or jid_split(orig_to);
 	-- And who are they chatting with?
 	local with = jid_bare(c2s and orig_to or orig_from);
+
+	-- Filter out <stanza-id> that claim to be from us
+	stanza:maptags(function (tag)
+		if tag.name == "stanza-id" and tag.attr.xmlns == "urn:xmpp:sid:0" then
+			local by_user, by_host, res = prepped_split(tag.attr.by);
+			if not res and by_host == module.host and by_user == store_user then
+				return nil;
+			end
+		end
+		return tag;
+	end);
 
 	-- We store chat messages or normal messages that have a body
 	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
