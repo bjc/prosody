@@ -4,6 +4,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 113/setfenv
 
 local load, loadstring, loadfile, setfenv = load, loadstring, loadfile, setfenv;
 local envload;
