@@ -26,7 +26,7 @@ local prosody = _G.prosody;
 
 module:set_global(); -- we're a global module
 
-local umask = module:get_option("umask") or "027";
+local umask = module:get_option_string("umask", "027");
 pposix.umask(umask);
 
 -- Allow switching away from root, some people like strange ports.
