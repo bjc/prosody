@@ -125,11 +125,16 @@ function check_dependencies()
 	end
 end
 
+-- luacheck: globals socket server
+
 function load_libraries()
 	-- Load socket framework
 	socket = require "socket";
 	server = require "net.server"
 end	
+
+-- The global log() gets defined by loggingmanager
+-- luacheck: ignore 113/log
 
 function init_logging()
 	-- Initialize logging
@@ -156,6 +161,7 @@ end
 function sandbox_require()
 	-- Replace require() with one that doesn't pollute _G, required
 	-- for neat sandboxing of modules
+	-- luacheck: ignore 113/getfenv 111/require
 	local _realG = _G;
 	local _real_require = require;
 	local getfenv = getfenv or function (f)
@@ -172,7 +178,7 @@ function sandbox_require()
 		if curr_env_mt and curr_env_mt.__index and not curr_env_mt.__newindex and _realG_mt then
 			local old_newindex, old_index;
 			old_newindex, _realG_mt.__newindex = _realG_mt.__newindex, curr_env;
-			old_index, _realG_mt.__index = _realG_mt.__index, function (_G, k)
+			old_index, _realG_mt.__index = _realG_mt.__index, function (_G, k) -- luacheck: ignore 212/_G
 				return rawget(curr_env, k);
 			end;
 			local ret = _real_require(...);
@@ -217,6 +223,7 @@ function init_global_state()
 	prosody.hosts = {};
 
 	-- COMPAT: These globals are deprecated
+	-- luacheck: ignore 111/bare_sessions 111/full_sessions 111/hosts
 	bare_sessions = prosody.bare_sessions;
 	full_sessions = prosody.full_sessions;
 	hosts = prosody.hosts;
@@ -349,6 +356,7 @@ end
 
 function init_global_protection()
 	-- Catch global accesses
+	-- luacheck: ignore 212/t
 	local locked_globals_mt = {
 		__index = function (t, k) log("warn", "%s", debug.traceback("Attempt to read a non-existent global '"..tostring(k).."'", 2)); end;
 		__newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end;
