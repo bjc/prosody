@@ -212,14 +212,14 @@ function set_function_metatable()
 end
 
 function init_global_state()
-	-- COMPAT: These globals are deprecated
-	bare_sessions = {};
-	full_sessions = {};
-	hosts = {};
+	prosody.bare_sessions = {};
+	prosody.full_sessions = {};
+	prosody.hosts = {};
 
-	prosody.bare_sessions = bare_sessions;
-	prosody.full_sessions = full_sessions;
-	prosody.hosts = hosts;
+	-- COMPAT: These globals are deprecated
+	bare_sessions = prosody.bare_sessions;
+	full_sessions = prosody.full_sessions;
+	hosts = prosody.hosts;
 	
 	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
 	local custom_plugin_paths = config.get("*", "plugin_paths");
