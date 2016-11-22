@@ -326,11 +326,8 @@ if cleanup_after ~= "never" then
 			local ok, err = archive:delete(user, { ["end"] = os.time() - cleanup_after; })
 			if not ok then
 				module:log("warn", "Could not expire archives for user %s: %s", user, err);
-			else
-				-- :affected() is a recent addition for eg SQLite3 in LuaDBI
-				pcall(function(stmt)
-					module:log("debug", "Removed %d messages", stmt:affected());
-				end, err);
+			elseif type(ok) == "number" then
+				module:log("debug", "Removed %d messages", ok);
 			end
 			cleanup[user] = nil;
 		end
