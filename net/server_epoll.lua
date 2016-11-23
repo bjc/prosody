@@ -21,6 +21,7 @@ local socket = require "socket";
 local luasec = require "ssl";
 local gettime = require "util.time".now;
 local createtable = require "util.table".create;
+local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 
 assert(socket.tcp6 and socket.tcp4, "Incompatible LuaSocket version");
 
@@ -157,7 +158,7 @@ function interface:getfd()
 	if self.conn then
 		return self.conn:getfd();
 	end
-	return -1;
+	return _SOCKETINVALID;
 end
 
 -- Get IP address
