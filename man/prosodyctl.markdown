@@ -134,6 +134,9 @@ details of how these commands work you should see ejabberdctl(8).
 OPTIONS
 =======
 
+`--config filename`
+:   Use the specified config file instead of the default.
+
 `--help`
 :   Display help text for the specified command.
 
