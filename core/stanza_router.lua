@@ -70,6 +70,9 @@ function core_process_stanza(origin, stanza)
 			if not iq_types[st_type] or ((st_type == "set" or st_type == "get") and (#stanza.tags ~= 1)) then
 				origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid IQ type or incorrect number of children"));
 				return;
+			elseif not stanza.attr.id then
+				origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing required 'id' attribute"));
+				return;
 			end
 		end
 
