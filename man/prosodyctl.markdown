@@ -5,7 +5,7 @@ author:
 date: '2015-12-23'
 section: 1
 title: PROSODYCTL
-...
+---
 
 NAME
 ====
@@ -79,6 +79,30 @@ reload
 
 status
 :   Prints the current execution status of the prosody server daemon.
+
+Certificates
+------------
+
+prosodyctl can create self-signed certificates, certificate requests and
+private keys for use with Prosody. Commands are of the form
+`prosodyctl cert subcommand`. Commands take a list of hosts to be
+included in the certificate.
+
+request hosts
+:   Create a certificate request (CSR) file for submission to a
+    certificate authority. Multiple hosts can be given, sub-domains are
+    automatically included.
+
+generate hosts
+:   Generate a self-signed certificate.
+
+key host \[size\]
+:   Generate a private key of 'size' bits (defaults to 2048). Invoked
+    automatically by 'request' and 'generate' if needed.
+
+config hosts
+:   Produce a config file for the list of hosts. Invoked automatically
+    by 'request' and 'generate' if needed.
 
 Debugging
 ---------
