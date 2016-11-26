@@ -9,7 +9,7 @@ local xmlns_forward = "urn:xmpp:forward:0";
 
 local um = require "core.usermanager";
 local st = require "util.stanza";
-local rsm = module:require "rsm";
+local rsm = require "rsm";
 local get_prefs = module:require"mamprefs".get;
 local set_prefs = module:require"mamprefs".set;
 local prefs_to_stanza = module:require"mamprefsxml".tostanza;
