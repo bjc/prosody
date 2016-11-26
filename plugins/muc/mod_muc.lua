@@ -159,7 +159,7 @@ function stanza_handler(event)
 	local bare = jid_bare(stanza.attr.to);
 	local room = rooms[bare];
 	if not room then
-		if stanza.name ~= "presence" then
+		if stanza.name ~= "presence" or stanza.attr.type ~= nil then
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
 			return true;
 		end
