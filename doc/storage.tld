@@ -1,0 +1,61 @@
+-- Storage Interface API Description
+--
+-- This is written as a TypedLua description
+
+-- Key-Value stores (the default)
+
+interface keyval_store
+	get : ( self, string? ) -> (any) | (nil, string)
+	set : ( self, string?, any ) -> (boolean) | (nil, string)
+end
+
+-- Map stores (key-key-value stores)
+
+interface map_store
+	get : ( self, string?, any ) -> (any) | (nil, string)
+	set : ( self, string?, any, any ) -> (boolean) | (nil, string)
+	set_keys : ( self, string?, { any : any }) -> (boolean) | (nil, string)
+	remove : {}
+end
+
+-- Archive stores
+
+typealias archive_query = {
+	"start"  : number?, -- timestamp
+	"end"    : number?, -- timestamp
+	"with"   : string?,
+	"after"  : string?, -- archive id
+	"before" : string?, -- archive id
+	"total"  : boolean?,
+}
+
+interface archive_store
+	-- Optional set of capabilities
+	caps   : {
+		-- Optional total count of matching items returned as second return value from :find()
+		"total" : boolean?,
+	}?
+
+	-- Add to the archive
+	append : ( self, string?, string?, any, number?, string? ) -> (string) | (nil, string)
+
+	-- Iterate over archive
+	find   : ( self, string?, archive_query? ) -> ( () -> ( string, any, number?, string? ), integer? )
+
+	-- Removal of items. API like find. Optional?
+	delete : ( self, string?, archive_query? ) -> (boolean) | (number) | (nil, string)
+
+	-- Array of dates which do have messages (Optional?)
+	dates  : ( self, string? ) -> ({ string }) | (nil, string)
+end
+
+-- This represents moduleapi
+interface module
+	-- If the first string is omitted then the name of the module is used
+	-- The second string is one of "keyval" (default), "map" or "archive"
+	open_store : (self, string?, string?) -> (keyval_store) | (map_store) | (archive_store) | (nil, string)
+
+	-- Other module methods omitted
+end
+
+module : module
