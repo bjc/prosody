@@ -416,6 +416,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	handler.port = handler.clientport -- COMPAT server_event
 	local write = function( self, data )
+		if not handler then return false end
 		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
 			_closelist[ handler ] = "send buffer exceeded"	 -- cannot close the client at the moment, have to wait to the end of the cycle
