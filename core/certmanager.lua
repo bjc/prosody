@@ -184,9 +184,12 @@ local function create_context(host, mode, ...)
 		err = err or "invalid ssl config"
 		local file = err:match("^error loading (.-) %(");
 		if file then
+			local typ;
 			if file == "private key" then
+				typ = file;
 				file = user_ssl_config.key or "your private key";
 			elseif file == "certificate" then
+				typ = file;
 				file = user_ssl_config.certificate or "your certificate file";
 			end
 			local reason = err:match("%((.+)%)$") or "some reason";
@@ -196,6 +199,8 @@ local function create_context(host, mode, ...)
 				reason = "Check that the path is correct, and the file exists.";
 			elseif reason == "system lib" then
 				reason = "Previous error (see logs), or other system error.";
+			elseif reason == "no start line" then
+				reason = "Check that the file contains a "..(typ or file);
 			elseif reason == "(null)" or not reason then
 				reason = "Check that the file exists and the permissions are correct";
 			else
