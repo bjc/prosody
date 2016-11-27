@@ -81,7 +81,7 @@ EOF
 
 while [ "$1" ]
 do
-   value="`echo $1 | sed 's/[^=]*=\(.*\)/\1/'`"
+   value="$(echo "$1" | sed 's/[^=]*=\(.*\)/\1/')"
    if echo "$value" | grep -q "~"
    then
       echo
@@ -268,8 +268,8 @@ fi
 
 find_program() {
    path="$PATH"
-   item="`echo "$path" | sed 's/\([^:]*\):.*/\1/'`"
-   path="`echo "$path" | sed -n 's/[^:]*::*\(.*\)/\1/p'`"
+   item="$(echo "$path" | sed 's/\([^:]*\):.*/\1/')"
+   path="$(echo "$path" | sed -n 's/[^:]*::*\(.*\)/\1/p')"
    found="no"
    while [ "$item" ]
    do
@@ -278,8 +278,8 @@ find_program() {
          found="yes"
          break
       fi
-      item="`echo "$path" | sed 's/\([^:]*\):.*/\1/'`"
-      path="`echo "$path" | sed -n 's/[^:]*::*\(.*\)/\1/p'`"
+      item="$(echo "$path" | sed 's/\([^:]*\):.*/\1/')"
+      path="$(echo "$path" | sed -n 's/[^:]*::*\(.*\)/\1/p')"
    done
    if [ "$found" = "yes" ]
    then
@@ -301,7 +301,7 @@ then
             find_lua="$LUA_DIR"
          fi
       else
-         find_lua=`find_program lua$suffix`
+         find_lua="$(find_program lua$suffix)"
       fi
       if [ "$find_lua" ]
       then
@@ -316,12 +316,12 @@ then
    echo -n "Looking for Lua... "
    if [ ! "$find_lua" ]
    then
-      find_lua=`find_program lua$LUA_SUFFIX`
+      find_lua"=$(find_program lua$LUA_SUFFIX)"
       echo "lua$LUA_SUFFIX found in \$PATH: $find_lua"
    fi
    if [ "$find_lua" ]
    then
-      LUA_DIR=`dirname $find_lua`
+      LUA_DIR="$(dirname $find_lua)"
       LUA_BINDIR="$find_lua"
    else
       echo "lua$LUA_SUFFIX not found in \$PATH."
