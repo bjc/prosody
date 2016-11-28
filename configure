@@ -316,7 +316,7 @@ then
    echo -n "Looking for Lua... "
    if [ ! "$find_lua" ]
    then
-      find_lua"=$(find_program lua$LUA_SUFFIX)"
+      find_lua="$(find_program lua$LUA_SUFFIX)"
       echo "lua$LUA_SUFFIX found in \$PATH: $find_lua"
    fi
    if [ "$find_lua" ]
