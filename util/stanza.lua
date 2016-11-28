@@ -14,6 +14,7 @@ local s_format      = string.format;
 local s_match       =  string.match;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
+local getmetatable  =  getmetatable;
 local pairs         =         pairs;
 local ipairs        =        ipairs;
 local type          =          type;
@@ -43,6 +44,10 @@ stanza_mt.__index = stanza_mt;
 local function new_stanza(name, attr)
 	local stanza = { name = name, attr = attr or {}, tags = {} };
 	return setmetatable(stanza, stanza_mt);
+end
+
+local function is_stanza(s)
+	return getmetatable(s) == stanza_mt;
 end
 
 function stanza_mt:query(xmlns)
@@ -417,6 +422,7 @@ end
 return {
 	stanza_mt = stanza_mt;
 	stanza = new_stanza;
+	is_stanza = is_stanza;
 	new_id = new_id;
 	preserialize = preserialize;
 	deserialize = deserialize;
