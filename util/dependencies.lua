@@ -102,6 +102,7 @@ function check_dependencies()
 	elseif not _G.ssl then
 		_G.ssl = ssl;
 		_G.ssl.context = require "ssl.context";
+		_G.ssl.x509 = softreq "ssl.x509";
 	end
 	
 	local encodings, err = softreq "util.encodings"
