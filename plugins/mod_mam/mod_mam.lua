@@ -21,11 +21,7 @@ local host = module.host;
 
 local rm_load_roster = require "core.rostermanager".load_roster;
 
-local getmetatable = getmetatable;
-local function is_stanza(x)
-	return getmetatable(x) == st.stanza_mt;
-end
-
+local is_stanza = st.is_stanza;
 local tostring = tostring;
 local time_now = os.time;
 local m_min = math.min;
