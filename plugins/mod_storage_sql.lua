@@ -433,14 +433,22 @@ local function upgrade_table(params, apply_changes)
 	return changes;
 end
 
-local function normalize_params(params)
-	if params.driver == "SQLite3" then
-		if params.database ~= ":memory:" then
-			params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
-		end
+local function normalize_database(driver, database)
+	if driver == "SQLite3" and database ~= ":memory:" then
+		return resolve_relative_path(prosody.paths.data or ".", database or "prosody.sqlite");
 	end
-	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
-	return params;
+	return database;
+end
+
+local function normalize_params(params)
+	return {
+		driver = assert(params.driver, "Configuration error: Both the SQL driver and the database need to be specified");
+		database = assert(normalize_database(params.driver, params.database), "Configuration error: Both the SQL driver and the database need to be specified");
+		username = params.username;
+		password = params.password;
+		host = params.host;
+		params.port;
+	};
 end
 
 function module.load()
