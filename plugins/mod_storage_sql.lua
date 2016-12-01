@@ -504,6 +504,8 @@ function module.command(arg)
 			upgrade_table(params, true);
 		end
 		print("All done!");
+	elseif command then
+		print("Unknown command: "..command);
 	else
 		print("Unknown command: "..command);
 	end
