@@ -484,7 +484,7 @@ function module.command(arg)
 		-- We need to find every unique dburi in the config
 		local uris = {};
 		for host in pairs(prosody.hosts) do
-			local params = config.get(host, "sql") or default_params;
+			local params = normalize_params(config.get(host, "sql") or default_params);
 			uris[sql.db2uri(params)] = params;
 		end
 		print("We will check and upgrade the following databases:\n");
