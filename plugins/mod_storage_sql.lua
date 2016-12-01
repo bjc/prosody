@@ -447,7 +447,7 @@ local function normalize_params(params)
 		username = params.username;
 		password = params.password;
 		host = params.host;
-		params.port;
+		port = params.port;
 	};
 end
 
