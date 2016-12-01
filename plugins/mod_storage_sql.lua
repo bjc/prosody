@@ -507,6 +507,7 @@ function module.command(arg)
 	elseif command then
 		print("Unknown command: "..command);
 	else
-		print("Unknown command: "..command);
+		print("Available commands:");
+		print("","upgrade - Perform database upgrade");
 	end
 end
