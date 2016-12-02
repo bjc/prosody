@@ -7,10 +7,8 @@ local xml_parse = require "util.xml".parse;
 local uuid = require "util.uuid";
 local resolve_relative_path = require "util.paths".resolve_relative_path;
 
-local stanza_mt = require"util.stanza".stanza_mt;
-local getmetatable = getmetatable;
+local is_stanza = require"util.stanza".is_stanza;
 local t_concat = table.concat;
-local function is_stanza(x) return getmetatable(x) == stanza_mt; end
 
 local noop = function() end
 local unpack = unpack
@@ -435,14 +433,22 @@ local function upgrade_table(params, apply_changes)
 	return changes;
 end
 
-local function normalize_params(params)
-	if params.driver == "SQLite3" then
-		if params.database ~= ":memory:" then
-			params.database = resolve_relative_path(prosody.paths.data or ".", params.database or "prosody.sqlite");
-		end
+local function normalize_database(driver, database)
+	if driver == "SQLite3" and database ~= ":memory:" then
+		return resolve_relative_path(prosody.paths.data or ".", database or "prosody.sqlite");
 	end
-	assert(params.driver and params.database, "Configuration error: Both the SQL driver and the database need to be specified");
-	return params;
+	return database;
+end
+
+local function normalize_params(params)
+	return {
+		driver = assert(params.driver, "Configuration error: Both the SQL driver and the database need to be specified");
+		database = assert(normalize_database(params.driver, params.database), "Configuration error: Both the SQL driver and the database need to be specified");
+		username = params.username;
+		password = params.password;
+		host = params.host;
+		port = params.port;
+	};
 end
 
 function module.load()
@@ -478,7 +484,7 @@ function module.command(arg)
 		-- We need to find every unique dburi in the config
 		local uris = {};
 		for host in pairs(prosody.hosts) do
-			local params = config.get(host, "sql") or default_params;
+			local params = normalize_params(config.get(host, "sql") or default_params);
 			uris[sql.db2uri(params)] = params;
 		end
 		print("We will check and upgrade the following databases:\n");
@@ -498,7 +504,10 @@ function module.command(arg)
 			upgrade_table(params, true);
 		end
 		print("All done!");
-	else
+	elseif command then
 		print("Unknown command: "..command);
+	else
+		print("Available commands:");
+		print("","upgrade - Perform database upgrade");
 	end
 end

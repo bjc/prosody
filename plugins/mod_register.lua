@@ -257,6 +257,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?
 						local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
 						if usermanager_create_user(username, password, host) then
+							data.registered = os.time();
 							if next(data) and not account_details:set(username, data) then
 								log("debug", "Could not store extra details");
 								usermanager_delete_user(username, host);
