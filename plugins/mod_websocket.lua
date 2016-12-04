@@ -148,6 +148,7 @@ function handle_request(event)
 	end);
 
 	if not wants_xmpp then
+		module:log("debug", "Client didn't want to talk XMPP, list of protocols was %s", request.headers.sec_websocket_protocol or "(empty)");
 		return 501;
 	end
 
@@ -286,6 +287,8 @@ function handle_request(event)
 	response.headers.sec_webSocket_accept = base64(sha1(request.headers.sec_websocket_key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 	response.headers.sec_webSocket_protocol = "xmpp";
 	response.headers.access_control_allow_origin = cross_domain;
+
+	session.log("debug", "Sending WebSocket handshake");
 
 	return "";
 end
