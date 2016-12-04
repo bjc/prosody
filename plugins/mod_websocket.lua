@@ -14,6 +14,7 @@ local sha1 = require "util.hashes".sha1;
 local base64 = require "util.encodings".base64.encode;
 local st = require "util.stanza";
 local parse_xml = require "util.xml".parse;
+local contains_token = require "util.http".contains_token;
 local portmanager = require "core.portmanager";
 local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
@@ -142,10 +143,7 @@ function handle_request(event)
 			</body></html>]];
 	end
 
-	local wants_xmpp = false;
-	(request.headers.sec_websocket_protocol or ""):gsub("([^,]*),?", function (proto)
-		if proto == "xmpp" then wants_xmpp = true; end
-	end);
+	local wants_xmpp = contains_token(request.headers.sec_websocket_protocol or "", "xmpp");
 
 	if not wants_xmpp then
 		module:log("debug", "Client didn't want to talk XMPP, list of protocols was %s", request.headers.sec_websocket_protocol or "(empty)");
