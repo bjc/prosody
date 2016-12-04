@@ -44,7 +44,7 @@ local function fail(s, code, reason)
 	return false
 end
 
-function websocket_listeners.onincoming(handler, buffer, err)
+function websocket_listeners.onincoming(handler, buffer, err) -- luacheck: ignore 212/err
 	local s = websockets[handler];
 	s.readbuffer = s.readbuffer..buffer;
 	while true do
@@ -123,7 +123,7 @@ function websocket_listeners.onincoming(handler, buffer, err)
 end
 
 local websocket_methods = {};
-local function close_timeout_cb(now, timerid, s)
+local function close_timeout_cb(now, timerid, s) -- luacheck: ignore 212/now 212/timerid
 	s.close_timer = nil;
 	log("warn", "Close timeout waiting for server to close, closing manually.");
 	s.handler:close();
@@ -232,7 +232,7 @@ local function connect(url, ex, listeners)
 	}, websocket_metatable);
 
 	local http_url = url:gsub("^(ws)", "http");
-	local http_req = http.request(http_url, {
+	local http_req = http.request(http_url, { -- luacheck: ignore 211/http_req
 		method = "GET";
 		headers = headers;
 		sslctx = ex.sslctx;
