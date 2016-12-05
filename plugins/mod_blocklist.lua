@@ -77,10 +77,7 @@ local function migrate_privacy_list(username)
 end
 
 local function get_blocklist(username)
-	local blocklist = cache[username];
-	if not blocklist then
-		blocklist = cache2:get(username);
-	end
+	local blocklist = cache2:get(username);
 	if not blocklist then
 		if not user_exists(username, module.host) then
 			return null_blocklist;
@@ -102,7 +99,7 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	local reply = st.reply(stanza):tag("blocklist", { xmlns = "urn:xmpp:blocking" });
-	local blocklist = get_blocklist(username);
+	local blocklist = cache[username] or get_blocklist(username);
 	for jid in pairs(blocklist) do
 		if jid then
 			reply:tag("item", { jid = jid }):up();
@@ -156,7 +153,7 @@ local function edit_blocklist(event)
 		return true;
 	end
 
-	local blocklist = get_blocklist(username);
+	local blocklist = cache[username] or get_blocklist(username);
 
 	local new_blocklist = {
 		-- We set the [false] key to someting as a signal not to migrate privacy lists
