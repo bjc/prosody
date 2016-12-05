@@ -315,4 +315,17 @@ function module.add_host(module)
 		};
 	});
 	module:hook("c2s-read-timeout", keepalive, -0.9);
+
+	if cross_domain ~= true then
+		local url = require "socket.url";
+		local ws_url = module:http_url("websocket", "xmpp-websocket");
+		local url_components = url.parse(ws_url);
+		-- The 'Origin' consists of the base URL without path
+		url_components.path = nil;
+		local this_origin = url.build(url_components);
+		cross_domain:add(this_origin);
+		function module.unload()
+			cross_domain:remove(this_origin);
+		end
+	end
 end
