@@ -29,16 +29,16 @@ local t_concat = table.concat;
 
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
-local cross_domain = module:get_option("cross_domain_websocket");
-if cross_domain then
+local cross_domain = module:get_option_set("cross_domain_websocket", {});
+if cross_domain:contains("*") or cross_domain:contains(true) then
+	cross_domain = true;
+end
+
+local function check_origin(origin)
 	if cross_domain == true then
-		cross_domain = "*";
-	elseif type(cross_domain) == "table" then
-		cross_domain = t_concat(cross_domain, ", ");
+		return true;
 	end
-	if type(cross_domain) ~= "string" then
-		cross_domain = nil;
-	end
+	return cross_domain:contains(origin);
 end
 
 local xmlns_framing = "urn:ietf:params:xml:ns:xmpp-framing";
@@ -148,6 +148,11 @@ function handle_request(event)
 	if not wants_xmpp then
 		module:log("debug", "Client didn't want to talk XMPP, list of protocols was %s", request.headers.sec_websocket_protocol or "(empty)");
 		return 501;
+	end
+
+	if not check_origin(request.headers.origin or "") then
+		module:log("debug", "Origin %s is not allowed by 'cross_domain_websocket'", request.headers.origin or "(missing header)");
+		return 403;
 	end
 
 	local function websocket_close(code, message)
@@ -284,7 +289,6 @@ function handle_request(event)
 	response.headers.connection = "Upgrade";
 	response.headers.sec_webSocket_accept = base64(sha1(request.headers.sec_websocket_key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 	response.headers.sec_webSocket_protocol = "xmpp";
-	response.headers.access_control_allow_origin = cross_domain;
 
 	session.log("debug", "Sending WebSocket handshake");
 
