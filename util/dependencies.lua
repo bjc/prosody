@@ -63,7 +63,7 @@ local function check_dependencies()
 		missingdep("luaexpat", {
 				["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-expat0";
 				["luarocks"] = "luarocks install luaexpat";
-				["Source"] = "http://www.keplerproject.org/luaexpat/";
+				["Source"] = "http://matthewwild.co.uk/projects/luaexpat/";
 			});
 		fatal = true;
 	end
@@ -95,7 +95,7 @@ local function check_dependencies()
 		missingdep("LuaSec", {
 				["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
 				["luarocks"] = "luarocks install luasec";
-				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
+				["Source"] = "https://github.com/brunoos/luasec";
 			}, "SSL/TLS support will not be available");
 	end
 
