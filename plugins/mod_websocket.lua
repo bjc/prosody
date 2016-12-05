@@ -323,9 +323,13 @@ function module.add_host(module)
 		-- The 'Origin' consists of the base URL without path
 		url_components.path = nil;
 		local this_origin = url.build(url_components);
-		cross_domain:add(this_origin);
+		local local_cross_domain = module:get_option_set("cross_domain_websocket", { this_origin });
+		-- Don't add / remove something added by another host
+		-- This might be weird with random load order
+		local_cross_domain:exclude(cross_domain);
+		cross_domain:include(local_cross_domain);
 		function module.unload()
-			cross_domain:remove(this_origin);
+			cross_domain:exclude(local_cross_domain);
 		end
 	end
 end
