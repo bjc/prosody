@@ -61,18 +61,16 @@ local function migrate_privacy_list(username)
 
 	local migrated_data = { [false] = { created = os.time(); migrated = "privacy" }};
 
-	if legacy_data then
-		module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
-		local item, jid;
-		for i = 1, #legacy_data do
-			item = legacy_data[i];
-			if item.type == "jid" and item.action == "deny" then
-				jid = jid_prep(item.value);
-				if not jid then
-					module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
-				else
-					migrated_data[jid] = true;
-				end
+	module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
+	local item, jid;
+	for i = 1, #legacy_data do
+		item = legacy_data[i];
+		if item.type == "jid" and item.action == "deny" then
+			jid = jid_prep(item.value);
+			if not jid then
+				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
+			else
+				migrated_data[jid] = true;
 			end
 		end
 	end
