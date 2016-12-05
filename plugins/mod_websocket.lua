@@ -14,6 +14,7 @@ local sha1 = require "util.hashes".sha1;
 local base64 = require "util.encodings".base64.encode;
 local st = require "util.stanza";
 local parse_xml = require "util.xml".parse;
+local contains_token = require "util.http".contains_token;
 local portmanager = require "core.portmanager";
 local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
@@ -28,16 +29,16 @@ local t_concat = table.concat;
 
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
-local cross_domain = module:get_option("cross_domain_websocket");
-if cross_domain then
+local cross_domain = module:get_option_set("cross_domain_websocket", {});
+if cross_domain:contains("*") or cross_domain:contains(true) then
+	cross_domain = true;
+end
+
+local function check_origin(origin)
 	if cross_domain == true then
-		cross_domain = "*";
-	elseif type(cross_domain) == "table" then
-		cross_domain = t_concat(cross_domain, ", ");
+		return true;
 	end
-	if type(cross_domain) ~= "string" then
-		cross_domain = nil;
-	end
+	return cross_domain:contains(origin);
 end
 
 local xmlns_framing = "urn:ietf:params:xml:ns:xmpp-framing";
@@ -142,13 +143,16 @@ function handle_request(event)
 			</body></html>]];
 	end
 
-	local wants_xmpp = false;
-	(request.headers.sec_websocket_protocol or ""):gsub("([^,]*),?", function (proto)
-		if proto == "xmpp" then wants_xmpp = true; end
-	end);
+	local wants_xmpp = contains_token(request.headers.sec_websocket_protocol or "", "xmpp");
 
 	if not wants_xmpp then
+		module:log("debug", "Client didn't want to talk XMPP, list of protocols was %s", request.headers.sec_websocket_protocol or "(empty)");
 		return 501;
+	end
+
+	if not check_origin(request.headers.origin or "") then
+		module:log("debug", "Origin %s is not allowed by 'cross_domain_websocket'", request.headers.origin or "(missing header)");
+		return 403;
 	end
 
 	local function websocket_close(code, message)
@@ -285,7 +289,8 @@ function handle_request(event)
 	response.headers.connection = "Upgrade";
 	response.headers.sec_webSocket_accept = base64(sha1(request.headers.sec_websocket_key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 	response.headers.sec_webSocket_protocol = "xmpp";
-	response.headers.access_control_allow_origin = cross_domain;
+
+	session.log("debug", "Sending WebSocket handshake");
 
 	return "";
 end
@@ -310,4 +315,21 @@ function module.add_host(module)
 		};
 	});
 	module:hook("c2s-read-timeout", keepalive, -0.9);
+
+	if cross_domain ~= true then
+		local url = require "socket.url";
+		local ws_url = module:http_url("websocket", "xmpp-websocket");
+		local url_components = url.parse(ws_url);
+		-- The 'Origin' consists of the base URL without path
+		url_components.path = nil;
+		local this_origin = url.build(url_components);
+		local local_cross_domain = module:get_option_set("cross_domain_websocket", { this_origin });
+		-- Don't add / remove something added by another host
+		-- This might be weird with random load order
+		local_cross_domain:exclude(cross_domain);
+		cross_domain:include(local_cross_domain);
+		function module.unload()
+			cross_domain:exclude(local_cross_domain);
+		end
+	end
 end
