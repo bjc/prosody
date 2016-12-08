@@ -54,7 +54,7 @@ end
 
 -- Migrates from the old mod_privacy storage
 local function migrate_privacy_list(username)
-	local migrated_data = { [false] = "not empty" };
+	local migrated_data = { [false] = { created = os.time(); migrated = "privacy" }};
 	local legacy_data = module:open_store("privacy"):get(username);
 	if legacy_data and legacy_data.lists and legacy_data.default then
 		legacy_data = legacy_data.lists[legacy_data.default];
@@ -160,18 +160,23 @@ local function edit_blocklist(event)
 
 	local blocklist = get_blocklist(username);
 
-	local new_blocklist = {};
+	local new_blocklist = {
+		-- We set the [false] key to someting as a signal not to migrate privacy lists
+		[false] = blocklist[false] or { created = os.time(); };
+	};
+	if type(blocklist[false]) == "table" then
+		new_blocklist[false].modified = os.time();
+	end
 
 	if is_blocking or next(new) then
 		for jid in pairs(blocklist) do
-			new_blocklist[jid] = true;
+			if jid then new_blocklist[jid] = true; end
 		end
 		for jid in pairs(new) do
 			new_blocklist[jid] = is_blocking;
 		end
 		-- else empty the blocklist
 	end
-	new_blocklist[false] = "not empty"; -- In order to avoid doing the migration thing twice
 
 	local ok, err = set_blocklist(username, new_blocklist);
 	if ok then
