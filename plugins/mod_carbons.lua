@@ -24,21 +24,23 @@ local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
 	local orig_type = stanza.attr.type or "normal";
 	local orig_from = stanza.attr.from;
+	local bare_from = jid_bare(orig_from);
 	local orig_to = stanza.attr.to;
-	
+	local bare_to = jid_bare(orig_to);
+
 	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body"))) then
 		return -- Only chat type messages
 	end
 
 	-- Stanza sent by a local client
-	local bare_jid = jid_bare(orig_from);
+	local bare_jid = bare_from; -- JID of the local user
 	local target_session = origin;
 	local top_priority = false;
-	local user_sessions = bare_sessions[bare_jid];
+	local user_sessions = bare_sessions[bare_from];
 
 	-- Stanza about to be delivered to a local client
 	if not c2s then
-		bare_jid = jid_bare(orig_to);
+		bare_jid = bare_to;
 		target_session = full_sessions[orig_to];
 		user_sessions = bare_sessions[bare_jid];
 		if not target_session and user_sessions then
