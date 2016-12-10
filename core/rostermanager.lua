@@ -234,6 +234,18 @@ local function is_contact_subscribed(username, host, jid)
 	local item = roster[jid];
 	return item and (item.subscription == "from" or item.subscription == "both"), err;
 end
+local function is_user_subscribed(username, host, jid)
+	do
+		local selfjid = username.."@"..host;
+		local user_subscription = _get_online_roster_subscription(selfjid, jid);
+		if user_subscription then return (user_subscription == "both" or user_subscription == "to"); end
+		local contact_subscription = _get_online_roster_subscription(jid, selfjid);
+		if contact_subscription then return (contact_subscription == "both" or contact_subscription == "from"); end
+	end
+	local roster, err = load_roster(username, host);
+	local item = roster[jid];
+	return item and (item.subscription == "to" or item.subscription == "both"), err;
+end
 
 function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
@@ -350,6 +362,7 @@ return {
 	process_inbound_subscription_cancellation = process_inbound_subscription_cancellation;
 	process_inbound_unsubscribe = process_inbound_unsubscribe;
 	is_contact_subscribed = is_contact_subscribed;
+	is_user_subscribed = is_user_subscribed;
 	is_contact_pending_in = is_contact_pending_in;
 	set_contact_pending_in = set_contact_pending_in;
 	is_contact_pending_out = is_contact_pending_out;
