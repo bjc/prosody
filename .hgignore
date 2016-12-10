@@ -1,5 +1,6 @@
 syntax: glob
 .hgignore
+.luacheckcache
 data
 local
 www_files
