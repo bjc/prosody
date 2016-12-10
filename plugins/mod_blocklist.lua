@@ -54,26 +54,21 @@ end
 
 -- Migrates from the old mod_privacy storage
 local function migrate_privacy_list(username)
-	local migrated_data = { [false] = "not empty" };
 	local legacy_data = module:open_store("privacy"):get(username);
-	if legacy_data and legacy_data.lists and legacy_data.default then
-		legacy_data = legacy_data.lists[legacy_data.default];
-		legacy_data = legacy_data and legacy_data.items;
-	else
-		return migrated_data;
-	end
-	if legacy_data then
-		module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
-		local item, jid;
-		for i = 1, #legacy_data do
-			item = legacy_data[i];
-			if item.type == "jid" and item.action == "deny" then
-				jid = jid_prep(item.value);
-				if not jid then
-					module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
-				else
-					migrated_data[jid] = true;
-				end
+	if not legacy_data or not legacy_data.lists or not legacy_data.default then return; end
+	local default_list = legacy_data.lists[legacy_data.default];
+	if not default_list or not default_list.items then return; end
+
+	local migrated_data = { [false] = { created = os.time(); migrated = "privacy" }};
+
+	module:log("info", "Migrating blocklist from mod_privacy storage for user '%s'", username);
+	for _, item in ipairs(default_list.items) do
+		if item.type == "jid" and item.action == "deny" then
+			local jid = jid_prep(item.value);
+			if not jid then
+				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
+			else
+				migrated_data[jid] = true;
 			end
 		end
 	end
@@ -82,10 +77,7 @@ local function migrate_privacy_list(username)
 end
 
 local function get_blocklist(username)
-	local blocklist = cache[username];
-	if not blocklist then
-		blocklist = cache2:get(username);
-	end
+	local blocklist = cache2:get(username);
 	if not blocklist then
 		if not user_exists(username, module.host) then
 			return null_blocklist;
@@ -93,6 +85,9 @@ local function get_blocklist(username)
 		blocklist = storage:get(username);
 		if not blocklist then
 			blocklist = migrate_privacy_list(username);
+		end
+		if not blocklist then
+			blocklist = { [false] = { created = os.time(); }; };
 		end
 		cache2:set(username, blocklist);
 	end
@@ -104,7 +99,7 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	local reply = st.reply(stanza):tag("blocklist", { xmlns = "urn:xmpp:blocking" });
-	local blocklist = get_blocklist(username);
+	local blocklist = cache[username] or get_blocklist(username);
 	for jid in pairs(blocklist) do
 		if jid then
 			reply:tag("item", { jid = jid }):up();
@@ -158,20 +153,25 @@ local function edit_blocklist(event)
 		return true;
 	end
 
-	local blocklist = get_blocklist(username);
+	local blocklist = cache[username] or get_blocklist(username);
 
-	local new_blocklist = {};
+	local new_blocklist = {
+		-- We set the [false] key to someting as a signal not to migrate privacy lists
+		[false] = blocklist[false] or { created = os.time(); };
+	};
+	if type(blocklist[false]) == "table" then
+		new_blocklist[false].modified = os.time();
+	end
 
 	if is_blocking or next(new) then
 		for jid in pairs(blocklist) do
-			new_blocklist[jid] = true;
+			if jid then new_blocklist[jid] = true; end
 		end
 		for jid in pairs(new) do
 			new_blocklist[jid] = is_blocking;
 		end
 		-- else empty the blocklist
 	end
-	new_blocklist[false] = "not empty"; -- In order to avoid doing the migration thing twice
 
 	local ok, err = set_blocklist(username, new_blocklist);
 	if ok then
