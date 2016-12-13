@@ -135,7 +135,6 @@ module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
 	local origin = event.origin or prosody.hosts[host];
 	if host ~= module.host then return end
-	local bare = username .. "@" .. host;
 	local roster = rm_load_roster(username, host);
 	for jid, item in pairs(roster) do
 		if jid then
