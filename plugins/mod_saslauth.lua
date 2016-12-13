@@ -273,7 +273,7 @@ module:hook("s2s-stream-features", function(event)
 	end
 end);
 
-module:hook("iq/self/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
+module:hook("stanza/iq/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local resource;
 	if stanza.attr.type == "set" then
