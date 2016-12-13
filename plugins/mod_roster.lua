@@ -142,9 +142,9 @@ module:hook_global("user-deleted", function(event)
 				username = username, jid = jid, item = item, roster = roster, origin = origin,
 			});
 		else
-			for jid in pairs(item.pending) do
+			for pending_jid in pairs(item.pending) do
 				module:fire_event("roster-item-removed", {
-					username = username, jid = jid, roster = roster, origin = origin,
+					username = username, jid = pending_jid, roster = roster, origin = origin,
 				});
 			end
 		end
