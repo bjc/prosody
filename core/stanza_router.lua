@@ -79,16 +79,6 @@ function core_process_stanza(origin, stanza)
 			end
 		end
 
-		if not origin.full_jid
-			and not(name == "iq" and st_type == "set" and stanza.tags[1] and stanza.tags[1].name == "bind"
-					and stanza.tags[1].attr.xmlns == "urn:ietf:params:xml:ns:xmpp-bind") then
-			-- authenticated client isn't bound and current stanza is not a bind request
-			if stanza.attr.type ~= "result" and stanza.attr.type ~= "error" then
-				origin.send(st.error_reply(stanza, "auth", "not-authorized")); -- FIXME maybe allow stanzas to account or server
-			end
-			return;
-		end
-
 		-- TODO also, stanzas should be returned to their original state before the function ends
 		stanza.attr.from = origin.full_jid;
 	end
