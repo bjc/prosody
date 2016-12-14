@@ -19,7 +19,6 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
 local rm_add_to_roster = require "core.rostermanager".add_to_roster;
 local rm_roster_push = require "core.rostermanager".roster_push;
-local core_post_stanza = prosody.core_post_stanza;
 
 module:add_feature("jabber:iq:roster");
 
@@ -136,7 +135,6 @@ module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
 	local origin = event.origin or prosody.hosts[host];
 	if host ~= module.host then return end
-	local bare = username .. "@" .. host;
 	local roster = rm_load_roster(username, host);
 	for jid, item in pairs(roster) do
 		if jid then
@@ -144,9 +142,9 @@ module:hook_global("user-deleted", function(event)
 				username = username, jid = jid, item = item, roster = roster, origin = origin,
 			});
 		else
-			for jid in pairs(item.pending) do
+			for pending_jid in pairs(item.pending) do
 				module:fire_event("roster-item-removed", {
-					username = username, jid = jid, roster = roster, origin = origin,
+					username = username, jid = pending_jid, roster = roster, origin = origin,
 				});
 			end
 		end

@@ -109,7 +109,7 @@ local function make_authenticated(session, username)
 	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
-		session.type = "c2s";
+		session.type = "c2s_unbound";
 	end
 	session.log("info", "Authenticated as %s@%s", username or "(unknown)", session.host or "(unknown)");
 	return true;
@@ -177,6 +177,9 @@ local function bind_resource(session, resource)
 	session.full_jid = session.username .. '@' .. session.host .. '/' .. resource;
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	full_sessions[session.full_jid] = session;
+	if session.type == "c2s_unbound" then
+		session.type = "c2s";
+	end
 
 	local err;
 	session.roster, err = rm_load_roster(session.username, session.host);
