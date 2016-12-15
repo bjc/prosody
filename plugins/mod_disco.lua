@@ -148,7 +148,7 @@ end);
 
 -- Handle caps stream feature
 module:hook("stream-features", function (event)
-	if event.origin.type == "c2s" then
+	if event.origin.type == "c2s" or event.origin.type == "c2s_unauthed" then
 		event.features:add_child(get_server_caps_feature());
 	end
 end);
