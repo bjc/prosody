@@ -377,6 +377,14 @@ function interface:onreadable()
 		end
 	end
 	if not self.conn then return; end
+	if self._limit and (data or partial) then
+		local cost = self._limit * #(data or partial);
+		if cost > cfg.min_wait then
+			self:setreadtimeout(false);
+			self:pausefor(cost);
+			return;
+		end
+	end
 	if self._wantread and self.conn:dirty() then
 		self:setreadtimeout(false);
 		self:pausefor(cfg.read_retry_delay);
@@ -609,6 +617,7 @@ end
 
 -- Pause connection for some time
 function interface:pausefor(t)
+	self:debug("Pause for %fs", t);
 	if self._pausefor then
 		self._pausefor:close();
 	end
@@ -621,6 +630,14 @@ function interface:pausefor(t)
 			self:onreadable();
 		end
 	end);
+end
+
+function interface:setlimit(Bps)
+	if Bps > 0 then
+		self._limit = 1/Bps;
+	else
+		self._limit = nil;
+	end
 end
 
 function interface:pause_writes()
