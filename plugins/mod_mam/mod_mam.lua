@@ -32,6 +32,7 @@ local global_default_policy = module:get_option("default_archive_policy", true);
 if global_default_policy ~= "roster" then
 	global_default_policy = module:get_option_boolean("default_archive_policy", global_default_policy);
 end
+local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
 local archive_store = "archive2";
 local archive = assert(module:open_store(archive_store, "archive"));
@@ -261,6 +262,20 @@ local function message_handler(event, c2s)
 		if stanza:get_child("no-permanent-store", "urn:xmpp:hints")
 			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
 			log("debug", "Not archiving stanza: %s (hint)", stanza:top_tag());
+			return;
+		end
+	end
+
+	if not strip_tags:empty() then
+		stanza = st.clone(stanza);
+		stanza:maptags(function (tag)
+			if strip_tags:contains(tag.attr.xmlns) then
+				return nil;
+			else
+				return tag;
+			end
+		end);
+		if #stanza.tags == 0 then
 			return;
 		end
 	end
