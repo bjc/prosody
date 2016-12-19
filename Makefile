@@ -19,7 +19,7 @@ INSTALL_EXEC=$(INSTALL) -m755
 MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
-.PHONY: all clean install
+.PHONY: all test clean install
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
