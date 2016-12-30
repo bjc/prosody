@@ -209,7 +209,7 @@ end
 
 return {
 	request = request;
-	
+
 	-- COMPAT
 	urlencode = util_http.urlencode;
 	urldecode = util_http.urldecode;
