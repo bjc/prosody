@@ -17,9 +17,9 @@ local server = require "net.server"
 
 local t_insert, t_concat = table.insert, table.concat;
 local pairs = pairs;
-local tonumber, tostring, xpcall, select, traceback =
-      tonumber, tostring, xpcall, select, debug.traceback;
-local assert, error = assert, error
+local tonumber, tostring, xpcall, traceback =
+      tonumber, tostring, xpcall, debug.traceback;
+local error = error
 
 local log = require "util.logger".init("http");
 
@@ -209,7 +209,7 @@ end
 
 return {
 	request = request;
-	
+
 	-- COMPAT
 	urlencode = util_http.urlencode;
 	urldecode = util_http.urldecode;
