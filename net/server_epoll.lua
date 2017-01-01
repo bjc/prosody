@@ -572,6 +572,7 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls)
 	return client;
 end
 
+-- New outgoing TCP connection
 local function addclient(addr, port, listeners, pattern, tls)
 	local conn, err = socket.tcp();
 	if not conn then return conn, err; end
@@ -582,6 +583,7 @@ local function addclient(addr, port, listeners, pattern, tls)
 	return client, conn;
 end
 
+-- Dump all data from one connection into another
 local function link(from, to)
 	from.listeners = setmetatable({
 		onincoming = function (_, data)
@@ -604,6 +606,7 @@ function interface:set_send(new_send)
 	self.send = new_send;
 end
 
+-- Close all connections and servers
 local function closeall()
 	for fd, conn in pairs(fds) do -- luacheck: ignore 213/fd
 		conn:close();
