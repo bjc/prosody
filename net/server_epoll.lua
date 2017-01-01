@@ -605,7 +605,7 @@ function interface:set_send(new_send)
 end
 
 local function closeall()
-	for fd, conn in pairs(fds) do
+	for fd, conn in pairs(fds) do -- luacheck: ignore 213/fd
 		conn:close();
 	end
 end
