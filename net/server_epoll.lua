@@ -612,8 +612,12 @@ end
 local quitting = nil;
 
 -- Signal main loop about shutdown via above upvalue
-local function setquitting()
-	quitting = "quitting";
+local function setquitting(quit)
+	if quit then
+		quitting = "quitting";
+	else
+		quitting = nil;
+	end
 end
 
 -- Main loop
