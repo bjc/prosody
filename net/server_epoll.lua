@@ -15,6 +15,7 @@ local t_concat = table.concat;
 local setmetatable = setmetatable;
 local tostring = tostring;
 local pcall = pcall;
+local pairs = pairs;
 local log = require "util.logger".init("server_epoll");
 local epoll = require "epoll";
 local socket = require "socket";
@@ -602,6 +603,12 @@ function interface:set_send(new_send)
 	self.send = new_send;
 end
 
+local function closeall()
+	for fd, conn in pairs(fds) do
+		conn:close();
+	end
+end
+
 local quitting = nil;
 
 -- Signal main loop about shutdown via above upvalue
@@ -641,6 +648,7 @@ return {
 	add_task = addtimer;
 	at = at;
 	loop = loop;
+	closeall = closeall;
 	setquitting = setquitting;
 	wrapclient = wrapclient;
 	link = link;
