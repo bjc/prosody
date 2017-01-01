@@ -617,7 +617,7 @@ local function setquitting()
 end
 
 -- Main loop
-local function loop()
+local function loop(once)
 	repeat
 		local t = runtimers(cfg.max_wait, cfg.min_wait);
 		local fd, r, w = epoll.wait(t);
@@ -637,7 +637,7 @@ local function loop()
 		elseif r ~= "timeout" then
 			log("debug", "epoll_wait error: %s", tostring(r));
 		end
-	until quitting;
+	until once or quitting;
 	return quitting;
 end
 
