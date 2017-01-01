@@ -15,6 +15,7 @@ local t_concat = table.concat;
 local setmetatable = setmetatable;
 local tostring = tostring;
 local pcall = pcall;
+local next = next;
 local pairs = pairs;
 local log = require "util.logger".init("server_epoll");
 local epoll = require "epoll";
@@ -615,6 +616,7 @@ local quitting = nil;
 local function setquitting(quit)
 	if quit then
 		quitting = "quitting";
+		closeall();
 	else
 		quitting = nil;
 	end
@@ -641,7 +643,7 @@ local function loop(once)
 		elseif r ~= "timeout" then
 			log("debug", "epoll_wait error: %s", tostring(r));
 		end
-	until once or quitting;
+	until once or (quitting and next(fds) == nil);
 	return quitting;
 end
 
