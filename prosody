@@ -95,7 +95,7 @@ function read_config()
 		print("\n");
 		print("**************************");
 		if level == "parser" then
-			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua"..":");
+			print("A problem occurred while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua"..":");
 			print("");
 			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
 			if err:match("chunk has too many syntax levels$") then
