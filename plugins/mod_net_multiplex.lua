@@ -67,5 +67,6 @@ module:provides("net", {
 module:provides("net", {
 	name = "multiplex_ssl";
 	config_prefix = "ssl";
+	encryption = "ssl";
 	listener = listener;
 });
