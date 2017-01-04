@@ -417,6 +417,7 @@ function interface_mt:setlistener(listener)
 	self.onreadtimeout = listener.onreadtimeout;
 	self.onstatus = listener.onstatus;
 	self.ondetach = listener.ondetach;
+	self.ondrain = listener.ondrain;
 end
 
 -- Stub handlers
