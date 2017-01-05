@@ -472,7 +472,7 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 		server = server;
 		created = gettime();
 		listeners = listeners;
-		_pattern = pattern or server._pattern;
+		_pattern = pattern or (server and server._pattern);
 		writebuffer = {};
 		tls = tls;
 	}, interface_mt);
