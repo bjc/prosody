@@ -64,7 +64,7 @@ for _, field in ipairs(additional_fields) do
 		registration_form[#registration_form + 1] = field;
 	else
 		if field:match("%+$") then
-			field = field:sub(1, #field - 1);
+			field = field:sub(1, -2);
 			field_map[field].required = true;
 		end
 
