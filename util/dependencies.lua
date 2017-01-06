@@ -61,7 +61,7 @@ local function check_dependencies()
 
 	if not lxp then
 		missingdep("luaexpat", {
-				["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-expat0";
+				["Debian/Ubuntu"] = "sudo apt-get install lua-expat";
 				["luarocks"] = "luarocks install luaexpat";
 				["Source"] = "http://matthewwild.co.uk/projects/luaexpat/";
 			});
@@ -72,7 +72,7 @@ local function check_dependencies()
 
 	if not socket then
 		missingdep("luasocket", {
-				["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-socket2";
+				["Debian/Ubuntu"] = "sudo apt-get install lua-socket";
 				["luarocks"] = "luarocks install luasocket";
 				["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
 			});
@@ -83,7 +83,7 @@ local function check_dependencies()
 	if not lfs then
 		missingdep("luafilesystem", {
 				["luarocks"] = "luarocks install luafilesystem";
-		 		["Debian/Ubuntu"] = "sudo apt-get install liblua5.1-filesystem0";
+		 		["Debian/Ubuntu"] = "sudo apt-get install lua-filesystem";
 		 		["Source"] = "http://www.keplerproject.org/luafilesystem/";
 		 	});
 		fatal = true;
