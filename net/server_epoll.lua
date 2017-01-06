@@ -671,23 +671,23 @@ return {
 		local function onevent(self)
 			local ret = self:callback();
 			if ret == -1 then
-				epoll.ctl("del", fd);
+				self:setflags(false, false);
 			elseif ret then
-				epoll.ctl("mod", fd, mode);
+				self:setflags(mode == "r" or mode == "rw", mode == "w" or mode == "rw");
 			end
 		end
 
-		local conn = {
+		local conn = setmetatable({
+			getfd = function () return fd; end;
 			callback = callback;
 			onreadable = onevent;
 			onwriteable = onevent;
-			close = function ()
+			close = function (self)
+				self:setflags(false, false);
 				fds[fd] = nil;
-				return epoll.ctl("del", fd);
 			end;
-		};
-		fds[fd] = conn;
-		local ok, err = epoll.ctl("add", fd, mode or "r");
+		}, interface_mt);
+		local ok, err = conn:setflags(mode == "r" or mode == "rw", mode == "w" or mode == "rw");
 		if not ok then return ok, err; end
 		return conn;
 	end;
