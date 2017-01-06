@@ -63,6 +63,7 @@ for _, field in ipairs(additional_fields) do
 	if type(field) == "table" then
 		registration_form[#registration_form + 1] = field;
 	else
+	elseif field_map[field] or field_map[field:sub(1, -2) then
 		if field:match("%+$") then
 			field = field:sub(1, -2);
 			field_map[field].required = true;
@@ -70,6 +71,8 @@ for _, field in ipairs(additional_fields) do
 
 		registration_form[#registration_form + 1] = field_map[field];
 		registration_query:tag(field):up();
+	else
+		module:log("error", "Unknown field %q", field);
 	end
 end
 registration_query:add_child(registration_form:form());
