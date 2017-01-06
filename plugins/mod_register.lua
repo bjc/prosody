@@ -62,8 +62,7 @@ local registration_query = st.stanza("query", {xmlns = "jabber:iq:register"})
 for _, field in ipairs(additional_fields) do
 	if type(field) == "table" then
 		registration_form[#registration_form + 1] = field;
-	else
-	elseif field_map[field] or field_map[field:sub(1, -2) then
+	elseif field_map[field] or field_map[field:sub(1, -2)] then
 		if field:match("%+$") then
 			field = field:sub(1, -2);
 			field_map[field].required = true;
