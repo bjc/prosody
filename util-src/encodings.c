@@ -524,6 +524,9 @@ static const luaL_Reg Reg_idna[] = {
 /***************** end *****************/
 
 LUALIB_API int luaopen_util_encodings(lua_State* L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 #ifdef USE_STRINGPREP_ICU
 	init_icu();
 #endif

@@ -779,6 +779,9 @@ int lc_fallocate(lua_State* L) {
 /* Register functions */
 
 int luaopen_util_pposix(lua_State* L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 	luaL_Reg exports[] = {
 		{ "abort", lc_abort },
 

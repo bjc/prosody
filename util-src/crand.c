@@ -130,6 +130,9 @@ int Lseed(lua_State *L) {
 #endif
 
 int luaopen_util_crand(lua_State *L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 	lua_newtable(L);
 	lua_pushcfunction(L, Lrandom);
 	lua_setfield(L, -2, "bytes");
