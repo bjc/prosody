@@ -125,6 +125,9 @@ static int lc_local_addresses(lua_State* L) {
 }
 
 int luaopen_util_net(lua_State* L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 	luaL_Reg exports[] = {
 		{ "local_addresses", lc_local_addresses },
 		{ NULL, NULL }
