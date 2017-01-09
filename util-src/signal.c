@@ -384,6 +384,9 @@ static const struct luaL_Reg lsignal_lib[] = {
 };
 
 int luaopen_util_signal(lua_State* L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 	int i = 0;
 
 	/* add the library */

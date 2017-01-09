@@ -21,6 +21,9 @@ static int Lpack(lua_State* L) {
 
 
 int luaopen_util_table(lua_State* L) {
+#if (LUA_VERSION_NUM > 501)
+	luaL_checkversion(L);
+#endif
 	lua_newtable(L);
 	lua_pushcfunction(L, Lcreate_table);
 	lua_setfield(L, -2, "create");
