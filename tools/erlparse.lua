@@ -189,9 +189,9 @@ local function readFile(filename)
 	end;
 end
 
-module "erlparse"
+local _M = {};
 
-function parseFile(file)
+function _M.parseFile(file)
 	return readFile(file);
 end
 
