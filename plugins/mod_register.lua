@@ -41,30 +41,37 @@ local field_map = {
 	date = { name = "date", type = "text-single", label = "Birth date" };
 };
 
+local title = module:get_option_string("registration_title",
+	"Creating a new account");
+local instructions = module:get_option_string("registration_instructions",
+	"Choose a username and password for use with this service.");
+
 local registration_form = dataform_new{
-	title = "Creating a new account";
-	instructions = "Choose a username and password for use with this service.";
+	title = title;
+	instructions = instructions;
 
 	field_map.username;
 	field_map.password;
 };
 
 local registration_query = st.stanza("query", {xmlns = "jabber:iq:register"})
-	:tag("instructions"):text("Choose a username and password for use with this service."):up()
+	:tag("instructions"):text(instructions):up()
 	:tag("username"):up()
 	:tag("password"):up();
 
 for _, field in ipairs(additional_fields) do
 	if type(field) == "table" then
 		registration_form[#registration_form + 1] = field;
-	else
+	elseif field_map[field] or field_map[field:sub(1, -2)] then
 		if field:match("%+$") then
-			field = field:sub(1, #field - 1);
+			field = field:sub(1, -2);
 			field_map[field].required = true;
 		end
 
 		registration_form[#registration_form + 1] = field_map[field];
 		registration_query:tag(field):up();
+	else
+		module:log("error", "Unknown field %q", field);
 	end
 end
 registration_query:add_child(registration_form:form());
