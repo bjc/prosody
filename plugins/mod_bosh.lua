@@ -118,7 +118,7 @@ local function set_cross_domain_headers(response)
 end
 
 function handle_OPTIONS(event)
-	if cross_domain and event.request.headers.origin then
+	if cross_domain then
 		set_cross_domain_headers(event.response);
 	end
 	return "";
