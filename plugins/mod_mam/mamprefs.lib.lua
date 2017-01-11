@@ -16,7 +16,8 @@ do
 end
 
 local sessions = hosts[module.host].sessions;
-local prefs = module:open_store("archive2_prefs");
+local archive_store = module:get_option_string("archive_store", "archive");
+local prefs = module:open_store(archive_store .. "_prefs");
 
 local function get_prefs(user)
 	local user_sessions = sessions[user];
