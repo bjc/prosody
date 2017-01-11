@@ -34,7 +34,7 @@ if global_default_policy ~= "roster" then
 end
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
-local archive_store = "archive2";
+local archive_store = module:get_option_string("archive_store", "archive");
 local archive = assert(module:open_store(archive_store, "archive"));
 
 if archive.name == "null" or not archive.find then
