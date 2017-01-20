@@ -77,22 +77,6 @@ int Lrandom(lua_State *L) {
 	return 1;
 }
 
-#ifdef ENABLE_SEEDING
-int Lseed(lua_State *L) {
-	size_t len;
-	const char *seed = lua_tolstring(L, 1, &len);
-
-#if defined(WITH_OPENSSL)
-	RAND_add(seed, len, len);
-	return 0;
-#else
-	lua_pushnil(L);
-	lua_pushliteral(L, "not-supported");
-	return 2;
-#endif
-}
-#endif
-
 int luaopen_util_crand(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
@@ -100,10 +84,6 @@ int luaopen_util_crand(lua_State *L) {
 	lua_newtable(L);
 	lua_pushcfunction(L, Lrandom);
 	lua_setfield(L, -2, "bytes");
-#ifdef ENABLE_SEEDING
-	lua_pushcfunction(L, Lseed);
-	lua_setfield(L, -2, "seed");
-#endif
 
 #if defined(WITH_GETRANDOM)
 	lua_pushstring(L, "Linux");
