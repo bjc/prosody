@@ -19,15 +19,6 @@
 #include <string.h>
 #include <errno.h>
 
-/*
- * TODO: Decide on fixed size or dynamically allocated buffer
- */
-#if 1
-#include <stdlib.h>
-#else
-#define BUFLEN 256
-#endif
-
 #if defined(WITH_GETRANDOM)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -38,7 +29,7 @@
 #endif
 
 /* Was this not supposed to be a function? */
-int getrandom(char *buf, size_t len, int flags) {
+int getrandom(void *buf, size_t len, int flags) {
 	return syscall(SYS_getrandom, buf, len, flags);
 }
 
@@ -51,36 +42,14 @@ int getrandom(char *buf, size_t len, int flags) {
 #endif
 
 int Lrandom(lua_State *L) {
-#ifdef BUFLEN
-	unsigned char buf[BUFLEN];
-#else
-	unsigned char *buf;
-#endif
 	int ret = 0;
 	size_t len = (size_t)luaL_checkinteger(L, 1);
-#ifdef BUFLEN
-	len = len > BUFLEN ? BUFLEN : len;
-#else
-	buf = malloc(len);
-
-	if(buf == NULL) {
-		lua_pushnil(L);
-		lua_pushstring(L, "out of memory");
-		/* or it migth be better to
-		 * return lua_error(L);
-		 */
-		return 2;
-	}
-
-#endif
+	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
 	ret = getrandom(buf, len, 0);
 
 	if(ret < 0) {
-#ifndef BUFLEN
-		free(buf);
-#endif
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
 		lua_pushinteger(L, errno);
@@ -96,9 +65,6 @@ int Lrandom(lua_State *L) {
 	if(ret == 1) {
 		ret = len;
 	} else {
-#ifndef BUFLEN
-		free(buf);
-#endif
 		lua_pushnil(L);
 		lua_pushstring(L, "failed");
 		/* lua_pushinteger(L, ERR_get_error()); */
@@ -107,10 +73,7 @@ int Lrandom(lua_State *L) {
 
 #endif
 
-	lua_pushlstring(L, (const char *)buf, ret);
-#ifndef BUFLEN
-	free(buf);
-#endif
+	lua_pushlstring(L, buf, ret);
 	return 1;
 }
 
