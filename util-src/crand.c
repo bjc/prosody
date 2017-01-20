@@ -57,7 +57,7 @@ int Lrandom(lua_State *L) {
 	unsigned char *buf;
 #endif
 	int ret = 0;
-	size_t len = (size_t)luaL_checkint(L, 1);
+	size_t len = (size_t)luaL_checkinteger(L, 1);
 #ifdef BUFLEN
 	len = len > BUFLEN ? BUFLEN : len;
 #else
@@ -71,6 +71,7 @@ int Lrandom(lua_State *L) {
 		 */
 		return 2;
 	}
+
 #endif
 
 #if defined(WITH_GETRANDOM)
