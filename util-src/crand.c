@@ -50,10 +50,8 @@ int Lrandom(lua_State *L) {
 	ret = getrandom(buf, len, 0);
 
 	if(ret < 0) {
-		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
-		lua_pushinteger(L, errno);
-		return 3;
+		return lua_error(L);
 	}
 
 #elif defined(WITH_ARC4RANDOM)
@@ -65,10 +63,8 @@ int Lrandom(lua_State *L) {
 	if(ret == 1) {
 		ret = len;
 	} else {
-		lua_pushnil(L);
-		lua_pushstring(L, "failed");
-		/* lua_pushinteger(L, ERR_get_error()); */
-		return 2;
+		lua_pushstring(L, "RAND_bytes() failed");
+		return lua_error(L);
 	}
 
 #endif
