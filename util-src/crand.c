@@ -11,6 +11,12 @@
 /*
 * crand.c
 * C PRNG interface
+*
+* The purpose of this module is to provide access to a PRNG in
+* environments without /dev/urandom
+*
+* Caution! This has not been extensively tested.
+*
 */
 
 #include "lualib.h"
