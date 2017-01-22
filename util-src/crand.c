@@ -34,7 +34,10 @@
 #error getrandom() requires Linux 3.17 or later
 #endif
 
-/* Was this not supposed to be a function? */
+/*
+ * This acts like a read from /dev/urandom with the exception that it
+ * *does* block if the entropy pool is not yet initialized.
+ */
 int getrandom(void *buf, size_t len, int flags) {
 	return syscall(SYS_getrandom, buf, len, flags);
 }
