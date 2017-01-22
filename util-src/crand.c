@@ -1,7 +1,7 @@
 /* Prosody IM
--- Copyright (C) 2008-2016 Matthew Wild
--- Copyright (C) 2008-2016 Waqas Hussain
--- Copyright (C) 2016 Kim Alvefur
+-- Copyright (C) 2008-2017 Matthew Wild
+-- Copyright (C) 2008-2017 Waqas Hussain
+-- Copyright (C) 2016-2017 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
