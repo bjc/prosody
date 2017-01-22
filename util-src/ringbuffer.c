@@ -8,9 +8,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#define MIN(a, b) ((a)>(b)?(b):(a))
-#define MAX(a, b) ((a)>(b)?(a):(b))
-
 typedef struct {
 	size_t rpos; /* read position */
 	size_t wpos; /* write position */
