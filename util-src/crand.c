@@ -72,6 +72,7 @@ int Lrandom(lua_State *L) {
 	if(ret == 1) {
 		ret = len;
 	} else {
+		/* TODO ERR_get_error() */
 		lua_pushstring(L, "RAND_bytes() failed");
 		return lua_error(L);
 	}
@@ -100,7 +101,7 @@ int luaopen_util_crand(lua_State *L) {
 	lua_setfield(L, -2, "_source");
 
 #if defined(WITH_OPENSSL) && defined(_WIN32)
-	/* Do we need to seed this on Windows? */
+	/* TODO Do we need to seed this on Windows? */
 #endif
 
 	return 1;
