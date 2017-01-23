@@ -12,6 +12,7 @@
 local global_default_policy = module:get_option("default_archive_policy", true);
 
 do
+	-- luacheck: ignore 211/prefs_format
 	local prefs_format = {
 		[false] = "roster",
 		-- default ::= true | false | "roster"
