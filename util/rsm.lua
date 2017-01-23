@@ -1,3 +1,14 @@
+-- Prosody IM
+-- Copyright (C) 2008-2017 Matthew Wild
+-- Copyright (C) 2008-2017 Waqas Hussain
+-- Copyright (C) 2011-2017 Kim Alvefur
+--
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+-- XEP-0313: Message Archive Management for Prosody
+--
+
 local stanza = require"util.stanza".stanza;
 local tostring, tonumber = tostring, tonumber;
 local type = type;
