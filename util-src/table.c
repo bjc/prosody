@@ -19,7 +19,6 @@ static int Lpack(lua_State* L) {
 	return 1;
 }
 
-
 int luaopen_util_table(lua_State* L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);

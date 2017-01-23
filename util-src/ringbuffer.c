@@ -1,5 +1,4 @@
 
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -73,7 +72,6 @@ int rb_find(lua_State* L) {
 	return 0;
 }
 
-
 int rb_read(lua_State* L) {
 	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	int r = luaL_checkinteger(L, 2);
@@ -100,7 +98,6 @@ int rb_read(lua_State* L) {
 
 	return 1;
 }
-
 
 int rb_readuntil(lua_State* L) {
 	size_t l, m;
