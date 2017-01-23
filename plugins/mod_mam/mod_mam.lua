@@ -249,7 +249,7 @@ local function message_handler(event, c2s)
 	-- Filter out <stanza-id> that claim to be from us
 	stanza:maptags(function (tag)
 		if tag.name == "stanza-id" and tag.attr.xmlns == "urn:xmpp:sid:0" then
-			local by_user, by_host, res = prepped_split(tag.attr.by);
+			local by_user, by_host, res = jid_prepped_split(tag.attr.by);
 			if not res and by_host == module.host and by_user == store_user then
 				return nil;
 			end
