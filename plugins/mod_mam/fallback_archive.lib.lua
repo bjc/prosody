@@ -73,7 +73,6 @@ function archive_store:delete(username, query)
 	local archive = store[username];
 	if not archive then return true; end -- no messages, nothing to delete
 
-	local start, stop, step = 1, archive[0] or #archive, 1;
 	local qstart = query.start or -math.huge;
 	local qend = query["end"] or math.huge;
 	local qwith = query.with;
