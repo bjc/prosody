@@ -595,8 +595,6 @@ int lc_getrlimit(lua_State* L) {
 		return 2;
 	}
 
-
-
 	resource = luaL_checkstring(L, 1);
 	rid = string2resource(resource);
 

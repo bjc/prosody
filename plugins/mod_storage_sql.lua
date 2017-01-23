@@ -287,7 +287,7 @@ end
 function archive_store:delete(username, query)
 	query = query or {};
 	local user,store = username,self.store;
-	return engine:transaction(function()
+	local stmt, err = engine:transaction(function()
 		local sql_query = "DELETE FROM `prosodyarchive` WHERE %s;";
 		local args = { host, user or "", store, };
 		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
@@ -300,6 +300,7 @@ function archive_store:delete(username, query)
 		sql_query = sql_query:format(t_concat(where, " AND "));
 		return engine:delete(sql_query, unpack(args));
 	end);
+	return stmt and stmt:affected() or nil, err;
 end
 
 local stores = {
