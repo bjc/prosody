@@ -251,7 +251,6 @@ static const luaL_Reg Reg_utf8[] = {
 	{ NULL,		NULL	}
 };
 
-
 /***************** STRINGPREP *****************/
 #ifdef USE_STRINGPREP_ICU
 
