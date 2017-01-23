@@ -1,5 +1,4 @@
 
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -8,15 +7,12 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#define MIN(a, b) ((a)>(b)?(b):(a))
-#define MAX(a, b) ((a)>(b)?(a):(b))
-
 typedef struct {
 	size_t rpos; /* read position */
 	size_t wpos; /* write position */
 	size_t alen; /* allocated size */
 	size_t blen; /* current content size */
-	char* buffer;
+	char buffer[];
 } ringbuffer;
 
 char readchar(ringbuffer* b) {
@@ -76,7 +72,6 @@ int rb_find(lua_State* L) {
 	return 0;
 }
 
-
 int rb_read(lua_State* L) {
 	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	int r = luaL_checkinteger(L, 2);
@@ -103,7 +98,6 @@ int rb_read(lua_State* L) {
 
 	return 1;
 }
-
 
 int rb_readuntil(lua_State* L) {
 	size_t l, m;
@@ -169,31 +163,17 @@ int rb_free(lua_State* L) {
 
 int rb_new(lua_State* L) {
 	size_t size = luaL_optinteger(L, 1, sysconf(_SC_PAGESIZE));
-	ringbuffer* b = lua_newuserdata(L, sizeof(ringbuffer));
+	ringbuffer *b = lua_newuserdata(L, sizeof(ringbuffer) + size);
+
 	b->rpos = 0;
 	b->wpos = 0;
 	b->alen = size;
 	b->blen = 0;
-	b->buffer = malloc(size);
-
-	if(b->buffer == NULL) {
-		return 0;
-	}
 
 	luaL_getmetatable(L, "ringbuffer_mt");
 	lua_setmetatable(L, -2);
 
 	return 1;
-}
-
-int rb_gc(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-
-	if(b->buffer != NULL) {
-		free(b->buffer);
-	}
-
-	return 0;
 }
 
 int luaopen_util_ringbuffer(lua_State* L) {
@@ -205,8 +185,6 @@ int luaopen_util_ringbuffer(lua_State* L) {
 		lua_setfield(L, -2, "__tostring");
 		lua_pushcfunction(L, rb_length);
 		lua_setfield(L, -2, "__len");
-		lua_pushcfunction(L, rb_gc);
-		lua_setfield(L, -2, "__gc");
 
 		lua_newtable(L); /* __index */
 		{

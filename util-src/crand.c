@@ -1,7 +1,7 @@
 /* Prosody IM
--- Copyright (C) 2008-2016 Matthew Wild
--- Copyright (C) 2008-2016 Waqas Hussain
--- Copyright (C) 2016 Kim Alvefur
+-- Copyright (C) 2008-2017 Matthew Wild
+-- Copyright (C) 2008-2017 Waqas Hussain
+-- Copyright (C) 2016-2017 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -11,6 +11,12 @@
 /*
 * crand.c
 * C PRNG interface
+*
+* The purpose of this module is to provide access to a PRNG in
+* environments without /dev/urandom
+*
+* Caution! This has not been extensively tested.
+*
 */
 
 #include "lualib.h"
@@ -18,15 +24,6 @@
 
 #include <string.h>
 #include <errno.h>
-
-/*
- * TODO: Decide on fixed size or dynamically allocated buffer
- */
-#if 1
-#include <stdlib.h>
-#else
-#define BUFLEN 256
-#endif
 
 #if defined(WITH_GETRANDOM)
 #include <unistd.h>
@@ -37,8 +34,11 @@
 #error getrandom() requires Linux 3.17 or later
 #endif
 
-/* Was this not supposed to be a function? */
-int getrandom(char *buf, size_t len, int flags) {
+/*
+ * This acts like a read from /dev/urandom with the exception that it
+ * *does* block if the entropy pool is not yet initialized.
+ */
+int getrandom(void *buf, size_t len, int flags) {
 	return syscall(SYS_getrandom, buf, len, flags);
 }
 
@@ -51,39 +51,16 @@ int getrandom(char *buf, size_t len, int flags) {
 #endif
 
 int Lrandom(lua_State *L) {
-#ifdef BUFLEN
-	unsigned char buf[BUFLEN];
-#else
-	unsigned char *buf;
-#endif
 	int ret = 0;
-	size_t len = (size_t)luaL_checkint(L, 1);
-#ifdef BUFLEN
-	len = len > BUFLEN ? BUFLEN : len;
-#else
-	buf = malloc(len);
-
-	if(buf == NULL) {
-		lua_pushnil(L);
-		lua_pushstring(L, "out of memory");
-		/* or it migth be better to
-		 * return lua_error(L);
-		 */
-		return 2;
-	}
-#endif
+	size_t len = (size_t)luaL_checkinteger(L, 1);
+	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
 	ret = getrandom(buf, len, 0);
 
 	if(ret < 0) {
-#ifndef BUFLEN
-		free(buf);
-#endif
-		lua_pushnil(L);
 		lua_pushstring(L, strerror(errno));
-		lua_pushinteger(L, errno);
-		return 3;
+		return lua_error(L);
 	}
 
 #elif defined(WITH_ARC4RANDOM)
@@ -95,39 +72,16 @@ int Lrandom(lua_State *L) {
 	if(ret == 1) {
 		ret = len;
 	} else {
-#ifndef BUFLEN
-		free(buf);
-#endif
-		lua_pushnil(L);
-		lua_pushstring(L, "failed");
-		/* lua_pushinteger(L, ERR_get_error()); */
-		return 2;
+		/* TODO ERR_get_error() */
+		lua_pushstring(L, "RAND_bytes() failed");
+		return lua_error(L);
 	}
 
 #endif
 
-	lua_pushlstring(L, (const char *)buf, ret);
-#ifndef BUFLEN
-	free(buf);
-#endif
+	lua_pushlstring(L, buf, ret);
 	return 1;
 }
-
-#ifdef ENABLE_SEEDING
-int Lseed(lua_State *L) {
-	size_t len;
-	const char *seed = lua_tolstring(L, 1, &len);
-
-#if defined(WITH_OPENSSL)
-	RAND_add(seed, len, len);
-	return 0;
-#else
-	lua_pushnil(L);
-	lua_pushliteral(L, "not-supported");
-	return 2;
-#endif
-}
-#endif
 
 int luaopen_util_crand(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
@@ -136,10 +90,6 @@ int luaopen_util_crand(lua_State *L) {
 	lua_newtable(L);
 	lua_pushcfunction(L, Lrandom);
 	lua_setfield(L, -2, "bytes");
-#ifdef ENABLE_SEEDING
-	lua_pushcfunction(L, Lseed);
-	lua_setfield(L, -2, "seed");
-#endif
 
 #if defined(WITH_GETRANDOM)
 	lua_pushstring(L, "Linux");
@@ -151,7 +101,7 @@ int luaopen_util_crand(lua_State *L) {
 	lua_setfield(L, -2, "_source");
 
 #if defined(WITH_OPENSSL) && defined(_WIN32)
-	/* Do we need to seed this on Windows? */
+	/* TODO Do we need to seed this on Windows? */
 #endif
 
 	return 1;
