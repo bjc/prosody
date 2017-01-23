@@ -1,7 +1,13 @@
--- XEP-0313: Message Archive Management for Prosody
--- Copyright (C) 2011-2013 Kim Alvefur
+-- Prosody IM
+-- Copyright (C) 2008-2017 Matthew Wild
+-- Copyright (C) 2008-2017 Waqas Hussain
+-- Copyright (C) 2011-2017 Kim Alvefur
 --
--- This file is MIT/X11 licensed.
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+-- XEP-0313: Message Archive Management for Prosody
+--
 
 local global_default_policy = module:get_option("default_archive_policy", true);
 
