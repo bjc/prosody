@@ -62,10 +62,10 @@ do
 end
 
 local function can_do_tls(session)
-	if session.ssl_ctx == false or not session.conn.starttls then
+	if session.ssl_ctx ~= nil then
+		return session.ssl_ctx;
+	elseif not session.conn.starttls then
 		return false;
-	elseif session.ssl_ctx then
-		return true;
 	end
 	if session.type == "c2s_unauthed" then
 		session.ssl_ctx = ssl_ctx_c2s;
