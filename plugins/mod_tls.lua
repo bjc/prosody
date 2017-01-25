@@ -79,6 +79,10 @@ local function can_do_tls(session)
 	else
 		return false;
 	end
+	if not session.ssl_ctx then
+		session.log("debug", "Should be able to do TLS but no context available");
+		return false;
+	end
 	return session.ssl_ctx;
 end
 
