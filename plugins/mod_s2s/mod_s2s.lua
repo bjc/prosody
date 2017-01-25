@@ -366,8 +366,8 @@ function stream_callbacks.streamopened(session, attr)
 				log("debug", "Sending stream features: %s", tostring(features));
 				session.sends2s(features);
 			else
-				(session.log or log)("warn", "No features to offer, giving up");
-				session:close({ condition = "undefined-condition", text = "No features to offer" });
+				(session.log or log)("warn", "No stream features to offer, giving up");
+				session:close({ condition = "undefined-condition", text = "No stream features to offer" });
 			end
 		end
 	elseif session.direction == "outgoing" then
