@@ -94,8 +94,8 @@ function stream_callbacks.streamopened(session, attr)
 	if features.tags[1] or session.full_jid then
 		send(features);
 	else
-		(session.log or log)("warn", "No features to offer");
-		session:close{ condition = "undefined-condition", text = "No features to proceed with" };
+		(session.log or log)("warn", "No stream features to offer");
+		session:close{ condition = "undefined-condition", text = "No stream features to proceed with" };
 	end
 end
 
