@@ -44,8 +44,6 @@ local sessions = module:shared("sessions");
 local log = module._log;
 
 module:hook("stats-update", function ()
-	-- Connection counter resets to 0 on load and reload
-	-- Bump it up to current value
 	local count = 0;
 	for _ in pairs(sessions) do
 		count = count + 1;
