@@ -37,8 +37,6 @@ local stream_callbacks = { default_ns = "jabber:client" };
 local listener = {};
 
 module:hook("stats-update", function ()
-	-- Connection counter resets to 0 on load and reload
-	-- Bump it up to current value
 	local count = 0;
 	for _ in pairs(sessions) do
 		count = count + 1;
