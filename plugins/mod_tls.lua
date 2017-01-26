@@ -62,10 +62,10 @@ do
 end
 
 local function can_do_tls(session)
-	if session.ssl_ctx == false or not session.conn.starttls then
+	if session.ssl_ctx ~= nil then
+		return session.ssl_ctx;
+	elseif not session.conn.starttls then
 		return false;
-	elseif session.ssl_ctx then
-		return true;
 	end
 	if session.type == "c2s_unauthed" then
 		session.ssl_ctx = ssl_ctx_c2s;
@@ -77,6 +77,10 @@ local function can_do_tls(session)
 		session.ssl_ctx = ssl_ctx_s2sout;
 		session.ssl_cfg = ssl_cfg_s2sout;
 	else
+		return false;
+	end
+	if not session.ssl_ctx then
+		session.log("debug", "Should be able to do TLS but no context available");
 		return false;
 	end
 	return session.ssl_ctx;

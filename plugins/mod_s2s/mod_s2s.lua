@@ -47,8 +47,6 @@ local runner_callbacks = {};
 local log = module._log;
 
 module:hook("stats-update", function ()
-	-- Connection counter resets to 0 on load and reload
-	-- Bump it up to current value
 	local count = 0;
 	for _ in pairs(sessions) do
 		count = count + 1;
@@ -382,8 +380,8 @@ function stream_callbacks._streamopened(session, attr)
 				log("debug", "Sending stream features: %s", tostring(features));
 				session.sends2s(features);
 			else
-				(session.log or log)("warn", "No features to offer, giving up");
-				session:close({ condition = "undefined-condition", text = "No features to offer" });
+				(session.log or log)("warn", "No stream features to offer, giving up");
+				session:close({ condition = "undefined-condition", text = "No stream features to offer" });
 			end
 		end
 	elseif session.direction == "outgoing" then
