@@ -36,7 +36,6 @@ function handlers.options(config, field, new)
 	config[field] = options;
 end
 
-handlers.verify = handlers.options;
 handlers.verifyext = handlers.options;
 
 -- finalisers take something produced by handlers and return what luasec
@@ -53,7 +52,6 @@ function finalisers.options(options)
 	return output;
 end
 
-finalisers.verify = finalisers.options;
 finalisers.verifyext = finalisers.options;
 
 -- We allow ciphers to be a list
