@@ -82,10 +82,10 @@ local function check_dependencies()
 	local lfs, err = softreq "lfs"
 	if not lfs then
 		missingdep("luafilesystem", {
-				["luarocks"] = "luarocks install luafilesystem";
-		 		["Debian/Ubuntu"] = "sudo apt-get install lua-filesystem";
-		 		["Source"] = "http://www.keplerproject.org/luafilesystem/";
-		 	});
+			["luarocks"] = "luarocks install luafilesystem";
+			["Debian/Ubuntu"] = "sudo apt-get install lua-filesystem";
+			["Source"] = "http://www.keplerproject.org/luafilesystem/";
+		});
 		fatal = true;
 	end
 
@@ -112,9 +112,10 @@ local function check_dependencies()
 	local encodings, err = softreq "util.encodings"
 	if not encodings then
 		if err:match("module '[^']*' not found") then
-			missingdep("util.encodings", { ["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
-		 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
-		 			});
+			missingdep("util.encodings", {
+				["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
+				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
+			});
 		else
 			print "***********************************"
 			print("util/encodings couldn't be loaded. Check that you have a recent version of libidn");
@@ -129,10 +130,11 @@ local function check_dependencies()
 	local hashes, err = softreq "util.hashes"
 	if not hashes then
 		if err:match("module '[^']*' not found") then
-			missingdep("util.hashes", { ["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
-		 				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
-		 			});
-	 	else
+			missingdep("util.hashes", {
+				["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
+				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
+			});
+		else
 			print "***********************************"
 			print("util/hashes couldn't be loaded. Check that you have a recent version of OpenSSL (libcrypto in particular)");
 			print ""
