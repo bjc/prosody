@@ -33,7 +33,7 @@ function module.add_host(module)
 	if module:get_host_type() ~= "component" then
 		error("Don't load mod_component manually, it should be for a component, please see http://prosody.im/doc/components", 0);
 	end
-	
+
 	local env = module.environment;
 	env.connected = false;
 	env.session = false;
@@ -46,26 +46,26 @@ function module.add_host(module)
 		send = nil;
 		session.on_destroy = nil;
 	end
-	
+
 	-- Handle authentication attempts by component
 	local function handle_component_auth(event)
 		local session, stanza = event.origin, event.stanza;
-		
+
 		if session.type ~= "component_unauthed" then return; end
-	
+
 		if (not session.host) or #stanza.tags > 0 then
 			(session.log or log)("warn", "Invalid component handshake for host: %s", session.host);
 			session:close("not-authorized");
 			return true;
 		end
-		
+
 		local secret = module:get_option("component_secret");
 		if not secret then
 			(session.log or log)("warn", "Component attempted to identify as %s, but component_secret is not set", session.host);
 			session:close("not-authorized");
 			return true;
 		end
-		
+
 		local supplied_token = t_concat(stanza);
 		local calculated_token = sha1(session.streamid..secret, true);
 		if supplied_token:lower() ~= calculated_token:lower() then
@@ -73,7 +73,7 @@ function module.add_host(module)
 			session:close{ condition = "not-authorized", text = "Given token does not match calculated token" };
 			return true;
 		end
-		
+
 		if env.connected then
 			local policy = module:get_option_string("component_conflict_resolve", "kick_new");
 			if policy == "kick_old" then
@@ -84,7 +84,7 @@ function module.add_host(module)
 				return true;
 			end
 		end
-		
+
 		env.connected = true;
 		env.session = session;
 		send = session.send;
@@ -94,7 +94,7 @@ function module.add_host(module)
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
 		module:fire_event("component-authenticated", { session = session });
-	
+
 		return true;
 	end
 	module:hook("stanza/jabber:component:accept:handshake", handle_component_auth, -1);
@@ -125,7 +125,7 @@ function module.add_host(module)
 		end
 		return true;
 	end
-	
+
 	module:hook("iq/bare", handle_stanza, -1);
 	module:hook("message/bare", handle_stanza, -1);
 	module:hook("presence/bare", handle_stanza, -1);
@@ -282,14 +282,14 @@ function listener.onconnect(conn)
 	if opt_keepalives then
 		conn:setoption("keepalive", opt_keepalives);
 	end
-	
+
 	session.log("info", "Incoming Jabber component connection");
-	
+
 	local stream = new_xmpp_stream(session, stream_callbacks);
 	session.stream = stream;
-	
+
 	session.notopen = true;
-	
+
 	function session.reset_stream()
 		session.notopen = true;
 		session.stream:reset();
@@ -301,7 +301,7 @@ function listener.onconnect(conn)
 		module:log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 		session:close("not-well-formed");
 	end
-	
+
 	session.dispatch_stanza = stream_callbacks.handlestanza;
 
 	sessions[conn] = session;
