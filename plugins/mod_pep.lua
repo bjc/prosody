@@ -185,7 +185,11 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 					node = node, user = jid_bare(session.full_jid), actor = session.jid, id = id, session = session, item = st.clone(payload);
 				});
 				return true;
+			else
+				module:log("debug", "Payload is missing the <item>", node);
 			end
+		else
+			module:log("debug", "Unhandled payload: %s", payload and payload:top_tag() or "(no payload)");
 		end
 	elseif stanza.attr.type == 'get' then
 		local user = stanza.attr.to and jid_bare(stanza.attr.to) or session.username..'@'..session.host;
@@ -221,14 +225,17 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				end
 			elseif node then -- node doesn't exist
 				session.send(st.error_reply(stanza, 'cancel', 'item-not-found'));
+				module:log("debug", "Item '%s' not found", node)
 				return true;
 			else --invalid request
 				session.send(st.error_reply(stanza, 'modify', 'bad-request'));
+				module:log("debug", "Invalid request: %s", tostring(payload));
 				return true;
 			end
 		else --no presence subscription
 			session.send(st.error_reply(stanza, 'auth', 'not-authorized')
 				:tag('presence-subscription-required', {xmlns='http://jabber.org/protocol/pubsub#errors'}));
+			module:log("debug", "Unauthorized request: %s", tostring(payload));
 			return true;
 		end
 	end
