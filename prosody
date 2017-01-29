@@ -129,6 +129,7 @@ end
 
 function load_libraries()
 	-- Load socket framework
+	-- luacheck: ignore 111/server 111/socket
 	socket = require "socket";
 	server = require "net.server"
 end
