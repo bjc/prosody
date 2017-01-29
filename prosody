@@ -2,7 +2,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -60,13 +60,13 @@ local dependencies = require "util.dependencies";
 config = require "core.configmanager"
 
 -- -- -- --
--- Define the functions we call during startup, the 
+-- Define the functions we call during startup, the
 -- actual startup happens right at the end, where these
 -- functions get called
 
 function read_config()
 	local filenames = {};
-	
+
 	local filename;
 	if arg[1] == "--config" and arg[2] then
 		table.insert(filenames, arg[2]);
@@ -129,9 +129,10 @@ end
 
 function load_libraries()
 	-- Load socket framework
+	-- luacheck: ignore 111/server 111/socket
 	socket = require "socket";
 	server = require "net.server"
-end	
+end
 
 -- The global log() gets defined by loggingmanager
 -- luacheck: ignore 113/log
@@ -227,7 +228,7 @@ function init_global_state()
 	bare_sessions = prosody.bare_sessions;
 	full_sessions = prosody.full_sessions;
 	hosts = prosody.hosts;
-	
+
 	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	if custom_plugin_paths then
@@ -235,7 +236,7 @@ function init_global_state()
 		-- path1;path2;path3;defaultpath...
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 	end
-	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".", 
+	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".",
 	                  plugins = CFG_PLUGINDIR or "plugins", data = data_path };
 
 	prosody.arg = _G.arg;
@@ -246,12 +247,12 @@ function init_global_state()
 	elseif package.config:sub(1,1) == "/" then
 		prosody.platform = "posix";
 	end
-	
+
 	prosody.installed = nil;
 	if CFG_SOURCEDIR and (prosody.platform == "windows" or CFG_SOURCEDIR:match("^/")) then
 		prosody.installed = true;
 	end
-	
+
 	if prosody.installed then
 		-- Change working directory to data path.
 		require "lfs".chdir(data_path);
@@ -323,18 +324,18 @@ function load_secondary_libraries()
 	end});
 
 	require "net.http"
-	
+
 	require "util.array"
 	require "util.datetime"
 	require "util.iterators"
 	require "util.timer"
 	require "util.helpers"
-	
+
 	pcall(require, "util.signal") -- Not on Windows
-	
-	-- Commented to protect us from 
+
+	-- Commented to protect us from
 	-- the second kind of people
-	--[[ 
+	--[[
 	pcall(require, "remdebug.engine");
 	if remdebug then remdebug.engine.start() end
 	]]
@@ -352,7 +353,7 @@ function prepare_to_start()
 	-- Signal to modules that we are ready to start
 	prosody.events.fire_event("server-starting");
 	prosody.start_time = os.time();
-end	
+end
 
 function init_global_protection()
 	-- Catch global accesses
@@ -361,11 +362,11 @@ function init_global_protection()
 		__index = function (t, k) log("warn", "%s", debug.traceback("Attempt to read a non-existent global '"..tostring(k).."'", 2)); end;
 		__newindex = function (t, k, v) error("Attempt to set a global: "..tostring(k).." = "..tostring(v), 2); end;
 	};
-		
+
 	function prosody.unlock_globals()
 		setmetatable(_G, nil);
 	end
-	
+
 	function prosody.lock_globals()
 		setmetatable(_G, locked_globals_mt);
 	end
@@ -380,16 +381,16 @@ function loop()
 		if type(err) == "string" and err:match("interrupted!$") then
 			return "quitting";
 		end
-		
+
 		log("error", "Top-level error, please report:\n%s", tostring(err));
 		local traceback = debug.traceback("", 2);
 		if traceback then
 			log("error", "%s", traceback);
 		end
-		
+
 		prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
 	end
-	
+
 	local sleep = require"socket".sleep;
 
 	while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
