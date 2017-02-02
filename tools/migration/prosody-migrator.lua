@@ -40,22 +40,13 @@ end
 
 local envloadfile = require "util.envload".envloadfile;
 
--- Load config file
-local function loadfilein(file, env)
-	if loadin then
-		return loadin(env, io.open(file):read("*a"));
-	else
-		return envloadfile(file, env);
-	end
-end
-
 local config_file = options.config or default_config;
 local from_store = arg[1] or "input";
 local to_store = arg[2] or "output";
 
 config = {};
 local config_env = setmetatable({}, { __index = function(t, k) return function(tbl) config[k] = tbl; end; end });
-local config_chunk, err = loadfilein(config_file, config_env);
+local config_chunk, err = envloadfile(config_file, config_env);
 if not config_chunk then
 	print("There was an error loading the config file, check the file exists");
 	print("and that the syntax is correct:");
