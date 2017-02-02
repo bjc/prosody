@@ -15,7 +15,6 @@ if not have_DBI then
 	error("LuaDBI (required for SQL support) was not found, please see http://prosody.im/doc/depends#luadbi", 0);
 end
 
-module "prosody_sql"
 
 local function create_table(connection, params)
 	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
@@ -110,7 +109,7 @@ local function decode_user(item)
 	return userdata;
 end
 
-function reader(input)
+local function reader(input)
 	local dbh = assert(DBI.Connect(
 		assert(input.driver, "no input.driver specified"),
 		assert(input.database, "no input.database specified"),
@@ -154,7 +153,7 @@ function reader(input)
 	end;
 end
 
-function writer(output, iter)
+local function writer(output, iter)
 	local dbh = assert(DBI.Connect(
 		assert(output.driver, "no output.driver specified"),
 		assert(output.database, "no output.database specified"),
@@ -197,4 +196,7 @@ function writer(output, iter)
 end
 
 
-return _M;
+return {
+	reader = reader;
+	writer = writer;
+}
