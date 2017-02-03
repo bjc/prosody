@@ -8,6 +8,7 @@
 --
 -- XEP-0313: Message Archive Management for Prosody
 --
+-- luacheck: ignore 122/prosody
 
 local global_default_policy = module:get_option("default_archive_policy", true);
 
