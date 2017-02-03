@@ -22,7 +22,7 @@ do
 	};
 end
 
-local sessions = hosts[module.host].sessions;
+local sessions = prosody.hosts[module.host].sessions;
 local archive_store = module:get_option_string("archive_store", "archive");
 local prefs = module:open_store(archive_store .. "_prefs");
 
