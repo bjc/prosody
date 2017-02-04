@@ -8,6 +8,7 @@
 --
 -- XEP-0313: Message Archive Management for Prosody
 --
+-- luacheck: ignore 122/prosody
 
 local global_default_policy = module:get_option("default_archive_policy", true);
 
@@ -22,7 +23,7 @@ do
 	};
 end
 
-local sessions = hosts[module.host].sessions;
+local sessions = prosody.hosts[module.host].sessions;
 local archive_store = module:get_option_string("archive_store", "archive");
 local prefs = module:open_store(archive_store .. "_prefs");
 

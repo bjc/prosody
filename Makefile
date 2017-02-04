@@ -44,12 +44,13 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	$(INSTALL_DATA) util/*.so $(SOURCE)/util
 	$(MKDIR) $(SOURCE)/util/sasl
 	$(INSTALL_DATA) util/sasl/*.lua $(SOURCE)/util/sasl
-	$(MKDIR) $(MODULES)/mod_s2s $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc
+	$(MKDIR) $(MODULES)/mod_s2s $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
 	$(INSTALL_DATA) plugins/*.lua $(MODULES)
 	$(INSTALL_DATA) plugins/mod_s2s/*.lua $(MODULES)/mod_s2s
 	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)/mod_pubsub
 	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)/adhoc
 	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)/muc
+	$(INSTALL_DATA) plugins/mod_mam/*.lua $(MODULES)/mod_mam
 	$(INSTALL_DATA) certs/* $(CONFIG)/certs
 	$(INSTALL_DATA) man/prosodyctl.man $(MAN)/man1/prosodyctl.1
 	test -f $(CONFIG)/prosody.cfg.lua || $(INSTALL_DATA) prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
