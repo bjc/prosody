@@ -4,9 +4,8 @@ local print = print;
 local t_insert = table.insert;
 local t_sort = table.sort;
 
-module "mtools"
 
-function sorted(params)
+local function sorted(params)
 
 	local reader = params.reader; -- iterator to get items from
 	local sorter = params.sorter; -- sorting function
@@ -28,7 +27,7 @@ function sorted(params)
 
 end
 
-function merged(reader, merger)
+local function merged(reader, merger)
 
 	local item1 = reader();
 	local merged = { item1 };
@@ -53,4 +52,7 @@ function merged(reader, merger)
 
 end
 
-return _M;
+return {
+	sorted = sorted;
+	merged = merged;
+}

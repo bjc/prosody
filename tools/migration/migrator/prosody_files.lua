@@ -18,7 +18,6 @@ local error = error;
 prosody = {};
 local dm = require "util.datamanager"
 
-module "prosody_files"
 
 local function is_dir(path) return lfs.attributes(path, "mode") == "directory"; end
 local function is_file(path) return lfs.attributes(path, "mode") == "file"; end
@@ -88,7 +87,7 @@ local function decode_user(item)
 	return userdata;
 end
 
-function reader(input)
+local function reader(input)
 	local path = clean_path(assert(input.path, "no input.path specified"));
 	assert(is_dir(path), "input.path is not a directory");
 	local iter = coroutine.wrap(function()handle_root_dir(path);end);
@@ -127,7 +126,7 @@ function reader(input)
 	end
 end
 
-function writer(output)
+local function writer(output)
 	local path = clean_path(assert(output.path, "no output.path specified"));
 	assert(is_dir(path), "output.path is not a directory");
 	return function(item)
@@ -139,4 +138,7 @@ function writer(output)
 	end
 end
 
-return _M;
+return {
+	reader = reader;
+	writer = writer;
+}

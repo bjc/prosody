@@ -9,7 +9,6 @@ local ipairs = ipairs;
 local coroutine = coroutine;
 local print = print;
 
-module "jabberd14"
 
 local function is_dir(path) return lfs.attributes(path, "mode") == "directory"; end
 local function is_file(path) return lfs.attributes(path, "mode") == "file"; end
@@ -128,7 +127,7 @@ local function loop_over_hosts(path, cb)
 	end
 end
 
-function reader(input)
+local function reader(input)
 	local path = clean_path(assert(input.path, "no input.path specified"));
 	assert(is_dir(path), "input.path is not a directory");
 
@@ -139,4 +138,6 @@ function reader(input)
 	end
 end
 
-return _M;
+return {
+	reader = reader;
+};
