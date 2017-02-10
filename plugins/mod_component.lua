@@ -29,6 +29,13 @@ local opt_keepalives = module:get_option_boolean("component_tcp_keepalives", mod
 
 local sessions = module:shared("sessions");
 
+local function keepalive(event)
+	local session = event.session;
+	if not session.notopen then
+		return event.session.send(' ');
+	end
+end
+
 function module.add_host(module)
 	if module:get_host_type() ~= "component" then
 		error("Don't load mod_component manually, it should be for a component, please see http://prosody.im/doc/components", 0);
@@ -135,7 +142,11 @@ function module.add_host(module)
 	module:hook("iq/host", handle_stanza, -1);
 	module:hook("message/host", handle_stanza, -1);
 	module:hook("presence/host", handle_stanza, -1);
+
+	module:hook("component-read-timeout", keepalive, -1);
 end
+
+module:hook("component-read-timeout", keepalive, -1);
 
 --- Network and stream part ---
 
@@ -330,6 +341,13 @@ end
 
 function listener.ondetach(conn)
 	sessions[conn] = nil;
+end
+
+function listener.onreadtimeout(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("component-read-timeout", { session = session });
+	end
 end
 
 module:provides("net", {
