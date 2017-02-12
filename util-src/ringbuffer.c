@@ -139,7 +139,7 @@ int rb_write(lua_State* L) {
 
 int rb_tostring(lua_State* L) {
 	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	lua_pushfstring(L, "ringbuffer: %p->%p %d/%d", b, b->buffer, b->blen, b->alen);
+	lua_pushfstring(L, "ringbuffer: %p %d/%d", b, b->blen, b->alen);
 	return 1;
 }
 
