@@ -32,19 +32,19 @@
 
 /* Enumerate all locally configured IP addresses */
 
-const char* const type_strings[] = {
+const char *const type_strings[] = {
 	"both",
 	"ipv4",
 	"ipv6",
 	NULL
 };
 
-static int lc_local_addresses(lua_State* L) {
+static int lc_local_addresses(lua_State *L) {
 #ifndef _WIN32
 	/* Link-local IPv4 addresses; see RFC 3927 and RFC 5735 */
 	const long ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
 	const long ip4_mask      = htonl(0xffff0000);
-	struct ifaddrs* addr = NULL, *a;
+	struct ifaddrs *addr = NULL, *a;
 #endif
 	int n = 1;
 	int type = luaL_checkoption(L, 1, "both", type_strings);
@@ -69,7 +69,7 @@ static int lc_local_addresses(lua_State* L) {
 	for(a = addr; a; a = a->ifa_next) {
 		int family;
 		char ipaddr[INET6_ADDRSTRLEN];
-		const char* tmp = NULL;
+		const char *tmp = NULL;
 
 		if(a->ifa_addr == NULL || a->ifa_flags & IFF_LOOPBACK) {
 			continue;
@@ -78,7 +78,7 @@ static int lc_local_addresses(lua_State* L) {
 		family = a->ifa_addr->sa_family;
 
 		if(ipv4 && family == AF_INET) {
-			struct sockaddr_in* sa = (struct sockaddr_in*)a->ifa_addr;
+			struct sockaddr_in *sa = (struct sockaddr_in *)a->ifa_addr;
 
 			if(!link_local && ((sa->sin_addr.s_addr & ip4_mask) == ip4_linklocal)) {
 				continue;
@@ -86,7 +86,7 @@ static int lc_local_addresses(lua_State* L) {
 
 			tmp = inet_ntop(family, &sa->sin_addr, ipaddr, sizeof(ipaddr));
 		} else if(ipv6 && family == AF_INET6) {
-			struct sockaddr_in6* sa = (struct sockaddr_in6*)a->ifa_addr;
+			struct sockaddr_in6 *sa = (struct sockaddr_in6 *)a->ifa_addr;
 
 			if(!link_local && IN6_IS_ADDR_LINKLOCAL(&sa->sin6_addr)) {
 				continue;
@@ -124,7 +124,7 @@ static int lc_local_addresses(lua_State* L) {
 	return 1;
 }
 
-int luaopen_util_net(lua_State* L) {
+int luaopen_util_net(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
