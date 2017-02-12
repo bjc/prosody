@@ -33,8 +33,8 @@ typedef unsigned __int32 uint32_t;
 #define HMAC_IPAD 0x36363636
 #define HMAC_OPAD 0x5c5c5c5c
 
-const char* hex_tab = "0123456789abcdef";
-void toHex(const unsigned char* in, int length, unsigned char* out) {
+const char *hex_tab = "0123456789abcdef";
+void toHex(const unsigned char *in, int length, unsigned char *out) {
 	int i;
 
 	for(i = 0; i < length; i++) {
@@ -67,15 +67,15 @@ MAKE_HASH_FUNCTION(Lsha512, SHA512, SHA512_DIGEST_LENGTH)
 MAKE_HASH_FUNCTION(Lmd5, MD5, MD5_DIGEST_LENGTH)
 
 struct hash_desc {
-	int (*Init)(void*);
-	int (*Update)(void*, const void*, size_t);
-	int (*Final)(unsigned char*, void*);
+	int (*Init)(void *);
+	int (*Update)(void *, const void *, size_t);
+	int (*Final)(unsigned char *, void *);
 	size_t digestLength;
-	void* ctx, *ctxo;
+	void *ctx, *ctxo;
 };
 
-static void hmac(struct hash_desc* desc, const char* key, size_t key_len,
-                 const char* msg, size_t msg_len, unsigned char* result) {
+static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
+                 const char *msg, size_t msg_len, unsigned char *result) {
 	union xory {
 		unsigned char bytes[64];
 		uint32_t quadbytes[16];
@@ -89,7 +89,7 @@ static void hmac(struct hash_desc* desc, const char* key, size_t key_len,
 		desc->Init(desc->ctx);
 		desc->Update(desc->ctx, key, key_len);
 		desc->Final(hashedKey, desc->ctx);
-		key = (const char*)hashedKey;
+		key = (const char *)hashedKey;
 		key_len = desc->digestLength;
 	}
 
@@ -142,7 +142,7 @@ MAKE_HMAC_FUNCTION(Lhmac_sha256, SHA256, SHA256_DIGEST_LENGTH, SHA256_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_sha512, SHA512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, MD5, MD5_DIGEST_LENGTH, MD5_CTX)
 
-static int LscramHi(lua_State* L) {
+static int LscramHi(lua_State *L) {
 	union xory {
 		unsigned char bytes[SHA_DIGEST_LENGTH];
 		uint32_t quadbytes[SHA_DIGEST_LENGTH / 4];
@@ -154,14 +154,14 @@ static int LscramHi(lua_State* L) {
 	union xory res;
 	size_t str_len, salt_len;
 	struct hash_desc desc;
-	const char* str = luaL_checklstring(L, 1, &str_len);
-	const char* salt = luaL_checklstring(L, 2, &salt_len);
-	char* salt2;
+	const char *str = luaL_checklstring(L, 1, &str_len);
+	const char *salt = luaL_checklstring(L, 2, &salt_len);
+	char *salt2;
 	const int iter = luaL_checkinteger(L, 3);
 
-	desc.Init = (int (*)(void*))SHA1_Init;
-	desc.Update = (int (*)(void*, const void*, size_t))SHA1_Update;
-	desc.Final = (int (*)(unsigned char*, void*))SHA1_Final;
+	desc.Init = (int (*)(void *))SHA1_Init;
+	desc.Update = (int (*)(void *, const void *, size_t))SHA1_Update;
+	desc.Final = (int (*)(unsigned char *, void *))SHA1_Final;
 	desc.digestLength = SHA_DIGEST_LENGTH;
 	desc.ctx = &ctx;
 	desc.ctxo = &ctxo;
@@ -181,7 +181,7 @@ static int LscramHi(lua_State* L) {
 
 	for(i = 1; i < iter; i++) {
 		int j;
-		hmac(&desc, str, str_len, (char*)Ust, sizeof(Ust), Und.bytes);
+		hmac(&desc, str, str_len, (char *)Ust, sizeof(Ust), Und.bytes);
 
 		for(j = 0; j < SHA_DIGEST_LENGTH / 4; j++) {
 			res.quadbytes[j] ^= Und.quadbytes[j];
@@ -190,7 +190,7 @@ static int LscramHi(lua_State* L) {
 		memcpy(Ust, Und.bytes, sizeof(Ust));
 	}
 
-	lua_pushlstring(L, (char*)res.bytes, SHA_DIGEST_LENGTH);
+	lua_pushlstring(L, (char *)res.bytes, SHA_DIGEST_LENGTH);
 
 	return 1;
 }
@@ -210,7 +210,7 @@ static const luaL_Reg Reg[] = {
 	{ NULL,			NULL		}
 };
 
-LUALIB_API int luaopen_util_hashes(lua_State* L) {
+LUALIB_API int luaopen_util_hashes(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif

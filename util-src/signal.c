@@ -41,7 +41,7 @@
 #define lsig
 
 struct lua_signal {
-	char* name; /* name of the signal */
+	char *name; /* name of the signal */
 	int sig; /* the signal */
 };
 
@@ -153,20 +153,20 @@ static const struct lua_signal lua_signals[] = {
 	{NULL, 0}
 };
 
-static lua_State* Lsig = NULL;
+static lua_State *Lsig = NULL;
 static lua_Hook Hsig = NULL;
 static int Hmask = 0;
 static int Hcount = 0;
 
 static struct signal_event {
 	int Nsig;
-	struct signal_event* next_event;
-}* signal_queue = NULL;
+	struct signal_event *next_event;
+} *signal_queue = NULL;
 
-static struct signal_event* last_event = NULL;
+static struct signal_event *last_event = NULL;
 
-static void sighook(lua_State* L, lua_Debug* ar) {
-	struct signal_event* event;
+static void sighook(lua_State *L, lua_Debug *ar) {
+	struct signal_event *event;
 	/* restore the old hook */
 	lua_sethook(L, Hsig, Hmask, Hcount);
 
@@ -220,7 +220,7 @@ static void handle(int sig) {
  *         in an unstable state.
 */
 
-static int l_signal(lua_State* L) {
+static int l_signal(lua_State *L) {
 	int args = lua_gettop(L);
 	int t, sig; /* type, signal */
 
@@ -295,7 +295,7 @@ static int l_signal(lua_State* L) {
  * signal = signal number or string
 */
 
-static int l_raise(lua_State* L) {
+static int l_raise(lua_State *L) {
 	/* int args = lua_gettop(L); */
 	int t = 0; /* type */
 	lua_Number ret;
@@ -338,7 +338,7 @@ static int l_raise(lua_State* L) {
  * signal = signal number or string
 */
 
-static int l_kill(lua_State* L) {
+static int l_kill(lua_State *L) {
 	int t; /* type */
 	lua_Number ret; /* return value */
 
@@ -383,7 +383,7 @@ static const struct luaL_Reg lsignal_lib[] = {
 	{NULL, NULL}
 };
 
-int luaopen_util_signal(lua_State* L) {
+int luaopen_util_signal(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
