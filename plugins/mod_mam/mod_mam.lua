@@ -12,6 +12,7 @@
 local xmlns_mam     = "urn:xmpp:mam:1";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
+local xmlns_st_id   = "urn:xmpp:sid:0";
 
 local um = require "core.usermanager";
 local st = require "util.stanza";
@@ -248,7 +249,7 @@ local function message_handler(event, c2s)
 
 	-- Filter out <stanza-id> that claim to be from us
 	stanza:maptags(function (tag)
-		if tag.name == "stanza-id" and tag.attr.xmlns == "urn:xmpp:sid:0" then
+		if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id then
 			local by_user, by_host, res = jid_prepped_split(tag.attr.by);
 			if not res and by_host == module.host and by_user == store_user then
 				return nil;
@@ -293,7 +294,7 @@ local function message_handler(event, c2s)
 		-- And stash it
 		local ok, id = archive:append(store_user, nil, stanza, time_now(), with);
 		if ok then
-			stanza:tag("stanza-id", { xmlns = "urn:xmpp:sid:0", by = store_user.."@"..host, id = id }):up();
+			stanza:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
 			if cleanup then cleanup[store_user] = true; end
 			module:fire_event("archive-message-added", { origin = origin, stanza = stanza, for_user = store_user, id = id });
 		end
@@ -365,5 +366,6 @@ module:hook("message/full", message_handler, 0);
 
 module:hook("account-disco-info", function(event)
 	(event.reply or event.stanza):tag("feature", {var=xmlns_mam}):up();
+	(event.reply or event.stanza):tag("feature", {var=xmlns_st_id}):up();
 end);
 

@@ -23,9 +23,9 @@
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
 
-static int Lget_nameservers(lua_State* L) {
+static int Lget_nameservers(lua_State *L) {
 	char stack_buffer[1024]; // stack allocated buffer
-	IP4_ARRAY* ips = (IP4_ARRAY*) stack_buffer;
+	IP4_ARRAY *ips = (IP4_ARRAY *) stack_buffer;
 	DWORD len = sizeof(stack_buffer);
 	DNS_STATUS status;
 
@@ -51,13 +51,13 @@ static int Lget_nameservers(lua_State* L) {
 	}
 }
 
-static int lerror(lua_State* L, char* string) {
+static int lerror(lua_State *L, char *string) {
 	lua_pushnil(L);
 	lua_pushfstring(L, "%s: %d", string, GetLastError());
 	return 2;
 }
 
-static int Lget_consolecolor(lua_State* L) {
+static int Lget_consolecolor(lua_State *L) {
 	HWND console = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color;
 	DWORD read_len;
@@ -79,7 +79,7 @@ static int Lget_consolecolor(lua_State* L) {
 	lua_pushnumber(L, color);
 	return 1;
 }
-static int Lset_consolecolor(lua_State* L) {
+static int Lset_consolecolor(lua_State *L) {
 	int color = luaL_checkint(L, 1);
 	HWND console = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -102,7 +102,7 @@ static const luaL_Reg Reg[] = {
 	{ NULL,		NULL	}
 };
 
-LUALIB_API int luaopen_util_windows(lua_State* L) {
+LUALIB_API int luaopen_util_windows(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
