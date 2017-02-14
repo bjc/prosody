@@ -15,23 +15,23 @@ typedef struct {
 	char buffer[];
 } ringbuffer;
 
-char readchar(ringbuffer* b) {
+char readchar(ringbuffer *b) {
 	b->blen--;
 	return b->buffer[(b->rpos++) % b->alen];
 }
 
-void writechar(ringbuffer* b, char c) {
+void writechar(ringbuffer *b, char c) {
 	b->blen++;
 	b->buffer[(b->wpos++) % b->alen] = c;
 }
 
 /* make sure position counters stay within the allocation */
-void modpos(ringbuffer* b) {
+void modpos(ringbuffer *b) {
 	b->rpos = b->rpos % b->alen;
 	b->wpos = b->wpos % b->alen;
 }
 
-int find(ringbuffer* b, const char* s, int l) {
+int find(ringbuffer *b, const char *s, int l) {
 	size_t i, j;
 	int m;
 
@@ -58,10 +58,10 @@ int find(ringbuffer* b, const char* s, int l) {
 	return 0;
 }
 
-int rb_find(lua_State* L) {
+int rb_find(lua_State *L) {
 	size_t l, m;
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	const char* s = luaL_checklstring(L, 2, &l);
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+	const char *s = luaL_checklstring(L, 2, &l);
 	m = find(b, s, l);
 
 	if(m > 0) {
@@ -72,8 +72,8 @@ int rb_find(lua_State* L) {
 	return 0;
 }
 
-int rb_read(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
+int rb_read(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	int r = luaL_checkinteger(L, 2);
 	int peek = lua_toboolean(L, 3);
 
@@ -99,10 +99,10 @@ int rb_read(lua_State* L) {
 	return 1;
 }
 
-int rb_readuntil(lua_State* L) {
+int rb_readuntil(lua_State *L) {
 	size_t l, m;
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	const char* s = luaL_checklstring(L, 2, &l);
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+	const char *s = luaL_checklstring(L, 2, &l);
 	m = find(b, s, l);
 
 	if(m > 0) {
@@ -114,10 +114,10 @@ int rb_readuntil(lua_State* L) {
 	return 0;
 }
 
-int rb_write(lua_State* L) {
+int rb_write(lua_State *L) {
 	size_t l, w = 0;
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	const char* s = luaL_checklstring(L, 2, &l);
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+	const char *s = luaL_checklstring(L, 2, &l);
 
 	/* Does `l` bytes fit? */
 	if((l + b->blen) > b->alen) {
@@ -137,31 +137,31 @@ int rb_write(lua_State* L) {
 	return 1;
 }
 
-int rb_tostring(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	lua_pushfstring(L, "ringbuffer: %p->%p %d/%d", b, b->buffer, b->blen, b->alen);
+int rb_tostring(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+	lua_pushfstring(L, "ringbuffer: %p %d/%d", b, b->blen, b->alen);
 	return 1;
 }
 
-int rb_length(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
+int rb_length(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	lua_pushinteger(L, b->blen);
 	return 1;
 }
 
-int rb_size(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
+int rb_size(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	lua_pushinteger(L, b->alen);
 	return 1;
 }
 
-int rb_free(lua_State* L) {
-	ringbuffer* b = luaL_checkudata(L, 1, "ringbuffer_mt");
+int rb_free(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	lua_pushinteger(L, b->alen - b->blen);
 	return 1;
 }
 
-int rb_new(lua_State* L) {
+int rb_new(lua_State *L) {
 	size_t size = luaL_optinteger(L, 1, sysconf(_SC_PAGESIZE));
 	ringbuffer *b = lua_newuserdata(L, sizeof(ringbuffer) + size);
 
@@ -176,10 +176,11 @@ int rb_new(lua_State* L) {
 	return 1;
 }
 
-int luaopen_util_ringbuffer(lua_State* L) {
+int luaopen_util_ringbuffer(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
+
 	if(luaL_newmetatable(L, "ringbuffer_mt")) {
 		lua_pushcfunction(L, rb_tostring);
 		lua_setfield(L, -2, "__tostring");
