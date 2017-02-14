@@ -30,7 +30,7 @@
 static const char code[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static void base64_encode(luaL_Buffer* b, unsigned int c1, unsigned int c2, unsigned int c3, int n) {
+static void base64_encode(luaL_Buffer *b, unsigned int c1, unsigned int c2, unsigned int c3, int n) {
 	unsigned long tuple = c3 + 256UL * (c2 + 256UL * c1);
 	int i;
 	char s[4];
@@ -47,9 +47,9 @@ static void base64_encode(luaL_Buffer* b, unsigned int c1, unsigned int c2, unsi
 	luaL_addlstring(b, s, 4);
 }
 
-static int Lbase64_encode(lua_State* L) {	/** encode(s) */
+static int Lbase64_encode(lua_State *L) {	/** encode(s) */
 	size_t l;
-	const unsigned char* s = (const unsigned char*)luaL_checklstring(L, 1, &l);
+	const unsigned char *s = (const unsigned char *)luaL_checklstring(L, 1, &l);
 	luaL_Buffer b;
 	int n;
 	luaL_buffinit(L, &b);
@@ -62,6 +62,7 @@ static int Lbase64_encode(lua_State* L) {	/** encode(s) */
 		case 1:
 			base64_encode(&b, s[0], 0, 0, 1);
 			break;
+
 		case 2:
 			base64_encode(&b, s[0], s[1], 0, 2);
 			break;
@@ -71,15 +72,17 @@ static int Lbase64_encode(lua_State* L) {	/** encode(s) */
 	return 1;
 }
 
-static void base64_decode(luaL_Buffer* b, int c1, int c2, int c3, int c4, int n) {
+static void base64_decode(luaL_Buffer *b, int c1, int c2, int c3, int c4, int n) {
 	unsigned long tuple = c4 + 64L * (c3 + 64L * (c2 + 64L * c1));
 	char s[3];
 
 	switch(--n) {
 		case 3:
 			s[2] = (char) tuple;
+
 		case 2:
 			s[1] = (char)(tuple >> 8);
+
 		case 1:
 			s[0] = (char)(tuple >> 16);
 	}
@@ -87,9 +90,9 @@ static void base64_decode(luaL_Buffer* b, int c1, int c2, int c3, int c4, int n)
 	luaL_addlstring(b, s, n);
 }
 
-static int Lbase64_decode(lua_State* L) {	/** decode(s) */
+static int Lbase64_decode(lua_State *L) {	/** decode(s) */
 	size_t l;
-	const char* s = luaL_checklstring(L, 1, &l);
+	const char *s = luaL_checklstring(L, 1, &l);
 	luaL_Buffer b;
 	int n = 0;
 	char t[4];
@@ -99,7 +102,8 @@ static int Lbase64_decode(lua_State* L) {	/** decode(s) */
 		int c = *s++;
 
 		switch(c) {
-				const char* p;
+				const char *p;
+
 			default:
 				p = strchr(code, c);
 
@@ -115,15 +119,18 @@ static int Lbase64_decode(lua_State* L) {	/** decode(s) */
 				}
 
 				break;
+
 			case '=':
 
 				switch(n) {
 					case 1:
 						base64_decode(&b, t[0], 0, 0, 0, 1);
 						break;
+
 					case 2:
 						base64_decode(&b, t[0], t[1], 0, 0, 2);
 						break;
+
 					case 3:
 						base64_decode(&b, t[0], t[1], t[2], 0, 3);
 						break;
@@ -131,9 +138,11 @@ static int Lbase64_decode(lua_State* L) {	/** decode(s) */
 
 				n = 0;
 				break;
+
 			case 0:
 				luaL_pushresult(&b);
 				return 1;
+
 			case '\n':
 			case '\r':
 			case '\t':
@@ -163,9 +172,9 @@ static const luaL_Reg Reg_base64[] = {
 /*
  * Decode one UTF-8 sequence, returning NULL if byte sequence is invalid.
  */
-static const char* utf8_decode(const char* o, int* val) {
+static const char *utf8_decode(const char *o, int *val) {
 	static unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
-	const unsigned char* s = (const unsigned char*)o;
+	const unsigned char *s = (const unsigned char *)o;
 	unsigned int c = s[0];
 	unsigned int res = 0;  /* final result */
 
@@ -198,20 +207,20 @@ static const char* utf8_decode(const char* o, int* val) {
 		*val = res;
 	}
 
-	return (const char*)s + 1;   /* +1 to include first byte */
+	return (const char *)s + 1;  /* +1 to include first byte */
 }
 
 /*
  * Check that a string is valid UTF-8
  * Returns NULL if not
  */
-const char* check_utf8(lua_State* L, int idx, size_t* l) {
+const char *check_utf8(lua_State *L, int idx, size_t *l) {
 	size_t pos, len;
-	const char* s = luaL_checklstring(L, 1, &len);
+	const char *s = luaL_checklstring(L, 1, &len);
 	pos = 0;
 
 	while(pos <= len) {
-		const char* s1 = utf8_decode(s + pos, NULL);
+		const char *s1 = utf8_decode(s + pos, NULL);
 
 		if(s1 == NULL) {   /* conversion error? */
 			return NULL;
@@ -227,12 +236,12 @@ const char* check_utf8(lua_State* L, int idx, size_t* l) {
 	return s;
 }
 
-static int Lutf8_valid(lua_State* L) {
+static int Lutf8_valid(lua_State *L) {
 	lua_pushboolean(L, check_utf8(L, 1, NULL) != NULL);
 	return 1;
 }
 
-static int Lutf8_length(lua_State* L) {
+static int Lutf8_length(lua_State *L) {
 	size_t len;
 
 	if(!check_utf8(L, 1, &len)) {
@@ -258,10 +267,10 @@ static const luaL_Reg Reg_utf8[] = {
 #include <unicode/ustring.h>
 #include <unicode/utrace.h>
 
-static int icu_stringprep_prep(lua_State* L, const UStringPrepProfile* profile) {
+static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) {
 	size_t input_len;
 	int32_t unprepped_len, prepped_len, output_len;
-	const char* input;
+	const char *input;
 	char output[1024];
 
 	UChar unprepped[1024]; /* Temporary unicode buffer (1024 characters) */
@@ -306,10 +315,10 @@ static int icu_stringprep_prep(lua_State* L, const UStringPrepProfile* profile) 
 	}
 }
 
-UStringPrepProfile* icu_nameprep;
-UStringPrepProfile* icu_nodeprep;
-UStringPrepProfile* icu_resourceprep;
-UStringPrepProfile* icu_saslprep;
+UStringPrepProfile *icu_nameprep;
+UStringPrepProfile *icu_nodeprep;
+UStringPrepProfile *icu_resourceprep;
+UStringPrepProfile *icu_saslprep;
 
 /* initialize global ICU stringprep profiles */
 void init_icu() {
@@ -346,9 +355,9 @@ static const luaL_Reg Reg_stringprep[] = {
 
 #include <stringprep.h>
 
-static int stringprep_prep(lua_State* L, const Stringprep_profile* profile) {
+static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 	size_t len;
-	const char* s;
+	const char *s;
 	char string[1024];
 	int ret;
 
@@ -398,10 +407,10 @@ static const luaL_Reg Reg_stringprep[] = {
 #include <unicode/ustdio.h>
 #include <unicode/uidna.h>
 /* IDNA2003 or IDNA2008 ? ? ? */
-static int Lidna_to_ascii(lua_State* L) {	/** idna.to_ascii(s) */
+static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 	size_t len;
 	int32_t ulen, dest_len, output_len;
-	const char* s = luaL_checklstring(L, 1, &len);
+	const char *s = luaL_checklstring(L, 1, &len);
 	UChar ustr[1024];
 	UErrorCode err = U_ZERO_ERROR;
 	UChar dest[1024];
@@ -432,10 +441,10 @@ static int Lidna_to_ascii(lua_State* L) {	/** idna.to_ascii(s) */
 	}
 }
 
-static int Lidna_to_unicode(lua_State* L) {	/** idna.to_unicode(s) */
+static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 	size_t len;
 	int32_t ulen, dest_len, output_len;
-	const char* s = luaL_checklstring(L, 1, &len);
+	const char *s = luaL_checklstring(L, 1, &len);
 	UChar ustr[1024];
 	UErrorCode err = U_ZERO_ERROR;
 	UChar dest[1024];
@@ -472,10 +481,10 @@ static int Lidna_to_unicode(lua_State* L) {	/** idna.to_unicode(s) */
 #include <idna.h>
 #include <idn-free.h>
 
-static int Lidna_to_ascii(lua_State* L) {	/** idna.to_ascii(s) */
+static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 	size_t len;
-	const char* s = check_utf8(L, 1, &len);
-	char* output = NULL;
+	const char *s = check_utf8(L, 1, &len);
+	char *output = NULL;
 	int ret;
 
 	if(s == NULL || len != strlen(s)) {
@@ -496,10 +505,10 @@ static int Lidna_to_ascii(lua_State* L) {	/** idna.to_ascii(s) */
 	}
 }
 
-static int Lidna_to_unicode(lua_State* L) {	/** idna.to_unicode(s) */
+static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 	size_t len;
-	const char* s = luaL_checklstring(L, 1, &len);
-	char* output = NULL;
+	const char *s = luaL_checklstring(L, 1, &len);
+	char *output = NULL;
 	int ret = idna_to_unicode_8z8z(s, &output, 0);
 
 	if(ret == IDNA_SUCCESS) {
@@ -522,7 +531,7 @@ static const luaL_Reg Reg_idna[] = {
 
 /***************** end *****************/
 
-LUALIB_API int luaopen_util_encodings(lua_State* L) {
+LUALIB_API int luaopen_util_encodings(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
