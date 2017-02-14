@@ -366,5 +366,6 @@ module:hook("message/full", message_handler, 0);
 
 module:hook("account-disco-info", function(event)
 	(event.reply or event.stanza):tag("feature", {var=xmlns_mam}):up();
+	(event.reply or event.stanza):tag("feature", {var=xmlns_st_id}):up();
 end);
 
