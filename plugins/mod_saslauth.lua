@@ -5,7 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
-
+-- luacheck: ignore 431/log
 
 
 local st = require "util.stanza";
