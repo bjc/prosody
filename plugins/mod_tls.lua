@@ -63,6 +63,7 @@ end
 
 local function can_do_tls(session)
 	if not session.conn.starttls then
+		session.log("debug", "Underlying connection does not support STARTTLS");
 		return false;
 	elseif session.ssl_ctx ~= nil then
 		return session.ssl_ctx;
@@ -77,6 +78,7 @@ local function can_do_tls(session)
 		session.ssl_ctx = ssl_ctx_s2sout;
 		session.ssl_cfg = ssl_cfg_s2sout;
 	else
+		session.log("debug", "Unknown session type, don't know which TLS context to use");
 		return false;
 	end
 	if not session.ssl_ctx then
