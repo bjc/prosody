@@ -226,6 +226,7 @@ module:hook("stream-features", function(event)
 	local log = origin.log or log;
 	if not origin.username then
 		if secure_auth_only and not origin.secure then
+			log("debug", "Not offering authentication on insecure connection");
 			return;
 		end
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
@@ -244,15 +245,22 @@ module:hook("stream-features", function(event)
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
-		for mechanism in pairs(sasl_handler:mechanisms()) do
-			if (not disabled_mechanisms:contains(mechanism)) and (origin.secure or not insecure_mechanisms:contains(mechanism)) then
+		local sasl_mechanisms = sasl_handler:mechanisms()
+		for mechanism in pairs(sasl_mechanisms) do
+			if disabled_mechanisms:contains(mechanism) then
+				log("debug", "Not offering disabled mechanism %s", mechanism);
+			elseif not origin.secure and insecure_mechanisms:contains(mechanism) then
+				log("debug", "Not offering mechanism %s on insecure connection", mechanism);
+			else
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end
 		if mechanisms[1] then
 			features:add_child(mechanisms);
+		elseif not next(sasl_mechanisms) then
+			log("warn", "No available SASL mechanisms, verify that the configured authentication module is working");
 		else
-			log("warn", "No SASL mechanisms to offer");
+			log("warn", "All available authentication mechanisms are either disabled or not suitable for an insecure connection");
 		end
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
