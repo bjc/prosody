@@ -5,30 +5,29 @@ CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 
 -- Substitute ~ with path to home directory in paths
 if CFG_CONFIGDIR then
-        CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+	CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
 end
 
 if CFG_SOURCEDIR then
-        CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
+	CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
 end
 
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 -- Command-line parsing
 local options = {};
-local handled_opts = 0;
-for i = 1, #arg do
+local i = 1;
+while arg[i] do
 	if arg[i]:sub(1,2) == "--" then
 		local opt, val = arg[i]:match("([%w-]+)=?(.*)");
 		if opt then
 			options[(opt:sub(3):gsub("%-", "_"))] = #val > 0 and val or true;
 		end
-		handled_opts = i;
+		table.remove(arg, i);
 	else
-		break;
+		i = i + 1;
 	end
 end
-table.remove(arg, handled_opts);
 
 if CFG_SOURCEDIR then
 	package.path = CFG_SOURCEDIR.."/?.lua;"..package.path;
@@ -48,7 +47,7 @@ config = {};
 local config_env = setmetatable({}, { __index = function(t, k) return function(tbl) config[k] = tbl; end; end });
 local config_chunk, err = envloadfile(config_file, config_env);
 if not config_chunk then
-	print("There was an error loading the config file, check the file exists");
+	print("There was an error loading the config file, check that the file exists");
 	print("and that the syntax is correct:");
 	print("", err);
 	os.exit(1);
