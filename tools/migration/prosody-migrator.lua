@@ -5,11 +5,11 @@ CFG_CONFIGDIR=os.getenv("PROSODY_CFGDIR");
 
 -- Substitute ~ with path to home directory in paths
 if CFG_CONFIGDIR then
-        CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
+	CFG_CONFIGDIR = CFG_CONFIGDIR:gsub("^~", os.getenv("HOME"));
 end
 
 if CFG_SOURCEDIR then
-        CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
+	CFG_SOURCEDIR = CFG_SOURCEDIR:gsub("^~", os.getenv("HOME"));
 end
 
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
