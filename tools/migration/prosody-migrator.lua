@@ -47,7 +47,7 @@ config = {};
 local config_env = setmetatable({}, { __index = function(t, k) return function(tbl) config[k] = tbl; end; end });
 local config_chunk, err = envloadfile(config_file, config_env);
 if not config_chunk then
-	print("There was an error loading the config file, check the file exists");
+	print("There was an error loading the config file, check that the file exists");
 	print("and that the syntax is correct:");
 	print("", err);
 	os.exit(1);
