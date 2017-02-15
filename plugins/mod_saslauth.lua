@@ -223,6 +223,7 @@ local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
+	local log = origin.log or log;
 	if not origin.username then
 		if secure_auth_only and not origin.secure then
 			return;
@@ -251,7 +252,7 @@ module:hook("stream-features", function(event)
 		if mechanisms[1] then
 			features:add_child(mechanisms);
 		else
-			(origin.log or log)("warn", "No SASL mechanisms to offer");
+			log("warn", "No SASL mechanisms to offer");
 		end
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
