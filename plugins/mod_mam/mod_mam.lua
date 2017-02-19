@@ -334,7 +334,7 @@ if cleanup_after ~= "never" then
 	-- Iterating over users is not supported by all authentication modules
 	-- Catch and ignore error if not supported
 	pcall(function ()
-		-- If this works, then we schedule cleanup for all known known
+		-- If this works, then we schedule cleanup for all known users on startup
 		for user in um.users(module.host) do
 			cleanup[user] = true;
 		end
