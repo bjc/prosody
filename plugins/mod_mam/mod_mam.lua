@@ -134,7 +134,6 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local before, after = qset and qset.before, qset and qset.after;
 	if type(before) ~= "string" then before = nil; end
 
-
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
 		start = qstart; ["end"] = qend; -- Time range
@@ -306,7 +305,6 @@ end
 local function c2s_message_handler(event)
 	return message_handler(event, true);
 end
-
 
 local function strip_stanza_id(event)
 	local strip_by = jid_bare(event.origin.full_jid);
