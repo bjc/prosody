@@ -9,7 +9,7 @@
 -- XEP-0313: Message Archive Management for Prosody
 --
 
-local xmlns_mam     = "urn:xmpp:mam:1";
+local xmlns_mam     = "urn:xmpp:mam:2";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 local xmlns_st_id   = "urn:xmpp:sid:0";
