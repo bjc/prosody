@@ -373,7 +373,7 @@ end
 -- Stanzas sent by local clients
 module:hook("pre-message/bare", c2s_message_handler, 0);
 module:hook("pre-message/full", c2s_message_handler, 0);
--- Stanszas to local clients
+-- Stanzas to local clients
 module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 
