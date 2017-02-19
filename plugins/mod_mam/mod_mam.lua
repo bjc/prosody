@@ -307,6 +307,19 @@ local function c2s_message_handler(event)
 	return message_handler(event, true);
 end
 
+
+local function strip_stanza_id(event)
+	local strip_by = jid_bare(event.origin.full_jid);
+	event.stanza:maptags(function(tag)
+		if not ( tag.attr.xmlns == xmlns_st_id and tag.attr.by == strip_by ) then
+			return tag;
+		end
+	end);
+end
+
+module:hook("pre-message/bare", strip_stanza_id, -1);
+module:hook("pre-message/full", strip_stanza_id, -1);
+
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 if cleanup_after ~= "never" then
