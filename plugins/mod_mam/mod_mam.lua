@@ -9,7 +9,7 @@
 -- XEP-0313: Message Archive Management for Prosody
 --
 
-local xmlns_mam     = "urn:xmpp:mam:1";
+local xmlns_mam     = "urn:xmpp:mam:2";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 local xmlns_st_id   = "urn:xmpp:sid:0";
@@ -89,7 +89,7 @@ local query_form = dataform {
 -- Serve form
 module:hook("iq-get/self/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	origin.send(st.reply(stanza):add_child(query_form:form()));
+	origin.send(st.reply(stanza):query(xmlns_mam):add_child(query_form:form()));
 	return true;
 end);
 
@@ -133,7 +133,6 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local reverse = qset and qset.before or false;
 	local before, after = qset and qset.before, qset and qset.after;
 	if type(before) ~= "string" then before = nil; end
-
 
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
@@ -292,8 +291,9 @@ local function message_handler(event, c2s)
 		log("debug", "Archiving stanza: %s", stanza:top_tag());
 
 		-- And stash it
-		local ok, id = archive:append(store_user, nil, stanza, time_now(), with);
+		local ok = archive:append(store_user, nil, stanza, time_now(), with);
 		if ok then
+			local id = ok;
 			stanza:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
 			if cleanup then cleanup[store_user] = true; end
 			module:fire_event("archive-message-added", { origin = origin, stanza = stanza, for_user = store_user, id = id });
@@ -306,6 +306,18 @@ end
 local function c2s_message_handler(event)
 	return message_handler(event, true);
 end
+
+local function strip_stanza_id(event)
+	local strip_by = jid_bare(event.origin.full_jid);
+	event.stanza:maptags(function(tag)
+		if not ( tag.attr.xmlns == xmlns_st_id and tag.attr.by == strip_by ) then
+			return tag;
+		end
+	end);
+end
+
+module:hook("pre-message/bare", strip_stanza_id, -1);
+module:hook("pre-message/full", strip_stanza_id, -1);
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
@@ -334,7 +346,7 @@ if cleanup_after ~= "never" then
 	-- Iterating over users is not supported by all authentication modules
 	-- Catch and ignore error if not supported
 	pcall(function ()
-		-- If this works, then we schedule cleanup for all known known
+		-- If this works, then we schedule cleanup for all known users on startup
 		for user in um.users(module.host) do
 			cleanup[user] = true;
 		end
@@ -360,7 +372,7 @@ end
 -- Stanzas sent by local clients
 module:hook("pre-message/bare", c2s_message_handler, 0);
 module:hook("pre-message/full", c2s_message_handler, 0);
--- Stanszas to local clients
+-- Stanzas to local clients
 module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 

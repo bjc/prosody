@@ -187,7 +187,7 @@ function archive_store:append(username, key, value, when, with)
 		when, with, value = value, when, with;
 	end
 	local user,store = username,self.store;
-	return engine:transaction(function()
+	local ok, key = engine:transaction(function()
 		if key then
 			engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, user or "", store, key);
 		else
@@ -197,6 +197,8 @@ function archive_store:append(username, key, value, when, with)
 		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
 		return key;
 	end);
+	if not ok then return ok, key; end
+	return key;
 end
 
 -- Helpers for building the WHERE clause
