@@ -10,7 +10,7 @@
 --
 
 local st = require"util.stanza";
-local xmlns_mam = "urn:xmpp:mam:1";
+local xmlns_mam = "urn:xmpp:mam:2";
 
 local default_attrs = {
 	always = true, [true] = "always",
