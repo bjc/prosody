@@ -1130,6 +1130,12 @@ function def_env.http:list()
 	return true;
 end
 
+module:hook("server-stopping", function(event)
+	for conn, session in pairs(sessions) do
+		session.print("Shutting down: "..(event.reason or "unknown reason"));
+	end
+end);
+
 -------------
 
 function printbanner(session)
