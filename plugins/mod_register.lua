@@ -20,6 +20,7 @@ local jid_bare = require "util.jid".bare;
 local compat = module:get_option_boolean("registration_compat", true);
 local allow_registration = module:get_option_boolean("allow_registration", false);
 local additional_fields = module:get_option("additional_registration_fields", {});
+local require_encryption = module:get_option("c2s_require_encryption") or module:get_option("require_encryption");
 
 local account_details = module:open_store("account_details");
 
@@ -75,7 +76,7 @@ module:hook("stream-features", function(event)
         local session, features = event.origin, event.features;
 
 	-- Advertise registration to unauthorized clients only.
-	if not(allow_registration) or session.type ~= "c2s_unauthed" then
+	if not(allow_registration) or session.type ~= "c2s_unauthed" or (require_encryption and not session.secure) then
 		return
 	end
 
@@ -183,6 +184,8 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 
 	if not(allow_registration) or session.type ~= "c2s_unauthed" then
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
+	elseif require_encryption and not session.secure then
+		session.send(st.error_reply(stanza, "modify", "policy-violation", "Encryption is required"));
 	else
 		local query = stanza.tags[1];
 		if stanza.attr.type == "get" then
