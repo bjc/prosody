@@ -67,6 +67,11 @@ int Lrandom(lua_State *L) {
 	arc4random_buf(buf, len);
 	ret = len;
 #elif defined(WITH_OPENSSL)
+	if(!RAND_status()) {
+		lua_pushliteral(L, "OpenSSL PRNG not seeded");
+		lua_error(L);
+	}
+
 	ret = RAND_bytes(buf, len);
 
 	if(ret == 1) {
@@ -87,6 +92,7 @@ int luaopen_util_crand(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
+
 	lua_newtable(L);
 	lua_pushcfunction(L, Lrandom);
 	lua_setfield(L, -2, "bytes");
@@ -99,10 +105,6 @@ int luaopen_util_crand(lua_State *L) {
 	lua_pushstring(L, "OpenSSL");
 #endif
 	lua_setfield(L, -2, "_source");
-
-#if defined(WITH_OPENSSL) && defined(_WIN32)
-	/* TODO Do we need to seed this on Windows? */
-#endif
 
 	return 1;
 }
