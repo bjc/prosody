@@ -192,6 +192,10 @@ function interface:socket()
 	return self.conn;
 end
 
+function interface:set_mode(new_mode)
+	self._pattern = new_mode;
+end
+
 function interface:setoption(k, v)
 	-- LuaSec doesn't expose setoption :(
 	if self.conn.setoption then
