@@ -69,7 +69,7 @@ int Lrandom(lua_State *L) {
 #elif defined(WITH_OPENSSL)
 	if(!RAND_status()) {
 		lua_pushliteral(L, "OpenSSL PRNG not seeded");
-		lua_error(L);
+		return lua_error(L);
 	}
 
 	ret = RAND_bytes(buf, len);
