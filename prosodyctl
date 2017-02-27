@@ -621,6 +621,8 @@ function commands.reload(arg)
 end
 -- ejabberdctl compatibility
 
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
+
 function commands.register(arg)
 	local user, host, password = unpack(arg);
 	if (not (user and host)) or arg[1] == "--help" then
