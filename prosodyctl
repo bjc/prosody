@@ -2,7 +2,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2010 Matthew Wild
 -- Copyright (C) 2008-2010 Waqas Hussain
--- 
+--
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
@@ -65,7 +65,7 @@ config = require "core.configmanager"
 local ENV_CONFIG;
 do
 	local filenames = {};
-	
+
 	local filename;
 	if arg[1] == "--config" and arg[2] then
 		table.insert(filenames, arg[2]);
@@ -120,7 +120,7 @@ if custom_plugin_paths then
 	-- path1;path2;path3;defaultpath...
 	CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 end
-prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR, 
+prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR,
 	          plugins = CFG_PLUGINDIR or "plugins", data = data_path };
 
 if prosody.installed then
@@ -161,7 +161,7 @@ if ok and pposix then
 			print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 		end
 	end
-	
+
 	-- Set our umask to protect data files
 	pposix.umask(config.get("*", "umask") or "027");
 	pposix.setenv("HOME", data_path);
@@ -212,7 +212,7 @@ if #unwriteable_files > 0 then
 end
 
 
-local error_messages = setmetatable({ 
+local error_messages = setmetatable({
 		["invalid-username"] = "The given username is invalid in a Jabber ID";
 		["invalid-hostname"] = "The given hostname is invalid";
 		["no-password"] = "No password was supplied";
@@ -241,7 +241,7 @@ end
 for hostname, config in pairs(config.getconfig()) do
 	hosts[hostname] = make_host(hostname);
 end
-	
+
 local modulemanager = require "core.modulemanager"
 
 local prosodyctl = require "util.prosodyctl"
@@ -290,30 +290,30 @@ function commands.adduser(arg)
 		show_usage [[adduser user@host]]
 		return 1;
 	end
-	
+
 	if not host then
 		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
 		return 1;
 	end
-	
+
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
 	end
-	
+
 	if prosodyctl.user_exists{ user = user, host = host } then
 		show_message [[That user already exists]];
 		return 1;
 	end
-	
+
 	local password = read_password();
 	if not password then return 1; end
-	
+
 	local ok, msg = prosodyctl.adduser { user = user, host = host, password = password };
-	
+
 	if ok then return 0; end
-	
+
 	show_message(msg)
 	return 1;
 end
@@ -329,30 +329,30 @@ function commands.passwd(arg)
 		show_usage [[passwd user@host]]
 		return 1;
 	end
-	
+
 	if not host then
 		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
 		return 1;
 	end
-	
+
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
 		hosts[host] = make_host(host);
 	end
-	
+
 	if not prosodyctl.user_exists { user = user, host = host } then
 		show_message [[That user does not exist, use prosodyctl adduser to create a new user]]
 		return 1;
 	end
-	
+
 	local password = read_password();
 	if not password then return 1; end
-	
+
 	local ok, msg = prosodyctl.passwd { user = user, host = host, password = password };
-	
+
 	if ok then return 0; end
-	
+
 	show_message(error_messages[msg])
 	return 1;
 end
@@ -368,12 +368,12 @@ function commands.deluser(arg)
 		show_usage [[deluser user@host]]
 		return 1;
 	end
-	
+
 	if not host then
 		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
 		return 1;
 	end
-	
+
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		hosts[host] = make_host(host);
@@ -383,11 +383,11 @@ function commands.deluser(arg)
 		show_message [[That user does not exist on this server]]
 		return 1;
 	end
-	
+
 	local ok, msg = prosodyctl.deluser { user = user, host = host };
-	
+
 	if ok then return 0; end
-	
+
 	show_message(error_messages[msg])
 	return 1;
 end
@@ -402,7 +402,7 @@ function commands.start(arg)
 		show_message(error_messages[ret]);
 		return 1;
 	end
-	
+
 	if ret then
 		local ok, ret = prosodyctl.getpid();
 		if not ok then
@@ -413,7 +413,7 @@ function commands.start(arg)
 		show_message("Prosody is already running with PID %s", ret or "(unknown)");
 		return 1;
 	end
-	
+
 	local ok, ret = prosodyctl.start();
 	if ok then
 		local daemonize = config.get("*", "daemonize");
@@ -441,8 +441,8 @@ function commands.start(arg)
 	end
 
 	show_message("Failed to start Prosody");
-	show_message(error_messages[ret])	
-	return 1;	
+	show_message(error_messages[ret])
+	return 1;
 end
 
 function commands.status(arg)
@@ -456,7 +456,7 @@ function commands.status(arg)
 		show_message(error_messages[ret]);
 		return 1;
 	end
-	
+
 	if ret then
 		local ok, ret = prosodyctl.getpid();
 		if not ok then
@@ -489,7 +489,7 @@ function commands.stop(arg)
 		show_message("Prosody is not running");
 		return 1;
 	end
-	
+
 	local ok, ret = prosodyctl.stop();
 	if ok then
 		local i=1;
@@ -519,7 +519,7 @@ function commands.restart(arg)
 		show_usage([[restart]], [[Restart a running Prosody server]]);
 		return 1;
 	end
-	
+
 	commands.stop(arg);
 	return commands.start(arg);
 end
@@ -530,14 +530,14 @@ function commands.about(arg)
 		show_usage([[about]], [[Show information about this Prosody installation]]);
 		return 1;
 	end
-	
+
 	local pwd = ".";
 	local lfs = require "lfs";
 	local array = require "util.array";
 	local keys = require "util.iterators".keys;
 	local hg = require"util.mercurial";
 	local relpath = config.resolve_relative_path;
-	
+
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
 	print("# Prosody directories");
@@ -608,10 +608,10 @@ function commands.reload(arg)
 		show_message("Prosody is not running");
 		return 1;
 	end
-	
+
 	local ok, ret = prosodyctl.reload();
 	if ok then
-		
+
 		show_message("Prosody log files re-opened and config file reloaded. You may need to reload modules for some changes to take effect.");
 		return 0;
 	end
@@ -643,11 +643,11 @@ function commands.register(arg)
 			return 1;
 		end
 	end
-	
+
 	local ok, msg = prosodyctl.adduser { user = user, host = host, password = password };
-	
+
 	if ok then return 0; end
-	
+
 	show_message(error_messages[msg])
 	return 1;
 end
@@ -667,9 +667,9 @@ function commands.unregister(arg)
 	end
 
 	local ok, msg = prosodyctl.deluser { user = user, host = host };
-	
+
 	if ok then return 0; end
-	
+
 	show_message(error_messages[msg])
 	return 1;
 end
@@ -1012,7 +1012,7 @@ function commands.check(arg)
 			print("    Connections will fail.");
 			ok = false;
 		end
-		
+
 		print("Done.\n");
 	end
 	if not what or what == "dns" then
@@ -1021,7 +1021,7 @@ function commands.check(arg)
 		local ip = require "util.ip";
 		local c2s_ports = set.new(config.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(config.get("*", "s2s_ports") or {5269});
-		
+
 		local c2s_srv_required, s2s_srv_required;
 		if not c2s_ports:contains(5222) then
 			c2s_srv_required = true;
@@ -1029,11 +1029,11 @@ function commands.check(arg)
 		if not s2s_ports:contains(5269) then
 			s2s_srv_required = true;
 		end
-		
+
 		local problem_hosts = set.new();
-		
+
 		local external_addresses, internal_addresses = set.new(), set.new();
-		
+
 		local fqdn = socket.dns.tohostname(socket.dns.gethostname());
 		if fqdn then
 			local res = dns.lookup(idna.to_ascii(fqdn), "A");
@@ -1049,9 +1049,9 @@ function commands.check(arg)
 				end
 			end
 		end
-		
+
 		local local_addresses = require"util.net".local_addresses() or {};
-		
+
 		for addr in it.values(local_addresses) do
 			if not ip.new_ip(addr).private then
 				external_addresses:add(addr);
@@ -1059,19 +1059,19 @@ function commands.check(arg)
 				internal_addresses:add(addr);
 			end
 		end
-		
+
 		if external_addresses:empty() then
 			print("");
 			print("   Failed to determine the external addresses of this server. Checks may be inaccurate.");
 			c2s_srv_required, s2s_srv_required = true, true;
 		end
-		
+
 		local v6_supported = not not socket.tcp6;
-		
+
 		for jid, host_options in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
-			
+
 			local is_component = not not host_options.component_module;
 			print("Checking DNS for "..(is_component and "component" or "host").." "..jid.."...");
 			if node then
@@ -1115,12 +1115,12 @@ function commands.check(arg)
 			if target_hosts:empty() then
 				target_hosts:add(host);
 			end
-			
+
 			if target_hosts:contains("localhost") then
 				print("    Target 'localhost' cannot be accessed from other servers");
 				target_hosts:remove("localhost");
 			end
-			
+
 			local modules = set.new(it.to_array(it.values(host_options.modules_enabled or {})))
 			                + set.new(it.to_array(it.values(config.get("*", "modules_enabled") or {})))
 			                + set.new({ config.get(host, "component_module") });
@@ -1139,7 +1139,7 @@ function commands.check(arg)
 					print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/").." record. Create one or set 'proxy65_address' to the correct host/IP.");
 				end
 			end
-			
+
 			for host in target_hosts do
 				local host_ok_v4, host_ok_v6;
 				local res = dns.lookup(idna.to_ascii(host), "A");
@@ -1174,7 +1174,7 @@ function commands.check(arg)
 						end
 					end
 				end
-				
+
 				local bad_protos = {}
 				if not host_ok_v4 then
 					table.insert(bad_protos, "IPv4");
@@ -1303,20 +1303,20 @@ if command and command:match("^mod_") then -- Is a command in a module
 		show_message("Failed to load module '"..module_name.."': "..err);
 		os.exit(1);
 	end
-	
+
 	table.remove(arg, 1);
-	
+
 	local module = modulemanager.get_module("*", module_name);
 	if not module then
 		show_message("Failed to load module '"..module_name.."': Unknown error");
 		os.exit(1);
 	end
-	
+
 	if not modulemanager.module_has_method(module, "command") then
 		show_message("Fail: mod_"..module_name.." does not support any commands");
 		os.exit(1);
 	end
-	
+
 	local ok, ret = modulemanager.call_module_method(module, "command", arg);
 	if ok then
 		if type(ret) == "number" then
@@ -1364,8 +1364,8 @@ if not commands[command] then -- Show help for all commands
 			done[command_name] = true;
 		end
 	end
-	
-	
+
+
 	os.exit(0);
 end
 
