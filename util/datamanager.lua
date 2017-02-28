@@ -17,7 +17,6 @@ local io_open = io.open;
 local os_remove = os.remove;
 local os_rename = os.rename;
 local tonumber = tonumber;
-local tostring = tostring;
 local next = next;
 local type = type;
 local t_insert = table.insert;
@@ -31,21 +30,12 @@ local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.
 local prosody = prosody;
 
 local raw_mkdir = lfs.mkdir;
-local function fallocate(f, offset, len)
-	-- This assumes that current position == offset
-	local fake_data = (" "):rep(len);
-	local ok, msg = f:write(fake_data);
-	if not ok then
-		return ok, msg;
-	end
-	f:seek("set", offset);
-	return true;
-end;
+local atomic_append;
 local ENOENT = 2;
 pcall(function()
 	local pposix = require "util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
-	fallocate = pposix.fallocate or fallocate;
+	atomic_append = pposix.atomic_append;
 	ENOENT = pposix.ENOENT or ENOENT;
 end);
 
@@ -62,6 +52,19 @@ do
 
 	encode = function (s)
 		return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end));
+	end
+end
+
+if not atomic_append then
+	function atomic_append(f, data)
+		local pos = f:seek();
+		if not f:write(data) or not f:flush() then
+			f:seek("set", pos);
+			f:write((" "):rep(#data));
+			f:flush();
+			return nil, "write-failed";
+		end
+		return true;
 	end
 end
 
@@ -221,25 +224,16 @@ local function append(username, host, datastore, ext, data)
 	local filename = getpath(username, host, datastore, ext, true);
 
 	local ok;
-	local f, msg = io_open(filename, "r+");
+	local f, msg, errno = io_open(filename, "r+");
 	if not f then
 		return atomic_store(filename, data);
 		-- File did probably not exist, let's create it
 	end
 
 	local pos = f:seek("end");
-	ok, msg = fallocate(f, pos, #data);
-	if not ok then
-		log("warn", "fallocate() failed: %s", tostring(msg));
-		-- This doesn't work on every file system
-	end
 
-	if f:seek() ~= pos then
-		log("debug", "fallocate() changed file position");
-		f:seek("set", pos);
-	end
+	ok, msg = atomic_append(f, data);
 
-	ok, msg = f:write(data);
 	if not ok then
 		f:close();
 		return ok, msg, "write";
