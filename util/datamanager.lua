@@ -44,6 +44,7 @@ pcall(function()
 	local pposix = require "util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
 	fallocate = pposix.fallocate or fallocate;
+	ENOENT = pposix.ENOENT or ENOENT;
 end);
 
 local _ENV = nil;
