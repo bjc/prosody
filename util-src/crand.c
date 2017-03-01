@@ -19,6 +19,8 @@
 *
 */
 
+#define _DEFAULT_SOURCE
+
 #include "lualib.h"
 #include "lauxlib.h"
 

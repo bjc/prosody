@@ -15,6 +15,14 @@
 
 #define MODULE_VERSION "0.3.6"
 
+
+#if defined(__linux__)
+#define _GNU_SOURCE
+#else
+#define _DEFAULT_SOURCE
+#endif
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
@@ -40,11 +48,11 @@
 #endif
 
 #include <fcntl.h>
-#if defined(__linux__) && defined(_GNU_SOURCE)
+#if defined(__linux__)
 #include <linux/falloc.h>
 #endif
 
-#if (defined(_SVID_SOURCE) && !defined(WITHOUT_MALLINFO))
+#if !defined(WITHOUT_MALLINFO)
 #include <malloc.h>
 #define WITH_MALLINFO
 #endif
@@ -663,7 +671,7 @@ int lc_uname(lua_State *L) {
 	lua_setfield(L, -2, "version");
 	lua_pushstring(L, uname_info.machine);
 	lua_setfield(L, -2, "machine");
-#ifdef _GNU_SOURCE
+#ifdef __USE_GNU
 	lua_pushstring(L, uname_info.domainname);
 	lua_setfield(L, -2, "domainname");
 #endif
@@ -726,7 +734,6 @@ int lc_meminfo(lua_State *L) {
  * https://github.com/rrthomas/luaposix/blob/master/lposix.c#L631
  * */
 
-#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
 int lc_fallocate(lua_State *L) {
 	int ret;
 	off_t offset, len;
@@ -739,7 +746,7 @@ int lc_fallocate(lua_State *L) {
 	offset = luaL_checkinteger(L, 2);
 	len = luaL_checkinteger(L, 3);
 
-#if defined(__linux__) && defined(_GNU_SOURCE)
+#if defined(__linux__)
 	errno = 0;
 	ret = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len);
 
@@ -759,10 +766,6 @@ int lc_fallocate(lua_State *L) {
 		return 2;
 	}
 
-#else
-#warning Only using posix_fallocate() fallback.
-#warning Linux fallocate() is strongly recommended if available: recompile with -D_GNU_SOURCE
-#warning Note that posix_fallocate() will still be used on filesystems that dont support fallocate()
 #endif
 
 	ret = posix_fallocate(fileno(f), offset, len);
@@ -784,7 +787,6 @@ int lc_fallocate(lua_State *L) {
 		return 2;
 	}
 }
-#endif
 
 /* Register functions */
 
@@ -825,9 +827,7 @@ int luaopen_util_pposix(lua_State *L) {
 		{ "meminfo", lc_meminfo },
 #endif
 
-#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L || defined(_GNU_SOURCE)
 		{ "fallocate", lc_fallocate },
-#endif
 
 		{ NULL, NULL }
 	};

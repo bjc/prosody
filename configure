@@ -113,7 +113,7 @@ do
          RUNWITH="lua$LUA_SUFFIX"
          LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
          LUA_INCDIR_SET=yes
-         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
+         CFLAGS="$CFLAGS -ggdb"
       fi
       if [ "$OSTYPE" = "macosx" ]; then
          LUA_INCDIR=/usr/local/include;
@@ -128,7 +128,7 @@ do
          LUA_INCDIR_SET=yes
          LUA_LIBDIR=/usr/local/lib
          LUA_LIBDIR_SET=yes
-         CFLAGS="$CFLAGS -ggdb -D_GNU_SOURCE"
+         CFLAGS="$CFLAGS -ggdb"
       fi
       if [ "$OSTYPE" = "freebsd" -o "$OSTYPE" = "openbsd" ]; then
          LUA_INCDIR="/usr/local/include/lua51"
@@ -167,7 +167,7 @@ do
             LUA_INCDIR="$LUA_CF"
             LUA_INCDIR_SET=yes
          fi
-         CFLAGS="$CFLAGS -D_GNU_SOURCE"
+         CFLAGS="$CFLAGS"
       fi
       ;;
    --libdir=*)
