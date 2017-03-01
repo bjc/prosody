@@ -228,11 +228,8 @@ local function append(username, host, datastore, ext, data)
 	local ok;
 	local f, msg = io_open(filename, "r+");
 	if not f then
+		return atomic_store(filename, data);
 		-- File did probably not exist, let's create it
-		f, msg = io_open(filename, "w");
-		if not f then
-			return nil, msg, "open";
-		end
 	end
 
 	local pos = f:seek("end");
