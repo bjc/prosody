@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.6"
+#define MODULE_VERSION "0.3.7"
 
 
 #if defined(__linux__)
@@ -788,6 +788,68 @@ int lc_fallocate(lua_State *L) {
 	}
 }
 
+/*
+ * Append some data to a file handle
+ * Attempt to allocate space first
+ * Truncate to original size on failure
+ */
+int lc_atomic_append(lua_State *L) {
+	int err;
+	size_t len;
+
+	FILE *f = *(FILE **) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+	const char *data = luaL_checklstring(L, 2, &len);
+
+	off_t offset = ftell(f);
+
+#if defined(__linux__)
+	/* Try to allocate space without changing the file size. */
+	if((err = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len))) {
+		if(errno != 0) {
+			/* Some old versions of Linux apparently use the return value instead of errno */
+			err = errno;
+		}
+		switch(err) {
+			case ENOSYS: /* Kernel doesn't implement fallocate */
+			case EOPNOTSUPP: /* Filesystem doesn't support it */
+				/* Ignore and proceed to try to write */
+				break;
+
+			case ENOSPC: /* No space left */
+			default: /* Other issues */
+				lua_pushnil(L);
+				lua_pushstring(L, strerror(err));
+				lua_pushinteger(L, err);
+				return 3;
+		}
+	}
+#endif
+
+	if(fwrite(data, sizeof(char), len, f) == len) {
+		if(fflush(f) == 0) {
+			lua_pushboolean(L, 1); /* Great success! */
+			return 1;
+		} else {
+			err = errno;
+		}
+	} else {
+		err = ferror(f);
+	}
+
+	fseek(f, offset, SEEK_SET);
+
+	/* Cut partially written data */
+	if(ftruncate(fileno(f), offset)) {
+		/* The file is now most likely corrupted, throw hard error */
+		return luaL_error(L, "atomic_append() failed in ftruncate(): %s", strerror(errno));
+	}
+
+	lua_pushnil(L);
+	lua_pushstring(L, strerror(err));
+	lua_pushinteger(L, err);
+	return 3;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L) {
@@ -828,6 +890,7 @@ int luaopen_util_pposix(lua_State *L) {
 #endif
 
 		{ "fallocate", lc_fallocate },
+		{ "atomic_append", lc_atomic_append },
 
 		{ NULL, NULL }
 	};
