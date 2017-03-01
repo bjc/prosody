@@ -22,7 +22,7 @@ local function new_initial_data_form(form, initial_data, result_handler)
 			return result_handler(fields, err, data);
 		else
 			return { status = "executing", actions = {"next", "complete", default = "complete"},
-				 form = { layout = form, values = initial_data() } }, "executing";
+				 form = { layout = form, values = initial_data(data) } }, "executing";
 		end
 	end
 end

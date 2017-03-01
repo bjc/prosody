@@ -136,6 +136,8 @@ function handle_request(event)
 	local request, response = event.request, event.response;
 	local conn = response.conn;
 
+	conn.starttls = false; -- Prevent mod_tls from believing starttls can be done
+
 	if not request.headers.sec_websocket_key then
 		response.headers.content_type = "text/html";
 		return [[<!DOCTYPE html><html><head><title>Websocket</title></head><body>
