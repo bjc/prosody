@@ -21,7 +21,7 @@ EXCERTS="yes"
 PRNG=
 PRNGLIBS=
 
-CFLAGS="-fPIC -Wall -pedantic -std=c89"
+CFLAGS="-fPIC -Wall -pedantic -std=c99"
 LDFLAGS="-shared"
 
 IDN_LIBRARY="idn"
