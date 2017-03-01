@@ -415,6 +415,7 @@ return {
 	load = load;
 	store = store;
 	append_raw = append;
+	store_raw = atomic_store;
 	list_append = list_append;
 	list_store = list_store;
 	list_load = list_load;
