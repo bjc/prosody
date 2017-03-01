@@ -615,7 +615,7 @@ int lc_getrlimit(lua_State *L) {
 			return 2;
 		}
 	} else {
-		/* Unsupported resoucrce. Sorry I'm pretty limited by POSIX standard. */
+		/* Unsupported resource. Sorry I'm pretty limited by POSIX standard. */
 		lua_pushboolean(L, 0);
 		lua_pushstring(L, "invalid-resource");
 		return 2;
