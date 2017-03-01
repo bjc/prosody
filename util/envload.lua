@@ -22,6 +22,7 @@ if setfenv then
 		local fh, err, errno = io_open(file);
 		if not fh then return fh, err, errno; end
 		local f, err = load(function () return fh:read(2048); end, "@"..file);
+		fh:close();
 		if f and env then setfenv(f, env); end
 		return f, err;
 	end
@@ -33,7 +34,9 @@ else
 	function envloadfile(file, env)
 		local fh, err, errno = io_open(file);
 		if not fh then return fh, err, errno; end
-		return load(fh:lines(2048), "@"..file, nil, env);
+		local f, err = load(fh:lines(2048), "@"..file, nil, env);
+		fh:close();
+		return f, err;
 	end
 end
 
