@@ -28,17 +28,22 @@
 #include <errno.h>
 
 #if defined(WITH_GETRANDOM)
+
+#if ! __GLIBC_PREREQ(2,25)
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <linux/random.h>
 
 #ifndef SYS_getrandom
 #error getrandom() requires Linux 3.17 or later
 #endif
 
+/* This wasn't present before glibc 2.25 */
 int getrandom(void *buf, size_t buflen, unsigned int flags) {
 	return syscall(SYS_getrandom, buf, buflen, flags);
 }
+#else
+#include <sys/random.h>
+#endif
 
 #elif defined(WITH_ARC4RANDOM)
 #include <stdlib.h>
