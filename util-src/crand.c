@@ -36,10 +36,6 @@
 #error getrandom() requires Linux 3.17 or later
 #endif
 
-/*
- * This acts like a read from /dev/urandom with the exception that it
- * *does* block if the entropy pool is not yet initialized.
- */
 int getrandom(void *buf, size_t len, int flags) {
 	return syscall(SYS_getrandom, buf, len, flags);
 }
@@ -58,6 +54,10 @@ int Lrandom(lua_State *L) {
 	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
+	/*
+	 * This acts like a read from /dev/urandom with the exception that it
+	 * *does* block if the entropy pool is not yet initialized.
+	 */
 	ret = getrandom(buf, len, 0);
 
 	if(ret < 0) {
