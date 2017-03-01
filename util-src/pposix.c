@@ -835,6 +835,11 @@ int luaopen_util_pposix(lua_State *L) {
 	lua_newtable(L);
 	luaL_setfuncs(L, exports, 0);
 
+#ifdef ENOENT
+	lua_pushinteger(L, ENOENT);
+	lua_setfield(L, -2, "ENOENT");
+#endif
+
 	lua_pushliteral(L, "pposix");
 	lua_setfield(L, -2, "_NAME");
 
