@@ -36,8 +36,8 @@
 #error getrandom() requires Linux 3.17 or later
 #endif
 
-int getrandom(void *buf, size_t len, int flags) {
-	return syscall(SYS_getrandom, buf, len, flags);
+int getrandom(void *buf, size_t buflen, unsigned int flags) {
+	return syscall(SYS_getrandom, buf, buflen, flags);
 }
 
 #elif defined(WITH_ARC4RANDOM)
