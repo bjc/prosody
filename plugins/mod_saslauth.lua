@@ -96,8 +96,19 @@ end)
 module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or session.external_auth ~= "attempting" then return; end
 
-	module:log("info", "SASL EXTERNAL with %s failed", session.to_host)
-	-- TODO: Log the failure reason
+	local text = stanza:get_child_text("text");
+	local condition = "unknown-condition";
+	for child in stanza:childtags() do
+		if child.name ~= "text" then
+			condition = child.name;
+			break;
+		end
+	end
+	if text and condition then
+		condition = connection .. ": " .. text;
+	end
+	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, condition);
+
 	session.external_auth = "failed"
 end, 500)
 
