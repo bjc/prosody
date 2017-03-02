@@ -54,6 +54,7 @@ local c2s_listener = portmanager.get_service("c2s").listener;
 local function session_open_stream(session)
 	local attr = {
 		xmlns = xmlns_framing,
+		["xml:lang"] = "en",
 		version = "1.0",
 		id = session.streamid or "",
 		from = session.host
