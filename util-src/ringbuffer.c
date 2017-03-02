@@ -31,7 +31,7 @@ void modpos(ringbuffer *b) {
 	b->wpos = b->wpos % b->alen;
 }
 
-int find(ringbuffer *b, const char *s, int l) {
+int find(ringbuffer *b, const char *s, size_t l) {
 	size_t i, j;
 	int m;
 
@@ -74,7 +74,7 @@ int rb_find(lua_State *L) {
 
 int rb_read(lua_State *L) {
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
-	int r = luaL_checkinteger(L, 2);
+	size_t r = luaL_checkinteger(L, 2);
 	int peek = lua_toboolean(L, 3);
 
 	if(r > b->blen) {
