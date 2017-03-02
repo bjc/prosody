@@ -7,12 +7,11 @@ static int Lcreate_table(lua_State *L) {
 }
 
 static int Lpack(lua_State *L) {
-	int arg;
 	unsigned int n_args = lua_gettop(L);
 	lua_createtable(L, n_args, 1);
 	lua_insert(L, 1);
 
-	for(arg = n_args; arg >= 1; arg--) {
+	for(int arg = n_args; arg >= 1; arg--) {
 		lua_rawseti(L, 1, arg);
 	}
 
