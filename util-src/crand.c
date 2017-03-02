@@ -19,6 +19,8 @@
 *
 */
 
+#define _DEFAULT_SOURCE
+
 #include "lualib.h"
 #include "lauxlib.h"
 
@@ -26,21 +28,22 @@
 #include <errno.h>
 
 #if defined(WITH_GETRANDOM)
+
+#if ! __GLIBC_PREREQ(2,25)
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <linux/random.h>
 
 #ifndef SYS_getrandom
 #error getrandom() requires Linux 3.17 or later
 #endif
 
-/*
- * This acts like a read from /dev/urandom with the exception that it
- * *does* block if the entropy pool is not yet initialized.
- */
-int getrandom(void *buf, size_t len, int flags) {
-	return syscall(SYS_getrandom, buf, len, flags);
+/* This wasn't present before glibc 2.25 */
+int getrandom(void *buf, size_t buflen, unsigned int flags) {
+	return syscall(SYS_getrandom, buf, buflen, flags);
 }
+#else
+#include <sys/random.h>
+#endif
 
 #elif defined(WITH_ARC4RANDOM)
 #include <stdlib.h>
@@ -56,6 +59,10 @@ int Lrandom(lua_State *L) {
 	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
+	/*
+	 * This acts like a read from /dev/urandom with the exception that it
+	 * *does* block if the entropy pool is not yet initialized.
+	 */
 	ret = getrandom(buf, len, 0);
 
 	if(ret < 0) {
