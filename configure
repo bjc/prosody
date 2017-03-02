@@ -170,7 +170,6 @@ do
             LUA_SUFFIX="5.1";
             LUA_SUFFIX_SET=yes
          fi
-         RUNWITH="lua$LUA_SUFFIX"
          LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
          LUA_INCDIR_SET=yes
          CFLAGS="$CFLAGS -ggdb"
@@ -207,7 +206,6 @@ do
          LUA_INCDIR_SET="yes"
       fi
       if [ "$OSTYPE" = "netbsd" ]; then
-         RUNWITH="lua5.1"
          LUA_INCDIR="/usr/pkg/include/lua-5.1"
          LUA_INCDIR_SET=yes
          LUA_LIBDIR="/usr/pkg/lib/lua/5.1"
@@ -308,6 +306,7 @@ do
       ;;
    --runwith)
       RUNWITH="$value"
+      RUNWITH_SET=yes
       ;;
     --no-example-certs)
       EXCERTS=
@@ -526,6 +525,10 @@ fi
 
 if [ -f config.unix ]; then
    rm -f config.unix
+fi
+
+if [ "$RUNWITH_SET" != yes ]; then
+   RUNWITH="lua$LUA_SUFFIX"
 fi
 
 OPENSSL_LIBS="-l$OPENSSL_LIB"
