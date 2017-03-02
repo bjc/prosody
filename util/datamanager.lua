@@ -39,10 +39,12 @@ local function fallocate(f, offset, len)
 	f:seek("set", offset);
 	return true;
 end;
+local ENOENT = 2;
 pcall(function()
 	local pposix = require "util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
 	fallocate = pposix.fallocate or fallocate;
+	ENOENT = pposix.ENOENT or ENOENT;
 end);
 
 local _ENV = nil;
@@ -122,8 +124,12 @@ local function getpath(username, host, datastore, ext, create)
 end
 
 local function load(username, host, datastore)
-	local data, err = envloadfile(getpath(username, host, datastore), {});
+	local data, err, errno = envloadfile(getpath(username, host, datastore), {});
 	if not data then
+		if errno == ENOENT then
+			-- No such file, ok to ignore
+			return nil;
+		end
 		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
 		if not mode then
 			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
@@ -145,9 +151,9 @@ end
 
 local function atomic_store(filename, data)
 	local scratch = filename.."~";
-	local f, ok, msg;
+	local f, ok, msg, errno;
 
-	f, msg = io_open(scratch, "w");
+	f, msg, errno = io_open(scratch, "w");
 	if not f then
 		return nil, msg;
 	end
@@ -222,11 +228,8 @@ local function append(username, host, datastore, ext, data)
 	local ok;
 	local f, msg = io_open(filename, "r+");
 	if not f then
+		return atomic_store(filename, data);
 		-- File did probably not exist, let's create it
-		f, msg = io_open(filename, "w");
-		if not f then
-			return nil, msg, "open";
-		end
 	end
 
 	local pos = f:seek("end");
@@ -295,8 +298,12 @@ end
 
 local function list_load(username, host, datastore)
 	local items = {};
-	local data, err = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
+	local data, err, errno = envloadfile(getpath(username, host, datastore, "list"), {item = function(i) t_insert(items, i); end});
 	if not data then
+		if errno == ENOENT then
+			-- No such file, ok to ignore
+			return nil;
+		end
 		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
 		if not mode then
 			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
@@ -408,6 +415,7 @@ return {
 	load = load;
 	store = store;
 	append_raw = append;
+	store_raw = atomic_store;
 	list_append = list_append;
 	list_store = list_store;
 	list_load = list_load;
