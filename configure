@@ -338,6 +338,11 @@ then
    fi
 fi
 
+if [ "$PREFIX_SET" = "yes" -a ! "$LIBDIR_SET" = "yes" ]
+then
+   LIBDIR=$PREFIX/lib
+fi
+
 detect_lua_version() {
    detected_lua=`$1 -e 'print(_VERSION:match(" (5%.[123])$"))' 2> /dev/null`
    if [ "$detected_lua" != "nil" ]
