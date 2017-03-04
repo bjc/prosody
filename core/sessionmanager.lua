@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: globals prosody.full_sessions prosody.bare_sessions
 
 local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
