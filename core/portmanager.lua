@@ -103,7 +103,8 @@ local function activate(service_name)
 			if not port_number then
 				log("error", "Invalid port number specified for service '%s': %s", service_info.name, tostring(port));
 			elseif #active_services:search(nil, interface, port_number) > 0 then
-				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port, active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
+				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port,
+					active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
 				local err;
 				-- Create SSL context for this service/port
@@ -118,14 +119,16 @@ local function activate(service_name)
 						global_ssl_config[interface],
 						global_ssl_config[port]);
 					if not ssl then
-						log("error", "Error binding encrypted port for %s: %s", service_info.name, error_to_friendly_message(service_name, port_number, err) or "unknown error");
+						log("error", "Error binding encrypted port for %s: %s", service_info.name,
+							error_to_friendly_message(service_name, port_number, err) or "unknown error");
 					end
 				end
 				if not err then
 					-- Start listening on interface+port
 					local handler, err = server.addserver(interface, port_number, listener, mode, ssl);
 					if not handler then
-						log("error", "Failed to open server port %d on %s, %s", port_number, interface, error_to_friendly_message(service_name, port_number, err));
+						log("error", "Failed to open server port %d on %s, %s", port_number, interface,
+							error_to_friendly_message(service_name, port_number, err));
 					else
 						table.insert(hooked_ports, "["..interface.."]:"..port_number);
 						log("debug", "Added listening service %s to [%s]:%d", service_name, interface, port_number);
@@ -138,7 +141,8 @@ local function activate(service_name)
 			end
 		end
 	end
-	log("info", "Activated service '%s' on %s", service_name, #hooked_ports == 0 and "no ports" or table.concat(hooked_ports, ", "));
+	log("info", "Activated service '%s' on %s", service_name,
+		#hooked_ports == 0 and "no ports" or table.concat(hooked_ports, ", "));
 	return true;
 end
 
