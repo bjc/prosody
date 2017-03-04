@@ -76,7 +76,10 @@ local function retire_session(session)
 end
 
 local function destroy_session(session, err)
-	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
+	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s",
+		session.full_jid or "(unknown)", session.username or "(unknown)",
+		session.host or "(unknown)", err and (": "..err) or "");
+
 	if session.destroyed then return; end
 
 	-- Remove session/resource from user's session list
