@@ -70,7 +70,9 @@ end
 
 local function destroy_session(session, reason)
 	if session.destroyed then return; end
-	(session.log or log)("debug", "Destroying "..tostring(session.direction).." session "..tostring(session.from_host).."->"..tostring(session.to_host)..(reason and (": "..reason) or ""));
+	(session.log or log)("debug", "Destroying "..tostring(session.direction)
+		.." session "..tostring(session.from_host).."->"..tostring(session.to_host)
+		..(reason and (": "..reason) or ""));
 
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
