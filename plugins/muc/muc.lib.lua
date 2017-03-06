@@ -517,7 +517,9 @@ function room_mt:handle_normal_presence(origin, stanza)
 	local nick_changed = dest_occupant and orig_nick ~= dest_occupant.nick;
 
 	-- Check for nick conflicts
-	if dest_occupant ~= nil and not is_first_dest_session and bare_jid ~= jid_bare(dest_occupant.bare_jid) then -- new nick or has different bare real jid
+	if dest_occupant ~= nil and not is_first_dest_session
+		and bare_jid ~= jid_bare(dest_occupant.bare_jid) then
+		-- new nick or has different bare real jid
 		log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
 		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
 		reply.tags[1].attr.code = "409";
