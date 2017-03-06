@@ -39,7 +39,8 @@ local _G = _G;
 
 local _ENV = nil;
 
-local load_modules_for_host, load, unload, reload, get_module, get_items, get_modules, is_loaded, module_has_method, call_module_method;
+local load_modules_for_host, load, unload, reload, get_module, get_items;
+local get_modules, is_loaded, module_has_method, call_module_method;
 
 -- [host] = { [module] = module_env }
 local modulemap = { ["*"] = {} };

@@ -5,7 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
-
+-- luacheck: globals log prosody.log
 
 local format = string.format;
 local setmetatable, rawset, pairs, ipairs, type =

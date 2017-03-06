@@ -38,7 +38,8 @@ local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 
 		if st_type == "error" or (name == "iq" and st_type == "result") then
 			if st_type == "error" then
 				local err_type, err_condition, err_message = stanza:get_error();
-				log("debug", "Discarding unhandled error %s (%s, %s) from %s: %s", name, err_type, err_condition or "unknown condition", origin_type, stanza:top_tag());
+				log("debug", "Discarding unhandled error %s (%s, %s) from %s: %s",
+					name, err_type, err_condition or "unknown condition", origin_type, stanza:top_tag());
 			else
 				log("debug", "Discarding %s from %s of type: %s", name, origin_type, st_type or '<nil>');
 			end
@@ -52,7 +53,8 @@ local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 
 			origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 		end
 	else
-		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s", origin_type, name, xmlns, tostring(stanza)); -- we didn't handle it
+		log("warn", "Unhandled %s stream element or stanza: %s; xmlns=%s: %s",
+			origin_type, name, xmlns, tostring(stanza)); -- we didn't handle it
 		origin:close("unsupported-stanza-type");
 	end
 end
@@ -211,12 +213,14 @@ function core_route_stanza(origin, stanza)
 		else
 			local xmlns = stanza.attr.xmlns;
 			stanza.attr.xmlns = nil;
-			local routed = host_session.events.fire_event("route/remote", { origin = origin, stanza = stanza, from_host = from_host, to_host = host });
+			local routed = host_session.events.fire_event("route/remote", {
+				origin = origin, stanza = stanza, from_host = from_host, to_host = host });
 			stanza.attr.xmlns = xmlns; -- reset
 			if not routed then
 				log("debug", "... no, just kidding.");
 				if stanza.attr.type == "error" or (stanza.name == "iq" and stanza.attr.type == "result") then return; end
-				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed", "Communication with remote domains is not enabled"));
+				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed",
+					"Communication with remote domains is not enabled"));
 			end
 		end
 	end
