@@ -82,7 +82,7 @@ local function sasl_process_cdata(session, stanza)
 	return true;
 end
 
-module:hook_stanza(xmlns_sasl, "success", function (session, stanza)
+module:hook_tag(xmlns_sasl, "success", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or session.external_auth ~= "attempting" then return; end
 	module:log("debug", "SASL EXTERNAL with %s succeeded", session.to_host);
 	session.external_auth = "succeeded"
@@ -93,7 +93,7 @@ module:hook_stanza(xmlns_sasl, "success", function (session, stanza)
 	return true;
 end)
 
-module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
+module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or session.external_auth ~= "attempting" then return; end
 
 	local text = stanza:get_child_text("text");
@@ -114,7 +114,7 @@ module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
 	return true;
 end, 500)
 
-module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
+module:hook_tag("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or not session.secure then return; end
 
 	local mechanisms = stanza:get_child("mechanisms", xmlns_sasl)
