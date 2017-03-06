@@ -169,27 +169,27 @@ local function session_close(session, reason)
 		session.send("</stream:stream>");
 		function session.send() return false; end
 
-		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
-		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
+		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;
+		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason_text or "session closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
-		if reason == nil and not session.notopen and session.type == "c2s" then
+		if reason_text == nil and not session.notopen and session.type == "c2s" then
 			-- Grace time to process data from authenticated cleanly-closed stream
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
-					sm_destroy_session(session, reason);
+					sm_destroy_session(session, reason_text);
 					conn:close();
 				end
 			end);
 		else
-			sm_destroy_session(session, reason);
+			sm_destroy_session(session, reason_text);
 			conn:close();
 		end
 	else
-		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
-		sm_destroy_session(session, reason);
+		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;
+		sm_destroy_session(session, reason_text);
 	end
 end
 
