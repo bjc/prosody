@@ -37,7 +37,7 @@ function stanza(stanza)
 	assert_equal(s1.attr.xmlns, nil);
 	assert_equal(#s1, 0);
 	assert_equal(#s1.tags, 0);
-	
+
 	s1:tag("child1");
 	assert_equal(#s1.tags, 1);
 	assert_equal(s1.tags[1].name, "child1");
@@ -47,7 +47,7 @@ function stanza(stanza)
 	assert_equal(s1.tags[1].name, "child1");
 	assert_equal(#s1.tags[1], 1);
 	assert_equal(s1.tags[1][1].name, "grandchild1");
-	
+
 	s1:up():tag("child2");
 	assert_equal(#s1.tags, 2, tostring(s1));
 	assert_equal(s1.tags[1].name, "child1");
