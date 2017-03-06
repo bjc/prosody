@@ -72,7 +72,8 @@ local function get_storage_config(host)
 		end
 	end
 	if found_sql2 then
-		log("error", "The temporary 'sql2' storage module has now been renamed to 'sql', please update your config file: https://prosody.im/doc/modules/mod_storage_sql2");
+		log("error", "The temporary 'sql2' storage module has now been renamed to 'sql', "
+			.."please update your config file: https://prosody.im/doc/modules/mod_storage_sql2");
 	end
 	return storage_config;
 end
@@ -180,7 +181,8 @@ local function purge(user, host)
 				if driver.purge then
 					purged[driver_name] = driver:purge(user);
 				else
-					log("warn", "Storage driver %s does not support removing all user data, you may need to delete it manually", driver_name);
+					log("warn", "Storage driver %s does not support removing all user data, "
+						.."you may need to delete it manually", driver_name);
 				end
 			end
 		end

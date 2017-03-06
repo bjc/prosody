@@ -158,7 +158,8 @@ do
 
 		function env.Component(name)
 			name = nameprep(name);
-			if rawget(config_table, name) and rawget(config_table[name], "defined") and not rawget(config_table[name], "component_module") then
+			if rawget(config_table, name) and rawget(config_table[name], "defined")
+				and not rawget(config_table[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
 					name, name, name), 0);
 			end
