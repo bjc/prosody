@@ -27,11 +27,12 @@ end
 function _M.handle_cmd(command, origin, stanza)
 	local cmdtag = stanza.tags[1]
 	local sessionid = cmdtag.attr.sessionid or uuid.generate();
-	local dataIn = {};
-	dataIn.to = stanza.attr.to;
-	dataIn.from = stanza.attr.from;
-	dataIn.action = cmdtag.attr.action or "execute";
-	dataIn.form = cmdtag:get_child("x", "jabber:x:data");
+	local dataIn = {
+		to = stanza.attr.to;
+		from = stanza.attr.from;
+		action = cmdtag.attr.action or "execute";
+		form = cmdtag:get_child("x", "jabber:x:data");
+	};
 
 	local data, state = command:handler(dataIn, states[sessionid]);
 	states[sessionid] = state;

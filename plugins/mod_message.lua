@@ -20,7 +20,7 @@ local function process_to_bare(bare, origin, stanza)
 
 	local t = stanza.attr.type;
 	if t == "error" then
-		-- discard
+		return true; -- discard
 	elseif t == "groupchat" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	elseif t == "headline" then
