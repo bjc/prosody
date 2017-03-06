@@ -116,7 +116,8 @@ function api:hook_tag(xmlns, name, handler, priority)
 		self:log("warn", "Error: Insufficient parameters to module:hook_stanza()");
 		return;
 	end
-	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name, function (data) return handler(data.origin, data.stanza, data); end, priority);
+	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name,
+		function (data) return handler(data.origin, data.stanza, data); end, priority);
 end
 api.hook_stanza = api.hook_tag; -- COMPAT w/pre-0.9
 
@@ -188,7 +189,8 @@ function api:shared(...)
 		local path = paths[i];
 		if path:sub(1,1) ~= "/" then -- Prepend default components
 			local n_components = select(2, path:gsub("/", "%1"));
-			path = (n_components<#default_path_components and "/" or "")..t_concat(default_path_components, "/", 1, #default_path_components-n_components).."/"..path;
+			path = (n_components<#default_path_components and "/" or "")
+				..t_concat(default_path_components, "/", 1, #default_path_components-n_components).."/"..path;
 		end
 		local shared = shared_data[path];
 		if not shared then

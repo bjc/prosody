@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: globals prosody.full_sessions prosody.bare_sessions
 
 local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
@@ -77,7 +78,10 @@ local function retire_session(session)
 end
 
 local function destroy_session(session, err)
-	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
+	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s",
+		session.full_jid or "(unknown)", session.username or "(unknown)",
+		session.host or "(unknown)", err and (": "..err) or "");
+
 	if session.destroyed then return; end
 
 	-- Remove session/resource from user's session list
