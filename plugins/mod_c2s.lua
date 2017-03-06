@@ -197,7 +197,7 @@ module:hook_global("user-deleted", function(event)
 	local username, host = event.username, event.host;
 	local user = hosts[host].sessions[username];
 	if user and user.sessions then
-		for jid, session in pairs(user.sessions) do
+		for _, session in pairs(user.sessions) do
 			session:close{ condition = "not-authorized", text = "Account deleted" };
 		end
 	end
