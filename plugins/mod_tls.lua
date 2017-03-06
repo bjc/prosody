@@ -122,7 +122,7 @@ module:hook("s2s-stream-features", function(event)
 end);
 
 -- For s2sout connections, start TLS if we can
-module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
+module:hook_tag("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	module:log("debug", "Received features element");
 	if can_do_tls(session) and stanza:get_child("starttls", xmlns_starttls) then
 		module:log("debug", "%s is offering TLS, taking up the offer...", session.to_host);
@@ -131,7 +131,7 @@ module:hook_stanza("http://etherx.jabber.org/streams", "features", function (ses
 	end
 end, 500);
 
-module:hook_stanza(xmlns_starttls, "proceed", function (session, stanza) -- luacheck: ignore 212/stanza
+module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luacheck: ignore 212/stanza
 	if session.type == "s2sout_unauthed" and can_do_tls(session) then
 		module:log("debug", "Proceeding with TLS on s2sout...");
 		session:reset_stream();
