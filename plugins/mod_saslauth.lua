@@ -105,7 +105,7 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 		end
 	end
 	if text and condition then
-		condition = connection .. ": " .. text;
+		condition = condition .. ": " .. text;
 	end
 	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, condition);
 
