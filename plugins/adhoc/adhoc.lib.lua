@@ -34,6 +34,8 @@ function _M.handle_cmd(command, origin, stanza)
 	local cmdtag = stanza.tags[1]
 	local sessionid = cmdtag.attr.sessionid or uuid.generate();
 	local dataIn = {
+		origin = origin;
+		stanza = stanza;
 		to = stanza.attr.to;
 		from = stanza.attr.from;
 		action = cmdtag.attr.action or "execute";
