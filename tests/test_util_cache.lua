@@ -10,7 +10,7 @@ function new(new)
 	expect_kv(nil, nil, c:tail());
 
 	assert_equal(c:count(), 0);
-	
+
 	c:set("one", 1)
 	assert_equal(c:count(), 1);
 	expect_kv("one", 1, c:head());
@@ -29,12 +29,12 @@ function new(new)
 	assert_equal(c:count(), 5);
 	expect_kv("five", 5, c:head());
 	expect_kv("one", 1, c:tail());
-	
+
 	c:set("foo", nil);
 	assert_equal(c:count(), 5);
 	expect_kv("five", 5, c:head());
 	expect_kv("one", 1, c:tail());
-	
+
 	assert_equal(c:get("one"), 1);
 	expect_kv("five", 5, c:head());
 	expect_kv("one", 1, c:tail());
@@ -46,32 +46,32 @@ function new(new)
 
 	assert_equal(c:get("foo"), nil);
 	assert_equal(c:get("bar"), nil);
-	
+
 	c:set("six", 6);
 	assert_equal(c:count(), 5);
 	expect_kv("six", 6, c:head());
 	expect_kv("two", 2, c:tail());
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), 2);
 	assert_equal(c:get("three"), 3);
 	assert_equal(c:get("four"), 4);
 	assert_equal(c:get("five"), 5);
 	assert_equal(c:get("six"), 6);
-	
+
 	c:set("three", nil);
 	assert_equal(c:count(), 4);
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), 2);
 	assert_equal(c:get("three"), nil);
 	assert_equal(c:get("four"), 4);
 	assert_equal(c:get("five"), 5);
 	assert_equal(c:get("six"), 6);
-	
+
 	c:set("seven", 7);
 	assert_equal(c:count(), 5);
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), 2);
 	assert_equal(c:get("three"), nil);
@@ -79,10 +79,10 @@ function new(new)
 	assert_equal(c:get("five"), 5);
 	assert_equal(c:get("six"), 6);
 	assert_equal(c:get("seven"), 7);
-	
+
 	c:set("eight", 8);
 	assert_equal(c:count(), 5);
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), nil);
 	assert_equal(c:get("three"), nil);
@@ -91,10 +91,10 @@ function new(new)
 	assert_equal(c:get("six"), 6);
 	assert_equal(c:get("seven"), 7);
 	assert_equal(c:get("eight"), 8);
-	
+
 	c:set("four", 4);
 	assert_equal(c:count(), 5);
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), nil);
 	assert_equal(c:get("three"), nil);
@@ -103,10 +103,10 @@ function new(new)
 	assert_equal(c:get("six"), 6);
 	assert_equal(c:get("seven"), 7);
 	assert_equal(c:get("eight"), 8);
-	
+
 	c:set("nine", 9);
 	assert_equal(c:count(), 5);
-	
+
 	assert_equal(c:get("one"), nil);
 	assert_equal(c:get("two"), nil);
 	assert_equal(c:get("three"), nil);
@@ -268,7 +268,7 @@ function new(new)
 
 
 	local c4 = new(3, false);
-	
+
 	assert_equal(c4:set("a", 1), true);
 	assert_equal(c4:set("a", 1), true);
 	assert_equal(c4:set("a", 1), true);
@@ -290,7 +290,7 @@ function new(new)
 		end
 		return false;
 	end);
-	
+
 	assert_equal(c5:set("a", 1), true);
 	assert_equal(c5:set("a", 1), true);
 	assert_equal(c5:set("a", 1), true);
