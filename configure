@@ -194,7 +194,7 @@ do
          LUA_INCDIR_SET=yes
          CFLAGS="-Wall -fPIC -I/usr/local/include"
          LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-         LUA_SUFFIX="-5.1"
+         LUA_SUFFIX="51"
          LUA_SUFFIX_SET=yes
          LUA_DIR=/usr/local
          LUA_DIR_SET=yes
