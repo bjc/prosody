@@ -542,7 +542,7 @@ int string2resource(const char *s) {
 	return -1;
 }
 
-unsigned long int arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
+rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
 		case LUA_TSTRING:
 
