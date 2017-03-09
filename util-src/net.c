@@ -134,7 +134,7 @@ int luaopen_util_net(lua_State *L) {
 		{ NULL, NULL }
 	};
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 1);
 	luaL_setfuncs(L, exports, 0);
 	return 1;
 }
