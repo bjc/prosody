@@ -100,7 +100,7 @@ int luaopen_util_crand(lua_State *L) {
 	luaL_checkversion(L);
 #endif
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 2);
 	lua_pushcfunction(L, Lrandom);
 	lua_setfield(L, -2, "bytes");
 
