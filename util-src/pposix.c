@@ -660,7 +660,7 @@ int lc_uname(lua_State *L) {
 		return 2;
 	}
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 6);
 	lua_pushstring(L, uname_info.sysname);
 	lua_setfield(L, -2, "sysname");
 	lua_pushstring(L, uname_info.nodename);
@@ -709,7 +709,7 @@ int lc_setenv(lua_State *L) {
 #ifdef WITH_MALLINFO
 int lc_meminfo(lua_State *L) {
 	struct mallinfo info = mallinfo();
-	lua_newtable(L);
+	lua_createtable(L, 0, 5);
 	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
 	lua_pushinteger(L, info.arena);
 	lua_setfield(L, -2, "allocated");

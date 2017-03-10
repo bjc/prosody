@@ -187,7 +187,7 @@ int luaopen_util_ringbuffer(lua_State *L) {
 		lua_pushcfunction(L, rb_length);
 		lua_setfield(L, -2, "__len");
 
-		lua_newtable(L); /* __index */
+		lua_createtable(L, 0, 7); /* __index */
 		{
 			lua_pushcfunction(L, rb_find);
 			lua_setfield(L, -2, "find");
@@ -207,7 +207,7 @@ int luaopen_util_ringbuffer(lua_State *L) {
 		lua_setfield(L, -2, "__index");
 	}
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 1);
 	lua_pushcfunction(L, rb_new);
 	lua_setfield(L, -2, "new");
 	return 1;
