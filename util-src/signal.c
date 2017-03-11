@@ -26,7 +26,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
 
 #include <signal.h>
 #include <stdlib.h>
