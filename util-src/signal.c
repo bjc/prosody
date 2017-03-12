@@ -26,7 +26,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define _DEFAULT_SOURCE
+#define _GNU_SOURCE
 
 #include <signal.h>
 #include <stdlib.h>
