@@ -213,7 +213,7 @@ function api:get_option(name, default_value)
 	return value;
 end
 
-function api:get_option_string(name, default_value)
+function api:get_option_scalar(name, default_value)
 	local value = self:get_option(name, default_value);
 	if type(value) == "table" then
 		if #value > 1 then
@@ -221,6 +221,11 @@ function api:get_option_string(name, default_value)
 		end
 		value = value[1];
 	end
+	return value;
+end
+
+function api:get_option_string(name, default_value)
+	local value = self:get_option_scalar(name, default_value);
 	if value == nil then
 		return nil;
 	end
@@ -228,13 +233,7 @@ function api:get_option_string(name, default_value)
 end
 
 function api:get_option_number(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
+	local value = self:get_option_scalar(name, ...);
 	local ret = tonumber(value);
 	if value ~= nil and ret == nil then
 		self:log("error", "Config option '%s' not understood, expecting a number", name);
@@ -243,13 +242,7 @@ function api:get_option_number(name, ...)
 end
 
 function api:get_option_boolean(name, ...)
-	local value = self:get_option(name, ...);
-	if type(value) == "table" then
-		if #value > 1 then
-			self:log("error", "Config option '%s' does not take a list, using just the first item", name);
-		end
-		value = value[1];
-	end
+	local value = self:get_option_scalar(name, ...);
 	if value == nil then
 		return nil;
 	end
