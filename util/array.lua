@@ -33,6 +33,19 @@ function array_mt.__add(a1, a2)
 	return res:append(a1):append(a2);
 end
 
+function array_mt.__eq(a, b)
+	if #a == #b then
+		for i = 1, #a do
+			if a[i] ~= b[i] then
+				return false;
+			end
+		end
+	else
+		return false;
+	end
+	return true;
+end
+
 setmetatable(array, { __call = new_array });
 
 -- Read-only methods

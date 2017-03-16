@@ -9,8 +9,7 @@ local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
-local pubsub_disco_name = module:get_option("name");
-if type(pubsub_disco_name) ~= "string" then pubsub_disco_name = "Prosody PubSub Service"; end
+local pubsub_disco_name = module:get_option_string("name" "Prosody PubSub Service");
 local expose_publisher = module:get_option_boolean("expose_publisher", false)
 
 local service;
