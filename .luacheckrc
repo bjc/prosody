@@ -48,6 +48,7 @@ files["plugins/"] = {
 		"module.get_option_inherited_set",
 		"module.get_option_number",
 		"module.get_option_path",
+		"module.get_option_scalar",
 		"module.get_option_set",
 		"module.get_option_string",
 		"module.handle_items",

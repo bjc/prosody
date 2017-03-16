@@ -10,7 +10,10 @@
 --
 -- luacheck: ignore 122/prosody
 
-local global_default_policy = module:get_option("default_archive_policy", true);
+local global_default_policy = module:get_option_string("default_archive_policy", true);
+if global_default_policy ~= "roster" then
+	global_default_policy = module:get_option_boolean("default_archive_policy", global_default_policy);
+end
 
 do
 	-- luacheck: ignore 211/prefs_format

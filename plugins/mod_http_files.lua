@@ -19,7 +19,7 @@ local path_sep = package.config:sub(1,1);
 local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path"));
 local cache_size = module:get_option_number("http_files_cache_size", 128);
 local cache_max_file_size = module:get_option_number("http_files_cache_max_file_size", 4096);
-local dir_indices = module:get_option("http_index_files", { "index.html", "index.htm" });
+local dir_indices = module:get_option_array("http_index_files", { "index.html", "index.htm" });
 local directory_index = module:get_option_boolean("http_dir_listing");
 
 local mime_map = module:shared("/*/http_files/mime").types;
@@ -37,7 +37,7 @@ if not mime_map then
 	};
 	module:shared("/*/http_files/mime").types = mime_map;
 
-	local mime_types, err = open(module:get_option_string("mime_types_file", "/etc/mime.types"),"r");
+	local mime_types, err = open(module:get_option_path("mime_types_file", "/etc/mime.types", prosody.paths.config), "r");
 	if mime_types then
 		local mime_data = mime_types:read("*a");
 		mime_types:close();
