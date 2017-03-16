@@ -13,7 +13,7 @@ local jid_bare = require "util.jid".bare;
 local st = require "util.stanza"
 local calculate_hash = require "util.caps".calculate_hash;
 
-local disco_items = module:get_option("disco_items") or {};
+local disco_items = module:get_option_array("disco_items", {})
 do -- validate disco_items
 	for _, item in ipairs(disco_items) do
 		local err;
