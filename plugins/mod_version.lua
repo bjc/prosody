@@ -16,11 +16,11 @@ local query = st.stanza("query", {xmlns = "jabber:iq:version"})
 	:tag("name"):text("Prosody"):up()
 	:tag("version"):text(prosody.version):up();
 
-if not module:get_option("hide_os_type") then
+if not module:get_option_boolean("hide_os_type") then
 	if os.getenv("WINDIR") then
 		version = "Windows";
 	else
-		local os_version_command = module:get_option("os_version_command");
+		local os_version_command = module:get_option_string("os_version_command");
 		local ok, pposix = pcall(require, "util.pposix");
 		if not os_version_command and (ok and pposix and pposix.uname) then
 			version = pposix.uname().sysname;
