@@ -37,7 +37,7 @@ if not mime_map then
 	};
 	module:shared("/*/http_files/mime").types = mime_map;
 
-	local mime_types, err = open(module:get_option_path("mime_types_file", "/etc/mime.types", prosody.paths.config), "r");
+	local mime_types, err = open(module:get_option_path("mime_types_file", "/etc/mime.types", "config"), "r");
 	if mime_types then
 		local mime_data = mime_types:read("*a");
 		mime_types:close();
