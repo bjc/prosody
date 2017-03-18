@@ -802,15 +802,17 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			local affiliation = self:get_affiliation(actor);
 			local current_nick = self._jid_nick[actor];
 			local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
-			local item = stanza.tags[1].tags[1];
-			if item and item.name == "item" then
-				if type == "set" then
+			if type == "set" then
+				local at_least_one_item_provided = false;
+
+				for item in stanza.tags[1]:childtags("item") do
+					at_least_one_item_provided = true;
+
 					local callback = function() origin.send(st.reply(stanza)); end
 					if item.attr.jid then -- Validate provided JID
 						item.attr.jid = jid_prep(item.attr.jid);
 						if not item.attr.jid then
 							origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
-							return;
 						end
 					end
 					if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
@@ -829,8 +831,17 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 						if not success then origin.send(st.error_reply(stanza, errtype, err)); end
 					else
 						origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+						return;
 					end
-				elseif type == "get" then
+				end
+
+				if not at_least_one_item_provided then
+					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+					return;
+				end
+			elseif type == "get" then
+				local item = stanza.tags[1].tags[1];
+				if item and item.name == "item" then
 					local _aff = item.attr.affiliation;
 					local _rol = item.attr.role;
 					if _aff and not _rol then
@@ -868,9 +879,9 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					else
 						origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 					end
+				else
+					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 				end
-			elseif type == "set" or type == "get" then
-				origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			end
 		elseif xmlns == "http://jabber.org/protocol/muc#owner" and (type == "get" or type == "set") and stanza.tags[1].name == "query" then
 			if self:get_affiliation(stanza.attr.from) ~= "owner" then
