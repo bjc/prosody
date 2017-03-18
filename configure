@@ -2,10 +2,12 @@
 
 # Defaults
 
+APP_NAME="Prosody"
+APP_DIRNAME="prosody"
 PREFIX="/usr/local"
-SYSCONFDIR="$PREFIX/etc/prosody"
+SYSCONFDIR="$PREFIX/etc/$APP_DIRNAME"
 LIBDIR="$PREFIX/lib"
-DATADIR="$PREFIX/var/lib/prosody"
+DATADIR="$PREFIX/var/lib/$APP_DIRNAME"
 LUA_SUFFIX=""
 LUA_DIR="/usr"
 LUA_BINDIR="/usr/bin"
@@ -29,19 +31,19 @@ IDN_LIBRARY="idn"
 
 show_help() {
 cat <<EOF
-Configure Prosody prior to building.
+Configure $APP_NAME prior to building.
 
 --help                      This help.
 --ostype=OS                 Use one of the OS presets. May be one of:
                             debian, macosx, linux, freebsd, openbsd, netbsd
---prefix=DIR                Prefix where Prosody should be installed.
+--prefix=DIR                Prefix where $APP_NAME should be installed.
                             Default is $PREFIX
 --sysconfdir=DIR            Location where the config file should be installed.
-                            Default is \$PREFIX/etc/prosody
+                            Default is \$PREFIX/etc/$APP_DIRNAME
 --libdir=DIR                Location where the server files should be stored.
                             Default is \$PREFIX/lib
 --datadir=DIR               Location where the server data should be stored.
-                            Default is \$PREFIX/var/lib/prosody
+                            Default is \$PREFIX/var/lib/$APP_DIRNAME
 --lua-version=VERSION       Use specific Lua version: 5.1, 5.2, or 5.3
                             Default is auto-detected.
 --lua-suffix=SUFFIX         Versioning suffix to use in Lua filenames.
@@ -77,7 +79,7 @@ Configure Prosody prior to building.
                             Default is $CC
 --linker=CC                 The linker to use when building modules.
                             Default is $LD
---require-config            Will cause Prosody to refuse to run when
+--require-config            Will cause $APP_NAME to refuse to run when
                             it fails to find a configuration file
 --no-example-certs          Disables generation of example certificates.
 EOF
@@ -325,16 +327,16 @@ done
 if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
 then
    if [ "$PREFIX" = "/usr" ]
-   then SYSCONFDIR=/etc/prosody
-   else SYSCONFDIR=$PREFIX/etc/prosody
+   then SYSCONFDIR=/etc/$APP_DIRNAME
+   else SYSCONFDIR=$PREFIX/etc/$APP_DIRNAME
    fi
 fi
 
 if [ "$PREFIX_SET" = "yes" -a ! "$DATADIR_SET" = "yes" ]
 then
    if [ "$PREFIX" = "/usr" ]
-   then DATADIR=/var/lib/prosody
-   else DATADIR=$PREFIX/var/lib/prosody
+   then DATADIR=/var/lib/$APP_DIRNAME
+   else DATADIR=$PREFIX/var/lib/$APP_DIRNAME
    fi
 fi
 
@@ -581,7 +583,7 @@ RANDOM_LIBS=$PRNGLIBS
 EOF
 
 echo "Installation prefix: $PREFIX"
-echo "Prosody configuration directory: $SYSCONFDIR"
+echo "$APP_NAME configuration directory: $SYSCONFDIR"
 echo "Using Lua from: $LUA_DIR"
 
 make clean > /dev/null 2> /dev/null
