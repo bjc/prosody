@@ -9,7 +9,7 @@
 local server = require "net.server";
 local math_min = math.min
 local math_huge = math.huge
-local get_time = require "socket".gettime;
+local get_time = require "util.time".now
 local t_insert = table.insert;
 local pairs = pairs;
 local type = type;
