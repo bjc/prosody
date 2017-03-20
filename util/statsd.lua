@@ -1,6 +1,6 @@
 local socket = require "socket";
 
-local time = require "socket".gettime;
+local time = require "util.time".now
 
 local function new(config)
 	if not config or not config.statsd_server then

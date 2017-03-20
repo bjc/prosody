@@ -1,6 +1,6 @@
 local t_sort = table.sort
 local m_floor = math.floor;
-local time = require "socket".gettime;
+local time = require "util.time".now;
 
 local function nop_function() end
 

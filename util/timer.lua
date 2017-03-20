@@ -9,7 +9,7 @@
 local indexedbheap = require "util.indexedbheap";
 local log = require "util.logger".init("timer");
 local server = require "net.server";
-local get_time = require "socket".gettime;
+local get_time = require "util.time".now
 local type = type;
 local debug_traceback = debug.traceback;
 local tostring = tostring;

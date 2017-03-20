@@ -1,5 +1,5 @@
 
-local gettime = require "socket".gettime;
+local gettime = require "util.time".now
 local setmetatable = setmetatable;
 local floor = math.floor;
 
