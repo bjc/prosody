@@ -93,7 +93,7 @@ local function check_dependencies()
 
 	if not ssl then
 		missingdep("LuaSec", {
-				["Debian/Ubuntu"] = "http://prosody.im/download/start#debian_and_ubuntu";
+				["Debian/Ubuntu"] = "sudo apt-get install lua-sec";
 				["luarocks"] = "luarocks install luasec";
 				["Source"] = "https://github.com/brunoos/luasec";
 			}, "SSL/TLS support will not be available");
