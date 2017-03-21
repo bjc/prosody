@@ -16,7 +16,7 @@ local stat = lfs.attributes;
 local build_path = require"socket.url".build_path;
 local path_sep = package.config:sub(1,1);
 
-local base_path = module:get_option_string("http_files_dir", module:get_option_string("http_path"));
+local base_path = module:get_option_path("http_files_dir", module:get_option_path("http_path"));
 local cache_size = module:get_option_number("http_files_cache_size", 128);
 local cache_max_file_size = module:get_option_number("http_files_cache_max_file_size", 4096);
 local dir_indices = module:get_option_array("http_index_files", { "index.html", "index.htm" });
