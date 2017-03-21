@@ -31,7 +31,7 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_affiliationnotify";
 		type = "boolean";
-		label = "Notify users when their affiliation changes when they are not in the room?";
+		label = "Notify absent users when their affiliation changes?";
 		value = get_affiliation_notify(event.room);
 	});
 end, 100-11);
