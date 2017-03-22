@@ -496,6 +496,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 							self.locked = nil; -- Older groupchat protocol doesn't lock
 						end
 					elseif self.locked then -- Deny entry
+						module:log("debug", "Room is locked, denying entry");
 						origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
 						return;
 					end
