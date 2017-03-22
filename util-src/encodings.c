@@ -173,7 +173,7 @@ static const luaL_Reg Reg_base64[] = {
  * Decode one UTF-8 sequence, returning NULL if byte sequence is invalid.
  */
 static const char *utf8_decode(const char *o, int *val) {
-	static unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
+	static const unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
 	const unsigned char *s = (const unsigned char *)o;
 	unsigned int c = s[0];
 	unsigned int res = 0;  /* final result */
