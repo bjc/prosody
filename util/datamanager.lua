@@ -132,15 +132,8 @@ local function load(username, host, datastore)
 			-- No such file, ok to ignore
 			return nil;
 		end
-		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
-		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil;
-		else -- file exists, but can't be read
-			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil, "Error reading storage";
-		end
+		log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
+		return nil, "Error reading storage";
 	end
 
 	local success, ret = pcall(data);
@@ -306,15 +299,8 @@ local function list_load(username, host, datastore)
 			-- No such file, ok to ignore
 			return nil;
 		end
-		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
-		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil;
-		else -- file exists, but can't be read
-			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil, "Error reading storage";
-		end
+		log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
+		return nil, "Error reading storage";
 	end
 
 	local success, ret = pcall(data);
