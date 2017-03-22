@@ -24,8 +24,10 @@ local t_insert = table.insert;
 local t_concat = table.concat;
 local envloadfile = require"util.envload".envloadfile;
 local serialize = require "util.serialization".serialize;
-local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
+-- Extract directory seperator from package.config (an undocumented string that comes with lua)
+local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" )
+
 local prosody = prosody;
 
 local raw_mkdir = lfs.mkdir;
