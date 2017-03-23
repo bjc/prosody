@@ -112,7 +112,7 @@ module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(even
 		return true;
 	end
 	local reply_query = get_server_disco_info();
-	reply_query.node = node;
+	reply_query.attr.node = node;
 	local reply = st.reply(stanza):add_child(reply_query);
 	origin.send(reply);
 	return true;
