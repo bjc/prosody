@@ -24,8 +24,10 @@ local t_insert = table.insert;
 local t_concat = table.concat;
 local envloadfile = require"util.envload".envloadfile;
 local serialize = require "util.serialization".serialize;
-local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" ) -- Extract directory seperator from package.config (an undocumented string that comes with lua)
 local lfs = require "lfs";
+-- Extract directory seperator from package.config (an undocumented string that comes with lua)
+local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" )
+
 local prosody = prosody;
 
 local raw_mkdir = lfs.mkdir;
@@ -130,15 +132,8 @@ local function load(username, host, datastore)
 			-- No such file, ok to ignore
 			return nil;
 		end
-		local mode = lfs.attributes(getpath(username, host, datastore), "mode");
-		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil;
-		else -- file exists, but can't be read
-			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil, "Error reading storage";
-		end
+		log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
+		return nil, "Error reading storage";
 	end
 
 	local success, ret = pcall(data);
@@ -304,15 +299,8 @@ local function list_load(username, host, datastore)
 			-- No such file, ok to ignore
 			return nil;
 		end
-		local mode = lfs.attributes(getpath(username, host, datastore, "list"), "mode");
-		if not mode then
-			log("debug", "Assuming empty %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil;
-		else -- file exists, but can't be read
-			-- TODO more detailed error checking and logging?
-			log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
-			return nil, "Error reading storage";
-		end
+		log("error", "Failed to load %s storage ('%s') for user: %s@%s", datastore, err, username or "nil", host or "nil");
+		return nil, "Error reading storage";
 	end
 
 	local success, ret = pcall(data);
