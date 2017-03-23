@@ -35,10 +35,6 @@ local time_now = os.time;
 local m_min = math.min;
 local timestamp, timestamp_parse = require "util.datetime".datetime, require "util.datetime".parse;
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
-local global_default_policy = module:get_option_string("default_archive_policy", true);
-if global_default_policy ~= "roster" then
-	global_default_policy = module:get_option_boolean("default_archive_policy", global_default_policy);
-end
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
 local archive_store = module:get_option_string("archive_store", "archive");
@@ -222,10 +218,6 @@ local function shall_store(user, who)
 	-- Below could be done by a metatable
 	local default = prefs[false];
 	module:log("debug", "%s's default rule is %s", user, tostring(default));
-	if default == nil then
-		default = global_default_policy;
-		module:log("debug", "Using global default rule, %s", tostring(default));
-	end
 	if default == "roster" then
 		return has_in_roster(user, who);
 	end
