@@ -384,7 +384,7 @@ interface.send = interface.write;
 
 -- Close, possibly after writing is done
 function interface:close()
-	if self._wantwrite then
+	if self.writebuffer and self.writebuffer[1] then
 		self:setflags(false, true); -- Flush final buffer contents
 		self.write, self.send = noop, noop; -- No more writing
 		log("debug", "Close %s after writing", tostring(self));
