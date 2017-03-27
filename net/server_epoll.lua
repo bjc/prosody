@@ -359,13 +359,7 @@ end
 
 -- The write buffer has been successfully emptied
 function interface:ondrain()
-	if self._toclose then
-		return self:close();
-	elseif self._starttls then
-		return self:starttls();
-	else
-		return self:on("drain");
-	end
+	return self:on("drain");
 end
 
 -- Add data to write buffer and set flag for wanting to write
@@ -388,7 +382,7 @@ function interface:close()
 		self:setflags(false, true); -- Flush final buffer contents
 		self.write, self.send = noop, noop; -- No more writing
 		log("debug", "Close %s after writing", tostring(self));
-		self._toclose = true;
+		self.ondrain = interface.close;
 	else
 		log("debug", "Close %s now", tostring(self));
 		self.write, self.send = noop, noop;
@@ -419,7 +413,8 @@ function interface:starttls(ctx)
 	if ctx then self.tls = ctx; end
 	if self.writebuffer and self.writebuffer[1] then
 		log("debug", "Start TLS on %s after write", tostring(self));
-		self._starttls = true;
+		self.ondrain = interface.starttls;
+		self.starttls = false;
 		self:setflags(nil, true); -- make sure wantwrite is set
 	else
 		log("debug", "Start TLS on %s now", tostring(self));
@@ -432,7 +427,7 @@ function interface:starttls(ctx)
 		end
 		conn:settimeout(0);
 		self.conn = conn;
-		self._starttls = nil;
+		self.ondrain = nil;
 		self.onwriteable = interface.tlshandskake;
 		self.onreadable = interface.tlshandskake;
 		self:setflags(true, true);
@@ -448,16 +443,9 @@ function interface:tlshandskake()
 		log("debug", "TLS handshake on %s complete", tostring(self));
 		self.onwriteable = nil;
 		self.onreadable = nil;
-		self:setflags(true, true);
-		local old = self._tls;
 		self._tls = true;
-		self.starttls = false;
-		if old == false then
-			self:init();
-		else
-			self:setflags(true, true);
-			self:on("status", "ssl-handshake-complete");
-		end
+		self:on("status", "ssl-handshake-complete");
+		self:init();
 	elseif err == "wantread" then
 		log("debug", "TLS handshake on %s to wait until readable", tostring(self));
 		self:setflags(true, false);
@@ -511,7 +499,6 @@ end
 -- Initialization
 function interface:init()
 	if self.tls and not self._tls then
-		self._tls = false; -- This means we should call onconnect when TLS is up
 		return self:starttls();
 	else
 		self.onwriteable = interface.onconnect;
@@ -546,9 +533,12 @@ end
 
 -- Connected!
 function interface:onconnect()
+	if not self._connected then
+		self._connected = true;
+		self:on("connect");
+	end
 	self.onwriteable = nil;
-	self:on("connect");
-	self:setflags(true);
+	self:setflags(true, false);
 	return self:onwriteable();
 end
 
