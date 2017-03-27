@@ -143,6 +143,10 @@ end
 
 -- Call a listener callback
 function interface:on(what, ...)
+	if not self.listeners then
+		log("error", "%s has no listeners", self);
+		return;
+	end
 	local listener = self.listeners["on"..what];
 	if not listener then
 		-- log("debug", "Missing listener 'on%s'", what); -- uncomment for development and debugging
