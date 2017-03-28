@@ -240,7 +240,7 @@ local function append(username, host, datastore, ext, data)
 
 	ok, msg = f:close();
 	if not ok then
-		return ok, msg;
+		return ok, msg, "close";
 	end
 
 	return true, pos;
@@ -252,9 +252,10 @@ local function list_append(username, host, datastore, data)
 	-- save the datastore
 
 	data = "item(" ..  serialize(data) .. ");\n";
-	local ok, msg = append(username, host, datastore, "list", data);
+	local ok, msg, where = append(username, host, datastore, "list", data);
 	if not ok then
-		log("error", "Unable to write to %s storage ('%s') for user: %s@%s", datastore, msg, username or "nil", host or "nil");
+		log("error", "Unable to write to %s storage ('%s' in %s) for user: %s@%s",
+			datastore, msg, where, username or "nil", host or "nil");
 		return ok, msg;
 	end
 	return true;
