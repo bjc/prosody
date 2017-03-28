@@ -7,7 +7,7 @@
 --
 
 
-local want_pposix_version = "0.3.6";
+local want_pposix_version = "0.4.0";
 
 local pposix = assert(require "util.pposix");
 if pposix._VERSION ~= want_pposix_version then
