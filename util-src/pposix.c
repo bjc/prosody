@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.3.6"
+#define MODULE_VERSION "0.4.0"
 
 
 #if defined(__linux__)
@@ -730,62 +730,66 @@ int lc_meminfo(lua_State *L) {
 }
 #endif
 
-/* File handle extraction blatantly stolen from
- * https://github.com/rrthomas/luaposix/blob/master/lposix.c#L631
- * */
+/*
+ * Append some data to a file handle
+ * Attempt to allocate space first
+ * Truncate to original size on failure
+ */
+int lc_atomic_append(lua_State *L) {
+	int err;
+	size_t len;
 
-int lc_fallocate(lua_State *L) {
-	int ret;
-	off_t offset, len;
 	FILE *f = *(FILE **) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+	const char *data = luaL_checklstring(L, 2, &len);
 
-	if(f == NULL) {
-		return luaL_error(L, "attempt to use a closed file");
-	}
-
-	offset = luaL_checkinteger(L, 2);
-	len = luaL_checkinteger(L, 3);
+	off_t offset = ftell(f);
 
 #if defined(__linux__)
-	errno = 0;
-	ret = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len);
+	/* Try to allocate space without changing the file size. */
+	if((err = fallocate(fileno(f), FALLOC_FL_KEEP_SIZE, offset, len))) {
+		if(errno != 0) {
+			/* Some old versions of Linux apparently use the return value instead of errno */
+			err = errno;
+		}
+		switch(err) {
+			case ENOSYS: /* Kernel doesn't implement fallocate */
+			case EOPNOTSUPP: /* Filesystem doesn't support it */
+				/* Ignore and proceed to try to write */
+				break;
 
-	if(ret == 0) {
-		lua_pushboolean(L, 1);
-		return 1;
+			case ENOSPC: /* No space left */
+			default: /* Other issues */
+				lua_pushnil(L);
+				lua_pushstring(L, strerror(err));
+				lua_pushinteger(L, err);
+				return 3;
+		}
 	}
-
-	/* Some old versions of Linux apparently use the return value instead of errno */
-	if(errno == 0) {
-		errno = ret;
-	}
-
-	if(errno != ENOSYS && errno != EOPNOTSUPP) {
-		lua_pushnil(L);
-		lua_pushstring(L, strerror(errno));
-		return 2;
-	}
-
 #endif
 
-	ret = posix_fallocate(fileno(f), offset, len);
-
-	if(ret == 0) {
-		lua_pushboolean(L, 1);
-		return 1;
-	} else {
-		lua_pushnil(L);
-		lua_pushstring(L, strerror(ret));
-
-		/* posix_fallocate() can leave a bunch of NULs at the end, so we cut that
-		 * this assumes that offset == length of the file */
-		if(ftruncate(fileno(f), offset) != 0) {
-			lua_pushstring(L, strerror(errno));
-			return 3;
+	if(fwrite(data, sizeof(char), len, f) == len) {
+		if(fflush(f) == 0) {
+			lua_pushboolean(L, 1); /* Great success! */
+			return 1;
+		} else {
+			err = errno;
 		}
-
-		return 2;
+	} else {
+		err = ferror(f);
 	}
+
+	fseek(f, offset, SEEK_SET);
+
+	/* Cut partially written data */
+	if(ftruncate(fileno(f), offset)) {
+		/* The file is now most likely corrupted, throw hard error */
+		return luaL_error(L, "atomic_append() failed in ftruncate(): %s", strerror(errno));
+	}
+
+	lua_pushnil(L);
+	lua_pushstring(L, strerror(err));
+	lua_pushinteger(L, err);
+	return 3;
 }
 
 /* Register functions */
@@ -827,7 +831,7 @@ int luaopen_util_pposix(lua_State *L) {
 		{ "meminfo", lc_meminfo },
 #endif
 
-		{ "fallocate", lc_fallocate },
+		{ "atomic_append", lc_atomic_append },
 
 		{ NULL, NULL }
 	};
