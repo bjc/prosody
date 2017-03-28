@@ -223,8 +223,7 @@ local function append(username, host, datastore, ext, data)
 	if type(data) ~= "string" then return; end
 	local filename = getpath(username, host, datastore, ext, true);
 
-	local ok;
-	local f, msg, errno = io_open(filename, "r+");
+	local f = io_open(filename, "r+");
 	if not f then
 		return atomic_store(filename, data);
 		-- File did probably not exist, let's create it
@@ -232,7 +231,7 @@ local function append(username, host, datastore, ext, data)
 
 	local pos = f:seek("end");
 
-	ok, msg = atomic_append(f, data);
+	local ok, msg = atomic_append(f, data);
 
 	if not ok then
 		f:close();
