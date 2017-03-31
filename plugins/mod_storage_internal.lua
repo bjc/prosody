@@ -120,6 +120,12 @@ function archive:find(username, query)
 	end, count;
 end
 
+function archive:dates(username)
+	local items, err = datamanager.list_load(username, host, self.store);
+	if not items then return items, err; end
+	return array(items):pluck("when"):map(datetime.date):unique();
+end
+
 function archive:delete(username, query)
 	if not query or next(query) == nil then
 		return datamanager.list_store(username, host, self.store, nil);
