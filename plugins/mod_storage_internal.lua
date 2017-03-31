@@ -3,19 +3,23 @@ local datamanager = require "core.storagemanager".olddm;
 local host = module.host;
 
 local driver = {};
-local driver_mt = { __index = driver };
 
 function driver:open(store, typ)
-	if typ and typ ~= "keyval" then
+	local mt = self[typ or "keyval"]
+	if not mt then
 		return nil, "unsupported-store";
 	end
-	return setmetatable({ store = store, type = typ }, driver_mt);
+	return setmetatable({ store = store, type = typ }, mt);
 end
-function driver:get(user)
+
+local keyval = { };
+driver.keyval = { __index = keyval };
+
+function keyval:get(user)
 	return datamanager.load(user, host, self.store);
 end
 
-function driver:set(user, data)
+function keyval:set(user, data)
 	return datamanager.store(user, host, self.store, data);
 end
 
@@ -23,7 +27,7 @@ function driver:stores(username)
 	return datamanager.stores(username, host);
 end
 
-function driver:users()
+function keyval:users()
 	return datamanager.users(host, self.store, self.type);
 end
 
