@@ -92,6 +92,18 @@ function array_base.sort(outa, ina, ...)
 	return outa;
 end
 
+function array_base.unique(outa, ina)
+	local seen = {};
+	return array_base.filter(outa, ina, function (item)
+		if seen[item] then
+			return false;
+		else
+			seen[item] = true;
+			return true;
+		end
+	end);
+end
+
 function array_base.pluck(outa, ina, key)
 	for i = 1, #ina do
 		outa[i] = ina[i][key];
