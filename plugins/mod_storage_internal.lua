@@ -120,4 +120,23 @@ function archive:find(username, query)
 	end, count;
 end
 
+function archive:delete(username, query)
+	if not query or next(query) == nil then
+		return datamanager.list_store(username, host, self.store, nil);
+	end
+	for k in pairs(query) do
+		if k ~= "end" then return nil, "unsupported-query-field"; end
+	end
+	local items, err = datamanager.list_load(username, host, self.store);
+	if not items then return items, err; end
+	items = array(items);
+	items:filter(function (item)
+		return item.when > query["end"];
+	end);
+	local count = #items;
+	local ok, err = datamanager.list_store(username, host, self.store, items);
+	if not ok then return ok, err; end
+	return count;
+end
+
 module:provides("storage", driver);
