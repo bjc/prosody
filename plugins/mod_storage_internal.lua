@@ -12,11 +12,11 @@ function driver:open(store, typ)
 	return setmetatable({ store = store, type = typ }, mt);
 end
 
-function driver:stores(username)
+function driver:stores(username) -- luacheck: ignore 212/self
 	return datamanager.stores(username, host);
 end
 
-function driver:purge(user)
+function driver:purge(user) -- luacheck: ignore 212/self
 	return datamanager.purge(user, host);
 end
 
