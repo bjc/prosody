@@ -12,6 +12,14 @@ function driver:open(store, typ)
 	return setmetatable({ store = store, type = typ }, mt);
 end
 
+function driver:stores(username)
+	return datamanager.stores(username, host);
+end
+
+function driver:purge(user)
+	return datamanager.purge(user, host);
+end
+
 local keyval = { };
 driver.keyval = { __index = keyval };
 
@@ -23,16 +31,8 @@ function keyval:set(user, data)
 	return datamanager.store(user, host, self.store, data);
 end
 
-function driver:stores(username)
-	return datamanager.stores(username, host);
-end
-
 function keyval:users()
 	return datamanager.users(host, self.store, self.type);
-end
-
-function driver:purge(user)
-	return datamanager.purge(user, host);
 end
 
 module:provides("storage", driver);
