@@ -86,12 +86,12 @@ local function room_save(room, forced)
 	if forced then persistent_rooms_storage:set(nil, persistent_rooms); end
 end
 
-function create_room(jid)
+function create_room(jid, locked)
 	local room = muc_new_room(jid);
 	room.route_stanza = room_route_stanza;
 	room.save = room_save;
 	rooms[jid] = room;
-	if lock_rooms then
+	if locked then
 		room.locked = true;
 		if lock_room_timeout and lock_room_timeout > 0 then
 			module:add_timer(lock_room_timeout, function ()
@@ -166,7 +166,7 @@ function stanza_handler(event)
 		if not(restrict_room_creation) or
 		  is_admin(stanza.attr.from) or
 		  (restrict_room_creation == "local" and select(2, jid_split(stanza.attr.from)) == module.host:gsub("^[^%.]+%.", "")) then
-			room = create_room(bare);
+			room = create_room(bare, lock_rooms);
 		end
 	end
 	if room then
