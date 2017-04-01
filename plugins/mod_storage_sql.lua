@@ -32,8 +32,8 @@ local function serialize(value)
 	elseif is_stanza(value) then
 		return "xml", tostring(value);
 	elseif t == "table" then
-		local value,err = json.encode(value);
-		if value then return "json", value; end
+		local encoded,err = json.encode(value);
+		if value then return "json", encoded; end
 		return nil, err;
 	end
 	return nil, "Unhandled value type: "..t;
@@ -80,15 +80,15 @@ local function keyval_store_set(data)
 		local extradata = {};
 		for key, value in pairs(data) do
 			if type(key) == "string" and key ~= "" then
-				local t, value = assert(serialize(value));
-				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, key, t, value);
+				local t, encoded_value = assert(serialize(value));
+				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, key, t, encoded_value);
 			else
 				extradata[key] = value;
 			end
 		end
 		if next(extradata) ~= nil then
-			local t, extradata = assert(serialize(extradata));
-			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, "", t, extradata);
+			local t, encoded_extradata = assert(serialize(extradata));
+			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, "", t, encoded_extradata);
 		end
 	end
 	return true;
@@ -186,18 +186,18 @@ function archive_store:append(username, key, value, when, with)
 	local user,store = username,self.store;
 	when = when or os.time();
 	with = with or "";
-	local ok, key = engine:transaction(function()
+	local ok, ret = engine:transaction(function()
 		if key then
 			engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, user or "", store, key);
 		else
 			key = uuid.generate();
 		end
-		local t, value = assert(serialize(value));
-		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
+		local t, encoded_value = assert(serialize(value));
+		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
 		return key;
 	end);
-	if not ok then return ok, key; end
-	return key;
+	if not ok then return ok, ret; end
+	return ret; -- the key
 end
 
 -- Helpers for building the WHERE clause
