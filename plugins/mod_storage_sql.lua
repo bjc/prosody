@@ -423,7 +423,7 @@ end
 --- Initialization
 
 
-local function create_table(name)
+local function create_table(engine, name) -- luacheck: ignore 431/engine
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
@@ -458,7 +458,7 @@ local function create_table(name)
 	end);
 end
 
-local function upgrade_table(params, apply_changes)
+local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 431/engine
 	local changes = false;
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
@@ -540,13 +540,13 @@ function module.load()
 	engine = engines[sql.db2uri(params)];
 	if not engine then
 		module:log("debug", "Creating new engine");
-		engine = sql:create_engine(params, function (engine)
+		engine = sql:create_engine(params, function (engine) -- luacheck: ignore 431/engine
 			if module:get_option("sql_manage_tables", true) then
 				-- Automatically create table, ignore failure (table probably already exists)
 				-- FIXME: we should check in information_schema, etc.
-				create_table();
+				create_table(engine);
 				-- Check whether the table needs upgrading
-				if upgrade_table(params, false) then
+				if upgrade_table(engine, params, false) then
 					module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 					return false, "database upgrade needed";
 				end
@@ -583,7 +583,7 @@ function module.command(arg)
 		for _, params in pairs(uris) do
 			print("Checking "..params.database.."...");
 			engine = sql:create_engine(params);
-			upgrade_table(params, true);
+			upgrade_table(engine, params, true);
 		end
 		print("All done!");
 	elseif command then
