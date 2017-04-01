@@ -184,6 +184,8 @@ archive_store.caps = {
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
 	local user,store = username,self.store;
+	when = when or os.time();
+	with = with or "";
 	local ok, key = engine:transaction(function()
 		if key then
 			engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, user or "", store, key);
