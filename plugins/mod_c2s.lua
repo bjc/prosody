@@ -17,8 +17,7 @@ local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionma
 local uuid_generate = require "util.uuid".generate;
 local runner = require "util.async".runner;
 
-local xpcall, tostring, type = xpcall, tostring, type;
-local t_insert, t_remove = table.insert, table.remove;
+local tostring, type = tostring, type;
 
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
