@@ -567,7 +567,7 @@ function module.command(arg)
 	if command == "upgrade" then
 		-- We need to find every unique dburi in the config
 		local uris = {};
-		for host in pairs(prosody.hosts) do
+		for host in pairs(prosody.hosts) do -- luacheck: ignore 431/host
 			local params = normalize_params(config.get(host, "sql") or default_params);
 			uris[sql.db2uri(params)] = params;
 		end
