@@ -46,7 +46,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					packet.body = buf;
 					success_cb(packet);
 				elseif buf ~= "" then -- unexpected EOF
-					error = true; return error_cb();
+					error = true; return error_cb("unexpected-eof");
 				end
 				return;
 			end
