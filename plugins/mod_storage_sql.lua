@@ -32,8 +32,8 @@ local function serialize(value)
 	elseif is_stanza(value) then
 		return "xml", tostring(value);
 	elseif t == "table" then
-		local value,err = json.encode(value);
-		if value then return "json", value; end
+		local encoded,err = json.encode(value);
+		if value then return "json", encoded; end
 		return nil, err;
 	end
 	return nil, "Unhandled value type: "..t;
@@ -57,7 +57,12 @@ local user, store;
 local function keyval_store_get()
 	local haveany;
 	local result = {};
-	for row in engine:select("SELECT `key`,`type`,`value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user or "", store) do
+	local select_sql = [[
+	SELECT `key`,`type`,`value`
+	FROM `prosody`
+	WHERE `host`=? AND `user`=? AND `store`=?;
+	]]
+	for row in engine:select(select_sql, host, user or "", store) do
 		haveany = true;
 		local k = row[1];
 		local v = deserialize(row[2], row[3]);
@@ -74,21 +79,30 @@ local function keyval_store_get()
 	end
 end
 local function keyval_store_set(data)
-	engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=?", host, user or "", store);
+	local delete_sql = [[
+	DELETE FROM `prosody`
+	WHERE `host`=? AND `user`=? AND `store`=?
+	]];
+	engine:delete(delete_sql, host, user or "", store);
 
+	local insert_sql = [[
+	INSERT INTO `prosody`
+	(`host`,`user`,`store`,`key`,`type`,`value`)
+	VALUES (?,?,?,?,?,?);
+	]]
 	if data and next(data) ~= nil then
 		local extradata = {};
 		for key, value in pairs(data) do
 			if type(key) == "string" and key ~= "" then
-				local t, value = assert(serialize(value));
-				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, key, t, value);
+				local t, encoded_value = assert(serialize(value));
+				engine:insert(delete_sql, host, user or "", store, key, t, encoded_value);
 			else
 				extradata[key] = value;
 			end
 		end
 		if next(extradata) ~= nil then
-			local t, extradata = assert(serialize(extradata));
-			engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, user or "", store, "", t, extradata);
+			local t, encoded_extradata = assert(serialize(extradata));
+			engine:insert(insert_sql, host, user or "", store, "", t, encoded_extradata);
 		end
 	end
 	return true;
@@ -115,7 +129,12 @@ function keyval_store:set(username, data)
 end
 function keyval_store:users()
 	local ok, result = engine:transaction(function()
-		return engine:select("SELECT DISTINCT `user` FROM `prosody` WHERE `host`=? AND `store`=?", host, self.store);
+		local select_sql = [[
+		SELECT DISTINCT `user`
+		FROM `prosody`
+		WHERE `host`=? AND `store`=?;
+		]];
+		return engine:select(select_sql, host, self.store);
 	end);
 	if not ok then return ok, result end
 	return iterator(result);
@@ -129,14 +148,20 @@ map_store.__index = map_store;
 map_store.remove = {};
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
+		local query = [[
+		SELECT `type`, `value`
+		FROM `prosody`
+		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?
+		LIMIT 1
+		]];
 		local data;
 		if type(key) == "string" and key ~= "" then
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, key) do
+			for row in engine:select(query, host, username or "", self.store, key) do
 				data = deserialize(row[1], row[2]);
 			end
 			return data;
 		else
-			for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
+			for row in engine:select(query, host, username or "", self.store, "") do
 				data = deserialize(row[1], row[2]);
 			end
 			return data and data[key] or nil;
@@ -151,24 +176,38 @@ function map_store:set(username, key, data)
 end
 function map_store:set_keys(username, keydatas)
 	local ok, result = engine:transaction(function()
+		local delete_sql = [[
+		DELETE FROM `prosody`
+		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?;
+		]];
+		local insert_sql = [[
+		INSERT INTO `prosody`
+		(`host`,`user`,`store`,`key`,`type`,`value`)
+		VALUES (?,?,?,?,?,?);
+		]];
+		local select_extradata_sql = [[
+		SELECT `type`, `value`
+		FROM `prosody`
+		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?
+		LIMIT 1;
+		]];
 		for key, data in pairs(keydatas) do
 			if type(key) == "string" and key ~= "" then
-				engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
+				engine:delete(delete_sql,
 					host, username or "", self.store, key);
 				if data ~= self.remove then
 					local t, value = assert(serialize(data));
-					engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, key, t, value);
+					engine:insert(insert_sql, host, username or "", self.store, key, t, value);
 				end
 			else
 				local extradata = {};
-				for row in engine:select("SELECT `type`, `value` FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=? LIMIT 1", host, username or "", self.store, "") do
+				for row in engine:select(select_extradata_sql, host, username or "", self.store, "") do
 					extradata = deserialize(row[1], row[2]);
 				end
-				engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?",
-					host, username or "", self.store, "");
+				engine:delete(delete_sql, host, username or "", self.store, "");
 				extradata[key] = data;
 				local t, value = assert(serialize(extradata));
-				engine:insert("INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", host, username or "", self.store, "", t, value);
+				engine:insert(insert_sql, host, username or "", self.store, "", t, value);
 			end
 		end
 		return true;
@@ -183,22 +222,30 @@ archive_store.caps = {
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
-	if type(when) ~= "number" then
-		when, with, value = value, when, with;
-	end
 	local user,store = username,self.store;
-	local ok, key = engine:transaction(function()
+	when = when or os.time();
+	with = with or "";
+	local ok, ret = engine:transaction(function()
+		local delete_sql = [[
+		DELETE FROM `prosodyarchive`
+		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?;
+		]];
+		local insert_sql = [[
+		INSERT INTO `prosodyarchive`
+		(`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`)
+		VALUES (?,?,?,?,?,?,?,?);
+		]];
 		if key then
-			engine:delete("DELETE FROM `prosodyarchive` WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?", host, user or "", store, key);
+			engine:delete(delete_sql, host, user or "", store, key);
 		else
 			key = uuid.generate();
 		end
-		local t, value = assert(serialize(value));
-		engine:insert("INSERT INTO `prosodyarchive` (`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`) VALUES (?,?,?,?,?,?,?,?)", host, user or "", store, when, with, key, t, value);
+		local t, encoded_value = assert(serialize(value));
+		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
 		return key;
 	end);
-	if not ok then return ok, key; end
-	return key;
+	if not ok then return ok, ret; end
+	return ret; -- the key
 end
 
 -- Helpers for building the WHERE clause
@@ -234,12 +281,33 @@ local function archive_where_id_range(query, args, where)
 	local args_len = #args
 	-- Before or after specific item, exclusive
 	if query.after then  -- keys better be unique!
-		where[#where+1] = "`sort_id` > COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), 0)"
+		where[#where+1] = [[
+		`sort_id` > COALESCE(
+			(
+				SELECT `sort_id`
+				FROM `prosodyarchive`
+				WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ?
+				LIMIT 1
+			), 0)
+		]];
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.after, args[1], args[2], args[3];
 		args_len = args_len + 4
 	end
 	if query.before then
-		where[#where+1] = "`sort_id` < COALESCE((SELECT `sort_id` FROM `prosodyarchive` WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ? LIMIT 1), (SELECT MAX(`sort_id`)+1 FROM `prosodyarchive`))"
+		where[#where+1] = [[
+		`sort_id` < COALESCE(
+			(
+				SELECT `sort_id`
+				FROM `prosodyarchive`
+				WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ?
+				LIMIT 1
+			),
+			(
+				SELECT MAX(`sort_id`)+1
+				FROM `prosodyarchive`
+			)
+		)
+		]]
 		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.before, args[1], args[2], args[3];
 	end
 end
@@ -249,7 +317,12 @@ function archive_store:find(username, query)
 	local user,store = username,self.store;
 	local total;
 	local ok, result = engine:transaction(function()
-		local sql_query = "SELECT `key`, `type`, `value`, `when`, `with` FROM `prosodyarchive` WHERE %s ORDER BY `sort_id` %s%s;";
+		local sql_query = [[
+		SELECT `key`, `type`, `value`, `when`, `with`
+		FROM `prosodyarchive`
+		WHERE %s
+		ORDER BY `sort_id` %s%s;
+		]];
 		local args = { host, user or "", store, };
 		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
 
@@ -257,7 +330,8 @@ function archive_store:find(username, query)
 
 		-- Total matching
 		if query.total then
-			local stats = engine:select("SELECT COUNT(*) FROM `prosodyarchive` WHERE " .. t_concat(where, " AND "), unpack(args));
+			local stats = engine:select("SELECT COUNT(*) FROM `prosodyarchive` WHERE "
+				.. t_concat(where, " AND "), unpack(args));
 			if stats then
 				for row in stats do
 					total = row[1];
@@ -274,7 +348,8 @@ function archive_store:find(username, query)
 			args[#args+1] = query.limit;
 		end
 
-		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
+		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse
+			and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result end
@@ -348,7 +423,7 @@ end
 --- Initialization
 
 
-local function create_table(name)
+local function create_table(engine, name) -- luacheck: ignore 431/engine
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
@@ -383,7 +458,7 @@ local function create_table(name)
 	end);
 end
 
-local function upgrade_table(params, apply_changes)
+local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 431/engine
 	local changes = false;
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
@@ -406,9 +481,14 @@ local function upgrade_table(params, apply_changes)
 		end
 
 		-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
-		local check_encoding_query = "SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME` FROM `information_schema`.`columns` WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );";
+		local check_encoding_query = [[
+		SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME`
+		FROM `information_schema`.`columns`
+		WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );
+		]];
 		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
-		success,err = engine:transaction(function()
+		-- FIXME Is it ok to ignore the return values from this?
+		engine:transaction(function()
 			local result = engine:execute(check_encoding_query);
 			local n_bad_columns = result:rowcount();
 			if n_bad_columns > 0 then
@@ -436,7 +516,7 @@ local function upgrade_table(params, apply_changes)
 	return changes;
 end
 
-local function normalize_database(driver, database)
+local function normalize_database(driver, database) -- luacheck: ignore 431/driver
 	if driver == "SQLite3" and database ~= ":memory:" then
 		return resolve_relative_path(prosody.paths.data or ".", database or "prosody.sqlite");
 	end
@@ -445,8 +525,10 @@ end
 
 local function normalize_params(params)
 	return {
-		driver = assert(params.driver, "Configuration error: Both the SQL driver and the database need to be specified");
-		database = assert(normalize_database(params.driver, params.database), "Configuration error: Both the SQL driver and the database need to be specified");
+		driver = assert(params.driver,
+			"Configuration error: Both the SQL driver and the database need to be specified");
+		database = assert(normalize_database(params.driver, params.database),
+			"Configuration error: Both the SQL driver and the database need to be specified");
 		username = params.username;
 		password = params.password;
 		host = params.host;
@@ -461,13 +543,13 @@ function module.load()
 	engine = engines[sql.db2uri(params)];
 	if not engine then
 		module:log("debug", "Creating new engine");
-		engine = sql:create_engine(params, function (engine)
+		engine = sql:create_engine(params, function (engine) -- luacheck: ignore 431/engine
 			if module:get_option("sql_manage_tables", true) then
 				-- Automatically create table, ignore failure (table probably already exists)
 				-- FIXME: we should check in information_schema, etc.
-				create_table();
+				create_table(engine);
 				-- Check whether the table needs upgrading
-				if upgrade_table(params, false) then
+				if upgrade_table(engine, params, false) then
 					module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 					return false, "database upgrade needed";
 				end
@@ -486,7 +568,7 @@ function module.command(arg)
 	if command == "upgrade" then
 		-- We need to find every unique dburi in the config
 		local uris = {};
-		for host in pairs(prosody.hosts) do
+		for host in pairs(prosody.hosts) do -- luacheck: ignore 431/host
 			local params = normalize_params(config.get(host, "sql") or default_params);
 			uris[sql.db2uri(params)] = params;
 		end
@@ -504,7 +586,7 @@ function module.command(arg)
 		for _, params in pairs(uris) do
 			print("Checking "..params.database.."...");
 			engine = sql:create_engine(params);
-			upgrade_table(params, true);
+			upgrade_table(engine, params, true);
 		end
 		print("All done!");
 	elseif command then
