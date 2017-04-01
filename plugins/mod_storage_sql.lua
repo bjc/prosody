@@ -515,7 +515,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 	return changes;
 end
 
-local function normalize_database(driver, database)
+local function normalize_database(driver, database) -- luacheck: ignore 431/driver
 	if driver == "SQLite3" and database ~= ":memory:" then
 		return resolve_relative_path(prosody.paths.data or ".", database or "prosody.sqlite");
 	end
