@@ -24,7 +24,7 @@ module:hook("message/offline/handle", function(event)
 		node = origin.username;
 	end
 
-	return offline_messages:append(node, nil, stanza);
+	return offline_messages:append(node, nil, stanza, os.time(), "");
 end, -1);
 
 module:hook("message/offline/broadcast", function(event)
