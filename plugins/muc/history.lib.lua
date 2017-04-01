@@ -114,7 +114,7 @@ module:hook("muc-get-history", function(event)
 		return msg;
 	end
 	return true;
-end);
+end, -1);
 
 local function send_history(room, stanza)
 	local maxchars, maxstanzas, since = parse_history(stanza);
