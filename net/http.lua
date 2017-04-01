@@ -68,7 +68,7 @@ end
 function listener.ondisconnect(conn, err)
 	local request = requests[conn];
 	if request and request.conn then
-		request:reader(nil, err);
+		request:reader(nil, err or "closed");
 	end
 	requests[conn] = nil;
 end
@@ -126,7 +126,7 @@ local function request(u, ex, callback)
 	local req = url.parse(u);
 
 	if not (req and req.host) then
-		callback(nil, 0, req);
+		callback("invalid-url", 0, req);
 		return nil, "invalid-url";
 	end
 
@@ -190,7 +190,7 @@ local function request(u, ex, callback)
 
 	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
 	if not handler then
-		callback(nil, 0, req);
+		callback(conn, 0, req);
 		return nil, conn;
 	end
 	req.handler, req.conn = handler, conn
