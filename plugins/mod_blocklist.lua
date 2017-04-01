@@ -229,7 +229,7 @@ end);
 -- Buggy clients
 module:hook("iq-error/self/blocklist-push", function (event)
 	local origin, stanza = event.origin, event.stanza;
-	local _, condition, text = event.stanza:get_error();
+	local _, condition, text = stanza:get_error();
 	local log = (origin.log or module._log);
 	log("warn", "Client returned an error in response to notification from mod_%s: %s%s%s",
 		module.name, condition, text and ": " or "", text or "");

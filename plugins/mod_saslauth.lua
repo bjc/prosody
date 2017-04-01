@@ -82,7 +82,7 @@ local function sasl_process_cdata(session, stanza)
 	return true;
 end
 
-module:hook_tag(xmlns_sasl, "success", function (session, stanza)
+module:hook_tag(xmlns_sasl, "success", function (session)
 	if session.type ~= "s2sout_unauthed" or session.external_auth ~= "attempting" then return; end
 	module:log("debug", "SASL EXTERNAL with %s succeeded", session.to_host);
 	session.external_auth = "succeeded"
