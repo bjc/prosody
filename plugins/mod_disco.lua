@@ -101,10 +101,10 @@ module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(even
 	local node = stanza.tags[1].attr.node;
 	if node and node ~= "" and node ~= "http://prosody.im#"..get_server_caps_hash() then
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
-		local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
-		local ret = module:fire_event("host-disco-info-node", event);
+		local node_event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
+		local ret = module:fire_event("host-disco-info-node", node_event);
 		if ret ~= nil then return ret; end
-		if event.exists then
+		if node_event.exists then
 			origin.send(reply);
 		else
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
@@ -123,10 +123,10 @@ module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(eve
 	local node = stanza.tags[1].attr.node;
 	if node and node ~= "" then
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#items', node=node});
-		local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
-		local ret = module:fire_event("host-disco-items-node", event);
+		local node_event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
+		local ret = module:fire_event("host-disco-items-node", node_event);
 		if ret ~= nil then return ret; end
-		if event.exists then
+		if node_event.exists then
 			origin.send(reply);
 		else
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
@@ -163,10 +163,10 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(even
 		if node and node ~= "" then
 			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
 			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-			local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
-			local ret = module:fire_event("account-disco-info-node", event);
+			local node_event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
+			local ret = module:fire_event("account-disco-info-node", node_event);
 			if ret ~= nil then return ret; end
-			if event.exists then
+			if node_event.exists then
 				origin.send(reply);
 			else
 				origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
@@ -189,10 +189,10 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#items:query", function(eve
 		if node and node ~= "" then
 			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#items', node=node});
 			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-			local event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
-			local ret = module:fire_event("account-disco-items-node", event);
+			local node_event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
+			local ret = module:fire_event("account-disco-items-node", node_event);
 			if ret ~= nil then return ret; end
-			if event.exists then
+			if node_event.exists then
 				origin.send(reply);
 			else
 				origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Node does not exist"));
