@@ -524,8 +524,10 @@ end
 
 local function normalize_params(params)
 	return {
-		driver = assert(params.driver, "Configuration error: Both the SQL driver and the database need to be specified");
-		database = assert(normalize_database(params.driver, params.database), "Configuration error: Both the SQL driver and the database need to be specified");
+		driver = assert(params.driver,
+			"Configuration error: Both the SQL driver and the database need to be specified");
+		database = assert(normalize_database(params.driver, params.database),
+			"Configuration error: Both the SQL driver and the database need to be specified");
 		username = params.username;
 		password = params.password;
 		host = params.host;
