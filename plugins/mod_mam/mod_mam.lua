@@ -38,7 +38,7 @@ local default_max_items, max_max_items = 20, module:get_option_number("max_archi
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
 local archive_store = module:get_option_string("archive_store", "archive");
-local archive = assert(module:open_store(archive_store, "archive"));
+local archive = module:open_store(archive_store, "archive");
 
 if archive.name == "null" or not archive.find then
 	if not archive.find then
