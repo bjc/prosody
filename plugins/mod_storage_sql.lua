@@ -95,7 +95,7 @@ local function keyval_store_set(data)
 		for key, value in pairs(data) do
 			if type(key) == "string" and key ~= "" then
 				local t, encoded_value = assert(serialize(value));
-				engine:insert(delete_sql, host, user or "", store, key, t, encoded_value);
+				engine:insert(insert_sql, host, user or "", store, key, t, encoded_value);
 			else
 				extradata[key] = value;
 			end
