@@ -23,7 +23,6 @@ files["plugins/"] = {
 		"module.event_handlers",
 		"module.reloading",
 		"module.saved_state",
-		"module.environment",
 		"module.global",
 		"module.path",
 
@@ -87,6 +86,7 @@ files["plugins/"] = {
 		"module.save",
 		"module.restore",
 		"module.command",
+		"module.environment",
 	};
 }
 files["tests/"] = {
