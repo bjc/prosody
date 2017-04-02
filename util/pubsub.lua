@@ -268,6 +268,7 @@ function service:publish(node, actor, id, item)
 		node_obj = self.nodes[node];
 	end
 	local node_data = self.data[node];
+	item.attr.publisher = actor;
 	local ok = node_data:set(id, item);
 	if not ok then
 		return nil, "internal-server-error";
