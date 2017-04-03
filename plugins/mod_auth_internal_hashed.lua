@@ -110,10 +110,10 @@ end
 
 function provider.get_sasl_handler()
 	local testpass_authentication_profile = {
-		plain_test = function(sasl, username, password, realm)
+		plain_test = function(_, username, password, realm)
 			return usermanager.test_password(username, realm, password), true;
 		end,
-		scram_sha_1 = function(sasl, username, realm)
+		scram_sha_1 = function(_, username)
 			local credentials = accounts:get(username);
 			if not credentials then return; end
 			if credentials.password then
