@@ -1,3 +1,5 @@
+-- luacheck: ignore 212
+
 local driver = {};
 local driver_mt = { __index = driver };
 
