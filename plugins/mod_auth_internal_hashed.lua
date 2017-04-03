@@ -101,7 +101,10 @@ function provider.create_user(username, password)
 	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, default_iteration_count);
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
-	return accounts:set(username, {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = default_iteration_count});
+	return accounts:set(username, {
+		stored_key = stored_key_hex, server_key = server_key_hex,
+		salt = salt, iteration_count = default_iteration_count
+	});
 end
 
 function provider.delete_user(username)
@@ -122,7 +125,8 @@ function provider.get_sasl_handler()
 				if not credentials then return; end
 			end
 
-			local stored_key, server_key, iteration_count, salt = credentials.stored_key, credentials.server_key, credentials.iteration_count, credentials.salt;
+			local stored_key, server_key = credentials.stored_key, credentials.server_key;
+			local iteration_count, salt = credentials.iteration_count, credentials.salt;
 			stored_key = stored_key and from_hex(stored_key);
 			server_key = server_key and from_hex(server_key);
 			return stored_key, server_key, iteration_count, salt, true;
