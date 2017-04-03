@@ -66,7 +66,7 @@ end
 
 function provider.get_sasl_handler()
 	local getpass_authentication_profile = {
-		plain = function(sasl, username, realm)
+		plain = function(_, username, realm)
 			local password = usermanager.get_password(username, realm);
 			if not password then
 				return "", nil;
