@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 212
 
 local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
