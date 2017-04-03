@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 212
 
 local log = require "util.logger".init("auth_cyrus");
 
