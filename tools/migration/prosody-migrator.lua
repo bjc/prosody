@@ -77,13 +77,8 @@ function load_store_handler(name)
 	else
 		local ok, err = pcall(require, "migrator."..store_type);
 		if not ok then
-			if package.loaded["migrator."..store_type] then
-				print(("Error: Failed to initialize '%s' store:\n\t%s")
-					:format(name, err));
-			else
-				print(("Error: Unrecognised store type for '%s': %s")
-					:format(from_store, store_type));
-			end
+			print(("Error: Failed to initialize '%s' store:\n\t%s")
+				:format(name, err));
 			return false;
 		end
 	end
