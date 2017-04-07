@@ -33,4 +33,8 @@ function driver:find()
 	return function () end, 0;
 end
 
+function driver:delete()
+	return true;
+end
+
 module:provides("storage", driver);
