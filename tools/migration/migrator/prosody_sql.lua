@@ -1,6 +1,6 @@
 
 local assert = assert;
-local have_DBI, DBI = pcall(require,"DBI");
+local have_DBI = pcall(require,"DBI");
 local print = print;
 local type = type;
 local next = next;
@@ -15,50 +15,25 @@ if not have_DBI then
 	error("LuaDBI (required for SQL support) was not found, please see http://prosody.im/doc/depends#luadbi", 0);
 end
 
+local sql = require "util.sql";
 
-local function create_table(connection, params)
-	local create_sql = "CREATE TABLE `prosody` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
-	if params.driver == "PostgreSQL" then
-		create_sql = create_sql:gsub("`", "\"");
-	elseif params.driver == "MySQL" then
-		create_sql = create_sql:gsub("`value` TEXT", "`value` MEDIUMTEXT");
-	end
+local function create_table(engine, name) -- luacheck: ignore 431/engine
+	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
-	local stmt = connection:prepare(create_sql);
-	if stmt then
-		local ok = stmt:execute();
-		local commit_ok = connection:commit();
-		if ok and commit_ok then
-			local index_sql = "CREATE INDEX `prosody_index` ON `prosody` (`host`, `user`, `store`, `key`)";
-			if params.driver == "PostgreSQL" then
-				index_sql = index_sql:gsub("`", "\"");
-			elseif params.driver == "MySQL" then
-				index_sql = index_sql:gsub("`([,)])", "`(20)%1");
-			end
-			local stmt, err = connection:prepare(index_sql);
-			local ok, commit_ok, commit_err;
-			if stmt then
-				ok, err = assert(stmt:execute());
-				commit_ok, commit_err = assert(connection:commit());
-			end
-		elseif params.driver == "MySQL" then -- COMPAT: Upgrade tables from 0.8.0
-			-- Failed to create, but check existing MySQL table here
-			local stmt = connection:prepare("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
-			local ok = stmt:execute();
-			local commit_ok = connection:commit();
-			if ok and commit_ok then
-				if stmt:rowcount() > 0 then
-					local stmt = connection:prepare("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
-					local ok = stmt:execute();
-					local commit_ok = connection:commit();
-					if ok and commit_ok then
-						print("Database table automatically upgraded");
-					end
-				end
-				repeat until not stmt:fetch();
-			end
-		end
-	end
+	local ProsodyTable = Table {
+		name= name or "prosody";
+		Column { name="host", type="TEXT", nullable=false };
+		Column { name="user", type="TEXT", nullable=false };
+		Column { name="store", type="TEXT", nullable=false };
+		Column { name="key", type="TEXT", nullable=false };
+		Column { name="type", type="TEXT", nullable=false };
+		Column { name="value", type="MEDIUMTEXT", nullable=false };
+		Index { name="prosody_index", "host", "user", "store", "key" };
+	};
+	engine:transaction(function()
+		ProsodyTable:create(engine);
+	end);
+
 end
 
 local function serialize(value)
@@ -110,23 +85,16 @@ local function decode_user(item)
 end
 
 local function reader(input)
-	local dbh = assert(DBI.Connect(
-		assert(input.driver, "no input.driver specified"),
-		assert(input.database, "no input.database specified"),
-		input.username, input.password,
-		input.host, input.port
-	));
-	assert(dbh:ping());
-	local stmt = assert(dbh:prepare("SELECT * FROM prosody"));
-	assert(stmt:execute());
+	local engine = assert(sql:create_engine(input);
 	local keys = {"host", "user", "store", "key", "type", "value"};
-	local f,s,val = stmt:rows(true);
+	assert(engine:connect());
+	local f,s,val = assert(engine:select("SELECT `host`, `user`, `store`, `key`, `type`, `value` FROM `prosody`;"));
 	-- get SQL rows, sorted
 	local iter = mtools.sorted {
 		reader = function() val = f(s, val); return val; end;
 		filter = function(x)
 			for i=1,#keys do
-				if not x[keys[i]] then return false; end -- TODO log error, missing field
+				x[ keys[i] ] = x[i];
 			end
 			if x.host  == "" then x.host  = nil; end
 			if x.user  == "" then x.user  = nil; end
@@ -154,26 +122,15 @@ local function reader(input)
 end
 
 local function writer(output, iter)
-	local dbh = assert(DBI.Connect(
-		assert(output.driver, "no output.driver specified"),
-		assert(output.database, "no output.database specified"),
-		output.username, output.password,
-		output.host, output.port
-	));
-	assert(dbh:ping());
-	create_table(dbh, output);
-	local stmt = assert(dbh:prepare("SELECT * FROM prosody"));
-	assert(stmt:execute());
-	local stmt = assert(dbh:prepare("DELETE FROM prosody"));
-	assert(stmt:execute());
+	local engine = assert(sql:create_engine(output, function (engine) -- luacheck: ignore 431/engine
+		create_table(engine);
+	end));
+	assert(engine:connect());
+	assert(engine:delete("DELETE FROM prosody"));
 	local insert_sql = "INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)";
-	if output.driver == "PostgreSQL" then
-		insert_sql = insert_sql:gsub("`", "\"");
-	end
-	local insert = assert(dbh:prepare(insert_sql));
 
 	return function(item)
-		if not item then assert(dbh:commit()) return dbh:close(); end -- end of input
+		if not item then return end -- end of input
 		local host = item.host or "";
 		local user = item.user or "";
 		for store, data in pairs(item.stores) do
@@ -182,14 +139,14 @@ local function writer(output, iter)
 			for key, value in pairs(data) do
 				if type(key) == "string" and key ~= "" then
 					local t, value = assert(serialize(value));
-					local ok, err = assert(insert:execute(host, user, store, key, t, value));
+					local ok, err = assert(engine:insert(insert_sql, host, user, store, key, t, value));
 				else
 					extradata[key] = value;
 				end
 			end
 			if next(extradata) ~= nil then
 				local t, extradata = assert(serialize(extradata));
-				local ok, err = assert(insert:execute(host, user, store, "", t, extradata));
+				local ok, err = assert(engine:insert(insert_sql, host, user, store, "", t, extradata));
 			end
 		end
 	end;
