@@ -84,8 +84,36 @@ local function decode_user(item)
 	return userdata;
 end
 
+local function needs_upgrade(engine, params)
+	if params.driver == "MySQL" then
+		local success = engine:transaction(function()
+			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			assert(result:rowcount() == 0);
+
+			-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
+			local check_encoding_query = [[
+			SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME`
+			FROM `information_schema`.`columns`
+			WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );
+			]];
+			check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
+			local result = engine:execute(check_encoding_query);
+			assert(result:rowcount() == 0)
+		end);
+		if not success then
+			-- Upgrade required
+			return true;
+		end
+	end
+	return false;
+end
+
 local function reader(input)
-	local engine = assert(sql:create_engine(input);
+	local engine = assert(sql:create_engine(input, function (engine) -- luacheck: ignore 431/engine
+		if needs_upgrade(engine, input) then
+			error("Old database format detected. Please run: prosodyctl mod_storage_sql upgrade");
+		end
+	end));
 	local keys = {"host", "user", "store", "key", "type", "value"};
 	assert(engine:connect());
 	local f,s,val = assert(engine:select("SELECT `host`, `user`, `store`, `key`, `type`, `value` FROM `prosody`;"));
@@ -123,6 +151,9 @@ end
 
 local function writer(output, iter)
 	local engine = assert(sql:create_engine(output, function (engine) -- luacheck: ignore 431/engine
+		if needs_upgrade(engine, output) then
+			error("Old database format detected. Please run: prosodyctl mod_storage_sql upgrade");
+		end
 		create_table(engine);
 	end));
 	assert(engine:connect());
