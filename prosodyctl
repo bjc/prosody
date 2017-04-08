@@ -973,6 +973,13 @@ function commands.check(arg)
 				print("    For more information see https://prosody.im/doc/storage");
 			end
 		end
+		for host, config in pairs(config) do
+			if type(rawget(config, "storage")) == "string" and rawget(config, "default_storage") then
+				print("");
+				print("    The 'default_storage' option is not needed if 'storage' is set to a string.");
+				break;
+			end
+		end
 		local require_encryption = set.intersection(all_options, set.new({"require_encryption", "c2s_require_encryption", "s2s_require_encryption"})):empty();
 		local ssl = dependencies.softreq"ssl";
 		if not ssl then
