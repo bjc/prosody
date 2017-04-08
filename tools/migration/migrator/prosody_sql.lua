@@ -161,7 +161,7 @@ local function writer(output, iter)
 	local insert_sql = "INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)";
 
 	return function(item)
-		if not item then return end -- end of input
+		if not item then assert(engine.conn:commit()) return end -- end of input
 		local host = item.host or "";
 		local user = item.user or "";
 		for store, data in pairs(item.stores) do
