@@ -36,7 +36,7 @@ function handle_normal_presence(origin, stanza)
 		local priority = stanza:get_child("priority");
 		if priority and priority[1] ~= "0" then
 			for i=#priority.tags,1,-1 do priority.tags[i] = nil; end
-			for i=#priority,1,-1 do priority[i] = nil; end
+			for i=#priority,2,-1 do priority[i] = nil; end
 			priority[1] = "0";
 		end
 	end
