@@ -255,7 +255,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
 						return true;
 					end
-					local user = { username = username , host = host, allowed = true }
+					local user = { username = username , host = host, additional = data, allowed = true }
 					module:fire_event("user-registering", user);
 					if not user.allowed then
 						log("debug", "Registration disallowed by module");
