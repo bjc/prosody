@@ -58,9 +58,9 @@ local function keyval_store_get()
 	local haveany;
 	local result = {};
 	local select_sql = [[
-	SELECT `key`,`type`,`value`
-	FROM `prosody`
-	WHERE `host`=? AND `user`=? AND `store`=?;
+	SELECT "key","type","value"
+	FROM "prosody"
+	WHERE "host"=? AND "user"=? AND "store"=?;
 	]]
 	for row in engine:select(select_sql, host, user or "", store) do
 		haveany = true;
@@ -80,14 +80,14 @@ local function keyval_store_get()
 end
 local function keyval_store_set(data)
 	local delete_sql = [[
-	DELETE FROM `prosody`
-	WHERE `host`=? AND `user`=? AND `store`=?
+	DELETE FROM "prosody"
+	WHERE "host"=? AND "user"=? AND "store"=?
 	]];
 	engine:delete(delete_sql, host, user or "", store);
 
 	local insert_sql = [[
-	INSERT INTO `prosody`
-	(`host`,`user`,`store`,`key`,`type`,`value`)
+	INSERT INTO "prosody"
+	("host","user","store","key","type","value")
 	VALUES (?,?,?,?,?,?);
 	]]
 	if data and next(data) ~= nil then
@@ -130,9 +130,9 @@ end
 function keyval_store:users()
 	local ok, result = engine:transaction(function()
 		local select_sql = [[
-		SELECT DISTINCT `user`
-		FROM `prosody`
-		WHERE `host`=? AND `store`=?;
+		SELECT DISTINCT "user"
+		FROM "prosody"
+		WHERE "host"=? AND "store"=?;
 		]];
 		return engine:select(select_sql, host, self.store);
 	end);
@@ -149,9 +149,9 @@ map_store.remove = {};
 function map_store:get(username, key)
 	local ok, result = engine:transaction(function()
 		local query = [[
-		SELECT `type`, `value`
-		FROM `prosody`
-		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?
+		SELECT "type", "value"
+		FROM "prosody"
+		WHERE "host"=? AND "user"=? AND "store"=? AND "key"=?
 		LIMIT 1
 		]];
 		local data;
@@ -177,18 +177,18 @@ end
 function map_store:set_keys(username, keydatas)
 	local ok, result = engine:transaction(function()
 		local delete_sql = [[
-		DELETE FROM `prosody`
-		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?;
+		DELETE FROM "prosody"
+		WHERE "host"=? AND "user"=? AND "store"=? AND "key"=?;
 		]];
 		local insert_sql = [[
-		INSERT INTO `prosody`
-		(`host`,`user`,`store`,`key`,`type`,`value`)
+		INSERT INTO "prosody"
+		("host","user","store","key","type","value")
 		VALUES (?,?,?,?,?,?);
 		]];
 		local select_extradata_sql = [[
-		SELECT `type`, `value`
-		FROM `prosody`
-		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?
+		SELECT "type", "value"
+		FROM "prosody"
+		WHERE "host"=? AND "user"=? AND "store"=? AND "key"=?
 		LIMIT 1;
 		]];
 		for key, data in pairs(keydatas) do
@@ -227,12 +227,12 @@ function archive_store:append(username, key, value, when, with)
 	with = with or "";
 	local ok, ret = engine:transaction(function()
 		local delete_sql = [[
-		DELETE FROM `prosodyarchive`
-		WHERE `host`=? AND `user`=? AND `store`=? AND `key`=?;
+		DELETE FROM "prosodyarchive"
+		WHERE "host"=? AND "user"=? AND "store"=? AND "key"=?;
 		]];
 		local insert_sql = [[
-		INSERT INTO `prosodyarchive`
-		(`host`, `user`, `store`, `when`, `with`, `key`, `type`, `value`)
+		INSERT INTO "prosodyarchive"
+		("host", "user", "store", "when", "with", "key", "type", "value")
 		VALUES (?,?,?,?,?,?,?,?);
 		]];
 		if key then
@@ -253,27 +253,27 @@ local function archive_where(query, args, where)
 	-- Time range, inclusive
 	if query.start then
 		args[#args+1] = query.start
-		where[#where+1] = "`when` >= ?"
+		where[#where+1] = "\"when\" >= ?"
 	end
 
 	if query["end"] then
 		args[#args+1] = query["end"];
 		if query.start then
-			where[#where] = "`when` BETWEEN ? AND ?" -- is this inclusive?
+			where[#where] = "\"when\" BETWEEN ? AND ?" -- is this inclusive?
 		else
-			where[#where+1] = "`when` <= ?"
+			where[#where+1] = "\"when\" <= ?"
 		end
 	end
 
 	-- Related name
 	if query.with then
-		where[#where+1] = "`with` = ?";
+		where[#where+1] = "\"with\" = ?";
 		args[#args+1] = query.with
 	end
 
 	-- Unique id
 	if query.key then
-		where[#where+1] = "`key` = ?";
+		where[#where+1] = "\"key\" = ?";
 		args[#args+1] = query.key
 	end
 end
@@ -282,11 +282,11 @@ local function archive_where_id_range(query, args, where)
 	-- Before or after specific item, exclusive
 	if query.after then  -- keys better be unique!
 		where[#where+1] = [[
-		`sort_id` > COALESCE(
+		"sort_id" > COALESCE(
 			(
-				SELECT `sort_id`
-				FROM `prosodyarchive`
-				WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ?
+				SELECT "sort_id"
+				FROM "prosodyarchive"
+				WHERE "key" = ? AND "host" = ? AND "user" = ? AND "store" = ?
 				LIMIT 1
 			), 0)
 		]];
@@ -295,16 +295,16 @@ local function archive_where_id_range(query, args, where)
 	end
 	if query.before then
 		where[#where+1] = [[
-		`sort_id` < COALESCE(
+		"sort_id" < COALESCE(
 			(
-				SELECT `sort_id`
-				FROM `prosodyarchive`
-				WHERE `key` = ? AND `host` = ? AND `user` = ? AND `store` = ?
+				SELECT "sort_id"
+				FROM "prosodyarchive"
+				WHERE "key" = ? AND "host" = ? AND "user" = ? AND "store" = ?
 				LIMIT 1
 			),
 			(
-				SELECT MAX(`sort_id`)+1
-				FROM `prosodyarchive`
+				SELECT MAX("sort_id")+1
+				FROM "prosodyarchive"
 			)
 		)
 		]]
@@ -318,19 +318,19 @@ function archive_store:find(username, query)
 	local total;
 	local ok, result = engine:transaction(function()
 		local sql_query = [[
-		SELECT `key`, `type`, `value`, `when`, `with`
-		FROM `prosodyarchive`
+		SELECT "key", "type", "value", "when", "with"
+		FROM "prosodyarchive"
 		WHERE %s
-		ORDER BY `sort_id` %s%s;
+		ORDER BY "sort_id" %s%s;
 		]];
 		local args = { host, user or "", store, };
-		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
+		local where = { "\"host\" = ?", "\"user\" = ?", "\"store\" = ?", };
 
 		archive_where(query, args, where);
 
 		-- Total matching
 		if query.total then
-			local stats = engine:select("SELECT COUNT(*) FROM `prosodyarchive` WHERE "
+			local stats = engine:select("SELECT COUNT(*) FROM \"prosodyarchive\" WHERE "
 				.. t_concat(where, " AND "), unpack(args));
 			if stats then
 				for row in stats do
@@ -365,9 +365,9 @@ function archive_store:delete(username, query)
 	query = query or {};
 	local user,store = username,self.store;
 	local ok, stmt = engine:transaction(function()
-		local sql_query = "DELETE FROM `prosodyarchive` WHERE %s;";
+		local sql_query = "DELETE FROM \"prosodyarchive\" WHERE %s;";
 		local args = { host, user or "", store, };
-		local where = { "`host` = ?", "`user` = ?", "`store` = ?", };
+		local where = { "\"host\" = ?", "\"user\" = ?", "\"store\" = ?", };
 		if user == true then
 			table.remove(args, 2);
 			table.remove(where, 2);
@@ -401,7 +401,7 @@ function driver:open(store, typ)
 end
 
 function driver:stores(username)
-	local query = "SELECT DISTINCT `store` FROM `prosody` WHERE `host`=? AND `user`" ..
+	local query = "SELECT DISTINCT \"store\" FROM \"prosody\" WHERE \"host\"=? AND \"user\"" ..
 		(username == true and "!=?" or "=?");
 	if username == true or not username then
 		username = "";
@@ -415,7 +415,7 @@ end
 
 function driver:purge(username)
 	return engine:transaction(function()
-		local stmt,err = engine:delete("DELETE FROM `prosody` WHERE `host`=? AND `user`=?", host, username);
+		local stmt,err = engine:delete("DELETE FROM \"prosody\" WHERE \"host\"=? AND \"user\"=?", host, username);
 		return true, err;
 	end);
 end
@@ -467,7 +467,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 				changes = true;
 				if apply_changes then
 					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE prosody MODIFY COLUMN `value` MEDIUMTEXT");
+					engine:execute("ALTER TABLE prosody MODIFY COLUMN \"value\" MEDIUMTEXT");
 					module:log("info", "Database table automatically upgraded");
 				end
 			end
@@ -482,9 +482,9 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 
 		-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
 		local check_encoding_query = [[
-		SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME`
-		FROM `information_schema`.`columns`
-		WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );
+		SELECT "COLUMN_NAME","COLUMN_TYPE","TABLE_NAME"
+		FROM "information_schema"."columns"
+		WHERE "TABLE_NAME" LIKE 'prosody%%' AND ( "CHARACTER_SET_NAME"!='%s' OR "COLLATION_NAME"!='%s_bin' );
 		]];
 		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 		-- FIXME Is it ok to ignore the return values from this?
@@ -495,8 +495,8 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 				changes = true;
 				if apply_changes then
 					module:log("warn", "Found %d columns in prosody table requiring encoding change, updating now...", n_bad_columns);
-					local fix_column_query1 = "ALTER TABLE `%s` CHANGE `%s` `%s` BLOB;";
-					local fix_column_query2 = "ALTER TABLE `%s` CHANGE `%s` `%s` %s CHARACTER SET '%s' COLLATE '%s_bin';";
+					local fix_column_query1 = "ALTER TABLE \"%s\" CHANGE \"%s\" \"%s\" BLOB;";
+					local fix_column_query2 = "ALTER TABLE \"%s\" CHANGE \"%s\" \"%s\" %s CHARACTER SET '%s' COLLATE '%s_bin';";
 					for row in result:rows() do
 						local column_name, column_type, table_name  = unpack(row);
 						module:log("debug", "Fixing column %s in table %s", column_name, table_name);
