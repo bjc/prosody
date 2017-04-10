@@ -128,8 +128,8 @@ function engine:onconnect()
 end
 
 function engine:prepquery(sql)
-	if self.params.driver == "PostgreSQL" then
-		sql = sql:gsub("`", "\"");
+	if self.params.driver == "MySQL" then
+		sql = sql:gsub("\"", "`");
 	end
 	return sql;
 end
@@ -242,27 +242,26 @@ function engine:transaction(...)
 	return ok, ret;
 end
 function engine:_create_index(index)
-	local sql = "CREATE INDEX `"..index.name.."` ON `"..index.table.."` (";
+	local sql = "CREATE INDEX \""..index.name.."\" ON \""..index.table.."\" (";
 	for i=1,#index do
-		sql = sql.."`"..index[i].."`";
+		sql = sql.."\""..index[i].."\"";
 		if i ~= #index then sql = sql..", "; end
 	end
 	sql = sql..");"
-	if self.params.driver == "PostgreSQL" then
-		sql = sql:gsub("`", "\"");
-	elseif self.params.driver == "MySQL" then
-		sql = sql:gsub("`([,)])", "`(20)%1");
+	if self.params.driver == "MySQL" then
+		sql = sql:gsub("\"([,)])", "\"(20)%1");
 	end
 	if index.unique then
 		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
 	end
+	sql = self:prepquery(sql);
 	if self._debug then
 		debugquery("create", sql);
 	end
 	return self:execute(sql);
 end
 function engine:_create_table(table)
-	local sql = "CREATE TABLE `"..table.name.."` (";
+	local sql = "CREATE TABLE \""..table.name.."\" (";
 	for i,col in ipairs(table.c) do
 		local col_type = col.type;
 		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
@@ -271,7 +270,7 @@ function engine:_create_table(table)
 		if col.auto_increment == true and self.params.driver == "PostgreSQL" then
 			col_type = "BIGSERIAL";
 		end
-		sql = sql.."`"..col.name.."` "..col_type;
+		sql = sql.."\""..col.name.."\" "..col_type;
 		if col.nullable == false then sql = sql.." NOT NULL"; end
 		if col.primary_key == true then sql = sql.." PRIMARY KEY"; end
 		if col.auto_increment == true then
@@ -284,11 +283,10 @@ function engine:_create_table(table)
 		if i ~= #table.c then sql = sql..", "; end
 	end
 	sql = sql.. ");"
-	if self.params.driver == "PostgreSQL" then
-		sql = sql:gsub("`", "\"");
-	elseif self.params.driver == "MySQL" then
+	if self.params.driver == "MySQL" then
 		sql = sql:gsub(";$", (" CHARACTER SET '%s' COLLATE '%s_bin';"):format(self.charset, self.charset));
 	end
+	sql = self:prepquery(sql);
 	if self._debug then
 		debugquery("create", sql);
 	end
@@ -316,7 +314,7 @@ function engine:set_encoding() -- to UTF-8
 	local charset = "utf8";
 	if driver == "MySQL" then
 		self:transaction(function()
-			for row in self:select"SELECT `CHARACTER_SET_NAME` FROM `information_schema`.`CHARACTER_SETS` WHERE `CHARACTER_SET_NAME` LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;" do
+			for row in self:select"SELECT \"CHARACTER_SET_NAME\" FROM \"information_schema\".\"CHARACTER_SETS\" WHERE \"CHARACTER_SET_NAME\" LIKE 'utf8%' ORDER BY MAXLEN DESC LIMIT 1;" do
 				charset = row and row[1] or charset;
 			end
 		end);

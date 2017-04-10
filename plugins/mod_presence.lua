@@ -36,18 +36,15 @@ function handle_normal_presence(origin, stanza)
 		local priority = stanza:get_child("priority");
 		if priority and priority[1] ~= "0" then
 			for i=#priority.tags,1,-1 do priority.tags[i] = nil; end
-			for i=#priority,1,-1 do priority[i] = nil; end
+			for i=#priority,2,-1 do priority[i] = nil; end
 			priority[1] = "0";
 		end
 	end
-	local priority = stanza:get_child("priority");
-	if priority and #priority > 0 then
-		priority = t_concat(priority);
-		if s_find(priority, "^[+-]?[0-9]+$") then
-			priority = tonumber(priority);
-			if priority < -128 then priority = -128 end
-			if priority > 127 then priority = 127 end
-		else priority = 0; end
+	local priority = stanza:get_child_text("priority");
+	if priority and s_find(priority, "^[+-]?[0-9]+$") then
+		priority = tonumber(priority);
+		if priority < -128 then priority = -128 end
+		if priority > 127 then priority = 127 end
 	else priority = 0; end
 	if full_sessions[origin.full_jid] then -- if user is still connected
 		origin.send(stanza); -- reflect their presence back to them

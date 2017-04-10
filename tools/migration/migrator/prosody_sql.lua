@@ -92,9 +92,9 @@ local function needs_upgrade(engine, params)
 
 			-- COMPAT w/pre-0.10: Upgrade table to UTF-8 if not already
 			local check_encoding_query = [[
-			SELECT `COLUMN_NAME`,`COLUMN_TYPE`,`TABLE_NAME`
-			FROM `information_schema`.`columns`
-			WHERE `TABLE_NAME` LIKE 'prosody%%' AND ( `CHARACTER_SET_NAME`!='%s' OR `COLLATION_NAME`!='%s_bin' );
+			SELECT "COLUMN_NAME","COLUMN_TYPE","TABLE_NAME"
+			FROM "information_schema"."columns"
+			WHERE "TABLE_NAME" LIKE 'prosody%%' AND ( "CHARACTER_SET_NAME"!='%s' OR "COLLATION_NAME"!='%s_bin' );
 			]];
 			check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 			local result = engine:execute(check_encoding_query);
@@ -116,7 +116,7 @@ local function reader(input)
 	end));
 	local keys = {"host", "user", "store", "key", "type", "value"};
 	assert(engine:connect());
-	local f,s,val = assert(engine:select("SELECT `host`, `user`, `store`, `key`, `type`, `value` FROM `prosody`;"));
+	local f,s,val = assert(engine:select("SELECT \"host\", \"user\", \"store\", \"key\", \"type\", \"value\" FROM \"prosody\";"));
 	-- get SQL rows, sorted
 	local iter = mtools.sorted {
 		reader = function() val = f(s, val); return val; end;
@@ -157,8 +157,8 @@ local function writer(output, iter)
 		create_table(engine);
 	end));
 	assert(engine:connect());
-	assert(engine:delete("DELETE FROM prosody"));
-	local insert_sql = "INSERT INTO `prosody` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)";
+	assert(engine:delete("DELETE FROM \"prosody\""));
+	local insert_sql = "INSERT INTO \"prosody\" (\"host\",\"user\",\"store\",\"key\",\"type\",\"value\") VALUES (?,?,?,?,?,?)";
 
 	return function(item)
 		if not item then assert(engine.conn:commit()) return end -- end of input
