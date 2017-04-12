@@ -139,6 +139,7 @@ function engine:execute(sql, ...)
 	if not success then return success, err; end
 	local prepared = self.prepared;
 
+	sql = self:prepquery(sql);
 	local stmt = prepared[sql];
 	if not stmt then
 		local err;
@@ -159,6 +160,7 @@ local result_mt = { __index = {
 
 local function debugquery(where, sql, ...)
 	local i = 0; local a = {...}
+	sql = sql:gsub("\n?\t+", " ");
 	log("debug", "[%s] %s", where, sql:gsub("%?", function () i = i + 1; local v = a[i]; if type(v) == "string" then v = ("%q"):format(v); end return tostring(v); end));
 end
 
@@ -254,7 +256,6 @@ function engine:_create_index(index)
 	if index.unique then
 		sql = sql:gsub("^CREATE", "CREATE UNIQUE");
 	end
-	sql = self:prepquery(sql);
 	if self._debug then
 		debugquery("create", sql);
 	end
@@ -286,7 +287,6 @@ function engine:_create_table(table)
 	if self.params.driver == "MySQL" then
 		sql = sql:gsub(";$", (" CHARACTER SET '%s' COLLATE '%s_bin';"):format(self.charset, self.charset));
 	end
-	sql = self:prepquery(sql);
 	if self._debug then
 		debugquery("create", sql);
 	end
