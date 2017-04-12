@@ -462,12 +462,12 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 	local changes = false;
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
-			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			local result = engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'");
 			if result:rowcount() > 0 then
 				changes = true;
 				if apply_changes then
 					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE prosody MODIFY COLUMN \"value\" MEDIUMTEXT");
+					engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT");
 					module:log("info", "Database table automatically upgraded");
 				end
 			end
