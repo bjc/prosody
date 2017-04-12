@@ -462,12 +462,12 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 	local changes = false;
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
-			local result = engine:execute("SHOW COLUMNS FROM prosody WHERE Field='value' and Type='text'");
+			local result = engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'");
 			if result:rowcount() > 0 then
 				changes = true;
 				if apply_changes then
 					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE prosody MODIFY COLUMN \"value\" MEDIUMTEXT");
+					engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT");
 					module:log("info", "Database table automatically upgraded");
 				end
 			end
@@ -484,12 +484,13 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 		local check_encoding_query = [[
 		SELECT "COLUMN_NAME","COLUMN_TYPE","TABLE_NAME"
 		FROM "information_schema"."columns"
-		WHERE "TABLE_NAME" LIKE 'prosody%%' AND ( "CHARACTER_SET_NAME"!='%s' OR "COLLATION_NAME"!='%s_bin' );
+		WHERE "TABLE_NAME" LIKE 'prosody%%'
+		AND "TABLE_SCHEMA" = ?
+		AND ( "CHARACTER_SET_NAME"!=? OR "COLLATION_NAME"!=?);
 		]];
-		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 		-- FIXME Is it ok to ignore the return values from this?
 		engine:transaction(function()
-			local result = assert(engine:execute(check_encoding_query));
+			local result = assert(engine:execute(check_encoding_query, params.database, engine.charset, engine.charset.."_bin"));
 			local n_bad_columns = result:rowcount();
 			if n_bad_columns > 0 then
 				changes = true;
@@ -507,7 +508,10 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 				end
 			end
 		end);
-		success,err = engine:transaction(function() return engine:execute(check_encoding_query); end);
+		success,err = engine:transaction(function()
+			return engine:execute(check_encoding_query, params.database,
+				engine.charset, engine.charset.."_bin");
+		end);
 		if not success then
 			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
 			return false;
