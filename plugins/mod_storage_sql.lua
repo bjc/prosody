@@ -489,7 +489,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 		check_encoding_query = check_encoding_query:format(engine.charset, engine.charset);
 		-- FIXME Is it ok to ignore the return values from this?
 		engine:transaction(function()
-			local result = engine:execute(check_encoding_query);
+			local result = assert(engine:execute(check_encoding_query));
 			local n_bad_columns = result:rowcount();
 			if n_bad_columns > 0 then
 				changes = true;
