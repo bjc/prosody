@@ -160,6 +160,7 @@ local result_mt = { __index = {
 
 local function debugquery(where, sql, ...)
 	local i = 0; local a = {...}
+	sql = sql:gsub("\n?\t+", " ");
 	log("debug", "[%s] %s", where, sql:gsub("%?", function () i = i + 1; local v = a[i]; if type(v) == "string" then v = ("%q"):format(v); end return tostring(v); end));
 end
 
