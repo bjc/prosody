@@ -16,7 +16,6 @@ local service;
 
 local lib_pubsub = module:require "pubsub";
 local handlers = lib_pubsub.handlers;
-local pubsub_error_reply = lib_pubsub.pubsub_error_reply;
 
 module:depends("disco");
 module:add_identity("pubsub", "service", pubsub_disco_name);
@@ -24,8 +23,8 @@ module:add_feature("http://jabber.org/protocol/pubsub");
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
-	local pubsub = stanza.tags[1];
-	local action = pubsub.tags[1];
+	local pubsub_tag = stanza.tags[1];
+	local action = pubsub_tag.tags[1];
 	if not action then
 		origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 		return true;
@@ -90,7 +89,7 @@ local function add_disco_features_from_service(service)
 end
 
 module:hook("host-disco-info-node", function (event)
-	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
+	local stanza, reply, node = event.stanza, event.reply, event.node;
 	local ok, ret = service:get_nodes(stanza.attr.from);
 	if not ok or not ret[node] then
 		return;
@@ -100,7 +99,7 @@ module:hook("host-disco-info-node", function (event)
 end);
 
 module:hook("host-disco-items-node", function (event)
-	local stanza, origin, reply, node = event.stanza, event.origin, event.reply, event.node;
+	local stanza, reply, node = event.stanza, event.reply, event.node;
 	local ok, ret = service:get_items(node, stanza.attr.from);
 	if not ok then
 		return;
@@ -114,8 +113,8 @@ end);
 
 
 module:hook("host-disco-items", function (event)
-	local stanza, origin, reply = event.stanza, event.origin, event.reply;
-	local ok, ret = service:get_nodes(event.stanza.attr.from);
+	local stanza, reply = event.stanza, event.reply;
+	local ok, ret = service:get_nodes(stanza.attr.from);
 	if not ok then
 		return;
 	end

@@ -1,3 +1,5 @@
+local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
+
 local st = require "util.stanza";
 local uuid_generate = require "util.uuid".generate;
 local dataform = require"util.dataforms".new;
@@ -23,7 +25,7 @@ local pubsub_errors = {
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
-	local reply = st.error_reply(stanza, unpack(e, 1, 3));
+	local reply = st.error_reply(stanza, t_unpack(e, 1, 3));
 	if e[4] then
 		reply:tag(e[4], { xmlns = xmlns_pubsub_errors }):up();
 	end
@@ -47,13 +49,13 @@ local node_config_form = dataform {
 function handlers.get_items(origin, stanza, items, service)
 	local node = items.attr.node;
 	local item = items:get_child("item");
-	local id = item and item.attr.id;
+	local item_id = item and item.attr.id;
 
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
-	local ok, results = service:get_items(node, stanza.attr.from, id);
+	local ok, results = service:get_items(node, stanza.attr.from, item_id);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, results));
 		return true;
@@ -122,7 +124,7 @@ end
 function handlers.set_delete(origin, stanza, delete, service)
 	local node = delete.attr.node;
 
-	local reply, notifier;
+	local reply;
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
