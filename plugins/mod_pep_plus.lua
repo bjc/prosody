@@ -12,7 +12,6 @@ local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local lib_pubsub = module:require "pubsub";
 local handlers = lib_pubsub.handlers;
-local pubsub_error_reply = lib_pubsub.pubsub_error_reply;
 
 local empty_set = set_new();
 
@@ -179,8 +178,8 @@ end
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
-	local pubsub = stanza.tags[1];
-	local action = pubsub.tags[1];
+	local pubsub_tag = stanza.tags[1];
+	local action = pubsub_tag.tags[1];
 	if not action then
 		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 	end
@@ -225,7 +224,7 @@ end
 local function resend_last_item(jid, node, service)
 	local ok, items = service:get_items(node, jid);
 	if not ok then return; end
-	for i, id in ipairs(items) do
+	for _, id in ipairs(items) do
 		service.config.broadcaster("items", node, { [jid] = true }, items[id]);
 	end
 end
@@ -271,7 +270,6 @@ module:hook("presence/bare", function(event)
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local t = stanza.attr.type;
 	local self = not stanza.attr.to;
-	local service = get_pep_service(user);
 
 	if not t then -- available presence
 		if self or subscription_presence(user, stanza.attr.from) then
