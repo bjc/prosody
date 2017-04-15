@@ -1,4 +1,5 @@
 local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
+local time_now = os.time;
 
 local st = require "util.stanza";
 local uuid_generate = require "util.uuid".generate;
@@ -315,5 +316,77 @@ function handlers.get_default(origin, stanza, default, service)
 	origin.send(reply);
 	return true;
 end
+
+local function create_encapsulating_item(id, payload, publisher, expose_publisher)
+	local item = st.stanza("item", { id = id }, xmlns_pubsub);
+	item:add_child(payload);
+	if expose_publisher then
+		item.attr.publisher = publisher;
+	end
+	return item;
+end
+
+local function simple_itemstore(archive, config, node, expose_publisher)
+	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
+	local get_set = {};
+	function get_set:items()
+		local store = self.store;
+		local data, err = archive:find(node);
+		if not data then
+			module:log("error", "Unable to get items: %s", err);
+			return true;
+		end
+		module:log("debug", "Listed items %s from store %s", data, store);
+		return function()
+			local id, payload, when, publisher = data();
+			if id == nil then
+				return;
+			end
+			local item = create_encapsulating_item(id, payload, publisher, expose_publisher);
+			return id, item;
+		end;
+	end
+	function get_set:get(key)
+		local store = self.store;
+		local data, err = archive:find(node, {
+			key = key;
+		});
+		if not data then
+			module:log("error", "Unable to get item: %s", err);
+			return nil, err;
+		end
+		-- Workaround for buggy SQL drivers which require iterating until we get a nil.
+		local id, payload, when, publisher;
+		for a, b, c, d in data() do
+			id, payload, when, publisher = a, b, c, d;
+		end
+		module:log("debug", "Get item %s (published at %s by %s) from store %s", id, when, publisher, store);
+		if id == nil then
+			return nil;
+		end
+		return create_encapsulating_item(id, payload, publisher, expose_publisher);
+	end
+	function get_set:set(key, value)
+		local store = self.store;
+		module:log("debug", "Set item %s to %s for %s in store %s", key, value, node, store);
+		local data, err;
+		if value ~= nil then
+			local publisher = value.attr.publisher;
+			local payload = value.tags[1];
+			data, err = archive:append(node, key, payload, time_now(), publisher);
+		else
+			data, err = archive:delete(node, {
+				key = key;
+			});
+		end
+		if not data then
+			module:log("error", "Unable to set item: %s", err);
+			return nil, err;
+		end
+		return true;
+	end
+	return setmetatable(get_set, archive);
+end
+_M.simple_itemstore = simple_itemstore;
 
 return _M;
