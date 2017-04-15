@@ -67,6 +67,11 @@ function archive:find(username, query)
 	local i = 0;
 	if query then
 		items = array(items);
+		if query.key then
+			items:filter(function (item)
+				return item.key == query.key;
+			end);
+		end
 		if query.with then
 			items:filter(function (item)
 				return item.with == query.with;
