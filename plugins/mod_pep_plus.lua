@@ -19,6 +19,8 @@ local services = {};
 local recipients = {};
 local hash_map = {};
 
+local archive = module:open_store("pubsub", "archive");
+
 function module.save()
 	return { services = services };
 end
@@ -32,6 +34,10 @@ local function subscription_presence(user_bare, recipient)
 	if (recipient_bare == user_bare) then return true; end
 	local username, host = jid_split(user_bare);
 	return is_contact_subscribed(username, host, recipient_bare);
+end
+
+local function simple_itemstore(config, node)
+	return lib_pubsub.simple_itemstore(archive, config, node, false);
 end
 
 local function get_broadcaster(name)
@@ -160,6 +166,7 @@ function get_pep_service(name)
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = true;
 
+		itemstore = simple_itemstore;
 		broadcaster = get_broadcaster(name);
 		get_affiliation = function (jid)
 			if jid_bare(jid) == name then
