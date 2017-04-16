@@ -533,12 +533,12 @@ end
 
 -- Connected!
 function interface:onconnect()
+	self.onwriteable = nil;
+	self:setflags(true, false);
 	if not self._connected then
 		self._connected = true;
 		self:on("connect");
 	end
-	self.onwriteable = nil;
-	self:setflags(true, false);
 	return self:onwriteable();
 end
 
