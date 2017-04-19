@@ -136,12 +136,14 @@ dependencies.log_warnings();
 local switched_user, current_uid;
 
 local want_pposix_version = "0.4.0";
-local ok, pposix = pcall(require, "util.pposix");
+local have_pposix, pposix = pcall(require, "util.pposix");
 
-if ok and pposix then
+if have_pposix and pposix then
 	if pposix._VERSION ~= want_pposix_version then print(string.format("Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version)); return; end
 	current_uid = pposix.getuid();
-	if current_uid == 0 then
+	local arg_root = arg[1] == "--root";
+	if arg_root then table.remove(arg, 1); end
+	if current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
 		-- We haz root!
 		local desired_user = config.get("*", "prosody_user") or "prosody";
 		local desired_group = config.get("*", "prosody_group") or desired_user;
@@ -695,9 +697,16 @@ local function use_existing(filename)
 	end
 end
 
+local cert_basedir = CFG_DATADIR or "./certs";
+if have_pposix and pposix.getuid() == 0 then
+	-- FIXME should be enough to check if this directory is writable
+	local cert_dir = config.get("*", "certificates") or "certs";
+	cert_basedir = config.resolve_relative_path(config.paths.certs, cert_dir);
+end
+
 function cert_commands.config(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local conf_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".cnf";
+		local conf_filename = cert_basedir .. "/" .. arg[1] .. ".cnf";
 		if use_existing(conf_filename) then
 			return nil, conf_filename;
 		end
@@ -758,7 +767,7 @@ end
 
 function cert_commands.key(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local key_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".key";
+		local key_filename = cert_basedir .. "/" .. arg[1] .. ".key";
 		if use_existing(key_filename) then
 			return nil, key_filename;
 		end
@@ -780,7 +789,7 @@ end
 
 function cert_commands.request(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local req_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".req";
+		local req_filename = cert_basedir .. "/" .. arg[1] .. ".req";
 		if use_existing(req_filename) then
 			return nil, req_filename;
 		end
@@ -798,7 +807,7 @@ end
 
 function cert_commands.generate(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		local cert_filename = (CFG_DATADIR or "./certs") .. "/" .. arg[1] .. ".crt";
+		local cert_filename = cert_basedir .. "/" .. arg[1] .. ".crt";
 		if use_existing(cert_filename) then
 			return nil, cert_filename;
 		end
