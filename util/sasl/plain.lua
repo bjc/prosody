@@ -63,6 +63,8 @@ local function plain(self, message)
 		end
 	end
 
+	self.username = authentication
+
 	local correct, state = false, false;
 	if self.profile.plain then
 		local correct_password;
@@ -72,7 +74,6 @@ local function plain(self, message)
 		correct, state = self.profile.plain_test(self, authentication, password, self.realm);
 	end
 
-	self.username = authentication
 	if state == false then
 		return "failure", "account-disabled";
 	elseif state == nil or not correct then
