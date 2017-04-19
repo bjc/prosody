@@ -308,7 +308,7 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session
 		sid = new_uuid();
 		local session = {
-			type = "c2s_unauthed", conn = {}, sid = sid, rid = rid, host = attr.to,
+			type = "c2s_unauthed", conn = request.conn, sid = sid, rid = rid, host = attr.to,
 			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
 			bosh_max_inactive = bosh_max_inactivity,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
@@ -383,6 +383,8 @@ function stream_callbacks.streamopened(context, attr)
 		context.notopen = nil;
 		return;
 	end
+
+	session.conn = request.conn;
 
 	if session.rid then
 		local rid = tonumber(attr.rid);

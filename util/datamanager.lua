@@ -268,8 +268,8 @@ local function list_store(username, host, datastore, data)
 	if callback(username, host, datastore) == false then return true; end
 	-- save the datastore
 	local d = {};
-	for _, item in ipairs(data) do
-		d[#d+1] = "item(" .. serialize(item) .. ");\n";
+	for i, item in ipairs(data) do
+		d[i] = "item(" .. serialize(item) .. ");\n";
 	end
 	local ok, msg = atomic_store(getpath(username, host, datastore, "list", true), t_concat(d));
 	if not ok then

@@ -146,6 +146,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 				log("debug", "Username violates either SASLprep or contains forbidden character sequences.")
 				return "failure", "malformed-request", "Invalid username.";
 			end
+			self.username = username;
 
 			-- retreive credentials
 			local stored_key, server_key, salt, iteration_count;
@@ -225,7 +226,6 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 
 			if StoredKey == H_f(ClientKey) then
 				local server_final_message = "v="..base64.encode(ServerSignature);
-				self["username"] = state.username;
 				return "success", server_final_message;
 			else
 				return "failure", "not-authorized", "The response provided by the client doesn't match the one we calculated.";
