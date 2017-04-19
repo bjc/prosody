@@ -136,9 +136,9 @@ dependencies.log_warnings();
 local switched_user, current_uid;
 
 local want_pposix_version = "0.4.0";
-local ok, pposix = pcall(require, "util.pposix");
+local have_pposix, pposix = pcall(require, "util.pposix");
 
-if ok and pposix then
+if have_pposix and pposix then
 	if pposix._VERSION ~= want_pposix_version then print(string.format("Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version)); return; end
 	current_uid = pposix.getuid();
 	local arg_root = arg[1] == "--root";
