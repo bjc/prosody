@@ -141,7 +141,9 @@ local ok, pposix = pcall(require, "util.pposix");
 if ok and pposix then
 	if pposix._VERSION ~= want_pposix_version then print(string.format("Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version)); return; end
 	current_uid = pposix.getuid();
-	if current_uid == 0 and config.get("*", "run_as_root") ~= true and arg[1] ~= "--root" then
+	local arg_root = arg[1] == "--root";
+	if arg_root then table.remove(arg, 1); end
+	if current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
 		-- We haz root!
 		local desired_user = config.get("*", "prosody_user") or "prosody";
 		local desired_group = config.get("*", "prosody_group") or desired_user;
