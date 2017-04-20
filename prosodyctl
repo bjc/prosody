@@ -701,7 +701,7 @@ local cert_basedir = CFG_DATADIR or "./certs";
 if have_pposix and pposix.getuid() == 0 then
 	-- FIXME should be enough to check if this directory is writable
 	local cert_dir = config.get("*", "certificates") or "certs";
-	cert_basedir = config.resolve_relative_path(config.paths.certs, cert_dir);
+	cert_basedir = config.resolve_relative_path(prosody.paths.config, cert_dir);
 end
 
 function cert_commands.config(arg)
