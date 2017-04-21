@@ -10,6 +10,7 @@ local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
+local events = require "util.events";
 
 local ssl_available = pcall(require, "ssl");
 
@@ -122,7 +123,7 @@ local function log_if_failed(id, ret, ...)
 	return ...;
 end
 
-local function request(u, ex, callback)
+local function request(self, u, ex, callback)
 	local req = url.parse(u);
 
 	if not (req and req.host) then
@@ -207,9 +208,27 @@ local function request(u, ex, callback)
 	return req;
 end
 
-return {
-	request = request;
+local function new(options)
+	local http = {
+		options = options;
+		request = request;
+		new = options and function (new_options)
+			return new(setmetatable(new_options, { __index = options }));
+		end or new;
+		events = events.new();
+		request = request;
+	};
+	return http;
+end
 
+local default_http = new();
+
+return {
+	request = function (u, ex, callback)
+		return default_http:request(u, ex, callback);
+	end;
+	new = new;
+	events = default_http.events;
 	-- COMPAT
 	urlencode = util_http.urlencode;
 	urldecode = util_http.urldecode;
