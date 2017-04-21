@@ -838,7 +838,7 @@ function commands.cert(arg)
 			end
 			if arg[1] ~= "--help" and not hosts[arg[1]] then
 				show_message(error_messages["no-such-host"]);
-				return
+				return 1;
 			end
 			return cert_commands[subcmd](arg);
 		end
