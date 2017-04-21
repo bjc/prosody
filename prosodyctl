@@ -831,6 +831,10 @@ function commands.cert(arg)
 		openssl = require "util.openssl";
 		lfs = require "lfs";
 		local cert_dir_attrs = lfs.attributes(cert_basedir);
+		if not cert_dir_attrs then
+			show_warning("The directory "..cert_basedir.." does not exist");
+			return 1; -- TODO Should we create it?
+		end
 		if pposix.getuid() ~= cert_dir_attrs.uid then
 			show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
 			return 1;
