@@ -139,7 +139,10 @@ local want_pposix_version = "0.4.0";
 local have_pposix, pposix = pcall(require, "util.pposix");
 
 if have_pposix and pposix then
-	if pposix._VERSION ~= want_pposix_version then print(string.format("Unknown version (%s) of binary pposix module, expected %s", tostring(pposix._VERSION), want_pposix_version)); return; end
+	if pposix._VERSION ~= want_pposix_version then
+		print(string.format("Unknown version (%s) of binary pposix module, expected %s",
+			tostring(pposix._VERSION), want_pposix_version)); return;
+	end
 	current_uid = pposix.getuid();
 	local arg_root = arg[1] == "--root";
 	if arg_root then table.remove(arg, 1); end
@@ -818,7 +821,6 @@ function cert_commands.generate(arg)
 				days=365, sha256=true, utf8=true, config=conf_filename, out=cert_filename} then
 			show_message("Certificate written to ".. cert_filename);
 			print();
-			show_message(("Example config:\n\nssl = {\n\tcertificate = %q;\n\tkey = %q;\n}"):format(cert_filename, key_filename));
 		else
 			show_message("There was a problem, see OpenSSL output");
 		end
@@ -827,10 +829,88 @@ function cert_commands.generate(arg)
 	end
 end
 
+local function sh_esc(s)
+	return "'" .. s:gsub("'", "'\\''") .. "'";
+end
+
+local function copy(from, to, umask, owner, group)
+	local old_umask = umask and pposix.umask(umask);
+	local attrs = lfs.attributes(to);
+	if attrs then -- Move old file out of the way
+		local backup = to..".bkp~"..os.date("%FT%T", attrs.change);
+		os.rename(to, backup);
+	end
+	-- FIXME friendlier error handling, maybe move above backup back?
+	local input = assert(io.open(from));
+	local output = assert(io.open(to, "w"));
+	local data = input:read(2^11);
+	while data and output:write(data) do
+		data = input:read(2^11);
+	end
+	assert(input:close());
+	assert(output:close());
+	if owner and group then
+		local ok = os.execute(("chown %s.%s %s"):format(sh_esc(owner), sh_esc(group), sh_esc(to)));
+		assert(ok == true or ok == 0, "Failed to change ownership of "..to);
+	end
+	if old_umask then pposix.umask(old_umask); end
+	return true;
+end
+
+function cert_commands.import(arg)
+	local hostnames = {};
+	-- Move hostname arguments out of arg, the rest should be a list of paths
+	while arg[1] and prosody.hosts[ arg[1] ] do
+		table.insert(hostnames, table.remove(arg, 1));
+	end
+	if not arg[1] or arg[1] == "--help" then -- Probably forgot the path
+		show_usage("cert import HOSTNAME [HOSTNAME+] /path/to/certs [/other/paths/]+",
+			"Copies certificates to "..cert_basedir);
+		return 1;
+	end
+	local owner, group;
+	if pposix.getuid() == 0 then -- We need root to change ownership
+		owner = config.get("*", "prosody_user") or "prosody";
+		group = config.get("*", "prosody_group") or owner;
+	end
+	for _, host in ipairs(hostnames) do
+		for _, dir in ipairs(arg) do
+			if lfs.attributes(dir .. "/" .. host .. "/fullchain.pem")
+			and lfs.attributes(dir .. "/" .. host .. "/privkey.pem") then
+				copy(dir .. "/" .. host .. "/fullchain.pem", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+				copy(dir .. "/" .. host .. "/privkey.pem", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+				show_message("Imported certificate and key for "..host);
+			elseif lfs.attributes(dir .. "/" .. host .. ".crt")
+			and lfs.attributes(dir .. "/" .. host .. ".key") then
+				copy(dir .. "/" .. host .. ".crt", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+				copy(dir .. "/" .. host .. ".key", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+				show_message("Imported certificate and key for "..host);
+			else
+				show_warning("No certificate for host "..host.." found :(");
+			end
+			-- TODO Additional checks
+			-- Certificate names matches the hostname
+			-- Private key matches public key in certificate
+		end
+	end
+end
+
 function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		openssl = require "util.openssl";
 		lfs = require "lfs";
+		local cert_dir_attrs = lfs.attributes(cert_basedir);
+		if not cert_dir_attrs then
+			show_warning("The directory "..cert_basedir.." does not exist");
+			return 1; -- TODO Should we create it?
+		end
+		if pposix.getuid() ~= cert_dir_attrs.uid then
+			show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
+			return 1;
+		elseif cert_dir_attrs.permissions:match("^%.w..%-..%-.$") then
+			show_warning("The directory "..cert_basedir.." not only writable by its owner");
+			return 1;
+		end
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
 			if not arg[1] then
@@ -839,7 +919,7 @@ function commands.cert(arg)
 			end
 			if arg[1] ~= "--help" and not hosts[arg[1]] then
 				show_message(error_messages["no-such-host"]);
-				return
+				return 1;
 			end
 			return cert_commands[subcmd](arg);
 		end
