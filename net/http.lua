@@ -125,6 +125,7 @@ end
 
 local function request(self, u, ex, callback)
 	local req = url.parse(u);
+	req.url = u;
 
 	if not (req and req.host) then
 		callback("invalid-url", 0, req);
