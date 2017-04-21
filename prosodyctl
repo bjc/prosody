@@ -830,6 +830,14 @@ function commands.cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
 		openssl = require "util.openssl";
 		lfs = require "lfs";
+		local cert_dir_attrs = lfs.attributes(cert_basedir);
+		if pposix.getuid() ~= cert_dir_attrs.uid then
+			show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
+			return 1;
+		elseif cert_dir_attrs.permissions:match("^%.w..%-..%-.$") then
+			show_warning("The directory "..cert_basedir.." not only writable by its owner");
+			return 1;
+		end
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
 			if not arg[1] then
