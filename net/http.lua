@@ -137,6 +137,15 @@ local function request(self, u, ex, callback)
 
 	req.id = ex and ex.id or make_id(req);
 
+	do
+		local event = { http = self, url = u, request = req, options = ex, callback = callback };
+		local ret = self.events.fire_event("pre-request", event);
+		if ret then
+			return ret;
+		end
+		req, u, ex, callback = event.request, event.url, event.options, event.callback;
+	end
+
 	local method, headers, body;
 
 	local host, port = req.host, req.port;
@@ -191,13 +200,20 @@ local function request(self, u, ex, callback)
 
 	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
 	if not handler then
+		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = conn });
 		callback(conn, 0, req);
 		return nil, conn;
 	end
 	req.handler, req.conn = handler, conn
 	req.write = function (...) return req.handler:write(...); end
 
-	req.callback = function (content, code, request, response)
+	req.callback = function (content, code, response, request)
+		do
+			local event = { http = self, url = u, request = req, response = response, content = content, code = code, callback = callback };
+			self.events.fire_event("response", event);
+			content, code, response = event.content, event.code, event.response;
+		end
+
 		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
 		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
 	end
@@ -205,6 +221,8 @@ local function request(self, u, ex, callback)
 	req.state = "status";
 
 	requests[req.handler] = req;
+
+	self.events.fire_event("request", { http = self, request = req, url = u });
 	return req;
 end
 
