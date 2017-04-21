@@ -959,11 +959,11 @@ function commands.check(arg)
 			end
 			local subdomain = host:match("^[^.]+");
 			if not(host_options:contains("component_module")) and (subdomain == "jabber" or subdomain == "xmpp"
-			   or subdomain == "chat" or subdomain == "im") then
-			   	print("");
-			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
-			   	print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
-			   	print("     For more information see: http://prosody.im/doc/dns");
+				or subdomain == "chat" or subdomain == "im") then
+				print("");
+				print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
+				print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
+				print("     For more information see: http://prosody.im/doc/dns");
 			end
 		end
 		local all_modules = set.new(config["*"].modules_enabled);
