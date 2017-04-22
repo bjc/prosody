@@ -896,6 +896,9 @@ function cert_commands.import(arg)
 	end
 	if imported[1] then
 		show_message("Imported certificate and key for hosts "..table.concat(imported, ", "));
+	else
+		show_warning("No certificates imported :(");
+		return 1;
 	end
 end
 
