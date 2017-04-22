@@ -897,6 +897,10 @@ function cert_commands.import(arg)
 	end
 	if imported[1] then
 		show_message("Imported certificate and key for hosts "..table.concat(imported, ", "));
+		local ok, err = prosodyctl.reload();
+		if not ok and err ~= "not-running" then
+			show_message(error_messages[err]);
+		end
 	else
 		show_warning("No certificates imported :(");
 		return 1;
