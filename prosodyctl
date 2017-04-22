@@ -887,6 +887,7 @@ function cert_commands.import(arg)
 				copy(dir .. "/" .. host .. ".key", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
 				table.insert(imported, host);
 			else
+				-- TODO Say where we looked
 				show_warning("No certificate for host "..host.." found :(");
 			end
 			-- TODO Additional checks
