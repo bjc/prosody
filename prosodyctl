@@ -873,25 +873,37 @@ function cert_commands.import(arg)
 		owner = config.get("*", "prosody_user") or "prosody";
 		group = config.get("*", "prosody_group") or owner;
 	end
+	local imported = {};
 	for _, host in ipairs(hostnames) do
 		for _, dir in ipairs(arg) do
 			if lfs.attributes(dir .. "/" .. host .. "/fullchain.pem")
 			and lfs.attributes(dir .. "/" .. host .. "/privkey.pem") then
 				copy(dir .. "/" .. host .. "/fullchain.pem", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
 				copy(dir .. "/" .. host .. "/privkey.pem", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-				show_message("Imported certificate and key for "..host);
+				table.insert(imported, host);
 			elseif lfs.attributes(dir .. "/" .. host .. ".crt")
 			and lfs.attributes(dir .. "/" .. host .. ".key") then
 				copy(dir .. "/" .. host .. ".crt", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
 				copy(dir .. "/" .. host .. ".key", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-				show_message("Imported certificate and key for "..host);
+				table.insert(imported, host);
 			else
+				-- TODO Say where we looked
 				show_warning("No certificate for host "..host.." found :(");
 			end
 			-- TODO Additional checks
 			-- Certificate names matches the hostname
 			-- Private key matches public key in certificate
 		end
+	end
+	if imported[1] then
+		show_message("Imported certificate and key for hosts "..table.concat(imported, ", "));
+		local ok, err = prosodyctl.reload();
+		if not ok and err ~= "not-running" then
+			show_message(error_messages[err]);
+		end
+	else
+		show_warning("No certificates imported :(");
+		return 1;
 	end
 end
 
