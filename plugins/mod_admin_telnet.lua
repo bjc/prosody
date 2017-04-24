@@ -325,7 +325,7 @@ end
 
 function def_env.server:memory()
 	if not has_pposix or not pposix.meminfo then
-		return true, "Lua is using "..collectgarbage("count");
+		return true, "Lua is using "..human(collectgarbage("count"));
 	end
 	local mem, lua_mem = pposix.meminfo(), collectgarbage("count");
 	local print = self.session.print;

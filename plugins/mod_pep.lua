@@ -182,7 +182,8 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				payload.attr.id = id;
 				session.send(st.reply(stanza));
 				module:fire_event("pep-publish-item", {
-					node = node, user = jid_bare(session.full_jid), actor = session.jid, id = id, session = session, item = st.clone(payload);
+					node = node, user = jid_bare(session.full_jid), actor = session.jid,
+					id = id, session = session, item = st.clone(payload);
 				});
 				return true;
 			else
@@ -293,8 +294,18 @@ module:hook("account-disco-items", function(event)
 
 	if user_data then
 		for node, _ in pairs(user_data) do
-			reply:tag('item', {jid=bare, node=node}):up(); -- TODO we need to handle queries to these nodes
+			reply:tag('item', {jid=bare, node=node}):up();
 		end
+	end
+end);
+
+module:hook("account-disco-info-node", function (event)
+	local session, stanza, node = event.origin, event.stanza, event.node;
+	local user = stanza.attr.to;
+	local user_data = data[user];
+	if user_data and user_data[node] then
+		event.exists = true;
+		event.reply:tag('identity', {category='pubsub', type='leaf'}):up();
 	end
 end);
 
