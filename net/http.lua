@@ -10,6 +10,7 @@ local b64 = require "util.encodings".base64.encode;
 local url = require "socket.url"
 local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
+local events = require "util.events";
 
 local ssl_available = pcall(require, "ssl");
 
@@ -122,8 +123,9 @@ local function log_if_failed(id, ret, ...)
 	return ...;
 end
 
-local function request(u, ex, callback)
+local function request(self, u, ex, callback)
 	local req = url.parse(u);
+	req.url = u;
 
 	if not (req and req.host) then
 		callback("invalid-url", 0, req);
@@ -135,6 +137,15 @@ local function request(u, ex, callback)
 	end
 
 	req.id = ex and ex.id or make_id(req);
+
+	do
+		local event = { http = self, url = u, request = req, options = ex, callback = callback };
+		local ret = self.events.fire_event("pre-request", event);
+		if ret then
+			return ret;
+		end
+		req, u, ex, callback = event.request, event.url, event.options, event.callback;
+	end
 
 	local method, headers, body;
 
@@ -190,13 +201,20 @@ local function request(u, ex, callback)
 
 	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
 	if not handler then
+		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = conn });
 		callback(conn, 0, req);
 		return nil, conn;
 	end
 	req.handler, req.conn = handler, conn
 	req.write = function (...) return req.handler:write(...); end
 
-	req.callback = function (content, code, request, response)
+	req.callback = function (content, code, response, request)
+		do
+			local event = { http = self, url = u, request = req, response = response, content = content, code = code, callback = callback };
+			self.events.fire_event("response", event);
+			content, code, response = event.content, event.code, event.response;
+		end
+
 		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
 		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
 	end
@@ -204,12 +222,32 @@ local function request(u, ex, callback)
 	req.state = "status";
 
 	requests[req.handler] = req;
+
+	self.events.fire_event("request", { http = self, request = req, url = u });
 	return req;
 end
 
-return {
-	request = request;
+local function new(options)
+	local http = {
+		options = options;
+		request = request;
+		new = options and function (new_options)
+			return new(setmetatable(new_options, { __index = options }));
+		end or new;
+		events = events.new();
+		request = request;
+	};
+	return http;
+end
 
+local default_http = new();
+
+return {
+	request = function (u, ex, callback)
+		return default_http:request(u, ex, callback);
+	end;
+	new = new;
+	events = default_http.events;
 	-- COMPAT
 	urlencode = util_http.urlencode;
 	urldecode = util_http.urldecode;
