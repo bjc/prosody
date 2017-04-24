@@ -29,6 +29,10 @@
 
 #if defined(WITH_GETRANDOM)
 
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(a,b) 0
+#endif
+
 #if ! __GLIBC_PREREQ(2,25)
 #include <unistd.h>
 #include <sys/syscall.h>

@@ -936,7 +936,7 @@ function commands.cert(arg)
 			return cert_commands[subcmd](arg);
 		end
 	end
-	show_usage("cert config|request|generate|key", "Helpers for generating X.509 certificates and keys.")
+	show_usage("cert config|request|generate|key|import", "Helpers for generating X.509 certificates and keys.")
 end
 
 function commands.check(arg)
