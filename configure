@@ -303,6 +303,9 @@ do
    --ldflags)
       LDFLAGS="$value"
       ;;
+   --add-ldflags)
+      LDFLAGS="$LDFLAGS $value"
+      ;;
    --c-compiler)
       CC="$value"
       ;;
