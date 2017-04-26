@@ -35,7 +35,8 @@ local host = hosts[module.host];
 
 local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
 local ssl_cfg_c2s, ssl_cfg_s2sout, ssl_cfg_s2sin;
-do
+
+function module.load()
 	local NULL, err = {};
 	local modhost = module.host;
 	local parent = modhost:match("%.(.*)$");
@@ -60,6 +61,8 @@ do
 	ssl_ctx_s2sin, err, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
 	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", err); end
 end
+
+module:hook_global("config-reloaded", module.load);
 
 local function can_do_tls(session)
 	if not session.conn.starttls then
