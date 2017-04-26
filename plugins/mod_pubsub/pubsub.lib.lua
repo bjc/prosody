@@ -326,7 +326,7 @@ local function create_encapsulating_item(id, payload, publisher, expose_publishe
 	return item;
 end
 
-local function simple_itemstore(archive, config, node, expose_publisher)
+local function simple_itemstore(archive, config, user, node, expose_publisher)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
 	function get_set:items()
