@@ -36,8 +36,10 @@ local function subscription_presence(user_bare, recipient)
 	return is_contact_subscribed(username, host, recipient_bare);
 end
 
-local function simple_itemstore(config, node)
-	return lib_pubsub.simple_itemstore(archive, config, node, false);
+local function simple_itemstore(user)
+	return function (config, node)
+		return lib_pubsub.simple_itemstore(archive, config, user, node, false);
+	end
 end
 
 local function get_broadcaster(name)
@@ -166,7 +168,7 @@ function get_pep_service(name)
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = true;
 
-		itemstore = simple_itemstore;
+		itemstore = simple_itemstore(name);
 		broadcaster = get_broadcaster(name);
 		get_affiliation = function (jid)
 			if jid_bare(jid) == name then

@@ -39,7 +39,7 @@ function handle_pubsub_iq(event)
 end
 
 local function simple_itemstore(config, node)
-	return lib_pubsub.simple_itemstore(archive, config, node, expose_publisher);
+	return lib_pubsub.simple_itemstore(archive, config, nil, node, expose_publisher);
 end
 
 function simple_broadcast(kind, node, jids, item, actor)
