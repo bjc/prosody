@@ -383,7 +383,7 @@ local function simple_itemstore(archive, config, node, expose_publisher)
 			module:log("error", "Unable to set item: %s", err);
 			return nil, err;
 		end
-		return true;
+		return data;
 	end
 	return setmetatable(get_set, archive);
 end

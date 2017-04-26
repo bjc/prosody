@@ -273,6 +273,7 @@ function service:publish(node, actor, id, item)
 	if not ok then
 		return nil, "internal-server-error";
 	end
+	if type(ok) == "string" then id = ok; end
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
 	self.config.broadcaster("items", node, node_obj.subscribers, item, actor);
 	return true;
