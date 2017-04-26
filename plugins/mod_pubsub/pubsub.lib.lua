@@ -331,7 +331,7 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 	local get_set = {};
 	function get_set:items()
 		local store = self.store;
-		local data, err = archive:find(node);
+		local data, err = archive:find(user, { with = node });
 		if not data then
 			module:log("error", "Unable to get items: %s", err);
 			return true;
@@ -348,7 +348,8 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 	end
 	function get_set:get(key)
 		local store = self.store;
-		local data, err = archive:find(node, {
+		local data, err = archive:find(user, {
+			with = node;
 			key = key;
 		});
 		if not data then
@@ -373,10 +374,11 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 		if value ~= nil then
 			local publisher = value.attr.publisher;
 			local payload = value.tags[1];
-			data, err = archive:append(node, key, payload, time_now(), publisher);
+			data, err = archive:append(user, key, payload, time_now(), node);
 		else
-			data, err = archive:delete(node, {
+			data, err = archive:delete(user, {
 				key = key;
+				with = node;
 			});
 		end
 		if not data then
