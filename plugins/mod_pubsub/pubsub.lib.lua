@@ -318,7 +318,7 @@ function handlers.get_default(origin, stanza, default, service)
 end
 
 local function create_encapsulating_item(id, payload, publisher, expose_publisher)
-	local item = st.stanza("item", { id = id }, xmlns_pubsub);
+	local item = st.stanza("item", { id = id, xmlns = xmlns_pubsub });
 	item:add_child(payload);
 	if expose_publisher then
 		item.attr.publisher = publisher;
