@@ -297,8 +297,14 @@ do
    --cflags)
       CFLAGS="$value"
       ;;
+   --add-cflags)
+      CFLAGS="$CFLAGS $value"
+      ;;
    --ldflags)
       LDFLAGS="$value"
+      ;;
+   --add-ldflags)
+      LDFLAGS="$LDFLAGS $value"
       ;;
    --c-compiler)
       CC="$value"

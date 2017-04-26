@@ -52,6 +52,8 @@ if archive.name == "null" or not archive.find then
 	archive = module:require "fallback_archive";
 end
 
+local use_total = true;
+
 local cleanup;
 
 -- Handle prefs.
@@ -137,7 +139,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		limit = qmax + 1;
 		before = before; after = after;
 		reverse = reverse;
-		total = true;
+		total = get_total;
 	});
 
 	if not data then
@@ -359,6 +361,10 @@ if cleanup_after ~= "never" then
 		end
 		return math.random(cleanup_interval, cleanup_interval * 2);
 	end);
+else
+	-- Don't ask the backend to count the potentially unbounded number of items,
+	-- it'll get slow.
+	use_total = false;
 end
 
 -- Stanzas sent by local clients
