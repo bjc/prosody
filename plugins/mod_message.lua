@@ -48,8 +48,6 @@ local function process_to_bare(bare, origin, stanza)
 		local node, host = jid_split(bare);
 		local ok
 		if user_exists(node, host) then
-			-- TODO apply the default privacy list
-
 			ok = module:fire_event('message/offline/handle', {
 			    origin = origin,
 			    stanza = stanza,
