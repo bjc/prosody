@@ -49,6 +49,7 @@ local function process_to_bare(bare, origin, stanza)
 		local ok
 		if user_exists(node, host) then
 			ok = module:fire_event('message/offline/handle', {
+				username = node;
 				origin = origin,
 				stanza = stanza,
 			});
