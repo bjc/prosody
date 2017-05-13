@@ -7,7 +7,6 @@
 -- luacheck: ignore 431/log
 
 module:set_global();
-
 local add_task = require "util.timer".add_task;
 local add_filter = require "util.filters".add_filter;
 local sha1 = require "util.hashes".sha1;
@@ -18,6 +17,8 @@ local contains_token = require "util.http".contains_token;
 local portmanager = require "core.portmanager";
 local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
+
+local hosts = _G.hosts;
 
 local websocket_frames = require"net.websocket.frames";
 local parse_frame = websocket_frames.parse;
@@ -256,11 +257,14 @@ function handle_request(event)
 
 	local session = sessions[conn];
 
+
 	session.secure = consider_websocket_secure or session.secure;
 
 	session.open_stream = session_open_stream;
 	session.close = session_close;
-
+	
+	hosts[session.host].events.fire_event("websocket-session", { session = session, request = request });
+	
 	local frameBuffer = "";
 	add_filter(session, "bytes/in", function(data)
 		local cache = {};
