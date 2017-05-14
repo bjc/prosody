@@ -139,7 +139,13 @@ function archive:delete(username, query)
 		if k ~= "end" then return nil, "unsupported-query-field"; end
 	end
 	local items, err = datamanager.list_load(username, host, self.store);
-	if not items then return items, err; end
+	if not items then
+		if err then
+			return items, err;
+		end
+		-- Store is empty
+		return 0;
+	end
 	items = array(items);
 	local count_before = #items;
 	items:filter(function (item)
