@@ -66,7 +66,7 @@ function module.add_host(module)
 			return true;
 		end
 
-		local secret = module:get_option("component_secret");
+		local secret = module:get_option_string("component_secret");
 		if not secret then
 			(session.log or log)("warn", "Component attempted to identify as %s, but component_secret is not set", session.host);
 			session:close("not-authorized");

@@ -33,7 +33,7 @@ local function serialize(value)
 		return "xml", tostring(value);
 	elseif t == "table" then
 		local encoded,err = json.encode(value);
-		if value then return "json", encoded; end
+		if encoded then return "json", encoded; end
 		return nil, err;
 	end
 	return nil, "Unhandled value type: "..t;

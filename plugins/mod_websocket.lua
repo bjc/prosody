@@ -334,7 +334,7 @@ function module.add_host(module)
 		-- This might be weird with random load order
 		local_cross_domain:exclude(cross_domain);
 		cross_domain:include(local_cross_domain);
-		module:log("debug", "cross_domain = %s", cross_domain);
+		module:log("debug", "cross_domain = %s", tostring(cross_domain));
 		function module.unload()
 			cross_domain:exclude(local_cross_domain);
 		end
