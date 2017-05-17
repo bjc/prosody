@@ -329,7 +329,7 @@ local function unsubscribed(username, host, jid)
 		end
 	end
 	local success = (pending or is_subscribed) and save_roster(username, host, roster, jid);
-	return success, pending, subscribed;
+	return success, pending, is_subscribed;
 end
 
 local function process_outbound_subscription_request(username, host, jid)
