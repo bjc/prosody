@@ -290,7 +290,7 @@ local function message_handler(event, c2s)
 		local ok = archive:append(store_user, nil, stanza, time_now(), with);
 		if ok then
 			local id = ok;
-			stanza:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
+			event.stanza:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
 			if cleanup then cleanup[store_user] = true; end
 			module:fire_event("archive-message-added", { origin = origin, stanza = stanza, for_user = store_user, id = id });
 		end
