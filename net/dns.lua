@@ -137,9 +137,7 @@ local function prune(rrs, time, soft)    -- - - - - - - - - - - - - - -  prune
 	time = time or socket.gettime();
 	for i,rr in ipairs(rrs) do
 		if rr.tod then
-			-- rr.tod = rr.tod - 50    -- accelerated decripitude
-			rr.ttl = math.floor(rr.tod - time);
-			if rr.ttl <= 0 then
+			if rr.tod < time then
 				rrs[rr[rr.type:lower()]] = nil;
 				table.remove(rrs, i);
 				return prune(rrs, time, soft); -- Re-iterate
@@ -506,11 +504,7 @@ function resolver:rr()    -- - - - - - - - - - - - - - - - - - - - - - - -  rr
 	rr.ttl      = 0x10000*self:word() + self:word();
 	rr.rdlength = self:word();
 
-	if rr.ttl <= 0 then
-		rr.tod = self.time + 30;
-	else
-		rr.tod = self.time + rr.ttl;
-	end
+	rr.tod = self.time + rr.ttl;
 
 	local remember = self.offset;
 	local rr_parser = self[dns.type[rr.type]];
