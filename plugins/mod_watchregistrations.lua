@@ -22,7 +22,8 @@ module:hook("user-registered", function (user)
 		:tag("body")
 			:text(registration_notification:gsub("%$(%w+)", function (v)
 				return user[v] or user.session and user.session[v] or nil;
-			end));
+			end))
+		:up();
 	for jid in registration_watchers do
 		module:log("debug", "Notifying %s", jid);
 		message.attr.to = jid;
