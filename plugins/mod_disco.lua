@@ -175,6 +175,7 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(even
 		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
+		reply:tag('identity', {category='account', type='registered'}):up();
 		module:fire_event("account-disco-info", { origin = origin, reply = reply });
 		origin.send(reply);
 		return true;
