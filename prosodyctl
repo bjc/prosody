@@ -74,9 +74,7 @@ do
 		end
 		table.remove(arg, 1); table.remove(arg, 1);
 	else
-		for _, format in ipairs(config.parsers()) do
-			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
-		end
+		table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
 	end
 	for _,_filename in ipairs(filenames) do
 		filename = _filename;

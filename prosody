@@ -76,9 +76,7 @@ function read_config()
 	elseif os.getenv("PROSODY_CONFIG") then -- Passed by prosodyctl
 			table.insert(filenames, os.getenv("PROSODY_CONFIG"));
 	else
-		for _, format in ipairs(config.parsers()) do
-			table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg."..format);
-		end
+		table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
 	end
 	for _,_filename in ipairs(filenames) do
 		filename = _filename;

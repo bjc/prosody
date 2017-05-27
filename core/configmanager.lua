@@ -27,7 +27,7 @@ local _ENV = nil;
 
 _M.resolve_relative_path = resolve_relative_path; -- COMPAT
 
-local parsers = {};
+local parser = nil;
 
 local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
@@ -77,11 +77,11 @@ end
 function _M.load(filename, config_format)
 	config_format = config_format or filename:match("%w+$");
 
-	if parsers[config_format] and parsers[config_format].load then
+	if config_format == "lua" then
 		local f, err = io.open(filename);
 		if f then
 			local new_config = setmetatable({ ["*"] = { } }, config_mt);
-			local ok, err = parsers[config_format].load(f:read("*a"), filename, new_config);
+			local ok, err = parser.load(f:read("*a"), filename, new_config);
 			f:close();
 			if ok then
 				config = new_config;
@@ -103,26 +103,11 @@ function _M.load(filename, config_format)
 	end
 end
 
-function _M.addparser(config_format, parser)
-	if config_format and parser then
-		parsers[config_format] = parser;
-	end
-end
-
--- _M needed to avoid name clash with local 'parsers'
-function _M.parsers()
-	local p = {};
-	for config_format in pairs(parsers) do
-		table.insert(p, config_format);
-	end
-	return p;
-end
-
 -- Built-in Lua parser
 do
 	local pcall = _G.pcall;
-	parsers.lua = {};
-	function parsers.lua.load(data, config_file, config_table)
+	parser = {};
+	function parser.load(data, config_file, config_table)
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -211,7 +196,7 @@ do
 			file = resolve_relative_path(config_file:gsub("[^"..path_sep.."]+$", ""), file);
 			local f, err = io.open(file);
 			if f then
-				local ret, err = parsers.lua.load(f:read("*a"), file, config_table);
+				local ret, err = parser.load(f:read("*a"), file, config_table);
 				if not ret then error(err:gsub("%[string.-%]", file), 0); end
 			end
 			if not f then error("Error loading included "..file..": "..err, 0); end
