@@ -7,8 +7,8 @@
 --
 
 local _G = _G;
-local setmetatable, rawget, rawset, io, error, dofile, type, pairs, table =
-      setmetatable, rawget, rawset, io, error, dofile, type, pairs, table;
+local setmetatable, rawget, rawset, io, error, dofile, type, pairs =
+      setmetatable, rawget, rawset, io, error, dofile, type, pairs;
 local format, math_max = string.format, math.max;
 
 local fire_event = prosody and prosody.events.fire_event or function () end;
