@@ -216,6 +216,7 @@ end
 
 local function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
+	global_certificates = configmanager.get("*", "certificates") or "certs";
 	if luasec_has.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
