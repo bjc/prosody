@@ -11,7 +11,8 @@ local want_pposix_version = "0.4.0";
 
 local pposix = assert(require "util.pposix");
 if pposix._VERSION ~= want_pposix_version then
-	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
+	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s."
+		.. "Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
 end
 
 local have_signal, signal = pcall(require, "util.signal");
