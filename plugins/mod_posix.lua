@@ -113,7 +113,7 @@ local function write_pidfile()
 end
 
 local syslog_opened;
-function syslog_sink_maker(config)
+function syslog_sink_maker(config) -- luacheck: ignore 212/config
 	if not syslog_opened then
 		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
 		syslog_opened = true;
