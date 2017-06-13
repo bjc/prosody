@@ -11,7 +11,8 @@ local want_pposix_version = "0.4.0";
 
 local pposix = assert(require "util.pposix");
 if pposix._VERSION ~= want_pposix_version then
-	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s. Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
+	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s."
+		.. "Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
 end
 
 local have_signal, signal = pcall(require, "util.signal");
@@ -112,7 +113,7 @@ local function write_pidfile()
 end
 
 local syslog_opened;
-function syslog_sink_maker(config)
+function syslog_sink_maker(config) -- luacheck: ignore 212/config
 	if not syslog_opened then
 		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
 		syslog_opened = true;
