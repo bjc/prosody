@@ -349,8 +349,11 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	occupant:set_session(real_jid, st.presence({type="unavailable"})
 		:tag('status'):text(error_message));
 	self:save_occupant(occupant);
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
-		:tag("status", {code = "307"})
+	local x = {
+		base = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+		self = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
+			:tag("status", {code = "307"});
+	};
 	self:publicise_occupant_status(occupant, x);
 	if occupant.jid == real_jid then -- Was last session
 		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
@@ -1298,7 +1301,11 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
 	if not role then
-		x:tag("status", {code = "307"}):up();
+		x = {
+			base = x;
+			self = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+				:tag("status", {code = "307"}):up();
+		};
 	end
 	occupant.role = role;
 	self:save_occupant(occupant);
