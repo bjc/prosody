@@ -158,6 +158,11 @@ Use the specified config file instead of the default.
 .RS
 .RE
 .TP
+.B \f[C]\-\-root\f[]
+Don\[aq]t drop root privileges.
+.RS
+.RE
+.TP
 .B \f[C]\-\-help\f[]
 Display help text for the specified command.
 .RS
