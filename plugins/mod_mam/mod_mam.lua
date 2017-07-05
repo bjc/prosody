@@ -141,7 +141,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		limit = qmax + 1;
 		before = before; after = after;
 		reverse = reverse;
-		total = use_total;
+		total = use_total or qmax == 0;
 	});
 
 	if not data then
