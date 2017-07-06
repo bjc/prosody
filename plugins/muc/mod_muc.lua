@@ -138,6 +138,7 @@ local function restore_room(jid)
 	local data = room_configs:get(node);
 	local state = room_state:get(node);
 	if data then
+		module:log("debug", "Restoring room %s from storage", jid);
 		local room = muclib.restore_room(data, state);
 		track_room(room);
 		return room;
