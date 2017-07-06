@@ -292,7 +292,7 @@ for event_name, method in pairs {
 				room = muclib.new_room(room_jid);
 				return room:handle_first_presence(origin, stanza);
 			elseif stanza.attr.type ~= "error" then
-				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
 				return true;
 			else
 				return;
