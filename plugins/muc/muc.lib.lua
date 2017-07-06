@@ -1083,17 +1083,20 @@ function room_mt:set_role(actor, occupant_jid, role, callback, reason)
 	else
 		occupant.role = role;
 	end
+	local self_x = st.clone(x);
+	self_x:tag("status", {code = "110"}):up();
 	local bp;
 	for jid,pres in pairs(occupant.sessions) do -- send to all sessions of the nick
 		local p = st.clone(pres);
 		p.attr.from = occupant_jid;
 		p.attr.type = presence_type;
 		p.attr.to = jid;
-		p:add_child(x);
-		self:_route_stanza(p);
 		if occupant.jid == jid then
-			bp = p;
+			bp = st.clone(p);
+			bp:add_child(x);
 		end
+		p:add_child(self_x);
+		self:_route_stanza(p);
 	end
 	if callback then callback(); end
 	if bp then
