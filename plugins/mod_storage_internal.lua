@@ -62,7 +62,13 @@ end
 
 function archive:find(username, query)
 	local items, err = datamanager.list_load(username, host, self.store);
-	if not items then return items, err; end
+	if not items then
+		if err then
+			return items, err;
+		else
+			return function () end, 0;
+		end
+	end
 	local count = #items;
 	local i = 0;
 	if query then

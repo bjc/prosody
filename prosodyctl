@@ -932,6 +932,8 @@ function commands.cert(arg)
 				return 1;
 			end
 			return cert_commands[subcmd](arg);
+		elseif subcmd == "check" then
+			return commands.check({"certs"});
 		end
 	end
 	show_usage("cert config|request|generate|key|import", "Helpers for generating X.509 certificates and keys.")

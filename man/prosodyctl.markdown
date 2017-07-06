@@ -137,6 +137,9 @@ OPTIONS
 `--config filename`
 :   Use the specified config file instead of the default.
 
+`--root`
+:   Don't drop root privileges.
+
 `--help`
 :   Display help text for the specified command.
 
