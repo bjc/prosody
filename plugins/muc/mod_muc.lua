@@ -251,7 +251,7 @@ do
 				restrict_room_creation == "local" and
 				select(2, jid_split(user_jid)) == host_suffix
 			) then
-				origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed", "Room creation is restricted"));
 				return true;
 			end
 		end);
