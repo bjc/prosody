@@ -1009,6 +1009,8 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			x:tag("status", {code="321"}):up(); -- affiliation change
 		end
 	end
+	local self_x = st.clone(x);
+	self_x:tag("status", {code="110"});
 	local modified_nicks = {};
 	for nick, occupant in pairs(self._occupants) do
 		if jid_bare(occupant.jid) == jid then
@@ -1023,11 +1025,13 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 				p.attr.from = nick;
 				p.attr.type = presence_type;
 				p.attr.to = jid;
-				p:add_child(x);
-				self:_route_stanza(p);
 				if occupant.jid == jid then
-					modified_nicks[nick] = p;
+					local bp = st.clone(p);
+					bp:add_child(x);
+					modified_nicks[nick] = bp;
 				end
+				p:add_child(self_x);
+				self:_route_stanza(p);
 			end
 		end
 	end
