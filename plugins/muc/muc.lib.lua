@@ -1009,6 +1009,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 			x:tag("status", {code="321"}):up(); -- affiliation change
 		end
 	end
+	-- Your own presence should have status 110
 	local self_x = st.clone(x);
 	self_x:tag("status", {code="110"});
 	local modified_nicks = {};
@@ -1026,6 +1027,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
 				p.attr.type = presence_type;
 				p.attr.to = jid;
 				if occupant.jid == jid then
+					-- Broadcast this presence to everyone else later, with the public <x> variant
 					local bp = st.clone(p);
 					bp:add_child(x);
 					modified_nicks[nick] = bp;
