@@ -245,6 +245,7 @@ return {
 	request = function (u, ex, callback)
 		return default_http:request(u, ex, callback);
 	end;
+	default = default_http;
 	new = new;
 	events = default_http.events;
 	-- COMPAT
