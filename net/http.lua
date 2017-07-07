@@ -235,7 +235,6 @@ local function new(options)
 			return new(setmetatable(new_options, { __index = options }));
 		end or new;
 		events = events.new();
-		request = request;
 	};
 	return http;
 end
