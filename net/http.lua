@@ -196,7 +196,7 @@ local function request(self, u, ex, callback)
 
 	local sslctx = false;
 	if using_https then
-		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
 	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
@@ -239,7 +239,9 @@ local function new(options)
 	return http;
 end
 
-local default_http = new();
+local default_http = new({
+	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+});
 
 return {
 	request = function (u, ex, callback)
