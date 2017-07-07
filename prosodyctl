@@ -251,6 +251,13 @@ local modulemanager = require "core.modulemanager"
 
 local prosodyctl = require "util.prosodyctl"
 local socket = require "socket"
+
+local http = require "net.http"
+local config_ssl = config.get("*", "ssl")
+local https_client = config.get("*", "client_https_ssl")
+http.default.options.sslctx = require "core.certmanager".create_context("client_https port 0", "client",
+	{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
+
 -----------------------
 
 -- FIXME: Duplicate code waiting for util.startup
