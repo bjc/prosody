@@ -37,7 +37,7 @@ function listener.onconnect(conn)
 	local req = requests[conn];
 
 	-- Validate certificate
-	if conn:ssl() then
+	if not req.insecure and conn:ssl() then
 		local sock = conn:socket();
 		local chain_valid = sock.getpeerverification and sock:getpeerverification();
 		if not chain_valid then
@@ -202,6 +202,7 @@ local function request(self, u, ex, callback)
 				headers[k] = v;
 			end
 		end
+		req.insecure = ex.insecure;
 	end
 
 	log("debug", "Making %s %s request '%s' to %s", req.scheme:upper(), method or "GET", req.id, (ex and ex.suppress_url and host_header) or u);
