@@ -11,6 +11,7 @@ local url = require "socket.url"
 local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
 local events = require "util.events";
+local verify_identity = require"util.x509".verify_identity;
 
 local ssl_available = pcall(require, "ssl");
 
@@ -34,6 +35,26 @@ local listener = { default_port = 80, default_mode = "*a" };
 
 function listener.onconnect(conn)
 	local req = requests[conn];
+
+	-- Validate certificate
+	if conn:ssl() then
+		local sock = conn:socket();
+		local chain_valid = sock.getpeerverification and sock:getpeerverification();
+		if not chain_valid then
+			req.callback("certificate-chain-invalid", 0, req);
+			req.callback = nil;
+			conn:close();
+			return;
+		end
+		local cert = sock.getpeercertificate and sock:getpeercertificate();
+		if not cert or not verify_identity(req.host, false, cert) then
+			req.callback("certificate-verify-failed", 0, req);
+			req.callback = nil;
+			conn:close();
+			return;
+		end
+	end
+
 	-- Send the request
 	local request_line = { req.method or "GET", " ", req.path, " HTTP/1.1\r\n" };
 	if req.query then
