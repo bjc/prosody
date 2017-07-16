@@ -182,7 +182,7 @@ end
 
 local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
 local whitelist_only = module:get_option_boolean("whitelist_registration_only");
-local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1" })._items;
+local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1", "::1" })._items;
 local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
 
 local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
