@@ -435,6 +435,13 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						self._occupants[current_nick].sessions[from] = pr;
 						self:broadcast_presence(pr, from);
 					else -- change nick
+						-- a MUC service MUST NOT allow empty or invisible Room Nicknames
+						-- (i.e., Room Nicknames that consist only of one or more space characters).
+						if not select(3, jid_split(nick)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
+							module:log("debug", "Rejecting invisible nickname");
+							origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+							return;
+						end
 						local occupant = self._occupants[current_nick];
 						local is_multisession = next(occupant.sessions, next(occupant.sessions));
 						if self._occupants[to] or is_multisession then
@@ -467,6 +474,13 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				--	self:handle_to_occupant(origin, stanza); -- resend available
 				--end
 			else -- enter room
+				-- a MUC service MUST NOT allow empty or invisible Room Nicknames
+				-- (i.e., Room Nicknames that consist only of one or more space characters).
+				if not select(3, jid_split(nick)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
+						module:log("debug", "Rejecting invisible nickname");
+						origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
+						return;
+				end
 				local new_nick = to;
 				local is_merge;
 				if self._occupants[to] then
