@@ -103,6 +103,7 @@ function check_dependencies()
 				["Source"] = "http://www.inf.puc-rio.br/~brunoos/luasec/";
 			}, "SSL/TLS support will not be available");
 	elseif not _G.ssl then
+		-- COMPAT Code expecting LuaSec to export as a global (see #749)
 		_G.ssl = ssl;
 		_G.ssl.context = require "ssl.context";
 		_G.ssl.x509 = softreq "ssl.x509";
