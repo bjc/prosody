@@ -79,6 +79,9 @@ function check_dependencies()
 				["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
 			});
 		fatal = true;
+	elseif not _G.socket then
+		-- COMPAT Code expecting LuaSocket to export as a global
+		_G.socket = socket;
 	end
 	
 	local lfs, err = softreq "lfs"
