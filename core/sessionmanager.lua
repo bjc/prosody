@@ -188,10 +188,14 @@ local function bind_resource(session, resource)
 	local err;
 	session.roster, err = rm_load_roster(session.username, session.host);
 	if err then
+		-- FIXME: Why is all this rollback down here, instead of just doing the roster test up above?
 		full_sessions[session.full_jid] = nil;
 		hosts[session.host].sessions[session.username].sessions[resource] = nil;
 		session.full_jid = nil;
 		session.resource = nil;
+		if session.type == "c2s" then
+			session.type = "c2s_unbound";
+		end
 		if next(bare_sessions[session.username..'@'..session.host].sessions) == nil then
 			bare_sessions[session.username..'@'..session.host] = nil;
 			hosts[session.host].sessions[session.username] = nil;
