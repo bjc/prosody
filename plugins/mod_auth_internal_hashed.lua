@@ -120,7 +120,9 @@ function provider.get_sasl_handler()
 			local credentials = accounts:get(username);
 			if not credentials then return; end
 			if credentials.password then
-				usermanager.set_password(username, credentials.password, host);
+				if provider.set_password(username, credentials.password) == nil then
+					return nil, "Auth failed. Could not set hashed password from plaintext.";
+				end
 				credentials = accounts:get(username);
 				if not credentials then return; end
 			end
