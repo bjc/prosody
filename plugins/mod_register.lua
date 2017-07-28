@@ -130,7 +130,7 @@ local function handle_registration_stanza(event)
 			local password = query:get_child_text("password");
 			if username and password then
 				if username == session.username then
-					if usermanager_set_password(username, password, session.host) then
+					if usermanager_set_password(username, password, session.host, session.resource) then
 						session.send(st.reply(stanza));
 					else
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?

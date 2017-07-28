@@ -203,6 +203,18 @@ module:hook_global("user-deleted", function(event)
 	end
 end, 200);
 
+module:hook_global("user-password-changed", function(event)
+	local username, host, resource = event.username, event.host, event.resource;
+	local user = hosts[host].sessions[username];
+	if user and user.sessions then
+		for r, session in pairs(user.sessions) do
+			if r ~= resource then
+				session:close{ condition = "reset", text = "Password changed" };
+			end
+		end
+	end
+end, 200);
+
 --- Port listener
 function listener.onconnect(conn)
 	local session = sm_new_session(conn);
