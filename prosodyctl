@@ -1336,7 +1336,14 @@ function commands.check(arg)
 			print("This version of LuaSec (" .. ssl._VERSION .. ") does not support certificate checking");
 			cert_ok = false
 		else
-			for host in enabled_hosts() do
+			local function skip_bare_jid_hosts(host)
+				if jid_split(host) then
+					-- See issue #779
+					return false;
+				end
+				return true;
+			end
+			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
 				local host_ssl_config = config.rawget(host, "ssl")
