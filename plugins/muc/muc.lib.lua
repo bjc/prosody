@@ -437,7 +437,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					else -- change nick
 						-- a MUC service MUST NOT allow empty or invisible Room Nicknames
 						-- (i.e., Room Nicknames that consist only of one or more space characters).
-						if not select(3, jid_split(nick)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
+						if not select(3, jid_split(to)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
 							module:log("debug", "Rejecting invisible nickname");
 							origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 							return;
@@ -476,7 +476,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 			else -- enter room
 				-- a MUC service MUST NOT allow empty or invisible Room Nicknames
 				-- (i.e., Room Nicknames that consist only of one or more space characters).
-				if not select(3, jid_split(nick)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
+				if not select(3, jid_split(to)):find("[^ ]") then -- resourceprep turns all whitespace into 0x20
 						module:log("debug", "Rejecting invisible nickname");
 						origin.send(st.error_reply(stanza, "cancel", "not-allowed"));
 						return;
