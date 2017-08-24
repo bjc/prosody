@@ -91,6 +91,7 @@ module:hook("stream-features", function(event)
 	features:add_child(register_stream_feature);
 end);
 
+-- Password change and account deletion handler
 local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
 	local log = session.log or module._log;
@@ -207,6 +208,7 @@ local function check_throttle(ip)
 	return throttle:poll(1);
 end
 
+-- In-band registration
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
 	local log = session.log or module._log;
