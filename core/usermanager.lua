@@ -76,8 +76,12 @@ local function get_password(username, host)
 	return hosts[host].users.get_password(username);
 end
 
-local function set_password(username, password, host)
-	return hosts[host].users.set_password(username, password);
+local function set_password(username, password, host, resource)
+	local ok, err = hosts[host].users.set_password(username, password);
+	if ok then
+		prosody.events.fire_event("user-password-changed", { username = username, host = host, resource = resource });
+	end
+	return ok, err;
 end
 
 local function user_exists(username, host)

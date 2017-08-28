@@ -1067,7 +1067,7 @@ function def_env.user:password(jid, password)
 	elseif not um.user_exists(username, host) then
 		return nil, "No such user";
 	end
-	local ok, err = um.set_password(username, password, host);
+	local ok, err = um.set_password(username, password, host, nil);
 	if ok then
 		return true, "User password changed";
 	else

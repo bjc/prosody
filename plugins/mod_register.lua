@@ -91,6 +91,7 @@ module:hook("stream-features", function(event)
 	features:add_child(register_stream_feature);
 end);
 
+-- Password change and account deletion handler
 local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
 	local log = session.log or module._log;
@@ -130,7 +131,7 @@ local function handle_registration_stanza(event)
 			local password = query:get_child_text("password");
 			if username and password then
 				if username == session.username then
-					if usermanager_set_password(username, password, session.host) then
+					if usermanager_set_password(username, password, session.host, session.resource) then
 						session.send(st.reply(stanza));
 					else
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?
@@ -207,6 +208,7 @@ local function check_throttle(ip)
 	return throttle:poll(1);
 end
 
+-- In-band registration
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
 	local log = session.log or module._log;

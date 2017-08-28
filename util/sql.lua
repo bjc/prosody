@@ -175,7 +175,11 @@ function engine:execute_query(sql, ...)
 	sql = self:prepquery(sql);
 	local stmt = assert(self.conn:prepare(sql));
 	assert(stmt:execute(...));
-	return stmt:rows();
+	local result = {};
+	for row in stmt:rows() do result[#result + 1] = row; end
+	stmt:close();
+	local i = 0;
+	return function() i=i+1; return result[i]; end;
 end
 function engine:execute_update(sql, ...)
 	sql = self:prepquery(sql);

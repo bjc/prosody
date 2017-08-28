@@ -249,6 +249,13 @@ local modulemanager = require "core.modulemanager"
 
 local prosodyctl = require "util.prosodyctl"
 local socket = require "socket"
+
+local http = require "net.http"
+local config_ssl = config.get("*", "ssl")
+local https_client = config.get("*", "client_https_ssl")
+http.default.options.sslctx = require "core.certmanager".create_context("client_https port 0", "client",
+	{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
+
 -----------------------
 
  -- FIXME: Duplicate code waiting for util.startup
@@ -1334,7 +1341,14 @@ function commands.check(arg)
 			print("This version of LuaSec (" .. ssl._VERSION .. ") does not support certificate checking");
 			cert_ok = false
 		else
-			for host in enabled_hosts() do
+			local function skip_bare_jid_hosts(host)
+				if jid_split(host) then
+					-- See issue #779
+					return false;
+				end
+				return true;
+			end
+			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
 				local host_ssl_config = config.rawget(host, "ssl")
