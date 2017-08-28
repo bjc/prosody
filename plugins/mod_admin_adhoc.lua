@@ -97,7 +97,7 @@ local change_user_password_command_handler = adhoc_simple(change_user_password_l
 	if module_host ~= host then
 		return { status = "completed", error = { message = "Trying to change the password of a user on " .. host .. " but command was sent to " .. module_host}};
 	end
-	if usermanager_user_exists(username, host) and usermanager_set_password(username, fields.password, host) then
+	if usermanager_user_exists(username, host) and usermanager_set_password(username, fields.password, host, nil) then
 		return { status = "completed", info = "Password successfully changed" };
 	else
 		return { status = "completed", error = { message = "User does not exist" } };

@@ -11,6 +11,7 @@ local url = require "socket.url"
 local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
 local events = require "util.events";
+local verify_identity = require"util.x509".verify_identity;
 
 local ssl_available = pcall(require, "ssl");
 
@@ -34,6 +35,26 @@ local listener = { default_port = 80, default_mode = "*a" };
 
 function listener.onconnect(conn)
 	local req = requests[conn];
+
+	-- Validate certificate
+	if not req.insecure and conn:ssl() then
+		local sock = conn:socket();
+		local chain_valid = sock.getpeerverification and sock:getpeerverification();
+		if not chain_valid then
+			req.callback("certificate-chain-invalid", 0, req);
+			req.callback = nil;
+			conn:close();
+			return;
+		end
+		local cert = sock.getpeercertificate and sock:getpeercertificate();
+		if not cert or not verify_identity(req.host, false, cert) then
+			req.callback("certificate-verify-failed", 0, req);
+			req.callback = nil;
+			conn:close();
+			return;
+		end
+	end
+
 	-- Send the request
 	local request_line = { req.method or "GET", " ", req.path, " HTTP/1.1\r\n" };
 	if req.query then
@@ -181,6 +202,7 @@ local function request(self, u, ex, callback)
 				headers[k] = v;
 			end
 		end
+		req.insecure = ex.insecure;
 	end
 
 	log("debug", "Making %s %s request '%s' to %s", req.scheme:upper(), method or "GET", req.id, (ex and ex.suppress_url and host_header) or u);
@@ -196,7 +218,7 @@ local function request(self, u, ex, callback)
 
 	local sslctx = false;
 	if using_https then
-		sslctx = ex and ex.sslctx or { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
 	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
@@ -235,17 +257,19 @@ local function new(options)
 			return new(setmetatable(new_options, { __index = options }));
 		end or new;
 		events = events.new();
-		request = request;
 	};
 	return http;
 end
 
-local default_http = new();
+local default_http = new({
+	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+});
 
 return {
 	request = function (u, ex, callback)
 		return default_http:request(u, ex, callback);
 	end;
+	default = default_http;
 	new = new;
 	events = default_http.events;
 	-- COMPAT

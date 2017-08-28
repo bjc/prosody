@@ -38,7 +38,7 @@ function websocket_listeners.ondetach(handler)
 end
 
 local function fail(s, code, reason)
-	module:log("warn", "WebSocket connection failed, closing. %d %s", code, reason);
+	log("warn", "WebSocket connection failed, closing. %d %s", code, reason);
 	s:close(code, reason);
 	s.handler:close();
 	return false

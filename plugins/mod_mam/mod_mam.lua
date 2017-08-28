@@ -243,15 +243,19 @@ local function message_handler(event, c2s)
 	local with = jid_bare(c2s and orig_to or orig_from);
 
 	-- Filter out <stanza-id> that claim to be from us
-	stanza:maptags(function (tag)
-		if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id then
-			local by_user, by_host, res = jid_prepped_split(tag.attr.by);
-			if not res and by_host == module.host and by_user == store_user then
-				return nil;
+	if stanza:get_child("stanza-id", xmlns_st_id) then
+		stanza = st.clone(stanza);
+		stanza:maptags(function (tag)
+			if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id then
+				local by_user, by_host, res = jid_prepped_split(tag.attr.by);
+				if not res and by_host == module.host and by_user == store_user then
+					return nil;
+				end
 			end
-		end
-		return tag;
-	end);
+			return tag;
+		end);
+		event.stanza = stanza;
+	end
 
 	-- We store chat messages or normal messages that have a body
 	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
@@ -268,18 +272,21 @@ local function message_handler(event, c2s)
 		end
 	end
 
+	local clone_for_storage;
 	if not strip_tags:empty() then
-		stanza = st.clone(stanza);
-		stanza:maptags(function (tag)
+		clone_for_storage = st.clone(stanza);
+		clone_for_storage:maptags(function (tag)
 			if strip_tags:contains(tag.attr.xmlns) then
 				return nil;
 			else
 				return tag;
 			end
 		end);
-		if #stanza.tags == 0 then
+		if #clone_for_storage.tags == 0 then
 			return;
 		end
+	else
+		clone_for_storage = stanza;
 	end
 
 	-- Check with the users preferences
@@ -287,12 +294,14 @@ local function message_handler(event, c2s)
 		log("debug", "Archiving stanza: %s", stanza:top_tag());
 
 		-- And stash it
-		local ok = archive:append(store_user, nil, stanza, time_now(), with);
+		local ok = archive:append(store_user, nil, clone_for_storage, time_now(), with);
 		if ok then
+			local clone_for_other_handlers = st.clone(stanza);
 			local id = ok;
-			event.stanza:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
+			clone_for_other_handlers:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
+			event.stanza = clone_for_other_handlers;
 			if cleanup then cleanup[store_user] = true; end
-			module:fire_event("archive-message-added", { origin = origin, stanza = stanza, for_user = store_user, id = id });
+			module:fire_event("archive-message-added", { origin = origin, stanza = clone_for_storage, for_user = store_user, id = id });
 		end
 	else
 		log("debug", "Not archiving stanza: %s (prefs)", stanza:top_tag());
