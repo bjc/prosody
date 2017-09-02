@@ -115,8 +115,8 @@ prosodyctl can also show some information about the environment,
 dependencies and such to aid in debugging.
 
 about
-:   Shows environment, various paths used by Prosody and
-    installed dependencies.
+:   Shows environment, various paths used by Prosody and installed
+    dependencies.
 
 check \[what\]
 :   Performs various sanity checks on the configuration, DNS setup and
