@@ -314,6 +314,7 @@ end
 
 local function strip_stanza_id(event)
 	local strip_by = jid_bare(event.origin.full_jid);
+	event.stanza = st.clone(event.stanza);
 	event.stanza:maptags(function(tag)
 		if not ( tag.attr.xmlns == xmlns_st_id and tag.attr.by == strip_by ) then
 			return tag;
