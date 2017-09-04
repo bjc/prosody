@@ -2,7 +2,7 @@
 author:
 - 'Dwayne Bent <dbb.1@liqd.org>'
 - Kim Alvefur
-date: '2015-12-23'
+date: '2017-09-02'
 section: 1
 title: PROSODYCTL
 ---
@@ -104,6 +104,10 @@ config hosts
 :   Produce a config file for the list of hosts. Invoked automatically
     by 'request' and 'generate' if needed.
 
+import hosts paths
+:   Copy certificates for hosts into the certificate path and reload
+    prosody.
+
 Debugging
 ---------
 
@@ -111,8 +115,8 @@ prosodyctl can also show some information about the environment,
 dependencies and such to aid in debugging.
 
 about
-:   Shows environment, various paths used by Prosody and
-    installed dependencies.
+:   Shows environment, various paths used by Prosody and installed
+    dependencies.
 
 check \[what\]
 :   Performs various sanity checks on the configuration, DNS setup and

@@ -228,6 +228,22 @@ local function shall_store(user, who)
 	return default;
 end
 
+local function strip_stanza_id(stanza, user)
+	if stanza:get_child("stanza-id", xmlns_st_id) then
+		stanza = st.clone(stanza);
+		stanza:maptags(function (tag)
+			if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id then
+				local by_user, by_host, res = jid_prepped_split(tag.attr.by);
+				if not res and by_host == host and by_user == user then
+					return nil;
+				end
+			end
+			return tag;
+		end);
+	end
+	return stanza;
+end
+
 -- Handle messages
 local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
@@ -243,19 +259,7 @@ local function message_handler(event, c2s)
 	local with = jid_bare(c2s and orig_to or orig_from);
 
 	-- Filter out <stanza-id> that claim to be from us
-	if stanza:get_child("stanza-id", xmlns_st_id) then
-		stanza = st.clone(stanza);
-		stanza:maptags(function (tag)
-			if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id then
-				local by_user, by_host, res = jid_prepped_split(tag.attr.by);
-				if not res and by_host == module.host and by_user == store_user then
-					return nil;
-				end
-			end
-			return tag;
-		end);
-		event.stanza = stanza;
-	end
+	event.stanza = strip_stanza_id(stanza, store_user);
 
 	-- We store chat messages or normal messages that have a body
 	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
@@ -312,17 +316,13 @@ local function c2s_message_handler(event)
 	return message_handler(event, true);
 end
 
-local function strip_stanza_id(event)
-	local strip_by = jid_bare(event.origin.full_jid);
-	event.stanza:maptags(function(tag)
-		if not ( tag.attr.xmlns == xmlns_st_id and tag.attr.by == strip_by ) then
-			return tag;
-		end
-	end);
+-- Filter out <stanza-id> before the message leaves the server to prevent privacy leak.
+local function strip_stanza_id_after_other_events(event)
+	event.stanza = strip_stanza_id(event.stanza, event.origin.username);
 end
 
-module:hook("pre-message/bare", strip_stanza_id, -1);
-module:hook("pre-message/full", strip_stanza_id, -1);
+module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
+module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
