@@ -28,6 +28,7 @@ local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 
 local measure_connections = module:measure("connections", "amount");
+local measure_ipv6 = module:measure("ipv6", "amount");
 
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
@@ -39,10 +40,15 @@ local runner_callbacks = {};
 
 module:hook("stats-update", function ()
 	local count = 0;
-	for _ in pairs(sessions) do
+	local ipv6 = 0;
+	for _, session in pairs(sessions) do
 		count = count + 1;
+		if session.ip and session.ip:match(":") then
+			ipv6 = ipv6 + 1;
+		end
 	end
 	measure_connections(count);
+	measure_ipv6(ipv6);
 end);
 
 --- Stream events handlers
