@@ -39,6 +39,7 @@ local secure_domains, insecure_domains =
 local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
 
 local measure_connections = module:measure("connections", "amount");
+local measure_ipv6 = module:measure("ipv6", "amount");
 
 local sessions = module:shared("sessions");
 
@@ -48,10 +49,15 @@ local log = module._log;
 
 module:hook("stats-update", function ()
 	local count = 0;
-	for _ in pairs(sessions) do
+	local ipv6 = 0;
+	for _, session in pairs(sessions) do
 		count = count + 1;
+		if session.ip and session.ip:match(":") then
+			ipv6 = ipv6 + 1;
+		end
 	end
 	measure_connections(count);
+	measure_ipv6(ipv6);
 end);
 
 --- Handle stanzas to remote domains
