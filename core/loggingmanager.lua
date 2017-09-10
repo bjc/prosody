@@ -194,14 +194,15 @@ local function log_to_file(sink_config, logfile)
 	-- Column width for "source" (used by stdout and console)
 	local sourcewidth = sink_config.source_width;
 
-	return function (name, level, message, ...)
-		if sourcewidth then
+	if sourcewidth then
+		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
-			name = name ..  rep(" ", sourcewidth-#name);
-		else
-			name = name .. "\t";
+			write(logfile, timestamps and os_date(timestamps) or "", name, rep(" ", sourcewidth-#name), level, "\t", format(message, ...), "\n");
 		end
-		write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", format(message, ...), "\n");
+	else
+		return function (name, level, message, ...)
+			write(logfile, timestamps and os_date(timestamps) or "", name, "\t", level, "\t", format(message, ...), "\n");
+		end
 	end
 end
 log_sink_types.file = log_to_file;
