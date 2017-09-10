@@ -7,7 +7,7 @@
 --
 -- luacheck: globals log prosody.log
 
-local format = string.format;
+local format = require "util.format";
 local setmetatable, rawset, pairs, ipairs, type =
 	setmetatable, rawset, pairs, ipairs, type;
 local stdout = io.stdout;
@@ -195,22 +195,13 @@ local function log_to_file(sink_config, logfile)
 	local sourcewidth = sink_config.source_width;
 
 	return function (name, level, message, ...)
-		local n = select('#', ...);
-		if n ~= 0 then
-			local arg = { ... };
-			for i = 1, n do
-				arg[i] = tostring(arg[i]);
-			end
-			message = format(message, unpack(arg, 1, n));
-		end
-
 		if sourcewidth then
 			sourcewidth = math_max(#name+2, sourcewidth);
 			name = name ..  rep(" ", sourcewidth-#name);
 		else
 			name = name .. "\t";
 		end
-		write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", message, "\n");
+		write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", format(message, ...), "\n");
 	end
 end
 log_sink_types.file = log_to_file;
