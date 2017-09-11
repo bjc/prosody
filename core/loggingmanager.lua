@@ -7,7 +7,7 @@
 --
 -- luacheck: globals log prosody.log
 
-local format = require "util.format";
+local format = require "util.format".format;
 local setmetatable, rawset, pairs, ipairs, type =
 	setmetatable, rawset, pairs, ipairs, type;
 local stdout = io.stdout;
