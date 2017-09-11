@@ -20,7 +20,7 @@ if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
-local format = require "util.format";
+local format = require "util.format".format;
 local lfs = require "lfs";
 local stat = lfs.attributes;
 
