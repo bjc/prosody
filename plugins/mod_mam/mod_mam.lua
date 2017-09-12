@@ -333,7 +333,9 @@ module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
-if cleanup_after ~= "never" then
+if not archive.delete then
+	module:log("debug", "Selected storage driver does not support deletion, archives will not expire");
+elseif cleanup_after ~= "never" then
 	local day = 86400;
 	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
 	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
