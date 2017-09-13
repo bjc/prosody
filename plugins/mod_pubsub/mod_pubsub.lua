@@ -21,7 +21,9 @@ module:depends("disco");
 module:add_identity("pubsub", "service", pubsub_disco_name);
 module:add_feature("http://jabber.org/protocol/pubsub");
 
+--[[ TODO Disabled until config persistence is implemented
 local archive = module:open_store("pubsub", "archive");
+--]]
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -38,9 +40,11 @@ function handle_pubsub_iq(event)
 	end
 end
 
+--[[ TODO Disabled until config persistence is implemented
 local function simple_itemstore(config, node)
 	return lib_pubsub.simple_itemstore(archive, config, nil, node, expose_publisher);
 end
+--]]
 
 function simple_broadcast(kind, node, jids, item, actor)
 	if item then
@@ -230,7 +234,9 @@ function module.load()
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
 
+		--[[ TODO Disabled until config persistence is implemented
 		itemstore = simple_itemstore;
+		--]]
 		broadcaster = simple_broadcast;
 		get_affiliation = get_affiliation;
 
