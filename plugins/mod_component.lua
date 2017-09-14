@@ -170,16 +170,14 @@ function stream_callbacks.error(session, error, data)
 		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
-		for child in data:children() do
-			if child.attr.xmlns == xmlns_xmpp_streams then
-				if child.name ~= "text" then
-					condition = child.name;
-				else
-					text = child:get_text();
-				end
-				if condition ~= "undefined-condition" and text then
-					break;
-				end
+		for child in data:childtags(nil, xmlns_xmpp_streams) do
+			if child.name ~= "text" then
+				condition = child.name;
+			else
+				text = child:get_text();
+			end
+			if condition ~= "undefined-condition" and text then
+				break;
 			end
 		end
 		text = condition .. (text and (" ("..text..")") or "");
