@@ -7,7 +7,7 @@
 --
 -- luacheck: globals log prosody.log
 
-local format = string.format;
+local format = require "util.format".format;
 local setmetatable, rawset, pairs, ipairs, type =
 	setmetatable, rawset, pairs, ipairs, type;
 local stdout = io.stdout;
@@ -15,9 +15,6 @@ local io_open = io.open;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
-local tostring = tostring;
-local select = select;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
 
 local config = require "core.configmanager";
 local logger = require "util.logger";
@@ -194,23 +191,15 @@ local function log_to_file(sink_config, logfile)
 	-- Column width for "source" (used by stdout and console)
 	local sourcewidth = sink_config.source_width;
 
-	return function (name, level, message, ...)
-		local n = select('#', ...);
-		if n ~= 0 then
-			local arg = { ... };
-			for i = 1, n do
-				arg[i] = tostring(arg[i]);
-			end
-			message = format(message, unpack(arg, 1, n));
-		end
-
-		if sourcewidth then
+	if sourcewidth then
+		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
-			name = name ..  rep(" ", sourcewidth-#name);
-		else
-			name = name .. "\t";
+			write(logfile, timestamps and os_date(timestamps) or "", name, rep(" ", sourcewidth-#name), level, "\t", format(message, ...), "\n");
 		end
-		write(logfile, timestamps and os_date(timestamps) or "", name, level, "\t", message, "\n");
+	else
+		return function (name, level, message, ...)
+			write(logfile, timestamps and os_date(timestamps) or "", name, "\t", level, "\t", format(message, ...), "\n");
+		end
 	end
 end
 log_sink_types.file = log_to_file;
