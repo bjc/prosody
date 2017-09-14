@@ -56,6 +56,13 @@ local use_total = true;
 
 local cleanup;
 
+local function schedule_cleanup(username)
+	if cleanup and not cleanup[username] then
+		table.insert(cleanup, username);
+		cleanup[username] = true;
+	end
+end
+
 -- Handle prefs.
 module:hook("iq/self/"..xmlns_mam..":prefs", function(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -97,7 +104,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local query = stanza.tags[1];
 	local qid = query.attr.queryid;
 
-	if cleanup then cleanup[origin.username] = true; end
+	schedule_cleanup(origin.username);
 
 	-- Search query parameters
 	local qwith, qstart, qend;
@@ -304,7 +311,7 @@ local function message_handler(event, c2s)
 			local id = ok;
 			clone_for_other_handlers:tag("stanza-id", { xmlns = xmlns_st_id, by = store_user.."@"..host, id = id }):up();
 			event.stanza = clone_for_other_handlers;
-			if cleanup then cleanup[store_user] = true; end
+			schedule_cleanup(store_user);
 			module:fire_event("archive-message-added", { origin = origin, stanza = clone_for_storage, for_user = store_user, id = id });
 		end
 	else
@@ -326,7 +333,9 @@ module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
-if cleanup_after ~= "never" then
+if not archive.delete then
+	module:log("debug", "Selected storage driver does not support deletion, archives will not expire");
+elseif cleanup_after ~= "never" then
 	local day = 86400;
 	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
 	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
@@ -353,13 +362,13 @@ if cleanup_after ~= "never" then
 	pcall(function ()
 		-- If this works, then we schedule cleanup for all known users on startup
 		for user in um.users(module.host) do
-			cleanup[user] = true;
+			schedule_cleanup(user);
 		end
 	end);
 
 	-- At odd intervals, delete old messages for one user
 	module:add_timer(math.random(10, 60), function()
-		local user = next(cleanup);
+		local user = table.remove(cleanup, 1);
 		if user then
 			module:log("debug", "Removing old messages for user %q", user);
 			local ok, err = archive:delete(user, { ["end"] = os.time() - cleanup_after; })

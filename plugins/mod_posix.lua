@@ -20,6 +20,7 @@ if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
+local format = require "util.format".format;
 local lfs = require "lfs";
 local stat = lfs.attributes;
 
@@ -118,13 +119,9 @@ function syslog_sink_maker(config) -- luacheck: ignore 212/config
 		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
 		syslog_opened = true;
 	end
-	local syslog, format = pposix.syslog_log, string.format;
+	local syslog = pposix.syslog_log;
 	return function (name, level, message, ...)
-		if ... then
-			syslog(level, name, format(message, ...));
-		else
-			syslog(level, name, message);
-		end
+		syslog(level, name, format(message, ...));
 	end;
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
