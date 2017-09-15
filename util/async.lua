@@ -27,7 +27,7 @@ end
 local function waiter(num)
 	local thread = coroutine.running();
 	if not thread then
-		error("Not running in an async context, see https://prosody.im/doc/developers/async");
+		error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
 	end
 	num = num or 1;
 	local waiting;
@@ -50,7 +50,7 @@ local function guarder()
 	return function (id, func)
 		local thread = coroutine.running();
 		if not thread then
-			error("Not running in an async context, see https://prosody.im/doc/developers/async");
+			error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
 		end
 		local guard = guards[id];
 		if not guard then
