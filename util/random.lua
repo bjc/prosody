@@ -11,9 +11,6 @@ if ok then return crand; end
 
 local urandom, urandom_err = io.open("/dev/urandom", "r");
 
-local function seed()
-end
-
 local function bytes(n)
 	return urandom:read(n);
 end
@@ -25,6 +22,5 @@ if not urandom then
 end
 
 return {
-	seed = seed;
 	bytes = bytes;
 };
