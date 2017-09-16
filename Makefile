@@ -65,8 +65,7 @@ clean:
 	$(MAKE) clean -C util-src
 
 test:
-	cd tests && $(RUNWITH) test.lua 0
-	# Skipping: cd tests && RUNWITH=$(RUNWITH) ./test_util_json.sh
+	busted
 
 util/%.so:
 	$(MAKE) install -C util-src
