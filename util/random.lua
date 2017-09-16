@@ -23,4 +23,5 @@ end
 
 return {
 	bytes = bytes;
+	_source = "/dev/urandom";
 };
