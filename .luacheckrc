@@ -89,16 +89,6 @@ files["plugins/"] = {
 		"module.environment",
 	};
 }
-files["tests/"] = {
-	read_globals = {
-		"testlib_new_env",
-		"assert_equal",
-		"assert_table",
-		"assert_function",
-		"assert_string",
-		"assert_boolean",
-		"assert_is",
-		"assert_is_not",
-		"runtest",
-	};
+files["spec/"] = {
+	std = "+busted"
 }
