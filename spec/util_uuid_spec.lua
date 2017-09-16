@@ -22,10 +22,4 @@ describe("util.uuid", function()
 			end
 		end);
 	end);
-
-	describe("#seed()", function()
-		it("should return nothing", function()
-			assert.is_nil(uuid.seed("random string here"), "seed doesn't return anything");
-		end);
-	end);
 end);
