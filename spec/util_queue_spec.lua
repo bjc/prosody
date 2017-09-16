@@ -37,6 +37,11 @@ describe("util.queue", function()
 				end
 
 				assert.are.equal(q:count(), 0, "queue count incorrect");
+				assert.are.equal(q:pop(), nil, "empty queue pops non-nil result");
+				assert.are.equal(q:count(), 0, "popping empty queue affects count");
+
+				assert.are.equal(q:peek(), nil, "empty queue peeks non-nil result");
+				assert.are.equal(q:count(), 0, "peeking empty queue affects count");
 
 				assert.is_true(q:push(1));
 				for i = 1, 1001 do
@@ -68,6 +73,7 @@ describe("util.queue", function()
 				assert.is_true(q:push(11));
 				assert.are.equal(q:count(), 10);
 				assert.are.equal(q:pop(), 2); -- First item should have been purged
+				assert.are.equal(q:peek(), 3);
 
 				for i = 12, 32 do
 					assert.is_true(q:push(i));
@@ -75,6 +81,21 @@ describe("util.queue", function()
 
 				assert.are.equal(q:count(), 10);
 				assert.are.equal(q:pop(), 23);
+			end
+
+			do
+				-- Test iterator
+				local q = queue.new(10, true);
+
+				for i = 1, 10 do
+					q:push(i);
+				end
+
+				local i = 0;
+				for item in q:items() do
+					i = i + 1;
+					assert.are.equal(item, i, "unexpected item returned by iterator")
+				end
 			end
 
 		end);
