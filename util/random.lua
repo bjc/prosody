@@ -27,4 +27,5 @@ end
 return {
 	seed = seed;
 	bytes = bytes;
+	_source = "/dev/urandom";
 };
