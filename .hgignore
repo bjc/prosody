@@ -27,3 +27,6 @@ config.unix
 *.exp
 *.lib
 *.obj
+luacov.report.out
+luacov.report.out.index
+luacov.stats.out
