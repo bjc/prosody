@@ -13,7 +13,7 @@ package.loaded["util.time"] = {
 local throttle = require "util.throttle";
 
 describe("util.throttle", function()
-	describe("#create", function()
+	describe("#create()", function()
 		it("should be created with correct values", function()
 			now = 5;
 			local a = throttle.create(3, 10);
@@ -33,7 +33,7 @@ describe("util.throttle", function()
 		end);
 	end);
 
-	describe("#update", function()
+	describe("#update()", function()
 		it("does nothing when no time hase passed, even if balance is not full", function()
 			now = 5;
 			local a = throttle.create(10, 10);
