@@ -12,7 +12,7 @@ function throttle:update()
 	local newt = gettime();
 	local elapsed = newt - self.t;
 	self.t = newt;
-	local balance = floor(self.rate * elapsed) + self.balance;
+	local balance = (self.rate * elapsed) + self.balance;
 	if balance > self.max then
 		self.balance = self.max;
 	else
@@ -40,7 +40,7 @@ function throttle:poll(cost, split)
 end
 
 local function create(max, period)
-	return setmetatable({ rate = max / period, max = max, t = 0, balance = max }, throttle_mt);
+	return setmetatable({ rate = max / period, max = max, t = gettime(), balance = max }, throttle_mt);
 end
 
 return {
