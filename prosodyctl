@@ -871,9 +871,16 @@ function cert_commands.import(arg)
 		table.insert(hostnames, table.remove(arg, 1));
 	end
 	if hostnames[1] == nil then
-		for host in pairs(prosody.hosts) do
-			if host ~= "*" and config.get(host, "enabled") ~= false then
+		local domains = os.getenv"RENEWED_DOMAINS"; -- Set if invoked via certbot
+		if domains then
+			for host in domains:gmatch("%S+") do
 				table.insert(hostnames, host);
+			end
+		else
+			for host in pairs(prosody.hosts) do
+				if host ~= "*" and config.get(host, "enabled") ~= false then
+					table.insert(hostnames, host);
+				end
 			end
 		end
 	end
