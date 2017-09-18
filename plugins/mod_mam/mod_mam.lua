@@ -294,6 +294,7 @@ local function message_handler(event, c2s)
 			end
 		end);
 		if #clone_for_storage.tags == 0 then
+			log("debug", "Not archiving stanza: %s (empty when stripped)", stanza:top_tag());
 			return;
 		end
 	else
