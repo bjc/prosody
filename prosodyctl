@@ -939,13 +939,15 @@ function commands.cert(arg)
 		end
 		local subcmd = table.remove(arg, 1);
 		if type(cert_commands[subcmd]) == "function" then
-			if not arg[1] then
-				show_message"You need to supply at least one hostname"
-				arg = { "--help" };
-			end
-			if arg[1] ~= "--help" and not hosts[arg[1]] then
-				show_message(error_messages["no-such-host"]);
-				return 1;
+			if subcmd ~= "import" then -- hostnames are optional for import
+				if not arg[1] then
+					show_message"You need to supply at least one hostname"
+					arg = { "--help" };
+				end
+				if arg[1] ~= "--help" and not hosts[arg[1]] then
+					show_message(error_messages["no-such-host"]);
+					return 1;
+				end
 			end
 			return cert_commands[subcmd](arg);
 		elseif subcmd == "check" then
