@@ -115,7 +115,8 @@ local function load_roster(username, host)
 	roster_metadata(roster, err);
 	if roster[jid] then
 		roster[jid] = nil;
-		log("warn", "roster for %s has a self-contact", jid);
+		log("warn", "roster for %s had a self-contact, removing", jid);
+		roster_store:set(username, roster);
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });
