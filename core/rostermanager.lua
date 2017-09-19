@@ -104,9 +104,9 @@ local function load_roster(username, host)
 	if user then
 		roster = user.roster;
 		if roster then return roster; end
-		log("debug", "load_roster: loading for new user: %s@%s", username, host);
+		log("debug", "load_roster: loading for new user: %s", jid);
 	else -- Attempt to load roster for non-loaded user
-		log("debug", "load_roster: loading for offline user: %s@%s", username, host);
+		log("debug", "load_roster: loading for offline user: %s", jid);
 	end
 	local roster_store = storagemanager.open(host, "roster", "keyval");
 	local data, err = roster_store:get(username);
