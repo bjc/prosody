@@ -67,20 +67,18 @@ end
 module:hook("iq/self/"..xmlns_mam..":prefs", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local user = origin.username;
-	if stanza.attr.type == "get" then
-		local prefs = prefs_to_stanza(get_prefs(user));
-		local reply = st.reply(stanza):add_child(prefs);
-		origin.send(reply);
-	else -- type == "set"
+	if stanza.attr.type == "set" then
 		local new_prefs = stanza:get_child("prefs", xmlns_mam);
 		local prefs = prefs_from_stanza(new_prefs);
 		local ok, err = set_prefs(user, prefs);
 		if not ok then
 			origin.send(st.error_reply(stanza, "cancel", "internal-server-error", "Error storing preferences: "..tostring(err)));
-		else
-			origin.send(st.reply(stanza));
+			return true;
 		end
 	end
+	local prefs = prefs_to_stanza(get_prefs(user));
+	local reply = st.reply(stanza):add_child(prefs);
+	origin.send(reply);
 	return true;
 end);
 
@@ -294,6 +292,7 @@ local function message_handler(event, c2s)
 			end
 		end);
 		if #clone_for_storage.tags == 0 then
+			log("debug", "Not archiving stanza: %s (empty when stripped)", stanza:top_tag());
 			return;
 		end
 	else
