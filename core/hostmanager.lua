@@ -91,7 +91,7 @@ function activate(host, host_config)
 		host_session.type = "component";
 	end
 	hosts[host] = host_session;
-	if not host:match("[@/]") then
+	if not host_config.disco_hidden and not host:match("[@/]") then
 		disco_items:set(host:match("%.(.*)") or "*", host, host_config.name or true);
 	end
 	for option_name in pairs(host_config) do
