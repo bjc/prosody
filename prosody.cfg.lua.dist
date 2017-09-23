@@ -174,11 +174,11 @@ log = {
 -- Certificates
 -- Every virtual host and component needs a certificate so that clients and
 -- servers can securely verify its identity. Prosody will automatically load
--- certificates/keys from the directory specified here (paths are relative to
--- the main configuration file).
+-- certificates/keys from the directory specified here.
 -- For more information, including how to use 'prosodyctl' to auto-import certificates
 -- (from e.g. Let's Encrypt) see https://prosody.im/doc/certificates
 
+-- Location of directory to find certificates in (relative to main config file):
 certificates = "certs"
 
 ----------- Virtual hosts -----------
