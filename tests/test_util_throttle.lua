@@ -7,20 +7,12 @@ local function later(n)
 	now = now + n; -- time passes at a different rate
 end
 
-local function override_gettime(throttle)
-	local i = 0;
-	repeat
-		i = i + 1;
-		local name = debug.getupvalue(throttle.update, i);
-		if name then
-			debug.setupvalue(throttle.update, i, predictable_gettime);
-			return throttle;
-		end
-	until not name;
-end
+package.loaded["util.time"] = {
+	now = predictable_gettime;
+}
 
 function create(create)
-	local a = override_gettime( create(3, 10) );
+	local a = create(3, 10);
 
 	assert_equal(a:poll(1), true);  -- 3 -> 2
 	assert_equal(a:poll(1), true);  -- 2 -> 1
