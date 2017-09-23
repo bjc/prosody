@@ -59,8 +59,6 @@ modules_enabled = {
 		"register"; -- Allow users to register on this server using a client and change passwords
 		--"mam"; -- Store messages in an archive and allow users to access it
 
-	-- Not merged yet, nice to have or recommended?
-
 	-- Admin interfaces
 		"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
 		--"admin_telnet"; -- Opens telnet console interface on localhost port 5582
@@ -94,18 +92,6 @@ modules_disabled = {
 -- Disable account creation by default, for security
 -- For more information see https://prosody.im/doc/creating_accounts
 allow_registration = false
-
--- If no certificate has been explicitly configured, Prosody will attempt to
--- locate one based on the service name.
--- This option determines which directory to search.
--- certificates = "certs";
-
--- OR --
-
--- Specify the location of certificates
--- Prosody will attempt to locate a certificate and key for hosts and
--- services offered.
--- For more information see https://prosody.im/doc/certificates#magic
 
 -- Force clients to use encrypted connections? This option will
 -- prevent clients from authenticating unless they are using encryption.
@@ -185,19 +171,24 @@ log = {
 -- For more info see https://prosody.im/doc/statistics
 -- statistics = "internal"
 
+-- Certificates
+-- Every virtual host and component needs a certificate so that clients and
+-- servers can securely verify its identity. Prosody will automatically load
+-- certificates/keys from the directory specified here (paths are relative to
+-- the main configuration file).
+-- For more information, including how to use 'prosodyctl' to auto-import certificates
+-- (from e.g. Let's Encrypt) see https://prosody.im/doc/certificates
+
+certificates = "certs"
+
 ----------- Virtual hosts -----------
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
 -- Settings under each VirtualHost entry apply *only* to that host.
 
 VirtualHost "localhost"
 
-VirtualHost "example.com"
-	enabled = false -- Remove this line to enable this host
-
-	-- Assign this host a certificate for TLS, otherwise it would attempt locate one,
-	-- based on the hostname.
-	-- certificate = "certs/example.com.crt";
-	-- `prosodyctl check certs`
+--VirtualHost "example.com"
+--	certificate = "/path/to/example.crt"
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
