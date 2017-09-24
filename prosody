@@ -20,8 +20,8 @@ CFG_DATADIR=CFG_DATADIR or os.getenv("PROSODY_DATADIR");
 
 local function is_relative(path)
 	local path_sep = package.config:sub(1,1);
-        return ((path_sep == "/" and path:sub(1,1) ~= "/")
-	or (path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\")))
+	return ((path_sep == "/" and path:sub(1,1) ~= "/")
+		or (path_sep == "\\" and (path:sub(1,1) ~= "/" and path:sub(2,3) ~= ":\\")))
 end
 
 -- Tell Lua where to find our libraries
