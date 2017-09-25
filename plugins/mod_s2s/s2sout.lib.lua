@@ -49,6 +49,8 @@ function s2sout.initiate_connection(host_session)
 	initialize_filters(host_session);
 	host_session.version = 1;
 
+	host_session.resolver = adns.resolver();
+
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
 		-- Intentionally not returning here, the
@@ -84,9 +86,7 @@ function s2sout.attempt_connection(host_session, err)
 	if not err then -- This is our first attempt
 		log("debug", "First attempt to connect to %s, starting with SRV lookup...", to_host);
 		host_session.connecting = true;
-		local handle;
-		handle = adns.lookup(function (answer)
-			handle = nil;
+		host_session.resolver:lookup(function (answer)
 			local srv_hosts = { answer = answer };
 			host_session.srv_hosts = srv_hosts;
 			host_session.srv_choice = 0;
@@ -168,7 +168,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		local have_other_result = not(has_ipv4) or not(has_ipv6) or false;
 
 		if has_ipv4 then
-			handle4 = adns.lookup(function (reply, err)
+			handle4 = host_session.resolver:lookup(function (reply, err)
 				handle4 = nil;
 
 				if reply and reply[#reply] and reply[#reply].a then
@@ -206,7 +206,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 		end
 
 		if has_ipv6 then
-			handle6 = adns.lookup(function (reply, err)
+			handle6 = host_session.resolver:lookup(function (reply, err)
 				handle6 = nil;
 
 				if reply and reply[#reply] and reply[#reply].aaaa then
