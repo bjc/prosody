@@ -58,6 +58,7 @@ local key_try = { "", "/%s.key", "/%s/privkey.pem",   "/%s.pem", };
 
 local function find_cert(user_certs, name)
 	local certs = resolve_path(config_path, user_certs or global_certificates);
+	log("debug", "Searching %s for a key and certificate for %s...", certs, name);
 	for i = 1, #crt_try do
 		local crt_path = certs .. crt_try[i]:format(name);
 		local key_path = certs .. key_try[i]:format(name);
@@ -66,13 +67,16 @@ local function find_cert(user_certs, name)
 			if key_path:sub(-4) == ".crt" then
 				key_path = key_path:sub(1, -4) .. "key";
 				if stat(key_path, "mode") == "file" then
+					log("debug", "Selecting certificate %s with key %s for %s", crt_path, key_path, name);
 					return { certificate = crt_path, key = key_path };
 				end
 			elseif stat(key_path, "mode") == "file" then
+				log("debug", "Selecting certificate %s with key %s for %s", crt_path, key_path, name);
 				return { certificate = crt_path, key = key_path };
 			end
 		end
 	end
+	log("debug", "No certificate/key found for %s", name);
 end
 
 local function find_host_cert(host)

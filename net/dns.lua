@@ -504,7 +504,7 @@ function resolver:rr()    -- - - - - - - - - - - - - - - - - - - - - - - -  rr
 	rr.ttl      = 0x10000*self:word() + self:word();
 	rr.rdlength = self:word();
 
-	rr.tod = self.time + math.min(rr.ttl, 1);
+	rr.tod = self.time + math.max(rr.ttl, 1);
 
 	local remember = self.offset;
 	local rr_parser = self[dns.type[rr.type]];
