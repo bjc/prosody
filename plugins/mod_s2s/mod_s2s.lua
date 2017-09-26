@@ -180,6 +180,7 @@ end
 
 -- Stream is authorised, and ready for normal stanzas
 function mark_connected(session)
+
 	local sendq = session.sendq;
 
 	local from, to = session.from_host, session.to_host;
@@ -211,6 +212,7 @@ function mark_connected(session)
 			session.sendq = nil;
 		end
 
+		session.resolver = nil;
 		session.ip_hosts = nil;
 		session.srv_hosts = nil;
 	end

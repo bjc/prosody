@@ -1030,7 +1030,7 @@ function commands.check(arg)
 					suggested_global_modules = set.intersection(suggested_global_modules or set.new(options.modules_enabled), set.new(options.modules_enabled));
 				end
 			end
-			if not suggested_global_modules:empty() then
+			if suggested_global_modules and not suggested_global_modules:empty() then
 				print("    Consider moving these modules into modules_enabled in the global section:")
 				print("    "..tostring(suggested_global_modules / function (x) return ("%q"):format(x) end));
 			end
