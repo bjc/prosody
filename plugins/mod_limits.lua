@@ -4,6 +4,7 @@ module:set_global();
 local filters = require "util.filters";
 local throttle = require "util.throttle";
 local timer = require "util.timer";
+local ceil = math.ceil;
 
 local limits_cfg = module:get_option("limits", {});
 local limits_resolution = module:get_option_number("limits_resolution", 1);
@@ -55,6 +56,7 @@ function default_filter_set.bytes_in(bytes, session)
 		local ok, balance, outstanding = throttle:poll(#bytes, true);
 		if not ok then
 			session.log("debug", "Session over rate limit (%d) with %d (by %d), pausing", throttle.max, #bytes, outstanding);
+			outstanding = ceil(outstanding);
 			session.conn:pause(); -- Read no more data from the connection until there is no outstanding data
 			local outstanding_data = bytes:sub(-outstanding);
 			bytes = bytes:sub(1, #bytes-outstanding);
