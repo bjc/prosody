@@ -1,7 +1,6 @@
 
 local gettime = require "util.time".now
 local setmetatable = setmetatable;
-local floor = math.floor;
 
 local _ENV = nil;
 
