@@ -93,13 +93,13 @@ do
 		print("\n");
 		print("**************************");
 		if level == "parser" then
-			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("A problem occured while reading the config file "..filename);
 			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
 			print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
 			print("");
 		elseif level == "file" then
 			print("Prosody was unable to find the configuration file.");
-			print("We looked for: "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("We looked for: "..filename);
 			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
 			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
 		end
