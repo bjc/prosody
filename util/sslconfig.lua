@@ -63,6 +63,9 @@ function finalisers.ciphers(cipherlist)
 	return cipherlist;
 end
 
+-- Curve list too
+finalisers.curveslist = finalisers.ciphers;
+
 -- protocol = "x" should enable only that protocol
 -- protocol = "x+" should enable x and later versions
 
