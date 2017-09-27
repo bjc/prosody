@@ -894,18 +894,14 @@ function cert_commands.import(arg)
 		owner = config.get("*", "prosody_user") or "prosody";
 		group = config.get("*", "prosody_group") or owner;
 	end
+	local cm = require "core.certmanager";
 	local imported = {};
 	for _, host in ipairs(hostnames) do
 		for _, dir in ipairs(arg) do
-			if lfs.attributes(dir .. "/" .. host .. "/fullchain.pem")
-			and lfs.attributes(dir .. "/" .. host .. "/privkey.pem") then
-				copy(dir .. "/" .. host .. "/fullchain.pem", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-				copy(dir .. "/" .. host .. "/privkey.pem", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-				table.insert(imported, host);
-			elseif lfs.attributes(dir .. "/" .. host .. ".crt")
-			and lfs.attributes(dir .. "/" .. host .. ".key") then
-				copy(dir .. "/" .. host .. ".crt", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-				copy(dir .. "/" .. host .. ".key", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+			local paths = cm.find_cert(dir, host);
+			if paths then
+				copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+				copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
 				table.insert(imported, host);
 			else
 				-- TODO Say where we looked
