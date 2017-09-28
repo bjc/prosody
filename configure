@@ -73,10 +73,16 @@ Configure $APP_NAME prior to building.
                             Default is to use /dev/urandom
 --cflags=FLAGS              Flags to pass to the compiler
                             Default is $CFLAGS
+--add-cflags=FLAGS          Adds additional CFLAGS, preserving defaults.
+                            Can be repeated.
 --ldflags=FLAGS             Flags to pass to the linker
                             Default is $LDFLAGS
+--add-ldflags=FLAGS         Adds additional linker flags, preserving defaults.
+                            Can be repeated.
 --c-compiler=CC             The C compiler to use when building modules.
                             Default is $CC
+--compiler-wrapper=WRAPPER  Adds a prefix to compiler and linker calls,
+                            usable for eg distcc or ccache.
 --linker=CC                 The linker to use when building modules.
                             Default is $LD
 --require-config            Will cause $APP_NAME to refuse to run when
