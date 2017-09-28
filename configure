@@ -172,6 +172,10 @@ do
             LUA_SUFFIX="5.1";
             LUA_SUFFIX_SET=yes
          fi
+         if [ "$RUNWITH_SET" != "yes" ]; then
+            RUNWITH="lua$LUA_SUFFIX";
+            RUNWITH_SET=yes
+         fi
          LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
          LUA_INCDIR_SET=yes
          CFLAGS="$CFLAGS -ggdb"
