@@ -73,14 +73,18 @@ Configure $APP_NAME prior to building.
                             Default is to use /dev/urandom
 --cflags=FLAGS              Flags to pass to the compiler
                             Default is $CFLAGS
+--add-cflags=FLAGS          Adds additional CFLAGS, preserving defaults.
+                            Can be repeated.
 --ldflags=FLAGS             Flags to pass to the linker
                             Default is $LDFLAGS
+--add-ldflags=FLAGS         Adds additional linker flags, preserving defaults.
+                            Can be repeated.
 --c-compiler=CC             The C compiler to use when building modules.
                             Default is $CC
+--compiler-wrapper=WRAPPER  Adds a prefix to compiler and linker calls,
+                            usable for eg distcc or ccache.
 --linker=CC                 The linker to use when building modules.
                             Default is $LD
---require-config            Will cause $APP_NAME to refuse to run when
-                            it fails to find a configuration file
 --no-example-certs          Disables generation of example certificates.
 EOF
 }
@@ -172,6 +176,10 @@ do
             LUA_SUFFIX="5.1";
             LUA_SUFFIX_SET=yes
          fi
+         if [ "$RUNWITH_SET" != "yes" ]; then
+            RUNWITH="lua$LUA_SUFFIX";
+            RUNWITH_SET=yes
+         fi
          LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
          LUA_INCDIR_SET=yes
          CFLAGS="$CFLAGS -ggdb"
@@ -237,9 +245,6 @@ do
    --datadir)
       DATADIR="$value"
       DATADIR_SET=yes
-      ;;
-   --require-config)
-      REQUIRE_CONFIG=yes
       ;;
    --lua-suffix)
       [ -n "$value" ] || die "Missing value in flag $key."
@@ -501,34 +506,6 @@ then
    fi
 fi
 
-echo_n "Configuring for system... "
-if uname -s
-then
-   UNAME_S=`uname -s`
-else
-   die "Could not determine operating system. 'uname -s' failed."
-fi
-echo_n "Configuring for architecture... "
-if uname -m
-then
-   UNAME_M=`uname -m`
-else
-   die "Could not determine processor architecture. 'uname -m' failed."
-fi
-
-if [ "$UNAME_S" = Linux ]
-then
-   GCC_ARCH=`gcc -print-multiarch 2>/dev/null`
-   if [ -n "$GCC_ARCH" -a -d "/usr/lib/$GCC_ARCH" ]
-   then
-      MULTIARCH_SUBDIR="lib/$GCC_ARCH"
-   elif [ -d "/usr/lib64" ]
-   then
-      # Useful for Fedora systems
-      MULTIARCH_SUBDIR="lib64"
-   fi
-fi
-
 if [ "$IDN_LIBRARY" = "icu" ]
 then
    IDNA_LIBS="$ICU_FLAGS"
@@ -574,8 +551,6 @@ LUA_DIR_SET=$LUA_DIR_SET
 LUA_INCDIR=$LUA_INCDIR
 LUA_LIBDIR=$LUA_LIBDIR
 LUA_BINDIR=$LUA_BINDIR
-MULTIARCH_SUBDIR=$MULTIARCH_SUBDIR
-REQUIRE_CONFIG=$REQUIRE_CONFIG
 IDN_LIB=$IDN_LIB
 IDNA_LIBS=$IDNA_LIBS
 OPENSSL_LIBS=$OPENSSL_LIBS

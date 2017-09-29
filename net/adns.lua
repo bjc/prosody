@@ -12,6 +12,7 @@ local new_resolver = require "net.dns".resolver;
 local log = require "util.logger".init("adns");
 
 local coroutine, tostring, pcall = coroutine, tostring, pcall;
+local setmetatable = setmetatable;
 
 local function dummy_send(sock, data, i, j) return (j-i)+1; end
 

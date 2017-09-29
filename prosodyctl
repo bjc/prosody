@@ -91,13 +91,13 @@ do
 		print("\n");
 		print("**************************");
 		if level == "parser" then
-			print("A problem occured while reading the config file "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("A problem occured while reading the config file "..filename);
 			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
 			print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
 			print("");
 		elseif level == "file" then
 			print("Prosody was unable to find the configuration file.");
-			print("We looked for: "..(CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
+			print("We looked for: "..filename);
 			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
 			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
 		end
@@ -162,6 +162,17 @@ if have_pposix and pposix then
 		if not switched_user then
 			-- Boo!
 			print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
+		else
+			-- Make sure the Prosody user can read the config
+			local conf, err, errno = io.open(ENV_CONFIG);
+			if conf then
+				conf:close();
+			else
+				print("The config file is not readable by the '"..desired_user.."' user.");
+				print("Prosody will not be able to read it.");
+				print("Error was "..err);
+				os.exit(1);
+			end
 		end
 	end
 
@@ -892,18 +903,14 @@ function cert_commands.import(arg)
 		owner = config.get("*", "prosody_user") or "prosody";
 		group = config.get("*", "prosody_group") or owner;
 	end
+	local cm = require "core.certmanager";
 	local imported = {};
 	for _, host in ipairs(hostnames) do
 		for _, dir in ipairs(arg) do
-			if lfs.attributes(dir .. "/" .. host .. "/fullchain.pem")
-			and lfs.attributes(dir .. "/" .. host .. "/privkey.pem") then
-				copy(dir .. "/" .. host .. "/fullchain.pem", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-				copy(dir .. "/" .. host .. "/privkey.pem", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-				table.insert(imported, host);
-			elseif lfs.attributes(dir .. "/" .. host .. ".crt")
-			and lfs.attributes(dir .. "/" .. host .. ".key") then
-				copy(dir .. "/" .. host .. ".crt", cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-				copy(dir .. "/" .. host .. ".key", cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+			local paths = cm.find_cert(dir, host);
+			if paths then
+				copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+				copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
 				table.insert(imported, host);
 			else
 				-- TODO Say where we looked

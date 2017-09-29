@@ -22,6 +22,7 @@ local jid_split = require"util.jid".split;
 
 local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
+local full_sessions = prosody.full_sessions;
 
 -- First level cache of blocklists by username.
 -- Weak table so may randomly expire at any time.
@@ -271,8 +272,13 @@ local function bounce_iq(event)
 end
 
 local function bounce_message(event)
-	local type = event.stanza.attr.type;
+	local stanza = event.stanza;
+	local type = stanza.attr.type;
 	if type == "chat" or not type or type == "normal" then
+		if full_sessions[stanza.attr.to] then
+			-- See #690
+			return drop_stanza(event);
+		end
 		return bounce_stanza(event);
 	end
 	return drop_stanza(event); -- drop headlines, groupchats etc
@@ -305,7 +311,6 @@ local prio_in, prio_out = 100, 100;
 module:hook("presence/bare", drop_stanza, prio_in);
 module:hook("presence/full", drop_stanza, prio_in);
 
--- FIXME See #690
 module:hook("message/bare", bounce_message, prio_in);
 module:hook("message/full", bounce_message, prio_in);
 
