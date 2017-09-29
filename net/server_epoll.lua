@@ -167,6 +167,10 @@ function interface:getfd()
 	return _SOCKETINVALID;
 end
 
+function interface:server()
+	return self._server or self;
+end
+
 -- Get IP address
 function interface:ip()
 	return self.peername or self.sockname;
@@ -186,8 +190,8 @@ end
 function interface:serverport()
 	if self.sockport then
 		return self.sockport;
-	elseif self.server then
-		self.server:port();
+	elseif self._server then
+		self._server:port();
 	end
 end
 
@@ -465,7 +469,7 @@ local function wrapsocket(client, server, pattern, listeners, tls) -- luasocket 
 	client:settimeout(0);
 	local conn = setmetatable({
 		conn = client;
-		server = server;
+		_server = server;
 		created = gettime();
 		listeners = listeners;
 		_pattern = pattern or (server and server._pattern);
