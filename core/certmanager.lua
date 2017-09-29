@@ -107,6 +107,12 @@ local core_defaults = {
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = "secp384r1";
+	curveslist = {
+		"X25519",
+		"P-384",
+		"P-256",
+		"P-521",
+	};
 	ciphers = {      -- Enabled ciphers in order of preference:
 		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
 		"HIGH+kEECDH", -- Ephemeral Elliptic curve Diffie-Hellman key exchange
@@ -231,4 +237,5 @@ prosody.events.add_handler("config-reloaded", reload_ssl_config);
 return {
 	create_context = create_context;
 	reload_ssl_config = reload_ssl_config;
+	find_cert = find_cert;
 };
