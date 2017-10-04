@@ -217,8 +217,9 @@ function engine:debug(enable)
 	end
 end
 local function handleerr(err)
-	log("error", "Error in SQL transaction: %s", debug_traceback(err, 3));
-	return err;
+	local trace = debug_traceback(err, 3);
+	log("debug", "Error in SQL transaction: %s", trace);
+	return { err = err, traceback = trace };
 end
 function engine:_transaction(func, ...)
 	if not self.conn then
@@ -238,9 +239,9 @@ function engine:_transaction(func, ...)
 		if not ok then return ok, err; end -- commit failed
 		return success, a, b, c;
 	else
-		log("debug", "SQL transaction failure [%s]: %s", tostring(func), a);
+		log("debug", "SQL transaction failure [%s]: %s", tostring(func), a.err);
 		if self.conn then self.conn:rollback(); end
-		return success, a;
+		return success, a.err;
 	end
 end
 function engine:transaction(...)
@@ -248,8 +249,16 @@ function engine:transaction(...)
 	if not ok then
 		local conn = self.conn;
 		if not conn or not conn:ping() then
+			log("debug", "Database connection was closed. Will reconnect and retry.");
 			self.conn = nil;
+			log("debug", "Retrying SQL transaction [%s]", tostring((...)));
 			ok, ret = self:_transaction(...);
+			log("debug", "SQL transaction retry %s", ok and "succeeded" or "failed");
+		else
+			log("debug", "SQL connection is up, so not retrying");
+		end
+		if not ok then
+			log("error", "Error in SQL transaction: %s", ret);
 		end
 	end
 	return ok, ret;
