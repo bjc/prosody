@@ -216,7 +216,7 @@ static const char *utf8_decode(const char *o, int *val) {
  */
 const char *check_utf8(lua_State *L, int idx, size_t *l) {
 	size_t pos, len;
-	const char *s = luaL_checklstring(L, 1, &len);
+	const char *s = luaL_checklstring(L, idx, &len);
 	pos = 0;
 
 	while(pos <= len) {
