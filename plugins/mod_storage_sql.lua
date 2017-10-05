@@ -416,6 +416,7 @@ end
 function driver:purge(username)
 	return engine:transaction(function()
 		engine:delete("DELETE FROM \"prosody\" WHERE \"host\"=? AND \"user\"=?", host, username);
+		engine:delete("DELETE FROM \"prosodyarchive\" WHERE \"host\"=? AND \"user\"=?", host, username);
 	end);
 end
 
