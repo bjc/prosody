@@ -19,8 +19,6 @@ local services = {};
 local recipients = {};
 local hash_map = {};
 
-local archive = module:open_store("pubsub", "archive");
-
 function module.save()
 	return { services = services };
 end
@@ -38,6 +36,8 @@ end
 
 local function simple_itemstore(user)
 	return function (config, node)
+		module:log("debug", "new simple_itemstore(%q, %q)", user, node);
+		local archive = module:open_store("pep_"..node, "archive");
 		return lib_pubsub.simple_itemstore(archive, config, user, node, false);
 	end
 end
@@ -62,6 +62,7 @@ local function get_broadcaster(name)
 end
 
 function get_pep_service(name)
+	module:log("debug", "get_pep_service(%q)");
 	local service = services[name];
 	if service then
 		return service;
