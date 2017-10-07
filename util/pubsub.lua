@@ -312,7 +312,11 @@ function service:purge(node, actor, notify)
 	if not node_obj then
 		return false, "item-not-found";
 	end
-	self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	if self.data[node] and self.data[node].clear then
+		self.data[node]:clear()
+	else
+		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	end
 	self.events.fire_event("node-purged", { node = node, actor = actor });
 	if notify then
 		self.config.broadcaster("purge", node, node_obj.subscribers);
