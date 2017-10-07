@@ -383,6 +383,9 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 		end
 		return data;
 	end
+	function get_set:clear()
+		return archive:delete(user, { with = node });
+	end
 	return setmetatable(get_set, archive);
 end
 _M.simple_itemstore = simple_itemstore;
