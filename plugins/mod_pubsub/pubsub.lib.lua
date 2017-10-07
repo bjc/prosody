@@ -358,7 +358,7 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 		end
 		-- Workaround for buggy SQL drivers which require iterating until we get a nil.
 		local id, payload, when, publisher;
-		for a, b, c, d in data() do
+		for a, b, c, d in data do
 			id, payload, when, publisher = a, b, c, d;
 		end
 		module:log("debug", "Get item %s (published at %s by %s) from store %s", id, when, publisher, store);
