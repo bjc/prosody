@@ -160,9 +160,6 @@ function archive:delete(username, query)
 	if not query or next(query) == nil then
 		return datamanager.list_store(username, host, self.store, nil);
 	end
-	for k in pairs(query) do
-		if k ~= "end" then return nil, "unsupported-query-field"; end
-	end
 	local items, err = datamanager.list_load(username, host, self.store);
 	if not items then
 		if err then
@@ -173,9 +170,28 @@ function archive:delete(username, query)
 	end
 	items = array(items);
 	local count_before = #items;
-	items:filter(function (item)
-		return item.when > query["end"];
-	end);
+	if query then
+		if query.key then
+			items:filter(function (item)
+				return item.key ~= query.key;
+			end);
+		end
+		if query.with then
+			items:filter(function (item)
+				return item.with ~= query.with;
+			end);
+		end
+		if query.start then
+			items:filter(function (item)
+				return item.when < query.start;
+			end);
+		end
+		if query["end"] then
+			items:filter(function (item)
+				return item.when > query["end"];
+			end);
+		end
+	end
 	local count = count_before - #items;
 	local ok, err = datamanager.list_store(username, host, self.store, items);
 	if not ok then return ok, err; end
