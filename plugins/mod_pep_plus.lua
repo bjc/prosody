@@ -379,11 +379,12 @@ module:hook("iq-result/bare/disco", function(event)
 	end
 	hash_map[ver] = notify; -- update hash map
 	if is_self then
+		-- Optimization: Fiddle with other local users
 		for jid, item in pairs(origin.roster) do -- for all interested contacts
 			if jid then
-				if item.subscription == "both" or item.subscription == "from" then
-					if not recipients[jid] then recipients[jid] = {}; end
-					update_subscriptions(contact, jid, notify);
+				local contact_node, contact_host = jid_split(jid);
+				if contact_host == host and item.subscription == "both" or item.subscription == "from" then
+					update_subscriptions(user_bare, contact_node, notify);
 				end
 			end
 		end
