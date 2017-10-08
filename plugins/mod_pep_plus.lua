@@ -22,6 +22,9 @@ local hash_map = {};
 
 local host = module.host;
 
+local known_nodes_map = module:open_store("pep", "map");
+local known_nodes = module:open_store("pep");
+
 function module.save()
 	return { services = services };
 end
@@ -40,6 +43,7 @@ end
 local function simple_itemstore(username)
 	return function (config, node)
 		module:log("debug", "new simple_itemstore(%q, %q)", username, node);
+		known_nodes_map:set(username, node, true);
 		local archive = module:open_store("pep_"..node, "archive");
 		return lib_pubsub.simple_itemstore(archive, config, username, node, false);
 	end
@@ -186,6 +190,18 @@ function get_pep_service(username)
 
 		normalize_jid = jid_bare;
 	});
+	local nodes, err = known_nodes:get(username);
+	if nodes then
+		module:log("debug", "Restoring nodes for user %s", username);
+		for node in pairs(nodes) do
+			module:log("debug", "Restoring node %q", node);
+			service:create(node, true);
+		end
+	elseif err then
+		module:log("error", "Could not restore nodes for %s: %s", username, err);
+	else
+		module:log("debug", "No known nodes");
+	end
 	services[username] = service;
 	module:add_item("pep-service", { service = service, jid = user_bare });
 	return service;
