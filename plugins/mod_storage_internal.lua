@@ -44,17 +44,36 @@ local archive = {};
 driver.archive = { __index = archive };
 
 function archive:append(username, key, value, when, with)
-	key = key or id();
 	when = when or now();
 	if not st.is_stanza(value) then
 		return nil, "unsupported-datatype";
 	end
 	value = st.preserialize(st.clone(value));
-	value.key = key;
 	value.when = when;
 	value.with = with;
 	value.attr.stamp = datetime.datetime(when);
 	value.attr.stamp_legacy = datetime.legacy(when);
+
+	if key then
+		local items, err = datamanager.list_load(username, host, self.store);
+		if not items and err then return items, err; end
+		if items then
+			items = array(items);
+			items:filter(function (item)
+				return item.key ~= key;
+			end);
+			value.key = key;
+			items:push(value);
+			local ok, err = datamanager.list_store(username, host, self.store, items);
+			if not ok then return ok, err; end
+			return key;
+		end
+	else
+		key = id();
+	end
+
+	value.key = key;
+
 	local ok, err = datamanager.list_append(username, host, self.store, value);
 	if not ok then return ok, err; end
 	return key;
