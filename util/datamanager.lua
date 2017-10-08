@@ -42,7 +42,7 @@ end);
 local _ENV = nil;
 
 ---- utils -----
-local encode, decode;
+local encode, decode, store_encode;
 do
 	local urlcodes = setmetatable({}, { __index = function (t, k) t[k] = char(tonumber(k, 16)); return t[k]; end });
 
@@ -52,6 +52,12 @@ do
 
 	encode = function (s)
 		return s and (s:gsub("%W", function (c) return format("%%%02x", c:byte()); end));
+	end
+
+	-- Special encode function for store names, which historically were unencoded.
+	-- All currently known stores use a-z and underscore, so this one preserves underscores.
+	store_encode = function (s)
+		return s and (s:gsub("[^_%w]", function (c) return format("%%%02x", c:byte()); end));
 	end
 end
 
@@ -119,6 +125,7 @@ local function getpath(username, host, datastore, ext, create)
 	ext = ext or "dat";
 	host = (host and encode(host)) or "_global";
 	username = username and encode(username);
+	datastore = store_encode(datastore);
 	if username then
 		if create then mkdir(mkdir(mkdir(data_path).."/"..host).."/"..datastore); end
 		return format("%s/%s/%s/%s.%s", data_path, host, datastore, username, ext);
