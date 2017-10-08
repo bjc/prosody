@@ -379,7 +379,7 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 		end
 		return data;
 	end
-	function get_set:clear()
+	function get_set:clear() -- luacheck: ignore 212/self
 		return archive:delete(user);
 	end
 	return setmetatable(get_set, archive);
