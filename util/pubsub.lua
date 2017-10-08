@@ -244,6 +244,9 @@ function service:delete(node, actor)
 		return false, "item-not-found";
 	end
 	self.nodes[node] = nil;
+	if self.data[node] and self.data[node].clear then
+		self.data[node]:clear();
+	end
 	self.data[node] = nil;
 	self.events.fire_event("node-deleted", { node = node, actor = actor });
 	self.config.broadcaster("delete", node, node_obj.subscribers);
