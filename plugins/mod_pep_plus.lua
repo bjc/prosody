@@ -1,6 +1,7 @@
 local pubsub = require "util.pubsub";
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
+local jid_join = require "util.jid".join;
 local set_new = require "util.set".new;
 local st = require "util.stanza";
 local calculate_hash = require "util.caps".calculate_hash;
@@ -19,6 +20,8 @@ local services = {};
 local recipients = {};
 local hash_map = {};
 
+local host = module.host;
+
 function module.save()
 	return { services = services };
 end
@@ -27,33 +30,34 @@ function module.restore(data)
 	services = data.services;
 end
 
-local function subscription_presence(user_bare, recipient)
+local function subscription_presence(username, recipient)
+	local user_bare = jid_join(username, host);
 	local recipient_bare = jid_bare(recipient);
 	if (recipient_bare == user_bare) then return true; end
-	local username, host = jid_split(user_bare);
 	return is_contact_subscribed(username, host, recipient_bare);
 end
 
-local function simple_itemstore(user)
+local function simple_itemstore(username)
 	return function (config, node)
-		module:log("debug", "new simple_itemstore(%q, %q)", user, node);
+		module:log("debug", "new simple_itemstore(%q, %q)", username, node);
 		local archive = module:open_store("pep_"..node, "archive");
-		return lib_pubsub.simple_itemstore(archive, config, user, node, false);
+		return lib_pubsub.simple_itemstore(archive, config, username, node, false);
 	end
 end
 
-local function get_broadcaster(name)
+local function get_broadcaster(username)
+	local user_bare = jid_join(username, host);
 	local function simple_broadcast(kind, node, jids, item)
 		if item then
 			item = st.clone(item);
 			item.attr.xmlns = nil; -- Clear the pubsub namespace
 		end
-		local message = st.message({ from = name, type = "headline" })
+		local message = st.message({ from = user_bare, type = "headline" })
 			:tag("event", { xmlns = xmlns_pubsub_event })
 				:tag(kind, { node = node })
 					:add_child(item);
 		for jid in pairs(jids) do
-			module:log("debug", "Sending notification to %s from %s: %s", jid, name, tostring(item));
+			module:log("debug", "Sending notification to %s from %s: %s", jid, user_bare, tostring(item));
 			message.attr.to = jid;
 			module:send(message);
 		end
@@ -61,9 +65,10 @@ local function get_broadcaster(name)
 	return simple_broadcast;
 end
 
-function get_pep_service(name)
-	module:log("debug", "get_pep_service(%q)");
-	local service = services[name];
+function get_pep_service(username)
+	module:log("debug", "get_pep_service(%q)", username);
+	local user_bare = jid_join(username, host);
+	local service = services[username];
 	if service then
 		return service;
 	end
@@ -169,20 +174,20 @@ function get_pep_service(name)
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = true;
 
-		itemstore = simple_itemstore(name);
-		broadcaster = get_broadcaster(name);
+		itemstore = simple_itemstore(username);
+		broadcaster = get_broadcaster(username);
 		get_affiliation = function (jid)
-			if jid_bare(jid) == name then
+			if jid_bare(jid) == user_bare then
 				return "owner";
-			elseif subscription_presence(name, jid) then
+			elseif subscription_presence(username, jid) then
 				return "subscriber";
 			end
 		end;
 
 		normalize_jid = jid_bare;
 	});
-	services[name] = service;
-	module:add_item("pep-service", { service = service, jid = name });
+	services[username] = service;
+	module:add_item("pep-service", { service = service, jid = user_bare });
 	return service;
 end
 
@@ -193,7 +198,10 @@ function handle_pubsub_iq(event)
 	if not action then
 		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 	end
-	local service_name = stanza.attr.to or origin.username.."@"..origin.host
+	local service_name = origin.username;
+	if stanza.attr.to ~= nil then
+		service_name = jid_split(stanza.attr.to);
+	end
 	local service = get_pep_service(service_name);
 	local handler = handlers[stanza.attr.type.."_"..action.name];
 	if handler then
@@ -277,29 +285,34 @@ end
 module:hook("presence/bare", function(event)
 	-- inbound presence to bare JID recieved
 	local origin, stanza = event.origin, event.stanza;
-	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local t = stanza.attr.type;
 	local is_self = not stanza.attr.to;
+	local username = jid_split(stanza.attr.to);
+	local user_bare = jid_bare(stanza.attr.to);
+	if is_self then
+		username = origin.username;
+		user_bare = jid_join(username, host);
+	end
 
 	if not t then -- available presence
-		if is_self or subscription_presence(user, stanza.attr.from) then
+		if is_self or subscription_presence(username, stanza.attr.from) then
 			local recipient = stanza.attr.from;
-			local current = recipients[user] and recipients[user][recipient];
+			local current = recipients[username] and recipients[username][recipient];
 			local hash, query_node = get_caps_hash_from_presence(stanza, current);
 			if current == hash or (current and current == hash_map[hash]) then return; end
 			if not hash then
-				update_subscriptions(recipient, user);
+				update_subscriptions(recipient, username);
 			else
-				recipients[user] = recipients[user] or {};
+				recipients[username] = recipients[username] or {};
 				if hash_map[hash] then
-					update_subscriptions(recipient, user, hash_map[hash]);
+					update_subscriptions(recipient, username, hash_map[hash]);
 				else
-					recipients[user][recipient] = hash;
+					recipients[username][recipient] = hash;
 					local from_bare = origin.type == "c2s" and origin.username.."@"..origin.host;
 					if is_self or origin.type ~= "c2s" or (recipients[from_bare] and recipients[from_bare][origin.full_jid]) ~= hash then
 						-- COMPAT from ~= stanza.attr.to because OneTeam can't deal with missing from attribute
 						origin.send(
-							st.stanza("iq", {from=user, to=stanza.attr.from, id="disco", type="get"})
+							st.stanza("iq", {from=user_bare, to=stanza.attr.from, id="disco", type="get"})
 								:tag("query", {xmlns = "http://jabber.org/protocol/disco#info", node = query_node})
 						);
 					end
@@ -307,14 +320,14 @@ module:hook("presence/bare", function(event)
 			end
 		end
 	elseif t == "unavailable" then
-		update_subscriptions(stanza.attr.from, user);
+		update_subscriptions(stanza.attr.from, username);
 	elseif not is_self and t == "unsubscribe" then
 		local from = jid_bare(stanza.attr.from);
-		local subscriptions = recipients[user];
+		local subscriptions = recipients[username];
 		if subscriptions then
 			for subscriber in pairs(subscriptions) do
 				if jid_bare(subscriber) == from then
-					update_subscriptions(subscriber, user);
+					update_subscriptions(subscriber, username);
 				end
 			end
 		end
@@ -329,10 +342,13 @@ module:hook("iq-result/bare/disco", function(event)
 	end
 
 	-- Process disco response
-	local is_self = not stanza.attr.to;
-	local user = stanza.attr.to or (origin.username..'@'..origin.host);
+	local is_self = stanza.attr.to == nil;
+	local username = jid_split(stanza.attr.to);
+	if is_self then
+		username = origin.username;
+	end
 	local contact = stanza.attr.from;
-	local current = recipients[user] and recipients[user][contact];
+	local current = recipients[username] and recipients[username][contact];
 	if type(current) ~= "string" then return; end -- check if waiting for recipient's response
 	local ver = current;
 	if not string.find(current, "#") then
@@ -356,12 +372,15 @@ module:hook("iq-result/bare/disco", function(event)
 			end
 		end
 	end
-	update_subscriptions(contact, user, notify);
+	update_subscriptions(contact, username, notify);
 end);
 
 module:hook("account-disco-info-node", function(event)
 	local reply, stanza, origin = event.reply, event.stanza, event.origin;
-	local service_name = stanza.attr.to or origin.username.."@"..origin.host
+	local service_name = origin.username;
+	if stanza.attr.to ~= nil then
+		service_name = jid_split(stanza.attr.to);
+	end
 	local service = get_pep_service(service_name);
 	local node = event.node;
 	local ok = service:get_items(node, jid_bare(stanza.attr.from) or true);
@@ -379,7 +398,10 @@ end);
 module:hook("account-disco-items-node", function(event)
 	local reply, stanza, origin = event.reply, event.stanza, event.origin;
 	local node = event.node;
-	local service_name = stanza.attr.to or origin.username.."@"..origin.host
+	local service_name = origin.username;
+	if stanza.attr.to ~= nil then
+		service_name = jid_split(stanza.attr.to);
+	end
 	local service = get_pep_service(service_name);
 	local ok, ret = service:get_items(node, jid_bare(stanza.attr.from) or true);
 	if not ok then return; end
@@ -392,7 +414,10 @@ end);
 module:hook("account-disco-items", function(event)
 	local reply, stanza, origin = event.reply, event.stanza, event.origin;
 
-	local service_name = reply.attr.from or origin.username.."@"..origin.host
+	local service_name = origin.username;
+	if stanza.attr.to ~= nil then
+		service_name = jid_split(stanza.attr.to);
+	end
 	local service = get_pep_service(service_name);
 	local ok, ret = service:get_nodes(jid_bare(stanza.attr.from));
 	if not ok then return; end
