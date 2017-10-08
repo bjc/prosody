@@ -329,14 +329,13 @@ end
 local function simple_itemstore(archive, config, user, node, expose_publisher)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
-	function get_set:items()
-		local store = self.store;
+	function get_set:items() -- luacheck: ignore 212/self
 		local data, err = archive:find(user);
 		if not data then
 			module:log("error", "Unable to get items: %s", err);
 			return true;
 		end
-		module:log("debug", "Listed items %s from store %s", data, store);
+		module:log("debug", "Listed items %s", data);
 		return function()
 			local id, payload, when, publisher = data();
 			if id == nil then
@@ -346,8 +345,7 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 			return id, item;
 		end;
 	end
-	function get_set:get(key)
-		local store = self.store;
+	function get_set:get(key) -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
 			key = key;
 			-- Get the last item with that key, if the archive doesn't deduplicate
@@ -359,15 +357,14 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 			return nil, err;
 		end
 		local id, payload, when, publisher = data();
-		module:log("debug", "Get item %s (published at %s by %s) from store %s", id, when, publisher, store);
+		module:log("debug", "Get item %s (published at %s by %s)", id, when, publisher);
 		if id == nil then
 			return nil;
 		end
 		return create_encapsulating_item(id, payload, publisher, expose_publisher);
 	end
-	function get_set:set(key, value)
-		local store = self.store;
-		module:log("debug", "Set item %s to %s for %s in store %s", key, value, node, store);
+	function get_set:set(key, value) -- luacheck: ignore 212/self
+		module:log("debug", "Set item %s to %s for %s", key, value, node);
 		local data, err;
 		if value ~= nil then
 			local publisher = value.attr.publisher;
