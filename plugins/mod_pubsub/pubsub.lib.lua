@@ -350,6 +350,9 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 		local store = self.store;
 		local data, err = archive:find(user, {
 			key = key;
+			-- Get the last item with that key, if the archive doesn't deduplicate
+			reverse = true,
+			limit = 1;
 		});
 		if not data then
 			module:log("error", "Unable to get item: %s", err);
