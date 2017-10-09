@@ -359,9 +359,11 @@ module:hook("iq-result/bare/disco", function(event)
 
 	-- Process disco response
 	local is_self = stanza.attr.to == nil;
+	local user_bare = jid_bare(stanza.attr.to);
 	local username = jid_split(stanza.attr.to);
 	if is_self then
 		username = origin.username;
+		user_bare = jid_join(username, host);
 	end
 	local contact = stanza.attr.from;
 	local current = recipients[username] and recipients[username][contact];
