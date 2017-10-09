@@ -338,7 +338,11 @@ function service:get_items(node, actor, id)
 		return false, "item-not-found";
 	end
 	if id then -- Restrict results to a single specific item
-		return true, { id, [id] = self.data[node]:get(id) };
+		local with_id = self.data[node]:get(id);
+		if not with_id then
+			return false, "item-not-found";
+		end
+		return true, { id, [id] = with_id };
 	else
 		local data = {}
 		for key, value in self.data[node]:items() do
