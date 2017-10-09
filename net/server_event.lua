@@ -773,7 +773,7 @@ local function setquitting(yes)
 end
 
 local function get_backend()
-	return base:method();
+	return "libevent " .. base:method();
 end
 
 -- We need to hold onto the events to stop them
