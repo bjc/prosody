@@ -409,9 +409,40 @@ module:hook("account-disco-info-node", function(event)
 end);
 
 module:hook("account-disco-info", function(event)
-	local reply = event.reply;
+	local origin, reply = event.origin, event.reply;
+
 	reply:tag('identity', {category='pubsub', type='pep'}):up();
-	reply:tag('feature', {var='http://jabber.org/protocol/pubsub#publish'}):up();
+
+	local username = jid_split(reply.attr.from) or origin.username;
+	local service = get_pep_service(username);
+
+	local feature_map = {
+		create = { "create-nodes", "instant-nodes", "item-ids" };
+		retract = { "delete-items", "retract-items" };
+		purge = { "purge-nodes" };
+		publish = { "publish", service.config.autocreate_on_publish and "auto-create" };
+		delete = { "delete-nodes" };
+		get_items = { "retrieve-items" };
+		add_subscription = { "subscribe" };
+		get_subscriptions = { "retrieve-subscriptions" };
+		set_configure = { "config-node" };
+		get_default = { "retrieve-default" };
+	};
+
+	for method, features in pairs(feature_map) do
+		if service[method] then
+			for _, feature in ipairs(features) do
+				if feature then
+					reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
+				end
+			end
+		end
+	end
+	for affiliation in pairs(service.config.capabilities) do
+		if affiliation ~= "none" and affiliation ~= "owner" then
+			reply:tag('feature', {var=xmlns_pubsub.."#"..affiliation.."-affiliation"}):up();
+		end
+	end
 end);
 
 module:hook("account-disco-items-node", function(event)
