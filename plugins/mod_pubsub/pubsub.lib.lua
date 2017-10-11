@@ -294,7 +294,12 @@ function handlers.set_configure(origin, stanza, config, service)
 		origin.send(pubsub_error_reply(stanza, "forbidden"));
 		return true;
 	end
-	local new_config, err = node_config_form:data(config.tags[1]);
+	local config_form = config:get_child("x", "jabber:x:data");
+	if not config_form then
+		origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
+		return true;
+	end
+	local new_config, err = node_config_form:data(config_form);
 	if not new_config then
 		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 		return true;
