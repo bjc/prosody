@@ -331,7 +331,7 @@ local function create_encapsulating_item(id, payload, publisher, expose_publishe
 	return item;
 end
 
-local function simple_itemstore(archive, config, user, node, expose_publisher)
+local function archive_itemstore(archive, config, user, node, expose_publisher)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
 	function get_set:items() -- luacheck: ignore 212/self
@@ -389,6 +389,6 @@ local function simple_itemstore(archive, config, user, node, expose_publisher)
 	end
 	return setmetatable(get_set, archive);
 end
-_M.simple_itemstore = simple_itemstore;
+_M.archive_itemstore = archive_itemstore;
 
 return _M;
