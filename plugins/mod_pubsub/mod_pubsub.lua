@@ -40,7 +40,7 @@ end
 
 local function simple_itemstore(config, node)
 	local archive = module:open_store("pubsub_"..node, "archive");
-	return lib_pubsub.simple_itemstore(archive, config, nil, node, expose_publisher);
+	return lib_pubsub.archive_itemstore(archive, config, nil, node, expose_publisher);
 end
 
 if enable_persistence then

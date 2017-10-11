@@ -45,7 +45,7 @@ local function simple_itemstore(username)
 		module:log("debug", "new simple_itemstore(%q, %q)", username, node);
 		known_nodes_map:set(username, node, true);
 		local archive = module:open_store("pep_"..node, "archive");
-		return lib_pubsub.simple_itemstore(archive, config, username, node, false);
+		return lib_pubsub.archive_itemstore(archive, config, username, node, false);
 	end
 end
 
