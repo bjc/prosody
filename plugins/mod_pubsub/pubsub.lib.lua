@@ -45,6 +45,11 @@ local node_config_form = dataform {
 		name = "pubsub#max_items";
 		label = "Max # of items to persist";
 	};
+	{
+		type = "boolean";
+		name = "pubsub#persist_items";
+		label = "Persist items to storage";
+	};
 };
 
 function handlers.get_items(origin, stanza, items, service)

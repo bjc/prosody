@@ -6,6 +6,7 @@ local set_new = require "util.set".new;
 local st = require "util.stanza";
 local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
+local cache = require "util.cache";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -42,10 +43,16 @@ end
 
 local function simple_itemstore(username)
 	return function (config, node)
-		module:log("debug", "new simple_itemstore(%q, %q)", username, node);
-		known_nodes_map:set(username, node, true);
-		local archive = module:open_store("pep_"..node, "archive");
-		return lib_pubsub.archive_itemstore(archive, config, username, node, false);
+		if config["pubsub#persist_items"] then
+			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
+			known_nodes_map:set(username, node, true);
+			local archive = module:open_store("pep_"..node, "archive");
+			return lib_pubsub.archive_itemstore(archive, config, username, node, false);
+		else
+			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
+			known_nodes_map:set(username, node, nil);
+			return cache.new(tonumber(config["pubsub#max_items"]));
+		end
 	end
 end
 
@@ -173,6 +180,7 @@ function get_pep_service(username)
 
 		node_defaults = {
 			["pubsub#max_items"] = "1";
+			["pubsub#persist_items"] = true;
 		};
 
 		autocreate_on_publish = true;
