@@ -456,31 +456,38 @@ end);
 module:hook("account-disco-items-node", function(event)
 	local reply, stanza, origin = event.reply, event.stanza, event.origin;
 	local node = event.node;
-	local service_name = origin.username;
-	if stanza.attr.to ~= nil then
-		service_name = jid_split(stanza.attr.to);
+	local is_self = stanza.attr.to == nil;
+	local user_bare = jid_bare(stanza.attr.to);
+	local username = jid_split(stanza.attr.to);
+	if is_self then
+		username = origin.username;
+		user_bare = jid_join(username, host);
 	end
-	local service = get_pep_service(service_name);
+	local service = get_pep_service(username);
 	local ok, ret = service:get_items(node, jid_bare(stanza.attr.from) or true);
 	if not ok then return; end
 	event.exists = true;
 	for _, id in ipairs(ret) do
-		reply:tag("item", { jid = service_name, name = id }):up();
+		reply:tag("item", { jid = user_bare, name = id }):up();
 	end
 end);
 
 module:hook("account-disco-items", function(event)
 	local reply, stanza, origin = event.reply, event.stanza, event.origin;
 
-	local service_name = origin.username;
-	if stanza.attr.to ~= nil then
-		service_name = jid_split(stanza.attr.to);
+	local is_self = stanza.attr.to == nil;
+	local user_bare = jid_bare(stanza.attr.to);
+	local username = jid_split(stanza.attr.to);
+	if is_self then
+		username = origin.username;
+		user_bare = jid_join(username, host);
 	end
-	local service = get_pep_service(service_name);
+	local service = get_pep_service(username);
+
 	local ok, ret = service:get_nodes(jid_bare(stanza.attr.from));
 	if not ok then return; end
 
 	for node, node_obj in pairs(ret) do
-		reply:tag("item", { jid = service_name, node = node, name = node_obj.config.name }):up();
+		reply:tag("item", { jid = user_bare, node = node, name = node_obj.config.name }):up();
 	end
 end);
