@@ -2,7 +2,7 @@ local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
 local time_now = os.time;
 
 local st = require "util.stanza";
-local ti = require "util.iterators";
+local it = require "util.iterators";
 local uuid_generate = require "util.uuid".generate;
 local dataform = require"util.dataforms".new;
 
