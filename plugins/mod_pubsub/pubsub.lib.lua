@@ -2,6 +2,7 @@ local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
 local time_now = os.time;
 
 local st = require "util.stanza";
+local ti = require "util.iterators";
 local uuid_generate = require "util.uuid".generate;
 local dataform = require"util.dataforms".new;
 
@@ -340,20 +341,23 @@ local function archive_itemstore(archive, config, user, node, expose_publisher)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
 	function get_set:items() -- luacheck: ignore 212/self
-		local data, err = archive:find(user);
+		local data, err = archive:find(user, {
+			limit = tonumber(config["pubsub#max_items"]);
+			reverse = true;
+		});
 		if not data then
 			module:log("error", "Unable to get items: %s", err);
 			return true;
 		end
 		module:log("debug", "Listed items %s", data);
-		return function()
+		return it.reverse(function()
 			local id, payload, when, publisher = data();
 			if id == nil then
 				return;
 			end
 			local item = create_encapsulating_item(id, payload, publisher, expose_publisher);
 			return id, item;
-		end;
+		end);
 	end
 	function get_set:get(key) -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
