@@ -374,7 +374,6 @@ local function archive_itemstore(archive, config, user, node, expose_publisher)
 		return create_encapsulating_item(id, payload, publisher, expose_publisher);
 	end
 	function get_set:set(key, value) -- luacheck: ignore 212/self
-		module:log("debug", "Set item %s to %s for %s", key, value, node);
 		local data, err;
 		if value ~= nil then
 			local publisher = value.attr.publisher;
