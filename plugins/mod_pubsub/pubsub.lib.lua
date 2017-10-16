@@ -328,16 +328,13 @@ function handlers.get_default(origin, stanza, default, service)
 	return true;
 end
 
-local function create_encapsulating_item(id, payload, publisher, expose_publisher)
+local function create_encapsulating_item(id, payload)
 	local item = st.stanza("item", { id = id, xmlns = xmlns_pubsub });
 	item:add_child(payload);
-	if expose_publisher then
-		item.attr.publisher = publisher;
-	end
 	return item;
 end
 
-local function archive_itemstore(archive, config, user, node, expose_publisher)
+local function archive_itemstore(archive, config, user, node)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
 	function get_set:items() -- luacheck: ignore 212/self
@@ -355,7 +352,7 @@ local function archive_itemstore(archive, config, user, node, expose_publisher)
 			if id == nil then
 				return;
 			end
-			local item = create_encapsulating_item(id, payload, publisher, expose_publisher);
+			local item = create_encapsulating_item(id, payload, publisher);
 			return id, item;
 		end);
 	end
@@ -375,7 +372,7 @@ local function archive_itemstore(archive, config, user, node, expose_publisher)
 		if id == nil then
 			return nil;
 		end
-		return create_encapsulating_item(id, payload, publisher, expose_publisher);
+		return create_encapsulating_item(id, payload, publisher);
 	end
 	function get_set:set(key, value) -- luacheck: ignore 212/self
 		local data, err;
