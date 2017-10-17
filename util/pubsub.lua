@@ -5,13 +5,14 @@ local service = {};
 local service_mt = { __index = service };
 
 local default_config = { __index = {
-	itemstore = function (config, _) return cache.new(tonumber(config["pubsub#max_items"])) end;
+	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
 	get_affiliation = function () end;
 	capabilities = {};
 } };
 local default_node_config = { __index = {
-	["pubsub#max_items"] = "20";
+	["persist_items"] = false;
+	["max_items"] = 20;
 } };
 
 local function new(config)
