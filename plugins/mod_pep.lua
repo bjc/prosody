@@ -18,6 +18,8 @@ local calculate_hash = require "util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
 local bare_sessions = prosody.bare_sessions;
 
+local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
+
 -- Used as canonical 'empty table'
 local NULL = {};
 -- data[user_bare_jid][node] = item_stanza
@@ -281,7 +283,23 @@ end);
 module:hook("account-disco-info", function(event)
 	local reply = event.reply;
 	reply:tag('identity', {category='pubsub', type='pep'}):up();
-	reply:tag('feature', {var='http://jabber.org/protocol/pubsub#publish'}):up();
+	reply:tag('feature', {var=xmlns_pubsub}):up();
+	local features = {
+		"access-presence",
+		"auto-create",
+		"auto-subscribe",
+		"filtered-notifications",
+		"item-ids",
+		"last-published",
+		"presence-notifications",
+		"presence-subscribe",
+		"publish",
+		"retract-items",
+		"retrieve-items",
+	};
+	for _, feature in ipairs(features) do
+		reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
+	end
 end);
 
 module:hook("account-disco-items", function(event)
