@@ -36,9 +36,6 @@ module.restore = function(state)
 	hash_map = state.hash_map or {};
 end
 
-module:add_identity("pubsub", "pep", module:get_option_string("name", "Prosody"));
-module:add_feature("http://jabber.org/protocol/pubsub#publish");
-
 local function subscription_presence(user_bare, recipient)
 	local recipient_bare = jid_bare(recipient);
 	if (recipient_bare == user_bare) then return true end
