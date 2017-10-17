@@ -140,7 +140,8 @@ function core_process_stanza(origin, stanza)
 		if h then
 			local event;
 			if xmlns == nil then
-				if stanza.name == "iq" and (stanza.attr.type == "set" or stanza.attr.type == "get") then
+				if stanza.name == "iq" and (stanza.attr.type == "set" or stanza.attr.type == "get")
+					and stanza.tags[1] and stanza.tags[1].attr.xmlns then
 					event = "stanza/iq/"..stanza.tags[1].attr.xmlns..":"..stanza.tags[1].name;
 				else
 					event = "stanza/"..stanza.name;
