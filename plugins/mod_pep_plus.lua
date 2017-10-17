@@ -420,6 +420,7 @@ module:hook("account-disco-info", function(event)
 	local origin, reply = event.origin, event.reply;
 
 	reply:tag('identity', {category='pubsub', type='pep'}):up();
+	reply:tag('feature', {var=xmlns_pubsub}):up();
 
 	local username = jid_split(reply.attr.from) or origin.username;
 	local service = get_pep_service(username);
@@ -450,6 +451,20 @@ module:hook("account-disco-info", function(event)
 		if affiliation ~= "none" and affiliation ~= "owner" then
 			reply:tag('feature', {var=xmlns_pubsub.."#"..affiliation.."-affiliation"}):up();
 		end
+	end
+
+	-- Features not covered by the above
+	local more_features = {
+		"access-presence",
+		"auto-subscribe",
+		"filtered-notifications",
+		"last-published",
+		"persistent-items",
+		"presence-notifications",
+		"presence-subscribe",
+	};
+	for _, feature in ipairs(more_features) do
+		reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
 	end
 end);
 
