@@ -282,10 +282,15 @@ function handlers.get_configure(origin, stanza, config, service)
 		return true;
 	end
 
+	local node_config = node_obj.config;
+	local pubsub_form_data = {
+		["pubsub#max_items"] = tostring(node_config["max_items"]);
+		["pubsub#persist_items"] = node_config["persist_items"]
+	}
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("configure", { node = node })
-				:add_child(node_config_form:form(node_obj.config));
+				:add_child(node_config_form:form(pubsub_form_data));
 	origin.send(reply);
 	return true;
 end
@@ -305,11 +310,15 @@ function handlers.set_configure(origin, stanza, config, service)
 		origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
 		return true;
 	end
-	local new_config, err = node_config_form:data(config_form);
-	if not new_config then
+	local form_data, err = node_config_form:data(config_form);
+	if not form_data then
 		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 		return true;
 	end
+	local new_config = {
+		["max_items"] = tonumber(form_data["pubsub#max_items"]);
+		["persist_items"] = form_data["pubsub#persist_items"];
+	};
 	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, err));
@@ -320,10 +329,14 @@ function handlers.set_configure(origin, stanza, config, service)
 end
 
 function handlers.get_default(origin, stanza, default, service)
+	local pubsub_form_data = {
+		["pubsub#max_items"] = tostring(service.node_defaults["max_items"]);
+		["pubsub#persist_items"] = service.node_defaults["persist_items"]
+	}
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("default")
-				:add_child(node_config_form:form(service.node_defaults));
+				:add_child(node_config_form:form(pubsub_form_data));
 	origin.send(reply);
 	return true;
 end

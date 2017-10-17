@@ -43,7 +43,7 @@ end
 
 local function simple_itemstore(username)
 	return function (config, node)
-		if config["pubsub#persist_items"] then
+		if config["persist_items"] then
 			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
 			known_nodes_map:set(username, node, true);
 			local archive = module:open_store("pep_"..node, "archive");
@@ -51,7 +51,7 @@ local function simple_itemstore(username)
 		else
 			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
 			known_nodes_map:set(username, node, nil);
-			return cache.new(tonumber(config["pubsub#max_items"]));
+			return cache.new(tonumber(config["max_items"]));
 		end
 	end
 end
@@ -179,8 +179,8 @@ function get_pep_service(username)
 		};
 
 		node_defaults = {
-			["pubsub#max_items"] = "1";
-			["pubsub#persist_items"] = true;
+			["max_items"] = 1;
+			["persist_items"] = true;
 		};
 
 		autocreate_on_publish = true;
