@@ -416,7 +416,7 @@ module:hook("account-disco-info", function(event)
 	local username = jid_split(reply.attr.from) or origin.username;
 	local service = get_pep_service(username);
 
-	local suppored_features = lib_pubsub.get_feature_set(service) + set.new{
+	local supported_features = lib_pubsub.get_feature_set(service) + set.new{
 		-- Features not covered by the above
 		"access-presence",
 		"auto-subscribe",
@@ -427,7 +427,7 @@ module:hook("account-disco-info", function(event)
 		"presence-subscribe",
 	};
 
-	for feature in suppored_features do
+	for feature in supported_features do
 		reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
 	end
 end);
