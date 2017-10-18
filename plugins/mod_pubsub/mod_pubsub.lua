@@ -17,7 +17,6 @@ local enable_persistence = module:get_option_boolean("experimental_pubsub_item_p
 local service;
 
 local lib_pubsub = module:require "pubsub";
-local handlers = lib_pubsub.handlers;
 
 module:depends("disco");
 module:add_identity("pubsub", "service", pubsub_disco_name);
