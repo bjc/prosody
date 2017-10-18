@@ -7,6 +7,7 @@ local st = require "util.stanza";
 local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local cache = require "util.cache";
+local set = require "util.set";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -411,41 +412,12 @@ module:hook("account-disco-info", function(event)
 	local origin, reply = event.origin, event.reply;
 
 	reply:tag('identity', {category='pubsub', type='pep'}):up();
-	reply:tag('feature', {var=xmlns_pubsub}):up();
 
 	local username = jid_split(reply.attr.from) or origin.username;
 	local service = get_pep_service(username);
 
-	local feature_map = {
-		create = { "create-nodes", "instant-nodes", "item-ids" };
-		retract = { "delete-items", "retract-items" };
-		purge = { "purge-nodes" };
-		publish = { "publish", service.config.autocreate_on_publish and "auto-create" };
-		delete = { "delete-nodes" };
-		get_items = { "retrieve-items" };
-		add_subscription = { "subscribe" };
-		get_subscriptions = { "retrieve-subscriptions" };
-		set_node_config = { "config-node" };
-		node_defaults = { "retrieve-default" };
-	};
-
-	for method, features in pairs(feature_map) do
-		if service[method] then
-			for _, feature in ipairs(features) do
-				if feature then
-					reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
-				end
-			end
-		end
-	end
-	for affiliation in pairs(service.config.capabilities) do
-		if affiliation ~= "none" and affiliation ~= "owner" then
-			reply:tag('feature', {var=xmlns_pubsub.."#"..affiliation.."-affiliation"}):up();
-		end
-	end
-
-	-- Features not covered by the above
-	local more_features = {
+	local suppored_features = lib_pubsub.get_feature_set(service) + set.new{
+		-- Features not covered by the above
 		"access-presence",
 		"auto-subscribe",
 		"filtered-notifications",
@@ -454,7 +426,8 @@ module:hook("account-disco-info", function(event)
 		"presence-notifications",
 		"presence-subscribe",
 	};
-	for _, feature in ipairs(more_features) do
+
+	for feature in suppored_features do
 		reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
 	end
 end);
