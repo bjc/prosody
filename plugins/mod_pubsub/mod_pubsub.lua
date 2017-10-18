@@ -60,33 +60,9 @@ end
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
-local feature_map = {
-	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
-	retract = { "delete-items", "retract-items" };
-	purge = { "purge-nodes" };
-	publish = { "publish", autocreate_on_publish and "auto-create" };
-	delete = { "delete-nodes" };
-	get_items = { "retrieve-items" };
-	add_subscription = { "subscribe" };
-	get_subscriptions = { "retrieve-subscriptions" };
-	set_node_config = { "config-node" };
-	node_defaults = { "retrieve-default" };
-};
-
 local function add_disco_features_from_service(service)
-	for method, features in pairs(feature_map) do
-		if service[method] then
-			for _, feature in ipairs(features) do
-				if feature then
-					module:add_feature(xmlns_pubsub.."#"..feature);
-				end
-			end
-		end
-	end
-	for affiliation in pairs(service.config.capabilities) do
-		if affiliation ~= "none" and affiliation ~= "owner" then
-			module:add_feature(xmlns_pubsub.."#"..affiliation.."-affiliation");
-		end
+	for feature in lib_pubsub.get_feature_set(service) do
+		module:add_feature(xmlns_pubsub.."#"..feature);
 	end
 end
 
