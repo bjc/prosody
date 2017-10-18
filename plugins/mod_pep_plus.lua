@@ -13,7 +13,6 @@ local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
 local lib_pubsub = module:require "pubsub";
-local handlers = lib_pubsub.handlers;
 
 local empty_set = set_new();
 
