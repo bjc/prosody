@@ -62,7 +62,7 @@ module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
 local feature_map = {
-	create = { "create-nodes", "instant-nodes", "item-ids" };
+	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
 	retract = { "delete-items", "retract-items" };
 	purge = { "purge-nodes" };
 	publish = { "publish", autocreate_on_publish and "auto-create" };

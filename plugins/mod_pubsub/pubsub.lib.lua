@@ -122,8 +122,26 @@ end
 function handlers.set_create(origin, stanza, create, service)
 	local node = create.attr.node;
 	local ok, ret, reply;
+	local config;
+	local configure = stanza.tags[1]:get_child("configure");
+	if configure then
+		local config_form = config:get_child("x", "jabber:x:data");
+		if not config_form then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
+			return true;
+		end
+		local form_data, err = node_config_form:data(config_form);
+		if not form_data then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", err));
+			return true;
+		end
+		config = {
+			["max_items"] = tonumber(form_data["pubsub#max_items"]);
+			["persist_items"] = form_data["pubsub#persist_items"];
+		};
+	end
 	if node then
-		ok, ret = service:create(node, stanza.attr.from);
+		ok, ret = service:create(node, stanza.attr.from, config);
 		if ok then
 			reply = st.reply(stanza);
 		else
@@ -132,7 +150,7 @@ function handlers.set_create(origin, stanza, create, service)
 	else
 		repeat
 			node = uuid_generate();
-			ok, ret = service:create(node, stanza.attr.from);
+			ok, ret = service:create(node, stanza.attr.from, config);
 		until ok or ret ~= "conflict";
 		if ok then
 			reply = st.reply(stanza)
