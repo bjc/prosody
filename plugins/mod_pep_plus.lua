@@ -217,21 +217,13 @@ end
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
-	local pubsub_tag = stanza.tags[1];
-	local action = pubsub_tag.tags[1];
-	if not action then
-		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
-	end
 	local service_name = origin.username;
 	if stanza.attr.to ~= nil then
 		service_name = jid_split(stanza.attr.to);
 	end
 	local service = get_pep_service(service_name);
-	local handler = handlers[stanza.attr.type.."_"..action.name];
-	if handler then
-		handler(origin, stanza, action, service);
-		return true;
-	end
+
+	return lib_pubsub.handle_pubsub_iq(event, service)
 end
 
 module:hook("iq/bare/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
