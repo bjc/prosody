@@ -1,6 +1,7 @@
 local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
 local time_now = os.time;
 
+local set = require "util.set";
 local st = require "util.stanza";
 local it = require "util.iterators";
 local uuid_generate = require "util.uuid".generate;
@@ -52,6 +53,54 @@ local node_config_form = dataform {
 		label = "Persist items to storage";
 	};
 };
+
+local service_method_feature_map = {
+	add_subscription = { "subscribe" };
+	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
+	delete = { "delete-nodes" };
+	get_items = { "retrieve-items" };
+	get_subscriptions = { "retrieve-subscriptions" };
+	node_defaults = { "retrieve-default" };
+	publish = { "publish" };
+	purge = { "purge-nodes" };
+	retract = { "delete-items", "retract-items" };
+	set_node_config = { "config-node" };
+};
+local service_config_feature_map = {
+	autocreate_on_publish = { "auto-create" };
+};
+
+function _M.get_feature_set(service)
+	local supported_features = set.new();
+
+	for method, features in pairs(service_method_feature_map) do
+		if service[method] then
+			for _, feature in ipairs(features) do
+				if feature then
+					supported_features:add(feature);
+				end
+			end
+		end
+	end
+
+	for option, features in pairs(service_config_feature_map) do
+		if service.config[option] then
+			for _, feature in ipairs(features) do
+				if feature then
+					supported_features:add(feature);
+				end
+			end
+		end
+	end
+
+	for affiliation in pairs(service.config.capabilities) do
+		if affiliation ~= "none" and affiliation ~= "owner" then
+			supported_features:add(affiliation.."-affiliation");
+		end
+	end
+
+	return supported_features;
+end
 
 function _M.handle_pubsub_iq(event, service)
 	local origin, stanza = event.origin, event.stanza;
