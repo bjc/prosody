@@ -125,7 +125,7 @@ function handlers.set_create(origin, stanza, create, service)
 	local config;
 	local configure = stanza.tags[1]:get_child("configure");
 	if configure then
-		local config_form = config:get_child("x", "jabber:x:data");
+		local config_form = configure:get_child("x", "jabber:x:data");
 		if not config_form then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
 			return true;
