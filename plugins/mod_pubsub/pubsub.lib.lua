@@ -53,6 +53,20 @@ local node_config_form = dataform {
 	};
 };
 
+function _M.handle_pubsub_iq(event, service)
+	local origin, stanza = event.origin, event.stanza;
+	local pubsub_tag = stanza.tags[1];
+	local action = pubsub_tag.tags[1];
+	if not action then
+		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+	end
+	local handler = handlers[stanza.attr.type.."_"..action.name];
+	if handler then
+		handler(origin, stanza, action, service);
+		return true;
+	end
+end
+
 function handlers.get_items(origin, stanza, items, service)
 	local node = items.attr.node;
 	local item = items:get_child("item");
