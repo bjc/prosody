@@ -60,7 +60,11 @@ function _M.handle_pubsub_iq(event, service)
 	if not action then
 		return origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 	end
-	local handler = handlers[stanza.attr.type.."_"..action.name];
+	local prefix = "";
+	if pubsub_tag.attr.xmlns == xmlns_pubsub_owner then
+		prefix = "owner_";
+	end
+	local handler = handlers[prefix..stanza.attr.type.."_"..action.name];
 	if handler then
 		handler(origin, stanza, action, service);
 		return true;
@@ -142,7 +146,7 @@ function handlers.set_create(origin, stanza, create, service)
 	return true;
 end
 
-function handlers.set_delete(origin, stanza, delete, service)
+function handlers.owner_set_delete(origin, stanza, delete, service)
 	local node = delete.attr.node;
 
 	local reply;
@@ -260,7 +264,7 @@ function handlers.set_retract(origin, stanza, retract, service)
 	return true;
 end
 
-function handlers.set_purge(origin, stanza, purge, service)
+function handlers.owner_set_purge(origin, stanza, purge, service)
 	local node, notify = purge.attr.node, purge.attr.notify;
 	notify = (notify == "1") or (notify == "true");
 	local reply;
@@ -278,7 +282,7 @@ function handlers.set_purge(origin, stanza, purge, service)
 	return true;
 end
 
-function handlers.get_configure(origin, stanza, config, service)
+function handlers.owner_get_configure(origin, stanza, config, service)
 	local node = config.attr.node;
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
@@ -309,7 +313,7 @@ function handlers.get_configure(origin, stanza, config, service)
 	return true;
 end
 
-function handlers.set_configure(origin, stanza, config, service)
+function handlers.owner_set_configure(origin, stanza, config, service)
 	local node = config.attr.node;
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
@@ -342,7 +346,7 @@ function handlers.set_configure(origin, stanza, config, service)
 	return true;
 end
 
-function handlers.get_default(origin, stanza, default, service)
+function handlers.owner_get_default(origin, stanza, default, service) -- luacheck: ignore 212/default
 	local pubsub_form_data = {
 		["pubsub#max_items"] = tostring(service.node_defaults["max_items"]);
 		["pubsub#persist_items"] = service.node_defaults["persist_items"]
