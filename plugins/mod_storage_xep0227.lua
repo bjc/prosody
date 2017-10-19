@@ -168,6 +168,7 @@ handlers.private = {
 local driver = {};
 
 function driver:open(datastore, typ)
+	if typ and typ ~= "keyval" then return nil, "unsupported-store"; end
 	local handler = handlers[datastore];
 	if not handler then return nil, "unsupported-datastore"; end
 	local instance = setmetatable({ host = module.host; datastore = datastore; }, { __index = handler });
