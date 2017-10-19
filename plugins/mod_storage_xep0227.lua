@@ -164,6 +164,79 @@ handlers.private = {
 	end;
 };
 
+handlers.roster = {
+	get = function(self, user)
+		user = getUserElement(getXml(user, self.host));
+		if user then
+			local roster = user:get_child("query", "jabber:iq:roster");
+			if roster then
+				local r = {
+					[false] = {
+						version = roster.attr.version;
+						pending = {};
+					}
+				};
+				for item in roster:childtags("item") do
+					r[item.attr.jid] = {
+						jid = item.attr.jid,
+						subscription = item.attr.subscription,
+						ask = item.attr.ask,
+						name = item.attr.name,
+						groups = {};
+					};
+					for group in item:childtags("group") do
+						r[item.attr.jid].groups[group:get_text()] = true;
+					end
+					for pending in user:childtags("presence", "jabber:client") do
+						r[false].pending[pending.attr.from] = true;
+					end
+				end
+				return r;
+			end
+		end
+	end;
+	set = function(self, user, data)
+		local xml = getXml(user, self.host);
+		local usere = xml and getUserElement(xml);
+		if usere then
+			local roster = usere:get_child("query", 'jabber:iq:roster');
+			if roster then removeStanzaChild(usere, roster); end
+			usere:maptags(function (tag)
+				if tag.attr.xmlns == "jabber:client" and tag.name == "presence" and tag.attr.type == "subscribe" then
+					return nil;
+				end
+				return tag;
+			end);
+			if data and next(data) ~= nil then
+				roster = st.stanza("query", {xmlns='jabber:iq:roster'});
+				usere:add_child(roster);
+				for jid, item in pairs(data) do
+					if jid then
+						roster:tag("item", {
+							jid = jid,
+							subscription = item.subscription,
+							ask = item.ask,
+							name = item.name,
+						});
+						for group in pairs(item.groups) do
+							roster:tag("group"):text(group):up();
+						end
+						roster:up(); -- move out from item
+					else
+						roster.attr.version = item.version;
+						for pending_jid in pairs(item.pending) do
+							usere:add_child(st.presence({ from = pending_jid, type = "subscribe" }));
+						end
+					end
+				end
+			end
+			return setXml(user, self.host, xml);
+		end
+		return true;
+	end;
+};
+
+
 -----------------------------
 local driver = {};
 
