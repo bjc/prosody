@@ -39,7 +39,7 @@ function uptime_text()
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
-function uptime_command_handler (self, data, state)
+function uptime_command_handler ()
 	return { info = uptime_text(), status = "completed" };
 end
 
