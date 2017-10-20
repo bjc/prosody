@@ -1,6 +1,7 @@
 
 -- luacheck: ignore 212/self
 
+local cache = require "util.cache";
 local json = require "util.json";
 local sql = require "util.sql";
 local xml_parse = require "util.xml".parse;
@@ -148,6 +149,9 @@ end
 
 --- Archive store API
 
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
+
 -- luacheck: ignore 512 431/user 431/store
 local map_store = {};
 map_store.__index = map_store;
@@ -231,6 +235,32 @@ archive_store.caps = {
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
+	local item_count = archive_item_count_cache:get(username);
+	if not item_count then
+		local ok, ret = engine:transaction(function()
+			local count_sql = [[
+			SELECT COUNT(*) FROM "prosodyarchive"
+			WHERE "host"=? AND "user"=? AND "store"=?;
+			]];
+			local result = engine:select(count_sql, host, user, store);
+			if result then
+				for row in result do
+					item_count = row[1];
+				end
+			end
+		end);
+		if not ok or not item_count then
+			module:log("error", "Failed while checking quota for %s: %s", username, ret);
+			return nil, "Failure while checking quota";
+		end
+		archive_item_count_cache:set(username, item_count);
+	end
+
+	module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
+	if item_count >= archive_item_limit then
+		return nil, "quota-limit";
+	end
+
 	local user,store = username,self.store;
 	when = when or os.time();
 	with = with or "";
@@ -245,12 +275,18 @@ function archive_store:append(username, key, value, when, with)
 		VALUES (?,?,?,?,?,?,?,?);
 		]];
 		if key then
-			engine:delete(delete_sql, host, user or "", store, key);
+			local result, err = engine:delete(delete_sql, host, user or "", store, key);
+			if result then
+				item_count = item_count - result:affected();
+				archive_item_count_cache:set(username, item_count);
+			end
 		else
+			item_count = item_count + 1;
 			key = uuid.generate();
 		end
 		local t, encoded_value = assert(serialize(value));
 		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
+		archive_item_count_cache:set(username, item_count+1);
 		return key;
 	end);
 	if not ok then return ok, ret; end
@@ -422,6 +458,7 @@ function archive_store:delete(username, query)
 		end
 		return engine:delete(sql_query, unpack(args));
 	end);
+	archive_item_count_cache:set(username, nil);
 	return ok and stmt:affected(), stmt;
 end
 

@@ -1,3 +1,4 @@
+local cache = require "util.cache";
 local datamanager = require "core.storagemanager".olddm;
 local array = require "util.array";
 local datetime = require "util.datetime";
@@ -6,6 +7,9 @@ local now = require "util.time".now;
 local id = require "util.id".medium;
 
 local host = module.host;
+
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
 local driver = {};
 
@@ -54,28 +58,56 @@ function archive:append(username, key, value, when, with)
 	value.attr.stamp = datetime.datetime(when);
 	value.attr.stamp_legacy = datetime.legacy(when);
 
+	local item_count = archive_item_count_cache:get(username);
+
 	if key then
 		local items, err = datamanager.list_load(username, host, self.store);
 		if not items and err then return items, err; end
+
+		-- Check the quota
+		item_count = items and #items or 0;
+		archive_item_count_cache:set(username, item_count);
+		if item_count >= archive_item_limit then
+			module:log("debug", "%s reached or over quota, not adding to store", username);
+			return nil, "quota-limit";
+		end
+
 		if items then
+			-- Filter out any item with the same key as the one being added
 			items = array(items);
 			items:filter(function (item)
 				return item.key ~= key;
 			end);
+
 			value.key = key;
 			items:push(value);
 			local ok, err = datamanager.list_store(username, host, self.store, items);
 			if not ok then return ok, err; end
+			archive_item_count_cache:set(username, #items);
 			return key;
 		end
 	else
+		if not item_count then -- Item count not cached?
+			-- We need to load the list to get the number of items currently stored
+			local items, err = datamanager.list_load(username, host, self.store);
+			if not items and err then return items, err; end
+			item_count = items and #items or 0;
+			archive_item_count_cache:set(username, item_count);
+		end
+		if item_count >= archive_item_limit then
+			module:log("debug", "%s reached or over quota, not adding to store", username);
+			return nil, "quota-limit";
+		end
 		key = id();
 	end
+
+	module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
 
 	value.key = key;
 
 	local ok, err = datamanager.list_append(username, host, self.store, value);
 	if not ok then return ok, err; end
+	archive_item_count_cache:set(username, item_count+1);
 	return key;
 end
 
@@ -158,6 +190,7 @@ end
 
 function archive:delete(username, query)
 	if not query or next(query) == nil then
+		archive_item_count_cache:set(username, nil);
 		return datamanager.list_store(username, host, self.store, nil);
 	end
 	local items, err = datamanager.list_load(username, host, self.store);
@@ -165,6 +198,7 @@ function archive:delete(username, query)
 		if err then
 			return items, err;
 		end
+		archive_item_count_cache:set(username, 0);
 		-- Store is empty
 		return 0;
 	end
@@ -214,6 +248,7 @@ function archive:delete(username, query)
 	end
 	local ok, err = datamanager.list_store(username, host, self.store, items);
 	if not ok then return ok, err; end
+	archive_item_count_cache:set(username, #items);
 	return count;
 end
 
