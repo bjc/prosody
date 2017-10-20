@@ -86,7 +86,7 @@ module:hook("muc-voice-request", function(event)
 
 		local message = st.message({ type = "normal"; from = event.room.jid }):add_child(form:form()):up();
 
-		event.room:broadcast(message, function (nick, occupant)
+		event.room:broadcast(message, function (_, occupant)
 			return occupant.role == "moderator";
 		end);
 	end

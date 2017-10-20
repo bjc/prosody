@@ -778,7 +778,7 @@ function room_mt:get_form_layout(actor)
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
 
-function room_mt:get_voice_form_layout()
+function room_mt:get_voice_form_layout() -- luacheck: ignore 212/self
 	local form = dataform.new({
 		{
 			name = "FORM_TYPE";
