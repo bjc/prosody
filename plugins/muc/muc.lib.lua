@@ -1128,7 +1128,7 @@ function room_mt:handle_message_to_room(origin, stanza)
 		return self:handle_groupchat_to_room(origin, stanza)
 	elseif type == "error" and is_kickable_error(stanza) then
 		return self:handle_kickable(origin, stanza)
-	elseif type == nil then
+	elseif type == nil or type == "normal" then
 		local x = stanza:get_child("x", "http://jabber.org/protocol/muc#user");
 		if x then
 			local payload = x.tags[1];
