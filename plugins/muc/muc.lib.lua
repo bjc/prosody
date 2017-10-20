@@ -778,6 +778,34 @@ function room_mt:get_form_layout(actor)
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
 
+function room_mt:get_voice_form_layout()
+	local form = dataform.new({
+		{
+			name = "FORM_TYPE";
+			type = "hidden";
+			value = "http://jabber.org/protocol/muc#request";
+		},
+		{
+			name = "muc#jid";
+			type = "jid-single";
+		},
+		{
+			name = "muc#roomnick";
+			type = "text-single";
+		},
+		{
+			name = "muc#role";
+			type = "text-single";
+		},
+		{
+			name = "muc#request_allow";
+			type = "boolean";
+		}
+	});
+
+	return form;
+end
+
 function room_mt:process_form(origin, stanza)
 	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
 	if form.attr.type == "cancel" then
@@ -1142,6 +1170,28 @@ function room_mt:handle_message_to_room(origin, stanza)
 			end
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 			return true;
+		end
+
+		local form = stanza:get_child("x", "jabber:x:data");
+		if form and form.attr.type == "submit" then
+			local fields, errors, present = self:get_voice_form_layout():data(form);
+
+			if fields.FORM_TYPE == "http://jabber.org/protocol/muc#request" then
+				local occupant = self:get_occupant_by_real_jid(stanza.attr.from);
+				local event = {
+					room = self;
+					origin = origin;
+					stanza = stanza;
+					fields = fields;
+					occupant = occupant;
+				};
+				if occupant.role == "moderator" then
+					module:fire_event("muc-voice-response", event);
+				else
+					module:fire_event("muc-voice-request", event);
+				end
+				return true;
+			end
 		end
 	end
 end

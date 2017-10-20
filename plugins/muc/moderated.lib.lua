@@ -7,6 +7,10 @@
 -- COPYING file in the source package for more information.
 --
 
+local st = require "util.stanza";
+local dataform = require "util.dataforms";
+
+
 local function get_moderated(room)
 	return room._data.moderated;
 end
@@ -44,6 +48,71 @@ module:hook("muc-get-default-role", function(event)
 		end
 	end
 end, 1);
+
+module:hook("muc-voice-request", function(event)
+	if event.occupant.role == "visitor" then
+		local form = dataform.new({
+			title = "Voice Request";
+			{
+				name = "FORM_TYPE";
+				type = "hidden";
+				value = "http://jabber.org/protocol/muc#request";
+			},
+			{
+				name = "muc#role";
+				type = "text-single";
+				label = "Requested Role";
+				value = "participant";
+			},
+			{
+				name = "muc#jid";
+				type = "jid-single";
+				label = "User ID";
+				value = event.stanza.attr.from;
+			},
+			{
+				name = "muc#roomnick";
+				type = "text-single";
+				label = "Room Nickname";
+				value = event.occupant.nick;
+			},
+			{
+				name = "muc#request_allow";
+				type = "boolean";
+				label = "Grant voice to this person?";
+				value = false;
+			}
+		});
+
+		local message = st.message({ type = "normal"; from = event.room.jid }):add_child(form:form()):up();
+
+		event.room:broadcast(message, function (nick, occupant)
+			return occupant.role == "moderator";
+		end);
+	end
+end);
+
+module:hook("muc-voice-response", function(event)
+	local actor = event.stanza.attr.from;
+	local affected_occupant = event.room:get_occupant_by_real_jid(event.fields["muc#jid"]);
+
+	if event.occupant.role ~= "moderator" then
+		return;
+	end
+
+	if not event.fields["muc#request_allow"] then
+		return;
+	end
+
+	if not affected_occupant then
+		return;
+	end
+
+	if affected_occupant.role == "visitor" then
+		event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
+	end
+end);
+
 
 return {
 	get = get_moderated;
