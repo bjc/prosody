@@ -780,6 +780,7 @@ end
 
 function room_mt:get_voice_form_layout() -- luacheck: ignore 212/self
 	local form = dataform.new({
+		title = "Voice Request";
 		{
 			name = "FORM_TYPE";
 			type = "hidden";
@@ -788,18 +789,24 @@ function room_mt:get_voice_form_layout() -- luacheck: ignore 212/self
 		{
 			name = "muc#jid";
 			type = "jid-single";
+			label = "User ID";
 		},
 		{
 			name = "muc#roomnick";
 			type = "text-single";
+			label = "Room Nickname";
 		},
 		{
 			name = "muc#role";
 			type = "text-single";
+			label = "Requested Role";
+			value = "participant";
 		},
 		{
 			name = "muc#request_allow";
 			type = "boolean";
+			label = "Grant voice to this person?";
+			value = false;
 		}
 	});
 
