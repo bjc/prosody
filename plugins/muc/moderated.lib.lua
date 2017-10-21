@@ -8,6 +8,7 @@
 --
 
 local st = require "util.stanza";
+local jid_resource = require "util.jid".resource;
 
 local function get_moderated(room)
 	return room._data.moderated;
@@ -50,9 +51,10 @@ end, 1);
 module:hook("muc-voice-request", function(event)
 	if event.occupant.role == "visitor" then
 		local form = event.room:get_voice_form_layout()
+		local nick = jid_resource(event.occupant.nick);
 		local formdata = {
 			["muc#jid"] = event.stanza.attr.from;
-			["muc#roomnick"] = event.occupant.nick;
+			["muc#roomnick"] = nick;
 		};
 
 		local message = st.message({ type = "normal"; from = event.room.jid }):add_child(form:form(formdata)):up();
