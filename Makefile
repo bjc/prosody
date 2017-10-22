@@ -65,7 +65,7 @@ clean:
 	$(MAKE) clean -C util-src
 
 test:
-	busted
+	busted --lua=$(RUNWITH)
 
 util/%.so:
 	$(MAKE) install -C util-src
