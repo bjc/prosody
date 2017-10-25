@@ -240,7 +240,7 @@ handlers.roster = {
 -----------------------------
 local driver = {};
 
-function driver:open(datastore, typ)
+function driver:open(datastore, typ) -- luacheck: ignore 212/self
 	if typ and typ ~= "keyval" then return nil, "unsupported-store"; end
 	local handler = handlers[datastore];
 	if not handler then return nil, "unsupported-datastore"; end
