@@ -229,7 +229,7 @@ function handle_request(conn, request, finish_cb)
 
 	if err then
 		response.status_code = err_code;
-		response:send(events.fire_event("http-error", { code = err_code, message = err }));
+		response:send(events.fire_event("http-error", { code = err_code, message = err, response = response }));
 		return;
 	end
 
@@ -244,7 +244,8 @@ function handle_request(conn, request, finish_cb)
 			if result_type == "number" then
 				response.status_code = result;
 				if result >= 400 then
-					body = events.fire_event("http-error", { code = result });
+					payload.code = result;
+					body = events.fire_event("http-error", payload);
 				end
 			elseif result_type == "string" then
 				body = result;
@@ -266,7 +267,8 @@ function handle_request(conn, request, finish_cb)
 
 	-- if handler not called, return 404
 	response.status_code = 404;
-	response:send(events.fire_event("http-error", { code = 404 }));
+	payload.code = 404;
+	response:send(events.fire_event("http-error", payload));
 end
 local function prepare_header(response)
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
