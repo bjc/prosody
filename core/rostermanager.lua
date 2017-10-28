@@ -115,7 +115,7 @@ local function load_roster(username, host)
 	roster_metadata(roster, err);
 	if roster[jid] then
 		roster[jid] = nil;
-		log("warn", "roster for %s had a self-contact, removing", jid);
+		log("warn", "Roster for %s had a self-contact, removing", jid);
 		roster_store:set(username, roster);
 	end
 	if not err then
