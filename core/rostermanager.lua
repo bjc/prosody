@@ -116,7 +116,7 @@ local function load_roster(username, host)
 	if roster[jid] then
 		roster[jid] = nil;
 		log("debug", "Roster for %s had a self-contact, removing", jid);
-		roster_store:set(username, roster);
+		save_roster(username, host, roster, jid);
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });
