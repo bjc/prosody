@@ -104,9 +104,9 @@ local function load_roster(username, host)
 	if user then
 		roster = user.roster;
 		if roster then return roster; end
-		log("debug", "load_roster: loading for new user: %s@%s", username, host);
+		log("debug", "load_roster: loading for new user: %s", jid);
 	else -- Attempt to load roster for non-loaded user
-		log("debug", "load_roster: loading for offline user: %s@%s", username, host);
+		log("debug", "load_roster: loading for offline user: %s", jid);
 	end
 	local roster_store = storagemanager.open(host, "roster", "keyval");
 	local data, err = roster_store:get(username);
@@ -115,7 +115,10 @@ local function load_roster(username, host)
 	roster_metadata(roster, err);
 	if roster[jid] then
 		roster[jid] = nil;
-		log("warn", "roster for %s has a self-contact", jid);
+		log("debug", "Roster for %s had a self-contact, removing", jid);
+		if not save_roster(username, host, roster, jid) then
+			log("warn", "Could not remove self-contact from roster for %s", jid);
+		end
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });

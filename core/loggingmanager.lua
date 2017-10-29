@@ -178,7 +178,7 @@ local function log_to_file(sink_config, logfile)
 
 	local timestamps = sink_config.timestamps;
 
-	if timestamps == true then
+	if timestamps == true or timestamps == nil then
 		timestamps = default_timestamp; -- Default format
 	elseif timestamps then
 		timestamps = timestamps .. " ";

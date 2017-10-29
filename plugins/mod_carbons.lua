@@ -76,6 +76,9 @@ local function message_handler(event, c2s)
 
 	-- Create the carbon copy and wrap it as per the Stanza Forwarding XEP
 	local copy = st.clone(stanza);
+	if c2s and not orig_to then
+		stanza.attr.to = bare_from;
+	end
 	copy.attr.xmlns = "jabber:client";
 	local carbon = st.message{ from = bare_jid, type = orig_type, }
 		:tag(c2s and "sent" or "received", { xmlns = xmlns_carbons })
