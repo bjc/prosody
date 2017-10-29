@@ -88,23 +88,23 @@ private keys for use with Prosody. Commands are of the form
 `prosodyctl cert subcommand`. Commands take a list of hosts to be
 included in the certificate.
 
-request hosts
+`request hosts`
 :   Create a certificate request (CSR) file for submission to a
     certificate authority. Multiple hosts can be given, sub-domains are
     automatically included.
 
-generate hosts
+`generate hosts`
 :   Generate a self-signed certificate.
 
-key host \[size\]
+`key host [size]`
 :   Generate a private key of 'size' bits (defaults to 2048). Invoked
     automatically by 'request' and 'generate' if needed.
 
-config hosts
+`config hosts`
 :   Produce a config file for the list of hosts. Invoked automatically
     by 'request' and 'generate' if needed.
 
-import hosts paths
+`import hosts paths`
 :   Copy certificates for hosts into the certificate path and reload
     prosody.
 
@@ -114,11 +114,11 @@ Debugging
 prosodyctl can also show some information about the environment,
 dependencies and such to aid in debugging.
 
-about
+`about`
 :   Shows environment, various paths used by Prosody and installed
     dependencies.
 
-check \[what\]
+`check [what]`
 :   Performs various sanity checks on the configuration, DNS setup and
     configured TLS certificates. `what` can be one of `config`, `dns`
     and `certs` to run only that check.

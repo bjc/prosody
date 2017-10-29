@@ -2,6 +2,8 @@ module:set_global();
 
 local server = require "net.http.server";
 local codes = require "net.http.codes";
+local xml_escape = require "util.stanza".xml_escape;
+local render = require "util.interpolation".new("%b{}", xml_escape);
 
 local show_private = module:get_option_boolean("http_errors_detailed", false);
 local always_serve = module:get_option_boolean("http_errors_always_show", true);
@@ -21,56 +23,52 @@ local html = [[
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<style>
-		body{
-			margin-top:14%;
-			text-align:center;
-			background-color:#F8F8F8;
-			font-family:sans-serif;
-		}
-		h1{
-			font-size:xx-large;
-		}
-		p{
-			font-size:x-large;
-		}
-		p+p { font-size: large; font-family: courier }
-        </style>
+<meta charset="utf-8">
+<title>{title}</title>
+<style>
+body{
+	margin-top:14%;
+	text-align:center;
+	background-color:#F8F8F8;
+	font-family:sans-serif;
+}
+h1{
+	font-size:xx-large;
+}
+p{
+	font-size:x-large;
+}
+p+p {
+	font-size:large;
+	font-family:courier;
+}
+</style>
 </head>
 <body>
-        <h1>$title</h1>
-        <p>$message</p>
-        <p>$extra</p>
+<h1>{title}</h1>
+<p>{message}</p>
+<p>{extra?}</p>
 </body>
 </html>
 ]];
-html = html:gsub("%s%s+", "");
-
-local entities = {
-	["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;",
-	["'"] = "&apos;", ["\""] = "&quot;", ["\n"] = "<br/>",
-};
-
-local function tohtml(plain)
-	return (plain:gsub("[<>&'\"\n]", entities));
-
-end
 
 local function get_page(code, extra)
 	local message = messages[code];
 	if always_serve or message then
 		message = message or default_message;
-		return (html:gsub("$(%a+)", {
+		return render(html, {
 			title = rawget(codes, code) or ("Code "..tostring(code));
 			message = message[1]:gsub("%%", function ()
 				return message[math.random(2, math.max(#message,2))];
 			end);
-			extra = tohtml(extra or "");
-		}));
+			extra = extra;
+		});
 	end
 end
 
 module:hook_object_event(server, "http-error", function (event)
+	if event.response then
+		event.response.headers.content_type = "text/html; charset=utf-8";
+	end
 	return get_page(event.code, (show_private and event.private_message) or event.message);
 end);

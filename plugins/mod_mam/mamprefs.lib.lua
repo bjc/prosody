@@ -33,9 +33,11 @@ local prefs = module:open_store(archive_store .. "_prefs");
 local function get_prefs(user)
 	local user_sessions = sessions[user];
 	local user_prefs = user_sessions and user_sessions.archive_prefs
-	if not user_prefs and user_sessions then
+	if not user_prefs then
 		user_prefs = prefs:get(user);
-		user_sessions.archive_prefs = user_prefs;
+		if user_sessions then
+			user_sessions.archive_prefs = user_prefs;
+		end
 	end
 	return user_prefs or { [false] = global_default_policy };
 end
