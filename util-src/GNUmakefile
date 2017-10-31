@@ -18,7 +18,7 @@ endif
 all: $(ALL)
 
 install: $(ALL)
-	$(INSTALL_DATA) $^ $(TARGET)
+	$(INSTALL_DATA) $? $(TARGET)
 
 clean:
 	rm -f $(ALL) $(patsubst %.so,%.o,$(ALL))
