@@ -8,6 +8,7 @@ describe("util.encodings", function ()
 			assert.is.equal(encodings.base64.encode(""), "");
 			assert.is.equal(encodings.base64.encode('coucou'), "Y291Y291");
 			assert.is.equal(encodings.base64.encode("\0\0\0"), "AAAA");
+			assert.is.equal(encodings.base64.encode("\255\255\255"), "////");
 		end);
 	end);
 	describe("#decode()", function()
@@ -15,6 +16,7 @@ describe("util.encodings", function ()
 			assert.is.equal(encodings.base64.decode(""), "");
 			assert.is.equal(encodings.base64.decode('Y291Y291'), "coucou");
 			assert.is.equal(encodings.base64.decode("AAAA"), "\0\0\0");
+			assert.is.equal(encodings.base64.decode("////"), "\255\255\255");
 		end);
 	end);
 end);
