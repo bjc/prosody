@@ -1,9 +1,5 @@
 
 local encodings = require "util.encodings";
-local encodings = { -- Workaround for rust thing
-	base64 = _G.base64;
-	utf8 = _G.utf8;
-};
 local utf8 = assert(encodings.utf8, "no encodings.utf8 module");
 
 describe("util.encodings", function ()
