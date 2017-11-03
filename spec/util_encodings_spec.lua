@@ -6,14 +6,14 @@ describe("util.encodings", function ()
 	describe("#encode()", function()
 		it("should work", function ()
 			assert.is.equal(encodings.base64.encode(""), "");
-			assert.is.equal(encodings.base64.encode('coucou') "Y291Y291");
+			assert.is.equal(encodings.base64.encode('coucou'), "Y291Y291");
 			assert.is.equal(encodings.base64.encode("\0\0\0"), "AAAA");
 		end);
 	end);
 	describe("#decode()", function()
 		it("should work", function ()
 			assert.is.equal(encodings.base64.decode(""), "");
-			assert.is.equal(encodings.base64.decode('Y291Y291') "coucou");
+			assert.is.equal(encodings.base64.decode('Y291Y291'), "coucou");
 			assert.is.equal(encodings.base64.decode("AAAA"), "\0\0\0");
 		end);
 	end);
