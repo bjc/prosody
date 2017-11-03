@@ -30,7 +30,8 @@ local _ENV = nil;
 local stylemap = {
 			reset = 0; bright = 1, dim = 2, underscore = 4, blink = 5, reverse = 7, hidden = 8;
 			black = 30; red = 31; green = 32; yellow = 33; blue = 34; magenta = 35; cyan = 36; white = 37;
-			["black background"] = 40; ["red background"] = 41; ["green background"] = 42; ["yellow background"] = 43; ["blue background"] = 44; ["magenta background"] = 45; ["cyan background"] = 46; ["white background"] = 47;
+			["black background"] = 40; ["red background"] = 41; ["green background"] = 42; ["yellow background"] = 43;
+			["blue background"] = 44; ["magenta background"] = 45; ["cyan background"] = 46; ["white background"] = 47;
 			bold = 1, dark = 2, underline = 4, underlined = 4, normal = 0;
 		}
 
