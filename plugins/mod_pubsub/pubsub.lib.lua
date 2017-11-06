@@ -437,7 +437,7 @@ local function archive_itemstore(archive, config, user, node)
 	local get_set = {};
 	function get_set:items() -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
-			limit = tonumber(config["pubsub#max_items"]);
+			limit = tonumber(config["max_items"]);
 			reverse = true;
 		});
 		if not data then
