@@ -139,6 +139,13 @@ function cache_methods:table()
 	return self.proxy_table;
 end
 
+function cache_methods:clear()
+	self._data = {};
+	self._count = 0;
+	self._head = nil;
+	self._tail = nil;
+end
+
 local function new(size, on_evict)
 	size = assert(tonumber(size), "cache size must be a number");
 	size = math.floor(size);
