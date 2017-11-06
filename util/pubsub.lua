@@ -351,6 +351,15 @@ function service:get_items(node, actor, id)
 	end
 end
 
+function service:get_last_item(node, actor)
+	-- Access checking
+	if not self:may(node, actor, "get_items") then
+		return false, "forbidden";
+	end
+	--
+	return true, self.data[node]:tail();
+end
+
 function service:get_nodes(actor)
 	-- Access checking
 	if not self:may(nil, actor, "get_nodes") then
