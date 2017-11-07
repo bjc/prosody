@@ -256,11 +256,10 @@ local function get_caps_hash_from_presence(stanza, current)
 end
 
 local function resend_last_item(jid, node, service)
-	local ok, items = service:get_items(node, jid);
+	local ok, id, item = service:get_last_item(node, jid);
 	if not ok then return; end
-	for _, id in ipairs(items) do
-		service.config.broadcaster("items", node, { [jid] = true }, items[id]);
-	end
+	if not id then return; end
+	service.config.broadcaster("items", node, { [jid] = true }, item);
 end
 
 local function update_subscriptions(recipient, service_name, nodes)
