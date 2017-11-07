@@ -40,6 +40,10 @@ local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://ja
 local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
+local cleanup_after = module:get_option_string("archive_expires_after", "1w");
+local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+
 if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
 		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
@@ -295,7 +299,20 @@ local function message_handler(event, c2s)
 		log("debug", "Archiving stanza: %s", stanza:top_tag());
 
 		-- And stash it
-		local ok = archive:append(store_user, nil, clone_for_storage, time_now(), with);
+		local time = time_now();
+		local ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+		if not ok and err == "quota-limit" then
+			if archive.caps and archive.caps.truncate then
+				module:log("debug", "User '%s' over quota, trimming archive", store_user);
+				local truncated = archive:delete(store_user, {
+					truncate = archive_item_limit - 1;
+					["end"] = type(cleanup_after) == "number" and (os.time() - cleanup_after) or nil;
+				});
+				if truncated then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+		end
 		if ok then
 			local clone_for_other_handlers = st.clone(stanza);
 			local id = ok;
@@ -321,8 +338,6 @@ end
 module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
 module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
-local cleanup_after = module:get_option_string("archive_expires_after", "1w");
-local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
