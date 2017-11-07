@@ -236,7 +236,8 @@ function engine:_transaction(func, ...)
 	if success then
 		log("debug", "SQL transaction success [%s]", tostring(func));
 		local ok, err = self.conn:commit();
-		if not ok then return ok, err; end -- commit failed
+		-- LuaDBI doesn't actually return an error message here, just a boolean
+		if not ok then return ok, err or "commit failed"; end
 		return success, a, b, c;
 	else
 		log("debug", "SQL transaction failure [%s]: %s", tostring(func), a.err);
