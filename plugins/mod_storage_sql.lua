@@ -374,7 +374,35 @@ function archive_store:delete(username, query)
 		end
 		archive_where(query, args, where);
 		archive_where_id_range(query, args, where);
-		sql_query = sql_query:format(t_concat(where, " AND "));
+		if query.truncate == nil then
+			sql_query = sql_query:format(t_concat(where, " AND "));
+		else
+			args[#args+1] = query.truncate;
+			local unlimited = "ALL";
+			if engine.params.driver == "SQLite3" then
+				sql_query = [[
+				DELETE FROM "prosodyarchive"
+				WHERE %s
+				ORDER BY "sort_id" %s
+				LIMIT %s OFFSET ?;
+				]];
+				unlimited = "-1";
+			else
+				sql_query = [[
+				DELETE FROM "prosodyarchive"
+				WHERE "sort_id" IN (
+					SELECT "sort_id" FROM "prosodyarchive"
+					WHERE %s
+					ORDER BY "sort_id" %s
+					LIMIT %s OFFSET ?
+				);]];
+				if engine.params.driver == "MySQL" then
+					unlimited = "18446744073709551615";
+				end
+			end
+			sql_query = string.format(sql_query, t_concat(where, " AND "),
+				query.reverse and "ASC" or "DESC", unlimited);
+		end
 		return engine:delete(sql_query, unpack(args));
 	end);
 	return ok and stmt:affected(), stmt;
