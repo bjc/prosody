@@ -191,6 +191,21 @@ function archive:delete(username, query)
 				return item.when > query["end"];
 			end);
 		end
+		if query.truncate then
+			if query.reverse then
+				-- Before: { 1, 2, 3, 4, 5, }
+				-- After: { 1, 2, 3 }
+				while #items > query.truncate do
+					table.remove(items);
+				end
+			else
+				-- Before: { 1, 2, 3, 4, 5, }
+				-- After: { 3, 4, 5 }
+				while #items > query.truncate do
+					table.remove(items, 1);
+				end
+			end
+		end
 	end
 	local count = count_before - #items;
 	local ok, err = datamanager.list_store(username, host, self.store, items);
