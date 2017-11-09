@@ -297,6 +297,9 @@ function handlers.set_publish(origin, stanza, publish, service)
 	local ok, ret = service:publish(node, stanza.attr.from, id, item);
 	local reply;
 	if ok then
+		if type(ok) == "string" then
+			id = ok;
+		end
 		reply = st.reply(stanza)
 			:tag("pubsub", { xmlns = xmlns_pubsub })
 				:tag("publish", { node = node })
