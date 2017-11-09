@@ -118,6 +118,7 @@ local eviction_hit_rate = module:measure("room_eviction", "rate");
 local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (jid, room)
 	module:log("debug", "Evicting room %s", jid);
 	eviction_hit_rate();
+	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
 	room_save(room, nil, true); -- Force to disk
 end);
 
