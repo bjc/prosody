@@ -115,7 +115,7 @@ local function room_save(room, forced, savestate)
 end
 
 local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (jid, room)
-	module:log("debug", "%s evicted", jid);
+	module:log("debug", "Evicting room %s", jid);
 	room_save(room, nil, true); -- Force to disk
 end);
 
