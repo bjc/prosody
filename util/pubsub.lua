@@ -431,14 +431,14 @@ function service:set_node_config(node, actor, new_config)
 		return false, "item-not-found";
 	end
 
-	for k,v in pairs(new_config) do
-		node_obj.config[k] = v;
+	if new_config["persist_items"] ~= node_obj.config["persist_items"] then
+		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	elseif new_config["max_items"] ~= node_obj.config["max_items"] then
+		self.data[node]:resize(new_config["max_items"]);
 	end
-	local new_data = self.config.itemstore(self.nodes[node].config, node);
-	for key, value in self.data[node]:items() do
-		new_data:set(key, value);
-	end
-	self.data[node] = new_data;
+
+	node_obj.config = setmetatable(new_config, {__index=self.node_defaults});
+
 	return true;
 end
 
