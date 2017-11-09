@@ -490,6 +490,11 @@ local function archive_itemstore(archive, config, user, node)
 	function get_set:clear() -- luacheck: ignore 212/self
 		return archive:delete(user);
 	end
+	function get_set:resize(size)
+		return archive:delete(user, {
+			truncate = size;
+		});
+	end
 	function get_set:tail()
 		-- This should conveniently return the last item
 		local item = self:get(nil);
