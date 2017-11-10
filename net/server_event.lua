@@ -223,7 +223,8 @@ function interface_mt:_destroy()  -- close this interface + events and call last
 		_ = self.eventsession and self.eventsession:close( )
 		_ = self.eventwritetimeout and self.eventwritetimeout:close( )
 		_ = self.eventreadtimeout and self.eventreadtimeout:close( )
-		_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)  -- call ondisconnect listener (wont be the case if handshake failed on connect)
+		-- call ondisconnect listener (wont be the case if handshake failed on connect)
+		_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)
 		_ = self.conn and self.conn:close( ) -- close connection
 		_ = self._server and self._server:counter(-1);
 		self.eventread, self.eventwrite = nil, nil
