@@ -12,8 +12,8 @@ local it = {};
 
 local t_insert = table.insert;
 local select, next = select, next;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
-local pack = table.pack or function (...) return { n = select("#", ...), ... }; end
+local unpack = table.unpack or unpack; --luacheck: ignore 113 143
+local pack = table.pack or function (...) return { n = select("#", ...), ... }; end -- luacheck: ignore 143
 
 -- Reverse an iterator
 function it.reverse(f, s, var)
