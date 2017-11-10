@@ -195,14 +195,15 @@ function archive:delete(username, query)
 			if query.reverse then
 				-- Before: { 1, 2, 3, 4, 5, }
 				-- After: { 1, 2, 3 }
-				while #items > query.truncate do
-					table.remove(items);
+				for i = #items, query.truncate + 1, -1 do
+					items[i] = nil;
 				end
 			else
 				-- Before: { 1, 2, 3, 4, 5, }
 				-- After: { 3, 4, 5 }
-				while #items > query.truncate do
-					table.remove(items, 1);
+				local offset = #items - query.truncate;
+				for i = 1, #items do
+					items[i] = items[i+offset];
 				end
 			end
 		end
