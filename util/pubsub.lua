@@ -177,18 +177,6 @@ function service:remove_subscription(node, actor, jid)
 	return true;
 end
 
-function service:remove_all_subscriptions(actor, jid)
-	local normal_jid = self.config.normalize_jid(jid);
-	local subs = self.subscriptions[normal_jid]
-	subs = subs and subs[jid];
-	if subs then
-		for node in pairs(subs) do
-			self:remove_subscription(node, true, jid);
-		end
-	end
-	return true;
-end
-
 function service:get_subscription(node, actor, jid)
 	-- Access checking
 	local cap;

@@ -8,7 +8,7 @@ local assert = assert;
 local unpack = unpack;
 local type = type;
 
-local function format(format, ...)
+local function format(formatstring, ...)
 	local args, args_length = { ... }, select('#', ...);
 
 	-- format specifier spec:
@@ -25,7 +25,7 @@ local function format(format, ...)
 
 	-- process each format specifier
 	local i = 0;
-	format = format:gsub("%%[^cdiouxXaAeEfgGqs%%]*[cdiouxXaAeEfgGqs%%]", function(spec)
+	formatstring = formatstring:gsub("%%[^cdiouxXaAeEfgGqs%%]*[cdiouxXaAeEfgGqs%%]", function(spec)
 		if spec ~= "%%" then
 			i = i + 1;
 			local arg = args[i];
@@ -54,10 +54,10 @@ local function format(format, ...)
 		else
 			args[i] = tostring(arg);
 		end
-		format = format .. " [%s]"
+		formatstring = formatstring .. " [%s]"
 	end
 
-	return format:format(unpack(args));
+	return formatstring:format(unpack(args));
 end
 
 local function test()

@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 113/CFG_PLUGINDIR
 
 local dir_sep, path_sep = package.config:match("^(%S+)%s(%S+)");
 local plugin_dir = {};

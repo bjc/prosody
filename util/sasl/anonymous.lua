@@ -28,7 +28,7 @@ anonymous:
 	end
 ]]
 
-local function anonymous(self, message)
+local function anonymous(self, message) -- luacheck: ignore 212/message
 	local username;
 	repeat
 		username = generate_uuid();

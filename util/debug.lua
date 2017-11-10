@@ -113,7 +113,9 @@ end
 
 local function build_source_boundary_marker(last_source_desc)
 	local padding = string.rep("-", math.floor(((optimal_line_length - 6) - #last_source_desc)/2));
-	return getstring(styles.boundary_padding, "v"..padding).." "..getstring(styles.filename, last_source_desc).." "..getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
+	return getstring(styles.boundary_padding, "v"..padding).." "..
+		getstring(styles.filename, last_source_desc).." "..
+		getstring(styles.boundary_padding, padding..(#last_source_desc%2==0 and "-v" or "v "));
 end
 
 local function _traceback(thread, message, level)
@@ -143,9 +145,9 @@ local function _traceback(thread, message, level)
 	local last_source_desc;
 
 	local lines = {};
-	for nlevel, level in ipairs(levels) do
-		local info = level.info;
-		local line = "...";
+	for nlevel, current_level in ipairs(levels) do
+		local info = current_level.info;
+		local line;
 		local func_type = info.namewhat.." ";
 		local source_desc = (info.short_src == "[C]" and "C code") or info.short_src or "Unknown";
 		if func_type == " " then func_type = ""; end;
@@ -161,7 +163,9 @@ local function _traceback(thread, message, level)
 			if func_type == "global " or func_type == "local " then
 				func_type = func_type.."function ";
 			end
-			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..info.currentline).." in "..func_type..getstring(styles.funcname, name).." (defined on line "..info.linedefined..")";
+			line = "[Lua] "..getstring(styles.location, info.short_src.." line "..
+				info.currentline).." in "..func_type..getstring(styles.funcname, name)..
+				" (defined on line "..info.linedefined..")";
 		end
 		if source_desc ~= last_source_desc then -- Venturing into a new source, add marker for previous
 			last_source_desc = source_desc;
@@ -170,13 +174,13 @@ local function _traceback(thread, message, level)
 		nlevel = nlevel-1;
 		table.insert(lines, "\t"..(nlevel==0 and ">" or " ")..getstring(styles.level_num, "("..nlevel..") ")..line);
 		local npadding = (" "):rep(#tostring(nlevel));
-		if level.locals then
-			local locals_str = string_from_var_table(level.locals, optimal_line_length, "\t            "..npadding);
+		if current_level.locals then
+			local locals_str = string_from_var_table(current_level.locals, optimal_line_length, "\t            "..npadding);
 			if locals_str then
 				table.insert(lines, "\t    "..npadding.."Locals: "..locals_str);
 			end
 		end
-		local upvalues_str = string_from_var_table(level.upvalues, optimal_line_length, "\t            "..npadding);
+		local upvalues_str = string_from_var_table(current_level.upvalues, optimal_line_length, "\t            "..npadding);
 		if upvalues_str then
 			table.insert(lines, "\t    "..npadding.."Upvals: "..upvalues_str);
 		end

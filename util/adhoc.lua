@@ -1,3 +1,5 @@
+-- luacheck: ignore 212/self
+
 local function new_simple_form(form, result_handler)
 	return function(self, data, state)
 		if state then

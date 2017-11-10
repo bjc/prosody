@@ -26,7 +26,7 @@ local function new()
 	-- Event map: event_map[handler_function] = priority_number
 	local event_map = {};
 	-- Called on-demand to build handlers entries
-	local function _rebuild_index(handlers, event)
+	local function _rebuild_index(self, event)
 		local _handlers = event_map[event];
 		if not _handlers or next(_handlers) == nil then return; end
 		local index = {};
@@ -34,7 +34,7 @@ local function new()
 			t_insert(index, handler);
 		end
 		t_sort(index, function(a, b) return _handlers[a] > _handlers[b]; end);
-		handlers[event] = index;
+		self[event] = index;
 		return index;
 	end;
 	setmetatable(handlers, { __index = _rebuild_index });
@@ -61,13 +61,13 @@ local function new()
 	local function get_handlers(event)
 		return handlers[event];
 	end;
-	local function add_handlers(handlers)
-		for event, handler in pairs(handlers) do
+	local function add_handlers(self)
+		for event, handler in pairs(self) do
 			add_handler(event, handler);
 		end
 	end;
-	local function remove_handlers(handlers)
-		for event, handler in pairs(handlers) do
+	local function remove_handlers(self)
+		for event, handler in pairs(self) do
 			remove_handler(event, handler);
 		end
 	end;
@@ -81,6 +81,7 @@ local function new()
 		end
 	end;
 	local function fire_event(event_name, event_data)
+		-- luacheck: ignore 432/event_name 432/event_data
 		local w = wrappers[event_name] or global_wrappers;
 		if w then
 			local curr_wrapper = #w;

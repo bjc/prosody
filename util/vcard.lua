@@ -10,7 +10,7 @@
 local st = require "util.stanza";
 local t_insert, t_concat = table.insert, table.concat;
 local type = type;
-local next, pairs, ipairs = next, pairs, ipairs;
+local pairs, ipairs = pairs, ipairs;
 
 local from_text, to_text, from_xep54, to_xep54;
 
@@ -18,14 +18,6 @@ local line_sep = "\n";
 
 local vCard_dtd; -- See end of file
 local vCard4_dtd;
-
-local function fold_line()
-	error "Not implemented" --TODO
-end
-local function unfold_line()
-	error "Not implemented"
-	-- gsub("\r?\n[ \t]([^\r\n])", "%1");
-end
 
 local function vCard_esc(s)
 	return s:gsub("[,:;\\]", "\\%1"):gsub("\n","\\n");
@@ -116,9 +108,9 @@ function from_text(data)
 		:gsub("\n ", "")
 		:gsub("\n\n+","\n");
 	local vCards = {};
-	local c; -- current item
+	local current;
 	for line in data:gmatch("[^\n]+") do
-		local line = vCard_unesc(line);
+		line = vCard_unesc(line);
 		local name, params, value = line:match("^([-%a]+)(\30?[^\29]*)\29(.*)$");
 		value = value:gsub("\29",":");
 		if #params > 0 then
@@ -139,23 +131,22 @@ function from_text(data)
 			params = _params;
 		end
 		if name == "BEGIN" and value == "VCARD" then
-			c = {};
-			vCards[#vCards+1] = c;
+			current = {};
+			vCards[#vCards+1] = current;
 		elseif name == "END" and value == "VCARD" then
-			c = nil;
-		elseif c and vCard_dtd[name] then
+			current = nil;
+		elseif current and vCard_dtd[name] then
 			local dtd = vCard_dtd[name];
-			local p = { name = name };
-			c[#c+1]=p;
-			--c[name]=p;
-			local up = c;
-			c = p;
+			local item = { name = name };
+			t_insert(current, item);
+			local up = current;
+			current = item;
 			if dtd.types then
 				for _, t in ipairs(dtd.types) do
-					local t = t:lower();
+					t = t:lower();
 					if ( params.TYPE and params.TYPE[t] == true)
 							or params[t] == true then
-						c.TYPE=t;
+						current.TYPE=t;
 					end
 				end
 			end
@@ -163,24 +154,23 @@ function from_text(data)
 				for _, p in ipairs(dtd.props) do
 					if params[p] then
 						if params[p] == true then
-							c[p]=true;
+							current[p]=true;
 						else
 							for _, prop in ipairs(params[p]) do
-								c[p]=prop;
+								current[p]=prop;
 							end
 						end
 					end
 				end
 			end
 			if dtd == "text" or dtd.value then
-				t_insert(c, value);
+				t_insert(current, value);
 			elseif dtd.values then
-				local value = "\30"..value;
-				for p in value:gmatch("\30([^\30]*)") do
-					t_insert(c, p);
+				for p in ("\30"..value):gmatch("\30([^\30]*)") do
+					t_insert(current, p);
 				end
 			end
-			c = up;
+			current = up;
 		end
 	end
 	return vCards;
@@ -322,7 +312,7 @@ end
 
 local vcard4 = { }
 
-function vcard4:text(node, params, value)
+function vcard4:text(node, params, value) -- luacheck: ignore 212/params
 	self:tag(node:lower())
 	-- FIXME params
 	if type(value) == "string" then

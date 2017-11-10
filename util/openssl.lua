@@ -114,7 +114,7 @@ function ssl_config:add_xmppAddr(host)
 		s_format("%s;%s", oid_xmppaddr, utf8string(host)));
 end
 
-function ssl_config:from_prosody(hosts, config, certhosts)
+function ssl_config:from_prosody(hosts, config, certhosts) -- luacheck: ignore 431/config
 	-- TODO Decide if this should go elsewhere
 	local found_matching_hosts = false;
 	for i = 1, #certhosts do

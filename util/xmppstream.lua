@@ -47,7 +47,10 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 
 	local cb_streamopened = stream_callbacks.streamopened;
 	local cb_streamclosed = stream_callbacks.streamclosed;
-	local cb_error = stream_callbacks.error or function(session, e, stanza) error("XML stream error: "..tostring(e)..(stanza and ": "..tostring(stanza) or ""),2); end;
+	local cb_error = stream_callbacks.error or
+		function(_, e, stanza)
+			error("XML stream error: "..tostring(e)..(stanza and ": "..tostring(stanza) or ""),2);
+		end;
 	local cb_handlestanza = stream_callbacks.handlestanza;
 	cb_handleprogress = cb_handleprogress or dummy_cb;
 
@@ -128,6 +131,9 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 	end
 	if lxp_supports_xmldecl then
 		function xml_handlers:XmlDecl(version, encoding, standalone)
+			session.xml_version = version;
+			session.xml_encoding = encoding;
+			session.xml_standalone = standalone;
 			if lxp_supports_bytecount then
 				cb_handleprogress(self:getcurrentbytecount());
 			end
@@ -214,7 +220,7 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 		stack = {};
 	end
 
-	local function set_session(stream, new_session)
+	local function set_session(stream, new_session) -- luacheck: ignore 212/stream
 		session = new_session;
 	end
 
@@ -238,7 +244,7 @@ local function new(session, stream_callbacks, stanza_size_limit)
 	local parser = new_parser(handlers, ns_separator, false);
 	local parse = parser.parse;
 
-	function session.open_stream(session, from, to)
+	function session.open_stream(session, from, to) -- luacheck: ignore 432/session
 		local send = session.sends2s or session.send;
 
 		local attr = {
@@ -264,7 +270,7 @@ local function new(session, stream_callbacks, stanza_size_limit)
 			n_outstanding_bytes = 0;
 			meta.reset();
 		end,
-		feed = function (self, data)
+		feed = function (self, data) -- luacheck: ignore 212/self
 			if lxp_supports_bytecount then
 				n_outstanding_bytes = n_outstanding_bytes + #data;
 			end
