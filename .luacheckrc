@@ -13,6 +13,10 @@ files["core/"] = {
 	read_globals = { "prosody", "hosts" };
 	globals = { "prosody.hosts.?", "hosts.?" };
 }
+files["util/"] = {
+	-- Ignore unwrapped license text
+	max_comment_line_length = false;
+}
 files["plugins/"] = {
 	read_globals = {
 		-- Module instance
