@@ -4,7 +4,6 @@
 
 local tostring = tostring;
 local select = select;
-local assert = assert;
 local unpack = unpack;
 local type = type;
 
@@ -60,15 +59,6 @@ local function format(formatstring, ...)
 	return formatstring:format(unpack(args));
 end
 
-local function test()
-	assert(format("%s", "hello") == "hello");
-	assert(format("%s") == "<nil>");
-	assert(format("%s", true) == "true");
-	assert(format("%d", true) == "[true]");
-	assert(format("%%", true) == "% [true]");
-end
-
 return {
 	format = format;
-	test = test;
 };
