@@ -110,7 +110,7 @@ function indexed_heap:reprioritize(id, priority)
 	self.priorities[k] = priority;
 
 	k = _percolate_up(self.priorities, k, self.ids, self.index);
-	k = _percolate_down(self.priorities, k, self.ids, self.index);
+	_percolate_down(self.priorities, k, self.ids, self.index);
 end
 function indexed_heap:remove_index(k)
 	local result = self.priorities[k];
@@ -132,7 +132,7 @@ function indexed_heap:remove_index(k)
 
 	if size > k then
 		k = _percolate_up(self.priorities, k, self.ids, self.index);
-		k = _percolate_down(self.priorities, k, self.ids, self.index);
+		_percolate_down(self.priorities, k, self.ids, self.index);
 	end
 
 	return result, item, result_sync;

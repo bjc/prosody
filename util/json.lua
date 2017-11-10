@@ -27,9 +27,6 @@ module.null = null;
 local escapes = {
 	["\""] = "\\\"", ["\\"] = "\\\\", ["\b"] = "\\b",
 	["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t"};
-local unescapes = {
-	["\""] = "\"", ["\\"] = "\\", ["/"] = "/",
-	b = "\b", f = "\f", n = "\n", r = "\r", t = "\t"};
 for i=0,31 do
 	local ch = s_char(i);
 	if not escapes[ch] then escapes[ch] = ("\\u%.4X"):format(i); end
@@ -249,7 +246,7 @@ local function _readarray(json, index)
 	end
 end
 local _unescape_error;
-local function _unescape_surrogate_func(x)
+local function _unescape_surrogate_func(x) -- luacheck: ignore
 	local lead, trail = tonumber(x:sub(3, 6), 16), tonumber(x:sub(9, 12), 16);
 	local codepoint = lead * 0x400 + trail - 0x35FDC00;
 	local a = codepoint % 64;

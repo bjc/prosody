@@ -367,7 +367,13 @@ local function iq(attr)
 end
 
 local function reply(orig)
-	return new_stanza(orig.name, orig.attr and { to = orig.attr.from, from = orig.attr.to, id = orig.attr.id, type = ((orig.name == "iq" and "result") or orig.attr.type) });
+	return new_stanza(orig.name,
+		orig.attr and {
+			to = orig.attr.from,
+			from = orig.attr.to,
+			id = orig.attr.id,
+			type = ((orig.name == "iq" and "result") or orig.attr.type)
+		});
 end
 
 local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };

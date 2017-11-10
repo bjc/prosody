@@ -42,7 +42,7 @@ Example:
 
 local method = {};
 method.__index = method;
-local mechanisms = {};
+local registered_mechanisms = {};
 local backend_mechanism = {};
 local mechanism_channelbindings = {};
 
@@ -52,7 +52,7 @@ local function registerMechanism(name, backends, f, cb_backends)
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
 	assert(type(f) == "function", "Parameter f MUST be a function.");
 	if cb_backends then assert(type(cb_backends) == "table"); end
-	mechanisms[name] = f
+	registered_mechanisms[name] = f
 	if cb_backends then
 		mechanism_channelbindings[name] = {};
 		for _, cb_name in ipairs(cb_backends) do
@@ -70,7 +70,7 @@ local function new(realm, profile)
 	local mechanisms = profile.mechanisms;
 	if not mechanisms then
 		mechanisms = {};
-		for backend, f in pairs(profile) do
+		for backend in pairs(profile) do
 			if backend_mechanism[backend] then
 				for _, mechanism in ipairs(backend_mechanism[backend]) do
 					mechanisms[mechanism] = true;
@@ -128,7 +128,7 @@ end
 -- feed new messages to process into the library
 function method:process(message)
 	--if message == "" or message == nil then return "failure", "malformed-request" end
-	return mechanisms[self.selected](self, message);
+	return registered_mechanisms[self.selected](self, message);
 end
 
 -- load the mechanisms
