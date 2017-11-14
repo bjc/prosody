@@ -49,6 +49,8 @@ struct lua_signal {
 
 #endif
 
+#define MAX_PENDING_SIGNALS 32
+
 #define LUA_SIGNAL "lua_signal"
 
 static const struct lua_signal lua_signals[] = {
@@ -160,54 +162,41 @@ static lua_Hook Hsig = NULL;
 static int Hmask = 0;
 static int Hcount = 0;
 
-static struct signal_event {
-	int Nsig;
-	struct signal_event *next_event;
-} *signal_queue = NULL;
-
-static struct signal_event *last_event = NULL;
+int signals[MAX_PENDING_SIGNALS];
+int nsig = 0;
 
 static void sighook(lua_State *L, lua_Debug *ar) {
-	struct signal_event *event;
 	/* restore the old hook */
 	lua_sethook(L, Hsig, Hmask, Hcount);
 
 	lua_pushstring(L, LUA_SIGNAL);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 
-	while((event = signal_queue)) {
-		lua_pushnumber(L, event->Nsig);
+	for(int i = 1; i <= nsig; i--) {
+		lua_pushnumber(L, signals[i]);
 		lua_gettable(L, -2);
 		lua_call(L, 0, 0);
-		signal_queue = event->next_event;
-		free(event);
 	};
+
+	nsig = 0;
 
 	lua_pop(L, 1); /* pop lua_signal table */
 
 }
 
 static void handle(int sig) {
-	if(!signal_queue) {
+	if(nsig == 0) {
 		/* Store the existing debug hook (if any) and its parameters */
 		Hsig = lua_gethook(Lsig);
 		Hmask = lua_gethookmask(Lsig);
 		Hcount = lua_gethookcount(Lsig);
 
-		signal_queue = malloc(sizeof(struct signal_event));
-		signal_queue->Nsig = sig;
-		signal_queue->next_event = NULL;
-
-		last_event = signal_queue;
-
 		/* Set our new debug hook */
 		lua_sethook(Lsig, sighook, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
-	} else {
-		last_event->next_event = malloc(sizeof(struct signal_event));
-		last_event->next_event->Nsig = sig;
-		last_event->next_event->next_event = NULL;
+	}
 
-		last_event = last_event->next_event;
+	if(nsig < MAX_PENDING_SIGNALS) {
+		signals[++nsig] = sig;
 	}
 }
 
