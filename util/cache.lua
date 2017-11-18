@@ -116,6 +116,20 @@ function cache_methods:tail()
 	return tail.key, tail.value;
 end
 
+function cache_methods:resize(new_size)
+	new_size = assert(tonumber(new_size), "cache size must be a number");
+	new_size = math.floor(new_size);
+	assert(new_size > 0, "cache size must be greater than zero");
+	while self._count > new_size do
+		local tail = self._tail;
+		local evicted_key = tail.key;
+		_remove(self, tail);
+		self._data[evicted_key] = nil;
+	end
+	self.size = new_size;
+	return true;
+end
+
 function cache_methods:table()
 	--luacheck: ignore 212/t
 	if not self.proxy_table then
