@@ -209,6 +209,9 @@ function archive:delete(username, query)
 		end
 	end
 	local count = count_before - #items;
+	if count == 0 then
+		return 0; -- No changes, skip write
+	end
 	local ok, err = datamanager.list_store(username, host, self.store, items);
 	if not ok then return ok, err; end
 	return count;
