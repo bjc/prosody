@@ -114,7 +114,7 @@ local core_defaults = {
 		single_ecdh_use = luasec_has.options.single_ecdh_use;
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
-	curve = "secp384r1";
+	curve = luasec_has.algorithms.ec and not luasec_has.capabilities.curves_list and "secp384r1";
 	curveslist = {
 		"X25519",
 		"P-384",
