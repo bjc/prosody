@@ -27,6 +27,7 @@ local stat = require "lfs".attributes;
 
 local tonumber, tostring = tonumber, tostring;
 local pairs = pairs;
+local t_remove = table.remove;
 local type = type;
 local io_open = io.open;
 local select = select;
@@ -131,6 +132,17 @@ local core_defaults = {
 		"!aNULL",      -- Ciphers that does not authenticate the connection
 	};
 }
+
+if luasec_has.curves then
+	for i = #core_defaults.curveslist, 1, -1 do
+		if not luasec_has.curves[ core_defaults.curveslist[i] ] then
+			t_remove(core_defaults.curveslist, i);
+		end
+	end
+else
+	core_defaults.curveslist = nil;
+end
+
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
