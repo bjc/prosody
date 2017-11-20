@@ -2,6 +2,8 @@
 --
 -- luacheck: ignore 213/uri
 
+module:set_global();
+
 local engines = module:shared("/*/sql/connections");
 
 for uri, engine in pairs(engines) do
