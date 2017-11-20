@@ -27,6 +27,7 @@ local stat = require "lfs".attributes;
 
 local tonumber, tostring = tonumber, tostring;
 local pairs = pairs;
+local t_remove = table.remove;
 local type = type;
 local io_open = io.open;
 local select = select;
@@ -37,13 +38,20 @@ local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
-local luasec_has = {
-	-- TODO If LuaSec ever starts exposing these things itself, use that instead
-	cipher_server_preference = luasec_version >= 2;
-	no_ticket = luasec_version >= 4;
-	no_compression = luasec_version >= 5;
-	single_dh_use = luasec_version >= 2;
-	single_ecdh_use = luasec_version >= 2;
+local luasec_has = softreq"ssl.config" or {
+	algorithms = {
+		ec = luasec_version >= 5;
+	};
+	capabilities = {
+		curves_list = luasec_version >= 7;
+	};
+	options = {
+		cipher_server_preference = luasec_version >= 2;
+		no_ticket = luasec_version >= 4;
+		no_compression = luasec_version >= 5;
+		single_dh_use = luasec_version >= 2;
+		single_ecdh_use = luasec_version >= 2;
+	};
 };
 
 local _ENV = nil;
@@ -99,14 +107,14 @@ local core_defaults = {
 	protocol = "tlsv1+";
 	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
 	options = {
-		cipher_server_preference = luasec_has.cipher_server_preference;
-		no_ticket = luasec_has.no_ticket;
-		no_compression = luasec_has.no_compression and configmanager.get("*", "ssl_compression") ~= true;
-		single_dh_use = luasec_has.single_dh_use;
-		single_ecdh_use = luasec_has.single_ecdh_use;
+		cipher_server_preference = luasec_has.options.cipher_server_preference;
+		no_ticket = luasec_has.options.no_ticket;
+		no_compression = luasec_has.options.no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		single_dh_use = luasec_has.options.single_dh_use;
+		single_ecdh_use = luasec_has.options.single_ecdh_use;
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
-	curve = "secp384r1";
+	curve = luasec_has.algorithms.ec and not luasec_has.capabilities.curves_list and "secp384r1";
 	curveslist = {
 		"X25519",
 		"P-384",
@@ -124,6 +132,17 @@ local core_defaults = {
 		"!aNULL",      -- Ciphers that does not authenticate the connection
 	};
 }
+
+if luasec_has.curves then
+	for i = #core_defaults.curveslist, 1, -1 do
+		if not luasec_has.curves[ core_defaults.curveslist[i] ] then
+			t_remove(core_defaults.curveslist, i);
+		end
+	end
+else
+	core_defaults.curveslist = nil;
+end
+
 local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
@@ -227,7 +246,7 @@ end
 local function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
 	global_certificates = configmanager.get("*", "certificates") or "certs";
-	if luasec_has.no_compression then
+	if luasec_has.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
 end
