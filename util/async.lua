@@ -1,5 +1,13 @@
 local log = require "util.logger".init("util.async");
 
+local function checkthread()
+	local thread = coroutine.running();
+	if not thread then
+		error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
+	end
+	return thread;
+end
+
 local function runner_continue(thread)
 	-- ASSUMPTION: runner is in 'waiting' state (but we don't have the runner to know for sure)
 	if coroutine.status(thread) ~= "suspended" then -- This should suffice
@@ -25,10 +33,7 @@ local function runner_continue(thread)
 end
 
 local function waiter(num)
-	local thread = coroutine.running();
-	if not thread then
-		error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
-	end
+	local thread = checkthread();
 	num = num or 1;
 	local waiting;
 	return function ()
@@ -48,10 +53,7 @@ end
 local function guarder()
 	local guards = {};
 	return function (id, func)
-		local thread = coroutine.running();
-		if not thread then
-			error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
-		end
+		local thread = checkthread();
 		local guard = guards[id];
 		if not guard then
 			guard = {};
