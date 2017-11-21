@@ -1,8 +1,8 @@
 local log = require "util.logger".init("util.async");
 
 local function checkthread()
-	local thread = coroutine.running();
-	if not thread then
+	local thread, main = coroutine.running();
+	if not thread or main then
 		error("Not running in an async context, see https://prosody.im/doc/developers/util/async");
 	end
 	return thread;
