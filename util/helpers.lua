@@ -50,7 +50,7 @@ local function show_events(events, specific_event)
 			local handler_strings = {};
 			for i, handler in ipairs(handlers) do
 				local upvals = debug.string_from_var_table(debug.get_upvalues_table(handler));
-				handler_strings[i] = "  "..priorities[handler]..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
+				handler_strings[i] = "  "..(priorities[handler] or "?")..": "..tostring(handler)..(upvals and ("\n        "..upvals) or "");
 			end
 			event_handler_arrays[event] = handler_strings;
 		end
