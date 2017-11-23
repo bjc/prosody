@@ -4,7 +4,7 @@
 
 local tostring = tostring;
 local select = select;
-local unpack = unpack;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
 local type = type;
 
 local function format(formatstring, ...)
