@@ -125,12 +125,75 @@ static int lc_local_addresses(lua_State *L) {
 	return 1;
 }
 
+static int lc_pton(lua_State *L) {
+	char buf[16];
+	const char *ipaddr = luaL_checkstring(L, 1);
+	int errno_ = 0;
+	int family = strchr(ipaddr, ':') ? AF_INET6 : AF_INET;
+
+	switch(inet_pton(family, ipaddr, &buf)) {
+		case 1:
+			lua_pushlstring(L, buf, family == AF_INET6 ? 16 : 4);
+			return 1;
+
+		case -1:
+			errno_ = errno;
+			lua_pushnil(L);
+			lua_pushstring(L, strerror(errno_));
+			lua_pushinteger(L, errno_);
+			return 3;
+
+		default:
+		case 0:
+			lua_pushnil(L);
+			lua_pushstring(L, strerror(EINVAL));
+			lua_pushinteger(L, EINVAL);
+			return 3;
+	}
+
+}
+
+static int lc_ntop(lua_State *L) {
+	char buf[INET6_ADDRSTRLEN];
+	int family;
+	int errno_;
+	size_t l;
+	const char *ipaddr = luaL_checklstring(L, 1, &l);
+
+	if(l == 16) {
+		family = AF_INET6;
+	}
+	else if(l == 4) {
+		family = AF_INET;
+	}
+	else {
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(EAFNOSUPPORT));
+		lua_pushinteger(L, EAFNOSUPPORT);
+		return 3;
+	}
+
+	if(!inet_ntop(family, ipaddr, buf, INET6_ADDRSTRLEN))
+	{
+		errno_ = errno;
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno_));
+		lua_pushinteger(L, errno_);
+		return 3;
+	}
+
+	lua_pushstring(L, (const char *)(&buf));
+	return 1;
+}
+
 int luaopen_util_net(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
 	luaL_Reg exports[] = {
 		{ "local_addresses", lc_local_addresses },
+		{ "pton", lc_pton },
+		{ "ntop", lc_ntop },
 		{ NULL, NULL }
 	};
 
