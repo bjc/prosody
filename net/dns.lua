@@ -15,6 +15,7 @@
 local socket = require "socket";
 local timer = require "util.timer";
 local new_ip = require "util.ip".new_ip;
+local have_util_net, util_net = pcall(require, "util.net");
 
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
@@ -382,6 +383,12 @@ function resolver:A(rr)    -- - - - - - - - - - - - - - - - - - - - - - - -  A
 	rr.a = string.format('%i.%i.%i.%i', b1, b2, b3, b4);
 end
 
+if have_util_net and util_net.ntop then
+	function resolver:A(rr)
+		rr.a = util_net.ntop(self:sub(4));
+	end
+end
+
 function resolver:AAAA(rr)
 	local addr = {};
 	for _ = 1, rr.rdlength, 2 do
@@ -400,6 +407,12 @@ function resolver:AAAA(rr)
 		table.sort(zeros, function(a, b) return #a > #b end);
 	end
 	rr.aaaa = addr:gsub(zeros[1], "::", 1):gsub("^0::", "::"):gsub("::0$", "::");
+end
+
+if have_util_net and util_net.ntop then
+	function resolver:AAAA(rr)
+		rr.aaaa = util_net.ntop(self:sub(16));
+	end
 end
 
 function resolver:CNAME(rr)    -- - - - - - - - - - - - - - - - - - - -  CNAME
