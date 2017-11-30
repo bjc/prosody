@@ -31,10 +31,12 @@
 #if defined(WITH_GETRANDOM)
 
 #ifndef __GLIBC_PREREQ
+/* Not compiled with glibc at all */
 #define __GLIBC_PREREQ(a,b) 0
 #endif
 
 #if ! __GLIBC_PREREQ(2,25)
+/* Not compiled with a glibc that provides getrandom() */
 #include <unistd.h>
 #include <sys/syscall.h>
 
