@@ -172,7 +172,7 @@ static void sighook(lua_State *L, lua_Debug *ar) {
 	lua_pushstring(L, LUA_SIGNAL);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 
-	for(int i = 1; i <= nsig; i--) {
+	for(int i = 0; i < nsig; i++) {
 		lua_pushnumber(L, signals[i]);
 		lua_gettable(L, -2);
 		lua_call(L, 0, 0);
@@ -196,7 +196,7 @@ static void handle(int sig) {
 	}
 
 	if(nsig < MAX_PENDING_SIGNALS) {
-		signals[++nsig] = sig;
+		signals[nsig++] = sig;
 	}
 }
 
