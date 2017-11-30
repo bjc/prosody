@@ -21,6 +21,8 @@
 
 #define _DEFAULT_SOURCE
 
+#include <stdlib.h>
+
 #include "lualib.h"
 #include "lauxlib.h"
 
@@ -49,11 +51,9 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 #include <sys/random.h>
 #endif
 
-#elif defined(WITH_ARC4RANDOM)
-#include <stdlib.h>
 #elif defined(WITH_OPENSSL)
 #include <openssl/rand.h>
-#else
+#elif ! defined(WITH_ARC4RANDOM)
 #error util.crand compiled without a random source
 #endif
 
