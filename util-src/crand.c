@@ -22,12 +22,11 @@
 #define _DEFAULT_SOURCE
 
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 #include "lualib.h"
 #include "lauxlib.h"
-
-#include <string.h>
-#include <errno.h>
 
 #if defined(WITH_GETRANDOM)
 
