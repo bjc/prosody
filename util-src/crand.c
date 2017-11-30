@@ -77,6 +77,7 @@ int Lrandom(lua_State *L) {
 	arc4random_buf(buf, len);
 	ret = len;
 #elif defined(WITH_OPENSSL)
+
 	if(!RAND_status()) {
 		lua_pushliteral(L, "OpenSSL PRNG not seeded");
 		return lua_error(L);
