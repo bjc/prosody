@@ -67,6 +67,8 @@ function ip_methods.bits_full(ip)
 	return ip.bits;
 end
 
+local match;
+
 local function commonPrefixLength(ipA, ipB)
 	ipA, ipB = ipA.bits_full, ipB.bits_full;
 	for i = 1, 128 do
@@ -77,56 +79,60 @@ local function commonPrefixLength(ipA, ipB)
 	return 128;
 end
 
+-- Instantiate once
+local loopback = new_ip("::1");
+local loopback4 = new_ip("127.0.0.0");
+local sixtofour = new_ip("2002::");
+local teredo = new_ip("2001::");
+local linklocal = new_ip("fe80::");
+local linklocal4 = new_ip("169.254.0.0");
+local uniquelocal = new_ip("fc00::");
+local sitelocal = new_ip("fec0::");
+local sixbone = new_ip("3ffe::");
+local defaultunicast = new_ip("::");
+local multicast = new_ip("ff00::");
+local ipv6mapped = new_ip("::ffff:0:0");
+
 local function v4scope(ip)
-	local fields = {};
-	ip:gsub("([^.]*).?", function (c) fields[#fields + 1] = tonumber(c) end);
-	-- Loopback:
-	if fields[1] == 127 then
+	if match(ip, loopback4, 8) then
 		return 0x2;
-	-- Link-local unicast:
-	elseif fields[1] == 169 and fields[2] == 254 then
+	elseif match(ip, linklocal4) then
 		return 0x2;
-	-- Global unicast:
-	else
+	else -- Global unicast
 		return 0xE;
 	end
 end
 
 local function v6scope(ip)
-	-- Loopback:
-	if ip:match("^[0:]*1$") then
+	if ip == loopback then
 		return 0x2;
-	-- Link-local unicast:
-	elseif ip:match("^[Ff][Ee][89ABab]") then
+	elseif match(ip, linklocal, 10) then
 		return 0x2;
-	-- Site-local unicast:
-	elseif ip:match("^[Ff][Ee][CcDdEeFf]") then
+	elseif match(ip, sitelocal, 10) then
 		return 0x5;
-	-- Multicast:
-	elseif ip:match("^[Ff][Ff]") then
-		return tonumber("0x"..ip:sub(4,4));
-	-- Global unicast:
-	else
+	elseif match(ip, multicast, 10) then
+		return ip.packed:byte(2) % 0x10;
+	else -- Global unicast
 		return 0xE;
 	end
 end
 
 local function label(ip)
-	if commonPrefixLength(ip, new_ip("::1", "IPv6")) == 128 then
+	if ip == loopback then
 		return 0;
-	elseif commonPrefixLength(ip, new_ip("2002::", "IPv6")) >= 16 then
+	elseif match(ip, sixtofour, 16) then
 		return 2;
-	elseif commonPrefixLength(ip, new_ip("2001::", "IPv6")) >= 32 then
+	elseif match(ip, teredo, 32) then
 		return 5;
-	elseif commonPrefixLength(ip, new_ip("fc00::", "IPv6")) >= 7 then
+	elseif match(ip, uniquelocal, 7) then
 		return 13;
-	elseif commonPrefixLength(ip, new_ip("fec0::", "IPv6")) >= 10 then
+	elseif match(ip, sitelocal, 10) then
 		return 11;
-	elseif commonPrefixLength(ip, new_ip("3ffe::", "IPv6")) >= 16 then
+	elseif match(ip, sixbone, 16) then
 		return 12;
-	elseif commonPrefixLength(ip, new_ip("::", "IPv6")) >= 96 then
+	elseif match(ip, defaultunicast, 96) then
 		return 3;
-	elseif commonPrefixLength(ip, new_ip("::ffff:0:0", "IPv6")) >= 96 then
+	elseif match(ip, ipv6mapped, 96) then
 		return 4;
 	else
 		return 1;
@@ -134,21 +140,21 @@ local function label(ip)
 end
 
 local function precedence(ip)
-	if commonPrefixLength(ip, new_ip("::1", "IPv6")) == 128 then
+	if ip == loopback then
 		return 50;
-	elseif commonPrefixLength(ip, new_ip("2002::", "IPv6")) >= 16 then
+	elseif match(ip, sixtofour, 16) then
 		return 30;
-	elseif commonPrefixLength(ip, new_ip("2001::", "IPv6")) >= 32 then
+	elseif match(ip, teredo, 32) then
 		return 5;
-	elseif commonPrefixLength(ip, new_ip("fc00::", "IPv6")) >= 7 then
+	elseif match(ip, uniquelocal, 7) then
 		return 3;
-	elseif commonPrefixLength(ip, new_ip("fec0::", "IPv6")) >= 10 then
+	elseif match(ip, sitelocal, 10) then
 		return 1;
-	elseif commonPrefixLength(ip, new_ip("3ffe::", "IPv6")) >= 16 then
+	elseif match(ip, sixbone, 16) then
 		return 1;
-	elseif commonPrefixLength(ip, new_ip("::", "IPv6")) >= 96 then
+	elseif match(ip, defaultunicast, 96) then
 		return 1;
-	elseif commonPrefixLength(ip, new_ip("::ffff:0:0", "IPv6")) >= 96 then
+	elseif match(ip, ipv6mapped, 96) then
 		return 35;
 	else
 		return 40;
@@ -186,24 +192,22 @@ end
 function ip_methods:scope()
 	local value;
 	if self.proto == "IPv4" then
-		value = v4scope(self.addr);
+		value = v4scope(self);
 	else
-		value = v6scope(self.addr);
+		value = v6scope(self);
 	end
 	self.scope = value;
 	return value;
 end
 
+local rfc1918_8 = new_ip("10.0.0.0");
+local rfc1918_12 = new_ip("172.16.0.0");
+local rfc1918_16 = new_ip("192.168.0.0");
+
 function ip_methods:private()
 	local private = self.scope ~= 0xE;
 	if not private and self.proto == "IPv4" then
-		local ip = self.addr;
-		local fields = {};
-		ip:gsub("([^.]*).?", function (c) fields[#fields + 1] = tonumber(c) end);
-		if fields[1] == 127 or fields[1] == 10 or (fields[1] == 192 and fields[2] == 168)
-		or (fields[1] == 172 and (fields[2] >= 16 or fields[2] <= 32)) then
-			private = true;
-		end
+		private = match(self, rfc1918_8, 8) or match(self, rfc1918_12, 12) or match(self, rfc1918_16);
 	end
 	self.private = private;
 	return private;
@@ -219,7 +223,7 @@ local function parse_cidr(cidr)
 	return new_ip(cidr), bits;
 end
 
-local function match(ipA, ipB, bits)
+function match(ipA, ipB, bits)
 	local common_bits = commonPrefixLength(ipA, ipB);
 	if bits and ipB.proto == "IPv4" then
 		common_bits = common_bits - 96; -- v6 mapped addresses always share these bits
