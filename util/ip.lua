@@ -155,22 +155,9 @@ local function precedence(ip)
 	end
 end
 
-local function toV4mapped(ip)
-	local fields = {};
-	local ret = "::ffff:";
-	ip:gsub("([^.]*).?", function (c) fields[#fields + 1] = tonumber(c) end);
-	ret = ret .. ("%02x"):format(fields[1]);
-	ret = ret .. ("%02x"):format(fields[2]);
-	ret = ret .. ":"
-	ret = ret .. ("%02x"):format(fields[3]);
-	ret = ret .. ("%02x"):format(fields[4]);
-	return new_ip(ret, "IPv6");
-end
-
 function ip_methods:toV4mapped()
 	if self.proto ~= "IPv4" then return nil, "No IPv4 address" end
-	local value = toV4mapped(self.addr);
-	self.toV4mapped = value;
+	local value = new_ip("::ffff:" .. self.normal);
 	return value;
 end
 
