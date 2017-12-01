@@ -52,6 +52,10 @@ local function new_ip(ipStr, proto)
 	return setmetatable({ addr = ipStr, packed = packed, proto = proto, zone = zone }, ip_mt);
 end
 
+function ip_methods:normal()
+	return net.ntop(self.packed);
+end
+
 function ip_methods.bits(ip)
 	return hex.to(ip.packed):upper():gsub(".", hex2bits);
 end
