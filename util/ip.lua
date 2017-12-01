@@ -228,7 +228,7 @@ local function parse_cidr(cidr)
 end
 
 function match(ipA, ipB, bits)
-	if not bits then
+	if not bits or bits >= 128 or ipB.proto == "IPv4" and bits >= 32 then
 		return ipA == ipB;
 	elseif bits < 1 then
 		return true;
