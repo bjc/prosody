@@ -19,7 +19,7 @@ local ip_mt = {
 		return ret;
 	end,
 	__tostring = function (ip) return ip.addr; end,
-	__eq = function (ipA, ipB) return ipA.addr == ipB.addr; end
+	__eq = function (ipA, ipB) return ipA.packed == ipB.packed; end
 };
 
 local hex2bits = {
