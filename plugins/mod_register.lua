@@ -17,6 +17,10 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local jid_bare = require "util.jid".bare;
 local create_throttle = require "util.throttle".create;
 local new_cache = require "util.cache".new;
+local ip_util = require "util.ip";
+local new_ip = ip_util.new_ip;
+local match_ip = ip_util.match;
+local parse_cidr = ip_util.parse_cidr;
 
 local compat = module:get_option_boolean("registration_compat", true);
 local allow_registration = module:get_option_boolean("allow_registration", false);
@@ -208,6 +212,19 @@ local function check_throttle(ip)
 	return throttle:poll(1);
 end
 
+local function ip_in_set(set, ip)
+	if set[ip] then
+		return true;
+	end
+	ip = new_ip(ip);
+	for in_set in pairs(set) do
+		if match_ip(ip, parse_cidr(in_set)) then
+			return true;
+		end
+	end
+	return false;
+end
+
 -- In-band registration
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
@@ -239,10 +256,10 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					-- Check that the user is not blacklisted or registering too often
 					if not session.ip then
 						log("debug", "User's IP not known; can't apply blacklist/whitelist");
-					elseif blacklisted_ips[session.ip] or (whitelist_only and not whitelisted_ips[session.ip]) then
+					elseif ip_in_set(blacklisted_ips, session.ip) or (whitelist_only and not ip_in_set(whitelisted_ips, session.ip)) then
 						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
 						return true;
-					elseif throttle_max and not whitelisted_ips[session.ip] then
+					elseif throttle_max and not ip_in_set(whitelisted_ips, session.ip) then
 						if not check_throttle(session.ip) then
 							log("debug", "Registrations over limit for ip %s", session.ip or "?");
 							session.send(st.error_reply(stanza, "wait", "not-acceptable"));
