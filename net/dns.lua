@@ -390,7 +390,7 @@ function resolver:AAAA(rr)
 	end
 	addr = table.concat(addr, ":"):gsub("%f[%x]0+(%x)","%1");
 	local zeros = {};
-	for item in addr:gmatch(":[0:]+:") do
+	for item in addr:gmatch(":[0:]+:[0:]+:") do
 		table.insert(zeros, item)
 	end
 	if #zeros == 0 then
