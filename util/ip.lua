@@ -6,9 +6,15 @@
 --
 
 local ip_methods = {};
-local ip_mt = { __index = function (ip, key) return (ip_methods[key])(ip); end,
-		__tostring = function (ip) return ip.addr; end,
-		__eq = function (ipA, ipB) return ipA.addr == ipB.addr; end};
+
+local ip_mt = {
+	__index = function (ip, key)
+		return ip_methods[key](ip);
+	end,
+	__tostring = function (ip) return ip.addr; end,
+	__eq = function (ipA, ipB) return ipA.addr == ipB.addr; end
+};
+
 local hex2bits = {
 	["0"] = "0000", ["1"] = "0001", ["2"] = "0010", ["3"] = "0011",
 	["4"] = "0100", ["5"] = "0101", ["6"] = "0110", ["7"] = "0111",
