@@ -51,12 +51,7 @@ local function new_ip(ipStr, proto)
 	return setmetatable({ addr = ipStr, packed = packed, proto = proto, zone = zone }, ip_mt);
 end
 
-local function toBits(ip)
-	local result = "";
-	local fields = {};
-	if ip.proto == "IPv4" then
-		ip = ip.toV4mapped;
-	end
+function ip_methods.bits(ip)
 	ip = (ip.addr):upper();
 	ip:gsub("([^:]*):?", function (c) fields[#fields + 1] = c end);
 	if not ip:match(":$") then fields[#fields] = nil; end
@@ -77,8 +72,15 @@ local function toBits(ip)
 	return result;
 end
 
+function ip_methods.bits_full(ip)
+	if ip.proto == "IPv4" then
+		ip = ip.toV4mapped;
+	end
+	return ip.bits;
+end
+
 local function commonPrefixLength(ipA, ipB)
-	ipA, ipB = toBits(ipA), toBits(ipB);
+	ipA, ipB = ipA.bits_full, ipB.bits_full;
 	for i = 1, 128 do
 		if ipA:sub(i,i) ~= ipB:sub(i,i) then
 			return i-1;
