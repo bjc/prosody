@@ -5,6 +5,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local net = require "util.net";
+
 local ip_methods = {};
 
 local ip_mt = {
@@ -23,32 +25,30 @@ local hex2bits = {
 };
 
 local function new_ip(ipStr, proto)
-	if not proto then
-		local sep = ipStr:match("^%x+(.)");
-		if sep == ":" or (not(sep) and ipStr:sub(1,1) == ":") then
-			proto = "IPv6"
-		elseif sep == "." then
-			proto = "IPv4"
-		end
-		if not proto then
-			return nil, "invalid address";
-		end
-	elseif proto ~= "IPv4" and proto ~= "IPv6" then
-		return nil, "invalid protocol";
-	end
 	local zone;
-	if proto == "IPv6" and ipStr:find('%', 1, true) then
+	if (not proto or proto == "IPv6") and ipStr:find('%', 1, true) then
 		ipStr, zone = ipStr:match("^(.-)%%(.*)");
 	end
-	if proto == "IPv6" and ipStr:find('.', 1, true) then
-		local changed;
-		ipStr, changed = ipStr:gsub(":(%d+)%.(%d+)%.(%d+)%.(%d+)$", function(a,b,c,d)
-			return (":%04X:%04X"):format(a*256+b,c*256+d);
-		end);
-		if changed ~= 1 then return nil, "invalid-address"; end
+
+	local packed, err = net.pton(ipStr);
+	if not packed then return packed, err end
+	if proto == "IPv6" and #packed ~= 16 then
+		return nil, "invalid-ipv6";
+	elseif proto == "IPv4" and #packed ~= 4 then
+		return nil, "invalid-ipv4";
+	elseif not proto then
+		if #packed == 16 then
+			proto = "IPv6";
+		elseif #packed == 4 then
+			proto = "IPv4";
+		else
+			return nil, "unknown protocol";
+		end
+	elseif proto ~= "IPv6" and proto ~= "IPv4" then
+		return nil, "invalid protocol";
 	end
 
-	return setmetatable({ addr = ipStr, proto = proto, zone = zone }, ip_mt);
+	return setmetatable({ addr = ipStr, packed = packed, proto = proto, zone = zone }, ip_mt);
 end
 
 local function toBits(ip)
