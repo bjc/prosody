@@ -6,6 +6,7 @@
 --
 
 local net = require "util.net";
+local hex = require "util.hex";
 
 local ip_methods = {};
 
@@ -52,24 +53,7 @@ local function new_ip(ipStr, proto)
 end
 
 function ip_methods.bits(ip)
-	ip = (ip.addr):upper();
-	ip:gsub("([^:]*):?", function (c) fields[#fields + 1] = c end);
-	if not ip:match(":$") then fields[#fields] = nil; end
-	for i, field in ipairs(fields) do
-		if field:len() == 0 and i ~= 1 and i ~= #fields then
-			for _ = 1, 16 * (9 - #fields) do
-				result = result .. "0";
-			end
-		else
-			for _ = 1, 4 - field:len() do
-				result = result .. "0000";
-			end
-			for j = 1, field:len() do
-				result = result .. hex2bits[field:sub(j, j)];
-			end
-		end
-	end
-	return result;
+	return hex.to(ip.packed):upper():gsub(".", hex2bits);
 end
 
 function ip_methods.bits_full(ip)
