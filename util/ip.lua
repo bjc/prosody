@@ -228,11 +228,20 @@ local function parse_cidr(cidr)
 end
 
 function match(ipA, ipB, bits)
-	local common_bits = commonPrefixLength(ipA, ipB);
-	if bits and ipB.proto == "IPv4" then
-		common_bits = common_bits - 96; -- v6 mapped addresses always share these bits
+	if not bits then
+		return ipA == ipB;
+	elseif bits < 1 then
+		return true;
 	end
-	return common_bits >= (bits or 128);
+	if ipA.proto ~= ipB.proto then
+		if ipA.proto == "IPv4" then
+			ipA = ipA.toV4mapped;
+		elseif ipB.proto == "IPv4" then
+			ipB = ipA.toV4mapped;
+			bits = bits + (128 - 32);
+		end
+	end
+	return ipA.bits:sub(1, bits) == ipB.bits:sub(1, bits);
 end
 
 return {
