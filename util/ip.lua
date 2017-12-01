@@ -12,7 +12,11 @@ local ip_methods = {};
 
 local ip_mt = {
 	__index = function (ip, key)
-		return ip_methods[key](ip);
+		local method = ip_methods[key];
+		if not method then return nil; end
+		local ret = method(ip);
+		ip[key] = ret;
+		return ret;
 	end,
 	__tostring = function (ip) return ip.addr; end,
 	__eq = function (ipA, ipB) return ipA.addr == ipB.addr; end
