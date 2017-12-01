@@ -250,7 +250,9 @@ local function match(ipA, ipB, bits)
 	return common_bits >= (bits or 128);
 end
 
-return {new_ip = new_ip,
+return {
+	new_ip = new_ip,
 	commonPrefixLength = commonPrefixLength,
 	parse_cidr = parse_cidr,
-	match=match};
+	match = match,
+};
