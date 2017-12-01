@@ -945,6 +945,9 @@ function commands.cert(arg)
 		if pposix.getuid() ~= cert_dir_attrs.uid then
 			show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
 			return 1;
+		elseif not cert_dir_attrs.permissions then -- COMPAT with LuaFilesystem < 1.6.2 (hey CentOS!)
+			show_message("Unable to check permissions on "..cert_basedir.." (LuaFilesystem 1.6.2+ required)");
+			show_message("Please confirm that Prosody (and only Prosody) can write to this directory)");
 		elseif cert_dir_attrs.permissions:match("^%.w..%-..%-.$") then
 			show_warning("The directory "..cert_basedir.." not only writable by its owner");
 			return 1;
