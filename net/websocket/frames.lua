@@ -21,8 +21,8 @@ local t_concat = table.concat;
 local s_byte = string.byte;
 local s_char= string.char;
 local s_sub = string.sub;
-local s_pack = string.pack;
-local s_unpack = string.unpack;
+local s_pack = string.pack; -- luacheck: ignore 143
+local s_unpack = string.unpack; -- luacheck: ignore 143
 
 if not s_pack and softreq"struct" then
 	s_pack = softreq"struct".pack;
