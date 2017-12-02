@@ -68,12 +68,22 @@ int Lrandom(lua_State *L) {
 	 * This acts like a read from /dev/urandom with the exception that it
 	 * *does* block if the entropy pool is not yet initialized.
 	 */
-	ret = getrandom(buf, len, 0);
+	int left = len;
+	char *b = buf;
 
-	if(ret < 0) {
-		lua_pushstring(L, strerror(errno));
-		return lua_error(L);
-	}
+	do {
+		ret = getrandom(b, left, 0);
+
+		if(ret < 0) {
+			lua_pushstring(L, strerror(errno));
+			return lua_error(L);
+		}
+
+		b += ret;
+		left -= ret;
+	} while(left > 0);
+
+	ret = len;
 
 #elif defined(WITH_ARC4RANDOM)
 	arc4random_buf(buf, len);
