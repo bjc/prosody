@@ -59,8 +59,7 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 #endif
 
 int Lrandom(lua_State *L) {
-	int ret = 0;
-	size_t len = (size_t)luaL_checkinteger(L, 1);
+	const size_t len = (size_t)luaL_checkinteger(L, 1);
 	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
@@ -69,25 +68,22 @@ int Lrandom(lua_State *L) {
 	 * *does* block if the entropy pool is not yet initialized.
 	 */
 	int left = len;
-	char *b = buf;
+	char *p = buf;
 
 	do {
-		ret = getrandom(b, left, 0);
+		int ret = getrandom(p, left, 0);
 
 		if(ret < 0) {
 			lua_pushstring(L, strerror(errno));
 			return lua_error(L);
 		}
 
-		b += ret;
+		p += ret;
 		left -= ret;
 	} while(left > 0);
 
-	ret = len;
-
 #elif defined(WITH_ARC4RANDOM)
 	arc4random_buf(buf, len);
-	ret = len;
 #elif defined(WITH_OPENSSL)
 
 	if(!RAND_status()) {
@@ -95,11 +91,7 @@ int Lrandom(lua_State *L) {
 		return lua_error(L);
 	}
 
-	ret = RAND_bytes(buf, len);
-
-	if(ret == 1) {
-		ret = len;
-	} else {
+	if(RAND_bytes(buf, len) != 1) {
 		/* TODO ERR_get_error() */
 		lua_pushstring(L, "RAND_bytes() failed");
 		return lua_error(L);
@@ -107,7 +99,7 @@ int Lrandom(lua_State *L) {
 
 #endif
 
-	lua_pushlstring(L, buf, ret);
+	lua_pushlstring(L, buf, len);
 	return 1;
 }
 
