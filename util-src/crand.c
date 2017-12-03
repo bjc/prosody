@@ -91,7 +91,7 @@ int Lrandom(lua_State *L) {
 		return lua_error(L);
 	}
 
-	if(RAND_bytes(buf, len) != 1) {
+	if(RAND_bytes((unsigned char *)buf, len) != 1) {
 		/* TODO ERR_get_error() */
 		lua_pushstring(L, "RAND_bytes() failed");
 		return lua_error(L);
