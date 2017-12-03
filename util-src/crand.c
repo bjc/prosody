@@ -69,7 +69,9 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 int Lrandom(lua_State *L) {
 	char smallbuf[SMALLBUFSIZ];
 	char *buf = &smallbuf[0];
-	const size_t len = luaL_checkinteger(L, 1);
+	const lua_Integer l = luaL_checkinteger(L, 1);
+	const size_t len = l;
+	luaL_argcheck(L, l >= 0, 1, "must be > 0");
 
 	if(len > SMALLBUFSIZ) {
 		buf = lua_newuserdata(L, len);
