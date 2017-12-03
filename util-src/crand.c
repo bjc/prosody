@@ -58,9 +58,19 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 #error util.crand compiled without a random source
 #endif
 
+#ifndef SMALLBUFSIZ
+#define SMALLBUFSIZ 32
+#endif
+
 int Lrandom(lua_State *L) {
+	char smallbuf[SMALLBUFSIZ];
+	char *buf = &smallbuf[0];
 	const size_t len = luaL_checkinteger(L, 1);
-	void *buf = lua_newuserdata(L, len);
+
+	if(len > SMALLBUFSIZ) {
+		buf = lua_newuserdata(L, len);
+	}
+
 
 #if defined(WITH_GETRANDOM)
 	/*
