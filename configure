@@ -528,6 +528,8 @@ OPENSSL_LIBS="-l$OPENSSL_LIB"
 
 if [ "$PRNG" = "OPENSSL" ]; then
    PRNGLIBS=$OPENSSL_LIBS
+elif [ "$PRNG" = "ARC4RANDOM" -a "$(uname)" = "Linux" ]; then
+   PRNGLIBS="-lbsd"
 fi
 
 # Write config

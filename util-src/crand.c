@@ -54,7 +54,11 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 
 #elif defined(WITH_OPENSSL)
 #include <openssl/rand.h>
-#elif ! defined(WITH_ARC4RANDOM)
+#elif defined(WITH_ARC4RANDOM)
+#ifdef __linux__
+#include <bsd/stdlib.h>
+#endif
+#else
 #error util.crand compiled without a random source
 #endif
 
