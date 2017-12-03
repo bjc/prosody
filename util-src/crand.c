@@ -59,7 +59,7 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 #endif
 
 int Lrandom(lua_State *L) {
-	const size_t len = (size_t)luaL_checkinteger(L, 1);
+	const size_t len = luaL_checkinteger(L, 1);
 	void *buf = lua_newuserdata(L, len);
 
 #if defined(WITH_GETRANDOM)
