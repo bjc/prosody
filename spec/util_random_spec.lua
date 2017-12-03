@@ -11,8 +11,8 @@ describe("util.random", function()
 			-- Makes no attempt at testing how random the bytes are,
 			-- just that it returns the number of bytes requested
 
-			for i = 1, 255 do
-				assert.are.equal(i, #random.bytes(i));
+			for i = 1, 20 do
+				assert.are.equal(2^i, #random.bytes(2^i));
 			end
 		end);
 	end);
