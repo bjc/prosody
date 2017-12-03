@@ -73,10 +73,14 @@ int Lrandom(lua_State *L) {
 	const size_t len = l;
 	luaL_argcheck(L, l >= 0, 1, "must be > 0");
 
+	if(len == 0) {
+		lua_pushliteral(L, "");
+		return 1;
+	}
+
 	if(len > SMALLBUFSIZ) {
 		buf = lua_newuserdata(L, len);
 	}
-
 
 #if defined(WITH_GETRANDOM)
 	/*
