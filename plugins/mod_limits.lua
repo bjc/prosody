@@ -1,4 +1,4 @@
--- Because we deal we pre-authed sessions and streams we can't be host-specific
+-- Because we deal with pre-authed sessions and streams we can't be host-specific
 module:set_global();
 
 local filters = require "util.filters";
