@@ -63,7 +63,7 @@ local function bounce_sendq(session, reason)
 	session.log("info", "Sending error replies for "..#sendq.." queued stanzas because of failed outgoing connection to "..tostring(session.to_host));
 	local dummy = {
 		type = "s2sin";
-		send = function(s)
+		send = function ()
 			(session.log or log)("error", "Replying to to an s2s error reply, please report this! Traceback: %s", traceback());
 		end;
 		dummy = true;
