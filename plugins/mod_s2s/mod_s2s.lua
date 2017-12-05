@@ -106,8 +106,15 @@ function route_to_existing_session(event)
 			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 
 			-- Queue stanza until we are able to send it
-			if host.sendq then t_insert(host.sendq, {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)});
-			else host.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} }; end
+			local queued_item = {
+				tostring(stanza),
+				stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza);
+			};
+			if host.sendq then
+				t_insert(host.sendq, queued_item);
+			else
+				host.sendq = { queued_item };
+			end
 			host.log("debug", "stanza [%s] queued ", stanza.name);
 			return true;
 		elseif host.type == "local" or host.type == "component" then
