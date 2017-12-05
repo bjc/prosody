@@ -14,7 +14,6 @@ local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 local sha256_hmac = require "util.hashes".hmac_sha256;
 local nameprep = require "util.encodings".stringprep.nameprep;
-local check_cert_status = module:depends"s2s".check_cert_status;
 local uuid_gen = require"util.uuid".generate;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
@@ -23,6 +22,19 @@ local dialback_requests = setmetatable({}, { __mode = 'v' });
 
 local dialback_secret = sha256_hash(module:get_option_string("dialback_secret", uuid_gen()), true);
 local dwd = module:get_option_boolean("dialback_without_dialback", false);
+
+--- Helper to check that a session peer's certificate is valid
+function check_cert_status(session)
+	local host = session.direction == "outgoing" and session.to_host or session.from_host
+	local conn = session.conn:socket()
+	local cert
+	if conn.getpeercertificate then
+		cert = conn:getpeercertificate()
+	end
+
+	return module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
+end
+
 
 function module.save()
 	return { dialback_secret = dialback_secret };
