@@ -14,7 +14,7 @@ local core_process_stanza = prosody.core_process_stanza;
 
 local tostring, type = tostring, type;
 local t_insert = table.insert;
-local xpcall, traceback = xpcall, debug.traceback;
+local traceback = debug.traceback;
 
 local add_task = require "util.timer".add_task;
 local st = require "util.stanza";
