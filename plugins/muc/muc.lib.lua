@@ -122,6 +122,22 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 end
 function room_mt:broadcast_message(stanza, historic)
 	local to = stanza.attr.to;
+	local muc_jid = self.jid;
+
+	stanza:maptags(function (child)
+		if child.name == "delay" and child.attr["xmlns"] == "urn:xmpp:delay" then
+			if child.attr["from"] == muc_jid then
+				return nil;
+			end
+		end
+		if child.name == "x" and child.attr["xmlns"] == "jabber:x:delay" then
+			if child.attr["from"] == muc_jid then
+				return nil;
+			end
+		end
+		return child;
+	end)
+
 	for occupant, o_data in pairs(self._occupants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
