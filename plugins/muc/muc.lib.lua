@@ -189,9 +189,7 @@ function room_mt:send_history(to, stanza)
 	end
 end
 function room_mt:send_subject(to)
-	if self._data['subject'] then
-		self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
-	end
+	self:_route_stanza(st.message({type='groupchat', from=self._data['subject_from'] or self.jid, to=to}):tag("subject"):text(self._data['subject']));
 end
 
 function room_mt:get_disco_info(stanza)
