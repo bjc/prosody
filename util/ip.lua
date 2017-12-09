@@ -238,7 +238,7 @@ function match(ipA, ipB, bits)
 		if ipA.proto == "IPv4" then
 			ipA = ipA.toV4mapped;
 		elseif ipB.proto == "IPv4" then
-			ipB = ipA.toV4mapped;
+			ipB = ipB.toV4mapped;
 			bits = bits + (128 - 32);
 		end
 	end
