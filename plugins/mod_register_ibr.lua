@@ -13,12 +13,6 @@ local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_delete_user = require "core.usermanager".delete_user;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local create_throttle = require "util.throttle".create;
-local new_cache = require "util.cache".new;
-local ip_util = require "util.ip";
-local new_ip = ip_util.new_ip;
-local match_ip = ip_util.match;
-local parse_cidr = ip_util.parse_cidr;
 
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
@@ -113,46 +107,6 @@ local function parse_response(query)
 	end
 end
 
-local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
-local whitelist_only = module:get_option_boolean("whitelist_registration_only");
-local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1", "::1" })._items;
-local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
-
-local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
-local throttle_period = module:get_option_number("registration_throttle_period", min_seconds_between_registrations);
-local throttle_cache_size = module:get_option_number("registration_throttle_cache_size", 100);
-local blacklist_overflow = module:get_option_boolean("blacklist_on_registration_throttle_overload", false);
-
-local throttle_cache = new_cache(throttle_cache_size, blacklist_overflow and function (ip, throttle)
-	if not throttle:peek() then
-		module:log("info", "Adding ip %s to registration blacklist", ip);
-		blacklisted_ips[ip] = true;
-	end
-end or nil);
-
-local function check_throttle(ip)
-	if not throttle_max then return true end
-	local throttle = throttle_cache:get(ip);
-	if not throttle then
-		throttle = create_throttle(throttle_max, throttle_period);
-	end
-	throttle_cache:set(ip, throttle);
-	return throttle:poll(1);
-end
-
-local function ip_in_set(set, ip)
-	if set[ip] then
-		return true;
-	end
-	ip = new_ip(ip);
-	for in_set in pairs(set) do
-		if match_ip(ip, parse_cidr(in_set)) then
-			return true;
-		end
-	end
-	return false;
-end
-
 -- In-band registration
 module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local session, stanza = event.origin, event.stanza;
@@ -181,19 +135,6 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					end
 					session.send(st.error_reply(stanza, "modify", "not-acceptable"));
 				else
-					-- Check that the user is not blacklisted or registering too often
-					if not session.ip then
-						log("debug", "User's IP not known; can't apply blacklist/whitelist");
-					elseif ip_in_set(blacklisted_ips, session.ip) or (whitelist_only and not ip_in_set(whitelisted_ips, session.ip)) then
-						session.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not allowed to register an account."));
-						return true;
-					elseif throttle_max and not ip_in_set(whitelisted_ips, session.ip) then
-						if not check_throttle(session.ip) then
-							log("debug", "Registrations over limit for ip %s", session.ip or "?");
-							session.send(st.error_reply(stanza, "wait", "not-acceptable"));
-							return true;
-						end
-					end
 					local username, password = nodeprep(data.username), data.password;
 					data.username, data.password = nil, nil;
 					local host = module.host;
