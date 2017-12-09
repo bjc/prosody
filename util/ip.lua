@@ -172,36 +172,27 @@ function ip_methods:toV4mapped()
 end
 
 function ip_methods:label()
-	local value;
 	if self.proto == "IPv4" then
-		value = label(self.toV4mapped);
+		return label(self.toV4mapped);
 	else
-		value = label(self);
+		return label(self);
 	end
-	self.label = value;
-	return value;
 end
 
 function ip_methods:precedence()
-	local value;
 	if self.proto == "IPv4" then
-		value = precedence(self.toV4mapped);
+		return precedence(self.toV4mapped);
 	else
-		value = precedence(self);
+		return precedence(self);
 	end
-	self.precedence = value;
-	return value;
 end
 
 function ip_methods:scope()
-	local value;
 	if self.proto == "IPv4" then
-		value = v4scope(self);
+		return v4scope(self);
 	else
-		value = v6scope(self);
+		return v6scope(self);
 	end
-	self.scope = value;
-	return value;
 end
 
 local rfc1918_8 = new_ip("10.0.0.0");
@@ -212,9 +203,8 @@ local rfc6598 = new_ip("100.64.0.0");
 function ip_methods:private()
 	local private = self.scope ~= 0xE;
 	if not private and self.proto == "IPv4" then
-		private = match(self, rfc1918_8, 8) or match(self, rfc1918_12, 12) or match(self, rfc1918_16) or match(self, rfc6598, 10);
+		return match(self, rfc1918_8, 8) or match(self, rfc1918_12, 12) or match(self, rfc1918_16) or match(self, rfc6598, 10);
 	end
-	self.private = private;
 	return private;
 end
 
