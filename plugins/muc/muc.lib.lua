@@ -99,6 +99,22 @@ function room_mt:broadcast_presence(stanza, sid, code, nick)
 end
 function room_mt:broadcast_message(stanza, historic)
 	local to = stanza.attr.to;
+	local room_jid = self.jid;
+
+	stanza:maptags(function (child)
+		if child.name == "delay" and child.attr["xmlns"] == "urn:xmpp:delay" then
+			if child.attr["from"] == room_jid then
+				return nil;
+			end
+		end
+		if child.name == "x" and child.attr["xmlns"] == "jabber:x:delay" then
+			if child.attr["from"] == room_jid then
+				return nil;
+			end
+		end
+		return child;
+	end)
+
 	for occupant, o_data in pairs(self._occupants) do
 		for jid in pairs(o_data.sessions) do
 			stanza.attr.to = jid;
@@ -116,8 +132,8 @@ function room_mt:save_to_history(stanza)
 	stanza = st.clone(stanza);
 	stanza.attr.to = "";
 	local stamp = datetime.datetime();
-	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = muc_domain, stamp = stamp}):up(); -- XEP-0203
-	stanza:tag("x", {xmlns = "jabber:x:delay", from = muc_domain, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = self.jid, stamp = stamp}):up(); -- XEP-0203
+	stanza:tag("x", {xmlns = "jabber:x:delay", from = self.jid, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
 	local entry = { stanza = stanza, stamp = stamp };
 	t_insert(history, entry);
 	while #history > (self._data.history_length or default_history_length) do t_remove(history, 1) end
