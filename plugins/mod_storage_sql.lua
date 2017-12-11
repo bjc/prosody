@@ -455,7 +455,7 @@ local function create_table(engine, name) -- luacheck: ignore 431/engine
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
-		name= name or "prosody";
+		name = "prosody";
 		Column { name="host", type="TEXT", nullable=false };
 		Column { name="user", type="TEXT", nullable=false };
 		Column { name="store", type="TEXT", nullable=false };
