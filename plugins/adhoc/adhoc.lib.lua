@@ -36,30 +36,30 @@ function _M.handle_cmd(command, origin, stanza)
 
 	local data, state = command:handler(dataIn, states[sessionid]);
 	states[sessionid] = state;
-	local cmdtag;
+	local cmdreply;
 	if data.status == "completed" then
 		states[sessionid] = nil;
-		cmdtag = command:cmdtag("completed", sessionid);
+		cmdreply = command:cmdtag("completed", sessionid);
 	elseif data.status == "canceled" then
 		states[sessionid] = nil;
-		cmdtag = command:cmdtag("canceled", sessionid);
+		cmdreply = command:cmdtag("canceled", sessionid);
 	elseif data.status == "error" then
 		states[sessionid] = nil;
 		local reply = st.error_reply(stanza, data.error.type, data.error.condition, data.error.message);
 		origin.send(reply);
 		return true;
 	else
-		cmdtag = command:cmdtag("executing", sessionid);
+		cmdreply = command:cmdtag("executing", sessionid);
 		data.actions = data.actions or { "complete" };
 	end
 
 	for name, content in pairs(data) do
 		if name == "info" then
-			cmdtag:tag("note", {type="info"}):text(content):up();
+			cmdreply:tag("note", {type="info"}):text(content):up();
 		elseif name == "warn" then
-			cmdtag:tag("note", {type="warn"}):text(content):up();
+			cmdreply:tag("note", {type="warn"}):text(content):up();
 		elseif name == "error" then
-			cmdtag:tag("note", {type="error"}):text(content.message):up();
+			cmdreply:tag("note", {type="error"}):text(content.message):up();
 		elseif name == "actions" then
 			local actions = st.stanza("actions", { execute = content.default });
 			for _, action in ipairs(content) do
@@ -70,17 +70,17 @@ function _M.handle_cmd(command, origin, stanza)
 						command.name, command.node, action);
 				end
 			end
-			cmdtag:add_child(actions);
+			cmdreply:add_child(actions);
 		elseif name == "form" then
-			cmdtag:add_child((content.layout or content):form(content.values));
+			cmdreply:add_child((content.layout or content):form(content.values));
 		elseif name == "result" then
-			cmdtag:add_child((content.layout or content):form(content.values, "result"));
+			cmdreply:add_child((content.layout or content):form(content.values, "result"));
 		elseif name == "other" then
-			cmdtag:add_child(content);
+			cmdreply:add_child(content);
 		end
 	end
 	local reply = st.reply(stanza);
-	reply:add_child(cmdtag);
+	reply:add_child(cmdreply);
 	origin.send(reply);
 
 	return true;
