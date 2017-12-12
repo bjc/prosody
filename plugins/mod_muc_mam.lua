@@ -21,24 +21,9 @@ local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local dataform = require "util.dataforms".new;
-local it = require"util.iterators";
 
--- Support both old and new MUC code
 local mod_muc = module:depends"muc";
-local rooms = rawget(mod_muc, "rooms");
-local each_room = rawget(mod_muc, "each_room") or function() return it.values(rooms); end;
-local new_muc = not rooms;
-if new_muc then
-	rooms = module:shared"muc/rooms";
-else
-	-- COMPAT: We don't (currently?) support injecting stanza-id
-	-- on Prosody 0.10 and prior, which is required by mam:2
-	xmlns_mam = "urn:xmpp:mam:1";
-end
-local get_room_from_jid = rawget(mod_muc, "get_room_from_jid") or
-	function (jid)
-		return rooms[jid];
-	end
+local get_room_from_jid = mod_muc.get_room_from_jid;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
@@ -83,36 +68,6 @@ local function archiving_enabled(room)
 	return enabled;
 end
 
-local send_history, save_to_history;
-
-	-- Override history methods for all rooms.
-if not new_muc then -- 0.10 or older
-	module:hook("muc-room-created", function (event)
-		local room = event.room;
-		if archiving_enabled(room) then
-			room.send_history = send_history;
-			room.save_to_history = save_to_history;
-		end
-	end);
-
-	function module.load()
-		for room in each_room() do
-			if archiving_enabled(room) then
-				room.send_history = send_history;
-				room.save_to_history = save_to_history;
-			end
-		end
-	end
-	function module.unload()
-		for room in each_room() do
-			if room.send_history == send_history then
-				room.send_history = nil;
-				room.save_to_history = nil;
-			end
-		end
-	end
-end
-
 if not log_all_rooms then
 	module:hook("muc-config-form", function(event)
 		local room, form = event.room, event.form;
@@ -126,24 +81,8 @@ if not log_all_rooms then
 		);
 	end);
 
-	module:hook("muc-config-submitted", function(event)
-		local room, fields, changed = event.room, event.fields, event.changed;
-		local new = fields[muc_form_enable];
-		if new ~= room._data.archiving then
-			room._data.archiving = new;
-			if type(changed) == "table" then
-				changed[muc_form_enable] = true;
-			else
-				event.changed = true;
-			end
-			if new then
-				room.send_history = send_history;
-				room.save_to_history = save_to_history;
-			else
-				room.send_history = nil;
-				room.save_to_history = nil;
-			end
-		end
+	module:hook("muc-config-submitted/"..muc_form_enable, function(event)
+		event.room._data.archiving = event.value;
 	end);
 end
 
@@ -352,40 +291,8 @@ module:hook("muc-get-history", function (event)
 	return true;
 end, 1);
 
-function send_history(self, to, stanza)
-	local maxchars, maxstanzas, seconds, since;
-	local history_tag = stanza:find("{http://jabber.org/protocol/muc}x/history")
-	if history_tag then
-		module:log("debug", tostring(history_tag));
-		local history_attr = history_tag.attr;
-		maxchars = tonumber(history_attr.maxchars);
-		maxstanzas = tonumber(history_attr.maxstanzas);
-		seconds = tonumber(history_attr.seconds);
-		since = history_attr.since;
-		if since then
-			since = timestamp_parse(since);
-		end
-		if seconds then
-			since = math.max(os.time() - seconds, since or 0);
-		end
-	end
-
-	local event = {
-		room = self;
-		to = to; -- `to` is required to calculate the character count for `maxchars`
-		maxchars = maxchars, maxstanzas = maxstanzas, since = since;
-		next_stanza = function() end; -- events should define this iterator
-	};
-
-	module:fire_event("muc-get-history", event);
-
-	for msg in event.next_stanza, event do
-		self:_route_stanza(msg);
-	end
-end
-
 -- Handle messages
-function save_to_history(self, stanza)
+local function save_to_history(self, stanza)
 	local room_node, room_host = jid_split(self.jid);
 
 	-- Filter out <stanza-id> that claim to be from us
