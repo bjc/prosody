@@ -465,13 +465,13 @@ function stream_callbacks.streamclosed(context)
 		if not context.defer and session.bosh_deferred then
 			-- Handle deferred stanzas now
 			local deferred_stanzas = session.bosh_deferred;
-			local context = deferred_stanzas.context;
+			local deferred_context = deferred_stanzas.context;
 			session.bosh_deferred = nil;
 			log("debug", "Handling deferred stanzas from rid %d", deferred_stanzas.rid);
 			session.rid = deferred_stanzas.rid;
-			t_insert(session.requests, context.response);
+			t_insert(session.requests, deferred_context.response);
 			for _, stanza in ipairs(deferred_stanzas) do
-				stream_callbacks.handlestanza(context, stanza);
+				stream_callbacks.handlestanza(deferred_context, stanza);
 			end
 			if deferred_stanzas.terminate then
 				session.bosh_terminate = true;
