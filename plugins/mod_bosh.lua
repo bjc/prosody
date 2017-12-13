@@ -6,8 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-module:set_global(); -- Global module
-
 local hosts = _G.hosts;
 local new_xmpp_stream = require "util.xmppstream".new;
 local sm = require "core.sessionmanager";
@@ -512,17 +510,15 @@ local GET_response = {
 	</body></html>]];
 };
 
-function module.add_host(module)
-	module:depends("http");
-	module:provides("http", {
-		default_path = "/http-bind";
-		route = {
-			["GET"] = GET_response;
-			["GET /"] = GET_response;
-			["OPTIONS"] = handle_OPTIONS;
-			["OPTIONS /"] = handle_OPTIONS;
-			["POST"] = handle_POST;
-			["POST /"] = handle_POST;
-		};
-	});
-end
+module:depends("http");
+module:provides("http", {
+	default_path = "/http-bind";
+	route = {
+		["GET"] = GET_response;
+		["GET /"] = GET_response;
+		["OPTIONS"] = handle_OPTIONS;
+		["OPTIONS /"] = handle_OPTIONS;
+		["POST"] = handle_POST;
+		["POST /"] = handle_POST;
+	};
+});
