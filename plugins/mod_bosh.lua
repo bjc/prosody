@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local hosts = _G.hosts;
 local new_xmpp_stream = require "util.xmppstream".new;
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
@@ -283,7 +282,7 @@ function stream_callbacks.streamopened(context, attr)
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
 			return;
-		elseif not hosts[to_host] then
+		elseif to_host ~= module.host then
 			-- Unknown host
 			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
