@@ -66,7 +66,6 @@ local function get_ip_from_request(request)
 end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
-local os_time = os.time;
 
 -- All sessions, and sessions that have no requests open
 local sessions = module:shared("sessions");
