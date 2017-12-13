@@ -100,7 +100,7 @@ function on_destroy_request(request)
 	end
 end
 
-function check_inactive(now, session, context, reason)
+function check_inactive(now, session, context, reason) -- luacheck: ignore 212/now
 	if not session.destroyed then
 		sessions[context.sid] = nil;
 		sm_destroy_session(session, reason);
