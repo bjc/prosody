@@ -326,7 +326,7 @@ function stream_callbacks.streamopened(context, attr)
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
 
-		hosts[session.host].events.fire_event("bosh-session", { session = session, request = request });
+		module:fire_event("bosh-session", { session = session, request = request });
 
 		-- Send creation response
 		local creating_session = true;
@@ -427,7 +427,7 @@ function stream_callbacks.streamopened(context, attr)
 
 	if session.notopen then
 		local features = st.stanza("stream:features");
-		hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+		module:fire_event("stream-features", { origin = session, features = features });
 		session.send(features);
 		session.notopen = nil;
 	end
