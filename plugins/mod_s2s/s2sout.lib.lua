@@ -68,9 +68,9 @@ function s2sout.initiate_connection(host_session)
 				buffer = {};
 				host_session.send_buffer = buffer;
 			end
-			log("debug", "Buffering data on unconnected s2sout to %s", tostring(host_session.to_host));
+			log("debug", "Buffering data on unconnected s2sout to %s", host_session.to_host);
 			buffer[#buffer+1] = data;
-			log("debug", "Buffered item %d: %s", #buffer, tostring(data));
+			log("debug", "Buffered item %d: %s", #buffer, data);
 		end
 	end
 end
@@ -129,16 +129,16 @@ function s2sout.attempt_connection(host_session, err)
 		host_session.srv_choice = host_session.srv_choice + 1;
 		local srv_choice = host_session.srv_hosts[host_session.srv_choice];
 		connect_host, connect_port = srv_choice.target or to_host, srv_choice.port or connect_port;
-		host_session.log("info", "Connection failed (%s). Attempt #%d: This time to %s:%d", tostring(err), host_session.srv_choice, connect_host, connect_port);
+		host_session.log("info", "Connection failed (%s). Attempt #%d: This time to %s:%d", err, host_session.srv_choice, connect_host, connect_port);
 	else
-		host_session.log("info", "Failed in all attempts to connect to %s", tostring(host_session.to_host));
+		host_session.log("info", "Failed in all attempts to connect to %s", host_session.to_host);
 		-- We're out of options
 		return false;
 	end
 
 	if not (connect_host and connect_port) then
 		-- Likely we couldn't resolve DNS
-		log("warn", "Hmm, we're without a host (%s) and port (%s) to connect to for %s, giving up :(", tostring(connect_host), tostring(connect_port), tostring(to_host));
+		log("warn", "Hmm, we're without a host (%s) and port (%s) to connect to for %s, giving up :(", connect_host, connect_port, to_host);
 		return false;
 	end
 
