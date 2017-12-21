@@ -34,7 +34,7 @@ describe("util.throttle", function()
 	end);
 
 	describe("#update()", function()
-		it("does nothing when no time hase passed, even if balance is not full", function()
+		it("does nothing when no time has passed, even if balance is not full", function()
 			now = 5;
 			local a = throttle.create(10, 10);
 			for i=1,5 do
