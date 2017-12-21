@@ -127,7 +127,7 @@ function route_to_existing_session(event)
 			-- FIXME
 			if host.from_host ~= from_host then
 				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
-				log("error", "We are going to send from %s instead of %s", tostring(host.from_host), tostring(from_host));
+				log("error", "We are going to send from %s instead of %s", host.from_host, from_host);
 			end
 			if host.sends2s(stanza) then
 				host.log("debug", "stanza sent over %s", host.type);
@@ -386,7 +386,7 @@ function stream_callbacks._streamopened(session, attr)
 			end
 
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
-				log("debug", "Sending stream features: %s", tostring(features));
+				log("debug", "Sending stream features: %s", features);
 				session.sends2s(features);
 			else
 				(session.log or log)("warn", "No stream features to offer, giving up");
@@ -443,7 +443,7 @@ function stream_callbacks.error(session, error, data)
 		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
-		session.log("debug", "Server-to-server XML parse error: %s", tostring(error));
+		session.log("debug", "Server-to-server XML parse error: %s", error);
 		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
@@ -490,10 +490,10 @@ local function session_close(session, reason, remote_reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, tostring(stanza));
+					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, stanza);
 					session.sends2s(stanza);
 				elseif reason.name then -- a stanza
-					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, tostring(reason));
+					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, reason);
 					session.sends2s(reason);
 				end
 			end
@@ -664,7 +664,7 @@ function listener.ondisconnect(conn, err)
 				return; -- Session lives for now
 			end
 		end
-		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", tostring(session.from_host), tostring(session.to_host), tostring(err or "connection closed"));
+		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", session.from_host, session.to_host, err or "connection closed");
 		s2s_destroy_session(session, err);
 	end
 end
