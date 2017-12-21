@@ -172,7 +172,7 @@ function room_mt:broadcast_message(stanza)
 end
 
 -- Strip delay tags claiming to be from us
-module:hook("muc-broadcast-message", function (event)
+module:hook("muc-occupant-message", function (event)
 	local stanza = event.stanza;
 	local to = stanza.attr.to;
 	local room_jid = self.jid;
