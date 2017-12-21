@@ -164,6 +164,16 @@ function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor_nick, ac
 end
 
 function room_mt:broadcast_message(stanza)
+	if module:fire_event("muc-broadcast-message", {room = self, stanza = stanza}) then
+		return true;
+	end
+	self:broadcast(stanza);
+	return true;
+end
+
+-- Strip delay tags claiming to be from us
+module:hook("muc-broadcast-message", function (event)
+	local stanza = event.stanza;
 	local to = stanza.attr.to;
 	local room_jid = self.jid;
 
@@ -180,13 +190,7 @@ function room_mt:broadcast_message(stanza)
 		end
 		return child;
 	end)
-
-	if module:fire_event("muc-broadcast-message", {room = self, stanza = stanza}) then
-		return true;
-	end
-	self:broadcast(stanza);
-	return true;
-end
+end);
 
 -- Broadcast a stanza to all occupants in the room.
 -- optionally checks conditional called with (nick, occupant)
