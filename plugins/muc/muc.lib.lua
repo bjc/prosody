@@ -164,6 +164,23 @@ function room_mt:build_item_list(occupant, x, is_anonymous, nick, actor_nick, ac
 end
 
 function room_mt:broadcast_message(stanza)
+	local to = stanza.attr.to;
+	local room_jid = self.jid;
+
+	stanza:maptags(function (child)
+		if child.name == "delay" and child.attr["xmlns"] == "urn:xmpp:delay" then
+			if child.attr["from"] == room_jid then
+				return nil;
+			end
+		end
+		if child.name == "x" and child.attr["xmlns"] == "jabber:x:delay" then
+			if child.attr["from"] == room_jid then
+				return nil;
+			end
+		end
+		return child;
+	end)
+
 	if module:fire_event("muc-broadcast-message", {room = self, stanza = stanza}) then
 		return true;
 	end

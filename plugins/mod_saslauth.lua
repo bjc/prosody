@@ -263,6 +263,7 @@ module:hook("stream-features", function(event)
 			elseif not origin.secure and insecure_mechanisms:contains(mechanism) then
 				log("debug", "Not offering mechanism %s on insecure connection", mechanism);
 			else
+				log("debug", "Offering mechanism %s", mechanism);
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 		end

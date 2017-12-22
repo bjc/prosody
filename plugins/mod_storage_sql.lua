@@ -480,7 +480,7 @@ local function create_table(engine, name) -- luacheck: ignore 431/engine
 		Column { name="type", type="TEXT", nullable=false };
 		Column { name="value", type="MEDIUMTEXT", nullable=false };
 		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
-		Index { name="prosodyarchive_with", "host", "user", "store", "with" };
+		Index { name="prosodyarchive_with_when", "host", "user", "store", "with", "when" };
 		Index { name="prosodyarchive_when", "host", "user", "store", "when" };
 	};
 	engine:transaction(function()
