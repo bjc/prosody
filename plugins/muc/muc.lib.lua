@@ -172,10 +172,10 @@ function room_mt:broadcast_message(stanza)
 end
 
 -- Strip delay tags claiming to be from us
-module:hook("muc-occupant-message", function (event)
+module:hook("muc-occupant-groupchat", function (event)
 	local stanza = event.stanza;
-	local to = stanza.attr.to;
-	local room_jid = self.jid;
+	local room = event.room;
+	local room_jid = room.jid;
 
 	stanza:maptags(function (child)
 		if child.name == "delay" and child.attr["xmlns"] == "urn:xmpp:delay" then
