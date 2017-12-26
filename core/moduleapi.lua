@@ -161,6 +161,9 @@ function api:depends(name)
 			end
 		end);
 	end
+	if self:get_option_inherited_set("modules_disabled", {}):contains(name) then
+		self:log("warn", "Loading prerequisite mod_%s despite it being disabled", name);
+	end
 	local mod = modulemanager.get_module(self.host, name) or modulemanager.get_module("*", name);
 	if mod and mod.module.host == "*" and self.host ~= "*"
 	and modulemanager.module_has_method(mod, "add_host") then
