@@ -283,12 +283,9 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		elseif to_host ~= module.host then
-			-- Unknown host
-			log("debug", "BOSH client tried to connect to unknown host: %s", tostring(attr.to));
-			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
-				["xmlns:stream"] = xmlns_streams, condition = "host-unknown" });
-			response:send(tostring(close_reply));
-			return;
+			-- Could be meant for a different instance of the module
+			-- if multiple instances are loaded with the same URL then this can happen
+			return; --> 404
 		end
 		if not rid or (not wait and attr.wait or wait < 0 or wait % 1 ~= 0) then
 			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
