@@ -176,8 +176,8 @@ local function create_context(host, mode, ...)
 	local user_ssl_config = cfg:final();
 
 	if mode == "server" then
-		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	end
 
 	for option in pairs(path_options) do
