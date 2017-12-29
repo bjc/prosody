@@ -112,7 +112,15 @@ local function load_roster(username, host)
 	local data, err = roster_store:get(username);
 	roster = data or {};
 	if user then user.roster = roster; end
+	local legacy_pending = roster.pending and type(roster.pending.subscription) ~= "string";
 	roster_metadata(roster, err);
+	if legacy_pending then
+		-- Due to map store use, we need to manually delete this entry
+		log("debug", "Removing legacy 'pending' entry");
+		if not save_roster(username, host, roster, "pending") then
+			log("warn", "Could not remove legacy 'pendig' entry");
+		end
+	end
 	if roster[jid] then
 		roster[jid] = nil;
 		log("debug", "Roster for %s had a self-contact, removing", jid);
