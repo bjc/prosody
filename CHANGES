@@ -11,6 +11,7 @@ New features
     -   Store rooms to disk on shutdown
 -   mod\_pep\_plus
 -   Asynchronous operations
+-   Busted for tests
 
 0.10.0
 =====================
