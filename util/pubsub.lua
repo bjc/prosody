@@ -4,22 +4,25 @@ local cache = require "util.cache";
 local service = {};
 local service_mt = { __index = service };
 
-local default_config = { __index = {
+local default_config = {
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
 	get_affiliation = function () end;
 	capabilities = {};
-} };
-local default_node_config = { __index = {
+};
+local default_config_mt = { __index = default_config };
+
+local default_node_config = {
 	["persist_items"] = false;
 	["max_items"] = 20;
-} };
+};
+local default_node_config_mt = { __index = default_node_config };
 
 local function new(config)
 	config = config or {};
 	return setmetatable({
-		config = setmetatable(config, default_config);
-		node_defaults = setmetatable(config.node_defaults or {}, default_node_config);
+		config = setmetatable(config, default_config_mt);
+		node_defaults = setmetatable(config.node_defaults or {}, default_node_config_mt);
 		affiliations = {};
 		subscriptions = {};
 		nodes = {};
