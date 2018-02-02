@@ -505,9 +505,10 @@ function interface:init()
 	if self.tls and not self._tls then
 		return self:starttls();
 	else
-		self.onwriteable = interface.onconnect;
+		self.onwriteable = interface.onfirstwritable;
+		self.onreadable = interface.onfirstreadable;
 		self:setwritetimeout();
-		return self:setflags(false, true);
+		return self:setflags(true, true);
 	end
 end
 
@@ -537,13 +538,22 @@ end
 
 -- Connected!
 function interface:onconnect()
-	self.onwriteable = nil;
 	self:setflags(true, false);
-	if not self._connected then
-		self._connected = true;
-		self:on("connect");
-	end
+	self:on("connect");
+end
+
+function interface:onfirstwritable()
+	self.onreadable = nil;
+	self.onwriteable = nil;
+	self:onconnect();
 	return self:onwriteable();
+end
+
+function interface:onfirstreadable()
+	self.onreadable = nil;
+	self.onwriteable = nil;
+	self:onconnect();
+	return self:onreadable();
 end
 
 local function addserver(addr, port, listeners, pattern, tls)
