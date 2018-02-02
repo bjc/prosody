@@ -26,6 +26,8 @@ function handle_pubsub_iq(event)
 	return lib_pubsub.handle_pubsub_iq(event, service);
 end
 
+local node_store = module:open_store(module.name.."_nodes");
+
 local function create_simple_itemstore(node_config, node_name)
 	local archive = module:open_store("pubsub_"..node_name, "archive");
 	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
@@ -202,6 +204,7 @@ function module.load()
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
 
+		nodestore = node_store;
 		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
 		get_affiliation = get_affiliation;
