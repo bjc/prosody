@@ -1,8 +1,7 @@
 local events = require "util.events";
 local cache = require "util.cache";
 
-local service = {};
-local service_mt = { __index = service };
+local service_mt = {};
 
 local default_config = {
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
@@ -30,6 +29,11 @@ local function new(config)
 		events = events.new();
 	}, service_mt);
 end
+
+--- Service methods
+
+local service = {};
+service_mt.__index = service;
 
 function service:jids_equal(jid1, jid2)
 	local normalize = self.config.normalize_jid;
