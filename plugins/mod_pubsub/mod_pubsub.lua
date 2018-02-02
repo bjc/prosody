@@ -26,15 +26,15 @@ function handle_pubsub_iq(event)
 	return lib_pubsub.handle_pubsub_iq(event, service);
 end
 
-local function simple_itemstore(config, node)
-	local archive = module:open_store("pubsub_"..node, "archive");
-	return lib_pubsub.archive_itemstore(archive, config, nil, node);
+local function create_simple_itemstore(node_config, node_name)
+	local archive = module:open_store("pubsub_"..node_name, "archive");
+	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
 end
 
 if enable_persistence then
 	module:log("warn", "Item persistence is an experimental feature. Note that ownership information is lost on restart.")
 else
-	simple_itemstore = nil;
+	create_simple_itemstore = nil;
 end
 
 
@@ -202,7 +202,7 @@ function module.load()
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
 
-		itemstore = simple_itemstore;
+		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
 		get_affiliation = get_affiliation;
 
