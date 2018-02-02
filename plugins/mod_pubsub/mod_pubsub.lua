@@ -62,7 +62,7 @@ end
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
-local function add_disco_features_from_service(service)
+local function add_disco_features_from_service(service) --luacheck: ignore 431/service
 	for feature in lib_pubsub.get_feature_set(service) do
 		module:add_feature(xmlns_pubsub.."#"..feature);
 	end
