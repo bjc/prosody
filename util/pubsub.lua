@@ -17,9 +17,28 @@ local default_node_config = {
 };
 local default_node_config_mt = { __index = default_node_config };
 
+-- Storage helper functions
+
+local function load_node_from_store(nodestore, node_name)
+	local node = nodestore:get(node_name);
+	node.config = setmetatable(node.config or {}, default_node_config_mt);
+	return node;
+end
+
+local function save_node_to_store(nodestore, node)
+	return nodestore:set(node.name, {
+		name = node.name;
+		config = node.config;
+		subscribers = node.subscribers;
+		affiliations = node.affiliations;
+	});
+end
+
+-- Create and return a new service object
 local function new(config)
 	config = config or {};
-	return setmetatable({
+
+	local service = setmetatable({
 		config = setmetatable(config, default_config_mt);
 		node_defaults = setmetatable(config.node_defaults or {}, default_node_config_mt);
 		affiliations = {};
@@ -28,6 +47,16 @@ local function new(config)
 		data = {};
 		events = events.new();
 	}, service_mt);
+
+	-- Load nodes from storage, if we have a store and it supports iterating over stored items
+	if config.nodestore and config.nodestore.users then
+		for node_name in config.nodestore:users() do
+			service.nodes[node_name] = load_node_from_store(config.nodestore, node_name);
+			service.data[node_name] = config.itemstore(service.nodes[node_name].config, node_name);
+		end
+	end
+
+	return service;
 end
 
 --- Service methods
@@ -219,13 +248,24 @@ function service:create(node, actor, options)
 		config = setmetatable(options or {}, {__index=self.node_defaults});
 		affiliations = {};
 	};
+
+	if self.config.nodestore then
+		local ok, err = save_node_to_store(self.config.nodestore, self.nodes[node]);
+		if not ok then
+			self.nodes[node] = nil;
+			return ok, err;
+		end
+	end
+
 	self.data[node] = self.config.itemstore(self.nodes[node].config, node);
 	self.events.fire_event("node-created", { node = node, actor = actor });
 	local ok, err = self:set_affiliation(node, true, actor, "owner");
 	if not ok then
 		self.nodes[node] = nil;
 		self.data[node] = nil;
+		return ok, err;
 	end
+
 	return ok, err;
 end
 
