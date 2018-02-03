@@ -539,7 +539,10 @@ end
 -- Connected!
 function interface:onconnect()
 	self:setflags(true, false);
-	self:on("connect");
+	if not self._connected then
+		self._connected = true;
+		self:on("connect");
+	end
 end
 
 function interface:onfirstwritable()
