@@ -113,7 +113,9 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 end, 500)
 
 module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
-	-- TODO: Dialback wasn't loaded.  Do something useful.
+	session.log("debug", "No fallback from SASL EXTERNAL failure, giving up");
+	session:close();
+	return true;
 end, 90)
 
 module:hook_tag("http://etherx.jabber.org/streams", "features", function (session, stanza)
