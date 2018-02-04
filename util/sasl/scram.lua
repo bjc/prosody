@@ -160,7 +160,7 @@ local function scram_gen(hash_name, H_f, HMAC_f)
 			end
 			self.username = username;
 
-			-- retreive credentials
+			-- retrieve credentials
 			local stored_key, server_key, salt, iteration_count;
 			if self.profile.plain then
 				local password, status = self.profile.plain(self, username, self.realm)

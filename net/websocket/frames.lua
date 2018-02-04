@@ -112,9 +112,9 @@ end
 -- TODO: optimize
 local function apply_mask(str, key, from, to)
 	from = from or 1
-	if from < 0 then from = #str + from + 1 end -- negative indicies
+	if from < 0 then from = #str + from + 1 end -- negative indices
 	to = to or #str
-	if to < 0 then to = #str + to + 1 end -- negative indicies
+	if to < 0 then to = #str + to + 1 end -- negative indices
 	local key_len = #key
 	local counter = 0;
 	local data = {};

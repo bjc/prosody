@@ -5,9 +5,9 @@
 
 			notes:
 			-- when using luaevent, never register 2 or more EV_READ at one socket, same for EV_WRITE
-			-- you cant even register a new EV_READ/EV_WRITE callback inside another one
+			-- you can't even register a new EV_READ/EV_WRITE callback inside another one
 			-- to do some of the above, use timeout events or something what will called from outside
-			-- dont let garbagecollect eventcallbacks, as long they are running
+			-- don't let garbagecollect eventcallbacks, as long they are running
 			-- when using luasec, there are 4 cases of timeout errors: wantread or wantwrite during reading or writing
 
 --]]
@@ -157,7 +157,7 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 		self.fatalerror = err
 		self.conn = nil  -- cannot be used anymore
 		if call_onconnect then
-			self.ondisconnect = nil  -- dont call this when client isnt really connected
+			self.ondisconnect = nil  -- don't call this when client isn't really connected
 		end
 		self:_close()
 		debug( "fatal error while ssl wrapping:", err )
@@ -200,7 +200,7 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 			end
 			if self.fatalerror then
 				if call_onconnect then
-					self.ondisconnect = nil  -- dont call this when client isnt really connected
+					self.ondisconnect = nil  -- don't call this when client isn't really connected
 				end
 				self:_close()
 				debug( "handshake failed because:", self.fatalerror )
@@ -229,7 +229,7 @@ function interface_mt:_destroy()  -- close this interface + events and call last
 		_ = self.eventsession and self.eventsession:close( )
 		_ = self.eventwritetimeout and self.eventwritetimeout:close( )
 		_ = self.eventreadtimeout and self.eventreadtimeout:close( )
-		-- call ondisconnect listener (wont be the case if handshake failed on connect)
+		-- call ondisconnect listener (won't be the case if handshake failed on connect)
 		_ = self.ondisconnect and self:ondisconnect( self.fatalerror ~= "client to close" and self.fatalerror)
 		_ = self.conn and self.conn:close( ) -- close connection
 		_ = self._server and self._server:counter(-1);
@@ -517,7 +517,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 			interface.writebuffer = { t_concat(interface.writebuffer) }
 			local succ, err, byte = interface.conn:send( interface.writebuffer[1], 1, interface.writebufferlen )
 			--vdebug( "write data:", interface.writebuffer, "error:", err, "part:", byte )
-			if succ then  -- writing succesful
+			if succ then  -- writing successful
 				interface.writebuffer[1] = nil
 				interface.writebufferlen = 0
 				interface:ondrain();
@@ -546,7 +546,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 						return -1;
 					end
 					interface.eventwritetimeout = addevent( base, nil, EV_TIMEOUT, callback, cfg.WRITE_TIMEOUT )  -- reg a new timeout event
-					debug( "wantread during write attempt, reg it in readcallback but dont know what really happens next..." )
+					debug( "wantread during write attempt, reg it in readcallback but don't know what really happens next..." )
 					-- hopefully this works with luasec; its simply not possible to use 2 different write events on a socket in luaevent
 					return -1
 				end
@@ -602,8 +602,8 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 				end
 				interface.eventreadtimeout = addevent( base, nil, EV_TIMEOUT,
 					function( ) interface:_close() end, cfg.READ_TIMEOUT)
-				debug( "wantwrite during read attempt, reg it in writecallback but dont know what really happens next..." )
-				-- to be honest i dont know what happens next, if it is allowed to first read, the write etc...
+				debug( "wantwrite during read attempt, reg it in writecallback but don't know what really happens next..." )
+				-- to be honest i don't know what happens next, if it is allowed to first read, the write etc...
 			else  -- connection was closed or fatal error
 				interface.fatalerror = err
 				debug( "connection failed in read event:", interface.fatalerror )

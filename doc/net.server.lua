@@ -135,7 +135,7 @@ end
 --[[ Links to two handles together, so anything written to one is piped to the other
 
 Arguments:
-  - sender, reciever: handles to link
+  - sender, receiver: handles to link
   - buffersize: maximum #bytes until sender will be locked
 ]]
 local function link(sender, receiver, buffersize)

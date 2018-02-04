@@ -117,7 +117,7 @@ local function get_caps_hash_from_presence(stanza, current)
 end
 
 module:hook("presence/bare", function(event)
-	-- inbound presence to bare JID recieved
+	-- inbound presence to bare JID received
 	local origin, stanza = event.origin, event.stanza;
 	local user = stanza.attr.to or (origin.username..'@'..origin.host);
 	local t = stanza.attr.type;

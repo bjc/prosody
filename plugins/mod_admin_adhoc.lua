@@ -369,7 +369,7 @@ local list_s2s_this_result = dataforms_new {
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/s2s#list" };
 	{ name = "sessions", type = "text-multi", label = "Connections:" };
-	{ name = "num_in", type = "text-single", label = "#incomming connections:" };
+	{ name = "num_in", type = "text-single", label = "#incoming connections:" };
 	{ name = "num_out", type = "text-single", label = "#outgoing connections:" };
 };
 
