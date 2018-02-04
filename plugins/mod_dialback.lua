@@ -153,7 +153,8 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 				valid = "invalid";
 			end
 			if dialback_verifying.destroyed then
-				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result", tostring(dialback_verifying):match("%w+$"));
+				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result",
+					tostring(dialback_verifying):match("%w+$"));
 			else
 				dialback_verifying.sends2s(
 						st.stanza("db:result", { from = attr.to, to = attr.from, id = attr.id, type = valid })
