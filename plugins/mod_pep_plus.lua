@@ -303,7 +303,7 @@ local function update_subscriptions(recipient, service_name, nodes)
 end
 
 module:hook("presence/bare", function(event)
-	-- inbound presence to bare JID recieved
+	-- inbound presence to bare JID received
 	local origin, stanza = event.origin, event.stanza;
 	local t = stanza.attr.type;
 	local is_self = not stanza.attr.to;

@@ -15,7 +15,7 @@ session {
 	full_jid -- convenience for the above 3 as string in username@host/resource form (not defined before resource binding)
 	priority -- the resource priority, default: 0
 	presence -- the last non-directed presence with no type attribute. initially nil. reset to nil on unavailable presence.
-	interested -- true if the resource requested the roster. Interested resources recieve roster updates. Initially nil.
+	interested -- true if the resource requested the roster. Interested resources receive roster updates. Initially nil.
 	roster -- the user's roster. Loaded as soon as the resource is bound (session becomes a connected resource).
 	
 	-- methods --

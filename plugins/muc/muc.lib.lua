@@ -576,7 +576,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 				self:route_stanza(pr);
 			end
 			if is_first_dest_session and is_last_orig_session then -- Normal nick change
-				log("debug", "no sessions in %s left; publically marking as nick change", orig_occupant.nick);
+				log("debug", "no sessions in %s left; publicly marking as nick change", orig_occupant.nick);
 				orig_x:tag("status", {code = "303";}):up();
 			else -- The session itself always needs to see a nick change
 				-- don't want to get our old nick's available presence,

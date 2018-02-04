@@ -132,7 +132,7 @@ _fullservers = { } -- servers in a paused state while there are too many clients
 
 _readlistlen = 0 -- length of readlist
 _sendlistlen = 0 -- length of sendlist
-_timerlistlen = 0 -- lenght of timerlist
+_timerlistlen = 0 -- length of timerlist
 
 _sendtraffic = 0 -- some stats
 _readtraffic = 0
@@ -420,7 +420,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
 			_closelist[ handler ] = "send buffer exceeded"	 -- cannot close the client at the moment, have to wait to the end of the cycle
-			handler.write = idfalse -- dont write anymore
+			handler.write = idfalse -- don't write anymore
 			return false
 		elseif socket and not _sendlist[ socket ] then
 			_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
@@ -531,7 +531,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		else
 			succ, err, count = false, "unexpected close", 0;
 		end
-		if succ then	-- sending succesful
+		if succ then	-- sending successful
 			bufferqueuelen = 0
 			bufferlen = 0
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen ) -- delete socket from writelist

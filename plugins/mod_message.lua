@@ -63,7 +63,7 @@ local function process_to_bare(bare, origin, stanza)
 end
 
 module:hook("message/full", function(data)
-	-- message to full JID recieved
+	-- message to full JID received
 	local origin, stanza = data.origin, data.stanza;
 
 	local session = full_sessions[stanza.attr.to];
@@ -75,7 +75,7 @@ module:hook("message/full", function(data)
 end, -1);
 
 module:hook("message/bare", function(data)
-	-- message to bare JID recieved
+	-- message to bare JID received
 	local origin, stanza = data.origin, data.stanza;
 
 	return process_to_bare(stanza.attr.to or (origin.username..'@'..origin.host), origin, stanza);

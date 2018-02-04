@@ -13,7 +13,7 @@ local full_sessions = prosody.full_sessions;
 
 if module:get_host_type() == "local" then
 	module:hook("iq/full", function(data)
-		-- IQ to full JID recieved
+		-- IQ to full JID received
 		local origin, stanza = data.origin, data.stanza;
 
 		local session = full_sessions[stanza.attr.to];
@@ -27,7 +27,7 @@ if module:get_host_type() == "local" then
 end
 
 module:hook("iq/bare", function(data)
-	-- IQ to bare JID recieved
+	-- IQ to bare JID received
 	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
@@ -44,7 +44,7 @@ module:hook("iq/bare", function(data)
 end);
 
 module:hook("iq/self", function(data)
-	-- IQ to self JID recieved
+	-- IQ to self JID received
 	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
@@ -60,7 +60,7 @@ module:hook("iq/self", function(data)
 end);
 
 module:hook("iq/host", function(data)
-	-- IQ to a local host recieved
+	-- IQ to a local host received
 	local stanza = data.stanza;
 	local type = stanza.attr.type;
 
