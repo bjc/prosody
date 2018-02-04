@@ -120,7 +120,8 @@ function module.add_host(module)
 					local name = module:get_option_string("name");
 					if name then
 						event.origin.send(st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-							:tag("identity", { category = "component", type = "generic", name = module:get_option_string("name", "Prosody") }))
+							:tag("identity", { category = "component", type = "generic", name = module:get_option_string("name", "Prosody") })):up()
+							:tag("feature", { var = "http://jabber.org/protocol/disco#info" }):up()
 						return true;
 					end
 				end
