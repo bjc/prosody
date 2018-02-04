@@ -153,7 +153,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 				valid = "invalid";
 			end
 			if dialback_verifying.destroyed then
-				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the db result",
+				log("warn", "Incoming s2s session %s was closed in the meantime, so we can't notify it of the dialback result",
 					tostring(dialback_verifying):match("%w+$"));
 			else
 				dialback_verifying.sends2s(
@@ -189,6 +189,14 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		return true;
 	end
 end);
+
+module:hook_tag("urn:ietf:params:xml:ns:xmpp-sasl", "failure", function (origin, stanza) -- luacheck: ignore 212/stanza
+	if origin.external_auth == "failed" then
+		module:log("debug", "SASL EXTERNAL failed, falling back to dialback");
+		initiate_dialback(origin);
+		return true;
+	end
+end, 100);
 
 module:hook_tag(xmlns_stream, "features", function (origin, stanza) -- luacheck: ignore 212/stanza
 	if not origin.external_auth or origin.external_auth == "failed" then

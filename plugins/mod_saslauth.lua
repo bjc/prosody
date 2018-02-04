@@ -110,9 +110,14 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, condition);
 
 	session.external_auth = "failed"
-	session:close();
-	return true;
+	session.external_auth_failure_reason = condition;
 end, 500)
+
+module:hook_tag(xmlns_sasl, "failure", function (session, stanza) -- luacheck: ignore 212/stanza
+	session.log("debug", "No fallback from SASL EXTERNAL failure, giving up");
+	session:close(nil, session.external_auth_failure_reason);
+	return true;
+end, 90)
 
 module:hook_tag("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or not session.secure then return; end
