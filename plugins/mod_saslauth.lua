@@ -110,9 +110,11 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, condition);
 
 	session.external_auth = "failed"
-	session:close();
-	return true;
 end, 500)
+
+module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
+	-- TODO: Dialback wasn't loaded.  Do something useful.
+end, 90)
 
 module:hook_tag("http://etherx.jabber.org/streams", "features", function (session, stanza)
 	if session.type ~= "s2sout_unauthed" or not session.secure then return; end
