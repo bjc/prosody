@@ -113,7 +113,7 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 	session.external_auth_failure_reason = condition;
 end, 500)
 
-module:hook_stanza(xmlns_sasl, "failure", function (session, stanza)
+module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 	session.log("debug", "No fallback from SASL EXTERNAL failure, giving up");
 	session:close(nil, session.external_auth_failure_reason);
 	return true;
