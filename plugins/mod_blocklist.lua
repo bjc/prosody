@@ -114,11 +114,13 @@ end, -1);
 -- Add or remove some jid(s) from the blocklist
 -- We want this to be atomic and not do a partial update
 local function edit_blocklist(event)
+	local now = os.time();
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	local action = stanza.tags[1]; -- "block" or "unblock"
-	local is_blocking = action.name == "block" or nil; -- nil if unblocking
+	local is_blocking = action.name == "block" and now or nil; -- nil if unblocking
 	local new = {}; -- JIDs to block depending or unblock on action
+
 
 	-- XEP-0191 sayeth:
 	-- > When the user blocks communications with the contact, the user's
@@ -158,15 +160,15 @@ local function edit_blocklist(event)
 
 	local new_blocklist = {
 		-- We set the [false] key to someting as a signal not to migrate privacy lists
-		[false] = blocklist[false] or { created = os.time(); };
+		[false] = blocklist[false] or { created = now; };
 	};
 	if type(blocklist[false]) == "table" then
-		new_blocklist[false].modified = os.time();
+		new_blocklist[false].modified = now;
 	end
 
 	if is_blocking or next(new) then
-		for jid in pairs(blocklist) do
-			if jid then new_blocklist[jid] = true; end
+		for jid, t in pairs(blocklist) do
+			if jid then new_blocklist[jid] = t; end
 		end
 		for jid in pairs(new) do
 			new_blocklist[jid] = is_blocking;
