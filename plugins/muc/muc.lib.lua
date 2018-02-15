@@ -1378,7 +1378,7 @@ function room_mt:freeze(live)
 			end
 		end
 		local history = self._history;
-		if history then
+		if history and history[1] ~= nil then
 			state._last_message = st.preserialize(history[#history].stanza);
 			state._last_message_at = history[#history].timestamp;
 		end
