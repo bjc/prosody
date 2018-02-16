@@ -12,7 +12,7 @@ local t_concat = table.concat;
 
 local _ENV = nil;
 
-local set_mt = {};
+local set_mt = { __name = "set" };
 function set_mt.__call(set, _, k)
 	return next(set._items, k);
 end
