@@ -9,6 +9,7 @@ New features
 -   Rewritten more extensible MUC module
     -   Store inactive rooms to disk
     -   Store rooms to disk on shutdown
+    -   Voice requests
 -   mod\_pep\_plus
 -   Persistence of PubSub data (applies to mod\_pubsub and mod\_pep\_plus)
 -   Asynchronous operations
