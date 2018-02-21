@@ -14,6 +14,7 @@ local global_default_policy = module:get_option_string("default_archive_policy",
 if global_default_policy ~= "roster" then
 	global_default_policy = module:get_option_boolean("default_archive_policy", global_default_policy);
 end
+local smart_enable = module:get_option_boolean("mam_smart_enable", false);
 
 do
 	-- luacheck: ignore 211/prefs_format
@@ -30,17 +31,37 @@ local sessions = prosody.hosts[module.host].sessions;
 local archive_store = module:get_option_string("archive_store", "archive");
 local prefs = module:open_store(archive_store .. "_prefs");
 
-local function get_prefs(user)
+local function get_prefs(user, explicit)
 	local user_sessions = sessions[user];
 	local user_prefs = user_sessions and user_sessions.archive_prefs
 	if not user_prefs then
+		-- prefs not cached
 		user_prefs = prefs:get(user);
+		if not user_prefs then
+			-- prefs not set
+			if smart_enable and explicit then
+				-- a mam-capable client was involved in this action, set defaults
+				user_prefs = { [false] = global_default_policy };
+				prefs:set(user, user_prefs);
+			end
+		end
 		if user_sessions then
+			-- cache settings if they originate from user action
 			user_sessions.archive_prefs = user_prefs;
 		end
+		if not user_prefs then
+			if smart_enable then
+				-- not yet enabled, either explicitly or "smart"
+				user_prefs = { [false] = false };
+			else
+				-- no explicit settings, return defaults
+				user_prefs = { [false] = global_default_policy };
+			end
+		end
 	end
-	return user_prefs or { [false] = global_default_policy };
+	return user_prefs;
 end
+
 local function set_prefs(user, user_prefs)
 	local user_sessions = sessions[user];
 	if user_sessions then
