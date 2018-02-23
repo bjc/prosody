@@ -222,13 +222,13 @@ local function request(self, u, ex, callback)
 		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
-	local handler, ret = server.addclient(host, port_number, listener, "*a", sslctx)
-	if not handler then
+	local conn, ret = server.addclient(host, port_number, listener, "*a", sslctx)
+	if not conn then
 		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = ret });
 		callback(ret, 0, req);
 		return nil, ret;
 	end
-	req.conn = handler
+	req.conn = conn
 	req.write = function (...) return req.conn:write(...); end
 
 	req.callback = function (content, code, response, request)
