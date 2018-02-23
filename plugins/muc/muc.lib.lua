@@ -371,7 +371,8 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 		:tag('status'):text(error_message));
 	self:save_occupant(occupant);
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
-		:tag("status", {code = "307"})
+		:tag("status", {code = "307"}):up()
+		:tag("status", {code = "333"})
 	self:publicise_occupant_status(occupant, x);
 	if occupant.jid == real_jid then -- Was last session
 		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
