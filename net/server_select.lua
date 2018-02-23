@@ -905,15 +905,6 @@ loop = function(once) -- this is the main loop of the program
 		end
 
 		local read, write, err = socket_select( _readlist, _sendlist, math_min(_selecttimeout, next_timer_time) )
-		for _, socket in ipairs( write ) do -- send data waiting in writequeues
-			local handler = _socketlist[ socket ]
-			if handler then
-				handler.sendbuffer( )
-			else
-				closesocket( socket )
-				out_put "server.lua: found no handler and closed socket (writelist)"	-- this should not happen
-			end
-		end
 		for _, socket in ipairs( read ) do -- receive data
 			local handler = _socketlist[ socket ]
 			if handler then
@@ -921,6 +912,15 @@ loop = function(once) -- this is the main loop of the program
 			else
 				closesocket( socket )
 				out_put "server.lua: found no handler and closed socket (readlist)" -- this can happen
+			end
+		end
+		for _, socket in ipairs( write ) do -- send data waiting in writequeues
+			local handler = _socketlist[ socket ]
+			if handler then
+				handler.sendbuffer( )
+			else
+				closesocket( socket )
+				out_put "server.lua: found no handler and closed socket (writelist)"	-- this should not happen
 			end
 		end
 		for handler, err in pairs( _closelist ) do
@@ -978,6 +978,7 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
+		_readlistlen = addsocket(_readlist, socket, _readlistlen)
 		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
 		if listeners.onconnect then
 			-- When socket is writeable, call onconnect
