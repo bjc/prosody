@@ -28,7 +28,7 @@ local function attempt_connection(p)
 	end
 	p.target_resolver:next(function (conn_type, ip, port, extra)
 		p:log("debug", "Next target to try is %s:%d", ip, port);
-		local conn = assert(server.addclient(ip, port, pending_connection_listeners, p.options.pattern, p.options.sslctx, conn_type, extra));
+		local conn = assert(server.addclient(ip, port, pending_connection_listeners, p.options.pattern or "*a", p.options.sslctx, conn_type, extra));
 		p.conn = conn;
 		pending_connections_map[conn] = p;
 	end);
