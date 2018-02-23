@@ -100,9 +100,10 @@ function listener.ondetach(conn)
 end
 
 local function destroy_request(request)
-	if request.conn then
+	local conn = request.conn;
+	if conn then
 		request.conn = nil;
-		request.handler:close()
+		conn:close()
 	end
 end
 
@@ -221,14 +222,14 @@ local function request(self, u, ex, callback)
 		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
-	local handler, conn = server.addclient(host, port_number, listener, "*a", sslctx)
+	local handler, ret = server.addclient(host, port_number, listener, "*a", sslctx)
 	if not handler then
-		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = conn });
-		callback(conn, 0, req);
-		return nil, conn;
+		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = ret });
+		callback(ret, 0, req);
+		return nil, ret;
 	end
-	req.handler, req.conn = handler, conn
-	req.write = function (...) return req.handler:write(...); end
+	req.conn = handler
+	req.write = function (...) return req.conn:write(...); end
 
 	req.callback = function (content, code, response, request)
 		do
@@ -243,7 +244,7 @@ local function request(self, u, ex, callback)
 	req.reader = request_reader;
 	req.state = "status";
 
-	requests[req.handler] = req;
+	requests[req.conn] = req;
 
 	self.events.fire_event("request", { http = self, request = req, url = u });
 	return req;
