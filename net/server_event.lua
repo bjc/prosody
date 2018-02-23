@@ -105,9 +105,13 @@ function interface_mt:_start_connection(plainssl) -- called from wrapclient
 			self:ontimeout()  -- call timeout listener
 			self:_close()
 			debug( "new connection failed. id:", self.id, "error:", self.fatalerror )
-		elseif EV_READWRITE == event then
-			self.readcallback(event);
 		else
+			if EV_READWRITE == event then
+				if self.readcallback(event) == -1 then
+					-- Fatal error occurred
+					return -1;
+				end
+			end
 			if plainssl and has_luasec then  -- start ssl session
 				self:starttls(self._sslctx, true)
 			else  -- normal connection
