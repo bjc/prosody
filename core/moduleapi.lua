@@ -71,20 +71,6 @@ end
 function api:add_extension(data)
 	self:add_item("extension", data);
 end
-function api:has_feature(xmlns)
-	for _, feature in ipairs(self:get_host_items("feature")) do
-		if feature == xmlns then return true; end
-	end
-	return false;
-end
-function api:has_identity(category, identity_type, name)
-	for _, id in ipairs(self:get_host_items("identity")) do
-		if id.category == category and id.type == identity_type and id.name == name then
-			return true;
-		end
-	end
-	return false;
-end
 
 function api:fire_event(...)
 	return (hosts[self.host] or prosody).events.fire_event(...);
