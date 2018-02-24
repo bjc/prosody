@@ -338,14 +338,12 @@ function interface:onwriteable()
 	local data = t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
 	if ok then
-		if data ~= "" then
-			for i = #buffer, 1, -1 do
-				buffer[i] = nil;
-			end
-			self:setflags(nil, false);
-			self:setwritetimeout(false);
-			self:ondrain(); -- Be aware of writes in ondrain
+		self:setflags(nil, false);
+		for i = #buffer, 1, -1 do
+			buffer[i] = nil;
 		end
+		self:setwritetimeout(false);
+		self:ondrain(); -- Be aware of writes in ondrain
 		self:onconnect();
 		return;
 	elseif partial then
