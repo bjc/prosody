@@ -79,6 +79,27 @@ int rb_find(lua_State *L) {
 }
 
 /*
+ * Move read position forward without returning the data
+ * (buffer, number) -> boolean
+ */
+int rb_discard(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+	size_t r = luaL_checkinteger(L, 2);
+
+	if(r > b->blen) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	b->blen -= r;
+	b->rpos += r;
+	modpos(b);
+
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+/*
  * Read bytes from buffer
  * (buffer, number, boolean?) -> string
  */
@@ -210,6 +231,8 @@ int luaopen_util_ringbuffer(lua_State *L) {
 		{
 			lua_pushcfunction(L, rb_find);
 			lua_setfield(L, -2, "find");
+			lua_pushcfunction(L, rb_discard);
+			lua_setfield(L, -2, "discard");
 			lua_pushcfunction(L, rb_read);
 			lua_setfield(L, -2, "read");
 			lua_pushcfunction(L, rb_readuntil);
