@@ -76,7 +76,7 @@ module:hook("iq/self/"..xmlns_mam..":prefs", function(event)
 			return true;
 		end
 	end
-	local prefs = prefs_to_stanza(get_prefs(user));
+	local prefs = prefs_to_stanza(get_prefs(user, true));
 	local reply = st.reply(stanza):add_child(prefs);
 	origin.send(reply);
 	return true;
@@ -92,6 +92,7 @@ local query_form = dataform {
 -- Serve form
 module:hook("iq-get/self/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
+	get_prefs(origin.username, true);
 	origin.send(st.reply(stanza):query(xmlns_mam):add_child(query_form:form()));
 	return true;
 end);
@@ -102,6 +103,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local query = stanza.tags[1];
 	local qid = query.attr.queryid;
 
+	get_prefs(origin.username, true);
 	schedule_cleanup(origin.username);
 
 	-- Search query parameters
