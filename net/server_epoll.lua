@@ -306,9 +306,11 @@ end
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self._pattern);
 	if data then
+		self:onconnect();
 		self:on("incoming", data);
 	else
-		if partial then
+		if partial and partial ~= "" then
+			self:onconnect();
 			self:on("incoming", partial, err);
 		end
 		if err == "wantread" then
@@ -336,15 +338,17 @@ function interface:onwriteable()
 	local data = t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
 	if ok then
-		for i = #buffer, 1, -1 do
-			buffer[i] = nil;
+		if data ~= "" then
+			for i = #buffer, 1, -1 do
+				buffer[i] = nil;
+			end
+			self:setflags(nil, false);
+			self:setwritetimeout(false);
+			self:ondrain(); -- Be aware of writes in ondrain
 		end
-		self:setflags(nil, false);
-		self:setwritetimeout(false);
-		self:ondrain(); -- Be aware of writes in ondrain
+		self:onconnect();
 		return;
-	end
-	if partial then
+	elseif partial then
 		buffer[1] = data:sub(partial+1);
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
@@ -505,8 +509,6 @@ function interface:init()
 	if self.tls and not self._tls then
 		return self:starttls();
 	else
-		self.onwriteable = interface.onfirstwritable;
-		self.onreadable = interface.onfirstreadable;
 		self:setwritetimeout();
 		return self:setflags(true, true);
 	end
@@ -538,25 +540,8 @@ end
 
 -- Connected!
 function interface:onconnect()
-	self:setflags(true, false);
-	if not self._connected then
-		self._connected = true;
-		self:on("connect");
-	end
-end
-
-function interface:onfirstwritable()
-	self.onreadable = nil;
-	self.onwriteable = nil;
-	self:onconnect();
-	return self:onwriteable();
-end
-
-function interface:onfirstreadable()
-	self.onreadable = nil;
-	self.onwriteable = nil;
-	self:onconnect();
-	return self:onreadable();
+	self.onconnect = noop;
+	self:on("connect");
 end
 
 local function addserver(addr, port, listeners, pattern, tls)
