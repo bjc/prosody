@@ -39,10 +39,12 @@ int find(ringbuffer *b, const char *s, size_t l) {
 		return 0;
 	}
 
+	/* look for a matching first byte */
 	for(i = 0; i <= b->blen - l; i++) {
 		if(b->buffer[(b->rpos + i) % b->alen] == *s) {
 			m = 1;
 
+			/* check if the following byte also match */
 			for(j = 1; j < l; j++)
 				if(b->buffer[(b->rpos + i + j) % b->alen] != s[j]) {
 					m = 0;
@@ -58,6 +60,10 @@ int find(ringbuffer *b, const char *s, size_t l) {
 	return 0;
 }
 
+/*
+ * Find first position of a substring in buffer
+ * (buffer, string) -> number
+ */
 int rb_find(lua_State *L) {
 	size_t l, m;
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
@@ -72,6 +78,10 @@ int rb_find(lua_State *L) {
 	return 0;
 }
 
+/*
+ * Read bytes from buffer
+ * (buffer, number, boolean?) -> string
+ */
 int rb_read(lua_State *L) {
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	size_t r = luaL_checkinteger(L, 2);
@@ -83,6 +93,7 @@ int rb_read(lua_State *L) {
 	}
 
 	if((b->rpos + r) > b->alen) {
+		/* Substring wraps around to the beginning of the buffer */
 		lua_pushlstring(L, &b->buffer[b->rpos], b->alen - b->rpos);
 		lua_pushlstring(L, b->buffer, r - (b->alen - b->rpos));
 		lua_concat(L, 2);
@@ -99,6 +110,10 @@ int rb_read(lua_State *L) {
 	return 1;
 }
 
+/*
+ * Read buffer until first occurence of a substring
+ * (buffer, string) -> string
+ */
 int rb_readuntil(lua_State *L) {
 	size_t l, m;
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
@@ -114,6 +129,10 @@ int rb_readuntil(lua_State *L) {
 	return 0;
 }
 
+/*
+ * Write bytes into the buffer
+ * (buffer, string) -> integer
+ */
 int rb_write(lua_State *L) {
 	size_t l, w = 0;
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
