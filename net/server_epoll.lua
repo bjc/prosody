@@ -333,7 +333,7 @@ function interface:onreadable()
 end
 
 -- Called when socket is writable
-function interface:onwriteable()
+function interface:onwritable()
 	local buffer = self.writebuffer;
 	local data = t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
@@ -403,7 +403,7 @@ function interface:destroy()
 	self:setwritetimeout(false);
 	self:setreadtimeout(false);
 	self.onreadable = noop;
-	self.onwriteable = noop;
+	self.onwritable = noop;
 	self.destroy = noop;
 	self.close = noop;
 	self.on = noop;
@@ -434,7 +434,7 @@ function interface:starttls(ctx)
 		conn:settimeout(0);
 		self.conn = conn;
 		self.ondrain = nil;
-		self.onwriteable = interface.tlshandskake;
+		self.onwritable = interface.tlshandskake;
 		self.onreadable = interface.tlshandskake;
 		self:setflags(true, true);
 		self:setwritetimeout(cfg.handshake_timeout);
@@ -447,7 +447,7 @@ function interface:tlshandskake()
 	local ok, err = self.conn:dohandshake();
 	if ok then
 		log("debug", "TLS handshake on %s complete", tostring(self));
-		self.onwriteable = nil;
+		self.onwritable = nil;
 		self.onreadable = nil;
 		self._tls = true;
 		self:on("status", "ssl-handshake-complete");
@@ -635,7 +635,7 @@ local function loop(once)
 					conn:onreadable();
 				end
 				if w then
-					conn:onwriteable();
+					conn:onwritable();
 				end
 			else
 				log("debug", "Removing unknown fd %d", fd);
@@ -679,7 +679,7 @@ return {
 			getfd = function () return fd; end;
 			callback = callback;
 			onreadable = onevent;
-			onwriteable = onevent;
+			onwritable = onevent;
 			close = function (self)
 				self:setflags(false, false);
 				fds[fd] = nil;
