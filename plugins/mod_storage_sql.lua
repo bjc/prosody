@@ -43,12 +43,17 @@ local function deserialize(t, value)
 	elseif t == "boolean" then
 		if value == "true" then return true;
 		elseif value == "false" then return false; end
-	elseif t == "number" then return tonumber(value);
+		return nil, "invalid-boolean";
+	elseif t == "number" then
+		value = tonumber(value);
+		if value then return value; end
+		return nil, "invalid-number";
 	elseif t == "json" then
 		return json.decode(value);
 	elseif t == "xml" then
 		return xml_parse(value);
 	end
+	return nil, "Unhandled value type: "..t;
 end
 
 local host = module.host;
@@ -65,7 +70,8 @@ local function keyval_store_get()
 	for row in engine:select(select_sql, host, user or "", store) do
 		haveany = true;
 		local k = row[1];
-		local v = deserialize(row[2], row[3]);
+		local v, e = deserialize(row[2], row[3]);
+		assert(v ~= nil, e);
 		if k and v then
 			if k ~= "" then result[k] = v; elseif type(v) == "table" then
 				for a,b in pairs(v) do
@@ -154,15 +160,17 @@ function map_store:get(username, key)
 		WHERE "host"=? AND "user"=? AND "store"=? AND "key"=?
 		LIMIT 1
 		]];
-		local data;
+		local data, err;
 		if type(key) == "string" and key ~= "" then
 			for row in engine:select(query, host, username or "", self.store, key) do
-				data = deserialize(row[1], row[2]);
+				data, err = deserialize(row[1], row[2]);
+				assert(data ~= nil, err);
 			end
 			return data;
 		else
 			for row in engine:select(query, host, username or "", self.store, "") do
-				data = deserialize(row[1], row[2]);
+				data, err = deserialize(row[1], row[2]);
+				assert(data ~= nil, err);
 			end
 			return data and data[key] or nil;
 		end
@@ -200,9 +208,10 @@ function map_store:set_keys(username, keydatas)
 					engine:insert(insert_sql, host, username or "", self.store, key, t, value);
 				end
 			else
-				local extradata = {};
+				local extradata, err = {};
 				for row in engine:select(select_extradata_sql, host, username or "", self.store, "") do
-					extradata = deserialize(row[1], row[2]);
+					extradata, err = deserialize(row[1], row[2]);
+					assert(extradata ~= nil, err);
 				end
 				engine:delete(delete_sql, host, username or "", self.store, "");
 				extradata[key] = data;
@@ -356,7 +365,9 @@ function archive_store:find(username, query)
 	return function()
 		local row = result();
 		if row ~= nil then
-			return row[1], deserialize(row[2], row[3]), row[4], row[5];
+			local value, err = deserialize(row[2], row[3]);
+			assert(value ~= nil, err);
+			return row[1], value, row[4], row[5];
 		end
 	end, total;
 end
