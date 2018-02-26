@@ -56,7 +56,8 @@ function pending_connection_listeners.ondisconnect(conn, reason)
 		log("warn", "Failed connection, but unexpected!");
 		return;
 	end
-	p:log("debug", "Connection attempt failed");
+	p.last_error = reason or "unknown reason";
+	p:log("debug", "Connection attempt failed: %s", p.last_error);
 	attempt_connection(p);
 end
 
