@@ -334,6 +334,7 @@ end
 
 -- Called when socket is writable
 function interface:onwritable()
+	self:onconnect();
 	local buffer = self.writebuffer;
 	local data = t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
@@ -344,7 +345,6 @@ function interface:onwritable()
 		end
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
-		self:onconnect();
 		return;
 	elseif partial then
 		buffer[1] = data:sub(partial+1);
