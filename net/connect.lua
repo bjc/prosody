@@ -27,6 +27,14 @@ local function attempt_connection(p)
 		p.conn = nil;
 	end
 	p.target_resolver:next(function (conn_type, ip, port, extra)
+		if not conn_type then
+			-- No more targets to try
+			p:log("debug", "No more connection targets to try");
+			if p.listeners.onfail then
+				p.listeners.onfail(p.data, p.last_error or "unable to connect to service");
+			end
+			return;
+		end
 		p:log("debug", "Next target to try is %s:%d", ip, port);
 		local conn = assert(server.addclient(ip, port, pending_connection_listeners, p.options.pattern or "*a", p.options.sslctx, conn_type, extra));
 		p.conn = conn;
