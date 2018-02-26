@@ -80,7 +80,7 @@ local function connect(target_resolver, listeners, options, data)
 		target_resolver = target_resolver;
 		listeners = assert(listeners);
 		options = options or {};
-		cb = cb;
+		data = data;
 	}, pending_connection_mt);
 
 	p:log("debug", "Starting connection process");
