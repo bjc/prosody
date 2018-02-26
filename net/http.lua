@@ -13,9 +13,10 @@ local util_http = require "util.http";
 local events = require "util.events";
 local verify_identity = require"util.x509".verify_identity;
 
-local ssl_available = pcall(require, "ssl");
+local basic_resolver = require "net.resolvers.basic";
+local connect = require "net.connect".connect;
 
-local server = require "net.server"
+local ssl_available = pcall(require, "ssl");
 
 local t_insert, t_concat = table.insert, table.concat;
 local pairs = pairs;
@@ -33,8 +34,74 @@ local function make_id(req) return (tostring(req):match("%x+$")); end
 
 local listener = { default_port = 80, default_mode = "*a" };
 
+-- Request-related helper functions
+local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
+local function log_if_failed(id, ret, ...)
+	if not ret then
+		log("error", "Request '%s': error in callback: %s", id, tostring((...)));
+	end
+	return ...;
+end
+
+local function destroy_request(request)
+	local conn = request.conn;
+	if conn then
+		request.conn = nil;
+		conn:close()
+	end
+end
+
+local function request_reader(request, data, err)
+	if not request.parser then
+		local function error_cb(reason)
+			if request.callback then
+				request.callback(reason or "connection-closed", 0, request);
+				request.callback = nil;
+			end
+			destroy_request(request);
+		end
+
+		if not data then
+			error_cb(err);
+			return;
+		end
+
+		local function success_cb(r)
+			if request.callback then
+				request.callback(r.body, r.code, r, request);
+				request.callback = nil;
+			end
+			destroy_request(request);
+		end
+		local function options_cb()
+			return request;
+		end
+		request.parser = httpstream_new(success_cb, error_cb, "client", options_cb);
+	end
+	request.parser:feed(data);
+end
+
+-- Connection listener callbacks
 function listener.onconnect(conn)
 	local req = requests[conn];
+
+	-- Initialize request object
+	req.write = function (...) return req.conn:write(...); end
+	local callback = req.callback;
+	req.callback = function (content, code, response, request)
+		do
+			local event = { http = req.http, url = req.url, request = req, response = response, content = content, code = code, callback = req.callback };
+			req.http.events.fire_event("response", event);
+			content, code, response = event.content, event.code, event.response;
+		end
+
+		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
+		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
+	end
+	req.reader = request_reader;
+	req.state = "status";
+
+	requests[req.conn] = req;
 
 	-- Validate certificate
 	if not req.insecure and conn:ssl() then
@@ -95,59 +162,24 @@ function listener.ondisconnect(conn, err)
 	requests[conn] = nil;
 end
 
+function listener.onattach(conn, req)
+	requests[conn] = req;
+	req.conn = conn;
+end
+
 function listener.ondetach(conn)
 	requests[conn] = nil;
 end
 
-local function destroy_request(request)
-	local conn = request.conn;
-	if conn then
-		request.conn = nil;
-		conn:close()
-	end
-end
-
-local function request_reader(request, data, err)
-	if not request.parser then
-		local function error_cb(reason)
-			if request.callback then
-				request.callback(reason or "connection-closed", 0, request);
-				request.callback = nil;
-			end
-			destroy_request(request);
-		end
-
-		if not data then
-			error_cb(err);
-			return;
-		end
-
-		local function success_cb(r)
-			if request.callback then
-				request.callback(r.body, r.code, r, request);
-				request.callback = nil;
-			end
-			destroy_request(request);
-		end
-		local function options_cb()
-			return request;
-		end
-		request.parser = httpstream_new(success_cb, error_cb, "client", options_cb);
-	end
-	request.parser:feed(data);
-end
-
-local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
-local function log_if_failed(id, ret, ...)
-	if not ret then
-		log("error", "Request '%s': error in callback: %s", id, tostring((...)));
-	end
-	return ...;
+function listener.onfail(req, reason)
+	req.http.events.fire_event("request-connection-error", { http = req.http, request = req, url = req.url, err = reason });
+	req.callback(reason or "connection failed", 0, req);
 end
 
 local function request(self, u, ex, callback)
 	local req = url.parse(u);
 	req.url = u;
+	req.http = self;
 
 	if not (req and req.host) then
 		callback("invalid-url", 0, req);
@@ -166,7 +198,7 @@ local function request(self, u, ex, callback)
 		if ret then
 			return ret;
 		end
-		req, u, ex, callback = event.request, event.url, event.options, event.callback;
+		req, u, ex, req.callback = event.request, event.url, event.options, event.callback;
 	end
 
 	local method, headers, body;
@@ -222,29 +254,8 @@ local function request(self, u, ex, callback)
 		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
-	local conn, ret = server.addclient(host, port_number, listener, "*a", sslctx)
-	if not conn then
-		self.events.fire_event("request-connection-error", { http = self, request = req, url = u, err = ret });
-		callback(ret, 0, req);
-		return nil, ret;
-	end
-	req.conn = conn
-	req.write = function (...) return req.conn:write(...); end
-
-	req.callback = function (content, code, response, request)
-		do
-			local event = { http = self, url = u, request = req, response = response, content = content, code = code, callback = callback };
-			self.events.fire_event("response", event);
-			content, code, response = event.content, event.code, event.response;
-		end
-
-		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
-		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
-	end
-	req.reader = request_reader;
-	req.state = "status";
-
-	requests[req.conn] = req;
+	local http_service = basic_resolver.new(host, port_number);
+	connect(http_service, listener, { sslctx = sslctx }, req);
 
 	self.events.fire_event("request", { http = self, request = req, url = u });
 	return req;
