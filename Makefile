@@ -37,8 +37,9 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	$(INSTALL_EXEC) ./prosodyctl.install $(BIN)/prosodyctl
 	$(INSTALL_DATA) core/*.lua $(SOURCE)/core
 	$(INSTALL_DATA) net/*.lua $(SOURCE)/net
-	$(MKDIR) $(SOURCE)/net/http $(SOURCE)/net/websocket
+	$(MKDIR) $(SOURCE)/net/http $(SOURCE)/net/resolvers $(SOURCE)/net/websocket
 	$(INSTALL_DATA) net/http/*.lua $(SOURCE)/net/http
+	$(INSTALL_DATA) net/resolvers/*.lua $(SOURCE)/net/resolvers
 	$(INSTALL_DATA) net/websocket/*.lua $(SOURCE)/net/websocket
 	$(INSTALL_DATA) util/*.lua $(SOURCE)/util
 	$(INSTALL_DATA) util/*.so $(SOURCE)/util
