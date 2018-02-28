@@ -23,6 +23,7 @@ local incoming_s2s = incoming_s2s;
 local fire_event = prosody.events.fire_event;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function new_incoming(conn)
 	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };

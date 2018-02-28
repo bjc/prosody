@@ -9,6 +9,7 @@
 local t_insert, t_remove = table.insert, table.remove;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local new_filter_hooks = {};
 

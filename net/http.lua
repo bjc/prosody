@@ -27,6 +27,7 @@ local error = error
 local log = require "util.logger".init("http");
 
 local _ENV = nil;
+-- luacheck: std none
 
 local requests = {}; -- Open requests
 

@@ -3,6 +3,7 @@ local setmetatable = setmetatable;
 local os_time = os.time;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local watchdog_methods = {};
 local watchdog_mt = { __index = watchdog_methods };

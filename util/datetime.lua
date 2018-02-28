@@ -15,6 +15,7 @@ local os_difftime = os.difftime;
 local tonumber = tonumber;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function date(t)
 	return os_date("!%Y-%m-%d", t);

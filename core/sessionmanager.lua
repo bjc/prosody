@@ -26,6 +26,7 @@ local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function new_session(conn)
 	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };

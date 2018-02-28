@@ -26,6 +26,7 @@ local generate_uuid = require "util.uuid".generate;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 
 local _ENV = nil;
+-- luacheck: std none
 
 --=========================
 --SASL DIGEST-MD5 according to RFC 2831

@@ -40,6 +40,7 @@ pcall(function()
 end);
 
 local _ENV = nil;
+-- luacheck: std none
 
 ---- utils -----
 local encode, decode, store_encode;

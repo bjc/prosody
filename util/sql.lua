@@ -14,6 +14,7 @@ DBI.Drivers();
 local build_url = require "socket.url".build;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local column_mt = {};
 local table_mt = {};

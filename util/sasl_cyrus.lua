@@ -61,6 +61,7 @@ local sasl_errstring = {
 setmetatable(sasl_errstring, { __index = function() return "undefined error!" end });
 
 local _ENV = nil;
+-- luacheck: std none
 
 local method = {};
 method.__index = method;

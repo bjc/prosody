@@ -73,6 +73,7 @@ local default_timeout = 15;
 
 -------------------------------------------------- module dns
 local _ENV = nil;
+-- luacheck: std none
 local dns = {};
 
 

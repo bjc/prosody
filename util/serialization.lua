@@ -21,6 +21,7 @@ local log = require "util.logger".init("serialization");
 local envload = require"util.envload".envload;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local indent = function(i)
 	return string_rep("\t", i);

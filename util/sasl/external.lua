@@ -1,6 +1,7 @@
 local saslprep = require "util.encodings".stringprep.saslprep;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function external(self, message)
 	message = saslprep(message);

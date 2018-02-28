@@ -13,6 +13,7 @@ local t_insert, t_sort, t_concat = table.insert, table.sort, table.concat;
 local ipairs = ipairs;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function calculate_hash(disco_info)
 	local identities, features, extensions = {}, {}, {};

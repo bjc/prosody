@@ -23,6 +23,7 @@ local st = require "util.stanza";
 local storagemanager = require "core.storagemanager";
 
 local _ENV = nil;
+-- luacheck: std none
 
 local save_roster; -- forward declaration
 

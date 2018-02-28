@@ -10,6 +10,7 @@ local t_remove = table.remove;
 local parse_xml = require "util.xml".parse;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function trim_xml(stanza)
 	for i=#stanza,1,-1 do

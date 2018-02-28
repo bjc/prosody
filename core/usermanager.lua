@@ -24,6 +24,7 @@ local setmetatable = setmetatable;
 local default_provider = "internal_plain";
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function new_null_provider()
 	local function dummy() return nil, "method not implemented"; end;

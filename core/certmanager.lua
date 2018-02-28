@@ -55,6 +55,7 @@ local luasec_has = softreq"ssl.config" or {
 };
 
 local _ENV = nil;
+-- luacheck: std none
 
 -- Global SSL options if not overridden per-host
 local global_ssl_config = configmanager.get("*", "ssl");

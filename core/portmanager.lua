@@ -15,6 +15,7 @@ local prosody = prosody;
 local fire_event = prosody.events.fire_event;
 
 local _ENV = nil;
+-- luacheck: std none
 
 --- Config
 

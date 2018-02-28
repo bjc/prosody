@@ -28,6 +28,7 @@ local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 assert(socket.tcp6 and socket.tcp4, "Incompatible LuaSocket version");
 
 local _ENV = nil;
+-- luacheck: std none
 
 local default_config = { __index = {
 	read_timeout = 900;

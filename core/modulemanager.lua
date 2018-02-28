@@ -38,6 +38,7 @@ local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s
 local _G = _G;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local load_modules_for_host, load, unload, reload, get_module, get_items;
 local get_modules, is_loaded, module_has_method, call_module_method;

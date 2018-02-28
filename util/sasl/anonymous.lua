@@ -15,6 +15,7 @@
 local generate_uuid = require "util.uuid".generate;
 
 local _ENV = nil;
+-- luacheck: std none
 
 --=========================
 --SASL ANONYMOUS according to RFC 4505

@@ -15,6 +15,7 @@ local setmetatable = setmetatable;
 local next = next;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function new()
 	-- Map event name to ordered list of handlers (lazily built): handlers[event_name] = array_of_handler_functions

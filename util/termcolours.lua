@@ -26,6 +26,7 @@ end
 local orig_color = windows and windows.get_consolecolor and windows.get_consolecolor();
 
 local _ENV = nil;
+-- luacheck: std none
 
 local stylemap = {
 			reset = 0; bright = 1, dim = 2, underscore = 4, blink = 5, reverse = 7, hidden = 8;

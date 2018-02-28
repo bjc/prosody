@@ -3,6 +3,7 @@ local gettime = require "util.time".now
 local setmetatable = setmetatable;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local throttle = {};
 local throttle_mt = { __index = throttle };
