@@ -5,6 +5,7 @@ local t_insert = table.insert;
 local t_remove = table.remove;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local parse_xml = (function()
 	local ns_prefixes = {

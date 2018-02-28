@@ -20,6 +20,7 @@ local assert = assert;
 local require = require;
 
 local _ENV = nil;
+-- luacheck: std none
 
 --[[
 Authentication Backend Prototypes:

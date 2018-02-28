@@ -3,6 +3,7 @@ local log = require "util.logger".init("net.httpserver");
 local traceback = debug.traceback;
 
 local _ENV = nil;
+-- luacheck: std none
 
 function fail()
 	log("error", "Attempt to use legacy HTTP API. For more info see https://prosody.im/doc/developers/legacy_http");

@@ -25,6 +25,7 @@ local unescapes = {};
 for k,v in pairs(escapes) do unescapes[v] = k; end
 
 local _ENV = nil;
+-- luacheck: std none
 
 local function split(jid)
 	if not jid then return; end

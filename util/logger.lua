@@ -10,6 +10,7 @@
 local pairs = pairs;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local level_sinks = {};
 

@@ -8,6 +8,7 @@ local t_insert = table.insert;
 local setmetatable = setmetatable;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local handlers = { };
 local finalisers = { };

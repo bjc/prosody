@@ -27,6 +27,7 @@ local tostring, type = tostring, type;
 local setmetatable = setmetatable;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local host_mt = { }
 function host_mt:__tostring()

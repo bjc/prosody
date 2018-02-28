@@ -16,6 +16,7 @@ local tostring = tostring;
 local xpcall = xpcall;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local _add_task = server.add_task;
 

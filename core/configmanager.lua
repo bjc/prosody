@@ -24,6 +24,7 @@ local nameprep = encodings and encodings.stringprep.nameprep or function (host) 
 
 local _M = {};
 local _ENV = nil;
+-- luacheck: std none
 
 _M.resolve_relative_path = resolve_relative_path; -- COMPAT
 

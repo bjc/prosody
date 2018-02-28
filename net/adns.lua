@@ -17,6 +17,7 @@ local setmetatable = setmetatable;
 local function dummy_send(sock, data, i, j) return (j-i)+1; end
 
 local _ENV = nil;
+-- luacheck: std none
 
 local async_resolver_methods = {};
 local async_resolver_mt = { __index = async_resolver_methods };

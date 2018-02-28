@@ -24,6 +24,7 @@ _G.log = logger.init("general");
 prosody.log = logger.init("general");
 
 local _ENV = nil;
+-- luacheck: std none
 
 -- The log config used if none specified in the config file (see reload_logging for initialization)
 local default_logging;

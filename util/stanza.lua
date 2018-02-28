@@ -37,6 +37,7 @@ end
 local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
 
 local _ENV = nil;
+-- luacheck: std none
 
 local stanza_mt = { __name = "stanza" };
 stanza_mt.__index = stanza_mt;

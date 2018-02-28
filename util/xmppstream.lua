@@ -25,6 +25,7 @@ local lxp_supports_bytecount = not not lxp.new({}).getcurrentbytecount;
 local default_stanza_size_limit = 1024*1024*10; -- 10MB
 
 local _ENV = nil;
+-- luacheck: std none
 
 local new_parser = lxp.new;
 

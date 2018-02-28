@@ -25,6 +25,7 @@ local log = require "util.logger".init("x509");
 local s_format = string.format;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local oid_commonname = "2.5.4.3"; -- [LDAP] 2.3
 local oid_subjectaltname = "2.5.29.17"; -- [PKIX] 4.2.1.6

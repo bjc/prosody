@@ -26,6 +26,7 @@ local char = string.char;
 local byte = string.byte;
 
 local _ENV = nil;
+-- luacheck: std none
 
 --=========================
 --SASL SCRAM-SHA-1 according to RFC 5802

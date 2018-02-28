@@ -12,6 +12,7 @@ local log = require "util.logger".init("storagemanager");
 local prosody = prosody;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local olddm = {}; -- maintain old datamanager, for backwards compatibility
 for k,v in pairs(datamanager) do olddm[k] = v; end

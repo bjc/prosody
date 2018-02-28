@@ -14,6 +14,7 @@ local st = require "util.stanza";
 local jid_prep = require "util.jid".prep;
 
 local _ENV = nil;
+-- luacheck: std none
 
 local xmlns_forms = 'jabber:x:data';
 

@@ -17,6 +17,7 @@ local nodeprep = require "util.encodings".stringprep.nodeprep;
 local log = require "util.logger".init("sasl");
 
 local _ENV = nil;
+-- luacheck: std none
 
 -- ================================
 -- SASL PLAIN according to RFC 4616
