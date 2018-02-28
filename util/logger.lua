@@ -8,6 +8,8 @@
 -- luacheck: ignore 213/level
 
 local pairs = pairs;
+local ipairs = ipairs;
+local require = require;
 
 local _ENV = nil;
 -- luacheck: std none
