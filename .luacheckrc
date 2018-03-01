@@ -94,3 +94,15 @@ files["plugins/"] = {
 files["spec/"] = {
 	std = "+busted"
 }
+files["prosody.cfg.lua"] = {
+	globals = { 
+		"Host",
+		"host",
+		"VirtualHost",
+		"Component",
+		"component",
+		"Include",
+		"include",
+		"RunScript"
+	};
+}
