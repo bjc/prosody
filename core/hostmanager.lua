@@ -84,6 +84,9 @@ function activate(host, host_config)
 		send = host_send;
 		modules = {};
 	};
+	function host_session:close(reason)
+		log("debug", "Attempt to close host session %s with reason: %s", self.host, reason);
+	end
 	setmetatable(host_session, host_mt);
 	if not host_config.component_module then -- host
 		host_session.type = "local";
