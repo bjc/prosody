@@ -45,7 +45,7 @@ module:hook("host-disco-info-node", function (event)
 end);
 
 module:hook("host-disco-items-node", function (event)
-	local stanza, origin, reply, disco_node = event.stanza, event.origin, event.reply, event.node;
+	local stanza, reply, disco_node = event.stanza, event.reply, event.node;
 	if disco_node ~= xmlns_cmd then
 		return;
 	end
