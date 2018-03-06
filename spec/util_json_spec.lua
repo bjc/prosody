@@ -64,7 +64,7 @@ describe("util.json", function()
 			for name, content in pairs(invalid_data) do
 				local parsed, err = json.decode(content);
 				assert(not parsed, name..": "..tostring(err));
-			end			
+			end
 		end);
 	end)
 end);

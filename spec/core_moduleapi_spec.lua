@@ -70,7 +70,7 @@ describe("core.moduleapi", function()
 		it("should return handle arrays", function()
 			test_option_value({1, 2, 3}, { boolean = true, string = "1", number = 1, array = {1, 2, 3}, set = {1, 2, 3} });
 			test_option_value({1, 2, 3, 3, 4}, {boolean = true, string = "1", number = 1, array = {1, 2, 3, 3, 4}, set = {1, 2, 3, 4} });
-			test_option_value({0, 1, 2, 3}, { boolean = false, string = "0", number = 0, array = {0, 1, 2, 3}, set = {0, 1, 2, 3} });	
+			test_option_value({0, 1, 2, 3}, { boolean = false, string = "0", number = 0, array = {0, 1, 2, 3}, set = {0, 1, 2, 3} });
 		end);
 	end)
 end)
