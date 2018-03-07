@@ -1,7 +1,5 @@
 cache = true
-globals = { "_M" }
 allow_defined_top = true
-module = true
 unused_secondaries = false
 codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log" }
@@ -84,8 +82,6 @@ files["plugins/"] = {
 		"module.wrap_object_event",
 	};
 	globals = {
-		"_M",
-
 		-- Methods that can be set on module API
 		"module.unload",
 		"module.add_host",
