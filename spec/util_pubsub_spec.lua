@@ -1,4 +1,8 @@
-local pubsub = require "util.pubsub";
+local pubsub;
+setup(function ()
+	pubsub = require "util.pubsub";
+end);
+
 describe("util.pubsub", function ()
 	describe("simple node creation and deletion", function ()
 		-- Roughly a port of scansion/scripts/pubsub_createdelete.scs
