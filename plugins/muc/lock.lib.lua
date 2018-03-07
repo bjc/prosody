@@ -23,7 +23,7 @@ end
 local function is_locked(room)
 	local ts = room._data.locked;
 	if ts then
-		if ts < os.time() then return true; end
+		if os.time() < ts then return true; end
 		unlock(room);
 	end
 	return false;
