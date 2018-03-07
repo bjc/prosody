@@ -52,7 +52,7 @@ if archive.name == "null" or not archive.find then
 	archive = module:require "fallback_archive";
 end
 
-local use_total = true;
+local use_total = module:get_option_boolean("mam_include_total", true);
 
 local cleanup;
 
@@ -384,7 +384,7 @@ else
 	module:log("debug", "Archive expiry disabled");
 	-- Don't ask the backend to count the potentially unbounded number of items,
 	-- it'll get slow.
-	use_total = false;
+	use_total = module:get_option_boolean("mam_include_total", false);
 end
 
 -- Stanzas sent by local clients
