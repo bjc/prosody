@@ -129,7 +129,11 @@ local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), fu
 	module:log("debug", "Evicting room %s", jid);
 	eviction_hit_rate();
 	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
-	room_save(room, nil, true); -- Force to disk
+	local ok, err = room_save(room, nil, true); -- Force to disk
+	if not ok then
+		module:log("error", "Failed to swap inactive room %s to disk: %s", jid, err);
+		return false;
+	end
 end);
 
 -- Automatically destroy empty non-persistent rooms
@@ -141,9 +145,12 @@ module:hook("muc-occupant-left",function(event)
 end, -1);
 
 function track_room(room)
-	rooms:set(room.jid, room);
-	-- When room is created, over-ride 'save' method
-	room.save = room_save;
+	if rooms:set(room.jid, room) then
+		-- When room is created, over-ride 'save' method
+		room.save = room_save;
+		return room;
+	end
+	return false;
 end
 
 local function restore_room(jid)
@@ -153,8 +160,7 @@ local function restore_room(jid)
 	if data then
 		module:log("debug", "Restoring room %s from storage", jid);
 		local room = muclib.restore_room(data, state);
-		track_room(room);
-		return room;
+		return track_room(room);
 	elseif err then
 		module:log("error", "Error restoring room %s from storage: %s", jid, err);
 		local room = muclib.new_room(jid, { locked = math.huge });
@@ -216,10 +222,10 @@ function each_room(local_only)
 		for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
 			if not seen[room_jid] then
 				local room = restore_room(room_jid);
-				if room == nil then
-					module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
-				else
+				if room then
 					coroutine.yield(room);
+				else
+					module:log("error", "Missing data for room '%s', omitting from iteration", room_jid);
 				end
 			end
 		end
