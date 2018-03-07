@@ -253,8 +253,12 @@ module:hook("host-disco-items", function(event)
 	end
 end);
 
-module:hook("muc-room-created", function(event)
-	track_room(event.room);
+module:hook("muc-room-pre-create", function(event)
+	local origin, stanza = event.origin, event.stanza;
+	if not track_room(event.room) then
+		origin.send(st.error_reply(stanza, "wait", "resource-constraint"));
+		return true;
+	end
 end, -1000);
 
 module:hook("muc-room-destroyed",function(event)
