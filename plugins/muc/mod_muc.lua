@@ -37,7 +37,11 @@ local hosts = prosody.hosts;
 rooms = {};
 local rooms = rooms;
 local persistent_rooms_storage = module:open_store("persistent");
-local persistent_rooms = persistent_rooms_storage:get() or {};
+local persistent_rooms, err = persistent_rooms_storage:get();
+if not persistent_rooms then
+	assert(not err, err);
+	persistent_rooms = {};
+end
 local room_configs = module:open_store("config");
 
 -- Configurable options
