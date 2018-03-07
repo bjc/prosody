@@ -381,6 +381,7 @@ if cleanup_after ~= "never" then
 		return math.random(cleanup_interval, cleanup_interval * 2);
 	end);
 else
+	module:log("debug", "Archive expiry disabled");
 	-- Don't ask the backend to count the potentially unbounded number of items,
 	-- it'll get slow.
 	use_total = false;
