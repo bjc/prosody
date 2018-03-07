@@ -21,7 +21,7 @@ local function unlock(room)
 	room._data.locked = nil;
 end
 local function is_locked(room)
-	local ts = room._data.locked or false;
+	local ts = room._data.locked;
 	if ts then
 		if ts < os.time() then return true; end
 		unlock(room);
