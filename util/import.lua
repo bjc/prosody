@@ -10,7 +10,7 @@
 
 local unpack = table.unpack or unpack; --luacheck: ignore 113 143
 local t_insert = table.insert;
-function import(module, ...)
+function _G.import(module, ...)
 	local m = package.loaded[module] or require(module);
 	if type(m) == "table" and ... then
 		local ret = {};
