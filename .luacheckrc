@@ -80,6 +80,9 @@ files["plugins/"] = {
 		"module.wrap_event",
 		"module.wrap_global",
 		"module.wrap_object_event",
+
+		-- mod_http API
+		"module.http_url",
 	};
 	globals = {
 		-- Methods that can be set on module API
