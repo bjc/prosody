@@ -344,6 +344,7 @@ function room_mt:get_disco_info(stanza)
 end
 module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc"}):up();
+	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc#stable_id"}):up();
 end);
 module:hook("muc-disco#info", function(event)
 	table.insert(event.form, { name = "muc#roominfo_occupants", label = "Number of occupants" });
