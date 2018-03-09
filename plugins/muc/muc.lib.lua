@@ -378,16 +378,6 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	return true;
 end
 
-if not module:get_option_boolean("muc_compat_create", true) then
-	module:hook("muc-room-pre-create", function(event)
-		local origin, stanza = event.origin, event.stanza;
-		if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-			return true;
-		end
-	end, -1);
-end
-
 -- Give the room creator owner affiliation
 module:hook("muc-room-pre-create", function(event)
 	event.room:set_affiliation(true, jid_bare(event.stanza.attr.from), "owner");
@@ -406,6 +396,13 @@ module:hook("muc-occupant-pre-join", function(event)
 end, -10);
 
 function room_mt:handle_first_presence(origin, stanza)
+	if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
+		module:log("debug", "Room creation without <x>, possibly desynced");
+
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+		return true;
+	end
+
 	local real_jid = stanza.attr.from;
 	local dest_jid = stanza.attr.to;
 	local bare_jid = jid_bare(real_jid);
@@ -416,11 +413,6 @@ function room_mt:handle_first_presence(origin, stanza)
 		}) then return true; end
 	local is_first_dest_session = true;
 	local dest_occupant = self:new_occupant(bare_jid, dest_jid);
-
-	-- TODO Handle this case sensibly
-	if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-		module:log("debug", "Room creation without <x>, possibly desynced");
-	end
 
 	local orig_nick = dest_occupant.nick;
 	if module:fire_event("muc-occupant-pre-join", {
