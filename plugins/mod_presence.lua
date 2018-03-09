@@ -120,6 +120,8 @@ function handle_normal_presence(origin, stanza)
 	stanza.attr.to = nil; -- reset it
 end
 
+-- luacheck: ignore 212/recipient_session
+-- TODO This argument is used in 3rd party modules
 function send_presence_of_available_resources(user, host, jid, recipient_session, stanza)
 	local h = hosts[host];
 	local count = 0;
