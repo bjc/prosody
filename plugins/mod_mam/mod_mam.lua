@@ -52,7 +52,7 @@ if archive.name == "null" or not archive.find then
 	archive = module:require "fallback_archive";
 end
 
-local use_total = true;
+local use_total = module:get_option_boolean("mam_include_total", true);
 
 local cleanup;
 
@@ -129,7 +129,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query, id %s with %s from %s until %s)",
+	module:log("debug", "Archive query, id %s with %s from %s until %s",
 		tostring(qid), qwith or "anyone",
 		qstart and timestamp(qstart) or "the dawn of time",
 		qend and timestamp(qend) or "now");
@@ -334,9 +334,7 @@ module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
-if not archive.delete then
-	module:log("debug", "Selected storage driver does not support deletion, archives will not expire");
-elseif cleanup_after ~= "never" then
+if cleanup_after ~= "never" then
 	local day = 86400;
 	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
 	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
@@ -383,9 +381,10 @@ elseif cleanup_after ~= "never" then
 		return math.random(cleanup_interval, cleanup_interval * 2);
 	end);
 else
+	module:log("debug", "Archive expiry disabled");
 	-- Don't ask the backend to count the potentially unbounded number of items,
 	-- it'll get slow.
-	use_total = false;
+	use_total = module:get_option_boolean("mam_include_total", false);
 end
 
 -- Stanzas sent by local clients
