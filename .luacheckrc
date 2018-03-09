@@ -101,6 +101,7 @@ files["spec/"] = {
 	std = "+busted"
 }
 files["prosody.cfg.lua"] = {
+	ignore = { "131" };
 	globals = { 
 		"Host",
 		"host",
