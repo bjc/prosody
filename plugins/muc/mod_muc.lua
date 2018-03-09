@@ -112,15 +112,21 @@ end
 local persistent_errors = false;
 for jid in pairs(persistent_rooms) do
 	local node = jid_split(jid);
-	local data = room_configs:get(node);
+	local data, err = room_configs:get(node);
 	if data then
 		local room = create_room(jid);
 		room._data = data._data;
 		room._affiliations = data._affiliations;
-	else -- missing room data
+	elseif not err then -- missing room data
 		persistent_rooms[jid] = nil;
 		module:log("error", "Missing data for room '%s', removing from persistent room list", jid);
 		persistent_errors = true;
+	else -- error
+		module:log("error", "Error loading data for room '%s', locking it until service restart. Error was: %s", jid, err);
+		local room = muc_new_room(jid);
+		room.locked = true;
+		room._affiliations = { [muc_host] = "owner" }; -- To prevent unlocking
+		rooms[jid] = room;
 	end
 end
 if persistent_errors then persistent_rooms_storage:set(nil, persistent_rooms); end
