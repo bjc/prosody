@@ -470,6 +470,13 @@ function room_mt:handle_normal_presence(origin, stanza)
 	local bare_jid = jid_bare(real_jid);
 	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
 	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
+
+	if orig_occupant == nil and not muc_x then
+		module:log("debug", "Attempted join without <x>, possibly desynced");
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "You must join the room before sending presence updates"));
+		return true;
+	end
+
 	local is_first_dest_session;
 	local dest_occupant;
 	if type == "unavailable" then
@@ -494,13 +501,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 		-- Is there are least 2 sessions?
 		local iter, ob, last = orig_occupant:each_session();
 		is_last_orig_session = iter(ob, iter(ob, last)) == nil;
-	end
-
-	-- TODO Handle these cases sensibly
-	if orig_occupant == nil and not muc_x then
-		module:log("debug", "Join without <x>, possibly desynced");
-	elseif orig_occupant ~= nil and muc_x then
-		module:log("debug", "Presence update with <x>, possibly desynced");
 	end
 
 	local orig_nick = dest_occupant and dest_occupant.nick;
@@ -604,7 +604,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		self:save_occupant(dest_occupant);
 
 		if orig_occupant == nil or muc_x then
-			-- Send occupant list to newly joined user
+			-- Send occupant list to newly joined or desynced user
 			self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
 				-- Don't include self
 				return occupant:get_presence(real_jid) == nil;
