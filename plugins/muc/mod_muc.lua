@@ -6,6 +6,16 @@
 -- COPYING file in the source package for more information.
 --
 
+-- Exposed functions:
+--
+-- create_room(jid) -> room
+-- track_room(room)
+-- delete_room(room)
+-- forget_room(room)
+-- get_room_from_jid(jid) -> room
+-- each_room(local_only) -> () -> room
+-- shutdown_component()
+
 if module:get_host_type() ~= "component" then
 	error("MUC should be loaded as a component, please see https://prosody.im/doc/components", 0);
 end
