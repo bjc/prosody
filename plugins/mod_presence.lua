@@ -10,7 +10,6 @@ local log = module._log;
 
 local require = require;
 local pairs = pairs;
-local t_concat = table.concat;
 local s_find = string.find;
 local tonumber = tonumber;
 
