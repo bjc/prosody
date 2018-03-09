@@ -477,6 +477,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 	local real_jid = stanza.attr.from;
 	local bare_jid = jid_bare(real_jid);
 	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
+	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	local is_first_dest_session;
 	local dest_occupant;
 	if type == "unavailable" then
@@ -504,7 +505,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 	end
 
 	-- TODO Handle these cases sensibly
-	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	if orig_occupant == nil and not muc_x then
 		module:log("debug", "Join without <x>, possibly desynced");
 	elseif orig_occupant ~= nil and muc_x then
