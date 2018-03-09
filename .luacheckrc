@@ -22,6 +22,7 @@ files["util/"] = {
 	max_comment_line_length = false;
 }
 files["plugins/"] = {
+	module = true;
 	read_globals = {
 		-- Module instance
 		"module.name",
