@@ -480,11 +480,10 @@ function room_mt:handle_normal_presence(origin, stanza)
 	local real_jid = stanza.attr.from;
 	local bare_jid = jid_bare(real_jid);
 	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
-	if type == "unavailable" and orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 	local is_first_dest_session;
 	local dest_occupant;
-	if type == "unavailable" then -- luacheck: ignore 542
-		-- FIXME Why the empty if branch?
+	if type == "unavailable" then
+		if orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 		-- dest_occupant = nil
 	elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
 		log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
