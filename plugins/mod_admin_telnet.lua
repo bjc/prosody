@@ -1151,7 +1151,7 @@ function def_env.http:list()
 			local http_host = module:context(host):get_option_string("http_host");
 			print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
 			for _, provider in ipairs(http_apps) do
-				local url = module:context(host):http_url(provider.name);
+				local url = module:context(host):http_url(provider.name, provider.default_path);
 				print("", url);
 			end
 			print("");
