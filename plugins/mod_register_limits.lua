@@ -63,13 +63,16 @@ module:hook("user-registering", function (event)
 	elseif ip_in_set(blacklisted_ips, event.ip) then
 		log("debug", "Registration disallowed by blacklist");
 		event.allowed = false;
+		event.reason = "Your IP address is blacklisted";
 	elseif (whitelist_only and not ip_in_set(whitelisted_ips, ip)) then
 		log("debug", "Registration disallowed by whitelist");
 		event.allowed = false;
+		event.reason = "Your IP address is not whitelisted";
 	elseif throttle_max and not ip_in_set(whitelisted_ips, ip) then
 		if not check_throttle(event.ip) then
 			log("debug", "Registrations over limit for ip %s", ip or "?");
 			event.allowed = false;
+			event.reason = "Too many registrations from this IP address recently";
 		end
 	end
 end);
