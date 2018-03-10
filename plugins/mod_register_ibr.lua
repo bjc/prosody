@@ -146,7 +146,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 					local user = { username = username , host = host, additional = data, ip = session.ip, session = session, allowed = true }
 					module:fire_event("user-registering", user);
 					if not user.allowed then
-						log("debug", "Registration disallowed by module");
+						log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
 						session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
 					elseif usermanager_user_exists(username, host) then
 						log("debug", "Attempt to register with existing username");
