@@ -148,12 +148,16 @@ end
 
 local function restore_room(jid)
 	local node = jid_split(jid);
-	local data = room_configs:get(node);
+	local data, err = room_configs:get(node);
 	local state = room_state:get(node);
 	if data then
 		module:log("debug", "Restoring room %s from storage", jid);
 		local room = muclib.restore_room(data, state);
 		track_room(room);
+		return room;
+	elseif err then
+		module:log("error", "Error restoring room %s from storage: %s", jid, err);
+		local room = muclib.new_room(jid, { locked = math.huge });
 		return room;
 	end
 end
