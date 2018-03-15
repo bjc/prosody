@@ -256,6 +256,10 @@ function handle_request(event)
 
 	local session = sessions[conn];
 
+	-- Use upstream IP if a HTTP proxy was used
+	-- See mod_http and #540
+	session.ip = request.ip;
+
 	session.secure = consider_websocket_secure or session.secure;
 
 	session.open_stream = session_open_stream;
