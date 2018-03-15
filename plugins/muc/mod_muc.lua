@@ -230,7 +230,15 @@ function each_room(local_only)
 			coroutine.yield(room);
 			seen[room.jid] = true;
 		end
-		for room_jid in pairs(persistent_rooms_storage:get(nil) or {}) do
+		local all_persistent_rooms, err = persistent_rooms_storage:get(nil);
+		if not all_persistent_rooms then
+			if err then
+				module:log("error", "Error loading list of persistent rooms, only rooms live in memory were iterated over");
+				module:log("debug", "%s", debug.traceback(err));
+			end
+			return nil;
+		end
+		for room_jid in pairs(all_persistent_rooms) do
 			if not seen[room_jid] then
 				local room = restore_room(room_jid);
 				if room then
