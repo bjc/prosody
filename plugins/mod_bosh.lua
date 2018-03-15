@@ -46,22 +46,6 @@ local cross_domain = module:get_option("cross_domain_bosh", false);
 if cross_domain == true then cross_domain = "*"; end
 if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
 
-local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", "::1" })._items;
-
-local function get_ip_from_request(request)
-	local ip = request.conn:ip();
-	local forwarded_for = request.headers.x_forwarded_for;
-	if forwarded_for then
-		forwarded_for = forwarded_for..", "..ip;
-		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
-			if not trusted_proxies[forwarded_ip] then
-				ip = forwarded_ip;
-			end
-		end
-	end
-	return ip;
-end
-
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 
 -- All sessions, and sessions that have no requests open
@@ -307,7 +291,7 @@ function stream_callbacks.streamopened(context, attr)
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
 			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
-			ip = get_ip_from_request(request);
+			ip = request.ip;
 		};
 		sessions[sid] = session;
 
