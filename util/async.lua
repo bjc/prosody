@@ -23,6 +23,8 @@ local function runner_continue(thread)
 		local level = 0;
 		while debug.getinfo(thread, level, "") do level = level + 1; end
 		ok, runner = debug.getlocal(thread, level-1, 1);
+		assert(ok == "self", "unexpected async state: variable mismatch");
+		assert(runner.thread == thread, "unexpected async state: thread mismatch");
 		local error_handler = runner.watchers.error;
 		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
 		local ready_handler = runner.watchers.ready;
