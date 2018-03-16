@@ -84,6 +84,11 @@ describe("util.async", function()
 		end);
 	end);
 	describe("#waiter", function()
+		it("should error outside of async context", function ()
+			assert.has_error(function ()
+				async.waiter();
+			end);
+		end);
 		it("should work", function ()
 			local wait, done;
 		
