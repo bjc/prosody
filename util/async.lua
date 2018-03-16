@@ -12,6 +12,7 @@ end
 local function runner_continue(thread)
 	-- ASSUMPTION: runner is in 'waiting' state (but we don't have the runner to know for sure)
 	if coroutine.status(thread) ~= "suspended" then -- This should suffice
+		log("warn", "unexpected async state: thread not suspended");
 		return false;
 	end
 	local ok, state, runner = coroutine.resume(thread);
