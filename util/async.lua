@@ -21,6 +21,7 @@ local function runner_continue(thread)
 		-- Running the coroutine failed, which means we have to find the runner manually,
 		-- in order to inform the error handler
 		local level = 0;
+		-- Find the 'level' of the top-most function (0 == current level, 1 == caller, ...)
 		while debug.getinfo(thread, level, "") do level = level + 1; end
 		ok, runner = debug.getlocal(thread, level-1, 1);
 		assert(ok == "self", "unexpected async state: variable mismatch");
