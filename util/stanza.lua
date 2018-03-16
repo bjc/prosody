@@ -7,6 +7,7 @@
 --
 
 
+local assert        =        assert;
 local t_insert      =  table.insert;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
@@ -22,6 +23,8 @@ local s_gsub        =   string.gsub;
 local s_sub         =    string.sub;
 local s_find        =   string.find;
 local os            =            os;
+
+local valid_utf8 = require "util.encodings".utf8.valid;
 
 local do_pretty_printing = not os.getenv("WINDIR");
 local getstyle, getstring;
@@ -42,7 +45,32 @@ local _ENV = nil;
 local stanza_mt = { __name = "stanza" };
 stanza_mt.__index = stanza_mt;
 
+local function check_name(name)
+	assert(type(name) == "string", "tag name is not a string, "..type(name));
+	assert(#name > 0, "tag name is empty");
+	assert(not s_find(name, "[<>& '\"]"), "tag name contains invalid characters");
+	assert(valid_utf8(name), "tag name is invalid utf8");
+end
+local function check_attr(attr)
+	if attr ~= nil then
+		assert(type(attr) == "table", "attribute is not a table");
+		for k, v in pairs(attr) do
+			assert(type(k) == "string", "non-string key in attributes");
+			assert(valid_utf8(k), "attribute name is not valid utf8");
+			assert(type(v) == "string", "non-string value in attributes");
+			assert(valid_utf8(v), "attribute value is not valid utf8");
+		end
+	end
+end
+local function check_text(text)
+	assert(type(text) == "string", "text is not a string");
+	assert(valid_utf8(text), "text is not valid utf8");
+end
+
 local function new_stanza(name, attr, namespaces)
+	assert(name)
+	check_name(name);
+	check_attr(attr);
 	local stanza = { name = name, attr = attr or {}, namespaces = namespaces, tags = {} };
 	return setmetatable(stanza, stanza_mt);
 end
@@ -69,6 +97,7 @@ function stanza_mt:tag(name, attr, namespaces)
 end
 
 function stanza_mt:text(text)
+	check_text(text);
 	local last_add = self.last_add;
 	(last_add and last_add[#last_add] or self):add_direct_child(text);
 	return self;

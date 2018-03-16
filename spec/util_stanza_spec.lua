@@ -164,4 +164,38 @@ describe("util.stanza", function()
 			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
 		end);
 	end);
+
+	describe("#invalid", function ()
+		it("name should be rejected", function ()
+			assert.has_error(function ()
+				st.stanza(1234);
+			end);
+			assert.has_error(function ()
+				st.stanza({});
+			end);
+			assert.has_error(function ()
+				st.stanza();
+			end);
+			assert.has_error(function ()
+				st.stanza("");
+			end);
+			assert.has_error(function ()
+				st.stanza(string.char(0xC0));
+			end);
+			assert.has_error(function ()
+				st.stanza(string.char(0xF4, 0x90, 0x80, 0x80));
+			end);
+			assert.has_error(function ()
+				st.stanza("<>");
+			end);
+			assert.has_error(function ()
+				st.stanza("&");
+			end);
+		end);
+		it("UTF-8 should be rejected", function ()
+			assert.has_error(function ()
+				st.stanza("tag"):text("hello "..string.char(0xF4, 0x90, 0x80, 0x80).." world");
+			end);
+		end);
+	end);
 end);
