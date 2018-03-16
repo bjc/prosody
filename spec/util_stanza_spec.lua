@@ -134,12 +134,13 @@ describe("util.stanza", function()
 			local s = st.stanza("s", { to = "touser", from = "fromuser", id = "123" })
 				:tag("child1");
 			-- Make reply stanza
-			local r = st.error_reply(s);
+			local r = st.error_reply(s, "cancel", "service-unavailable");
 			assert.are.equal(r.name, s.name);
 			assert.are.equal(r.id, s.id);
 			assert.are.equal(r.attr.to, s.attr.from);
 			assert.are.equal(r.attr.from, s.attr.to);
 			assert.are.equal(#r.tags, 1);
+			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
 		end);
 
 		it("should work for <iq get>", function()
@@ -147,13 +148,14 @@ describe("util.stanza", function()
 			local s = st.stanza("iq", { to = "touser", from = "fromuser", id = "123", type = "get" })
 				:tag("child1");
 			-- Make reply stanza
-			local r = st.error_reply(s);
+			local r = st.error_reply(s, "cancel", "service-unavailable");
 			assert.are.equal(r.name, s.name);
 			assert.are.equal(r.id, s.id);
 			assert.are.equal(r.attr.to, s.attr.from);
 			assert.are.equal(r.attr.from, s.attr.to);
 			assert.are.equal(r.attr.type, "error");
 			assert.are.equal(#r.tags, 1);
+			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
 		end);
 	end);
 end);
