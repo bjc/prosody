@@ -26,6 +26,62 @@ describe("util.async", function()
 			r:run(1);
 			r:run(2);
 		end);
+
+		it("should be ready after creation", function ()
+			local r = async.runner(function (item) end);
+			assert.equal(r.state, "ready");
+		end);
+
+		describe("#errors", function ()
+			local last_processed_item, last_error;
+			local r;
+			r = async.runner(function (item)
+				if item == "error" then
+					error({ e = "test error" });
+				end
+				last_processed_item = item;
+			end, {
+				error = function (runner, err)
+					assert.equal(r, runner);
+					last_error = err;
+				end;
+			});
+
+			randomize(false);
+
+			it("should notify", function ()
+				local last_processed_item, last_error;
+				local r;
+				r = async.runner(function (item)
+					if item == "error" then
+						error({ e = "test error" });
+					end
+					last_processed_item = item;
+				end, {
+					error = function (runner, err)
+						assert.equal(r, runner);
+						last_error = err;
+					end;
+				});
+
+				r:run("hello");
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "hello");
+
+				assert.equal(last_error, nil);
+				r:run("error");
+				assert.is_table(last_error);
+				assert.equal(last_error.e, "test error");
+				last_error = nil;
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "hello");
+			end);
+			it("should not be fatal to the runner", function ()
+				r:run("world");
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "world");
+			end);
+		end);
 	end);
 	describe("#waiter", function()
 		it("should work", function ()
