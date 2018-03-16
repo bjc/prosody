@@ -161,7 +161,7 @@ function runner_mt:run(input)
 	-- Runner processed all items it can, so save current runner state
 	self.state = state;
 	if err or state ~= self.notified_state then
-		self:log("debug", "changed state from %s to %s", self.notified_state, err and "error" or state);
+		self:log("debug", "changed state from %s to %s", self.notified_state, err and ("error ("..state..")") or state);
 		if err then
 			state = "error"
 		else
