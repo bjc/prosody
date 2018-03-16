@@ -17,13 +17,18 @@ local function runner_continue(thread)
 	end
 	local ok, state, runner = coroutine.resume(thread);
 	if not ok then
+		local err = state;
 		-- Running the coroutine failed, which means we have to find the runner manually,
 		-- in order to inform the error handler
 		local level = 0;
 		while debug.getinfo(thread, level, "") do level = level + 1; end
 		ok, runner = debug.getlocal(thread, level-1, 1);
 		local error_handler = runner.watchers.error;
-		if error_handler then error_handler(runner, debug.traceback(thread, state)); end
+		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
+		local ready_handler = runner.watchers.ready;
+		runner.state, runner.thread = "ready", nil;
+		if ready_handler then ready_handler(runner); end
+		runner.notified_state = "ready";
 	elseif state == "ready" then
 		-- If state is 'ready', it is our responsibility to update runner.state from 'waiting'.
 		-- We also have to :run(), because the queue might have further items that will not be
