@@ -35,9 +35,14 @@ describe("util.async", function()
 		describe("#errors", function ()
 			local last_processed_item, last_error;
 			local r;
+			local wait, done;
 			r = async.runner(function (item)
 				if item == "error" then
 					error({ e = "test error" });
+				elseif item == "wait" then
+					wait, done = async.waiter();
+					wait();
+					error({ e = "post wait error" });
 				end
 				last_processed_item = item;
 			end, {
@@ -80,6 +85,24 @@ describe("util.async", function()
 				r:run("world");
 				assert.equal(r.state, "ready");
 				assert.equal(last_processed_item, "world");
+			end);
+			it("should work despite a #waiter", function ()
+				-- This test covers an important case where a runner
+				-- throws an error while being executed outside of the
+				-- main loop. This happens when it was blocked ('waiting'),
+				-- and then released (via a call to done()).
+				last_error = nil;
+				r:run("wait");
+				assert.equal(r.state, "waiting");
+				done();
+				-- At this point an error happens (state goes error->ready)
+				assert.equal(r.state, "ready");
+				assert.is_table(last_error);
+				assert.equal(last_error.e, "post wait error");
+				last_error = nil;
+				r:run("hello again");
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "hello again");
 			end);
 		end);
 	end);
