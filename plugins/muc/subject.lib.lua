@@ -14,7 +14,7 @@ local valid_roles = muc_util.valid_roles;
 
 local function create_subject_message(from, subject)
 	return st.message({from = from; type = "groupchat"})
-		:tag("subject"):text(subject):up();
+		:tag("subject"):text(subject or ""):up();
 end
 
 local function get_changesubject(room)
