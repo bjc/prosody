@@ -62,6 +62,12 @@ describe("util.stanza", function()
 			assert.are.equal(#s1.tags[1], 1);
 			assert.are.equal(s1.tags[1][1].name, "grandchild1");
 		end);
+		it("should work with unicode values", function ()
+			local s = st.stanza("Объект", { xmlns = "myxmlns", ["Объект"] = "&" });
+			assert.are.equal(s.name, "Объект");
+			assert.are.equal(s.attr.xmlns, "myxmlns");
+			assert.are.equal(s.attr["Объект"], "&");
+		end);
 	end);
 
 	describe("#message()", function()
