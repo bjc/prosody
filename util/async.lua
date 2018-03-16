@@ -108,8 +108,8 @@ end
 -- Add a task item for the runner to process
 function runner_mt:run(input)
 	if input ~= nil then
-		self:log("debug", "queued new work item, %d items queued", #self.queue);
 		table.insert(self.queue, input);
+		self:log("debug", "queued new work item, %d items queued", #self.queue);
 	end
 	if self.state ~= "ready" then
 		-- The runner is busy. Indicate that the task item has been
@@ -176,6 +176,7 @@ end
 -- Add a task item to the queue without invoking the runner, even if it is idle
 function runner_mt:enqueue(input)
 	table.insert(self.queue, input);
+	self:log("debug", "queued new work item, %d items queued", #self.queue);
 end
 
 function runner_mt:log(level, fmt, ...)
