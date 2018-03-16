@@ -129,7 +129,7 @@ function runner_mt:run(input)
 	local n, state, err = #q, self.state, nil;
 	self.state = "running";
 	self:log("debug", "running main loop");
-	while n > 0 and state == "ready" do
+	while n > 0 and state == "ready" and not err do
 		local consumed;
 		-- Loop through queue items, and attempt to run them
 		for i = 1,n do
