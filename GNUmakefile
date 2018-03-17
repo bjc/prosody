@@ -19,7 +19,7 @@ INSTALL_EXEC=$(INSTALL) -m755
 MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
-.PHONY: all test clean install
+.PHONY: all test coverage clean install
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C util-src install
@@ -67,6 +67,13 @@ clean:
 
 test:
 	busted --lua=$(RUNWITH)
+
+coverage:
+	-rm -- luacov.*
+	busted --lua=$(RUNWITH) -c
+	luacov
+	luacov-console
+	luacov-console -s
 
 util/%.so:
 	$(MAKE) install -C util-src
