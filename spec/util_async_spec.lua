@@ -8,17 +8,23 @@ describe("util.async", function()
 	else
 		print = function () end
 	end
+
+	local function mock_watchers()
+		return setmetatable(mock{
+			ready = function () end;
+			waiting = function () end;
+			error = function () end;
+		}, {
+			__index = function (_, event)
+				-- Unexpected watcher called
+				assert(false);
+			end;
+		})
+	end
+
 	local function new(func, name)
 		local log = {};
-		return async.runner(func, setmetatable({}, {
-			__index = function (_, event)
-				return function (runner, err)
-					print(name or runner.id, "event", event, err)
-					print "--"
-					table.insert(log, { event = event, err = err });
-				end;
-			end;
-		})), log;
+		return async.runner(func, mock_watchers()), log;
 	end
 	describe("#runner", function()
 		it("should work", function()
