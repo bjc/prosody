@@ -21,7 +21,7 @@ describe("util.async", function()
 		})), log;
 	end
 	describe("#runner", function()
-		it("should work", function()			
+		it("should work", function()
 			local r, l = new(function (item) assert(type(item) == "number") end);
 			r:run(1);
 			r:run(2);
@@ -246,7 +246,7 @@ describe("util.async", function()
 		end);
 		it("should work", function ()
 			local wait, done;
-		
+
 			local r, l = new(function (item)
 				assert(type(item) == "number")
 				if item == 3 then
@@ -254,7 +254,7 @@ describe("util.async", function()
 					wait();
 				end
 			end);
-			
+
 			r:run(1);
 			assert(r.state == "ready");
 			r:run(2);
@@ -265,7 +265,7 @@ describe("util.async", function()
 			assert(r.state == "ready");
 			--for k, v in ipairs(l) do print(k,v) end
 		end);
-		
+
 		it("should work", function ()
 			--------------------
 			local wait, done;
@@ -279,7 +279,7 @@ describe("util.async", function()
 					wait();
 				end
 			end);
-			
+
 			r:run(1);
 			assert(r.state == "ready");
 			r:run(2);
@@ -305,12 +305,12 @@ describe("util.async", function()
 					wait();
 				end
 			end);
-			
+
 			r:run(1);
 			assert(r.state == "ready");
 			r:run(2);
 			assert(r.state == "ready");
-			
+
 			local dones = {};
 			r:run(3);
 			assert(r.state == "waiting");
@@ -320,14 +320,14 @@ describe("util.async", function()
 			assert(r.state == "waiting");
 			r:run(4);
 			assert(r.state == "waiting");
-		
+
 			for i = 1, 3 do
 				done();
 				if i < 3 then
 					assert(r.state == "waiting");
 				end
 			end
-		
+
 			assert(r.state == "ready");
 			--for k, v in ipairs(l) do print(k,v) end
 		end);
@@ -344,29 +344,29 @@ describe("util.async", function()
 					wait();
 				end
 			end);
-			
+
 			r:run(1);
 			assert(r.state == "ready");
 			r:run(2);
 			assert(r.state == "ready");
-			
+
 			local dones = {};
 			r:run(3);
 			assert(r.state == "waiting");
 			r:run(3);
 			assert(r.state == "waiting");
-		
+
 			for i = 1, 2 do
 				done();
 				if i < 2 then
 					assert(r.state == "waiting");
 				end
 			end
-		
+
 			assert(r.state == "ready");
 			r:run(4);
 			assert(r.state == "ready");
-		
+
 			assert(r.state == "ready");
 			--for k, v in ipairs(l) do print(k,v) end
 		end);
@@ -384,7 +384,7 @@ describe("util.async", function()
 					wait1();
 				end
 			end, "r1");
-		
+
 			local wait2, done2;
 			local last_item2 = 0;
 			local r2, l2 = new(function (item)
@@ -396,51 +396,51 @@ describe("util.async", function()
 					wait2();
 				end
 			end, "r2");
-			
+
 			r1:run(1);
 			assert(r1.state == "ready");
 			r1:run(2);
 			assert(r1.state == "ready");
-			
+
 			local dones = {};
 			r1:run(3);
 			assert(r1.state == "waiting");
 			r1:run(3);
 			assert(r1.state == "waiting");
-		
+
 			r2:run(1);
 			assert(r1.state == "waiting");
 			assert(r2.state == "ready");
-		
+
 			r2:run(2);
 			assert(r1.state == "waiting");
 			assert(r2.state == "ready");
-		
+
 			r2:run(3);
 			assert(r1.state == "waiting");
 			assert(r2.state == "waiting");
 			done2();
-		
+
 			r2:run(3);
 			assert(r1.state == "waiting");
 			assert(r2.state == "waiting");
 			done2();
-		
+
 			r2:run(4);
 			assert(r1.state == "waiting");
 			assert(r2.state == "ready");
-		
+
 			for i = 1, 2 do
 				done1();
 				if i < 2 then
 					assert(r1.state == "waiting");
 				end
 			end
-		
+
 			assert(r1.state == "ready");
 			r1:run(4);
 			assert(r1.state == "ready");
-		
+
 			assert(r1.state == "ready");
 			--for k, v in ipairs(l1) do print(k,v) end
 		end);
@@ -519,7 +519,7 @@ describe("util.async", function()
 			assert.equal(r2.state, "ready");
 
 			done1();
-		
+
 			assert.equal(r1.state, "ready");
 			r1:run(4);
 			assert.equal(r1.state, "ready");
