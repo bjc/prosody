@@ -32,6 +32,58 @@ describe("util.async", function()
 			assert.equal(r.state, "ready");
 		end);
 
+		it("should do nothing if the queue is empty", function ()
+			local did_run;
+			local r = async.runner(function (item) did_run = true end);
+			r:run();
+			assert.equal(r.state, "ready");
+			assert.is_nil(did_run);
+			r:run("hello");
+			assert.is_true(did_run);
+		end);
+
+		it("should support queuing work items without running", function ()
+			local did_run;
+			local r = async.runner(function (item) did_run = true end);
+			r:enqueue("hello");
+			assert.equal(r.state, "ready");
+			assert.is_nil(did_run);
+			r:run();
+			assert.is_true(did_run);
+		end);
+
+		it("should support queuing multiple work items", function ()
+			local last_item;
+			local s = spy(function (item) last_item = item; end);
+			local r = async.runner(s);
+			r:enqueue("hello");
+			r:enqueue("there");
+			r:enqueue("world");
+			assert.equal(r.state, "ready");
+			r:run();
+			assert.equal(r.state, "ready");
+			assert.spy(s).was.called(3);
+			assert.equal(last_item, "world");
+		end);
+
+		it("should support all simple data types", function ()
+			local last_item;
+			local s = spy(function (item) last_item = item; end);
+			local r = async.runner(s);
+			local values = { {}, 123, "hello", true, false };
+			for i = 1, #values do
+				r:enqueue(values[i]);
+			end
+			assert.equal(r.state, "ready");
+			r:run();
+			assert.equal(r.state, "ready");
+			assert.spy(s).was.called(#values);
+			for i = 1, #values do
+				assert.spy(s).was.called_with(values[i]);
+			end
+			assert.equal(last_item, values[#values]);
+		end);
+
 		describe("#errors", function ()
 			local last_processed_item, last_error;
 			local r;
