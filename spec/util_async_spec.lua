@@ -180,6 +180,31 @@ describe("util.async", function()
 				assert.spy(runner.watchers.error).was.called(1);
 				assert.equal(last_item, "two");
 			end);
+
+			it("should continue to process work items during resume", function ()
+				local wait, done, last_item;
+				local runner_func = spy.new(function (item)
+					if item == "error" then
+						error("test error");
+					elseif item == "wait-error" then
+						wait, done = async.waiter();
+						wait();
+						error("test error");
+					end
+					last_item = item;
+				end);
+				local runner = async.runner(runner_func, { error = spy.new(function () end) });
+				runner:enqueue("one");
+				runner:enqueue("wait-error");
+				runner:enqueue("two");
+				runner:run();
+				done();
+				assert.equal(r.state, "ready");
+				assert.equal(r.state, r.notified_state);
+				assert.spy(runner_func).was.called(3);
+				assert.spy(runner.watchers.error).was.called(1);
+				assert.equal(last_item, "two");
+			end);
 		end);
 	end);
 	describe("#waiter", function()
