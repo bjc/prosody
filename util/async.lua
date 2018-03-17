@@ -180,6 +180,9 @@ function runner_mt:run(input)
 		local handler = self.watchers[state];
 		if handler then handler(self, err); end
 	end
+	if n > 0 then
+		return self:run();
+	end
 	return true, state, n;
 end
 
