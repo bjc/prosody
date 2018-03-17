@@ -198,4 +198,20 @@ describe("util.stanza", function()
 			end);
 		end);
 	end);
+
+	describe("#is_stanza", function ()
+		-- is_stanza(any) -> boolean
+		it("identifies stanzas as stanzas", function ()
+			assert.truthy(st.is_stanza(st.stanza("x")));
+		end);
+		it("identifies strings as not stanzas", function ()
+			assert.falsy(st.is_stanza(""));
+		end);
+		it("identifies numbers as not stanzas", function ()
+			assert.falsy(st.is_stanza(1));
+		end);
+		it("identifies tables as not stanzas", function ()
+			assert.falsy(st.is_stanza({}));
+		end);
+	end);
 end);
