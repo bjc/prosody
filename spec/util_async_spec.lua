@@ -13,7 +13,7 @@ describe("util.async", function()
 		return async.runner(func, setmetatable({}, {
 			__index = function (_, event)
 				return function (runner, err)
-					print(name, "event", event, err)
+					print(name or runner.id, "event", event, err)
 					print "--"
 					table.insert(log, { event = event, err = err });
 				end;
