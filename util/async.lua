@@ -24,8 +24,10 @@ local function runner_continue(thread)
 		-- Find the 'level' of the top-most function (0 == current level, 1 == caller, ...)
 		while debug.getinfo(thread, level, "") do level = level + 1; end
 		ok, runner = debug.getlocal(thread, level-1, 1);
-		assert(ok == "self", "unexpected async state: variable mismatch");
-		assert(runner.thread == thread, "unexpected async state: thread mismatch");
+		if ok ~= "self" or runner.thread ~= thread then
+			log("warn", "unexpected async state: unable to locate runner during error handling, got %s", ok);
+			return false;
+		end
 		local error_handler = runner.watchers.error;
 		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
 		local ready_handler = runner.watchers.ready;
