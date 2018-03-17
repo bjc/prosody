@@ -85,6 +85,51 @@ describe("util.async", function()
 		end);
 
 		describe("#errors", function ()
+			describe("should notify", function ()
+				local last_processed_item, last_error;
+				local r;
+				r = async.runner(function (item)
+					if item == "error" then
+						error({ e = "test error" });
+					end
+					last_processed_item = item;
+				end, mock{
+					ready = function () end;
+					waiting = function () end;
+					error = function (runner, err)
+						assert.equal(r, runner);
+						last_error = err;
+					end;
+				});
+
+				-- Simple item, no error
+				r:run("hello");
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "hello");
+				assert.spy(r.watchers.ready).was_not.called();
+				assert.spy(r.watchers.error).was_not.called();
+
+				-- Trigger an error inside the runner
+				assert.equal(last_error, nil);
+				r:run("error");
+				test("the correct watcher functions", function ()
+					-- Only the error watcher should have been called
+					assert.spy(r.watchers.ready).was_not.called();
+					assert.spy(r.watchers.waiting).was_not.called();
+					assert.spy(r.watchers.error).was.called(1);
+				end);
+				test("with the correct error", function ()
+					-- The error watcher state should be correct, to
+					-- demonstrate the error was passed correctly
+					assert.is_table(last_error);
+					assert.equal(last_error.e, "test error");
+					last_error = nil;
+				end);
+				assert.equal(r.state, "ready");
+				assert.equal(last_processed_item, "hello");
+			end);
+
+
 			local last_processed_item, last_error;
 			local r;
 			local wait, done;
@@ -97,45 +142,21 @@ describe("util.async", function()
 					error({ e = "post wait error" });
 				end
 				last_processed_item = item;
-			end, {
+			end, mock({
+				ready = function () end;
+				waiting = function () end;
 				error = function (runner, err)
 					assert.equal(r, runner);
 					last_error = err;
 				end;
-			});
+			}));
 
 			randomize(false);
 
-			it("should notify", function ()
-				local last_processed_item, last_error;
-				local r;
-				r = async.runner(function (item)
-					if item == "error" then
-						error({ e = "test error" });
-					end
-					last_processed_item = item;
-				end, {
-					error = function (runner, err)
-						assert.equal(r, runner);
-						last_error = err;
-					end;
-				});
-
-				r:run("hello");
-				assert.equal(r.state, "ready");
-				assert.equal(last_processed_item, "hello");
-
-				assert.equal(last_error, nil);
-				r:run("error");
-				assert.is_table(last_error);
-				assert.equal(last_error.e, "test error");
-				last_error = nil;
-				assert.equal(r.state, "ready");
-				assert.equal(last_processed_item, "hello");
-			end);
 			it("should not be fatal to the runner", function ()
 				r:run("world");
 				assert.equal(r.state, "ready");
+				assert.spy(r.watchers.ready).was_not.called();
 				assert.equal(last_processed_item, "world");
 			end);
 			it("should work despite a #waiter", function ()
@@ -146,13 +167,19 @@ describe("util.async", function()
 				last_error = nil;
 				r:run("wait");
 				assert.equal(r.state, "waiting");
+				assert.spy(r.watchers.waiting).was.called(1);
 				done();
 				-- At this point an error happens (state goes error->ready)
 				assert.equal(r.state, "ready");
+				assert.spy(r.watchers.error).was.called(1);
+				assert.spy(r.watchers.ready).was.called(1);
 				assert.is_table(last_error);
 				assert.equal(last_error.e, "post wait error");
 				last_error = nil;
 				r:run("hello again");
+				assert.spy(r.watchers.ready).was.called(1);
+				assert.spy(r.watchers.waiting).was.called(1);
+				assert.spy(r.watchers.error).was.called(1);
 				assert.equal(r.state, "ready");
 				assert.equal(last_processed_item, "hello again");
 			end);
@@ -162,47 +189,51 @@ describe("util.async", function()
 				local runner_func = spy.new(function (item)
 					if item == "error" then
 						error("test error");
-					elseif item == "wait-error" then
-						wait, done = async.waiter();
-						wait();
-						error("test error");
 					end
 					last_item = item;
 				end);
-				local runner = async.runner(runner_func, { error = spy.new(function () end) });
+				local runner = async.runner(runner_func, mock{
+					ready = function () end;
+					waiting = function () end;
+					error = function () end;
+				});
 				runner:enqueue("one");
 				runner:enqueue("error");
 				runner:enqueue("two");
 				runner:run();
 				assert.equal(r.state, "ready");
-				assert.equal(r.state, r.notified_state);
 				assert.spy(runner_func).was.called(3);
 				assert.spy(runner.watchers.error).was.called(1);
+				assert.spy(runner.watchers.ready).was.called(0);
+				assert.spy(runner.watchers.waiting).was.called(0);
 				assert.equal(last_item, "two");
 			end);
 
 			it("should continue to process work items during resume", function ()
 				local wait, done, last_item;
 				local runner_func = spy.new(function (item)
-					if item == "error" then
-						error("test error");
-					elseif item == "wait-error" then
+					if item == "wait-error" then
 						wait, done = async.waiter();
 						wait();
 						error("test error");
 					end
 					last_item = item;
 				end);
-				local runner = async.runner(runner_func, { error = spy.new(function () end) });
+				local runner = async.runner(runner_func, mock{
+					ready = function () end;
+					waiting = function () end;
+					error = function () end;
+				});
 				runner:enqueue("one");
 				runner:enqueue("wait-error");
 				runner:enqueue("two");
 				runner:run();
 				done();
 				assert.equal(r.state, "ready");
-				assert.equal(r.state, r.notified_state);
 				assert.spy(runner_func).was.called(3);
 				assert.spy(runner.watchers.error).was.called(1);
+				assert.spy(runner.watchers.waiting).was.called(1);
+				assert.spy(runner.watchers.ready).was.called(1);
 				assert.equal(last_item, "two");
 			end);
 		end);
