@@ -32,8 +32,7 @@ local function runner_continue(thread)
 		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
 		local ready_handler = runner.watchers.ready;
 		runner.state, runner.thread = "ready", nil;
-		if ready_handler then ready_handler(runner); end
-		runner.notified_state = "ready";
+		return runner:run();
 	elseif state == "ready" then
 		-- If state is 'ready', it is our responsibility to update runner.state from 'waiting'.
 		-- We also have to :run(), because the queue might have further items that will not be
