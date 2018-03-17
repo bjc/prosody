@@ -533,5 +533,23 @@ describe("util.async", function()
 			assert.equal(r1.state, "ready");
 			--for k, v in ipairs(l1) do print(k,v) end
 		end);
+
+		it("should allow done() to be called before wait()", function ()
+			local processed_item;
+			local rf = spy.new(function (item)
+				local wait, done = async.waiter();
+				done();
+				wait();
+				processed_item = item;
+			end);
+			local r = async.runner(rf, mock_watchers());
+			r:run("test");
+			assert.equal(processed_item, "test");
+			assert.equal(r.state, "ready");
+			-- Since the observable state did not change,
+			-- the watchers should not have been called
+			assert.spy(r.watchers.waiting).was_not.called();
+			assert.spy(r.watchers.ready).was_not.called();
+		end);
 	end);
 end);
