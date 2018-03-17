@@ -30,7 +30,6 @@ local function runner_continue(thread)
 		end
 		local error_handler = runner.watchers.error;
 		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
-		local ready_handler = runner.watchers.ready;
 		runner.state, runner.thread = "ready", nil;
 		return runner:run();
 	elseif state == "ready" then
