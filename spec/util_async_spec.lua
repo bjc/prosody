@@ -534,6 +534,46 @@ describe("util.async", function()
 			--for k, v in ipairs(l1) do print(k,v) end
 		end);
 
+		it("should support multiple done() calls", function ()
+			local processed_item;
+			local wait, done;
+			local rf = spy.new(function (item)
+				wait, done = async.waiter(4);
+				wait();
+				processed_item = item;
+			end);
+			local r = async.runner(rf, mock_watchers());
+			r:run("test");
+			for i = 1, 3 do
+				done();
+				assert.equal(r.state, "waiting");
+				assert.is_nil(processed_item);
+			end
+			done();
+			assert.equal(r.state, "ready");
+			assert.equal(processed_item, "test");
+			assert.spy(r.watchers.error).was_not.called();
+		end);
+
+		it("should not allow done() to be called more than specified", function ()
+			local processed_item;
+			local wait, done;
+			local rf = spy.new(function (item)
+				wait, done = async.waiter(4);
+				wait();
+				processed_item = item;
+			end);
+			local r = async.runner(rf, mock_watchers());
+			r:run("test");
+			for i = 1, 4 do
+				done();
+			end
+			assert.has_error(done);;
+			assert.equal(r.state, "ready");
+			assert.equal(processed_item, "test");
+			assert.spy(r.watchers.error).was_not.called();
+		end);
+
 		it("should allow done() to be called before wait()", function ()
 			local processed_item;
 			local rf = spy.new(function (item)
