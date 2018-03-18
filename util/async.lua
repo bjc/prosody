@@ -9,6 +9,31 @@ local function checkthread()
 	return thread;
 end
 
+local function runner_from_thread(thread)
+	local level = 0;
+	-- Find the 'level' of the top-most function (0 == current level, 1 == caller, ...)
+	while debug.getinfo(thread, level, "") do level = level + 1; end
+	local name, runner = debug.getlocal(thread, level-1, 1);
+	if name ~= "self" or type(runner) ~= "table" or runner.thread ~= thread then
+		return nil;
+	end
+	return runner;
+end
+
+local function call_watcher(runner, watcher_name, ...)
+	local watcher = runner.watchers[watcher_name];
+	if not watcher then
+		return false;
+	end
+	runner:log("debug", "Calling '%s' watcher", watcher_name);
+	local ok, err = pcall(watcher, runner, ...); -- COMPAT: Switch to xpcall after Lua 5.1
+	if not ok then
+		runner:log("error", "Error in '%s' watcher: %s", watcher_name, err);
+		return nil, err;
+	end
+	return true;
+end
+
 local function runner_continue(thread)
 	-- ASSUMPTION: runner is in 'waiting' state (but we don't have the runner to know for sure)
 	if coroutine.status(thread) ~= "suspended" then -- This should suffice
@@ -20,16 +45,12 @@ local function runner_continue(thread)
 		local err = state;
 		-- Running the coroutine failed, which means we have to find the runner manually,
 		-- in order to inform the error handler
-		local level = 0;
-		-- Find the 'level' of the top-most function (0 == current level, 1 == caller, ...)
-		while debug.getinfo(thread, level, "") do level = level + 1; end
-		ok, runner = debug.getlocal(thread, level-1, 1);
-		if ok ~= "self" or runner.thread ~= thread then
-			log("warn", "unexpected async state: unable to locate runner during error handling, got %s", ok);
+		runner = runner_from_thread(thread);
+		if not runner then
+			log("warn", "unexpected async state: unable to locate runner during error handling");
 			return false;
 		end
-		local error_handler = runner.watchers.error;
-		if error_handler then error_handler(runner, debug.traceback(thread, err)); end
+		call_watcher(runner, "error", debug.traceback(thread, err));
 		runner.state, runner.thread = "ready", nil;
 		return runner:run();
 	elseif state == "ready" then
