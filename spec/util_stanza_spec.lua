@@ -165,38 +165,49 @@ describe("util.stanza", function()
 		end);
 	end);
 
-	describe("#invalid", function ()
-		it("name should be rejected", function ()
-			assert.has_error(function ()
-				st.stanza(1234);
+	describe("should reject #invalid", function ()
+		local invalid_names = {
+			["empty string"] = "", ["characters"] = "<>";
+		}
+		local invalid_data = {
+			["number"] = 1234, ["table"] = {};
+			["utf8"] = string.char(0xF4, 0x90, 0x80, 0x80);
+		};
+
+		for value_type, value in pairs(invalid_names) do
+			it(value_type.." in tag names", function ()
+				assert.error_matches(function ()
+					st.stanza(value);
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza({});
+			it(value_type.." in attribute names", function ()
+				assert.error_matches(function ()
+					st.stanza("valid", { [value] = "valid" });
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza();
+		end
+		for value_type, value in pairs(invalid_data) do
+			it(value_type.." in tag names", function ()
+				assert.error_matches(function ()
+					st.stanza(value);
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza("");
+			it(value_type.." in attribute names", function ()
+				assert.error_matches(function ()
+					st.stanza("valid", { [value] = "valid" });
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza(string.char(0xC0));
+			it(value_type.." in attribute values", function ()
+				assert.error_matches(function ()
+					st.stanza("valid", { valid = value });
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza(string.char(0xF4, 0x90, 0x80, 0x80));
+			it(value_type.." in text node", function ()
+				assert.error_matches(function ()
+					st.stanza("valid"):text(value);
+				end, value_type);
 			end);
-			assert.has_error(function ()
-				st.stanza("<>");
-			end);
-			assert.has_error(function ()
-				st.stanza("&");
-			end);
-		end);
-		it("UTF-8 should be rejected", function ()
-			assert.has_error(function ()
-				st.stanza("tag"):text("hello "..string.char(0xF4, 0x90, 0x80, 0x80).." world");
-			end);
-		end);
+		end
 	end);
 
 	describe("#is_stanza", function ()
