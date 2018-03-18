@@ -7,7 +7,7 @@
 --
 
 
-local assert        =        assert;
+local error         =         error;
 local t_insert      =  table.insert;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
@@ -45,31 +45,45 @@ local _ENV = nil;
 local stanza_mt = { __name = "stanza" };
 stanza_mt.__index = stanza_mt;
 
-local function check_name(name)
-	assert(type(name) == "string", "tag name is not a string, "..type(name));
-	assert(#name > 0, "tag name is empty");
-	assert(not s_find(name, "[<>& '\"]"), "tag name contains invalid characters");
-	assert(valid_utf8(name), "tag name is invalid utf8");
+local function check_name(name, name_type)
+	if type(name) ~= "string" then
+		error("invalid "..name_type.." name: expected string, got "..type(name));
+	elseif #name == 0 then
+		error("invalid "..name_type.." name: empty string");
+	elseif s_find(name, "[<>& '\"]") then
+		error("invalid "..name_type.." name: contains invalid characters");
+	elseif not valid_utf8(name) then
+		error("invalid "..name_type.." name: contains invalid utf8");
+	end
 end
+
+local function check_text(text, text_type)
+	if type(text) ~= "string" then
+		error("invalid "..text_type.." value: expected string, got "..type(text));
+	elseif not valid_utf8(text) then
+		error("invalid "..text_type.." value: contains invalid utf8");
+	end
+end
+
 local function check_attr(attr)
 	if attr ~= nil then
-		assert(type(attr) == "table", "attribute is not a table");
+		if type(attr) ~= "table" then
+			error("invalid attributes, expected table got "..type(attr));
+		end
 		for k, v in pairs(attr) do
-			assert(type(k) == "string", "non-string key in attributes");
-			assert(valid_utf8(k), "attribute name is not valid utf8");
-			assert(type(v) == "string", "non-string value in attributes");
-			assert(valid_utf8(v), "attribute value is not valid utf8");
+			check_name(k, "attribute");
+			check_text(v, "attribute");
+			if type(v) ~= "string" then
+				error("invalid attribute value for '"..k.."': expected string, got "..type(v));
+			elseif not valid_utf8(v) then
+				error("invalid attribute value for '"..k.."': contains invalid utf8");
+			end
 		end
 	end
 end
-local function check_text(text)
-	assert(type(text) == "string", "text is not a string");
-	assert(valid_utf8(text), "text is not valid utf8");
-end
 
 local function new_stanza(name, attr, namespaces)
-	assert(name)
-	check_name(name);
+	check_name(name, "tag");
 	check_attr(attr);
 	local stanza = { name = name, attr = attr or {}, namespaces = namespaces, tags = {} };
 	return setmetatable(stanza, stanza_mt);
@@ -97,7 +111,7 @@ function stanza_mt:tag(name, attr, namespaces)
 end
 
 function stanza_mt:text(text)
-	check_text(text);
+	check_text(text, "text");
 	local last_add = self.last_add;
 	(last_add and last_add[#last_add] or self):add_direct_child(text);
 	return self;
