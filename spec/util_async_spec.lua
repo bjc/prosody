@@ -30,23 +30,23 @@ describe("util.async", function()
 	local function new(func)
 		local event_log = {};
 		local spy_func = spy.new(func);
-		return async.runner(spy_func, mock_watchers(event_log)), event_log, spy_func;
+		return async.runner(spy_func, mock_watchers(event_log)), spy_func, event_log;
 	end
 	describe("#runner", function()
 		it("should work", function()
-			local r, l = new(function (item) assert(type(item) == "number") end);
+			local r = new(function (item) assert(type(item) == "number") end);
 			r:run(1);
 			r:run(2);
 		end);
 
 		it("should be ready after creation", function ()
-			local r = async.runner(function () end);
+			local r = new(function () end);
 			assert.equal(r.state, "ready");
 		end);
 
 		it("should do nothing if the queue is empty", function ()
 			local did_run;
-			local r = async.runner(function () did_run = true end);
+			local r = new(function () did_run = true end);
 			r:run();
 			assert.equal(r.state, "ready");
 			assert.is_nil(did_run);
@@ -56,7 +56,7 @@ describe("util.async", function()
 
 		it("should support queuing work items without running", function ()
 			local did_run;
-			local r = async.runner(function () did_run = true end);
+			local r = new(function () did_run = true end);
 			r:enqueue("hello");
 			assert.equal(r.state, "ready");
 			assert.is_nil(did_run);
@@ -66,8 +66,7 @@ describe("util.async", function()
 
 		it("should support queuing multiple work items", function ()
 			local last_item;
-			local s = spy(function (item) last_item = item; end);
-			local r = async.runner(s);
+			local r, s = new(function (item) last_item = item; end);
 			r:enqueue("hello");
 			r:enqueue("there");
 			r:enqueue("world");
@@ -80,8 +79,7 @@ describe("util.async", function()
 
 		it("should support all simple data types", function ()
 			local last_item;
-			local s = spy(function (item) last_item = item; end);
-			local r = async.runner(s);
+			local r, s = new(function (item) last_item = item; end);
 			local values = { {}, 123, "hello", true, false };
 			for i = 1, #values do
 				r:enqueue(values[i]);
@@ -199,17 +197,12 @@ describe("util.async", function()
 
 			it("should continue to process work items", function ()
 				local last_item;
-				local runner_func = spy.new(function (item)
+				local runner, runner_func = new(function (item)
 					if item == "error" then
 						error("test error");
 					end
 					last_item = item;
 				end);
-				local runner = async.runner(runner_func, mock{
-					ready = function () end;
-					waiting = function () end;
-					error = function () end;
-				});
 				runner:enqueue("one");
 				runner:enqueue("error");
 				runner:enqueue("two");
@@ -224,7 +217,7 @@ describe("util.async", function()
 
 			it("should continue to process work items during resume", function ()
 				local wait, done, last_item;
-				local runner_func = spy.new(function (item)
+				local runner, runner_func = new(function (item)
 					if item == "wait-error" then
 						wait, done = async.waiter();
 						wait();
@@ -232,11 +225,6 @@ describe("util.async", function()
 					end
 					last_item = item;
 				end);
-				local runner = async.runner(runner_func, mock{
-					ready = function () end;
-					waiting = function () end;
-					error = function () end;
-				});
 				runner:enqueue("one");
 				runner:enqueue("wait-error");
 				runner:enqueue("two");
@@ -260,7 +248,7 @@ describe("util.async", function()
 		it("should work", function ()
 			local wait, done;
 
-			local r, l = new(function (item)
+			local r = new(function (item)
 				assert(type(item) == "number")
 				if item == 3 then
 					wait, done = async.waiter();
@@ -283,7 +271,7 @@ describe("util.async", function()
 			--------------------
 			local wait, done;
 			local last_item = 0;
-			local r, l = new(function (item)
+			local r = new(function (item)
 				assert(type(item) == "number")
 				assert(item == last_item + 1);
 				last_item = item;
@@ -309,7 +297,7 @@ describe("util.async", function()
 			--------------------
 			local wait, done;
 			local last_item = 0;
-			local r, l = new(function (item)
+			local r = new(function (item)
 				assert(type(item) == "number")
 				assert((item == last_item + 1) or item == 3);
 				last_item = item;
@@ -347,7 +335,7 @@ describe("util.async", function()
 			--------------------
 			local wait, done;
 			local last_item = 0;
-			local r, l = new(function (item)
+			local r = new(function (item)
 				assert(type(item) == "number")
 				assert((item == last_item + 1) or item == 3);
 				last_item = item;
@@ -386,7 +374,7 @@ describe("util.async", function()
 			--------------------
 			local wait1, done1;
 			local last_item1 = 0;
-			local r1, l1 = new(function (item)
+			local r1 = new(function (item)
 				assert(type(item) == "number")
 				assert((item == last_item1 + 1) or item == 3);
 				last_item1 = item;
@@ -398,7 +386,7 @@ describe("util.async", function()
 
 			local wait2, done2;
 			local last_item2 = 0;
-			local r2, l2 = new(function (item)
+			local r2 = new(function (item)
 				assert(type(item) == "number")
 				assert((item == last_item2 + 1) or item == 3);
 				last_item2 = item;
@@ -458,7 +446,7 @@ describe("util.async", function()
 			--------------------
 			local wait1, done1;
 			local last_item1 = 0;
-			local r1, l1 = new(function (item)
+			local r1 = new(function (item)
 				print("r1 processing ", item);
 				assert(type(item) == "number")
 				assert((item == last_item1 + 1) or item == 3);
@@ -471,7 +459,7 @@ describe("util.async", function()
 
 			local wait2, done2;
 			local last_item2 = 0;
-			local r2, l2 = new(function (item)
+			local r2 = new(function (item)
 				print("r2 processing ", item);
 				assert.is_number(item);
 				assert((item == last_item2 + 1) or item == 3);
@@ -539,7 +527,7 @@ describe("util.async", function()
 		it("should support multiple done() calls", function ()
 			local processed_item;
 			local wait, done;
-			local r, _, rf = new(function (item)
+			local r, rf = new(function (item)
 				wait, done = async.waiter(4);
 				wait();
 				processed_item = item;
@@ -559,7 +547,7 @@ describe("util.async", function()
 		it("should not allow done() to be called more than specified", function ()
 			local processed_item;
 			local wait, done;
-			local r, _, rf = new(function (item)
+			local r, rf = new(function (item)
 				wait, done = async.waiter(4);
 				wait();
 				processed_item = item;
@@ -576,7 +564,7 @@ describe("util.async", function()
 
 		it("should allow done() to be called before wait()", function ()
 			local processed_item;
-			local r, _, rf = new(function (item)
+			local r, rf = new(function (item)
 				local wait, done = async.waiter();
 				done();
 				wait();
