@@ -37,7 +37,7 @@ end
 local function runner_continue(thread)
 	-- ASSUMPTION: runner is in 'waiting' state (but we don't have the runner to know for sure)
 	if coroutine.status(thread) ~= "suspended" then -- This should suffice
-		log("warn", "unexpected async state: thread not suspended");
+		log("error", "unexpected async state: thread not suspended");
 		return false;
 	end
 	local ok, state, runner = coroutine.resume(thread);
@@ -47,7 +47,7 @@ local function runner_continue(thread)
 		-- in order to inform the error handler
 		runner = runner_from_thread(thread);
 		if not runner then
-			log("warn", "unexpected async state: unable to locate runner during error handling");
+			log("error", "unexpected async state: unable to locate runner during error handling");
 			return false;
 		end
 		call_watcher(runner, "error", debug.traceback(thread, err));
