@@ -9,11 +9,16 @@ describe("util.async", function()
 		print = function () end
 	end
 
-	local function mock_watchers()
+	local function mock_watchers(event_log)
+		local function generic_logging_watcher(name)
+			return function (...)
+				table.insert(event_log, { name = name, n = select("#", ...)-1, select(2, ...) });
+			end;
+		end;
 		return setmetatable(mock{
-			ready = function () end;
-			waiting = function () end;
-			error = function () end;
+			ready = generic_logging_watcher("ready");
+			waiting = generic_logging_watcher("waiting");
+			error = generic_logging_watcher("error");
 		}, {
 			__index = function (_, event)
 				-- Unexpected watcher called
@@ -23,8 +28,9 @@ describe("util.async", function()
 	end
 
 	local function new(func, name)
-		local log = {};
-		return async.runner(func, mock_watchers()), log;
+		local event_log = {};
+		local spy_func = spy.new(func);
+		return async.runner(spy_func, mock_watchers(event_log)), event_log, spy_func;
 	end
 	describe("#runner", function()
 		it("should work", function()
@@ -537,12 +543,11 @@ describe("util.async", function()
 		it("should support multiple done() calls", function ()
 			local processed_item;
 			local wait, done;
-			local rf = spy.new(function (item)
+			local r, _, rf = new(function (item)
 				wait, done = async.waiter(4);
 				wait();
 				processed_item = item;
 			end);
-			local r = async.runner(rf, mock_watchers());
 			r:run("test");
 			for i = 1, 3 do
 				done();
@@ -558,12 +563,11 @@ describe("util.async", function()
 		it("should not allow done() to be called more than specified", function ()
 			local processed_item;
 			local wait, done;
-			local rf = spy.new(function (item)
+			local r, _, rf = new(function (item)
 				wait, done = async.waiter(4);
 				wait();
 				processed_item = item;
 			end);
-			local r = async.runner(rf, mock_watchers());
 			r:run("test");
 			for i = 1, 4 do
 				done();
@@ -576,13 +580,12 @@ describe("util.async", function()
 
 		it("should allow done() to be called before wait()", function ()
 			local processed_item;
-			local rf = spy.new(function (item)
+			local r, _, rf = new(function (item)
 				local wait, done = async.waiter();
 				done();
 				wait();
 				processed_item = item;
 			end);
-			local r = async.runner(rf, mock_watchers());
 			r:run("test");
 			assert.equal(processed_item, "test");
 			assert.equal(r.state, "ready");
