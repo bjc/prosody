@@ -22,12 +22,12 @@ describe("util.async", function()
 		}, {
 			__index = function (_, event)
 				-- Unexpected watcher called
-				assert(false);
+				assert(false, "unexpected watcher called: "..event);
 			end;
 		})
 	end
 
-	local function new(func, name)
+	local function new(func)
 		local event_log = {};
 		local spy_func = spy.new(func);
 		return async.runner(spy_func, mock_watchers(event_log)), event_log, spy_func;
@@ -40,13 +40,13 @@ describe("util.async", function()
 		end);
 
 		it("should be ready after creation", function ()
-			local r = async.runner(function (item) end);
+			local r = async.runner(function () end);
 			assert.equal(r.state, "ready");
 		end);
 
 		it("should do nothing if the queue is empty", function ()
 			local did_run;
-			local r = async.runner(function (item) did_run = true end);
+			local r = async.runner(function () did_run = true end);
 			r:run();
 			assert.equal(r.state, "ready");
 			assert.is_nil(did_run);
@@ -56,7 +56,7 @@ describe("util.async", function()
 
 		it("should support queuing work items without running", function ()
 			local did_run;
-			local r = async.runner(function (item) did_run = true end);
+			local r = async.runner(function () did_run = true end);
 			r:enqueue("hello");
 			assert.equal(r.state, "ready");
 			assert.is_nil(did_run);
@@ -141,63 +141,64 @@ describe("util.async", function()
 				assert.equal(last_processed_item, "hello");
 			end);
 
+			do
+				local last_processed_item, last_error;
+				local r;
+				local wait, done;
+				r = async.runner(function (item)
+					if item == "error" then
+						error({ e = "test error" });
+					elseif item == "wait" then
+						wait, done = async.waiter();
+						wait();
+						error({ e = "post wait error" });
+					end
+					last_processed_item = item;
+				end, mock({
+					ready = function () end;
+					waiting = function () end;
+					error = function (runner, err)
+						assert.equal(r, runner);
+						last_error = err;
+					end;
+				}));
 
-			local last_processed_item, last_error;
-			local r;
-			local wait, done;
-			r = async.runner(function (item)
-				if item == "error" then
-					error({ e = "test error" });
-				elseif item == "wait" then
-					wait, done = async.waiter();
-					wait();
-					error({ e = "post wait error" });
-				end
-				last_processed_item = item;
-			end, mock({
-				ready = function () end;
-				waiting = function () end;
-				error = function (runner, err)
-					assert.equal(r, runner);
-					last_error = err;
-				end;
-			}));
+				randomize(false); --luacheck: ignore 113/randomize
 
-			randomize(false);
-
-			it("should not be fatal to the runner", function ()
-				r:run("world");
-				assert.equal(r.state, "ready");
-				assert.spy(r.watchers.ready).was_not.called();
-				assert.equal(last_processed_item, "world");
-			end);
-			it("should work despite a #waiter", function ()
-				-- This test covers an important case where a runner
-				-- throws an error while being executed outside of the
-				-- main loop. This happens when it was blocked ('waiting'),
-				-- and then released (via a call to done()).
-				last_error = nil;
-				r:run("wait");
-				assert.equal(r.state, "waiting");
-				assert.spy(r.watchers.waiting).was.called(1);
-				done();
-				-- At this point an error happens (state goes error->ready)
-				assert.equal(r.state, "ready");
-				assert.spy(r.watchers.error).was.called(1);
-				assert.spy(r.watchers.ready).was.called(1);
-				assert.is_table(last_error);
-				assert.equal(last_error.e, "post wait error");
-				last_error = nil;
-				r:run("hello again");
-				assert.spy(r.watchers.ready).was.called(1);
-				assert.spy(r.watchers.waiting).was.called(1);
-				assert.spy(r.watchers.error).was.called(1);
-				assert.equal(r.state, "ready");
-				assert.equal(last_processed_item, "hello again");
-			end);
+				it("should not be fatal to the runner", function ()
+					r:run("world");
+					assert.equal(r.state, "ready");
+					assert.spy(r.watchers.ready).was_not.called();
+					assert.equal(last_processed_item, "world");
+				end);
+				it("should work despite a #waiter", function ()
+					-- This test covers an important case where a runner
+					-- throws an error while being executed outside of the
+					-- main loop. This happens when it was blocked ('waiting'),
+					-- and then released (via a call to done()).
+					last_error = nil;
+					r:run("wait");
+					assert.equal(r.state, "waiting");
+					assert.spy(r.watchers.waiting).was.called(1);
+					done();
+					-- At this point an error happens (state goes error->ready)
+					assert.equal(r.state, "ready");
+					assert.spy(r.watchers.error).was.called(1);
+					assert.spy(r.watchers.ready).was.called(1);
+					assert.is_table(last_error);
+					assert.equal(last_error.e, "post wait error");
+					last_error = nil;
+					r:run("hello again");
+					assert.spy(r.watchers.ready).was.called(1);
+					assert.spy(r.watchers.waiting).was.called(1);
+					assert.spy(r.watchers.error).was.called(1);
+					assert.equal(r.state, "ready");
+					assert.equal(last_processed_item, "hello again");
+				end);
+			end
 
 			it("should continue to process work items", function ()
-				local wait, done, last_item;
+				local last_item;
 				local runner_func = spy.new(function (item)
 					if item == "error" then
 						error("test error");
@@ -213,7 +214,7 @@ describe("util.async", function()
 				runner:enqueue("error");
 				runner:enqueue("two");
 				runner:run();
-				assert.equal(r.state, "ready");
+				assert.equal(runner.state, "ready");
 				assert.spy(runner_func).was.called(3);
 				assert.spy(runner.watchers.error).was.called(1);
 				assert.spy(runner.watchers.ready).was.called(0);
@@ -241,7 +242,7 @@ describe("util.async", function()
 				runner:enqueue("two");
 				runner:run();
 				done();
-				assert.equal(r.state, "ready");
+				assert.equal(runner.state, "ready");
 				assert.spy(runner_func).was.called(3);
 				assert.spy(runner.watchers.error).was.called(1);
 				assert.spy(runner.watchers.waiting).was.called(1);
@@ -544,7 +545,7 @@ describe("util.async", function()
 				processed_item = item;
 			end);
 			r:run("test");
-			for i = 1, 3 do
+			for _ = 1, 3 do
 				done();
 				assert.equal(r.state, "waiting");
 				assert.is_nil(processed_item);
@@ -564,10 +565,10 @@ describe("util.async", function()
 				processed_item = item;
 			end);
 			r:run("test");
-			for i = 1, 4 do
+			for _ = 1, 4 do
 				done();
 			end
-			assert.has_error(done);;
+			assert.has_error(done);
 			assert.equal(r.state, "ready");
 			assert.equal(processed_item, "test");
 			assert.spy(r.watchers.error).was_not.called();
