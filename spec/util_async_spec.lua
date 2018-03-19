@@ -323,7 +323,6 @@ describe("util.async", function()
 			r:run(2);
 			assert(r.state == "ready");
 
-			local dones = {};
 			r:run(3);
 			assert(r.state == "waiting");
 			r:run(3);
@@ -362,7 +361,6 @@ describe("util.async", function()
 			r:run(2);
 			assert(r.state == "ready");
 
-			local dones = {};
 			r:run(3);
 			assert(r.state == "waiting");
 			r:run(3);
@@ -414,7 +412,6 @@ describe("util.async", function()
 			r1:run(2);
 			assert(r1.state == "ready");
 
-			local dones = {};
 			r1:run(3);
 			assert(r1.state == "waiting");
 			r1:run(3);
@@ -492,7 +489,6 @@ describe("util.async", function()
 			r1:run(5);
 			assert.equal(r1.state, "ready");
 
-			local dones = {};
 			r1:run(3);
 			assert.equal(r1.state, "waiting");
 			r1:run(5); -- Will error, when we get to it
@@ -537,7 +533,6 @@ describe("util.async", function()
 			assert.equal(r1.state, "ready");
 
 			assert.equal(r1.state, "ready");
-			--for k, v in ipairs(l1) do print(k,v) end
 		end);
 
 		it("should support multiple done() calls", function ()
