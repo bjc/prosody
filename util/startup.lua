@@ -512,7 +512,7 @@ function startup.prosody()
 	startup.init_data_store();
 	startup.init_global_protection();
 	startup.prepare_to_start();
---	startup.notify_started();
+	startup.notify_started();
 end
 
 return startup;
