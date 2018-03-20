@@ -43,188 +43,11 @@ if CFG_DATADIR then
 	end
 end
 
--- Global 'prosody' object
-local prosody = {
-	hosts = {};
-	events = require "util.events".new();
-	platform = "posix";
-	lock_globals = function () end;
-	unlock_globals = function () end;
-	installed = CFG_SOURCEDIR ~= nil;
-	core_post_stanza = function () end; -- TODO: mod_router!
-};
-_G.prosody = prosody;
+-----------
 
-local dependencies = require "util.dependencies";
-if not dependencies.check_dependencies() then
-	os.exit(1);
-end
+require "util.startup".prosodyctl();
 
-config = require "core.configmanager"
-
-local ENV_CONFIG;
-do
-	local filenames = {};
-
-	local filename;
-	if arg[1] == "--config" and arg[2] then
-		table.insert(filenames, arg[2]);
-		if CFG_CONFIGDIR then
-			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
-		end
-		table.remove(arg, 1); table.remove(arg, 1);
-	else
-		table.insert(filenames, (CFG_CONFIGDIR or ".").."/prosody.cfg.lua");
-	end
-	for _,_filename in ipairs(filenames) do
-		filename = _filename;
-		local file = io.open(filename);
-		if file then
-			file:close();
-			ENV_CONFIG = filename;
-			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
-			break;
-		end
-	end
-	local ok, level, err = config.load(filename);
-	if not ok then
-		print("\n");
-		print("**************************");
-		if level == "parser" then
-			print("A problem occured while reading the config file "..filename);
-			local err_line, err_message = tostring(err):match("%[string .-%]:(%d*): (.*)");
-			print("Error"..(err_line and (" on line "..err_line) or "")..": "..(err_message or tostring(err)));
-			print("");
-		elseif level == "file" then
-			print("Prosody was unable to find the configuration file.");
-			print("We looked for: "..filename);
-			print("A sample config file is included in the Prosody download called prosody.cfg.lua.dist");
-			print("Copy or rename it to prosody.cfg.lua and edit as necessary.");
-		end
-		print("More help on configuring Prosody can be found at https://prosody.im/doc/configure");
-		print("Good luck!");
-		print("**************************");
-		print("");
-		os.exit(1);
-	end
-end
-local original_logging_config = config.get("*", "log");
-config.set("*", "log", { { levels = { min="info" }, to = "console" } });
-
-local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
-local custom_plugin_paths = config.get("*", "plugin_paths");
-if custom_plugin_paths then
-	local path_sep = package.config:sub(3,3);
-	-- path1;path2;path3;defaultpath...
-	CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
-end
-prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR,
-	          plugins = CFG_PLUGINDIR or "plugins", data = data_path };
-
-if prosody.installed then
-	-- Change working directory to data path.
-	require "lfs".chdir(data_path);
-end
-
-require "core.loggingmanager"
-
-dependencies.log_warnings();
-
--- Switch away from root and into the prosody user --
-local switched_user, current_uid;
-
-local want_pposix_version = "0.4.0";
-local have_pposix, pposix = pcall(require, "util.pposix");
-
-if have_pposix and pposix then
-	if pposix._VERSION ~= want_pposix_version then
-		print(string.format("Unknown version (%s) of binary pposix module, expected %s",
-			tostring(pposix._VERSION), want_pposix_version)); return;
-	end
-	current_uid = pposix.getuid();
-	local arg_root = arg[1] == "--root";
-	if arg_root then table.remove(arg, 1); end
-	if current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
-		-- We haz root!
-		local desired_user = config.get("*", "prosody_user") or "prosody";
-		local desired_group = config.get("*", "prosody_group") or desired_user;
-		local ok, err = pposix.setgid(desired_group);
-		if ok then
-			ok, err = pposix.initgroups(desired_user);
-		end
-		if ok then
-			ok, err = pposix.setuid(desired_user);
-			if ok then
-				-- Yay!
-				switched_user = true;
-			end
-		end
-		if not switched_user then
-			-- Boo!
-			print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
-		else
-			-- Make sure the Prosody user can read the config
-			local conf, err, errno = io.open(ENV_CONFIG);
-			if conf then
-				conf:close();
-			else
-				print("The config file is not readable by the '"..desired_user.."' user.");
-				print("Prosody will not be able to read it.");
-				print("Error was "..err);
-				os.exit(1);
-			end
-		end
-	end
-
-	-- Set our umask to protect data files
-	pposix.umask(config.get("*", "umask") or "027");
-	pposix.setenv("HOME", data_path);
-	pposix.setenv("PROSODY_CONFIG", ENV_CONFIG);
-else
-	print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
-	print("For more help send the below error to us through https://prosody.im/discuss");
-	print(tostring(pposix))
-	os.exit(1);
-end
-
-local function test_writeable(filename)
-	local f, err = io.open(filename, "a");
-	if not f then
-		return false, err;
-	end
-	f:close();
-	return true;
-end
-
-local unwriteable_files = {};
-if type(original_logging_config) == "string" and original_logging_config:sub(1,1) ~= "*" then
-	local ok, err = test_writeable(original_logging_config);
-	if not ok then
-		table.insert(unwriteable_files, err);
-	end
-elseif type(original_logging_config) == "table" then
-	for _, rule in ipairs(original_logging_config) do
-		if rule.filename then
-			local ok, err = test_writeable(rule.filename);
-			if not ok then
-				table.insert(unwriteable_files, err);
-			end
-		end
-	end
-end
-
-if #unwriteable_files > 0 then
-	print("One of more of the Prosody log files are not");
-	print("writeable, please correct the errors and try");
-	print("starting prosodyctl again.");
-	print("");
-	for _, err in ipairs(unwriteable_files) do
-		print(err);
-	end
-	print("");
-	os.exit(1);
-end
-
+-----------
 
 local error_messages = setmetatable({
 		["invalid-username"] = "The given username is invalid in a Jabber ID";
@@ -240,52 +63,13 @@ local error_messages = setmetatable({
 		["not-running"] = "Prosody is not running";
 		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-hosts = prosody.hosts;
-
-local function make_host(hostname)
-	return {
-		type = "local",
-		events = prosody.events,
-		modules = {},
-		sessions = {},
-		users = require "core.usermanager".new_null_provider(hostname)
-	};
-end
-
-for hostname, config in pairs(config.getconfig()) do
-	hosts[hostname] = make_host(hostname);
-end
-
+local config = require "core.configmanager";
 local modulemanager = require "core.modulemanager"
-
 local prosodyctl = require "util.prosodyctl"
 local socket = require "socket"
-
-local http = require "net.http"
-local config_ssl = config.get("*", "ssl") or {}
-local https_client = config.get("*", "client_https_ssl")
-http.default.options.sslctx = require "core.certmanager".create_context("client_https port 0", "client",
-	{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
+local dependencies = require "util.dependencies";
 
 -----------------------
-
- -- FIXME: Duplicate code waiting for util.startup
-function read_version()
-	-- Try to determine version
-	local version_file = io.open((CFG_SOURCEDIR or ".").."/prosody.version");
-	prosody.version = "unknown";
-	if version_file then
-		prosody.version = version_file:read("*a"):gsub("%s*$", "");
-		version_file:close();
-		if #prosody.version == 12 and prosody.version:match("^[a-f0-9]+$") then
-			prosody.version = "hg:"..prosody.version;
-		end
-	else
-		local hg = require"util.mercurial";
-		local hgid = hg.check_id(CFG_SOURCEDIR or ".");
-		if hgid then prosody.version = "hg:" .. hgid; end
-	end
-end
 
 local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
 local show_usage = prosodyctl.show_usage;
@@ -546,7 +330,6 @@ function commands.restart(arg)
 end
 
 function commands.about(arg)
-	read_version();
 	if arg[1] == "--help" then
 		show_usage([[about]], [[Show information about this Prosody installation]]);
 		return 1;
@@ -562,9 +345,9 @@ function commands.about(arg)
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
 	print("# Prosody directories");
-	print("Data directory:     "..relpath(pwd, data_path));
-	print("Config directory:   "..relpath(pwd, CFG_CONFIGDIR or "."));
-	print("Source directory:   "..relpath(pwd, CFG_SOURCEDIR or "."));
+	print("Data directory:     "..relpath(pwd, prosody.paths.data));
+	print("Config directory:   "..relpath(pwd, prosody.paths.config or "."));
+	print("Source directory:   "..relpath(pwd, prosody.paths.source or "."));
 	print("Plugin directories:")
 	print("  "..(prosody.paths.plugins:gsub("([^;]+);?", function(path)
 			path = config.resolve_relative_path(pwd, path);
@@ -716,7 +499,8 @@ local function use_existing(filename)
 	end
 end
 
-local cert_basedir = CFG_DATADIR or "./certs";
+local have_pposix, pposix = pcall(require, "util.pposix");
+local cert_basedir = prosody.paths.data == "." and "./certs" or prosody.paths.data;
 if have_pposix and pposix.getuid() == 0 then
 	-- FIXME should be enough to check if this directory is writable
 	local cert_dir = config.get("*", "certificates") or "certs";
