@@ -475,7 +475,7 @@ function startup.make_dummy_hosts()
 		};
 	end
 
-	for hostname, config in pairs(config.getconfig()) do
+	for hostname in pairs(config.getconfig()) do
 		hosts[hostname] = make_host(hostname);
 	end
 end
