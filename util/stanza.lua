@@ -101,6 +101,10 @@ function stanza_mt:body(text, attr)
 	return self:tag("body", attr):text(text);
 end
 
+function stanza_mt:text_tag(name, text, attr, namespaces)
+	return self:tag(name, attr, namespaces):text(text):up();
+end
+
 function stanza_mt:tag(name, attr, namespaces)
 	local s = new_stanza(name, attr, namespaces);
 	local last_add = self.last_add;
