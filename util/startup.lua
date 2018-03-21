@@ -343,7 +343,7 @@ function startup.log_greeting()
 end
 
 function startup.notify_started()
-	prosody.events.fire_event("server-started");	
+	prosody.events.fire_event("server-started");
 end
 
 -- Override logging config (used by prosodyctl)
@@ -402,7 +402,7 @@ function startup.switch_user()
 				end
 			end
 		end
-	
+
 		-- Set our umask to protect data files
 		pposix.umask(config.get("*", "umask") or "027");
 		pposix.setenv("HOME", data_path);
@@ -424,7 +424,7 @@ function startup.check_unwriteable()
 		f:close();
 		return true;
 	end
-	
+
 	local unwriteable_files = {};
 	if type(original_logging_config) == "string" and original_logging_config:sub(1,1) ~= "*" then
 		local ok, err = test_writeable(original_logging_config);
@@ -441,7 +441,7 @@ function startup.check_unwriteable()
 			end
 		end
 	end
-	
+
 	if #unwriteable_files > 0 then
 		print("One of more of the Prosody log files are not");
 		print("writeable, please correct the errors and try");
@@ -469,7 +469,7 @@ function startup.make_dummy_hosts()
 			users = require "core.usermanager".new_null_provider(hostname)
 		};
 	end
-	
+
 	for hostname, config in pairs(config.getconfig()) do
 		hosts[hostname] = make_host(hostname);
 	end
