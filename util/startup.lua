@@ -1,3 +1,5 @@
+-- Ignore the CFG_* variables
+-- luacheck: ignore 113/CFG_CONFIGDIR 113/CFG_SOURCEDIR 113/CFG_DATADIR 113/CFG_PLUGINDIR
 local startup = {};
 
 local prosody = { events = require "util.events".new() };
@@ -27,7 +29,7 @@ function startup.read_config()
 		if file then
 			file:close();
 			prosody.config_file = filename;
-			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$");
+			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$"); -- luacheck: ignore 111
 			break;
 		end
 	end
@@ -114,7 +116,7 @@ function startup.sandbox_require()
 			return env;
 		end
 	end
-	function require(...)
+	function require(...) -- luacheck: ignore 121
 		local curr_env = getfenv(2);
 		local curr_env_mt = getmetatable(curr_env);
 		local _realG_mt = getmetatable(_realG);
@@ -184,6 +186,7 @@ function startup.chdir()
 end
 
 function startup.init_global_state()
+	-- luacheck: ignore 121
 	prosody.bare_sessions = {};
 	prosody.full_sessions = {};
 	prosody.hosts = {};
@@ -199,6 +202,7 @@ function startup.init_global_state()
 	if custom_plugin_paths then
 		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
+		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 	end
 	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".",
@@ -459,6 +463,7 @@ function startup.make_dummy_hosts()
 	-- When running under prosodyctl, we don't want to
 	-- fully initialize the server, so we populate prosody.hosts
 	-- with just enough things for most code to work correctly
+	-- luacheck: ignore 122/hosts
 	prosody.core_post_stanza = function () end; -- TODO: mod_router!
 	local function make_host(hostname)
 		return {
