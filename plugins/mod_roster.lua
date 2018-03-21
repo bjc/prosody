@@ -50,7 +50,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 						name = item.name,
 					});
 					for group in pairs(item.groups) do
-						roster:tag("group"):text(group):up();
+						roster:text_tag("group", group);
 					end
 					roster:up(); -- move out from item
 				end
