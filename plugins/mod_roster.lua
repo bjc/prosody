@@ -11,9 +11,8 @@ local st = require "util.stanza"
 
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
-local t_concat = table.concat;
 local tonumber = tonumber;
-local pairs, ipairs = pairs, ipairs;
+local pairs = pairs;
 
 local rm_load_roster = require "core.rostermanager".load_roster;
 local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
@@ -96,12 +95,10 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 						else
 							r_item.subscription = "none";
 						end
-						for _, child in ipairs(item) do
-							if child.name == "group" then
-								local text = t_concat(child);
-								if text and text ~= "" then
-									r_item.groups[text] = true;
-								end
+						for group in item:childtags("group") do
+							local text = group:get_text();
+							if text then
+								r_item.groups[text] = true;
 							end
 						end
 						local success, err_type, err_cond, err_msg = rm_add_to_roster(session, jid, r_item);
