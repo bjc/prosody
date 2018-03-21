@@ -68,6 +68,12 @@ describe("util.stanza", function()
 			assert.are.equal(s.attr.xmlns, "myxmlns");
 			assert.are.equal(s.attr["Объект"], "&");
 		end);
+		it("should allow :text() with nil and empty strings", function ()
+			local s_control = st.stanza("foo");
+			assert.same(st.stanza("foo"):text(), s_control);
+			assert.same(st.stanza("foo"):text(nil), s_control);
+			assert.same(st.stanza("foo"):text(""), s_control);
+		end);
 	end);
 
 	describe("#message()", function()
@@ -172,6 +178,7 @@ describe("util.stanza", function()
 		local invalid_data = {
 			["number"] = 1234, ["table"] = {};
 			["utf8"] = string.char(0xF4, 0x90, 0x80, 0x80);
+			["nil"] = "nil"; ["boolean"] = true;
 		};
 
 		for value_type, value in pairs(invalid_names) do
@@ -187,6 +194,7 @@ describe("util.stanza", function()
 			end);
 		end
 		for value_type, value in pairs(invalid_data) do
+			if value == "nil" then value = nil; end
 			it(value_type.." in tag names", function ()
 				assert.error_matches(function ()
 					st.stanza(value);
@@ -197,16 +205,18 @@ describe("util.stanza", function()
 					st.stanza("valid", { [value] = "valid" });
 				end, value_type);
 			end);
-			it(value_type.." in attribute values", function ()
-				assert.error_matches(function ()
-					st.stanza("valid", { valid = value });
-				end, value_type);
-			end);
-			it(value_type.." in text node", function ()
-				assert.error_matches(function ()
-					st.stanza("valid"):text(value);
-				end, value_type);
-			end);
+			if value ~= nil then
+				it(value_type.." in attribute values", function ()
+					assert.error_matches(function ()
+						st.stanza("valid", { valid = value });
+					end, value_type);
+				end);
+				it(value_type.." in text node", function ()
+					assert.error_matches(function ()
+						st.stanza("valid"):text(value);
+					end, value_type);
+				end);
+			end
 		end
 	end);
 
