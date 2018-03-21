@@ -59,6 +59,10 @@ function simple_broadcast(kind, node, jids, item, actor)
 	end
 end
 
+function is_item_stanza(item)
+	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
+end
+
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
@@ -207,6 +211,7 @@ function module.load()
 		nodestore = node_store;
 		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
+		itemcheck = is_item_stanza;
 		get_affiliation = get_affiliation;
 
 		normalize_jid = jid_bare;
