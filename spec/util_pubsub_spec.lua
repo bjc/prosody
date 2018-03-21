@@ -28,4 +28,28 @@ describe("util.pubsub", function ()
 			end);
 		end);
 	end);
+
+	describe("simple publishing", function ()
+		local broadcaster = spy.new(function () end);
+		local service = pubsub.new({ broadcaster = broadcaster; });
+
+		it("creates a node", function ()
+			assert.truthy(service:create("node", true));
+		end);
+
+		it("publishes an item", function ()
+			assert.truthy(service:publish("node", true, "1", "item 1"));
+		end);
+
+		it("called the broadcaster", function ()
+			assert.spy(broadcaster).was_called();
+		end);
+
+		it("should return one item", function ()
+			local ok, ret = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same({ "1", ["1"] = "item 1" }, ret);
+		end);
+
+	end);
 end);
