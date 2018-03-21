@@ -71,7 +71,7 @@ function listener.onincoming(conn, data)
 	end
 end
 
-function listener.ondisconnect(conn, err)
+function listener.ondisconnect(conn)
 	local session = sessions[conn];
 	if session then
 		if transfers[session.sha] then
@@ -79,7 +79,7 @@ function listener.ondisconnect(conn, err)
 			if initiator == conn and target ~= nil then
 				target:close();
 			elseif target == conn and initiator ~= nil then
-			 	initiator:close();
+				initiator:close();
 			end
 			transfers[session.sha] = nil;
 		end
@@ -109,7 +109,8 @@ function module.add_host(module)
 		local origin, stanza = event.origin, event.stanza;
 
 		-- check ACL
-		while proxy_acl and #proxy_acl > 0 do -- using 'while' instead of 'if' so we can break out of it
+		-- using 'while' instead of 'if' so we can break out of it
+		while proxy_acl and #proxy_acl > 0 do --luacheck: ignore 512
 			local jid = stanza.attr.from;
 			local allow;
 			for _, acl in ipairs(proxy_acl) do
