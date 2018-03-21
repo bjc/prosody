@@ -123,7 +123,7 @@ function module.add_host(module)
 
 		local sid = stanza.tags[1].attr.sid;
 		origin.send(st.reply(stanza):tag("query", {xmlns="http://jabber.org/protocol/bytestreams", sid=sid})
-			:tag("streamhost", {jid=host, host=proxy_address, port=proxy_port}));
+			:tag("streamhost", {jid=host, host=proxy_address, port=("%d"):format(proxy_port)}));
 		return true;
 	end);
 
