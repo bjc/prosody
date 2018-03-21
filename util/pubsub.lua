@@ -6,6 +6,7 @@ local service_mt = {};
 local default_config = {
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
+	itemcheck = function () return true; end;
 	get_affiliation = function () end;
 	capabilities = {};
 };
@@ -305,6 +306,9 @@ function service:publish(node, actor, id, item)
 			return ok, err;
 		end
 		node_obj = self.nodes[node];
+	end
+	if not self.config.itemcheck(item) then
+		return nil, "internal-server-error";
 	end
 	local node_data = self.data[node];
 	local ok = node_data:set(id, item);
