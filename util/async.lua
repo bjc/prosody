@@ -219,4 +219,24 @@ local function ready()
 	return pcall(checkthread);
 end
 
-return { ready = ready, waiter = waiter, guarder = guarder, runner = runner };
+local once; -- forward declaration
+do
+	local once_watchers = {
+		error = function (_, err)
+			error(err);
+		end;
+	};
+	local function once_runner(func) func(); end
+	function once(func)
+		local r = runner(func, once_watchers);
+		return r:run(func);
+	end
+end
+
+return {
+	once = once;
+	ready = ready;
+	waiter = waiter;
+	guarder = guarder;
+	runner = runner
+};
