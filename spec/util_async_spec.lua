@@ -593,4 +593,14 @@ describe("util.async", function()
 			assert.spy(r.watchers.error).was_not.called();
 		end);
 	end);
+
+	describe("#once()", function ()
+		it("should work", function ()
+			local f = spy.new(function ()
+				assert.truthy(async.ready());
+			end);
+			async.once(f);
+			assert.spy(f).was.called();
+		end);
+	end);
 end);
