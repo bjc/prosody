@@ -219,7 +219,7 @@ function commands.start(arg)
 		return 1;
 	end
 
-	local ok, ret = prosodyctl.start();
+	local ok, ret = prosodyctl.start(prosody.paths.source);
 	if ok then
 		local daemonize = config.get("*", "daemonize");
 		if daemonize == nil then
