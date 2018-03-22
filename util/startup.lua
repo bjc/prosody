@@ -179,13 +179,6 @@ function startup.detect_installed()
 	end
 end
 
-function startup.chdir()
-	if prosody.installed then
-		-- Change working directory to data path.
-		require "lfs".chdir(data_path);
-	end
-end
-
 function startup.init_global_state()
 	-- luacheck: ignore 121
 	prosody.bare_sessions = {};
@@ -214,6 +207,13 @@ function startup.init_global_state()
 	startup.detect_platform();
 	startup.detect_installed();
 	_G.prosody = prosody;
+end
+
+function startup.chdir()
+	if prosody.installed then
+		-- Change working directory to data path.
+		require "lfs".chdir(prosody.paths.data);
+	end
 end
 
 function startup.add_global_prosody_functions()
