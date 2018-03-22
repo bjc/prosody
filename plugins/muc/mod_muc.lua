@@ -153,6 +153,12 @@ function track_room(room)
 	return false;
 end
 
+local function handle_broken_room(room, origin, stanza)
+	module:log("debug", "Returning error from broken room %s", room.jid);
+	origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
+	return true;
+end
+
 local function restore_room(jid)
 	local node = jid_split(jid);
 	local data, err = room_configs:get(node);
@@ -167,6 +173,8 @@ local function restore_room(jid)
 	elseif err then
 		module:log("error", "Error restoring room %s from storage: %s", jid, err);
 		local room = muclib.new_room(jid, { locked = math.huge });
+		room.handle_normal_presence = handle_broken_room;
+		room.handle_first_presence = handle_broken_room;
 		return room;
 	end
 end
