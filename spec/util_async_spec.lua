@@ -602,5 +602,13 @@ describe("util.async", function()
 			async.once(f);
 			assert.spy(f).was.called();
 		end);
+		it("should propagate errors", function ()
+			local function should_error()
+				async.once(function ()
+					error("hello world");
+				end);
+			end;
+			assert.error_matches(should_error, "hello world");
+		end);
 	end);
 end);
