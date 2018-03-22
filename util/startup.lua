@@ -461,24 +461,25 @@ function startup.check_unwriteable()
 	end
 end
 
+function startup.make_host(hostname)
+	return {
+		type = "local",
+		events = prosody.events,
+		modules = {},
+		sessions = {},
+		users = require "core.usermanager".new_null_provider(hostname)
+	};
+end
+
 function startup.make_dummy_hosts()
 	-- When running under prosodyctl, we don't want to
 	-- fully initialize the server, so we populate prosody.hosts
 	-- with just enough things for most code to work correctly
 	-- luacheck: ignore 122/hosts
 	prosody.core_post_stanza = function () end; -- TODO: mod_router!
-	local function make_host(hostname)
-		return {
-			type = "local",
-			events = prosody.events,
-			modules = {},
-			sessions = {},
-			users = require "core.usermanager".new_null_provider(hostname)
-		};
-	end
 
 	for hostname in pairs(config.getconfig()) do
-		hosts[hostname] = make_host(hostname);
+		hosts[hostname] = startup.make_host(hostname);
 	end
 end
 
