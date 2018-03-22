@@ -84,7 +84,9 @@ end
 
 local function guarder()
 	local guards = {};
+	local default_id = {};
 	return function (id, func)
+		id = id or default_id;
 		local thread = checkthread();
 		local guard = guards[id];
 		if not guard then
