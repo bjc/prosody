@@ -9,6 +9,8 @@ local async = require "util.async";
 
 local dependencies = require "util.dependencies";
 
+local original_logging_config;
+
 function startup.read_config()
 	local filenames = {};
 
@@ -353,7 +355,7 @@ end
 
 -- Override logging config (used by prosodyctl)
 function startup.force_console_logging()
-	local original_logging_config = config.get("*", "log");
+	original_logging_config = config.get("*", "log");
 	config.set("*", "log", { { levels = { min="info" }, to = "console" } });
 end
 
