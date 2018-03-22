@@ -601,6 +601,7 @@ describe("util.async", function()
 			end);
 			async.once(f);
 			assert.spy(f).was.called();
+			assert.spy(f).was.called_with();
 		end);
 		it("should propagate errors", function ()
 			local function should_error()

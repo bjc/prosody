@@ -231,7 +231,7 @@ do
 	};
 	local function once_runner(func) func(); end
 	function once(func)
-		local r = runner(func, once_watchers);
+		local r = runner(once_runner, once_watchers);
 		return r:run(func);
 	end
 end
