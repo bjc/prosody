@@ -161,23 +161,25 @@ module:hook("server-stopped", remove_pidfile);
 
 -- Set signal handlers
 if have_signal then
-	signal.signal("SIGTERM", function ()
-		module:log("warn", "Received SIGTERM");
-		prosody.unlock_globals();
-		prosody.shutdown("Received SIGTERM");
-		prosody.lock_globals();
-	end);
+	module:add_timer(0, function ()
+		signal.signal("SIGTERM", function ()
+			module:log("warn", "Received SIGTERM");
+			prosody.unlock_globals();
+			prosody.shutdown("Received SIGTERM");
+			prosody.lock_globals();
+		end);
 
-	signal.signal("SIGHUP", function ()
-		module:log("info", "Received SIGHUP");
-		prosody.reload_config();
-		prosody.reopen_logfiles();
-	end);
+		signal.signal("SIGHUP", function ()
+			module:log("info", "Received SIGHUP");
+			prosody.reload_config();
+			prosody.reopen_logfiles();
+		end);
 
-	signal.signal("SIGINT", function ()
-		module:log("info", "Received SIGINT");
-		prosody.unlock_globals();
-		prosody.shutdown("Received SIGINT");
-		prosody.lock_globals();
+		signal.signal("SIGINT", function ()
+			module:log("info", "Received SIGINT");
+			prosody.unlock_globals();
+			prosody.shutdown("Received SIGINT");
+			prosody.lock_globals();
+		end);
 	end);
 end
