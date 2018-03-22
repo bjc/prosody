@@ -45,7 +45,8 @@ end
 
 -----------
 
-require "util.startup".prosodyctl();
+local startup = require "util.startup";
+startup.prosodyctl();
 
 -----------
 
@@ -61,9 +62,9 @@ local error_messages = setmetatable({
 		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see https://prosody.im/doc/prosodyctl for more info";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
-		}, { __index = function (t,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
+		}, { __index = function (_,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
-local config = require "core.configmanager";
+local configmanager = require "core.configmanager";
 local modulemanager = require "core.modulemanager"
 local prosodyctl = require "util.prosodyctl"
 local socket = require "socket"
@@ -79,7 +80,7 @@ local read_password = prosodyctl.read_password;
 
 local jid_split = require "util.jid".prepped_split;
 
-local prosodyctl_timeout = (config.get("*", "prosodyctl_timeout") or 5) * 2;
+local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
 local command = arg[1];
@@ -104,7 +105,7 @@ function commands.adduser(arg)
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
-		hosts[host] = make_host(host);
+		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
 	end
 
 	if prosodyctl.user_exists{ user = user, host = host } then
@@ -143,7 +144,7 @@ function commands.passwd(arg)
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
-		hosts[host] = make_host(host);
+		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
 	end
 
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -181,7 +182,7 @@ function commands.deluser(arg)
 
 	if not hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		hosts[host] = make_host(host);
+		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
 	end
 
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -209,6 +210,7 @@ function commands.start(arg)
 	end
 
 	if ret then
+		--luacheck: ignore 421/ret
 		local ok, ret = prosodyctl.getpid();
 		if not ok then
 			show_message("Couldn't get running Prosody's PID");
@@ -219,9 +221,10 @@ function commands.start(arg)
 		return 1;
 	end
 
+	--luacheck: ignore 411/ret
 	local ok, ret = prosodyctl.start(prosody.paths.source);
 	if ok then
-		local daemonize = config.get("*", "daemonize");
+		local daemonize = configmanager.get("*", "daemonize");
 		if daemonize == nil then
 			daemonize = prosody.installed;
 		end
@@ -263,6 +266,7 @@ function commands.status(arg)
 	end
 
 	if ret then
+		--luacheck: ignore 421/ret
 		local ok, ret = prosodyctl.getpid();
 		if not ok then
 			show_message("Couldn't get running Prosody's PID");
@@ -273,7 +277,7 @@ function commands.status(arg)
 		return 0;
 	else
 		show_message("Prosody is not running");
-		if not switched_user and current_uid ~= 0 then
+		if not prosody.switched_user and prosody.current_uid ~= 0 then
 			print("\nNote:")
 			print(" You will also see this if prosodyctl is not running under");
 			print(" the same user account as Prosody. Try running as root (e.g. ");
@@ -281,7 +285,6 @@ function commands.status(arg)
 		end
 		return 2
 	end
-	return 1;
 end
 
 function commands.stop(arg)
@@ -336,11 +339,10 @@ function commands.about(arg)
 	end
 
 	local pwd = ".";
-	local lfs = require "lfs";
 	local array = require "util.array";
 	local keys = require "util.iterators".keys;
 	local hg = require"util.mercurial";
-	local relpath = config.resolve_relative_path;
+	local relpath = configmanager.resolve_relative_path;
 
 	print("Prosody "..(prosody.version or "(unknown version)"));
 	print("");
@@ -350,7 +352,7 @@ function commands.about(arg)
 	print("Source directory:   "..relpath(pwd, prosody.paths.source or "."));
 	print("Plugin directories:")
 	print("  "..(prosody.paths.plugins:gsub("([^;]+);?", function(path)
-			path = config.resolve_relative_path(pwd, path);
+			path = configmanager.resolve_relative_path(pwd, path);
 			local hgid, hgrepo = hg.check_id(path);
 			if not hgid and hgrepo then
 				return path.." - "..hgrepo .."!\n  ";
@@ -382,7 +384,7 @@ function commands.about(arg)
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
 	local luaevent =dependencies.softreq"luaevent";
-	local ssl = dependencies.softreq"ssl";
+	dependencies.softreq"ssl";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
 		and name ~= "_G" and not name:match("%.") then
@@ -503,8 +505,8 @@ local have_pposix, pposix = pcall(require, "util.pposix");
 local cert_basedir = prosody.paths.data == "." and "./certs" or prosody.paths.data;
 if have_pposix and pposix.getuid() == 0 then
 	-- FIXME should be enough to check if this directory is writable
-	local cert_dir = config.get("*", "certificates") or "certs";
-	cert_basedir = config.resolve_relative_path(prosody.paths.config, cert_dir);
+	local cert_dir = configmanager.get("*", "certificates") or "certs";
+	cert_basedir = configmanager.resolve_relative_path(prosody.paths.config, cert_dir);
 end
 
 function cert_commands.config(arg)
@@ -518,7 +520,7 @@ function cert_commands.config(arg)
 			distinguished_name = table.remove(arg);
 		end
 		local conf = openssl.config.new();
-		conf:from_prosody(hosts, config, arg);
+		conf:from_prosody(hosts, configmanager, arg);
 		if distinguished_name then
 			local dn = {};
 			for k, v in distinguished_name:gmatch("/([^=/]+)=([^/]+)") do
@@ -532,7 +534,7 @@ function cert_commands.config(arg)
 			for _, k in ipairs(openssl._DN_order) do
 				local v = conf.distinguished_name[k];
 				if v then
-					local nv;
+					local nv = nil;
 					if k == "commonName" then
 						v = arg[1]
 					elseif k == "emailAddress" then
@@ -671,7 +673,7 @@ function cert_commands.import(arg)
 			end
 		else
 			for host in pairs(prosody.hosts) do
-				if host ~= "*" and config.get(host, "enabled") ~= false then
+				if host ~= "*" and configmanager.get(host, "enabled") ~= false then
 					table.insert(hostnames, host);
 				end
 			end
@@ -684,8 +686,8 @@ function cert_commands.import(arg)
 	end
 	local owner, group;
 	if pposix.getuid() == 0 then -- We need root to change ownership
-		owner = config.get("*", "prosody_user") or "prosody";
-		group = config.get("*", "prosody_group") or owner;
+		owner = configmanager.get("*", "prosody_user") or "prosody";
+		group = configmanager.get("*", "prosody_group") or owner;
 	end
 	local cm = require "core.certmanager";
 	local imported = {};
@@ -766,22 +768,22 @@ function commands.check(arg)
 		return 1;
 	end
 	local what = table.remove(arg, 1);
-	local array, set = require "util.array", require "util.set";
+	local set = require "util.set";
 	local it = require "util.iterators";
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
-	local function enabled_hosts() return it.filter(disabled_hosts, pairs(config.getconfig())); end
+	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
 	if not what or what == "disabled" then
-		local disabled_hosts = set.new();
-		for host, host_options in it.filter("*", pairs(config.getconfig())) do
+		local disabled_hosts_set = set.new();
+		for host, host_options in it.filter("*", pairs(configmanager.getconfig())) do
 			if host_options.enabled == false then
-				disabled_hosts:add(host);
+				disabled_hosts_set:add(host);
 			end
 		end
-		if not disabled_hosts:empty() then
+		if not disabled_hosts_set:empty() then
 			local msg = "Checks will be skipped for these disabled hosts: %s";
 			if what then msg = "These hosts are disabled: %s"; end
-			show_warning(msg, tostring(disabled_hosts));
+			show_warning(msg, tostring(disabled_hosts_set));
 			if what then return 0; end
 			print""
 		end
@@ -797,7 +799,7 @@ function commands.check(arg)
 			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings",
 			"network_backend", "http_default_host",
 		});
-		local config = config.getconfig();
+		local config = configmanager.getconfig();
 		-- Check that we have any global options (caused by putting a host at the top)
 		if it.count(it.filter("log", pairs(config["*"]))) == 0 then
 			ok = false;
@@ -819,7 +821,7 @@ function commands.check(arg)
 		if not config["*"].modules_enabled then
 			print("    No global modules_enabled is set?");
 			local suggested_global_modules;
-			for host, options in enabled_hosts() do
+			for host, options in enabled_hosts() do --luacheck: ignore 213/host
 				if not options.component_module and options.modules_enabled then
 					suggested_global_modules = set.intersection(suggested_global_modules or set.new(options.modules_enabled), set.new(options.modules_enabled));
 				end
@@ -862,10 +864,10 @@ function commands.check(arg)
 			local subdomain = host:match("^[^.]+");
 			if not(host_options:contains("component_module")) and (subdomain == "jabber" or subdomain == "xmpp"
 			   or subdomain == "chat" or subdomain == "im") then
-			   	print("");
-			   	print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
-			   	print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
-			   	print("     For more information see: https://prosody.im/doc/dns");
+				print("");
+				print("    Suggestion: If "..host.. " is a new host with no real users yet, consider renaming it now to");
+				print("     "..host:gsub("^[^.]+%.", "")..". You can use SRV records to redirect XMPP clients and servers to "..host..".");
+				print("     For more information see: https://prosody.im/doc/dns");
 			end
 		end
 		local all_modules = set.new(config["*"].modules_enabled);
@@ -895,14 +897,16 @@ function commands.check(arg)
 				print("    For more information see https://prosody.im/doc/storage");
 			end
 		end
-		for host, config in pairs(config) do
-			if type(rawget(config, "storage")) == "string" and rawget(config, "default_storage") then
+		for host, host_config in pairs(config) do --luacheck: ignore 213/host
+			if type(rawget(host_config, "storage")) == "string" and rawget(host_config, "default_storage") then
 				print("");
 				print("    The 'default_storage' option is not needed if 'storage' is set to a string.");
 				break;
 			end
 		end
-		local require_encryption = set.intersection(all_options, set.new({"require_encryption", "c2s_require_encryption", "s2s_require_encryption"})):empty();
+		local require_encryption = set.intersection(all_options, set.new({
+			"require_encryption", "c2s_require_encryption", "s2s_require_encryption"
+		})):empty();
 		local ssl = dependencies.softreq"ssl";
 		if not ssl then
 			if not require_encryption then
@@ -948,8 +952,8 @@ function commands.check(arg)
 		local dns = require "net.dns";
 		local idna = require "util.encodings".idna;
 		local ip = require "util.ip";
-		local c2s_ports = set.new(config.get("*", "c2s_ports") or {5222});
-		local s2s_ports = set.new(config.get("*", "s2s_ports") or {5269});
+		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
+		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
 
 		local c2s_srv_required, s2s_srv_required;
 		if not c2s_ports:contains(5222) then
@@ -965,16 +969,20 @@ function commands.check(arg)
 
 		local fqdn = socket.dns.tohostname(socket.dns.gethostname());
 		if fqdn then
-			local res = dns.lookup(idna.to_ascii(fqdn), "A");
-			if res then
-				for _, record in ipairs(res) do
-					external_addresses:add(record.a);
+			do
+				local res = dns.lookup(idna.to_ascii(fqdn), "A");
+				if res then
+					for _, record in ipairs(res) do
+						external_addresses:add(record.a);
+					end
 				end
 			end
-			local res = dns.lookup(idna.to_ascii(fqdn), "AAAA");
-			if res then
-				for _, record in ipairs(res) do
-					external_addresses:add(record.aaaa);
+			do
+				local res = dns.lookup(idna.to_ascii(fqdn), "AAAA");
+				if res then
+					for _, record in ipairs(res) do
+						external_addresses:add(record.aaaa);
+					end
 				end
 			end
 		end
@@ -1025,20 +1033,22 @@ function commands.check(arg)
 					end
 				end
 			end
-			local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
-			if res then
-				for _, record in ipairs(res) do
-					target_hosts:add(record.srv.target);
-					if not s2s_ports:contains(record.srv.port) then
-						print("    SRV target "..record.srv.target.." contains unknown server port: "..record.srv.port);
+			do
+				local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
+				if res then
+					for _, record in ipairs(res) do
+						target_hosts:add(record.srv.target);
+						if not s2s_ports:contains(record.srv.port) then
+							print("    SRV target "..record.srv.target.." contains unknown server port: "..record.srv.port);
+						end
 					end
-				end
-			else
-				if s2s_srv_required then
-					print("    No _xmpp-server SRV record found for "..host..", but it looks like you need one.");
-					all_targets_ok = false;
 				else
-					target_hosts:add(host);
+					if s2s_srv_required then
+						print("    No _xmpp-server SRV record found for "..host..", but it looks like you need one.");
+						all_targets_ok = false;
+					else
+						target_hosts:add(host);
+					end
 				end
 			end
 			if target_hosts:empty() then
@@ -1051,11 +1061,11 @@ function commands.check(arg)
 			end
 
 			local modules = set.new(it.to_array(it.values(host_options.modules_enabled or {})))
-			                + set.new(it.to_array(it.values(config.get("*", "modules_enabled") or {})))
-			                + set.new({ config.get(host, "component_module") });
+			                + set.new(it.to_array(it.values(configmanager.get("*", "modules_enabled") or {})))
+			                + set.new({ configmanager.get(host, "component_module") });
 
 			if modules:contains("proxy65") then
-				local proxy65_target = config.get(host, "proxy65_address") or host;
+				local proxy65_target = configmanager.get(host, "proxy65_address") or host;
 				local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
 				local prob = {};
 				if not A then
@@ -1065,41 +1075,46 @@ function commands.check(arg)
 					table.insert(prob, "AAAA");
 				end
 				if #prob > 0 then
-					print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/").." record. Create one or set 'proxy65_address' to the correct host/IP.");
+					print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/")
+					.." record. Create one or set 'proxy65_address' to the correct host/IP.");
 				end
 			end
 
-			for host in target_hosts do
+			for target_host in target_hosts do
 				local host_ok_v4, host_ok_v6;
-				local res = dns.lookup(idna.to_ascii(host), "A");
-				if res then
-					for _, record in ipairs(res) do
-						if external_addresses:contains(record.a) then
-							some_targets_ok = true;
-							host_ok_v4 = true;
-						elseif internal_addresses:contains(record.a) then
-							host_ok_v4 = true;
-							some_targets_ok = true;
-							print("    "..host.." A record points to internal address, external connections might fail");
-						else
-							print("    "..host.." A record points to unknown address "..record.a);
-							all_targets_ok = false;
+				do
+					local res = dns.lookup(idna.to_ascii(target_host), "A");
+					if res then
+						for _, record in ipairs(res) do
+							if external_addresses:contains(record.a) then
+								some_targets_ok = true;
+								host_ok_v4 = true;
+							elseif internal_addresses:contains(record.a) then
+								host_ok_v4 = true;
+								some_targets_ok = true;
+								print("    "..target_host.." A record points to internal address, external connections might fail");
+							else
+								print("    "..target_host.." A record points to unknown address "..record.a);
+								all_targets_ok = false;
+							end
 						end
 					end
 				end
-				local res = dns.lookup(idna.to_ascii(host), "AAAA");
-				if res then
-					for _, record in ipairs(res) do
-						if external_addresses:contains(record.aaaa) then
-							some_targets_ok = true;
-							host_ok_v6 = true;
-						elseif internal_addresses:contains(record.aaaa) then
-							host_ok_v6 = true;
-							some_targets_ok = true;
-							print("    "..host.." AAAA record points to internal address, external connections might fail");
-						else
-							print("    "..host.." AAAA record points to unknown address "..record.aaaa);
-							all_targets_ok = false;
+				do
+					local res = dns.lookup(idna.to_ascii(target_host), "AAAA");
+					if res then
+						for _, record in ipairs(res) do
+							if external_addresses:contains(record.aaaa) then
+								some_targets_ok = true;
+								host_ok_v6 = true;
+							elseif internal_addresses:contains(record.aaaa) then
+								host_ok_v6 = true;
+								some_targets_ok = true;
+								print("    "..target_host.." AAAA record points to internal address, external connections might fail");
+							else
+								print("    "..target_host.." AAAA record points to unknown address "..record.aaaa);
+								all_targets_ok = false;
+							end
 						end
 					end
 				end
@@ -1112,10 +1127,10 @@ function commands.check(arg)
 					table.insert(bad_protos, "IPv6");
 				end
 				if #bad_protos > 0 then
-					print("    Host "..host.." does not seem to resolve to this server ("..table.concat(bad_protos, "/")..")");
+					print("    Host "..target_host.." does not seem to resolve to this server ("..table.concat(bad_protos, "/")..")");
 				end
 				if host_ok_v6 and not v6_supported then
-					print("    Host "..host.." has AAAA records, but your version of LuaSocket does not support IPv6.");
+					print("    Host "..target_host.." has AAAA records, but your version of LuaSocket does not support IPv6.");
 					print("      Please see https://prosody.im/doc/ipv6 for more information.");
 				end
 			end
@@ -1161,9 +1176,9 @@ function commands.check(arg)
 			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
-				local host_ssl_config = config.rawget(host, "ssl")
-					or config.rawget(host:match("%.(.*)"), "ssl");
-				local global_ssl_config = config.rawget("*", "ssl");
+				local host_ssl_config = configmanager.rawget(host, "ssl")
+					or configmanager.rawget(host:match("%.(.*)"), "ssl");
+				local global_ssl_config = configmanager.rawget("*", "ssl");
 				local ok, err, ssl_config = create_context(host, "server", host_ssl_config, global_ssl_config);
 				if not ok then
 					print("  Error: "..err);
@@ -1188,7 +1203,7 @@ function commands.check(arg)
 						cert_ok = false
 					else
 						print("  Certificate: "..ssl_config.certificate)
-						local cert = load_cert(cert_fh:read"*a"); cert_fh = cert_fh:close();
+						local cert = load_cert(cert_fh:read"*a"); cert_fh:close();
 						if not cert:validat(os.time()) then
 							print("    Certificate has expired.")
 							cert_ok = false
@@ -1200,13 +1215,13 @@ function commands.check(arg)
 						elseif not cert:validat(os.time() + 86400*31) then
 							print("    Certificate expires within one month.")
 						end
-						if config.get(host, "component_module") == nil
+						if configmanager.get(host, "component_module") == nil
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
 							print("    Not valid for client connections to "..host..".")
 							cert_ok = false
 						end
-						if (not (config.get(host, "anonymous_login")
-							or config.get(host, "authentication") == "anonymous"))
+						if (not (configmanager.get(host, "anonymous_login")
+							or configmanager.get(host, "authentication") == "anonymous"))
 							and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
 							cert_ok = false
@@ -1214,11 +1229,11 @@ function commands.check(arg)
 					end
 				end
 			end
-			if cert_ok == false then
-				print("")
-				print("For more information about certificates please see https://prosody.im/doc/certificates");
-				ok = false
-			end
+		end
+		if cert_ok == false then
+			print("")
+			print("For more information about certificates please see https://prosody.im/doc/certificates");
+			ok = false
 		end
 		print("")
 	end
@@ -1233,6 +1248,7 @@ end
 ---------------------
 
 local async = require "util.async";
+local server = require "net.server";
 local watchers = {
 	error = function (_, err)
 		error(err);
@@ -1244,10 +1260,12 @@ local watchers = {
 local command_runner = async.runner(function ()
 	if command and command:match("^mod_") then -- Is a command in a module
 		local module_name = command:match("^mod_(.+)");
-		local ret, err = modulemanager.load("*", module_name);
-		if not ret then
-			show_message("Failed to load module '"..module_name.."': "..err);
-			os.exit(1);
+		do
+			local ret, err = modulemanager.load("*", module_name);
+			if not ret then
+				show_message("Failed to load module '"..module_name.."': "..err);
+				os.exit(1);
+			end
 		end
 
 		table.remove(arg, 1);
@@ -1295,17 +1313,17 @@ local command_runner = async.runner(function ()
 		local done = {};
 
 		for _, command_name in ipairs(commands_order) do
-			local command = commands[command_name];
-			if command then
-				command{ "--help" };
+			local command_func = commands[command_name];
+			if command_func then
+				command_func{ "--help" };
 				print""
 				done[command_name] = true;
 			end
 		end
 
-		for command_name, command in pairs(commands) do
+		for command_name, command_func in pairs(commands) do
 			if not done[command_name] and not hidden_commands:contains(command_name) then
-				command{ "--help" };
+				command_func{ "--help" };
 				print""
 				done[command_name] = true;
 			end
