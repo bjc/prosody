@@ -398,7 +398,7 @@ function startup.switch_user()
 				print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 			else
 				-- Make sure the Prosody user can read the config
-				local conf, err, errno = io.open(ENV_CONFIG);
+				local conf, err, errno = io.open(prosody.config_file);
 				if conf then
 					conf:close();
 				else
@@ -412,8 +412,8 @@ function startup.switch_user()
 
 		-- Set our umask to protect data files
 		pposix.umask(config.get("*", "umask") or "027");
-		pposix.setenv("HOME", data_path);
-		pposix.setenv("PROSODY_CONFIG", ENV_CONFIG);
+		pposix.setenv("HOME", prosody.paths.data);
+		pposix.setenv("PROSODY_CONFIG", prosody.config_file);
 	else
 		print("Error: Unable to load pposix module. Check that Prosody is installed correctly.")
 		print("For more help send the below error to us through https://prosody.im/discuss");
