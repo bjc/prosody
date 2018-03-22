@@ -484,10 +484,11 @@ end
 -- prosodyctl only
 function startup.prosodyctl()
 	startup.read_config();
+	startup.init_global_state();
 	startup.chdir();
+	startup.switch_user();
 	startup.check_dependencies();
 	startup.force_console_logging();
-	startup.init_global_state();
 	startup.init_logging();
 	startup.log_dependency_warnings();
 	startup.check_unwriteable();
