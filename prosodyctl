@@ -1232,77 +1232,90 @@ end
 
 ---------------------
 
-if command and command:match("^mod_") then -- Is a command in a module
-	local module_name = command:match("^mod_(.+)");
-	local ret, err = modulemanager.load("*", module_name);
-	if not ret then
-		show_message("Failed to load module '"..module_name.."': "..err);
-		os.exit(1);
-	end
-
-	table.remove(arg, 1);
-
-	local module = modulemanager.get_module("*", module_name);
-	if not module then
-		show_message("Failed to load module '"..module_name.."': Unknown error");
-		os.exit(1);
-	end
-
-	if not modulemanager.module_has_method(module, "command") then
-		show_message("Fail: mod_"..module_name.." does not support any commands");
-		os.exit(1);
-	end
-
-	local ok, ret = modulemanager.call_module_method(module, "command", arg);
-	if ok then
-		if type(ret) == "number" then
-			os.exit(ret);
-		elseif type(ret) == "string" then
-			show_message(ret);
+local async = require "util.async";
+local watchers = {
+	error = function (_, err)
+		error(err);
+	end;
+	waiting = function ()
+		server.loop();
+	end;
+};
+local command_runner = async.runner(function ()
+	if command and command:match("^mod_") then -- Is a command in a module
+		local module_name = command:match("^mod_(.+)");
+		local ret, err = modulemanager.load("*", module_name);
+		if not ret then
+			show_message("Failed to load module '"..module_name.."': "..err);
+			os.exit(1);
 		end
-		os.exit(0); -- :)
-	else
-		show_message("Failed to execute command: "..error_messages[ret]);
-		os.exit(1); -- :(
-	end
-end
 
-if not commands[command] then -- Show help for all commands
-	function show_usage(usage, desc)
-		print(" "..usage);
-		print("    "..desc);
-	end
+		table.remove(arg, 1);
 
-	print("prosodyctl - Manage a Prosody server");
-	print("");
-	print("Usage: "..arg[0].." COMMAND [OPTIONS]");
-	print("");
-	print("Where COMMAND may be one of:\n");
+		local module = modulemanager.get_module("*", module_name);
+		if not module then
+			show_message("Failed to load module '"..module_name.."': Unknown error");
+			os.exit(1);
+		end
 
-	local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-	local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
+		if not modulemanager.module_has_method(module, "command") then
+			show_message("Fail: mod_"..module_name.." does not support any commands");
+			os.exit(1);
+		end
 
-	local done = {};
-
-	for _, command_name in ipairs(commands_order) do
-		local command = commands[command_name];
-		if command then
-			command{ "--help" };
-			print""
-			done[command_name] = true;
+		local ok, ret = modulemanager.call_module_method(module, "command", arg);
+		if ok then
+			if type(ret) == "number" then
+				os.exit(ret);
+			elseif type(ret) == "string" then
+				show_message(ret);
+			end
+			os.exit(0); -- :)
+		else
+			show_message("Failed to execute command: "..error_messages[ret]);
+			os.exit(1); -- :(
 		end
 	end
 
-	for command_name, command in pairs(commands) do
-		if not done[command_name] and not hidden_commands:contains(command_name) then
-			command{ "--help" };
-			print""
-			done[command_name] = true;
+	if not commands[command] then -- Show help for all commands
+		function show_usage(usage, desc)
+			print(" "..usage);
+			print("    "..desc);
 		end
+
+		print("prosodyctl - Manage a Prosody server");
+		print("");
+		print("Usage: "..arg[0].." COMMAND [OPTIONS]");
+		print("");
+		print("Where COMMAND may be one of:\n");
+
+		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
+		local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
+
+		local done = {};
+
+		for _, command_name in ipairs(commands_order) do
+			local command = commands[command_name];
+			if command then
+				command{ "--help" };
+				print""
+				done[command_name] = true;
+			end
+		end
+
+		for command_name, command in pairs(commands) do
+			if not done[command_name] and not hidden_commands:contains(command_name) then
+				command{ "--help" };
+				print""
+				done[command_name] = true;
+			end
+		end
+
+
+		os.exit(0);
 	end
 
+	os.exit(commands[command]({ select(2, unpack(arg)) }));
+end, watchers);
 
-	os.exit(0);
-end
-
-os.exit(commands[command]({ select(2, unpack(arg)) }));
+command_runner:run(true);
