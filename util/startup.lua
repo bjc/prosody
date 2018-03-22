@@ -5,6 +5,7 @@ local startup = {};
 local prosody = { events = require "util.events".new() };
 
 local config = require "core.configmanager";
+local async = require "util.async";
 
 local dependencies = require "util.dependencies";
 
@@ -497,27 +498,29 @@ function startup.prosodyctl()
 end
 
 function startup.prosody()
-	-- These actions are in a strict order, as many depend on
-	-- previous steps to have already been performed
-	startup.read_config();
-	startup.sanity_check();
-	startup.sandbox_require();
-	startup.set_function_metatable();
-	startup.check_dependencies();
-	startup.load_libraries();
-	startup.init_global_state();
-	startup.init_logging();
-	startup.chdir();
-	startup.add_global_prosody_functions();
-	startup.read_version();
-	startup.log_greeting();
-	startup.log_dependency_warnings();
-	startup.load_secondary_libraries();
-	startup.init_http_client();
-	startup.init_data_store();
-	startup.init_global_protection();
-	startup.prepare_to_start();
-	startup.notify_started();
+	async.once(function ()
+		-- These actions are in a strict order, as many depend on
+		-- previous steps to have already been performed
+		startup.read_config();
+		startup.sanity_check();
+		startup.sandbox_require();
+		startup.set_function_metatable();
+		startup.check_dependencies();
+		startup.load_libraries();
+		startup.init_global_state();
+		startup.init_logging();
+		startup.chdir();
+		startup.add_global_prosody_functions();
+		startup.read_version();
+		startup.log_greeting();
+		startup.log_dependency_warnings();
+		startup.load_secondary_libraries();
+		startup.init_http_client();
+		startup.init_data_store();
+		startup.init_global_protection();
+		startup.prepare_to_start();
+		startup.notify_started();
+	end);
 end
 
 return startup;
