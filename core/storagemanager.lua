@@ -1,6 +1,7 @@
 
 local type, pairs = type, pairs;
 local setmetatable = setmetatable;
+local rawset, error = rawset, error;
 
 local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
@@ -8,6 +9,8 @@ local modulemanager = require "core.modulemanager";
 local multitable = require "util.multitable";
 local hosts = hosts;
 local log = require "util.logger".init("storagemanager");
+local async = require "util.async";
+local debug = debug;
 
 local prosody = prosody;
 
@@ -29,7 +32,33 @@ local null_storage_driver = setmetatable(
 	}
 );
 
+local async_check = config.get("*", "storage_async_check") ~= false;
+
 local stores_available = multitable.new();
+
+local function check_async_wrapper(event)
+	local store = event.store;
+	event.store = setmetatable({}, {
+		__index = function (t, method_name)
+			local original_method = store[method_name];
+			if type(original_method) ~= "function" then
+				if original_method then
+					rawset(t, method_name, original_method);
+				end
+				return original_method;
+			end
+			local wrapped_method = function (...)
+				if not async.ready() then
+					log("warn", "ASYNC-01: Attempt to access storage outside async context, "
+					  .."see https://prosody.im/doc/developers/async - %s", debug.traceback());
+				end
+				return original_method(...);
+			end
+			rawset(t, method_name, wrapped_method);
+			return wrapped_method;
+		end;
+	});
+end
 
 local function initialize_host(host)
 	local host_session = hosts[host];
@@ -42,6 +71,9 @@ local function initialize_host(host)
 		local item = event.item;
 		stores_available:set(host, item.name, nil);
 	end);
+	if async_check then
+		host_session.events.add_handler("store-opened", check_async_wrapper);
+	end
 end
 prosody.events.add_handler("host-activated", initialize_host, 101);
 
