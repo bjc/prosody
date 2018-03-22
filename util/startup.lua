@@ -364,7 +364,6 @@ function startup.switch_user()
 	-- NOTE: This function is only used by prosodyctl.
 	-- The prosody process is built with the assumption that
 	-- it is already started as the appropriate user.
-	local switched_user, current_uid;
 
 	local want_pposix_version = "0.4.0";
 	local have_pposix, pposix = pcall(require, "util.pposix");
@@ -375,10 +374,10 @@ function startup.switch_user()
 				tostring(pposix._VERSION), want_pposix_version));
 			os.exit(1);
 		end
-		current_uid = pposix.getuid();
+		prosody.current_uid = pposix.getuid();
 		local arg_root = arg[1] == "--root";
 		if arg_root then table.remove(arg, 1); end
-		if current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
+		if prosody.current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
 			-- We haz root!
 			local desired_user = config.get("*", "prosody_user") or "prosody";
 			local desired_group = config.get("*", "prosody_group") or desired_user;
@@ -390,10 +389,10 @@ function startup.switch_user()
 				ok, err = pposix.setuid(desired_user);
 				if ok then
 					-- Yay!
-					switched_user = true;
+					prosody.switched_user = true;
 				end
 			end
-			if not switched_user then
+			if not prosody.switched_user then
 				-- Boo!
 				print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 			else
