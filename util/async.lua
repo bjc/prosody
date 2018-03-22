@@ -215,4 +215,8 @@ function runner_mt:log(level, fmt, ...)
 	return log(level, "[runner %s] "..fmt, self.id, ...);
 end
 
-return { waiter = waiter, guarder = guarder, runner = runner };
+local function ready()
+	return pcall(checkthread);
+end
+
+return { ready = ready, waiter = waiter, guarder = guarder, runner = runner };

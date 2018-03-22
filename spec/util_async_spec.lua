@@ -579,4 +579,18 @@ describe("util.async", function()
 			assert.spy(r.watchers.ready).was_not.called();
 		end);
 	end);
+
+	describe("#ready()", function ()
+		it("should return false outside an async context", function ()
+			assert.falsy(async.ready());
+		end);
+		it("should return true inside an async context", function ()
+			local r = new(function ()
+				assert.truthy(async.ready());
+			end);
+			r:run(true);
+			assert.spy(r.func).was.called();
+			assert.spy(r.watchers.error).was_not.called();
+		end);
+	end);
 end);
