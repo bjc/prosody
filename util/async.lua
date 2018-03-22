@@ -1,5 +1,6 @@
 local log = require "util.logger".init("util.async");
 local new_id = require "util.id".short;
+local timer = require "util.timer";
 
 local function checkthread()
 	local thread, main = coroutine.running();
@@ -233,10 +234,17 @@ do
 	end
 end
 
+local function sleep(s)
+	local wait, done = waiter();
+	timer.add_task(s, done);
+	wait();
+end
+
 return {
 	once = once;
 	ready = ready;
 	waiter = waiter;
 	guarder = guarder;
-	runner = runner
+	runner = runner;
+	sleep = sleep;
 };
