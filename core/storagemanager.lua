@@ -1,7 +1,7 @@
 
 local type, pairs = type, pairs;
 local setmetatable = setmetatable;
-local rawset, error = rawset, error;
+local rawset = rawset;
 
 local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
