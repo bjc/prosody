@@ -16,6 +16,10 @@ files["prosody"] = {
 	allow_defined_top = true;
 	module = true;
 }
+files["prosodyctl"] = {
+	allow_defined_top = true;
+	module = true;
+};
 files["core/"] = {
 	globals = {
 		"prosody.hosts.?",
