@@ -130,10 +130,14 @@ local function runner_create_thread(func, self)
 	return thread;
 end
 
-local empty_watchers = {};
+local function default_error_watcher(runner, err)
+	runner:log("error", "Encountered error: %s", err);
+	error(err);
+end
+local function default_func(f) f(); end
 local function runner(func, watchers, data)
-	return setmetatable({ func = func, thread = false, state = "ready", notified_state = "ready",
-		queue = {}, watchers = watchers or empty_watchers, data = data, id = new_id() }
+	return setmetatable({ func = func or default_func, thread = false, state = "ready", notified_state = "ready",
+		queue = {}, watchers = watchers or { error = default_error_watcher }, data = data, id = new_id() }
 	, runner_mt);
 end
 
