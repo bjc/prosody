@@ -233,7 +233,6 @@ local function sleep(s)
 end
 
 return {
-	once = once;
 	ready = ready;
 	waiter = waiter;
 	guarder = guarder;
