@@ -9,6 +9,8 @@ read_globals = {
 	"prosody",
 	"hosts",
 	"import",
+	"log",
+	"server",
 };
 files["prosody"] = {
 	allow_defined_top = true;
