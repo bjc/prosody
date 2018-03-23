@@ -19,7 +19,7 @@ local bare_sessions = _G.prosody.bare_sessions;
 
 local core_post_stanza, core_process_stanza, core_route_stanza;
 
-function deprecated_warning(f)
+local function deprecated_warning(f)
 	_G[f] = function(...)
 		log("warn", "Using the global %s() is deprecated, use module:send() or prosody.%s(). %s", f, f, debug.traceback());
 		return prosody[f](...);
