@@ -50,8 +50,13 @@ if #arg > 0 and arg[1] ~= "--config" then
 end
 
 local startup = require "util.startup";
+local async = require "util.async";
 
-startup.prosody();
+-- Note: it's important that this thread is not GC'd, as some C libraries
+-- that are initialized here store a pointer to it ( :/ ).
+local thread = async.runner();
+
+thread:run(startup.prosody);
 
 local function loop()
 	-- Error handler for errors that make it this far
@@ -88,4 +93,4 @@ cleanup();
 prosody.events.fire_event("server-stopped");
 log("info", "Shutdown complete");
 
-os.exit(prosody.shutdown_code)
+os.exit(prosody.shutdown_code);
