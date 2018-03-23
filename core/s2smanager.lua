@@ -17,9 +17,9 @@ local logger_init = require "util.logger".init;
 local log = logger_init("s2smanager");
 
 local prosody = _G.prosody;
-incoming_s2s = {};
+local incoming_s2s = {};
+_G.incoming_s2s = incoming_s2s;
 prosody.incoming_s2s = incoming_s2s;
-local incoming_s2s = incoming_s2s;
 local fire_event = prosody.events.fire_event;
 
 local _ENV = nil;
