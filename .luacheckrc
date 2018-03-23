@@ -1,5 +1,4 @@
 cache = true
-allow_defined_top = true
 unused_secondaries = false
 codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log" }
@@ -11,6 +10,10 @@ read_globals = {
 	"hosts",
 	"import",
 };
+files["prosody"] = {
+	allow_defined_top = true;
+	module = true;
+}
 files["core/"] = {
 	globals = {
 		"prosody.hosts.?",
@@ -23,6 +26,7 @@ files["util/"] = {
 }
 files["plugins/"] = {
 	module = true;
+	allow_defined_top = true;
 	read_globals = {
 		-- Module instance
 		"module.name",
