@@ -91,8 +91,6 @@ function announce_handler(self, data, state)
 	else
 		return { status = "executing", actions = {"next", "complete", default = "complete"}, form = announce_layout }, "executing";
 	end
-
-	return true;
 end
 
 local adhoc_new = module:require "adhoc".new;
