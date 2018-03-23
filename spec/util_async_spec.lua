@@ -94,6 +94,26 @@ describe("util.async", function()
 			assert.equal(last_item, values[#values]);
 		end);
 
+		it("should work with no parameters", function ()
+			local item = "fail";
+			local r = async.runner();
+			local f = spy.new(function () item = "success"; end);
+			r:run(f);
+			assert.spy(f).was.called();
+			assert.equal(item, "success");
+		end);
+
+		it("supports a default error handler", function ()
+			local item = "fail";
+			local r = async.runner();
+			local f = spy.new(function () error("test error"); end);
+			assert.error_matches(function ()
+				r:run(f);
+			end, "test error");
+			assert.spy(f).was.called();
+			assert.equal(item, "fail");
+		end);
+
 		describe("#errors", function ()
 			describe("should notify", function ()
 				local last_processed_item, last_error;
