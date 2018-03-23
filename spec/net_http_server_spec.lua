@@ -1,4 +1,5 @@
 describe("net.http.server", function ()
+	package.loaded["net.server"] = {}
 	local server = require "net.http.server";
 	describe("events", function ()
 		it("should work with util.helpers", function ()
