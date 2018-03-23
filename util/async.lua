@@ -226,20 +226,6 @@ local function ready()
 	return pcall(checkthread);
 end
 
-local once; -- forward declaration
-do
-	local once_watchers = {
-		error = function (_, err)
-			error(err);
-		end;
-	};
-	local function once_runner(func) func(); end
-	function once(func)
-		local r = runner(once_runner, once_watchers);
-		return r:run(func);
-	end
-end
-
 local function sleep(s)
 	local wait, done = waiter();
 	timer.add_task(s, done);

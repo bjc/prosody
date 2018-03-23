@@ -613,23 +613,4 @@ describe("util.async", function()
 			assert.spy(r.watchers.error).was_not.called();
 		end);
 	end);
-
-	describe("#once()", function ()
-		it("should work", function ()
-			local f = spy.new(function ()
-				assert.truthy(async.ready());
-			end);
-			async.once(f);
-			assert.spy(f).was.called();
-			assert.spy(f).was.called_with();
-		end);
-		it("should propagate errors", function ()
-			local function should_error()
-				async.once(function ()
-					error("hello world");
-				end);
-			end;
-			assert.error_matches(should_error, "hello world");
-		end);
-	end);
 end);
