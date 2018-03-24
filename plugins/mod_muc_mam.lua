@@ -341,7 +341,7 @@ end);
 
 if module:get_option_boolean("muc_log_presences", true) then
 	module:hook("muc-occupant-joined", function (event)
-		save_to_history(event.room, st.stanza("presence", { from = event.nick }));
+		save_to_history(event.room, st.stanza("presence", { from = event.nick }):tag("x", { xmlns = "http://jabber.org/protocol/muc" }));
 	end);
 	module:hook("muc-occupant-left", function (event)
 		save_to_history(event.room, st.stanza("presence", { type = "unavailable", from = event.nick }));
