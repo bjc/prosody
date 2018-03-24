@@ -36,7 +36,7 @@ local function make_id(req) return (tostring(req):match("%x+$")); end
 local listener = { default_port = 80, default_mode = "*a" };
 
 -- Request-related helper functions
-local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); end
+local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); return err; end
 local function log_if_failed(id, ret, ...)
 	if not ret then
 		log("error", "Request '%s': error in callback: %s", id, tostring((...)));
