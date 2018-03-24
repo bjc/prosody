@@ -37,9 +37,12 @@ local listener = { default_port = 80, default_mode = "*a" };
 
 -- Request-related helper functions
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); return err; end
-local function log_if_failed(id, ret, ...)
+local function log_if_failed(req, ret, ...)
 	if not ret then
-		log("error", "Request '%s': error in callback: %s", id, tostring((...)));
+		log("error", "Request '%s': error in callback: %s", req.id, tostring((...)));
+		if not req.suppress_errors then
+			error(...);
+		end
 	end
 	return ...;
 end
@@ -237,6 +240,7 @@ local function request(self, u, ex, callback)
 			end
 		end
 		req.insecure = ex.insecure;
+		req.suppress_errors = ex.suppress_errors;
 	end
 
 	log("debug", "Making %s %s request '%s' to %s", req.scheme:upper(), method or "GET", req.id, (ex and ex.suppress_url and host_header) or u);
@@ -276,6 +280,7 @@ end
 
 local default_http = new({
 	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+	suppress_errors = true;
 });
 
 return {
