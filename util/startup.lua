@@ -487,6 +487,7 @@ function startup.prosodyctl()
 	startup.read_config();
 	startup.init_global_state();
 	startup.chdir();
+	startup.read_version();
 	startup.switch_user();
 	startup.check_dependencies();
 	startup.force_console_logging();
