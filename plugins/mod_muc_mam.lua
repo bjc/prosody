@@ -334,11 +334,9 @@ local function save_to_history(self, stanza)
 	end
 end
 
-module:hook("muc-broadcast-message", function (event)
+module:hook("muc-add-history", function (event)
 	local room, stanza = event.room, event.stanza;
-	if stanza:get_child("body") then
-		save_to_history(room, stanza);
-	end
+	save_to_history(room, stanza);
 end);
 
 if module:get_option_boolean("muc_log_presences", true) then
