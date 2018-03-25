@@ -32,7 +32,7 @@ local null_storage_driver = setmetatable(
 	}
 );
 
-local async_check = config.get("*", "storage_async_check") ~= false;
+local async_check = config.get("*", "storage_async_check") == true;
 
 local stores_available = multitable.new();
 
