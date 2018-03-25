@@ -34,6 +34,10 @@ function module.restore(data)
 	services = data.services;
 end
 
+function is_item_stanza(item)
+	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
+end
+
 local function subscription_presence(username, recipient)
 	local user_bare = jid_join(username, host);
 	local recipient_bare = jid_bare(recipient);
@@ -188,6 +192,7 @@ function get_pep_service(username)
 
 		itemstore = simple_itemstore(username);
 		broadcaster = get_broadcaster(username);
+		itemcheck = is_item_stanza;
 		get_affiliation = function (jid)
 			if jid_bare(jid) == user_bare then
 				return "owner";
