@@ -229,6 +229,11 @@ function startup.add_global_prosody_functions()
 			elseif level == "file" then
 				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
 			end
+		else
+			prosody.events.fire_event("config-reloaded", {
+				filename = prosody.config_file,
+				config = config.getconfig(),
+			});
 		end
 		return ok, (err and tostring(level)..": "..tostring(err)) or nil;
 	end

@@ -11,8 +11,6 @@ local setmetatable, rawget, rawset, io, error, dofile, type, pairs =
       setmetatable, rawget, rawset, io, error, dofile, type, pairs;
 local format, math_max = string.format, math.max;
 
-local fire_event = prosody and prosody.events.fire_event or function () end;
-
 local envload = require"util.envload".envload;
 local deps = require"util.dependencies";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
@@ -86,11 +84,6 @@ function _M.load(filename, config_format)
 			f:close();
 			if ok then
 				config = new_config;
-				fire_event("config-reloaded", {
-					filename = filename,
-					format = config_format,
-					config = config
-				});
 			end
 			return ok, "parser", err;
 		end
