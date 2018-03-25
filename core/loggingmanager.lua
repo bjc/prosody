@@ -160,7 +160,7 @@ local function reload_logging()
 end
 
 reload_logging();
-prosody.events.add_handler("config-reloaded", reload_logging);
+prosody.events.add_handler("reopen-log-files", reload_logging);
 
 --- Definition of built-in logging sinks ---
 
