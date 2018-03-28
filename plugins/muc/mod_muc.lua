@@ -171,7 +171,9 @@ function stanza_handler(event)
 	local room = rooms[bare];
 	if not room then
 		if stanza.name ~= "presence" or stanza.attr.type ~= nil then
-			origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+			if stanza.attr.type ~= "error" then
+				origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+			end
 			return true;
 		end
 		if not(restrict_room_creation) or
