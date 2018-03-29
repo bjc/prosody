@@ -102,10 +102,10 @@ function commands.adduser(arg)
 		return 1;
 	end
 
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
-		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
+		prosody.hosts[host] = startup.make_host(host); --luacheck: ignore 122
 	end
 
 	if prosodyctl.user_exists{ user = user, host = host } then
@@ -141,10 +141,10 @@ function commands.passwd(arg)
 		return 1;
 	end
 
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
 		show_warning("The user will not be able to log in until this is changed.");
-		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
+		prosody.hosts[host] = startup.make_host(host); --luacheck: ignore 122
 	end
 
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -180,9 +180,9 @@ function commands.deluser(arg)
 		return 1;
 	end
 
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		hosts[host] = startup.make_host(host); --luacheck: ignore 122/hosts
+		prosody.hosts[host] = startup.make_host(host); --luacheck: ignore 122
 	end
 
 	if not prosodyctl.user_exists { user = user, host = host } then
@@ -526,7 +526,7 @@ function cert_commands.config(arg)
 			distinguished_name = table.remove(arg);
 		end
 		local conf = openssl.config.new();
-		conf:from_prosody(hosts, configmanager, arg);
+		conf:from_prosody(prosody.hosts, configmanager, arg);
 		if distinguished_name then
 			local dn = {};
 			for k, v in distinguished_name:gmatch("/([^=/]+)=([^/]+)") do
@@ -751,7 +751,7 @@ function commands.cert(arg)
 					show_message"You need to supply at least one hostname"
 					arg = { "--help" };
 				end
-				if arg[1] ~= "--help" and not hosts[arg[1]] then
+				if arg[1] ~= "--help" and not prosody.hosts[arg[1]] then
 					show_message(error_messages["no-such-host"]);
 					return 1;
 				end
