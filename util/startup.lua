@@ -496,8 +496,8 @@ end
 
 -- prosodyctl only
 function startup.prosodyctl()
-	startup.read_config();
 	startup.init_global_state();
+	startup.read_config();
 	startup.setup_plugindir();
 	startup.setup_datadir();
 	startup.chdir();
@@ -517,13 +517,13 @@ end
 function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
+	startup.init_global_state();
 	startup.read_config();
 	startup.sanity_check();
 	startup.sandbox_require();
 	startup.set_function_metatable();
 	startup.check_dependencies();
 	startup.load_libraries();
-	startup.init_global_state();
 	startup.setup_plugindir();
 	startup.setup_datadir();
 	startup.init_logging();
