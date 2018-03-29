@@ -488,7 +488,7 @@ function startup.make_dummy_hosts()
 	prosody.core_post_stanza = function () end; -- TODO: mod_router!
 
 	for hostname in pairs(config.getconfig()) do
-		hosts[hostname] = startup.make_host(hostname);
+		prosody.hosts[hostname] = startup.make_host(hostname);
 	end
 end
 
