@@ -10,7 +10,7 @@
 local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
 
-local hosts = hosts;
+local hosts = prosody.hosts;
 local full_sessions = prosody.full_sessions;
 local bare_sessions = prosody.bare_sessions;
 

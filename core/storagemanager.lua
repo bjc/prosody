@@ -7,12 +7,12 @@ local config = require "core.configmanager";
 local datamanager = require "util.datamanager";
 local modulemanager = require "core.modulemanager";
 local multitable = require "util.multitable";
-local hosts = hosts;
 local log = require "util.logger".init("storagemanager");
 local async = require "util.async";
 local debug = debug;
 
 local prosody = prosody;
+local hosts = prosody.hosts;
 
 local _ENV = nil;
 -- luacheck: std none
