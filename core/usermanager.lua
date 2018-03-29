@@ -13,11 +13,11 @@ local ipairs = ipairs;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
-local hosts = hosts;
 local sasl_new = require "util.sasl".new;
 local storagemanager = require "core.storagemanager";
 
 local prosody = _G.prosody;
+local hosts = prosody.hosts;
 
 local setmetatable = setmetatable;
 

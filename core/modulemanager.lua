@@ -15,8 +15,8 @@ local set = require "util.set";
 local new_multitable = require "util.multitable".new;
 local api = require "core.moduleapi"; -- Module API container
 
-local hosts = hosts;
 local prosody = prosody;
+local hosts = prosody.hosts;
 
 local xpcall = xpcall;
 local setmetatable, rawget = setmetatable, rawget;
