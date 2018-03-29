@@ -192,7 +192,21 @@ function startup.init_global_state()
 	full_sessions = prosody.full_sessions;
 	hosts = prosody.hosts;
 
-	local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
+	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".",
+	                  plugins = CFG_PLUGINDIR or "plugins", data = "data" };
+
+	prosody.arg = _G.arg;
+
+	startup.detect_platform();
+	startup.detect_installed();
+	_G.prosody = prosody;
+end
+
+function startup.setup_datadir()
+	prosody.paths.data = config.get("*", "data_path") or CFG_DATADIR or "data";
+end
+
+function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	if custom_plugin_paths then
 		local path_sep = package.config:sub(3,3);
@@ -200,14 +214,7 @@ function startup.init_global_state()
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 	end
-	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".",
-	                  plugins = CFG_PLUGINDIR or "plugins", data = data_path };
-
-	prosody.arg = _G.arg;
-
-	startup.detect_platform();
-	startup.detect_installed();
-	_G.prosody = prosody;
+	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
 function startup.chdir()
@@ -491,6 +498,8 @@ end
 function startup.prosodyctl()
 	startup.read_config();
 	startup.init_global_state();
+	startup.setup_plugindir();
+	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
 	startup.switch_user();
@@ -515,6 +524,8 @@ function startup.prosody()
 	startup.check_dependencies();
 	startup.load_libraries();
 	startup.init_global_state();
+	startup.setup_plugindir();
+	startup.setup_datadir();
 	startup.init_logging();
 	startup.chdir();
 	startup.add_global_prosody_functions();
