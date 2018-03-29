@@ -7,7 +7,6 @@ max_line_length = 150
 
 read_globals = {
 	"prosody",
-	"hosts",
 	"import",
 	"server",
 };
@@ -22,7 +21,6 @@ files["prosodyctl"] = {
 files["core/"] = {
 	globals = {
 		"prosody.hosts.?",
-		"hosts.?",
 	};
 }
 files["util/"] = {
