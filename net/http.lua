@@ -100,7 +100,7 @@ function listener.onconnect(conn)
 		end
 
 		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
-		return log_if_failed(req.id, xpcall(function () return callback(content, code, request, response) end, handleerr));
+		return log_if_failed(req.id, xpcall(function () return callback(content, code, response, request) end, handleerr));
 	end
 	req.reader = request_reader;
 	req.state = "status";
