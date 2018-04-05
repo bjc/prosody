@@ -3,6 +3,7 @@
 local startup = {};
 
 local prosody = { events = require "util.events".new() };
+local log = require "util.logger".init("startup");
 
 local config = require "core.configmanager";
 
