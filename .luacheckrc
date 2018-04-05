@@ -9,7 +9,6 @@ read_globals = {
 	"prosody",
 	"hosts",
 	"import",
-	"log",
 	"server",
 };
 files["prosody"] = {
