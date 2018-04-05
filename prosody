@@ -65,10 +65,10 @@ local function loop()
 			return "quitting";
 		end
 
-		log("error", "Top-level error, please report:\n%s", tostring(err));
+		prosody.log("error", "Top-level error, please report:\n%s", tostring(err));
 		local traceback = debug.traceback("", 2);
 		if traceback then
-			log("error", "%s", traceback);
+			prosody.log("error", "%s", traceback);
 		end
 
 		prosody.events.fire_event("very-bad-error", {error = err, traceback = traceback});
@@ -82,15 +82,15 @@ local function loop()
 end
 
 local function cleanup()
-	log("info", "Shutdown status: Cleaning up");
+	prosody.log("info", "Shutdown status: Cleaning up");
 	prosody.events.fire_event("server-cleanup");
 end
 
 loop();
 
-log("info", "Shutting down...");
+prosody.log("info", "Shutting down...");
 cleanup();
 prosody.events.fire_event("server-stopped");
-log("info", "Shutdown complete");
+prosody.log("info", "Shutdown complete");
 
 os.exit(prosody.shutdown_code);
