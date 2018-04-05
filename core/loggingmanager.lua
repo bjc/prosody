@@ -18,7 +18,6 @@ local getstyle, getstring = require "util.termcolours".getstyle, require "util.t
 
 local config = require "core.configmanager";
 local logger = require "util.logger";
-local prosody = prosody;
 
 local _ENV = nil;
 -- luacheck: std none
@@ -152,12 +151,7 @@ local function reload_logging()
 	for name, sink_maker in pairs(old_sink_types) do
 		log_sink_types[name] = sink_maker;
 	end
-
-	prosody.events.fire_event("logging-reloaded");
 end
-
-reload_logging();
-prosody.events.add_handler("reopen-log-files", reload_logging);
 
 --- Definition of built-in logging sinks ---
 
