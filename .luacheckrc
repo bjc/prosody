@@ -8,7 +8,6 @@ max_line_length = 150
 read_globals = {
 	"prosody",
 	"import",
-	"server",
 };
 files["prosody"] = {
 	allow_defined_top = true;
