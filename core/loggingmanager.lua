@@ -20,9 +20,6 @@ local config = require "core.configmanager";
 local logger = require "util.logger";
 local prosody = prosody;
 
-_G.log = logger.init("general");
-prosody.log = logger.init("general");
-
 local _ENV = nil;
 -- luacheck: std none
 

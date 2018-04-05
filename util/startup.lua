@@ -3,7 +3,8 @@
 local startup = {};
 
 local prosody = { events = require "util.events".new() };
-local log = require "util.logger".init("startup");
+local logger = require "util.logger";
+local log = logger.init("startup");
 
 local config = require "core.configmanager";
 
@@ -194,6 +195,9 @@ function startup.init_global_state()
 	                  plugins = CFG_PLUGINDIR or "plugins", data = "data" };
 
 	prosody.arg = _G.arg;
+
+	_G.log = logger.init("general");
+	prosody.log = logger.init("general");
 
 	startup.detect_platform();
 	startup.detect_installed();
