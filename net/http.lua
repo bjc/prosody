@@ -22,6 +22,7 @@ local pairs = pairs;
 local tonumber, tostring, xpcall, traceback =
       tonumber, tostring, xpcall, debug.traceback;
 local error = error
+local setmetatable = setmetatable;
 
 local log = require "util.logger".init("http");
 
