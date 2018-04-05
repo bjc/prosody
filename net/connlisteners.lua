@@ -12,7 +12,6 @@ end
 
 return {
 	register = fail;
-	register = fail;
 	get = fail;
 	start = fail;
 	-- epic fail
