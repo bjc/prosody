@@ -80,9 +80,6 @@ function startup.load_libraries()
 	server = require "net.server"
 end
 
--- The global log() gets defined by loggingmanager
--- luacheck: ignore 113/log
-
 function startup.init_logging()
 	-- Initialize logging
 	require "core.loggingmanager"
