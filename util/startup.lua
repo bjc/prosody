@@ -521,10 +521,10 @@ function startup.prosody()
 	startup.sandbox_require();
 	startup.set_function_metatable();
 	startup.check_dependencies();
+	startup.init_logging();
 	startup.load_libraries();
 	startup.setup_plugindir();
 	startup.setup_datadir();
-	startup.init_logging();
 	startup.chdir();
 	startup.add_global_prosody_functions();
 	startup.read_version();
