@@ -220,8 +220,8 @@ function startup.setup_plugindir()
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
+		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
-	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
 function startup.chdir()
