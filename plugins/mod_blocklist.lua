@@ -321,12 +321,9 @@ module:hook("pre-message/bare", bounce_outgoing, prio_out);
 module:hook("pre-message/full", bounce_outgoing, prio_out);
 module:hook("pre-message/host", bounce_outgoing, prio_out);
 
--- FIXME See #575 -- We MUST bounce these, but we don't because this
--- would produce lots of error replies due to server-generated presence.
--- This will likely need changes to mod_presence
-module:hook("pre-presence/bare", drop_outgoing, prio_out);
-module:hook("pre-presence/full", drop_outgoing, prio_out);
-module:hook("pre-presence/host", drop_outgoing, prio_out);
+module:hook("pre-presence/bare", bounce_outgoing, -1);
+module:hook("pre-presence/host", bounce_outgoing, -1);
+module:hook("pre-presence/full", bounce_outgoing, prio_out);
 
 module:hook("pre-iq/bare", bounce_outgoing, prio_out);
 module:hook("pre-iq/full", bounce_outgoing, prio_out);
