@@ -132,7 +132,7 @@ int rb_read(lua_State *L) {
 }
 
 /*
- * Read buffer until first occurence of a substring
+ * Read buffer until first occurrence of a substring
  * (buffer, string) -> string
  */
 int rb_readuntil(lua_State *L) {
