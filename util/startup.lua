@@ -516,9 +516,9 @@ function startup.prosodyctl()
 	startup.log_dependency_warnings();
 	startup.check_unwriteable();
 	startup.load_libraries();
-	startup.init_global_protection();
 	startup.init_http_client();
 	startup.make_dummy_hosts();
+	startup.init_global_protection();
 end
 
 function startup.prosody()
