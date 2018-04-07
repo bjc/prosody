@@ -115,66 +115,79 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	if session.type ~= "c2s_unauthed" then
 		log("debug", "Attempted registration when disabled or already authenticated");
 		session.send(st.error_reply(stanza, "cancel", "service-unavailable"));
-	elseif require_encryption and not session.secure then
+		return true;
+	end
+
+	if require_encryption and not session.secure then
 		session.send(st.error_reply(stanza, "modify", "policy-violation", "Encryption is required"));
-	else
-		local query = stanza.tags[1];
-		if stanza.attr.type == "get" then
-			local reply = st.reply(stanza);
-			reply:add_child(registration_query);
-			session.send(reply);
-		elseif stanza.attr.type == "set" then
-			if query.tags[1] and query.tags[1].name == "remove" then
-				session.send(st.error_reply(stanza, "auth", "registration-required"));
-			else
-				local data, errors = parse_response(query);
-				if errors then
-					log("debug", "Error parsing registration form:");
-					for field, err in pairs(errors) do
-						log("debug", "Field %q: %s", field, err);
-					end
-					session.send(st.error_reply(stanza, "modify", "not-acceptable"));
-				else
-					local username, password = nodeprep(data.username), data.password;
-					data.username, data.password = nil, nil;
-					local host = module.host;
-					if not username or username == "" then
-						log("debug", "The requested username is invalid.");
-						session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
-						return true;
-					end
-					local user = { username = username , host = host, additional = data, ip = session.ip, session = session, allowed = true }
-					module:fire_event("user-registering", user);
-					if not user.allowed then
-						log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
-						session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
-					elseif usermanager_user_exists(username, host) then
-						log("debug", "Attempt to register with existing username");
-						session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
-					else
-						-- TODO unable to write file, file may be locked, etc, what's the correct error?
-						local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
-						if usermanager_create_user(username, password, host) then
-							data.registered = os.time();
-							if not account_details:set(username, data) then
-								log("debug", "Could not store extra details");
-								usermanager_delete_user(username, host);
-								session.send(error_reply);
-								return true;
-							end
-							session.send(st.reply(stanza)); -- user created!
-							log("info", "User account created: %s@%s", username, host);
-							module:fire_event("user-registered", {
-								username = username, host = host, source = "mod_register",
-								session = session });
-						else
-							log("debug", "Could not create user");
-							session.send(error_reply);
-						end
-					end
-				end
-			end
+		return true;
+	end
+
+	local query = stanza.tags[1];
+	if stanza.attr.type == "get" then
+		local reply = st.reply(stanza);
+		reply:add_child(registration_query);
+		session.send(reply);
+		return true;
+	end
+
+	-- stanza.attr.type == "set"
+	if query.tags[1] and query.tags[1].name == "remove" then
+		session.send(st.error_reply(stanza, "auth", "registration-required"));
+		return true;
+	end
+
+	local data, errors = parse_response(query);
+	if errors then
+		log("debug", "Error parsing registration form:");
+		for field, err in pairs(errors) do
+			log("debug", "Field %q: %s", field, err);
 		end
+		session.send(st.error_reply(stanza, "modify", "not-acceptable"));
+		return true;
+	end
+
+	local username, password = nodeprep(data.username), data.password;
+	data.username, data.password = nil, nil;
+	local host = module.host;
+	if not username or username == "" then
+		log("debug", "The requested username is invalid.");
+		session.send(st.error_reply(stanza, "modify", "not-acceptable", "The requested username is invalid."));
+		return true;
+	end
+
+	local user = { username = username , host = host, additional = data, ip = session.ip, session = session, allowed = true }
+	module:fire_event("user-registering", user);
+	if not user.allowed then
+		log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
+		session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
+		return true;
+	end
+
+	if usermanager_user_exists(username, host) then
+		log("debug", "Attempt to register with existing username");
+		session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
+		return true;
+	end
+
+	-- TODO unable to write file, file may be locked, etc, what's the correct error?
+	local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
+	if usermanager_create_user(username, password, host) then
+		data.registered = os.time();
+		if not account_details:set(username, data) then
+			log("debug", "Could not store extra details");
+			usermanager_delete_user(username, host);
+			session.send(error_reply);
+			return true;
+		end
+		session.send(st.reply(stanza)); -- user created!
+		log("info", "User account created: %s@%s", username, host);
+		module:fire_event("user-registered", {
+			username = username, host = host, source = "mod_register",
+			session = session });
+	else
+		log("debug", "Could not create user");
+		session.send(error_reply);
 	end
 	return true;
 end);
