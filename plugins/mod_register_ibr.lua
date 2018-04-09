@@ -140,10 +140,12 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local data, errors = parse_response(query);
 	if errors then
 		log("debug", "Error parsing registration form:");
+		local textual_errors = {};
 		for field, err in pairs(errors) do
 			log("debug", "Field %q: %s", field, err);
+			table.insert(textual_errors, ("%s: %s"):format(field:gsub("^%a", string.upper), err));
 		end
-		session.send(st.error_reply(stanza, "modify", "not-acceptable"));
+		session.send(st.error_reply(stanza, "modify", "not-acceptable", table.concat(textual_errors, "\n")));
 		return true;
 	end
 
