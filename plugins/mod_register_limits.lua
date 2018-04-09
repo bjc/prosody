@@ -59,7 +59,7 @@ module:hook("user-registering", function (event)
 	local ip = event.ip or session and session.ip;
 	local log = session and session.log or module._log;
 	if not ip then
-		log("debug", "User's IP not known; can't apply blacklist/whitelist");
+		log("debug", "IP not known; can't apply blacklist/whitelist");
 	elseif ip_in_set(blacklisted_ips, ip) then
 		log("debug", "Registration disallowed by blacklist");
 		event.allowed = false;
