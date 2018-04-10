@@ -463,8 +463,8 @@ function stream_callbacks.streamclosed(context)
 end
 
 function stream_callbacks.error(context, error)
-	log("debug", "Error parsing BOSH request payload; %s", error);
 	if not context.sid then
+		log("debug", "Error parsing BOSH request payload; %s", error);
 		local response = context.response;
 		local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 			["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
@@ -473,6 +473,7 @@ function stream_callbacks.error(context, error)
 	end
 
 	local session = sessions[context.sid];
+	(session and session.log or log)("warn", "Error parsing BOSH request payload; %s", error);
 	if error == "stream-error" then -- Remote stream error, we close normally
 		session:close();
 	else
