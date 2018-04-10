@@ -369,13 +369,15 @@ function stream_callbacks.streamopened(context, attr)
 		if diff ~= 1 then
 			context.sid = sid;
 			context.notopen = nil;
-			if diff == 2 then
+			if diff == 2 then -- Missed a request
 				-- Hold request, but don't process it (ouch!)
 				session.log("debug", "rid skipped: %d, deferring this request", rid-1)
 				context.defer = true;
 				session.bosh_deferred = { context = context, sid = sid, rid = rid, terminate = attr.type == "terminate" };
 				return;
 			end
+			-- Set a marker to indicate that stanzas in this request should NOT be processed
+			-- (these stanzas will already be in the XML parser's buffer)
 			context.ignore = true;
 			if diff == 0 then
 				-- Re-send previous response, ignore stanzas in this request
