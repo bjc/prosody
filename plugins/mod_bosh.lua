@@ -210,7 +210,7 @@ local function bosh_reset_stream(session) session.notopen = true; end
 local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
 
 local function bosh_close_stream(session, reason)
-	(session.log or log)("info", "BOSH client disconnected");
+	(session.log or log)("info", "BOSH client disconnected: %s", tostring((reason and reason.condition or reason) or "session close"));
 
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams });
