@@ -774,7 +774,9 @@ end
 local function setquitting(yes)
 	if yes then
 		-- Quit now
-		closeallservers();
+		if yes ~= "once" then
+			closeallservers();
+		end
 		base:loopexit();
 	end
 end
