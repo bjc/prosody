@@ -889,7 +889,7 @@ end
 local quitting;
 
 local function setquitting(quit)
-	quitting = not not quit;
+	quitting = quit;
 end
 
 loop = function(once) -- this is the main loop of the program
@@ -958,7 +958,7 @@ loop = function(once) -- this is the main loop of the program
 			end
 		end
 	until quitting;
-	if once and quitting == "once" then quitting = nil; return; end
+	if quitting == "once" then quitting = nil; return; end
 	closeall();
 	return "quitting"
 end
