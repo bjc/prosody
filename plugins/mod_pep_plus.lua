@@ -268,7 +268,6 @@ local function resend_last_item(jid, node, service)
 end
 
 local function update_subscriptions(recipient, service_name, nodes)
-	local service = get_pep_service(service_name);
 	nodes = nodes or empty_set;
 
 	local service_recipients = recipients[service_name];
@@ -286,6 +285,7 @@ local function update_subscriptions(recipient, service_name, nodes)
 		return;
 	end
 
+	local service = get_pep_service(service_name);
 	for node in current - nodes do
 		service:remove_subscription(node, recipient, recipient);
 	end
