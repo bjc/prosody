@@ -287,7 +287,7 @@ function stream_callbacks.streamopened(context, attr)
 			type = "c2s_unauthed", conn = request.conn, sid = sid, host = attr.to,
 			rid = rid - 1, -- Hack for initial session setup, "previous" rid was $current_request - 1
 			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
-			bosh_max_inactive = bosh_max_inactivity, bosh_responses = cache.new(BOSH_HOLD):table();
+			bosh_max_inactive = bosh_max_inactivity, bosh_responses = cache.new(BOSH_HOLD+1):table();
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
 			close = bosh_close_stream, dispatch_stanza = core_process_stanza, notopen = true,
 			log = logger.init("bosh"..sid),	secure = consider_bosh_secure or request.secure,
