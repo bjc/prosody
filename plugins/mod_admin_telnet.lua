@@ -991,14 +991,15 @@ local function check_muc(jid)
 	return room_name, host;
 end
 
-function def_env.muc:create(room_jid)
+function def_env.muc:create(room_jid, config)
 	local room_name, host = check_muc(room_jid);
 	if not room_name then
 		return room_name, host;
 	end
 	if not room_name then return nil, host end
+	if config ~= nil and type(config) ~= "table" then return nil, "Config must be a table"; end
 	if hosts[host].modules.muc.get_room_from_jid(room_jid) then return nil, "Room exists already" end
-	return hosts[host].modules.muc.create_room(room_jid);
+	return hosts[host].modules.muc.create_room(room_jid, config);
 end
 
 function def_env.muc:room(room_jid)
