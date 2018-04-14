@@ -222,12 +222,12 @@ function get_room_from_jid(room_jid)
 	return restore_room(room_jid);
 end
 
-function create_room(room_jid)
+function create_room(room_jid, config)
 	local exists = get_room_from_jid(room_jid);
 	if exists then
 		return nil, "room-exists";
 	end
-	local room = muclib.new_room(room_jid);
+	local room = muclib.new_room(room_jid, config);
 	module:fire_event("muc-room-created", {
 		room = room;
 	});
