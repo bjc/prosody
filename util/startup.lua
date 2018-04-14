@@ -505,6 +505,7 @@ end
 function startup.prosodyctl()
 	startup.init_global_state();
 	startup.read_config();
+	startup.force_console_logging();
 	startup.init_logging();
 	startup.setup_plugindir();
 	startup.setup_datadir();
@@ -512,7 +513,6 @@ function startup.prosodyctl()
 	startup.read_version();
 	startup.switch_user();
 	startup.check_dependencies();
-	startup.force_console_logging();
 	startup.log_dependency_warnings();
 	startup.check_unwriteable();
 	startup.load_libraries();
