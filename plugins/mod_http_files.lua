@@ -144,7 +144,7 @@ function serve(opts)
 			if not data then
 				return 403;
 			end
-			cache[orig_path] = { data = data, content_type = mime_map.html; etag = etag; };
+			cache:set(orig_path, { data = data, content_type = mime_map.html; etag = etag; });
 			response_headers.content_type = mime_map.html;
 
 		else
