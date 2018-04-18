@@ -518,7 +518,6 @@ function startup.prosodyctl()
 	startup.load_libraries();
 	startup.init_http_client();
 	startup.make_dummy_hosts();
-	startup.init_global_protection();
 end
 
 function startup.prosody()
