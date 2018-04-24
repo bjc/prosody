@@ -127,7 +127,7 @@ local function new()
 			w = wrappers[event_name];
 		end
 		if not w then return; end
-		for i = #w, 1 do
+		for i = #w, 1, -1 do
 			if w[i] == wrapper then
 				t_remove(w, i);
 			end
