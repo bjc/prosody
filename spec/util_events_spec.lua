@@ -113,6 +113,12 @@ describe("util.events", function ()
 		pending("should support adding handlers within an event handler")
 		pending("should support removing handlers within an event handler")
 
+		it("should support getting the current handlers for an event", function ()
+			e.add_handler("myevent", h);
+			local handlers = e.get_handlers("myevent");
+			assert.equal(h, handlers[1]);
+		end);
+
 		describe("wrappers", function ()
 			local w
 			before_each(function ()
@@ -151,6 +157,21 @@ describe("util.events", function ()
 				e.add_wrapper("myevent", w2);
 				e.fire_event("myevent", "abc");
 				e.remove_wrapper("myevent", w);
+				e.fire_event("myevent", "abc");
+				assert.spy(w).was_called(1);
+				assert.spy(w2).was_called(2);
+				assert.spy(h).was_called(2);
+			end);
+
+			it("should support a mix of global and event wrappers", function ()
+				local w2 = spy.new(function (handlers, event_name, event_data)
+					return handlers(event_name, event_data);
+				end);
+				e.add_wrapper(false, w);
+				e.add_handler("myevent", h);
+				e.add_wrapper("myevent", w2);
+				e.fire_event("myevent", "abc");
+				e.remove_wrapper(false, w);
 				e.fire_event("myevent", "abc");
 				assert.spy(w).was_called(1);
 				assert.spy(w2).was_called(2);
