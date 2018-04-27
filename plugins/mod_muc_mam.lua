@@ -246,6 +246,10 @@ module:hook("muc-get-history", function (event)
 	local since = event.since;
 	local to = event.to;
 
+	if maxstanzas == 0 or maxchars == 0 then
+		return -- No history requested
+	end
+
 	if not maxstanzas or maxstanzas > get_historylength(room) then
 		maxstanzas = get_historylength(room);
 	end
