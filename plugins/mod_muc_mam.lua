@@ -303,14 +303,13 @@ module:hook("muc-get-history", function (event)
 	return true;
 end, 1);
 
--- Handle messages
-local function save_to_history(self, stanza)
-	local room_node, room_host = jid_split(self.jid);
+module:hook("muc-broadcast-messages", function (event)
+	local room, stanza = event.room, event.stanza;
 
 	-- Filter out <stanza-id> that claim to be from us
 	stanza:maptags(function (tag)
 		if tag.name == "stanza-id" and tag.attr.xmlns == xmlns_st_id
-		and jid_prep(tag.attr.by) == self.jid then
+		and jid_prep(tag.attr.by) == room.jid then
 			return nil;
 		end
 		if tag.name == "x" and tag.attr.xmlns == xmlns_muc_user then
@@ -318,6 +317,12 @@ local function save_to_history(self, stanza)
 		end
 		return tag;
 	end);
+
+end, 0);
+
+-- Handle messages
+local function save_to_history(self, stanza)
+	local room_node, room_host = jid_split(self.jid);
 
 	local stored_stanza = stanza;
 
