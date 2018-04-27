@@ -254,6 +254,10 @@ module:hook("muc-get-history", function (event)
 		maxstanzas = get_historylength(room);
 	end
 
+	if room._history and #room._history >= maxstanzas then
+		return -- It can deal with this itself
+	end
+
 	-- Load all the data!
 	local query = {
 		limit = maxstanzas;
