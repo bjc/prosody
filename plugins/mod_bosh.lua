@@ -191,8 +191,10 @@ function handle_POST(event)
 
 			return true; -- Inform http server we shall reply later
 		end
-	elseif response.finished then
-		return; -- A response has been sent already
+	elseif response.finished or context.ignore_request then
+ 		-- A response has been sent already, or we're ignoring this request
+ 		-- (e.g. so a different instance of the module can handle it)
+		return;
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
@@ -269,7 +271,8 @@ function stream_callbacks.streamopened(context, attr)
 		elseif to_host ~= module.host then
 			-- Could be meant for a different instance of the module
 			-- if multiple instances are loaded with the same URL then this can happen
-			return; --> 404
+			context.ignore_request = true;
+			return;
 		end
 		if not rid or (not wait and attr.wait or wait < 0 or wait % 1 ~= 0) then
 			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
