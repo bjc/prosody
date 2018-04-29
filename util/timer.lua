@@ -15,6 +15,7 @@ local type = type;
 local debug_traceback = debug.traceback;
 local tostring = tostring;
 local xpcall = xpcall;
+local math_max = math.max;
 
 local _ENV = nil;
 -- luacheck: std none
@@ -87,7 +88,7 @@ local function stop(id)
 		next_time = peek;
 		_server_timer:close();
 		if next_time ~= nil then
-			_server_timer = _add_task(next_time - get_time(), _on_timer);
+			_server_timer = _add_task(math_max(next_time - get_time(), 0), _on_timer);
 		end
 	end
 	return result, item, result_sync;
