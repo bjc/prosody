@@ -74,6 +74,7 @@ coverage:
 	luacov
 	luacov-console
 	luacov-console -s
+	@echo "To inspect individual files run: luacov-console -l FILENAME"
 
 util/%.so:
 	$(MAKE) install -C util-src
