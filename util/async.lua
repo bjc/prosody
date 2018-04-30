@@ -215,10 +215,26 @@ end
 function runner_mt:enqueue(input)
 	table.insert(self.queue, input);
 	self:log("debug", "queued new work item, %d items queued", #self.queue);
+	return self;
 end
 
 function runner_mt:log(level, fmt, ...)
 	return log(level, "[runner %s] "..fmt, self.id, ...);
+end
+
+function runner_mt:onready(f)
+	self.watchers.ready = f;
+	return self;
+end
+
+function runner_mt:onwaiting(f)
+	self.watchers.waiting = f;
+	return self;
+end
+
+function runner_mt:onerror(f)
+	self.watchers.error = f;
+	return self;
 end
 
 local function ready()
