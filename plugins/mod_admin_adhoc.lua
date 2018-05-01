@@ -3,6 +3,7 @@
 -- This file is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 212/self 212/data 212/state 412/err
 
 local _G = _G;
 
