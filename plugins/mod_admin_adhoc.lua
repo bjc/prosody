@@ -304,8 +304,8 @@ local get_user_stats_handler = adhoc_simple(get_user_stats_layout, function(fiel
 	local rostersize = 0;
 	local IPs = "";
 	local resources = "";
-	for jid in pairs(roster) do
-		if jid then
+	for contact_jid in pairs(roster) do
+		if contact_jid then
 			rostersize = rostersize + 1;
 		end
 	end
