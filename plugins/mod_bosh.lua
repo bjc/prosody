@@ -192,8 +192,8 @@ function handle_POST(event)
 			return true; -- Inform http server we shall reply later
 		end
 	elseif response.finished or context.ignore_request then
- 		-- A response has been sent already, or we're ignoring this request
- 		-- (e.g. so a different instance of the module can handle it)
+		-- A response has been sent already, or we're ignoring this request
+		-- (e.g. so a different instance of the module can handle it)
 		return;
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
