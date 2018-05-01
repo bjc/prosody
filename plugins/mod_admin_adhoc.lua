@@ -212,8 +212,8 @@ local get_user_password_handler = adhoc_simple(get_user_password_layout, functio
 		return generate_error_message(err);
 	end
 	local user, host, resource = jid.split(fields.accountjid);
-	local accountjid = "";
-	local password = "";
+	local accountjid;
+	local password;
 	if host ~= module_host then
 		return { status = "completed", error = { message = "Tried to get password for a user on " .. host .. " but command was sent to " .. module_host } };
 	elseif usermanager_user_exists(user, host) then
