@@ -251,15 +251,15 @@ local get_user_roster_handler = adhoc_simple(get_user_roster_layout, function(fi
 	local roster = rm_load_roster(user, host);
 
 	local query = st.stanza("query", { xmlns = "jabber:iq:roster" });
-	for jid in pairs(roster) do
-		if jid then
+	for contact_jid in pairs(roster) do
+		if contact_jid then
 			query:tag("item", {
-				jid = jid,
-				subscription = roster[jid].subscription,
-				ask = roster[jid].ask,
-				name = roster[jid].name,
+				jid = contact_jid,
+				subscription = roster[contact_jid].subscription,
+				ask = roster[contact_jid].ask,
+				name = roster[contact_jid].name,
 			});
-			for group in pairs(roster[jid].groups) do
+			for group in pairs(roster[contact_jid].groups) do
 				query:tag("group"):text(group):up();
 			end
 			query:up();
