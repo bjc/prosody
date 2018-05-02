@@ -540,6 +540,9 @@ end
 
 -- Connected!
 function interface:onconnect()
+	if self.conn and not self.peername then
+		self.peername, self.peerport = self.conn:getpeername();
+	end
 	self.onconnect = noop;
 	self:on("connect");
 end
