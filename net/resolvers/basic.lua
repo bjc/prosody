@@ -1,4 +1,5 @@
 local adns = require "net.adns";
+local inet_pton = require "util.net".pton;
 
 local methods = {};
 local resolver_mt = { __index = methods };
@@ -23,6 +24,16 @@ function methods:next(cb)
 		if n > 0 then return; end
 		self.targets = targets;
 		self:next(cb);
+	end
+
+	local is_ip = inet_pton(self.hostname);
+	if is_ip then
+		if #is_ip == 16 then
+			cb(self.conn_type.."6", self.hostname, self.port, self.extra);
+		elseif #is_ip == 4 then
+			cb(self.conn_type, self.hostname, self.port, self.extra);
+		end
+		return;
 	end
 
 	-- Resolve DNS to target list
