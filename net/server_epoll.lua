@@ -336,6 +336,7 @@ end
 -- Called when socket is writable
 function interface:onwritable()
 	self:onconnect();
+	if not self.conn then return; end -- could have been closed in onconnect
 	local buffer = self.writebuffer;
 	local data = t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
