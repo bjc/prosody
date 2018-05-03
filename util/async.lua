@@ -1,4 +1,5 @@
-local log = require "util.logger".init("util.async");
+local logger = require "util.logger";
+local log = logger.init("util.async");
 local new_id = require "util.id".short;
 
 local function checkthread()
@@ -135,8 +136,10 @@ local function default_error_watcher(runner, err)
 end
 local function default_func(f) f(); end
 local function runner(func, watchers, data)
+	local id = new_id();
+	local _log = logger.init("runner" .. id);
 	return setmetatable({ func = func or default_func, thread = false, state = "ready", notified_state = "ready",
-		queue = {}, watchers = watchers or { error = default_error_watcher }, data = data, id = new_id() }
+		queue = {}, watchers = watchers or { error = default_error_watcher }, data = data, id = id, _log = _log; }
 	, runner_mt);
 end
 
@@ -219,7 +222,7 @@ function runner_mt:enqueue(input)
 end
 
 function runner_mt:log(level, fmt, ...)
-	return log(level, "[runner %s] "..fmt, self.id, ...);
+	return self._log(level, fmt, ...);
 end
 
 function runner_mt:onready(f)
