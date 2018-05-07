@@ -156,11 +156,14 @@ end, -1);
 -- Have a single muc-add-history event, so that plugins can mark it
 -- as handled without stopping other muc-broadcast-message handlers
 module:hook("muc-broadcast-message", function(event)
-	local historic = event.stanza:get_child("body");
-	if historic then
+	if module:fire_event("muc-message-is-historic", event) then
 		module:fire_event("muc-add-history", event);
 	end
 end);
+
+module:hook("muc-message-is-historic", function (event)
+	return event.stanza:get_child("body");
+end, -1);
 
 return {
 	set_max_length = set_max_history_length;
