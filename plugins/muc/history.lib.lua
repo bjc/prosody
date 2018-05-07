@@ -138,28 +138,28 @@ end, 50); -- Before subject(20)
 
 -- add to history
 module:hook("muc-add-history", function(event)
-	local historic = event.stanza:get_child("body");
-	if historic then
-		local room = event.room
-		local history = room._history;
-		if not history then history = {}; room._history = history; end
-		local stanza = st.clone(event.stanza);
-		stanza.attr.to = "";
-		local ts = gettime();
-		local stamp = datetime.datetime(ts);
-		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
-		stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
-		local entry = { stanza = stanza, timestamp = ts };
-		table.insert(history, entry);
-		while #history > get_historylength(room) do table.remove(history, 1) end
-	end
+	local room = event.room
+	local history = room._history;
+	if not history then history = {}; room._history = history; end
+	local stanza = st.clone(event.stanza);
+	stanza.attr.to = "";
+	local ts = gettime();
+	local stamp = datetime.datetime(ts);
+	stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = module.host, stamp = stamp}):up(); -- XEP-0203
+	stanza:tag("x", {xmlns = "jabber:x:delay", from = module.host, stamp = datetime.legacy()}):up(); -- XEP-0091 (deprecated)
+	local entry = { stanza = stanza, timestamp = ts };
+	table.insert(history, entry);
+	while #history > get_historylength(room) do table.remove(history, 1) end
 	return true;
 end, -1);
 
 -- Have a single muc-add-history event, so that plugins can mark it
 -- as handled without stopping other muc-broadcast-message handlers
 module:hook("muc-broadcast-message", function(event)
-	module:fire_event("muc-add-history", event);
+	local historic = event.stanza:get_child("body");
+	if historic then
+		module:fire_event("muc-add-history", event);
+	end
 end);
 
 return {
