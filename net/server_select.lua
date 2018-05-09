@@ -1034,6 +1034,48 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	end
 end
 
+local closewatcher = function (handler)
+	local socket = handler.conn;
+	_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+	_readlistlen = removesocket( _readlist, socket, _readlistlen )
+	_socketlist[ socket ] = nil
+end;
+
+local addremove = function (handler, read, send)
+	local socket = handler.conn
+	_socketlist[ socket ] = handler
+	if read ~= nil then
+		if read then
+			_readlistlen = addsocket( _readlist, socket, _readlistlen )
+		else
+			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+		end
+	end
+	if send ~= nil then
+		if send then
+			_sendlistlen = addsocket( _sendlist, socket, _sendlistlen )
+		else
+			_readlistlen = removesocket( _readlist, socket, _readlistlen )
+		end
+	end
+end
+
+local watchfd = function ( fd, onreadable, onwriteable )
+	local socket = fd
+	if type(fd) == "number" then
+		socket = { getfd = function () return fd; end }
+	end
+	local handler = {
+		conn = socket;
+		readbuffer = onreadable or id;
+		sendbuffer = onwriteable or id;
+		close = closewatcher;
+		setflags = addremove;
+	};
+	addremove( handler, onreadable, onwriteable )
+	return handler
+end
+
 ----------------------------------// BEGIN //--
 
 use "setmetatable" ( _socketlist, { __mode = "k" } )
@@ -1058,6 +1100,7 @@ return {
 
 	addclient = addclient,
 	wrapclient = wrapclient,
+	watchfd = watchfd,
 
 	loop = loop,
 	link = link,

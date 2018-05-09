@@ -15,6 +15,7 @@ local t_concat = table.concat;
 local setmetatable = setmetatable;
 local tostring = tostring;
 local pcall = pcall;
+local type = type;
 local next = next;
 local pairs = pairs;
 local log = require "util.logger".init("server_epoll");
@@ -586,6 +587,25 @@ local function addclient(addr, port, listeners, pattern, tls)
 	return client, conn;
 end
 
+local function watchfd(fd, onreadable, onwriteable)
+	local conn = setmetatable({
+		conn = fd;
+		onreadable = onreadable;
+		onwriteable = onwriteable;
+		close = function (self)
+			self:setflags(false, false);
+		end
+	}, interface_mt);
+	if type(fd) == "number" then
+		conn.getfd = function ()
+			return fd;
+		end;
+		-- Otherwise it'll need to be something LuaSocket-compatible
+	end
+	conn:setflags(onreadable, onwriteable);
+	return conn;
+end;
+
 -- Dump all data from one connection into another
 local function link(from, to)
 	from.listeners = setmetatable({
@@ -663,6 +683,7 @@ return {
 	closeall = closeall;
 	setquitting = setquitting;
 	wrapclient = wrapclient;
+	watchfd = watchfd;
 	link = link;
 	set_config = function (newconfig)
 		cfg = setmetatable(newconfig, default_config);
