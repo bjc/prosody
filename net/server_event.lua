@@ -834,6 +834,34 @@ local function add_task(delay, callback)
 	return event_handle;
 end
 
+local function watchfd(fd, onreadable, onwriteable)
+	local handle = {};
+	function handle:setflags(r,w)
+		if r ~= nil then
+			if r and not self.wantread then
+				self.wantread = base:addevent(fd, EV_READ, function ()
+					onreadable(self);
+				end);
+			elseif not r and self.wantread then
+				self.wantread:close();
+				self.wantread = nil;
+			end
+		end
+		if w ~= nil then
+			if w and not self.wantwrite then
+				self.wantwrite = base:addevent(fd, EV_WRITE, function ()
+					onwriteable(self);
+				end);
+			elseif not r and self.wantread then
+				self.wantwrite:close();
+				self.wantwrite = nil;
+			end
+		end
+	end
+	handle:setflags(onreadable, onwriteable);
+	return handle;
+end
+
 return {
 	cfg = cfg,
 	base = base,
@@ -850,6 +878,7 @@ return {
 	get_backend = get_backend,
 	hook_signal = hook_signal,
 	add_task = add_task,
+	watchfd = watchfd,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,

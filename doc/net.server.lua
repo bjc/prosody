@@ -229,6 +229,18 @@ Arguments:
 local function hook_signal(signal_id, handler)
 end
 
+--[[ Adds a low-level FD watcher
+Arguments:
+-   fd_number: A non-negative integer representing a file descriptor or
+    object with a :getfd() method returning one
+-   on_readable: Optional callback for when the FD is readable
+-   on_writable: Optional callback for when the FD is writable
+
+Returns:
+-   net.server handle
+]]
+local function watchfd(fd_number, on_readable, on_writable)
+end
 
 return {
 	get_backend = get_backend;
@@ -240,4 +252,5 @@ return {
 	addclient = addclient;
 	closeall = closeall;
 	hook_signal = hook_signal;
+	watchfd = watchfd;
 }
