@@ -838,6 +838,19 @@ function commands.check(arg)
 			end
 			print();
 		end
+
+		do -- Check for modules enabled both normally and as components
+			local modules = set.new(config["*"]["modules_enabled"]);
+			for host, options in enabled_hosts() do
+				local component_module = options.component_module;
+				if component_module and modules:contains(component_module) then
+					print(("    mod_%s is enabled both in modules_enabled and as Component %q %q"):format(component_module, host, component_module));
+					print("    This means the service is enabled on all VirtualHosts as well as the Component.");
+					print("    Are you sure this what you want? It may cause unexpected behaviour.");
+				end
+			end
+		end
+
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
 		local deprecated_global_options = set.intersection(global_options, deprecated);
