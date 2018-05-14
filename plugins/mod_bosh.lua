@@ -192,6 +192,12 @@ function handle_POST(event)
 			return true; -- Inform http server we shall reply later
 		end
 	elseif response.finished or context.ignore_request then
+		if response.finished then
+			module:log("debug", "Response finished");
+		end
+		if context.ignore_request then
+			module:log("debug", "Ignoring this request");
+		end
 		-- A response has been sent already, or we're ignoring this request
 		-- (e.g. so a different instance of the module can handle it)
 		return;
