@@ -1136,9 +1136,13 @@ function room_mt:set_affiliations(actor, jid_affiliation, callback)
 		if not role then -- getting kicked
 			presence_type = "unavailable";
 			if affiliation == "outcast" then
-				x:tag("status", {code="301"}):up(); -- banned
+				-- banned
+				x:tag("status", {code="301"}):up();
+				self_x:tag("status", {code="301"}):up();
 			else
-				x:tag("status", {code="321"}):up(); -- affiliation change
+				-- affiliation change
+				x:tag("status", {code="321"}):up();
+				self_x:tag("status", {code="321"}):up();
 			end
 		end
 		for nick, occupant in pairs(self._occupants) do
