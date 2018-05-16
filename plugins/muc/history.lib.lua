@@ -31,12 +31,31 @@ local function set_historylength(room, length)
 	return true;
 end
 
+-- Fix for clients who don't support XEP-0045 correctly
+-- Default number of history messages the room returns
+local function get_defaulthistorymessages(room)
+	return room._data.default_history_messages or default_history_length;
+end
+local function set_defaulthistorymessages(room, number)
+	number = math.min(tonumber(number) or default_history_length, room._data.history_length or default_history_length);
+	if number == default_history_length then
+		number = nil;
+	end
+	room._data.default_history_messages = number;
+end
+
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_historylength";
 		type = "text-single";
 		label = "Maximum Number of History Messages Returned by Room";
 		value = tostring(get_historylength(event.room));
+	});
+	table.insert(event.form, {
+		name = 'muc#roomconfig_defaulthistorymessages',
+		type = 'text-single',
+		label = 'Default Number of History Messages Returned by Room',
+		value = tostring(get_defaulthistorymessages(event.room))
 	});
 end, 100-10);
 
@@ -46,11 +65,17 @@ module:hook("muc-config-submitted/muc#roomconfig_historylength", function(event)
 	end
 end);
 
+module:hook("muc-config-submitted/muc#roomconfig_defaulthistorymessages", function(event)
+	if set_defaulthistorymessages(event.room, event.value) then
+		event.status_codes["104"] = true;
+	end
+end);
+
 local function parse_history(stanza)
 	local x_tag = stanza:get_child("x", "http://jabber.org/protocol/muc");
 	local history_tag = x_tag and x_tag:get_child("history", "http://jabber.org/protocol/muc");
 	if not history_tag then
-		return nil, default_history_length, nil;
+		return nil, nil, nil;
 	end
 
 	local maxchars = tonumber(history_tag.attr.maxchars);
@@ -118,11 +143,16 @@ end, -1);
 
 local function send_history(room, stanza)
 	local maxchars, maxstanzas, since = parse_history(stanza);
+	if not(maxchars or maxstanzas or since) then
+		maxstanzas = get_defaulthistorymessages(room);
+	end
 	local event = {
 		room = room;
 		stanza = stanza;
 		to = stanza.attr.from; -- `to` is required to calculate the character count for `maxchars`
-		maxchars = maxchars, maxstanzas = maxstanzas, since = since;
+		maxchars = maxchars,
+		maxstanzas = maxstanzas,
+		since = since;
 		next_stanza = function() end; -- events should define this iterator
 	};
 	module:fire_event("muc-get-history", event);
