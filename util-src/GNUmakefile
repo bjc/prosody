@@ -6,7 +6,7 @@ CFLAGS+=-I$(LUA_INCDIR)
 INSTALL_DATA=install -m644
 TARGET?=../util/
 
-ALL=encodings.so hashes.so net.so pposix.so signal.so table.so ringbuffer.so time.so
+ALL=encodings.so hashes.so net.so pposix.so signal.so table.so ringbuffer.so time.so poll.so
 
 ifdef RANDOM
 ALL+=crand.so
