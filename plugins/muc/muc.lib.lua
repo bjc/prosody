@@ -171,7 +171,7 @@ function room_mt:send_history(to, stanza)
 		if maxchars then maxchars = math.floor(maxchars); end
 
 		local maxstanzas = math.floor(history_tag and tonumber(history_tag.attr.maxstanzas) or #history);
-		if not history_tag then maxstanzas = 20; end
+		if not history_tag then maxstanzas = self._data.default_history_messages; end
 
 		local seconds = history_tag and tonumber(history_tag.attr.seconds);
 		if seconds then seconds = datetime.datetime(os.time() - math.floor(seconds)); end
@@ -358,6 +358,20 @@ function room_mt:set_historylength(length)
 	end
 	self._data.history_length = length;
 end
+
+-- Fix for clients who don't support XEP-0045 correctly
+-- Default number of history messages the room returns
+function room_mt:get_defaulthistorymessages()
+        return self._data.default_history_messages or default_history_length;
+end
+function room_mt:set_defaulthistorymessages(number)
+        number = math.min(tonumber(number) or default_history_length, self._data.history_length);
+        if number == default_history_length then
+                number = nil;
+        end
+        self._data.default_history_messages = number;
+end
+
 
 
 local valid_whois = { moderators = true, anyone = true };
@@ -698,6 +712,12 @@ function room_mt:get_form_layout(actor)
 			type = 'text-single',
 			label = 'Maximum Number of History Messages Returned by Room',
 			value = tostring(self:get_historylength())
+		},
+		{
+			name = 'muc#roomconfig_defaulthistorymessages',
+			type = 'text-single',
+			label = 'Default Number of History Messages Returned by Room',
+			value = tostring(self:get_defaulthistorymessages())
 		}
 	});
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
@@ -746,6 +766,7 @@ function room_mt:process_form(origin, stanza)
 	handle_option("public", "muc#roomconfig_publicroom");
 	handle_option("changesubject", "muc#roomconfig_changesubject");
 	handle_option("historylength", "muc#roomconfig_historylength");
+	handle_option("defaulthistorymessages", "muc#roomconfig_defaulthistorymessages");
 	handle_option("whois", "muc#roomconfig_whois", valid_whois);
 	handle_option("password", "muc#roomconfig_roomsecret");
 
