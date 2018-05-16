@@ -804,15 +804,19 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 			local role = current_nick and self._occupants[current_nick].role or self:get_default_role(affiliation);
 			if type == "set" then
 				local at_least_one_item_provided = false;
+				local callback = function() origin.send(st.reply(stanza)); end
 
+				-- Gather all changes to affiliations and roles
+				local jid_affiliation = {};
+				local jidnick_role = {};
 				for item in stanza.tags[1]:childtags("item") do
 					at_least_one_item_provided = true;
 
-					local callback = function() origin.send(st.reply(stanza)); end
 					if item.attr.jid then -- Validate provided JID
 						item.attr.jid = jid_prep(item.attr.jid);
 						if not item.attr.jid then
 							origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
+							return;
 						end
 					end
 					if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
@@ -822,13 +826,12 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 						local nick = self._jid_nick[item.attr.jid];
 						if nick then item.attr.nick = select(3, jid_split(nick)); end
 					end
+
 					local reason = item.tags[1] and item.tags[1].name == "reason" and #item.tags[1] == 1 and item.tags[1][1];
 					if item.attr.affiliation and item.attr.jid and not item.attr.role then
-						local success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, callback, reason);
-						if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+						jid_affiliation[item.attr.jid] = { ["affiliation"] = item.attr.affiliation, ["reason"] = reason };
 					elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
-						local success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, callback, reason);
-						if not success then origin.send(st.error_reply(stanza, errtype, err)); end
+						jidnick_role[item.attr.jid.."/"..item.attr.nick] = { ["role"] = item.attr.role, ["reason"] = reason };
 					else
 						origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 						return;
@@ -838,6 +841,36 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 				if not at_least_one_item_provided then
 					origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 					return;
+				else
+					local can_set_affiliations, errtype_aff, err_aff = self:can_set_affiliations(actor, jid_affiliation)
+					local can_set_roles, errtype_role, err_role = self:can_set_roles(actor, jidnick_role)
+
+					if can_set_affiliations and can_set_roles then
+						local nb_affiliation_changes = 0;
+						for _ in pairs(jid_affiliation) do nb_affiliation_changes = nb_affiliation_changes + 1; end
+						local nb_role_changes = 0;
+						for _ in pairs(jidnick_role) do nb_role_changes = nb_role_changes + 1; end
+
+						if nb_affiliation_changes > 0 and nb_role_changes > 0 then
+							origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+						end
+						if nb_affiliation_changes > 0 then
+							self:set_affiliations(actor, jid_affiliation, callback);
+						end
+						if nb_role_changes > 0 then
+							self:set_roles(actor, jidnick_role, callback);
+						end
+					else
+						if not can_set_affiliations then
+							origin.send(st.error_reply(stanza, errtype_aff, err_aff));
+						elseif not can_set_roles then
+							origin.send(st.error_reply(stanza, errtype_role, err_role));
+						else
+							origin.send(st.error_reply(stanza, "cancel", "bad-request"));
+						end
+
+						return;
+					end
 				end
 			elseif type == "get" then
 				local item = stanza.tags[1].tags[1];
@@ -1009,81 +1042,124 @@ function room_mt:get_affiliation(jid)
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
-function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
-	jid = jid_bare(jid);
-	if affiliation == "none" then affiliation = nil; end
-	if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
-		return nil, "modify", "not-acceptable";
-	end
+--- Checks whether the given affiliation changes in jid_affiliation can be applied by actor.
+-- Note: Empty tables can always be applied and won't have any effect.
+function room_mt:can_set_affiliations(actor, jid_affiliation)
+	local actor_affiliation;
 	if actor ~= true then
-		local actor_affiliation = self:get_affiliation(actor);
-		local target_affiliation = self:get_affiliation(jid);
-		if target_affiliation == affiliation then -- no change, shortcut
-			if callback then callback(); end
-			return true;
+		actor_affiliation = self:get_affiliation(actor);
+	end
+
+	-- First let's see if there are any problems with the affiliations given
+	-- in jid_affiliation
+	for jid, value in pairs(jid_affiliation) do
+		local affiliation = value["affiliation"];
+
+		jid = jid_bare(jid);
+		if affiliation == "none" then affiliation = nil; end
+		if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
+			return false, "modify", "not-acceptable";
 		end
-		if actor_affiliation ~= "owner" then
-			if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
-				return nil, "cancel", "not-allowed";
-			end
-		elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
-			local is_last = true;
-			for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
-			if is_last then
-				return nil, "cancel", "conflict";
+
+		local target_affiliation = self:get_affiliation(jid);
+		if target_affiliation == affiliation then
+			-- no change, no error checking necessary
+		else
+			if actor ~= true and actor_affiliation ~= "owner" then
+				if affiliation == "owner" or affiliation == "admin" or actor_affiliation ~= "admin" or target_affiliation == "owner" or target_affiliation == "admin" then
+					return false, "cancel", "not-allowed";
+				end
+			elseif target_affiliation == "owner" and jid_bare(actor) == jid then -- self change
+				local is_last = true;
+				for j, aff in pairs(self._affiliations) do if j ~= jid and aff == "owner" then is_last = false; break; end end
+				if is_last then
+					return false, "cancel", "conflict";
+				end
 			end
 		end
 	end
-	self._affiliations[jid] = affiliation;
-	local role = self:get_default_role(affiliation);
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=affiliation or "none", role=role or "none"})
-				:tag("reason"):text(reason or ""):up()
-			:up();
-	local presence_type = nil;
-	if not role then -- getting kicked
-		presence_type = "unavailable";
-		if affiliation == "outcast" then
-			x:tag("status", {code="301"}):up(); -- banned
-		else
-			x:tag("status", {code="321"}):up(); -- affiliation change
-		end
+
+	return true;
+end
+--- Updates the room affiliations by applying the ones given here.
+-- Takes the affiliations given in jid_affiliation and applies them to
+-- the room, overwriting a potentially existing affiliation for any given
+-- jid.
+-- @param jid_affiliation A table associating a jid with a table consisting
+--                        of two subkeys: `affilation` and `reason`. The jids
+--                        within must not be malformed.
+function room_mt:set_affiliations(actor, jid_affiliation, callback)
+	local can_set, err_type, err_condition = self:can_set_affiliations(actor, jid_affiliation)
+
+	if not can_set then
+		return false, err_type, err_condition;
 	end
 	-- Your own presence should have status 110
-	local self_x = st.clone(x);
-	self_x:tag("status", {code="110"});
 	local modified_nicks = {};
-	for nick, occupant in pairs(self._occupants) do
-		if jid_bare(occupant.jid) == jid then
-			if not role then -- getting kicked
-				self._occupants[nick] = nil;
+	local nb_modified_nicks = 0;
+	-- Now we can be sure that jid_affiliation causes no problems
+	-- We can actually set them
+	for jid, value in pairs(jid_affiliation) do
+		local affiliation = value["affiliation"];
+		local reason = value["reason"];
+
+		self._affiliations[jid] = affiliation;
+		local role = self:get_default_role(affiliation);
+		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+				:tag("item", {affiliation=affiliation or "none", role=role or "none"})
+					:tag("reason"):text(reason or ""):up()
+				:up();
+		local self_x = st.clone(x);
+		self_x:tag("status", {code="110"});
+		local presence_type = nil;
+		if not role then -- getting kicked
+			presence_type = "unavailable";
+			if affiliation == "outcast" then
+				x:tag("status", {code="301"}):up(); -- banned
 			else
-				occupant.affiliation, occupant.role = affiliation, role;
+				x:tag("status", {code="321"}):up(); -- affiliation change
 			end
-			for jid,pres in pairs(occupant.sessions) do -- remove for all sessions of the nick
-				if not role then self._jid_nick[jid] = nil; end
-				local p = st.clone(pres);
-				p.attr.from = nick;
-				p.attr.type = presence_type;
-				p.attr.to = jid;
-				if occupant.jid == jid then
-					-- Broadcast this presence to everyone else later, with the public <x> variant
-					local bp = st.clone(p);
-					bp:add_child(x);
-					modified_nicks[nick] = bp;
+		end
+		for nick, occupant in pairs(self._occupants) do
+			if jid_bare(occupant.jid) == jid then
+				if not role then -- getting kicked
+					self._occupants[nick] = nil;
+				else
+					occupant.affiliation, occupant.role = affiliation, role;
 				end
-				p:add_child(self_x);
-				self:_route_stanza(p);
+				for jid,pres in pairs(occupant.sessions) do -- remove for all sessions of the nick
+					if not role then self._jid_nick[jid] = nil; end
+					local p = st.clone(pres);
+					p.attr.from = nick;
+					p.attr.type = presence_type;
+					p.attr.to = jid;
+					self:_route_stanza(p);
+					if occupant.jid == jid then
+					-- Broadcast this presence to everyone else later, with the public <x> variant
+						local bp = st.clone(p);
+						bp:add_child(x);
+						modified_nicks[nick] = bp;
+						nb_modified_nicks = nb_modified_nicks + 1;
+					end
+					p:add_child(self_x);
+					self:_route_stanza(p);
+				end
 			end
 		end
 	end
-	if self.save then self:save(); end
-	if callback then callback(); end
+
+	if nb_modified_nicks > 0 then
+		if self.save then self:save(); end
+		if callback then callback(); end
+	end
 	for nick,p in pairs(modified_nicks) do
 		p.attr.from = nick;
 		self:broadcast_except_nick(p, nick);
 	end
 	return true;
+end
+function room_mt:set_affiliation(actor, jid, affiliation, callback, reason)
+	return self.set_affiliations(actor, { [jid] = { ["affiliation"] = affiliation, ["reason"] = reason } }, callback)
 end
 
 function room_mt:get_role(nick)
@@ -1108,45 +1184,81 @@ function room_mt:can_set_role(actor_jid, occupant_jid, role)
 	end
 	return nil, "cancel", "not-allowed";
 end
-function room_mt:set_role(actor, occupant_jid, role, callback, reason)
-	if role == "none" then role = nil; end
-	if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return nil, "modify", "not-acceptable"; end
-	local allowed, err_type, err_condition = self:can_set_role(actor, occupant_jid, role);
+
+--- Checks whether the given role changes in jidnick_role can be applied by actor.
+-- Note: Empty tables can always be applied and won't have any effect.
+function room_mt:can_set_roles(actor, jidnick_role)
+	for jidnick, role in pairs(jidnick_role) do
+		if role == "none" then role = nil; end
+		if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return false, "modify", "not-acceptable"; end
+		local can_set, err_type, err_condition = self:can_set_role(actor, jidnick, role)
+		if not can_set then
+			return false, err_type, err_condition;
+		end
+	end
+
+	return true;
+end
+
+--- Updates the room roles by applying the ones given here.
+-- Takes the roles given in jidnick_role and applies them to
+-- the room, overwriting a potentially existing role for any given
+-- jid.
+-- @param jidnick_role A table associating a jid/nick with a table consisting
+--                     of two subkeys: `role` and `reason`. The jids within
+--                     must not be malformed.
+function room_mt:set_roles(actor, jidnick_role, callback)
+	local allowed, err_type, err_condition = self:can_set_roles(actor, jidnick_role);
 	if not allowed then return allowed, err_type, err_condition; end
-	local occupant = self._occupants[occupant_jid];
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-			:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
-				:tag("reason"):text(reason or ""):up()
-			:up();
-	local presence_type = nil;
-	if not role then -- kick
-		presence_type = "unavailable";
-		self._occupants[occupant_jid] = nil;
-		for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
-			self._jid_nick[jid] = nil;
+
+	local modified_nicks = {};
+	local nb_modified_nicks = 0;
+	for jidnick, value in pairs(jidnick_role) do
+		local occupant_jid = jidnick;
+		local role = value["role"];
+		local reason = value["reason"];
+
+		local occupant = self._occupants[occupant_jid];
+		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+				:tag("item", {affiliation=occupant.affiliation or "none", nick=select(3, jid_split(occupant_jid)), role=role or "none"})
+					:tag("reason"):text(reason or ""):up()
+				:up();
+		local presence_type = nil;
+		if not role then -- kick
+			presence_type = "unavailable";
+			self._occupants[occupant_jid] = nil;
+			for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
+				self._jid_nick[jid] = nil;
+			end
+			x:tag("status", {code = "307"}):up();
+		else
+			occupant.role = role;
 		end
-		x:tag("status", {code = "307"}):up();
-	else
-		occupant.role = role;
-	end
-	local self_x = st.clone(x);
-	self_x:tag("status", {code = "110"}):up();
-	local bp;
-	for jid,pres in pairs(occupant.sessions) do -- send to all sessions of the nick
-		local p = st.clone(pres);
-		p.attr.from = occupant_jid;
-		p.attr.type = presence_type;
-		p.attr.to = jid;
-		if occupant.jid == jid then
-			bp = st.clone(p);
-			bp:add_child(x);
+		local self_x = st.clone(x);
+		self_x:tag("status", {code = "110"}):up();
+		local bp;
+		for jid,pres in pairs(occupant.sessions) do -- send to all sessions of the nick
+			local p = st.clone(pres);
+			p.attr.from = occupant_jid;
+			p.attr.type = presence_type;
+			p.attr.to = jid;
+			self:_route_stanza(p);
+			if occupant.jid == jid then
+				bp = st.clone(p);
+				bp:add_child(x);
+				modified_nicks[occupant_jid] = p;
+				nb_modified_nicks = nb_modified_nicks + 1;
+			end
+			p:add_child(self_x);
+			self:route_stanza(p);
 		end
-		p:add_child(self_x);
-		self:_route_stanza(p);
 	end
-	if callback then callback(); end
-	if bp then
-		self:broadcast_except_nick(bp, occupant_jid);
+
+	if nb_modified_nicks > 0 then
+		if callback then callback(); end
+	end
+	for nick,p in pairs(modified_nicks) do
+		self:broadcast_except_nick(p, nick);
 	end
 	return true;
 end
