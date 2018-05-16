@@ -261,6 +261,7 @@ function handle_request(event)
 	session.ip = request.ip;
 
 	session.secure = consider_websocket_secure or session.secure;
+	session.websocket_request = request;
 
 	session.open_stream = session_open_stream;
 	session.close = session_close;
