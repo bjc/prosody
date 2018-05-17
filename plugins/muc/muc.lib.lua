@@ -1134,7 +1134,7 @@ function room_mt:set_affiliations(actor, jid_affiliation, callback)
 					:tag("reason"):text(reason or ""):up()
 				:up();
 		local self_x = st.clone(x);
-		self_x:tag("status", {code="110"});
+		self_x:tag("status", {code="110"}):up();
 		local presence_type = nil;
 		if not role then -- getting kicked
 			presence_type = "unavailable";
