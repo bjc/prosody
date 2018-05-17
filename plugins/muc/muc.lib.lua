@@ -1311,9 +1311,9 @@ function room_mt:_route_stanza(stanza)
 		for _, item in pairs(muc_child.tags) do
 			if item.name == "item" then
 				if from_occupant == to_occupant then
-					item.attr.jid = stanza.attr.to;
+					item.attr.jid = jid_bare(stanza.attr.to);
 				else
-					item.attr.jid = from_occupant.jid;
+					item.attr.jid = jid_bare(from_occupant.jid);
 				end
 			end
 		end
