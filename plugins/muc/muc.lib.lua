@@ -1076,6 +1076,9 @@ function room_mt:can_set_affiliations(actor, jid_affiliation)
 	for jid, value in pairs(jid_affiliation) do
 		local affiliation = value["affiliation"];
 
+		if jid ~= jid_bare(jid) then
+			return false, "modify", "not-acceptable";
+		end
 		jid = jid_bare(jid);
 		if affiliation == "none" then affiliation = nil; end
 		if affiliation and affiliation ~= "outcast" and affiliation ~= "owner" and affiliation ~= "admin" and affiliation ~= "member" then
