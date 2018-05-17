@@ -852,7 +852,7 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 					if item.attr.affiliation and item.attr.jid and not item.attr.role then
 						jid_affiliation[item.attr.jid] = { ["affiliation"] = item.attr.affiliation, ["reason"] = reason };
 					elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
-						jidnick_role[item.attr.jid.."/"..item.attr.nick] = { ["role"] = item.attr.role, ["reason"] = reason };
+						jidnick_role[self.jid.."/"..item.attr.nick] = { ["role"] = item.attr.role, ["reason"] = reason };
 					else
 						origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 						return;
@@ -1213,7 +1213,8 @@ end
 --- Checks whether the given role changes in jidnick_role can be applied by actor.
 -- Note: Empty tables can always be applied and won't have any effect.
 function room_mt:can_set_roles(actor, jidnick_role)
-	for jidnick, role in pairs(jidnick_role) do
+	for jidnick, role_info in pairs(jidnick_role) do
+		local role = role_info["role"];
 		if role == "none" then role = nil; end
 		if role and role ~= "moderator" and role ~= "participant" and role ~= "visitor" then return false, "modify", "not-acceptable"; end
 		local can_set, err_type, err_condition = self:can_set_role(actor, jidnick, role)
@@ -1249,7 +1250,7 @@ function room_mt:set_roles(actor, jidnick_role, callback)
 					:tag("reason"):text(reason or ""):up()
 				:up();
 		local presence_type = nil;
-		if not role then -- kick
+		if not role or role == "none" then -- kick
 			presence_type = "unavailable";
 			self._occupants[occupant_jid] = nil;
 			for jid in pairs(occupant.sessions) do -- remove for all sessions of the nick
@@ -1271,7 +1272,7 @@ function room_mt:set_roles(actor, jidnick_role, callback)
 			if occupant.jid == jid then
 				bp = st.clone(p);
 				bp:add_child(x);
-				modified_nicks[occupant_jid] = p;
+				modified_nicks[occupant_jid] = bp;
 				nb_modified_nicks = nb_modified_nicks + 1;
 			end
 			p:add_child(self_x);
