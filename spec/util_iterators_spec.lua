@@ -1,5 +1,4 @@
 local iter = require "util.iterators";
-local set = require "util.set";
 
 describe("util.iterators", function ()
 	describe("join", function ()
