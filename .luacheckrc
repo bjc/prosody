@@ -119,3 +119,67 @@ files["prosody.cfg.lua"] = {
 		"RunScript"
 	};
 }
+
+if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
+	-- These files have not yet been brought up to standard
+	-- Do not add more files here, but do help us fix these!
+	exclude_files = {
+	"doc/net.server.lua";
+
+	"fallbacks/bit.lua";
+	"fallbacks/lxp.lua";
+
+	"net/adns.lua";
+	"net/cqueues.lua";
+	"net/dns.lua";
+	"net/server_select.lua";
+
+	"plugins/mod_admin_adhoc.lua";
+	"plugins/mod_admin_telnet.lua";
+	"plugins/mod_announce.lua";
+	"plugins/mod_bosh.lua";
+	"plugins/mod_groups.lua";
+	"plugins/mod_http_files.lua";
+	"plugins/mod_http.lua";
+	"plugins/mod_legacyauth.lua";
+	"plugins/mod_limits.lua";
+	"plugins/mod_net_multiplex.lua";
+	"plugins/mod_pep.lua";
+	"plugins/mod_pep_plus.lua";
+	"plugins/mod_privacy.lua";
+	"plugins/mod_pubsub/pubsub.lib.lua";
+	"plugins/mod_s2s/mod_s2s.lua";
+	"plugins/mod_s2s/s2sout.lib.lua";
+	"plugins/mod_storage_sql1.lua";
+	"plugins/mod_storage_sql.lua";
+	"plugins/mod_websocket.lua";
+
+	"spec/core_configmanager_spec.lua";
+	"spec/core_moduleapi_spec.lua";
+	"spec/net_http_parser_spec.lua";
+	"spec/util_cache_spec.lua";
+	"spec/util_events_spec.lua";
+	"spec/util_http_spec.lua";
+	"spec/util_ip_spec.lua";
+	"spec/util_json_spec.lua";
+	"spec/util_multitable_spec.lua";
+	"spec/util_rfc6724_spec.lua";
+	"spec/util_throttle_spec.lua";
+	"spec/util_xmppstream_spec.lua";
+
+	"tools/ejabberd2prosody.lua";
+	"tools/ejabberdsql2prosody.lua";
+	"tools/erlparse.lua";
+	"tools/jabberd14sql2prosody.lua";
+	"tools/migration/migrator.cfg.lua";
+	"tools/migration/migrator/jabberd14.lua";
+	"tools/migration/migrator/mtools.lua";
+	"tools/migration/migrator/prosody_files.lua";
+	"tools/migration/migrator/prosody_sql.lua";
+	"tools/migration/prosody-migrator.lua";
+	"tools/openfire2prosody.lua";
+	"tools/xep227toprosody.lua";
+
+	"util/sasl/digest-md5.lua";
+	}
+end
