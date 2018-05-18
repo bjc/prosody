@@ -208,5 +208,26 @@ describe("util.events", function ()
 				assert.spy(h).was_called(2);
 			end);
 		end);
+
+		describe("chaining", function ()
+			local e2;
+			before_each(function ()
+				e2 = events.new(e);
+				h2 = spy.new(function () end);
+			end);
+			it("should fire parent handlers when an event is fired", function ()
+				e.add_handler("myevent", h);
+				e2.add_handler("myevent", h2);
+				e2.fire_event("myevent", "abc");
+				assert.spy(h).was_called(1);
+				assert.spy(h).was_called.with("abc");
+				assert.spy(h2).was_called(1);
+				assert.spy(h2).was_called.with("abc");
+			end);
+			it("should handle changes in the parent's handlers", function ()
+			end);
+			it("should fire wrappers in child and parent", function ()
+			end);
+		end);
 	end);
 end);
