@@ -182,4 +182,7 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 
 	"util/sasl/digest-md5.lua";
 	}
+else
+	max_cyclomatic_complexity = 50
+	max_line_length = 120
 end
