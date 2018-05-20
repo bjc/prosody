@@ -53,6 +53,11 @@ local node_config_form = dataform {
 		label = "Persist items to storage";
 	};
 	{
+		type = "boolean";
+		name = "pubsub#include_body";
+		label = "Receive message body in addition to payload?";
+	};
+	{
 		type = "list-single";
 		name = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
@@ -196,6 +201,7 @@ function handlers.set_create(origin, stanza, create, service)
 			["max_items"] = tonumber(form_data["pubsub#max_items"]);
 			["persist_items"] = form_data["pubsub#persist_items"];
 			["notification_type"] = form_data["pubsub#notification_type"];
+			["include_body"] = form_data["pubsub#include_body"];
 		};
 	end
 	if node then
@@ -384,6 +390,7 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
+		["pubsub#include_body"] = node_config["include_body"];
 	}
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
