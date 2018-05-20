@@ -2,6 +2,7 @@ local pubsub = require "util.pubsub";
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local usermanager = require "core.usermanager";
+local new_id = require "util.id".medium;
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -48,7 +49,9 @@ function simple_broadcast(kind, node, jids, item, actor)
 			item.attr.publisher = actor
 		end
 	end
-	local message = st.message({ from = module.host, type = "headline" })
+
+	local id = new_id();
+	local message = st.message({ from = module.host, type = "headline", id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag(kind, { node = node })
 				:add_child(item);
