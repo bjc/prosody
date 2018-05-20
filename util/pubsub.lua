@@ -289,7 +289,7 @@ function service:delete(node, actor)
 	end
 	self.data[node] = nil;
 	self.events.fire_event("node-deleted", { node = node, actor = actor });
-	self.config.broadcaster("delete", node, node_obj.subscribers);
+	self.config.broadcaster("delete", node, node_obj.subscribers, nil, actor, node_obj, self);
 	return true;
 end
 
@@ -320,7 +320,7 @@ function service:publish(node, actor, id, item)
 	end
 	if type(ok) == "string" then id = ok; end
 	self.events.fire_event("item-published", { node = node, actor = actor, id = id, item = item });
-	self.config.broadcaster("items", node, node_obj.subscribers, item, actor);
+	self.config.broadcaster("items", node, node_obj.subscribers, item, actor, node_obj, self);
 	return true;
 end
 
@@ -340,7 +340,7 @@ function service:retract(node, actor, id, retract)
 	end
 	self.events.fire_event("item-retracted", { node = node, actor = actor, id = id });
 	if retract then
-		self.config.broadcaster("items", node, node_obj.subscribers, retract);
+		self.config.broadcaster("items", node, node_obj.subscribers, retract, actor, node_obj, self);
 	end
 	return true
 end
@@ -362,7 +362,7 @@ function service:purge(node, actor, notify)
 	end
 	self.events.fire_event("node-purged", { node = node, actor = actor });
 	if notify then
-		self.config.broadcaster("purge", node, node_obj.subscribers);
+		self.config.broadcaster("purge", node, node_obj.subscribers, nil, actor, node_obj, self);
 	end
 	return true
 end
