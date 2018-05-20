@@ -41,7 +41,7 @@ else
 end
 
 
-function simple_broadcast(kind, node, jids, item, actor)
+function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	if item then
 		item = st.clone(item);
 		item.attr.xmlns = nil; -- Clear the pubsub namespace
@@ -51,10 +51,12 @@ function simple_broadcast(kind, node, jids, item, actor)
 	end
 
 	local id = new_id();
-	local message = st.message({ from = module.host, type = "headline", id = id })
+	local msg_type = node_obj and node_obj.config.message_type or "headline";
+	local message = st.message({ from = module.host, type = msg_type, id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag(kind, { node = node })
 				:add_child(item);
+
 	module:broadcast(jids, message, pairs);
 end
 
