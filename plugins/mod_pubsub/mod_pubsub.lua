@@ -52,11 +52,7 @@ function simple_broadcast(kind, node, jids, item, actor)
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag(kind, { node = node })
 				:add_child(item);
-	for jid in pairs(jids) do
-		module:log("debug", "Sending notification to %s", jid);
-		message.attr.to = jid;
-		module:send(message);
-	end
+	module:broadcast(jids, message, pairs);
 end
 
 function is_item_stanza(item)
