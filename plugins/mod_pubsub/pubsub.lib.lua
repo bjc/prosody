@@ -52,6 +52,14 @@ local node_config_form = dataform {
 		name = "pubsub#persist_items";
 		label = "Persist items to storage";
 	};
+	{
+		type = "list-single";
+		name = "pubsub#notification_type";
+		label = "Specify the delivery style for notifications";
+		options = {
+			{ label = "Messages of type normal", value = "normal" },
+			{ label = "Messages of type headline", value = "headline", default = true },
+		};
 };
 
 local service_method_feature_map = {
@@ -187,6 +195,7 @@ function handlers.set_create(origin, stanza, create, service)
 		config = {
 			["max_items"] = tonumber(form_data["pubsub#max_items"]);
 			["persist_items"] = form_data["pubsub#persist_items"];
+			["notification_type"] = form_data["pubsub#notification_type"];
 		};
 	end
 	if node then
@@ -373,7 +382,8 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 	local node_config = node_obj.config;
 	local pubsub_form_data = {
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
-		["pubsub#persist_items"] = node_config["persist_items"]
+		["pubsub#persist_items"] = node_config["persist_items"];
+		["pubsub#notification_type"] = node_config["notification_type"];
 	}
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
