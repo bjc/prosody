@@ -8,6 +8,7 @@ local default_config = {
 	broadcaster = function () end;
 	itemcheck = function () return true; end;
 	get_affiliation = function () end;
+	normalize_jid = function (jid) return jid; end;
 	capabilities = {};
 };
 local default_config_mt = { __index = default_config };
