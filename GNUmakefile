@@ -77,7 +77,7 @@ coverage:
 	@echo "To inspect individual files run: luacov-console -l FILENAME"
 
 lint:
-	luacheck -q $$(hg files -I '**.lua') prosody prosodyctl
+	luacheck -q $$(hg files -I '**.lua' || echo core net util plugins) prosody prosodyctl
 	@echo $$(sed -n '/^exclude_files/,/^}/p;' .luacheckrc | sed '1d;$d' | wc -l) files ignored
 
 util/%.so:
