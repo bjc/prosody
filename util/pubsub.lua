@@ -260,14 +260,16 @@ function service:create(node, actor, options)
 
 	self.data[node] = self.config.itemstore(self.nodes[node].config, node);
 	self.events.fire_event("node-created", { node = node, actor = actor });
-	local ok, err = self:set_affiliation(node, true, actor, "owner");
-	if not ok then
-		self.nodes[node] = nil;
-		self.data[node] = nil;
-		return ok, err;
+	if actor ~= true then
+		local ok, err = self:set_affiliation(node, true, actor, "owner");
+		if not ok then
+			self.nodes[node] = nil;
+			self.data[node] = nil;
+			return ok, err;
+		end
 	end
 
-	return ok, err;
+	return true;
 end
 
 function service:delete(node, actor)
