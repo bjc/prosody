@@ -31,10 +31,22 @@ describe("util.pubsub", function ()
 
 	describe("simple publishing", function ()
 		local broadcaster = spy.new(function () end);
-		local service = pubsub.new({ broadcaster = broadcaster; });
+		local service = pubsub.new({
+			broadcaster = broadcaster;
+			capabilities = {
+				none = {
+					subscribe = true;
+					be_subscribed = true;
+				};
+			}
+		});
 
 		it("creates a node", function ()
 			assert.truthy(service:create("node", true));
+		end);
+
+		it("lets someone subscribe", function ()
+			assert.truthy(service:add_subscription("node", true, "someone"));
 		end);
 
 		it("publishes an item", function ()
