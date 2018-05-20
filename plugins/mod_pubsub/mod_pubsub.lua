@@ -57,6 +57,26 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 			:tag(kind, { node = node })
 				:add_child(item);
 
+	-- Compose a sensible textual representation of at least Atom payloads
+	if node_obj and node_obj.config.include_body and item.tags[1] then
+		local payload = item.tags[1];
+		if payload.attr.xmlns == "http://www.w3.org/2005/Atom" then
+			message:reset();
+			local title = payload:get_child_text("title");
+			local summary = payload:get_child_text("summary");
+			if not summary and title then
+				local author = payload:find("author/name#");
+				summary = title;
+				if author then
+					summary = author .. " posted " .. summary;
+				end
+			end
+			if summary then
+				message:body(summary);
+			end
+		end
+	end
+
 	module:broadcast(jids, message, pairs);
 end
 
