@@ -75,7 +75,8 @@ function service:may(node, actor, action)
 	if actor == true then return true; end
 
 	local node_obj = self.nodes[node];
-	local node_aff = node_obj and node_obj.affiliations[actor];
+	local node_aff = node_obj and (node_obj.affiliations[actor]
+	              or node_obj.affiliations[self.config.normalize_jid(actor)]);
 	local service_aff = self.affiliations[actor]
 	                 or self.config.get_affiliation(actor, node, action)
 	                 or "none";
