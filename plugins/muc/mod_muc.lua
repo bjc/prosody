@@ -124,8 +124,15 @@ local function room_save(room, forced, savestate)
 	end
 end
 
+local max_rooms = module:get_option_number("muc_max_rooms");
+local max_live_rooms = module:get_option_number("muc_room_cache_size", 100);
+
 local eviction_hit_rate = module:measure("room_eviction", "rate");
-local rooms = cache.new(module:get_option_number("muc_room_cache_size", 100), function (jid, room)
+local rooms = cache.new(max_rooms or max_live_rooms, function (jid, room)
+	if max_rooms then
+		module:log("info", "Room limit of %d reached, no new rooms allowed");
+		return false;
+	end
 	module:log("debug", "Evicting room %s", jid);
 	eviction_hit_rate();
 	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
