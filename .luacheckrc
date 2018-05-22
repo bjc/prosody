@@ -123,7 +123,7 @@ files["prosody.cfg.lua"] = {
 if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	-- These files have not yet been brought up to standard
 	-- Do not add more files here, but do help us fix these!
-	exclude_files = {
+	local exclude_files = {
 	"doc/net.server.lua";
 
 	"fallbacks/bit.lua";
@@ -181,6 +181,9 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 
 	"util/sasl/digest-md5.lua";
 	}
+	for _, file in ipairs(exclude_files) do
+		files[file] = { only = {} }
+	end
 else
 	max_cyclomatic_complexity = 50
 	max_line_length = 120
