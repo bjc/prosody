@@ -65,6 +65,7 @@ local node_config_form = dataform {
 			{ label = "Messages of type normal", value = "normal" },
 			{ label = "Messages of type headline", value = "headline", default = true },
 		};
+	};
 };
 
 local service_method_feature_map = {
