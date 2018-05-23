@@ -146,7 +146,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	"plugins/mod_pep.lua";
 	"plugins/mod_pep_plus.lua";
 	"plugins/mod_privacy.lua";
-	"plugins/mod_pubsub/pubsub.lib.lua";
 	"plugins/mod_s2s/mod_s2s.lua";
 	"plugins/mod_s2s/s2sout.lib.lua";
 	"plugins/mod_storage_sql1.lua";
