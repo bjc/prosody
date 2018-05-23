@@ -511,7 +511,7 @@ local function archive_itemstore(archive, config, user, node)
 	function get_set:clear() -- luacheck: ignore 212/self
 		return archive:delete(user);
 	end
-	function get_set:resize(size)
+	function get_set:resize(size) -- luacheck: ignore 212/self
 		return archive:delete(user, {
 			truncate = size;
 		});
