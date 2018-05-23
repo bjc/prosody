@@ -68,6 +68,15 @@ local node_config_form = dataform {
 	};
 };
 
+local options_form = dataform {
+	{
+		type = "hidden";
+		name = "FORM_TYPE";
+		value = "http://jabber.org/protocol/pubsub#subscribe_options";
+	}
+	-- No options yet. File a feature request ;)
+};
+
 local service_method_feature_map = {
 	add_subscription = { "subscribe" };
 	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
@@ -253,13 +262,10 @@ function handlers.set_subscribe(origin, stanza, subscribe, service)
 		origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
 		return true;
 	end
-	--[[
 	local options_tag, options = stanza.tags[1]:get_child("options"), nil;
 	if options_tag then
 		options = options_form:data(options_tag.tags[1]);
 	end
-	--]]
-	local options_tag, options; -- FIXME
 	local ok, ret = service:add_subscription(node, stanza.attr.from, jid, options);
 	local reply;
 	if ok then
