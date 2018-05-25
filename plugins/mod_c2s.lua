@@ -40,10 +40,17 @@ local default_stream_attr = { ["xmlns:stream"] = "http://etherx.jabber.org/strea
 
 function stream_callbacks.streamopened(session, attr)
 	local send = session.send;
-	session.host = nameprep(attr.to);
-	if not session.host then
+	local host = nameprep(attr.to);
+	if not host then
 		session:close{ condition = "improper-addressing",
 			text = "A valid 'to' attribute is required on stream headers" };
+		return;
+	end
+	if not session.host then
+		session.host = host;
+	elseif session.host ~= host then
+		session:close{ condition = "not-authorized",
+			text = "The 'to' attribute must remain the same across stream restarts" };
 		return;
 	end
 	session.version = tonumber(attr.version) or 0;
