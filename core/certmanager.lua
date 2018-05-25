@@ -157,7 +157,7 @@ end
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
-	local service_name, port = host:match("^(%w+) port (%d+)$");
+	local service_name, port = host:match("^(%S+) port (%d+)$");
 	if service_name then
 		cfg:apply(find_service_cert(service_name, tonumber(port)));
 	else
