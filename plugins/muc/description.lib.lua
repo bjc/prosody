@@ -18,6 +18,14 @@ local function set_description(room, description)
 	return true;
 end
 
+local function add_disco_form(event)
+	table.insert(event.form, {
+		name = "muc#roominfo_description";
+		label = "Description";
+		value = get_description(event.room) or "";
+	});
+end
+
 local function add_form_option(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_roomdesc";
@@ -26,7 +34,7 @@ local function add_form_option(event)
 		value = get_description(event.room) or "";
 	});
 end
-module:hook("muc-disco#info", add_form_option);
+module:hook("muc-disco#info", add_disco_form);
 module:hook("muc-config-form", add_form_option, 100-2);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomdesc", function(event)
