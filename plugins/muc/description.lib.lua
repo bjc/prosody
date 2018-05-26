@@ -35,6 +35,7 @@ local function add_form_option(event)
 		value = get_description(event.room) or "";
 	});
 end
+
 module:hook("muc-disco#info", add_disco_form);
 module:hook("muc-config-form", add_form_option, 100-2);
 
