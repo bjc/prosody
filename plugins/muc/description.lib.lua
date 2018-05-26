@@ -22,8 +22,9 @@ local function add_disco_form(event)
 	table.insert(event.form, {
 		name = "muc#roominfo_description";
 		label = "Description";
-		value = get_description(event.room) or "";
+		value = "";
 	});
+	event.formdata["muc#roominfo_description"] = get_description(event.room);
 end
 
 local function add_form_option(event)
