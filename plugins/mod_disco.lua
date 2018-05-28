@@ -154,6 +154,7 @@ module:hook("stream-features", function (event)
 end);
 
 -- Handle disco requests to user accounts
+if module:get_host_type() ~= "local" then	return end -- skip for components
 module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if stanza.attr.type ~= "get" then return; end
