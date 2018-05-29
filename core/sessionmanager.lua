@@ -20,7 +20,7 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local uuid_generate = require "util.uuid".generate;
+local generate_identifier = require "util.id".short;
 
 local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
@@ -138,7 +138,7 @@ local function bind_resource(session, resource)
 	end
 
 	resource = resourceprep(resource);
-	resource = resource ~= "" and resource or uuid_generate();
+	resource = resource ~= "" and resource or generate_identifier();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 
 	if not hosts[session.host].sessions[session.username] then
@@ -152,7 +152,7 @@ local function bind_resource(session, resource)
 			local policy = config_get(session.host, "conflict_resolve");
 			local increment;
 			if policy == "random" then
-				resource = uuid_generate();
+				resource = generate_identifier();
 				increment = true;
 			elseif policy == "increment" then
 				increment = true; -- TODO ping old resource
