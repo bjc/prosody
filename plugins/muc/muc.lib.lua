@@ -365,7 +365,7 @@ function room_mt:get_defaulthistorymessages()
         return self._data.default_history_messages or default_history_length;
 end
 function room_mt:set_defaulthistorymessages(number)
-        number = math.min(tonumber(number) or default_history_length, self._data.history_length);
+        number = math.min(tonumber(number) or default_history_length, self._data.history_length or default_history_length);
         if number == default_history_length then
                 number = nil;
         end
