@@ -83,6 +83,7 @@ if not log_all_rooms then
 
 	module:hook("muc-config-submitted/"..muc_form_enable, function(event)
 		event.room._data.archiving = event.value;
+		event.status_codes[event.value and "170" or "171"] = true;
 	end);
 end
 
