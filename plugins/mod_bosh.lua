@@ -281,7 +281,7 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session
 		sid = new_uuid();
 		local session = {
-			type = "c2s_unauthed", conn = request.conn, sid = sid, rid = rid, host = attr.to,
+			type = "c2s_unauthed", conn = request.conn, sid = sid, rid = rid, host = to_host,
 			bosh_version = attr.ver, bosh_wait = wait, streamid = sid,
 			bosh_max_inactive = bosh_max_inactivity,
 			requests = { }, send_buffer = {}, reset_stream = bosh_reset_stream,
