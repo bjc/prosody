@@ -33,6 +33,10 @@ local description = module:require "muc/description";
 room_mt.get_description = description.get;
 room_mt.set_description = description.set;
 
+local language = module:require "muc/language";
+room_mt.get_language = language.get;
+room_mt.set_language = language.set;
+
 local hidden = module:require "muc/hidden";
 room_mt.get_hidden = hidden.get;
 room_mt.set_hidden = hidden.set;
