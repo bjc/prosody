@@ -39,8 +39,11 @@ local rooms = rooms;
 local persistent_rooms_storage = module:open_store("persistent");
 local persistent_rooms, err = persistent_rooms_storage:get();
 if not persistent_rooms then
-	module:log("error", "Error loading list of persistent rooms from storage. Reload mod_muc or restart to recover.");
-	assert(not err, err);
+	if err then
+		module:log("error", "Error loading list of persistent rooms from storage. Reload mod_muc or restart to recover.");
+		error("Storage error: "..err);
+	end
+	module:log("debug", "No persistent rooms found in the database");
 	persistent_rooms = {};
 end
 local room_configs = module:open_store("config");
