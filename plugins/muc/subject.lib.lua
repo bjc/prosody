@@ -73,6 +73,13 @@ local function set_subject(room, from, subject)
 	return true;
 end
 
+module:hook("muc-disco#info", function (event)
+	table.insert(event.form, {
+		name = "muc#roominfo_subject";
+	});
+	event.formdata["muc#roominfo_subject"] = select(2, get_subject(event.room));
+end);
+
 -- Send subject to joining user
 module:hook("muc-occupant-session-new", function(event)
 	send_subject(event.room, event.stanza.attr.from);
