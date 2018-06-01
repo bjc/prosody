@@ -101,7 +101,7 @@ module:hook("muc-occupant-groupchat", function(event)
 			room:save();
 			return true;
 		else
-			event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
+			event.origin.send(st.error_reply(stanza, "auth", "forbidden", "You are not allowed to change the subject"));
 			return true;
 		end
 	end
