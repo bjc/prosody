@@ -28,6 +28,14 @@ local function set_changesubject(room, changesubject)
 	return true;
 end
 
+module:hook("muc-disco#info", function (event)
+	table.insert(event.form, {
+		name = "muc#roominfo_changesubject";
+		type = "boolean";
+	});
+	event.formdata["muc#roominfo_changesubject"] = get_changesubject(event.room);
+end);
+
 module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_changesubject";
