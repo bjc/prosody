@@ -68,8 +68,9 @@ end);
 module:hook("muc-voice-response", function(event)
 	local actor = event.stanza.attr.from;
 	local affected_occupant = event.room:get_occupant_by_real_jid(event.fields["muc#jid"]);
+	local occupant = event.occupant;
 
-	if event.occupant.role ~= "moderator" then
+	if occupant.role ~= "moderator" then
 		return;
 	end
 
