@@ -1194,8 +1194,10 @@ function room_mt:handle_message_to_room(origin, stanza)
 					occupant = occupant;
 				};
 				if occupant.role == "moderator" then
+					module:log("debug", "%s responded to a voice request in %s", jid_resource(occupant.nick), self.jid);
 					module:fire_event("muc-voice-response", event);
 				else
+					module:log("debug", "%s requested voice in %s", jid_resource(occupant.nick), self.jid);
 					module:fire_event("muc-voice-request", event);
 				end
 				return true;

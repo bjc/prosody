@@ -71,21 +71,26 @@ module:hook("muc-voice-response", function(event)
 	local occupant = event.occupant;
 
 	if occupant.role ~= "moderator" then
+		module:log("debug", "%s tried to grant voice but wasn't a moderator", jid_resource(occupant.nick));
 		return;
 	end
 
 	if not event.fields["muc#request_allow"] then
+		module:log("debug", "%s did not grant voice", jid_resource(occupant.nick));
 		return;
 	end
 
 	if not affected_occupant then
+		module:log("debug", "%s tried to grant voice to unknown occupant %s", jid_resource(occupant.nick), event.fields["muc#jid"]);
 		return;
 	end
 
 	if affected_occupant.role ~= "visitor" then
+		module:log("debug", "%s tried to grant voice to %s but they already have it", jid_resource(occupant.nick), jid_resource(occupant.jid));
 		return;
 	end
 
+	module:log("debug", "%s granted voice to %s", jid_resource(occupant.nick), jid_resource(occupant.jid));
 	event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
 end);
 
