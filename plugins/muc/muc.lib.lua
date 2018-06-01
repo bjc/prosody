@@ -18,6 +18,7 @@ local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local jid_join = require "util.jid".join;
+local jid_resource = require "util.jid".resource;
 local st = require "util.stanza";
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
@@ -242,7 +243,7 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 
 	local actor_nick;
 	if actor then
-		actor_nick = select(3, jid_split(self:get_occupant_jid(actor)));
+		actor_nick = jid_resource(self:get_occupant_jid(actor));
 	end
 
 	local full_p, full_x;
@@ -563,7 +564,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 			log("debug", "session %s is changing from occupant %s to %s", real_jid, orig_occupant.nick, dest_occupant.nick);
 			local generated_unavail = st.presence {from = orig_occupant.nick, to = real_jid, type = "unavailable"};
 			orig_occupant:set_session(real_jid, generated_unavail);
-			dest_nick = select(3, jid_split(dest_occupant.nick));
+			dest_nick = jid_resource(dest_occupant.nick);
 			if not is_first_dest_session then -- User is swapping into another pre-existing session
 				log("debug", "session %s is swapping into multisession %s, showing it leave.", real_jid, dest_occupant.nick);
 				-- Show the other session leaving
@@ -918,7 +919,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 		if occupant then item.attr.jid = occupant.jid; end
 	elseif not item.attr.nick and item.attr.jid then
 		local nick = self:get_occupant_jid(item.attr.jid);
-		if nick then item.attr.nick = select(3, jid_split(nick)); end
+		if nick then item.attr.nick = jid_resource(nick); end
 	end
 	local actor = stanza.attr.from;
 	local reason = item:get_child_text("reason");
@@ -970,7 +971,7 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 			-- TODO: whois check here? (though fully anonymous rooms are not supported)
 			for occupant_jid, occupant in self:each_occupant() do
 				if occupant.role == _rol then
-					local nick = select(3,jid_split(occupant_jid));
+					local nick = jid_resource(occupant_jid);
 					self:build_item_list(occupant, reply, false, nick);
 				end
 			end
