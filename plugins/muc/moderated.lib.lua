@@ -90,8 +90,13 @@ module:hook("muc-voice-response", function(event)
 		return;
 	end
 
-	module:log("debug", "%s granted voice to %s", jid_resource(occupant.nick), jid_resource(occupant.jid));
-	event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
+	module:log("debug", "%s granted voice to %s", jid_resource(event.occupant.nick), jid_resource(occupant.jid));
+	local ok, errtype, err = event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
+
+	if not ok then
+		module:log("debug", "Error granting voice: %s", err or errtype);
+		event.origin.send(st.error_reply(event.stanza, errtype, err));
+	end
 end);
 
 
