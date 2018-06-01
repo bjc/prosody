@@ -82,9 +82,11 @@ module:hook("muc-voice-response", function(event)
 		return;
 	end
 
-	if affected_occupant.role == "visitor" then
-		event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
+	if affected_occupant.role ~= "visitor" then
+		return;
 	end
+
+	event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
 end);
 
 
