@@ -59,6 +59,9 @@ local moderated = module:require "muc/moderated";
 room_mt.get_moderated = moderated.get;
 room_mt.set_moderated = moderated.set;
 
+local request = module:require "muc/request";
+room_mt.handle_role_request = request.handle_request;
+
 local persistent = module:require "muc/persistent";
 room_mt.get_persistent = persistent.get;
 room_mt.set_persistent = persistent.set;

@@ -779,47 +779,6 @@ function room_mt:get_form_layout(actor)
 	return module:fire_event("muc-config-form", { room = self, actor = actor, form = form }) or form;
 end
 
-function room_mt:get_voice_form_layout() -- luacheck: ignore 212/self
-	local form = dataform.new({
-		title = "Voice Request";
-		{
-			name = "FORM_TYPE";
-			type = "hidden";
-			value = "http://jabber.org/protocol/muc#request";
-		},
-		{
-			name = "muc#jid";
-			type = "jid-single";
-			label = "User ID";
-		},
-		{
-			name = "muc#roomnick";
-			type = "text-single";
-			label = "Room Nickname";
-		},
-		{
-			name = "muc#role";
-			type = "list-single";
-			label = "Requested Role";
-			value = "participant";
-			options = {
-				"none",
-				"visitor",
-				"participant",
-				"moderator",
-			};
-		},
-		{
-			name = "muc#request_allow";
-			type = "boolean";
-			label = "Grant voice to this person?";
-			value = false;
-		}
-	});
-
-	return form;
-end
-
 function room_mt:process_form(origin, stanza)
 	local form = stanza.tags[1]:get_child("x", "jabber:x:data");
 	if form.attr.type == "cancel" then
@@ -1187,27 +1146,10 @@ function room_mt:handle_message_to_room(origin, stanza)
 		end
 
 		local form = stanza:get_child("x", "jabber:x:data");
-		if form and form.attr.type == "submit" then
-			local fields, errors, present = self:get_voice_form_layout():data(form);
-
-			if fields.FORM_TYPE == "http://jabber.org/protocol/muc#request" then
-				local occupant = self:get_occupant_by_real_jid(stanza.attr.from);
-				local event = {
-					room = self;
-					origin = origin;
-					stanza = stanza;
-					fields = fields;
-					occupant = occupant;
-				};
-				if occupant.role == "moderator" then
-					module:log("debug", "%s responded to a voice request in %s", jid_resource(occupant.nick), self.jid);
-					module:fire_event("muc-voice-response", event);
-				else
-					module:log("debug", "%s requested voice in %s", jid_resource(occupant.nick), self.jid);
-					module:fire_event("muc-voice-request", event);
-				end
-				return true;
-			end
+		local form_type = dataform.get_type(form);
+		if form_type == "http://jabber.org/protocol/muc#request" then
+			self:handle_role_request(origin, stanza, form);
+			return true;
 		end
 	end
 end

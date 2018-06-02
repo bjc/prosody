@@ -7,9 +7,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local jid_resource = require "util.jid".resource;
-
 local function get_moderated(room)
 	return room._data.moderated;
 end
@@ -47,58 +44,6 @@ module:hook("muc-get-default-role", function(event)
 		end
 	end
 end, 1);
-
-module:hook("muc-voice-request", function(event)
-	if event.occupant.role == "visitor" then
-		local form = event.room:get_voice_form_layout()
-		local nick = jid_resource(event.occupant.nick);
-		local formdata = {
-			["muc#jid"] = event.stanza.attr.from;
-			["muc#roomnick"] = nick;
-		};
-
-		local message = st.message({ type = "normal"; from = event.room.jid }):add_child(form:form(formdata)):up();
-
-		event.room:broadcast(message, function (_, occupant)
-			return occupant.role == "moderator";
-		end);
-	end
-end);
-
-module:hook("muc-voice-response", function(event)
-	local actor = event.stanza.attr.from;
-	local affected_occupant = event.room:get_occupant_by_real_jid(event.fields["muc#jid"]);
-	local occupant = event.occupant;
-
-	if occupant.role ~= "moderator" then
-		module:log("debug", "%s tried to grant voice but wasn't a moderator", jid_resource(occupant.nick));
-		return;
-	end
-
-	if not event.fields["muc#request_allow"] then
-		module:log("debug", "%s did not grant voice", jid_resource(occupant.nick));
-		return;
-	end
-
-	if not affected_occupant then
-		module:log("debug", "%s tried to grant voice to unknown occupant %s", jid_resource(occupant.nick), event.fields["muc#jid"]);
-		return;
-	end
-
-	if affected_occupant.role ~= "visitor" then
-		module:log("debug", "%s tried to grant voice to %s but they already have it", jid_resource(occupant.nick), jid_resource(occupant.jid));
-		return;
-	end
-
-	module:log("debug", "%s granted voice to %s", jid_resource(event.occupant.nick), jid_resource(occupant.jid));
-	local ok, errtype, err = event.room:set_role(actor, affected_occupant.nick, "participant", "Voice granted");
-
-	if not ok then
-		module:log("debug", "Error granting voice: %s", err or errtype);
-		event.origin.send(st.error_reply(event.stanza, errtype, err));
-	end
-end);
-
 
 return {
 	get = get_moderated;
