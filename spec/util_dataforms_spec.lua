@@ -301,5 +301,14 @@ describe("util.dataforms", function ()
 		assert.equal("text-single-value", f:get_child_text("value"));
 	end);
 
+	describe("get_type()", function ()
+		it("identifes dataforms", function ()
+			assert.equal(nil, dataforms.get_type(nil));
+			assert.equal(nil, dataforms.get_type(""));
+			assert.equal(nil, dataforms.get_type({}));
+			assert.equal(nil, dataforms.get_type(st.stanza("no-a-form")));
+			assert.equal("xmpp:prosody.im/spec/util.dataforms#1", dataforms.get_type(xform));
+		end);
+	end);
 end);
 
