@@ -249,8 +249,24 @@ field_readers["hidden"] =
 		return field_tag:get_child_text("value");
 	end
 
+
+local function get_form_type(form)
+	if not st.is_stanza(form) then
+		return nil, "not a stanza object";
+	elseif form.attr.xmlns ~= "jabber:x:data" or form.name ~= "x" then
+		return nil, "not a dataform element";
+	end
+	for field in form:childtags("field") do
+		if field.attr.var == "FORM_TYPE" then
+			return field:get_child_text("value");
+		end
+	end
+	return "";
+end
+
 return {
 	new = new;
+	get_type = get_form_type;
 };
 
 
