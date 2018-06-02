@@ -892,6 +892,10 @@ function resolver:feed(sock, packet, force)
 			self:remember(rr, rr.type);
 		end
 
+		for _, rr in pairs(response.additional) do
+			self:remember(rr, rr.type);
+		end
+
 		-- retire the query
 		local queries = self.active[response.header.id];
 		queries[response.question.raw] = nil;
