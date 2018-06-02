@@ -31,6 +31,7 @@ local has_ipv4, has_ipv6;
 
 local dns_timeout = module:get_option_number("dns_timeout", 15);
 dns.settimeout(dns_timeout);
+local resolvers = module:get_option_set("s2s_dns_resolvers")
 
 local s2sout = {};
 
@@ -50,6 +51,11 @@ function s2sout.initiate_connection(host_session)
 	host_session.version = 1;
 
 	host_session.resolver = adns.resolver();
+	if resolvers then
+		for resolver in resolvers do
+			host_session.resolver._resolver:addnameserver(resolver);
+		end
+	end
 
 	-- Kick the connection attempting machine into life
 	if not s2sout.attempt_connection(host_session) then
