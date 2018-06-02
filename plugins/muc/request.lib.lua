@@ -10,6 +10,10 @@
 local st = require "util.stanza";
 local jid_resource = require "util.jid".resource;
 
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc#request"}):up();
+end);
+
 local voice_request_form = require "util.dataforms".new({
 	title = "Voice Request";
 	{
