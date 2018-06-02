@@ -799,9 +799,15 @@ function room_mt:get_voice_form_layout() -- luacheck: ignore 212/self
 		},
 		{
 			name = "muc#role";
-			type = "text-single";
+			type = "list-single";
 			label = "Requested Role";
 			value = "participant";
+			options = {
+				"none",
+				"visitor",
+				"participant",
+				"moderator",
+			};
 		},
 		{
 			name = "muc#request_allow";
