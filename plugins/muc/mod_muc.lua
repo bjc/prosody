@@ -285,12 +285,12 @@ end);
 
 module:hook("muc-room-pre-create", function (event)
 	local room = event.room;
-	room:set_public(module:get_option_boolean("muc_rooom_default_public", false));
-	room:set_persistent(module:get_option_boolean("muc_rooom_default_persistent", room:get_persistent()));
-	room:set_members_only(module:get_option_boolean("muc_rooom_default_members_only", room:get_members_only()));
-	room:set_moderated(module:get_option_boolean("muc_rooom_default_moderated", room:get_moderated()));
-	room:set_whois(module:get_option_boolean("muc_rooom_default_public_jids", room:get_whois() == "anyone") and "anyone" or "moderators");
-	room:set_changesubject(module:get_option_boolean("muc_rooom_default_change_subject", room:get_changesubject()));
+	room:set_public(module:get_option_boolean("muc_room_default_public", false));
+	room:set_persistent(module:get_option_boolean("muc_room_default_persistent", room:get_persistent()));
+	room:set_members_only(module:get_option_boolean("muc_room_default_members_only", room:get_members_only()));
+	room:set_moderated(module:get_option_boolean("muc_room_default_moderated", room:get_moderated()));
+	room:set_whois(module:get_option_boolean("muc_room_default_public_jids", room:get_whois() == "anyone") and "anyone" or "moderators");
+	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
 	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
 	room:set_language(event.stanza.attr["xml:lang"] or module:get_option_string("muc_room_default_language"));
 end, 1);
