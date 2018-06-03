@@ -9,7 +9,7 @@
 
 local st = require "util.stanza";
 
-local lock_rooms = module:get_option_boolean("muc_room_locking", false);
+local lock_rooms = module:get_option_boolean("muc_room_locking", true);
 local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
 
 local function lock(room)
