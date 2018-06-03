@@ -285,7 +285,7 @@ end);
 
 module:hook("muc-room-pre-create", function (event)
 	local room = event.room;
-	room:set_public(module:get_option_boolean("muc_rooom_default_public", room:get_public()));
+	room:set_public(module:get_option_boolean("muc_rooom_default_public", false));
 	room:set_persistent(module:get_option_boolean("muc_rooom_default_persistent", room:get_persistent()));
 	room:set_members_only(module:get_option_boolean("muc_rooom_default_members_only", room:get_members_only()));
 	room:set_moderated(module:get_option_boolean("muc_rooom_default_moderated", room:get_moderated()));
