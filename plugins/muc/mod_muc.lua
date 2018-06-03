@@ -292,7 +292,7 @@ module:hook("muc-room-pre-create", function (event)
 	room:set_whois(module:get_option_boolean("muc_rooom_default_public_jids", room:get_whois() == "anyone") and "anyone" or "moderators");
 	room:set_changesubject(module:get_option_boolean("muc_rooom_default_change_subject", room:get_changesubject()));
 	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
-	room:set_language(module:get_option_string("muc_room_default_language"));
+	room:set_language(event.stanza.attr["xml:lang"] or module:get_option_string("muc_room_default_language"));
 end, 1);
 
 module:hook("muc-room-pre-create", function(event)
