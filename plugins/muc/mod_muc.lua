@@ -231,7 +231,7 @@ function create_room(room_jid, config)
 	module:fire_event("muc-room-created", {
 		room = room;
 	});
-	return room;
+	return track_room(room);
 end
 
 function each_room(local_only)
