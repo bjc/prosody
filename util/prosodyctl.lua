@@ -190,8 +190,8 @@ local function getpid()
 
 	pidfile = config.resolve_relative_path(prosody.paths.data, pidfile);
 
-	local modules_enabled = set.new(config.get("*", "modules_disabled"));
-	if prosody.platform ~= "posix" or modules_enabled:contains("posix") then
+	local modules_disabled = set.new(config.get("*", "modules_disabled"));
+	if prosody.platform ~= "posix" or modules_disabled:contains("posix") then
 		return false, "no-posix";
 	end
 
