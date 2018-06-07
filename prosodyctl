@@ -111,7 +111,7 @@ do
 	end
 end
 local original_logging_config = config.get("*", "log");
-config.set("*", "log", { { levels = { min="info" }, to = "console" } });
+config.set("*", "log", { { levels = { min = os.getenv("PROSODYCTL_LOG_LEVEL") or "info" }, to = "console" } });
 
 local data_path = config.get("*", "data_path") or CFG_DATADIR or "data";
 local custom_plugin_paths = config.get("*", "plugin_paths");
