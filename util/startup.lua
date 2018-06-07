@@ -374,7 +374,7 @@ end
 -- Override logging config (used by prosodyctl)
 function startup.force_console_logging()
 	original_logging_config = config.get("*", "log");
-	config.set("*", "log", { { levels = { min="info" }, to = "console" } });
+	config.set("*", "log", { { levels = { min = os.getenv("PROSODYCTL_LOG_LEVEL") or "info" }, to = "console" } });
 end
 
 function startup.switch_user()
