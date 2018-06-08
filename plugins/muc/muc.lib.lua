@@ -352,7 +352,7 @@ module:hook("muc-disco#info", function(event)
 	event.formdata["muc#roominfo_occupants"] = tostring(iterators.count(event.room:each_occupant()));
 end);
 
-function room_mt:get_disco_items(stanza)
+function room_mt:get_disco_items(stanza) -- luacheck: ignore 212
 	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
 end
 
