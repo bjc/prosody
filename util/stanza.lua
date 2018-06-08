@@ -137,8 +137,11 @@ end
 function stanza_mt:add_direct_child(child)
 	if is_stanza(child) then
 		t_insert(self.tags, child);
+		t_insert(self, child);
+	else
+		check_text(child, "text");
+		t_insert(self, child);
 	end
-	t_insert(self, child);
 end
 
 function stanza_mt:add_child(child)
