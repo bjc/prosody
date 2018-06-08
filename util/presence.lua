@@ -13,7 +13,6 @@ local function select_top_resources(user)
 	local recipients = {};
 	for _, session in pairs(user.sessions) do -- find resource with greatest priority
 		if session.presence then
-			-- TODO check active privacy list for session
 			local p = session.priority;
 			if p > priority then
 				priority = p;
