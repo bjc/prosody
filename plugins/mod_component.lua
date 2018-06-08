@@ -119,9 +119,10 @@ function module.add_host(module)
 				if query.name == "query" and query.attr.xmlns == "http://jabber.org/protocol/disco#info" and (not node or node == "") then
 					local name = module:get_option_string("name");
 					if name then
-						event.origin.send(st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info" })
-							:tag("identity", { category = "component", type = "generic", name = module:get_option_string("name", "Prosody") })):up()
-							:tag("feature", { var = "http://jabber.org/protocol/disco#info" }):up()
+						local reply = st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info" })
+							:tag("identity", { category = "component", type = "generic", name = module:get_option_string("name", "Prosody") }):up()
+							:tag("feature", { var = "http://jabber.org/protocol/disco#info" }):up();
+						event.origin.send(reply);
 						return true;
 					end
 				end

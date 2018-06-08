@@ -353,11 +353,7 @@ module:hook("muc-disco#info", function(event)
 end);
 
 function room_mt:get_disco_items(stanza)
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
-	for room_jid in self:each_occupant() do
-		reply:tag("item", {jid = room_jid, name = room_jid:match("/(.*)")}):up();
-	end
-	return reply;
+	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
 end
 
 function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
