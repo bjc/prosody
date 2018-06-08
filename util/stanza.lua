@@ -116,7 +116,6 @@ end
 
 function stanza_mt:text(text)
 	if text ~= nil and text ~= "" then
-		check_text(text, "text");
 		local last_add = self.last_add;
 		(last_add and last_add[#last_add] or self):add_direct_child(text);
 	end
