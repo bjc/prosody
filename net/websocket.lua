@@ -236,6 +236,7 @@ local function connect(url, ex, listeners)
 		method = "GET";
 		headers = headers;
 		sslctx = ex.sslctx;
+		insecure = ex.insecure;
 	}, function(b, c, r, http_req)
 		if c ~= 101
 		   or r.headers["connection"]:lower() ~= "upgrade"
