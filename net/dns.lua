@@ -889,7 +889,7 @@ function resolver:feed(sock, packet, force)
 		--self.print(response);
 
 		for _, rr in pairs(response.answer) do
-			self:remember(rr, response.question[1].type);
+			self:remember(rr, rr.type);
 		end
 
 		-- retire the query
