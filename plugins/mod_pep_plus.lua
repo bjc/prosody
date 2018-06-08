@@ -63,14 +63,14 @@ end
 local function get_broadcaster(username)
 	local user_bare = jid_join(username, host);
 	local function simple_broadcast(kind, node, jids, item)
+		local message = st.message({ from = user_bare, type = "headline" })
+			:tag("event", { xmlns = xmlns_pubsub_event })
+				:tag(kind, { node = node });
 		if item then
 			item = st.clone(item);
 			item.attr.xmlns = nil; -- Clear the pubsub namespace
+			message:add_child(item);
 		end
-		local message = st.message({ from = user_bare, type = "headline" })
-			:tag("event", { xmlns = xmlns_pubsub_event })
-				:tag(kind, { node = node })
-					:add_child(item);
 		for jid in pairs(jids) do
 			module:log("debug", "Sending notification to %s from %s: %s", jid, user_bare, tostring(item));
 			message.attr.to = jid;
