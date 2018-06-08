@@ -135,7 +135,7 @@ function stanza_mt:reset()
 end
 
 function stanza_mt:add_direct_child(child)
-	if type(child) == "table" then
+	if is_stanza(child) then
 		t_insert(self.tags, child);
 	end
 	t_insert(self, child);
