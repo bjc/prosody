@@ -21,9 +21,9 @@ local close_timeout = 3; -- Seconds to wait after sending close frame until clos
 local websockets = {};
 
 local websocket_listeners = {};
-function websocket_listeners.ondisconnect(handler, err)
-	local s = websockets[handler];
-	websockets[handler] = nil;
+function websocket_listeners.ondisconnect(conn, err)
+	local s = websockets[conn];
+	websockets[conn] = nil;
 	if s.close_timer then
 		timer.stop(s.close_timer);
 		s.close_timer = nil;
@@ -33,19 +33,19 @@ function websocket_listeners.ondisconnect(handler, err)
 	if s.onclose then s:onclose(s.close_code, s.close_message or err); end
 end
 
-function websocket_listeners.ondetach(handler)
-	websockets[handler] = nil;
+function websocket_listeners.ondetach(conn)
+	websockets[conn] = nil;
 end
 
 local function fail(s, code, reason)
 	log("warn", "WebSocket connection failed, closing. %d %s", code, reason);
 	s:close(code, reason);
-	s.handler:close();
+	s.conn:close();
 	return false
 end
 
-function websocket_listeners.onincoming(handler, buffer, err) -- luacheck: ignore 212/err
-	local s = websockets[handler];
+function websocket_listeners.onincoming(conn, buffer, err) -- luacheck: ignore 212/err
+	local s = websockets[conn];
 	s.readbuffer = s.readbuffer..buffer;
 	while true do
 		local frame, len = frames.parse(s.readbuffer);
@@ -111,7 +111,7 @@ function websocket_listeners.onincoming(handler, buffer, err) -- luacheck: ignor
 			elseif frame.opcode == 0x9 then -- Ping frame
 				frame.opcode = 0xA;
 				frame.MASK = true; -- RFC 6455 6.1.5: If the data is being sent by the client, the frame(s) MUST be masked
-				handler:write(frames.build(frame));
+				conn:write(frames.build(frame));
 			elseif frame.opcode == 0xA then -- Pong frame
 				log("debug", "Received unexpected pong frame: " .. tostring(frame.data));
 			else
@@ -126,15 +126,15 @@ local websocket_methods = {};
 local function close_timeout_cb(now, timerid, s) -- luacheck: ignore 212/now 212/timerid
 	s.close_timer = nil;
 	log("warn", "Close timeout waiting for server to close, closing manually.");
-	s.handler:close();
+	s.conn:close();
 end
 function websocket_methods:close(code, reason)
 	if self.readyState < 2 then
 		code = code or 1000;
 		log("debug", "closing WebSocket with code %i: %s" , code , tostring(reason));
 		self.readyState = 2;
-		local handler = self.handler;
-		handler:write(frames.build_close(code, reason, true));
+		local conn = self.conn;
+		conn:write(frames.build_close(code, reason, true));
 		-- Do not close socket straight away, wait for acknowledgement from server.
 		self.close_timer = timer.add_task(close_timeout, close_timeout_cb, self);
 	elseif self.readyState == 2 then
@@ -144,8 +144,8 @@ function websocket_methods:close(code, reason)
 			timer.stop(self.close_timer);
 			self.close_timer = nil;
 		end
-		local handler = self.handler;
-		handler:close();
+		local conn = self.conn;
+		conn:close();
 	else
 		log("debug", "tried to close a closed WebSocket, ignoring.");
 	end
@@ -168,7 +168,7 @@ function websocket_methods:send(data, opcode)
 		data = tostring(data);
 	};
 	log("debug", "WebSocket sending frame: opcode=%0x, %i bytes", frame.opcode, #frame.data);
-	return self.handler:write(frames.build(frame));
+	return self.conn:write(frames.build(frame));
 end
 
 local websocket_metatable = {
@@ -216,7 +216,7 @@ local function connect(url, ex, listeners)
 	local s = setmetatable({
 		readbuffer = "";
 		databuffer = nil;
-		handler = nil;
+		conn = nil;
 		close_code = nil;
 		close_message = nil;
 		close_timer = nil;
@@ -252,16 +252,16 @@ local function connect(url, ex, listeners)
 		s.protocol = r.headers["sec-websocket-protocol"];
 
 		-- Take possession of socket from http
+		local conn = http_req.conn;
 		http_req.conn = nil;
-		local handler = http_req.handler;
-		s.handler = handler;
-		websockets[handler] = s;
-		handler:setlistener(websocket_listeners);
+		s.conn = conn;
+		websockets[conn] = s;
+		conn:setlistener(websocket_listeners);
 
 		log("debug", "WebSocket connected successfully to %s", url);
 		s.readyState = 1;
 		if s.onopen then s:onopen(); end
-		websocket_listeners.onincoming(handler, b);
+		websocket_listeners.onincoming(conn, b);
 	end);
 
 	return s;
