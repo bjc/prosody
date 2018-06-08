@@ -235,11 +235,7 @@ function room_mt:get_disco_info(stanza)
 	return reply;
 end
 function room_mt:get_disco_items(stanza)
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#items");
-	for room_jid in pairs(self._occupants) do
-		reply:tag("item", {jid = room_jid, name = room_jid:match("/(.*)")}):up();
-	end
-	return reply;
+	return st.reply(stanza):query("http://jabber.org/protocol/disco#items");
 end
 function room_mt:set_subject(current_nick, subject)
 	if subject == "" then subject = nil; end
