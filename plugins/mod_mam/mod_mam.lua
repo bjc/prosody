@@ -145,7 +145,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local data, err = archive:find(origin.username, {
 		start = qstart; ["end"] = qend; -- Time range
 		with = qwith;
-		limit = qmax + 1;
+		limit = qmax == 0 and 0 or qmax + 1;
 		before = before; after = after;
 		reverse = reverse;
 		total = use_total or qmax == 0;
