@@ -88,9 +88,10 @@ local function highbyte(i)    -- - - - - - - - - - - - - - - - - - -  highbyte
 end
 
 
-local function augment (t)    -- - - - - - - - - - - - - - - - - - - -  augment
+local function augment (t, prefix)  -- - - - - - - - - - - - - - - - -  augment
 	local a = {};
-	for i,s in pairs(t) do
+	for i = 1, 0xffff do
+		local s = t[i] or ("%s%d"):format(prefix, i);
 		a[i] = s;
 		a[s] = s;
 		a[string.lower(s)] = s;
@@ -121,8 +122,8 @@ dns.types = {
 dns.classes = { 'IN', 'CS', 'CH', 'HS', [255] = '*' };
 
 
-dns.type      = augment (dns.types);
-dns.class     = augment (dns.classes);
+dns.type      = augment (dns.types, "TYPE");
+dns.class     = augment (dns.classes, "CLASS");
 dns.typecode  = encode  (dns.types);
 dns.classcode = encode  (dns.classes);
 
@@ -686,7 +687,7 @@ function resolver:remember(rr, type)    -- - - - - - - - - - - - - -  remember
 	self.cache = self.cache or setmetatable({}, cache_metatable);
 	local rrs = get(self.cache, qclass, type, qname) or
 		set(self.cache, qclass, type, qname, setmetatable({}, rrs_metatable));
-	if not rrs[rr[qtype:lower()]] then
+	if rr[qtype:lower()] and not rrs[rr[qtype:lower()]] then
 		rrs[rr[qtype:lower()]] = true;
 		append(rrs, rr);
 	end
@@ -903,7 +904,11 @@ function resolver:feed(sock, packet, force)
 		--self.print(response);
 
 		for _, rr in pairs(response.answer) do
-			self:remember(rr, response.question[1].type);
+			self:remember(rr, rr.type);
+		end
+
+		for _, rr in pairs(response.additional) do
+			self:remember(rr, rr.type);
 		end
 
 		-- retire the query
