@@ -168,6 +168,8 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	for id, item, when in data do
 		count = count + 1;
 		if count > qmax then
+			-- We requested qmax+1 items. If that many items are retrieved then
+			-- there are more results to page through, so:
 			complete = nil;
 			break;
 		end
