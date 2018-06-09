@@ -672,7 +672,7 @@ function resolver:remember(rr, type)    -- - - - - - - - - - - - - -  remember
 	self.cache = self.cache or setmetatable({}, cache_metatable);
 	local rrs = get(self.cache, qclass, type, qname) or
 		set(self.cache, qclass, type, qname, setmetatable({}, rrs_metatable));
-	if not rrs[rr[qtype:lower()]] then
+	if rr[qtype:lower()] and not rrs[rr[qtype:lower()]] then
 		rrs[rr[qtype:lower()]] = true;
 		append(rrs, rr);
 	end
