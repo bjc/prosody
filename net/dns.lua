@@ -86,13 +86,22 @@ local function highbyte(i)    -- - - - - - - - - - - - - - - - - - -  highbyte
 end
 
 
-local function augment (t)    -- - - - - - - - - - - - - - - - - - - -  augment
+local function augment (t, prefix)  -- - - - - - - - - - - - - - - - -  augment
 	local a = {};
 	for i,s in pairs(t) do
 		a[i] = s;
 		a[s] = s;
 		a[string.lower(s)] = s;
 	end
+	setmetatable(a, {
+		__index = function (_, i)
+			if type(i) == "number" then
+				return ("%s%d"):format(prefix, i);
+			elseif type(i) == "string" then
+				return i:upper();
+			end
+		end;
+	})
 	return a;
 end
 
@@ -119,8 +128,8 @@ dns.types = {
 dns.classes = { 'IN', 'CS', 'CH', 'HS', [255] = '*' };
 
 
-dns.type      = augment (dns.types);
-dns.class     = augment (dns.classes);
+dns.type      = augment (dns.types, "TYPE");
+dns.class     = augment (dns.classes, "CLASS");
 dns.typecode  = encode  (dns.types);
 dns.classcode = encode  (dns.classes);
 
