@@ -90,12 +90,20 @@ end
 
 local function augment (t, prefix)  -- - - - - - - - - - - - - - - - -  augment
 	local a = {};
-	for i = 1, 0xffff do
-		local s = t[i] or ("%s%d"):format(prefix, i);
+	for i,s in pairs(t) do
 		a[i] = s;
 		a[s] = s;
 		a[string.lower(s)] = s;
 	end
+	setmetatable(a, {
+		__index = function (_, i)
+			if type(i) == "number" then
+				return ("%s%d"):format(prefix, i);
+			elseif type(i) == "string" then
+				return i:upper();
+			end
+		end;
+	})
 	return a;
 end
 
