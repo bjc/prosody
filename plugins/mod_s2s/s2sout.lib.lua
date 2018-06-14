@@ -46,6 +46,8 @@ local function compare_srv_priorities(a,b)
 end
 
 function s2sout.initiate_connection(host_session)
+	local log = host_session.log or log;
+
 	initialize_filters(host_session);
 	host_session.version = 1;
 
@@ -84,6 +86,7 @@ end
 function s2sout.attempt_connection(host_session, err)
 	local to_host = host_session.to_host;
 	local connect_host, connect_port = to_host and idna_to_ascii(to_host), 5269;
+	local log = host_session.log or log;
 
 	if not connect_host then
 		return false;
@@ -166,6 +169,7 @@ end
 
 function s2sout.try_connect(host_session, connect_host, connect_port, err)
 	host_session.connecting = true;
+	local log = host_session.log or log;
 
 	if not err then
 		local IPs = {};
@@ -266,7 +270,8 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 end
 
 function s2sout.make_connect(host_session, connect_host, connect_port)
-	(host_session.log or log)("debug", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
+	local log = host_session.log or log;
+	log("debug", "Beginning new connection attempt to %s ([%s]:%d)", host_session.to_host, connect_host.addr, connect_port);
 
 	-- Reset secure flag in case this is another
 	-- connection attempt after a failed STARTTLS
