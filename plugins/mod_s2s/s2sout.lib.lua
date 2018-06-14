@@ -252,6 +252,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 	elseif host_session.ip_hosts and #host_session.ip_hosts > host_session.ip_choice then -- Not our first attempt, and we also have IPs left to try
 		s2sout.try_next_ip(host_session);
 	else
+		log("debug", "Out of IP addresses, trying next SRV record (if any)");
 		host_session.ip_hosts = nil;
 		if not s2sout.attempt_connection(host_session, "out of IP addresses") then -- Retry if we can
 			log("debug", "No other records to try for %s - destroying", host_session.to_host);
