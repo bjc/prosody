@@ -51,6 +51,7 @@ function room_mt:get_default_role(affiliation)
 		affiliation = affiliation;
 		affiliation_rank = valid_affiliations[affiliation or "none"];
 	});
+	role = role ~= "none" and role or nil; -- coerces `role == false` to `nil`
 	return role, valid_roles[role or "none"];
 end
 module:hook("muc-get-default-role", function(event)
