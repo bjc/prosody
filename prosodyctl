@@ -1079,9 +1079,11 @@ function commands.check(arg)
 				target_hosts:remove("localhost");
 			end
 
-			local modules = set.new(it.to_array(it.values(host_options.modules_enabled or {})))
-			                + set.new(it.to_array(it.values(configmanager.get("*", "modules_enabled") or {})))
-			                + set.new({ configmanager.get(host, "component_module") });
+			local modules, component_module = modulemanager.get_modules_for_host(host);
+
+			if component_module then
+				modules:add(component_module);
+			end
 
 			if modules:contains("proxy65") then
 				local proxy65_target = configmanager.get(host, "proxy65_address") or host;
