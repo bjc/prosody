@@ -12,6 +12,7 @@ local hostmanager = require "core.hostmanager";
 local modulemanager = require "core.modulemanager";
 local s2smanager = require "core.s2smanager";
 local portmanager = require "core.portmanager";
+local helpers = require "util.helpers";
 
 local _G = _G;
 
@@ -1128,6 +1129,26 @@ function def_env.http:list()
 		print("HTTP requests to unknown hosts will be handled by "..default_host);
 	end
 	return true;
+end
+
+def_env.debug = {};
+
+function def_env.debug:logevents(host)
+	helpers.log_host_events(host);
+	return true;
+end
+
+function def_env.debug:events(host, event)
+	local events_obj;
+	if host and host ~= "*" then
+		if not hosts[host] then
+			return false, "Unknown host: "..host;
+		end
+		events_obj = hosts[host].events;
+	else
+		events_obj = prosody.events;
+	end
+	return true, helpers.show_events(events_obj, event);
 end
 
 module:hook("server-stopping", function(event)
