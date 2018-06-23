@@ -1039,7 +1039,7 @@ function commands.check(arg)
 				print("Only the domain part ("..host..") is used in DNS.")
 			end
 			local target_hosts = set.new();
-			if not is_component then
+			if modules:contains("c2s") then
 				local res = dns.lookup("_xmpp-client._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res then
 					for _, record in ipairs(res) do
