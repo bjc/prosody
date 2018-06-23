@@ -135,6 +135,8 @@ end
 local max_rooms = module:get_option_number("muc_max_rooms");
 local max_live_rooms = module:get_option_number("muc_room_cache_size", 100);
 
+local room_hit = module:measure("room_hit", "rate");
+local room_miss = module:measure("room_miss", "rate")
 local room_eviction = module:measure("room_eviction", "rate");
 local rooms = cache.new(max_rooms or max_live_rooms, function (jid, room)
 	if max_rooms then
@@ -217,9 +219,11 @@ end
 function get_room_from_jid(room_jid)
 	local room = rooms:get(room_jid);
 	if room then
+		room_hit();
 		rooms:set(room_jid, room); -- bump to top;
 		return room;
 	end
+	room_miss();
 	return restore_room(room_jid);
 end
 
