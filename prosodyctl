@@ -1028,6 +1028,11 @@ function commands.check(arg)
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
 
+			local modules, component_module = modulemanager.get_modules_for_host(host);
+			if component_module then
+				modules:add(component_module);
+			end
+
 			local is_component = not not host_options.component_module;
 			print("Checking DNS for "..(is_component and "component" or "host").." "..jid.."...");
 			if node then
@@ -1052,7 +1057,7 @@ function commands.check(arg)
 					end
 				end
 			end
-			do
+			if modules:contains("s2s") then
 				local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res then
 					for _, record in ipairs(res) do
@@ -1077,12 +1082,6 @@ function commands.check(arg)
 			if target_hosts:contains("localhost") then
 				print("    Target 'localhost' cannot be accessed from other servers");
 				target_hosts:remove("localhost");
-			end
-
-			local modules, component_module = modulemanager.get_modules_for_host(host);
-
-			if component_module then
-				modules:add(component_module);
 			end
 
 			if modules:contains("proxy65") then
