@@ -126,6 +126,7 @@ local function runner_create_thread(func, self)
 			func(coroutine.yield("ready", self));
 		end
 	end);
+	debug.sethook(thread, debug.gethook());
 	assert(coroutine.resume(thread, self)); -- Start it up, it will return instantly to wait for the first input
 	return thread;
 end
