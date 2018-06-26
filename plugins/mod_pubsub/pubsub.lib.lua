@@ -483,10 +483,27 @@ function handlers.owner_get_affiliations(origin, stanza, affiliations, service)
 	return true;
 end
 
---[[ TODO
 function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
+	local node = affiliations.attr.node;
+	if not node then
+		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+		return true;
+	end
+	if not service:may(node, stanza.attr.from, "set_affiliation") then
+		origin.send(pubsub_error_reply(stanza, "forbidden"));
+		return true;
+	end
+
+	local node_obj = service.nodes[node];
+	if not node_obj then
+		origin.send(pubsub_error_reply(stanza, "item-not-found"));
+		return true;
+	end
+
+	local reply = st.error_reply(stanza, "wait", "not-implemented", "yet");
+	origin.send(reply);
+	return true;
 end
---]]
 
 local function create_encapsulating_item(id, payload)
 	local item = st.stanza("item", { id = id, xmlns = xmlns_pubsub });
