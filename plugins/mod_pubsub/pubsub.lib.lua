@@ -465,6 +465,12 @@ function handlers.owner_get_affiliations(origin, stanza, affiliations, service)
 		return true;
 	end
 
+	local node_obj = service.nodes[node];
+	if not node_obj then
+		origin.send(pubsub_error_reply(stanza, "item-not-found"));
+		return true;
+	end
+
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("affiliations", { node = node });
