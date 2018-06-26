@@ -472,7 +472,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 	local orig_occupant = self:get_occupant_by_real_jid(real_jid);
 	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
 
-	if orig_occupant == nil and not muc_x then
+	if orig_occupant == nil and not muc_x and stanza.attr.type == nil then
 		module:log("debug", "Attempted join without <x>, possibly desynced");
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "You must join the room before sending presence updates"));
 		return true;
