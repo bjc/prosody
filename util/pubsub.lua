@@ -116,6 +116,7 @@ function service:set_affiliation(node, actor, jid, affiliation)
 	if not node_obj then
 		return false, "item-not-found";
 	end
+	jid = self.config.normal_jid(jid);
 	node_obj.affiliations[jid] = affiliation;
 	local _, jid_sub = self:get_subscription(node, true, jid);
 	if not jid_sub and not self:may(node, jid, "be_unsubscribed") then
