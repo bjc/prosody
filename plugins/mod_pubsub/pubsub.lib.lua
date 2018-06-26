@@ -475,6 +475,10 @@ function handlers.owner_get_affiliations(origin, stanza, affiliations, service)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("affiliations", { node = node });
 
+	for jid, affiliation in pairs(node_obj.affiliations) do
+		reply:tag("affiliation", { jid = jid, affiliation = affiliation }):up();
+	end
+
 	origin.send(reply);
 	return true;
 end
