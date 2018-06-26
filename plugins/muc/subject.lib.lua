@@ -8,6 +8,7 @@
 --
 
 local st = require "util.stanza";
+local dt = require "util.datetime";
 
 local muc_util = module:require "muc/util";
 local valid_roles = muc_util.valid_roles;
@@ -56,9 +57,16 @@ local function get_subject(room)
 	return room._data.subject, room._data.subject_from or room.jid;
 end
 
-local function send_subject(room, to)
+local function send_subject(room, to, time)
 	local msg = create_subject_message(get_subject(room));
 	msg.attr.to = to;
+	if time then
+		msg:tag("delay", {
+			xmlns = "urn:xmpp:delay",
+			from = room.jid,
+			stamp = dt.datetime(time);
+		}):up();
+	end
 	room:route_stanza(msg);
 end
 
@@ -68,6 +76,7 @@ local function set_subject(room, subject, from)
 	if old_subject == subject and old_from == from then return false; end
 	room._data.subject_from = from;
 	room._data.subject = subject;
+	room._data.subject_time = os.time();
 	local msg = create_subject_message(subject, from);
 	room:broadcast_message(msg);
 	return true;
@@ -75,7 +84,7 @@ end
 
 -- Send subject to joining user
 module:hook("muc-occupant-session-new", function(event)
-	send_subject(event.room, event.stanza.attr.from);
+	send_subject(event.room, event.stanza.attr.from, event.room._data.subject_time);
 end, 20);
 
 -- Prosody has made the decision that messages with <subject/> are exclusively subject changes
