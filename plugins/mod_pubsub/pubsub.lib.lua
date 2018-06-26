@@ -88,6 +88,7 @@ local service_method_feature_map = {
 	purge = { "purge-nodes" };
 	retract = { "delete-items", "retract-items" };
 	set_node_config = { "config-node" };
+	-- TODO -- set_affiliation = { "modify-affiliations" };
 };
 local service_config_feature_map = {
 	autocreate_on_publish = { "auto-create" };
@@ -452,6 +453,14 @@ function handlers.owner_get_default(origin, stanza, default, service) -- luachec
 	origin.send(reply);
 	return true;
 end
+
+--[[ TODO
+function handlers.owner_get_affiliations(origin, stanza, affiliations, service)
+end
+
+function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
+end
+--]]
 
 local function create_encapsulating_item(id, payload)
 	local item = st.stanza("item", { id = id, xmlns = xmlns_pubsub });
