@@ -1,6 +1,7 @@
 local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
 local time_now = os.time;
 
+local jid_prep = require "util.jid".prep;
 local set = require "util.set";
 local st = require "util.stanza";
 local it = require "util.iterators";
@@ -259,6 +260,7 @@ end
 
 function handlers.set_subscribe(origin, stanza, subscribe, service)
 	local node, jid = subscribe.attr.node, subscribe.attr.jid;
+	jid = jid_prep(jid);
 	if not (node and jid) then
 		origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
 		return true;
@@ -288,6 +290,7 @@ end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe, service)
 	local node, jid = unsubscribe.attr.node, unsubscribe.attr.jid;
+	jid = jid_prep(jid);
 	if not (node and jid) then
 		origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
 		return true;
@@ -504,6 +507,7 @@ function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
 		local jid = affiliation_tag.attr.jid;
 		local affiliation = affiliation_tag.attr.affiliation;
 
+		jid = jid_prep(jid);
 		if affiliation == "none" then affiliation = nil; end
 
 		local ok, err = service:set_affiliation(node, stanza.attr.from, jid, affiliation);
