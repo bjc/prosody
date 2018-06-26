@@ -507,6 +507,12 @@ function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
 		if affiliation == "none" then affiliation = nil; end
 
 		local ok, err = service:set_affiliation(node, stanza.attr.from, jid, affiliation);
+		if not ok then
+			-- FIXME Incomplete error handling,
+			-- see XEP 60 8.9.2.4 Multiple Simultaneous Modifications
+			origin.send(pubsub_error_reply(stanza, err));
+			return true;
+		end
 	end
 
 	local reply = st.reply(stanza);
