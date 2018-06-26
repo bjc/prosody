@@ -88,7 +88,7 @@ local service_method_feature_map = {
 	purge = { "purge-nodes" };
 	retract = { "delete-items", "retract-items" };
 	set_node_config = { "config-node" };
-	-- TODO -- set_affiliation = { "modify-affiliations" };
+	set_affiliation = { "modify-affiliations" };
 };
 local service_config_feature_map = {
 	autocreate_on_publish = { "auto-create" };
@@ -500,7 +500,16 @@ function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
 		return true;
 	end
 
-	local reply = st.error_reply(stanza, "wait", "not-implemented", "yet");
+	for affiliation_tag in affiliations:childtags("affiliation") do
+		local jid = affiliation_tag.attr.jid;
+		local affiliation = affiliation_tag.attr.affiliation;
+
+		if affiliation == "none" then affiliation = nil; end
+
+		local ok, err = service:set_affiliation(node, stanza.attr.from, jid, affiliation);
+	end
+
+	local reply = st.reply(stanza);
 	origin.send(reply);
 	return true;
 end
