@@ -12,7 +12,7 @@ local st = require "util.stanza";
 local muc_util = module:require "muc/util";
 local valid_roles = muc_util.valid_roles;
 
-local function create_subject_message(from, subject)
+local function create_subject_message(subject, from)
 	return st.message({from = from; type = "groupchat"})
 		:tag("subject"):text(subject or ""):up();
 end
@@ -53,7 +53,7 @@ end);
 
 local function get_subject(room)
 	-- a <message/> stanza from the room JID (or from the occupant JID of the entity that set the subject)
-	return room._data.subject_from or room.jid, room._data.subject;
+	return room._data.subject, room._data.subject_from or room.jid;
 end
 
 local function send_subject(room, to)
@@ -62,13 +62,13 @@ local function send_subject(room, to)
 	room:route_stanza(msg);
 end
 
-local function set_subject(room, from, subject)
+local function set_subject(room, subject, from)
 	if subject == "" then subject = nil; end
-	local old_from, old_subject = get_subject(room);
+	local old_subject, old_from = get_subject(room);
 	if old_subject == subject and old_from == from then return false; end
 	room._data.subject_from = from;
 	room._data.subject = subject;
-	local msg = create_subject_message(from, subject);
+	local msg = create_subject_message(subject, from);
 	room:broadcast_message(msg);
 	return true;
 end
@@ -90,7 +90,7 @@ module:hook("muc-occupant-groupchat", function(event)
 		local role_rank = valid_roles[occupant and occupant.role or "none"];
 		if role_rank >= valid_roles.moderator or
 			( role_rank >= valid_roles.participant and get_changesubject(room) ) then -- and participant
-			set_subject(room, occupant.nick, subject:get_text());
+			set_subject(room, subject:get_text(), occupant.nick);
 			room:save();
 			return true;
 		else
