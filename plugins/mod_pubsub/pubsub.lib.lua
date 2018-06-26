@@ -454,10 +454,26 @@ function handlers.owner_get_default(origin, stanza, default, service) -- luachec
 	return true;
 end
 
---[[ TODO
 function handlers.owner_get_affiliations(origin, stanza, affiliations, service)
+	local node = affiliations.attr.node;
+	if not node then
+		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+		return true;
+	end
+	if not service:may(node, stanza.attr.from, "set_affiliation") then
+		origin.send(pubsub_error_reply(stanza, "forbidden"));
+		return true;
+	end
+
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
+			:tag("affiliations", { node = node });
+
+	origin.send(reply);
+	return true;
 end
 
+--[[ TODO
 function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
 end
 --]]
