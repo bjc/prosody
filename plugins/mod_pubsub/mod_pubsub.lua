@@ -55,10 +55,13 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	local message = st.message({ from = module.host, type = msg_type, id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag(kind, { node = node })
-				:add_child(item);
+
+	if item then
+		message:add_child(item);
+	end
 
 	-- Compose a sensible textual representation of at least Atom payloads
-	if node_obj and node_obj.config.include_body and item.tags[1] then
+	if node_obj and item and node_obj.config.include_body and item.tags[1] then
 		local payload = item.tags[1];
 		if payload.attr.xmlns == "http://www.w3.org/2005/Atom" then
 			message:reset();
