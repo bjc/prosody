@@ -19,12 +19,11 @@ local st = require "util.stanza";
 module:hook("muc-set-affiliation", function(event)
 	local room = event.room;
 	if not event.in_room then
-		local body = string.format("Your affiliation in room %s is now %s.", room.jid, event.affiliation);
 		local stanza = st.message({
 				type = "headline";
 				from = room.jid;
 				to = event.jid;
-			}, body)
+			})
 			:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 				:tag("status", {code="101"}):up()
 			:up();
