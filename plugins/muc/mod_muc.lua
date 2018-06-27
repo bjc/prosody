@@ -24,8 +24,6 @@ local muclib = module:require "muc";
 room_mt = muclib.room_mt; -- Yes, global.
 new_room = muclib.new_room;
 
-local affiliation_notify = module:require "muc/affiliation_notify"; -- luacheck: ignore 211
-
 local name = module:require "muc/name";
 room_mt.get_name = name.get;
 room_mt.set_name = name.set;
