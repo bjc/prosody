@@ -38,6 +38,10 @@ function form_t.form(layout, data, formtype)
 		-- Add field tag
 		form:tag("field", { type = field_type, var = field.name, label = field.label });
 
+		if field.desc then
+			form:text_tag("desc", field.desc);
+		end
+
 		local value = (data and data[field.name]) or field.value;
 
 		if value then
