@@ -16,35 +16,9 @@ and MUST contain a status code of 101.
 
 local st = require "util.stanza";
 
-local function get_affiliation_notify(room)
-	return room._data.affiliation_notify;
-end
-
-local function set_affiliation_notify(room, affiliation_notify)
-	affiliation_notify = affiliation_notify and true or nil;
-	if room._data.affiliation_notify == affiliation_notify then return false; end
-	room._data.affiliation_notify = affiliation_notify;
-	return true;
-end
-
-module:hook("muc-config-form", function(event)
-	table.insert(event.form, {
-		name = "muc#roomconfig_affiliationnotify";
-		type = "boolean";
-		label = "Notify absent users when their affiliation changes?";
-		value = get_affiliation_notify(event.room);
-	});
-end, 100-11);
-
-module:hook("muc-config-submitted/muc#roomconfig_affiliationnotify", function(event)
-	if set_affiliation_notify(event.room, event.value) then
-		event.status_codes["104"] = true;
-	end
-end);
-
 module:hook("muc-set-affiliation", function(event)
 	local room = event.room;
-	if not event.in_room and get_affiliation_notify(room) then
+	if not event.in_room then
 		local body = string.format("Your affiliation in room %s is now %s.", room.jid, event.affiliation);
 		local stanza = st.message({
 				type = "headline";
@@ -57,8 +31,3 @@ module:hook("muc-set-affiliation", function(event)
 		room:route_stanza(stanza);
 	end
 end);
-
-return {
-	get = get_affiliation_notify;
-	set = set_affiliation_notify;
-};
