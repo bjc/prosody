@@ -989,6 +989,10 @@ function commands.check(arg)
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(config.getconfig())); end
+	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs") then
+		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs' or 'disabled'.", what);
+		return 1;
+	end
 	if not what or what == "disabled" then
 		local disabled_hosts = set.new();
 		for host, host_options in it.filter("*", pairs(config.getconfig())) do
