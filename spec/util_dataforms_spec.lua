@@ -320,5 +320,32 @@ describe("util.dataforms", function ()
 			assert.truthy(some_form:data(xform));
 		end);
 	end);
+
+	describe("issue1177", function ()
+		local form_with_stuff;
+		setup(function ()
+			form_with_stuff = dataforms.new({
+				{
+					type = "list-single";
+					name = "abtest";
+					label = "A or B?";
+					options = {
+						{ label = "A", value = "a", default = true },
+						{ label = "B", value = "b" },
+					};
+				},
+			});
+		end);
+
+		it("includes options when value is included", function ()
+			local f = form_with_stuff:form({ abtest = "a" });
+			assert.truthy(f:find("field/option"));
+		end);
+
+		it("includes options when value is excluded", function ()
+			local f = form_with_stuff:form({});
+			assert.truthy(f:find("field/option"));
+		end);
+	end);
 end);
 
