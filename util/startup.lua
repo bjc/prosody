@@ -284,6 +284,7 @@ function startup.load_secondary_libraries()
 	require "core.rostermanager"
 	require "core.sessionmanager"
 	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
+		-- COMPAT which version?
 		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[ \t]*([^\n]*)"));
 		return function() end
 	end});
