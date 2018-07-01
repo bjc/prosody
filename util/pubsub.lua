@@ -121,7 +121,17 @@ function service:set_affiliation(node, actor, jid, affiliation)
 		return false, "item-not-found";
 	end
 	jid = self.config.normalize_jid(jid);
+	local old_affiliation = node_obj.affiliations[jid];
 	node_obj.affiliations[jid] = affiliation;
+
+	if self.config.nodestore then
+		local ok, err = save_node_to_store(self, node_obj);
+		if not ok then
+			node_obj.affiliations[jid] = old_affiliation;
+			return ok, "internal-server-error";
+		end
+	end
+
 	local _, jid_sub = self:get_subscription(node, true, jid);
 	if not jid_sub and not self:may(node, jid, "be_unsubscribed") then
 		local ok, err = self:add_subscription(node, true, jid);
