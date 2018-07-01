@@ -26,6 +26,7 @@ local pubsub_errors = {
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
 	["forbidden"] = { "auth", "forbidden" };
 	["not-allowed"] = { "cancel", "not-allowed" };
+	["internal-server-error"] = { "wait", "internal-server-error" };
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
