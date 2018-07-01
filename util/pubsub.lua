@@ -174,6 +174,7 @@ function service:add_subscription(node, actor, jid, options)
 			node_obj = self.nodes[node];
 		end
 	end
+	local old_subscription = node_obj.subscribers[jid];
 	node_obj.subscribers[jid] = options or true;
 	local normal_jid = self.config.normalize_jid(jid);
 	local subs = self.subscriptions[normal_jid];
@@ -186,6 +187,16 @@ function service:add_subscription(node, actor, jid, options)
 	else
 		self.subscriptions[normal_jid] = { [jid] = { [node] = true } };
 	end
+
+	if self.config.nodestore then
+		local ok, err = save_node_to_store(self, node_obj);
+		if not ok then
+			node_obj.subscribers[jid] = old_subscription;
+			self.subscriptions[normal_jid][jid][node] = old_subscription and true or nil;
+			return ok, "internal-server-error";
+		end
+	end
+
 	self.events.fire_event("subscription-added", { node = node, jid = jid, normalized_jid = normal_jid, options = options });
 	return true;
 end
@@ -212,6 +223,7 @@ function service:remove_subscription(node, actor, jid)
 	if not node_obj.subscribers[jid] then
 		return false, "not-subscribed";
 	end
+	local old_subscription = node_obj.subscribers[jid];
 	node_obj.subscribers[jid] = nil;
 	local normal_jid = self.config.normalize_jid(jid);
 	local subs = self.subscriptions[normal_jid];
@@ -227,6 +239,16 @@ function service:remove_subscription(node, actor, jid)
 			self.subscriptions[normal_jid] = nil;
 		end
 	end
+
+	if self.config.nodestore then
+		local ok, err = save_node_to_store(self, node_obj);
+		if not ok then
+			node_obj.subscribers[jid] = old_subscription;
+			self.subscriptions[normal_jid][jid][node] = old_subscription and true or nil;
+			return ok, "internal-server-error";
+		end
+	end
+
 	self.events.fire_event("subscription-removed", { node = node, jid = jid, normalized_jid = normal_jid });
 	return true;
 end
