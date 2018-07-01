@@ -13,8 +13,6 @@ local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscri
 local pubsub_disco_name = module:get_option_string("name", "Prosody PubSub Service");
 local expose_publisher = module:get_option_boolean("expose_publisher", false)
 
-local enable_persistence = module:get_option_boolean("experimental_pubsub_item_persistence", false);
-
 local service;
 
 local lib_pubsub = module:require "pubsub";
@@ -33,13 +31,6 @@ local function create_simple_itemstore(node_config, node_name)
 	local archive = module:open_store("pubsub_"..node_name, "archive");
 	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
 end
-
-if enable_persistence then
-	module:log("warn", "Item persistence is an experimental feature. Note that ownership information is lost on restart.")
-else
-	create_simple_itemstore = nil;
-end
-
 
 function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	if item then
