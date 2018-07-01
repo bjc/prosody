@@ -23,7 +23,7 @@ local hash_map = {};
 
 local host = module.host;
 
-local known_nodes_map = module:open_store("pep", "map");
+local node_config = module:open_store("pep", "map");
 local known_nodes = module:open_store("pep");
 
 function module.save()
@@ -45,16 +45,39 @@ local function subscription_presence(username, recipient)
 	return is_contact_subscribed(username, host, recipient_bare);
 end
 
+local function nodestore(username)
+	-- luacheck: ignore 212/self
+	local store = {};
+	function store:get(node)
+		local data, err = node_config:get(username, node)
+		if data == true then
+			-- COMPAT Previously stored only a boolean representing 'persist_items'
+			data = {
+				name = node;
+				config = {};
+				subscribers = {};
+				affiliations = {};
+			};
+		end
+		return data, err;
+	end
+	function store:set(node, data)
+		return node_config:set(username, node, data);
+	end
+	function store:users()
+		return pairs(known_nodes:get(username) or {});
+	end
+	return store;
+end
+
 local function simple_itemstore(username)
 	return function (config, node)
 		if config["persist_items"] then
 			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
-			known_nodes_map:set(username, node, true);
 			local archive = module:open_store("pep_"..node, "archive");
 			return lib_pubsub.archive_itemstore(archive, config, username, node, false);
 		else
 			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
-			known_nodes_map:set(username, node, nil);
 			return cache.new(tonumber(config["max_items"]));
 		end
 	end
@@ -190,6 +213,7 @@ function get_pep_service(username)
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = true;
 
+		nodestore = nodestore(username);
 		itemstore = simple_itemstore(username);
 		broadcaster = get_broadcaster(username);
 		itemcheck = is_item_stanza;
