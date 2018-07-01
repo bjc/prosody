@@ -293,7 +293,7 @@ function service:create(node, actor, options)
 		local ok, err = save_node_to_store(self, self.nodes[node]);
 		if not ok then
 			self.nodes[node] = nil;
-			return ok, err;
+			return ok, "internal-server-error";
 		end
 	end
 
