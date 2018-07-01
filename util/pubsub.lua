@@ -36,6 +36,10 @@ local function save_node_to_store(service, node)
 	});
 end
 
+local function delete_node_in_store(service, node_name)
+	return service.config.nodestore:set(node_name, nil);
+end
+
 -- Create and return a new service object
 local function new(config)
 	config = config or {};
@@ -290,6 +294,15 @@ function service:delete(node, actor)
 		self.data[node]:clear();
 	end
 	self.data[node] = nil;
+
+	if self.config.nodestore then
+		local ok, err = delete_node_in_store(self, node);
+		if not ok then
+			self.nodes[node] = nil;
+			return ok, err;
+		end
+	end
+
 	self.events.fire_event("node-deleted", { node = node, actor = actor });
 	self.config.broadcaster("delete", node, node_obj.subscribers, nil, actor, node_obj, self);
 	return true;
