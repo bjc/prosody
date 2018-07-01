@@ -21,14 +21,14 @@ local default_node_config_mt = { __index = default_node_config };
 
 -- Storage helper functions
 
-local function load_node_from_store(nodestore, node_name)
-	local node = nodestore:get(node_name);
-	node.config = setmetatable(node.config or {}, default_node_config_mt);
+local function load_node_from_store(service, node_name)
+	local node = service.config.nodestore:get(node_name);
+	node.config = setmetatable(node.config or {}, {__index=service.node_defaults});
 	return node;
 end
 
-local function save_node_to_store(nodestore, node)
-	return nodestore:set(node.name, {
+local function save_node_to_store(service, node)
+	return service.config.nodestore:set(node.name, {
 		name = node.name;
 		config = node.config;
 		subscribers = node.subscribers;
@@ -53,7 +53,7 @@ local function new(config)
 	-- Load nodes from storage, if we have a store and it supports iterating over stored items
 	if config.nodestore and config.nodestore.users then
 		for node_name in config.nodestore:users() do
-			service.nodes[node_name] = load_node_from_store(config.nodestore, node_name);
+			service.nodes[node_name] = load_node_from_store(service, node_name);
 			service.data[node_name] = config.itemstore(service.nodes[node_name].config, node_name);
 		end
 	end
@@ -254,7 +254,7 @@ function service:create(node, actor, options)
 	};
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self.config.nodestore, self.nodes[node]);
+		local ok, err = save_node_to_store(self, self.nodes[node]);
 		if not ok then
 			self.nodes[node] = nil;
 			return ok, err;
