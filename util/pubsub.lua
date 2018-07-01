@@ -487,13 +487,22 @@ function service:set_node_config(node, actor, new_config)
 		return false, "item-not-found";
 	end
 
-	if new_config["persist_items"] ~= node_obj.config["persist_items"] then
-		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
-	elseif new_config["max_items"] ~= node_obj.config["max_items"] then
-		self.data[node]:resize(new_config["max_items"]);
+	local old_config = node_obj.config;
+	node_obj.config = setmetatable(new_config, {__index=self.node_defaults});
+
+	if self.config.nodestore then
+		local ok, err = save_node_to_store(self, node_obj);
+		if not ok then
+			node_obj.config = old_config;
+			return ok, "internal-server-error";
+		end
 	end
 
-	node_obj.config = setmetatable(new_config, {__index=self.node_defaults});
+	if old_config["persist_items"] ~= node_obj.config["persist_items"] then
+		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	elseif old_config["max_items"] ~= node_obj.config["max_items"] then
+		self.data[node]:resize(self.nodes[node].config["max_items"]);
+	end
 
 	return true;
 end
