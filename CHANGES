@@ -10,8 +10,10 @@ New features
     -   Store inactive rooms to disk
     -   Store rooms to disk on shutdown
     -   Voice requests
--   mod\_pep\_plus
--   Persistence of PubSub data (applies to mod\_pubsub and mod\_pep\_plus)
+-   PubSub features
+    -   Persistence
+    -   Affiliations
+    -   mod\_pep\_plus
 -   Asynchronous operations
 -   Busted for tests
 -   mod\_muc\_mam (XEP-0313 in groupchats)
