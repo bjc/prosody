@@ -26,6 +26,7 @@ function ping_command_handler (self, data, state) -- luacheck: ignore 212
 	return { info = "Pong\n"..now, status = "completed" };
 end
 
+module:depend "adhoc";
 local adhoc_new = module:require "adhoc".new;
 local descriptor = adhoc_new("Ping", "ping", ping_command_handler);
 module:add_item ("adhoc", descriptor);
