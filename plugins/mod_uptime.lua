@@ -23,6 +23,7 @@ module:hook("iq/host/jabber:iq:last:query", function(event)
 end);
 
 -- Ad-hoc command
+module:depends "adhoc";
 local adhoc_new = module:require "adhoc".new;
 
 function uptime_text()
