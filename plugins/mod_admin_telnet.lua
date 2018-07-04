@@ -1195,6 +1195,320 @@ module:hook("server-stopping", function(event)
 	end
 end);
 
+def_env.stats = {};
+
+local function format_stat(type, value, ref_value)
+	ref_value = ref_value or value;
+	--do return tostring(value) end
+	if type == "duration" then
+		if ref_value < 0.001 then
+			return ("%d µs"):format(value*1000000);
+		elseif ref_value < 0.9 then
+			return ("%0.2f ms"):format(value*1000);
+		end
+		return ("%0.2f"):format(value);
+	elseif type == "size" then
+		if ref_value > 1048576 then
+			return ("%d MB"):format(value/1048576);
+		elseif ref_value > 1024 then
+			return ("%d KB"):format(value/1024);
+		end
+		return ("%d bytes"):format(value);
+	elseif type == "rate" then
+		if ref_value < 0.9 then
+			return ("%0.2f/min"):format(value*60);
+		end
+		return ("%0.2f/sec"):format(value);
+	end
+	return tostring(value);
+end
+
+local stats_methods = {};
+function stats_methods:bounds(_lower, _upper)
+	local statistics = require "util.statistics";
+	for _, stat_info in ipairs(self) do
+		local data = stat_info[4];
+		if data then
+			local lower = _lower or data.min;
+			local upper = _upper or data.max;
+			local new_data = {
+				min = lower;
+				max = upper;
+				samples = {};
+				sample_count = 0;
+				count = data.count;
+				units = data.units;
+			};
+			local sum = 0;
+			for i, v in ipairs(data.samples) do
+				if v > upper then
+					break;
+				elseif v>=lower then
+					table.insert(new_data.samples, v);
+					sum = sum + v;
+				end
+			end
+			new_data.sample_count = #new_data.samples;
+			stat_info[4] = new_data;
+			stat_info[3] = sum/new_data.sample_count;
+		end
+	end
+	return self;
+end
+
+function stats_methods:trim(lower, upper)
+	upper = upper or (100-lower);
+	local statistics = require "util.statistics";
+	for _, stat_info in ipairs(self) do
+		-- Strip outliers
+		local data = stat_info[4];
+		if data then
+			local new_data = {
+				min = statistics.get_percentile(data, lower);
+				max = statistics.get_percentile(data, upper);
+				samples = {};
+				sample_count = 0;
+				count = data.count;
+				units = data.units;
+			};
+			local sum = 0;
+			for i, v in ipairs(data.samples) do
+				if v > new_data.max then
+					break;
+				elseif v>=new_data.min then
+					table.insert(new_data.samples, v);
+					sum = sum + v;
+				end
+			end
+			new_data.sample_count = #new_data.samples;
+			stat_info[4] = new_data;
+			stat_info[3] = sum/new_data.sample_count;
+		end
+	end
+	return self;
+end
+
+function stats_methods:max(upper)
+	return self:bounds(nil, upper);
+end
+
+function stats_methods:min(lower)
+	return self:bounds(lower, nil);
+end
+
+function stats_methods:summary()
+	local statistics = require "util.statistics";
+	for _, stat_info in ipairs(self) do
+		local name, type, value, data = stat_info[1], stat_info[2], stat_info[3], stat_info[4];
+		if data and data.samples then
+			table.insert(stat_info.output, string.format("Count: %d (%d captured)",
+				data.count,
+				data.sample_count
+			));
+			table.insert(stat_info.output, string.format("Min: %s  Mean: %s  Max: %s",
+				format_stat(type, data.min),
+				format_stat(type, value),
+				format_stat(type, data.max)
+			));
+			table.insert(stat_info.output, string.format("Q1: %s  Median: %s  Q3: %s",
+				format_stat(type, statistics.get_percentile(data, 25)),
+				format_stat(type, statistics.get_percentile(data, 50)),
+				format_stat(type, statistics.get_percentile(data, 75))
+			));
+		end
+	end
+	return self;
+end
+
+function stats_methods:cfgraph()
+	for _, stat_info in ipairs(self) do
+		local name, type, value, data = unpack(stat_info, 1, 4);
+		local function print(s)
+			table.insert(stat_info.output, s);
+		end
+
+		if data and data.sample_count > 0 then
+			local raw_histogram = require "util.statistics".get_histogram(data);
+
+			local graph_width, graph_height = 50, 10;
+			local eighth_chars = "   ▁▂▃▄▅▆▇█";
+
+			local range = data.max - data.min;
+
+			if range > 0 then
+				local x_scaling = #raw_histogram/graph_width;
+				local histogram = {};
+				for i = 1, graph_width do
+					histogram[i] = math.max(raw_histogram[i*x_scaling-1] or 0, raw_histogram[i*x_scaling] or 0);
+				end
+
+				print("");
+				print(("_"):rep(52)..format_stat(type, data.max));
+				for row = graph_height, 1, -1 do
+					local row_chars = {};
+					local min_eighths, max_eighths = 8, 0;
+					for i = 1, #histogram do
+						local char_eighths = math.ceil(math.max(math.min((graph_height/(data.max/histogram[i]))-(row-1), 1), 0)*8);
+						if char_eighths < min_eighths then
+							min_eighths = char_eighths;
+						end
+						if char_eighths > max_eighths then
+							max_eighths = char_eighths;
+						end
+						if char_eighths == 0 then
+							row_chars[i] = "-";
+						else
+							local char = eighth_chars:sub(char_eighths*3+1, char_eighths*3+3);
+							row_chars[i] = char;
+						end
+					end
+					print(table.concat(row_chars).."|-"..format_stat(type, data.max/(graph_height/(row-0.5))));
+				end
+				print(("\\    "):rep(11));
+				local x_labels = {};
+				for i = 1, 11 do
+					local s = ("%-4s"):format((i-1)*10);
+					if #s > 4 then
+						s = s:sub(1, 3).."…";
+					end
+					x_labels[i] = s;
+				end
+				print(" "..table.concat(x_labels, " "));
+				local units = "%";
+				local margin = math.floor((graph_width-#units)/2);
+				print((" "):rep(margin)..units);
+			else
+				print("[range too small to graph]");
+			end
+			print("");
+		end
+	end
+	return self;
+end
+
+function stats_methods:histogram()
+	for _, stat_info in ipairs(self) do
+		local name, type, value, data = unpack(stat_info, 1, 4);
+		local function print(s)
+			table.insert(stat_info.output, s);
+		end
+
+		if not data then
+			print("[no data]");
+			return self;
+		elseif not data.sample_count then
+			print("[not a sampled metric type]");
+			return self;
+		end
+
+		local raw_histogram = require "util.statistics".get_histogram(data);
+
+		local graph_width, graph_height = 50, 10;
+		local eighth_chars = "   ▁▂▃▄▅▆▇█";
+
+		local range = data.max - data.min;
+
+		if range > 0 then
+			local n_buckets = graph_width;
+
+			local histogram = {};
+			for i = 1, n_buckets do
+				histogram[i] = 0;
+			end
+			local max_bin_samples = 0;
+			for i, d in ipairs(data.samples) do
+				local bucket = math.floor(1+(n_buckets-1)/(range/(d-data.min)));
+				histogram[bucket] = histogram[bucket] + 1;
+				if histogram[bucket] > max_bin_samples then
+					max_bin_samples = histogram[bucket];
+				end
+			end
+
+			print("");
+			print(("_"):rep(52)..max_bin_samples);
+			for row = graph_height, 1, -1 do
+				local row_chars = {};
+				local min_eighths, max_eighths = 8, 0;
+				for i = 1, #histogram do
+					local char_eighths = math.ceil(math.max(math.min((graph_height/(max_bin_samples/histogram[i]))-(row-1), 1), 0)*8);
+					if char_eighths < min_eighths then
+						min_eighths = char_eighths;
+					end
+					if char_eighths > max_eighths then
+						max_eighths = char_eighths;
+					end
+					if char_eighths == 0 then
+						row_chars[i] = "-";
+					else
+						local char = eighth_chars:sub(char_eighths*3+1, char_eighths*3+3);
+						row_chars[i] = char;
+					end
+				end
+				print(table.concat(row_chars).."|-"..math.ceil((max_bin_samples/graph_height)*(row-0.5)));
+			end
+			print(("\\    "):rep(11));
+			local x_labels = {};
+			for i = 1, 11 do
+				local s = ("%-4s"):format(format_stat(type, data.min+range*i/11, data.min):match("^%S+"));
+				if #s > 4 then
+					s = s:sub(1, 3).."…";
+				end
+				x_labels[i] = s;
+			end
+			print(" "..table.concat(x_labels, " "));
+			local units = format_stat(type, data.min):match("%s+(.+)$") or data.units or "";
+			local margin = math.floor((graph_width-#units)/2);
+			print((" "):rep(margin)..units);
+		else
+			print("[range too small to graph]");
+		end
+		print("");
+	end
+	return self;
+end
+
+local function stats_tostring(stats)
+	local print = stats.session.print;
+	for _, stat_info in ipairs(stats) do
+		if #stat_info.output > 0 then
+			print("\n#"..stat_info[1]);
+			print("");
+			for i, v in ipairs(stat_info.output) do
+				print(v);
+			end
+			print("");
+		else
+			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], stat_info[3])));
+		end
+	end
+	return #stats.." statistics displayed";
+end
+
+local function new_stats_context(self)
+	return setmetatable({ session = self.session, stats = true }, {__index = stats_methods, __tostring = stats_tostring });
+end
+
+function def_env.stats:show(filter)
+	local print = self.session.print;
+	local stats, changed, extra = require "core.statsmanager".get_stats();
+	local available, displayed = 0, 0;
+	local displayed_stats = new_stats_context(self);
+	for name, value in pairs(stats) do
+		available = available + 1;
+		if not filter or name:match(filter) then
+			displayed = displayed + 1;
+			local type = name:match(":(%a+)$");
+			table.insert(displayed_stats, {
+				name, type, value, extra[name];
+				output = {};
+			});
+		end
+	end
+	return displayed_stats;
+end
+
+
+
 -------------
 
 function printbanner(session)
