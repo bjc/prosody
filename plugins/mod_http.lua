@@ -108,9 +108,9 @@ function module.add_host(module)
 				elseif event_name:sub(-2, -1) == "/*" then
 					local base_path_len = #event_name:match("/.+$");
 					local _handler = handler;
-					handler = function (event)
-						local path = event.request.path:sub(base_path_len);
-						return _handler(event, path);
+					handler = function (_event)
+						local path = _event.request.path:sub(base_path_len);
+						return _handler(_event, path);
 					end;
 					module:hook_object_event(server, event_name:sub(1, -3), redir_handler, -1);
 				elseif event_name:sub(-1, -1) == "/" then
