@@ -207,20 +207,20 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 			if node and user_data and user_data[node] then -- Send the last item
 				local id, item = unpack(user_data[node]);
 				if not requested_id or id == requested_id then
-					local stanza = st.reply(stanza)
+					local reply_stanza = st.reply(stanza)
 						:tag('pubsub', {xmlns='http://jabber.org/protocol/pubsub'})
 							:tag('items', {node=node})
 								:add_child(item)
 							:up()
 						:up();
-					session.send(stanza);
+					session.send(reply_stanza);
 					return true;
 				else -- requested item doesn't exist
-					local stanza = st.reply(stanza)
+					local reply_stanza = st.reply(stanza)
 						:tag('pubsub', {xmlns='http://jabber.org/protocol/pubsub'})
 							:tag('items', {node=node})
 						:up();
-					session.send(stanza);
+					session.send(reply_stanza);
 					return true;
 				end
 			elseif node then -- node doesn't exist
