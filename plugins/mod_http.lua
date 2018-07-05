@@ -137,8 +137,8 @@ function module.add_host(module)
 	local function http_app_removed(event)
 		local app_handlers = apps[event.item.name];
 		apps[event.item.name] = nil;
-		for event, handler in pairs(app_handlers) do
-			module:unhook_object_event(server, event, handler);
+		for event_name, handler in pairs(app_handlers) do
+			module:unhook_object_event(server, event_name, handler);
 		end
 	end
 
