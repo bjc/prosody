@@ -143,7 +143,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	"plugins/mod_http.lua";
 	"plugins/mod_legacyauth.lua";
 	"plugins/mod_net_multiplex.lua";
-	"plugins/mod_pep.lua";
 	"plugins/mod_pep_plus.lua";
 	"plugins/mod_privacy.lua";
 	"plugins/mod_s2s/mod_s2s.lua";
