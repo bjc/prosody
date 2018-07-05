@@ -315,7 +315,7 @@ module:hook("account-disco-items", function(event)
 end);
 
 module:hook("account-disco-info-node", function (event)
-	local session, stanza, node = event.origin, event.stanza, event.node;
+	local stanza, node = event.stanza, event.node;
 	local user = stanza.attr.to;
 	local user_data = data[user];
 	if user_data and user_data[node] then
