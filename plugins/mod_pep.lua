@@ -172,8 +172,8 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 	local payload = stanza.tags[1];
 
 	if stanza.attr.type == 'set' and (not stanza.attr.to or jid_bare(stanza.attr.from) == stanza.attr.to) then
-		payload = payload.tags[1];
-		if payload and (payload.name == 'publish' or payload.name == 'retract') and payload.attr.node then -- <publish node='http://jabber.org/protocol/tune'>
+		payload = payload.tags[1]; -- <publish node='http://jabber.org/protocol/tune'>
+		if payload and (payload.name == 'publish' or payload.name == 'retract') and payload.attr.node then
 			local node = payload.attr.node;
 			payload = payload.tags[1];
 			if payload and payload.name == "item" then -- <item>
