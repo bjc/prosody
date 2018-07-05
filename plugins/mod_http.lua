@@ -67,8 +67,8 @@ function moduleapi.http_url(module, app_name, default_path)
 	end
 	local services = portmanager.get_active_services();
 	local http_services = services:get("https") or services:get("http") or {};
-	for interface, ports in pairs(http_services) do
-		for port, services in pairs(ports) do
+	for interface, ports in pairs(http_services) do -- luacheck: ignore 213/interface
+		for port, services in pairs(ports) do -- luacheck: ignore 512
 			local url = {
 				scheme = (external_url.scheme or services[1].service.name);
 				host = (external_url.host or module:get_option_string("http_host", module.host));
