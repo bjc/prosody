@@ -37,7 +37,7 @@ end
 
 -- Old <message>-based jabberd-style announcement sending
 function handle_announcement(event)
-	local origin, stanza = event.origin, event.stanza;
+	local stanza = event.stanza;
 	local node, host, resource = jid.split(stanza.attr.to);
 
 	if resource ~= "announce/online" then
@@ -72,7 +72,7 @@ local announce_layout = dataforms_new{
 	{ name = "announcement", type = "text-multi", required = true, label = "Announcement" };
 };
 
-function announce_handler(self, data, state)
+function announce_handler(_, data, state)
 	if state then
 		if data.action == "cancel" then
 			return { status = "canceled" };
