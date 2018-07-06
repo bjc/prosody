@@ -46,6 +46,16 @@ local node_config_form = dataform {
 	};
 	{
 		type = "text-single";
+		name = "pubsub#title";
+		label = "Title";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#description";
+		label = "Description";
+	};
+	{
+		type = "text-single";
 		name = "pubsub#max_items";
 		label = "Max # of items to persist";
 	};
@@ -399,6 +409,8 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 
 	local node_config = node_obj.config;
 	local pubsub_form_data = {
+		["pubsub#title"] = node_config["title"];
+		["pubsub#description"] = node_config["description"];
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
@@ -433,6 +445,8 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 		return true;
 	end
 	local new_config = {
+		["title"] = form_data["pubsub#title"];
+		["description"] = form_data["pubsub#description"];
 		["max_items"] = tonumber(form_data["pubsub#max_items"]);
 		["persist_items"] = form_data["pubsub#persist_items"];
 		["notification_type"] = form_data["pubsub#notification_type"];
