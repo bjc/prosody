@@ -89,6 +89,22 @@ local options_form = dataform {
 	-- No options yet. File a feature request ;)
 };
 
+local node_metadata_form = dataform {
+	{
+		type = "hidden";
+		name = "FORM_TYPE";
+		value = "http://jabber.org/protocol/pubsub#meta-data";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#title";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#description";
+	};
+};
+
 local service_method_feature_map = {
 	add_subscription = { "subscribe" };
 	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
@@ -147,6 +163,12 @@ function _M.handle_disco_info_node(event, service)
 	end
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
+	if node_obj.config then
+		reply:add_child(node_metadata_form:form({
+			["pubsub#title"] = node_obj.config.title;
+			["pubsub#description"] = node_obj.config.description;
+		}, "result"));
+	end
 end
 
 function _M.handle_disco_items_node(event, service)
