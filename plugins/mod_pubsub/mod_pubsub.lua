@@ -88,26 +88,11 @@ local function add_disco_features_from_service(service) --luacheck: ignore 431/s
 end
 
 module:hook("host-disco-info-node", function (event)
-	local stanza, reply, node = event.stanza, event.reply, event.node;
-	local ok, ret = service:get_nodes(stanza.attr.from);
-	if not ok or not ret[node] then
-		return;
-	end
-	event.exists = true;
-	reply:tag("identity", { category = "pubsub", type = "leaf" });
+	return lib_pubsub.handle_disco_info_node(event, service);
 end);
 
 module:hook("host-disco-items-node", function (event)
-	local stanza, reply, node = event.stanza, event.reply, event.node;
-	local ok, ret = service:get_items(node, stanza.attr.from);
-	if not ok then
-		return;
-	end
-
-	for _, id in ipairs(ret) do
-		reply:tag("item", { jid = module.host, name = id }):up();
-	end
-	event.exists = true;
+	return lib_pubsub.handle_disco_items_node(event, service);
 end);
 
 
