@@ -138,6 +138,30 @@ function _M.get_feature_set(service)
 	return supported_features;
 end
 
+function _M.handle_disco_info_node(event, service)
+	local stanza, reply, node = event.stanza, event.reply, event.node;
+	local ok, ret = service:get_nodes(stanza.attr.from);
+	local node_obj = ret[node];
+	if not ok or not node_obj then
+		return;
+	end
+	event.exists = true;
+	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
+end
+
+function _M.handle_disco_items_node(event, service)
+	local stanza, reply, node = event.stanza, event.reply, event.node;
+	local ok, ret = service:get_items(node, stanza.attr.from);
+	if not ok then
+		return;
+	end
+
+	for _, id in ipairs(ret) do
+		reply:tag("item", { jid = module.host, name = id }):up();
+	end
+	event.exists = true;
+end
+
 function _M.handle_pubsub_iq(event, service)
 	local origin, stanza = event.origin, event.stanza;
 	local pubsub_tag = stanza.tags[1];
