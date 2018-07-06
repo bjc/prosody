@@ -423,17 +423,13 @@ module:hook("iq-result/bare/disco", function(event)
 end);
 
 module:hook("account-disco-info-node", function(event)
-	local reply, stanza, origin = event.reply, event.stanza, event.origin;
+	local stanza, origin = event.stanza, event.origin;
 	local service_name = origin.username;
 	if stanza.attr.to ~= nil then
 		service_name = jid_split(stanza.attr.to);
 	end
 	local service = get_pep_service(service_name);
-	local node = event.node;
-	local ok = service:get_items(node, jid_bare(stanza.attr.from) or true);
-	if not ok then return; end
-	event.exists = true;
-	reply:tag('identity', {category='pubsub', type='leaf'}):up();
+	return lib_pubsub.handle_disco_info_node(event, service);
 end);
 
 module:hook("account-disco-info", function(event)
@@ -461,22 +457,14 @@ module:hook("account-disco-info", function(event)
 end);
 
 module:hook("account-disco-items-node", function(event)
-	local reply, stanza, origin = event.reply, event.stanza, event.origin;
-	local node = event.node;
+	local stanza, origin = event.stanza, event.origin;
 	local is_self = stanza.attr.to == nil;
-	local user_bare = jid_bare(stanza.attr.to);
 	local username = jid_split(stanza.attr.to);
 	if is_self then
 		username = origin.username;
-		user_bare = jid_join(username, host);
 	end
 	local service = get_pep_service(username);
-	local ok, ret = service:get_items(node, jid_bare(stanza.attr.from) or true);
-	if not ok then return; end
-	event.exists = true;
-	for _, id in ipairs(ret) do
-		reply:tag("item", { jid = user_bare, name = id }):up();
-	end
+	return lib_pubsub.handle_disco_items_node(event, service);
 end);
 
 module:hook("account-disco-items", function(event)
