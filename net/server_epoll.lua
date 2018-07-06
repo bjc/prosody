@@ -32,7 +32,7 @@ local _ENV = nil;
 -- luacheck: std none
 
 local default_config = { __index = {
-	read_timeout = 900;
+	read_timeout = 14 * 60;
 	write_timeout = 7;
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
