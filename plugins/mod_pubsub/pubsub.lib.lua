@@ -435,6 +435,8 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 	local new_config = {
 		["max_items"] = tonumber(form_data["pubsub#max_items"]);
 		["persist_items"] = form_data["pubsub#persist_items"];
+		["notification_type"] = form_data["pubsub#notification_type"];
+		["include_body"] = form_data["pubsub#include_body"];
 	};
 	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
 	if not ok then
