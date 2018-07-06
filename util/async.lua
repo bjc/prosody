@@ -148,7 +148,7 @@ end
 function runner_mt:run(input)
 	if input ~= nil then
 		table.insert(self.queue, input);
-		self:log("debug", "queued new work item, %d items queued", #self.queue);
+		--self:log("debug", "queued new work item, %d items queued", #self.queue);
 	end
 	if self.state ~= "ready" then
 		-- The runner is busy. Indicate that the task item has been
@@ -167,7 +167,7 @@ function runner_mt:run(input)
 	-- Process task item(s) while the queue is not empty, and we're not blocked
 	local n, state, err = #q, self.state, nil;
 	self.state = "running";
-	self:log("debug", "running main loop");
+	--self:log("debug", "running main loop");
 	while n > 0 and state == "ready" and not err do
 		local consumed;
 		-- Loop through queue items, and attempt to run them

@@ -53,6 +53,8 @@ room_mt.set_password = password.set;
 local members_only = module:require "muc/members_only";
 room_mt.get_members_only = members_only.get;
 room_mt.set_members_only = members_only.set;
+room_mt.get_allow_member_invites = members_only.get_allow_member_invites;
+room_mt.set_allow_member_invites = members_only.set_allow_member_invites;
 
 local moderated = module:require "muc/moderated";
 room_mt.get_moderated = moderated.get;
