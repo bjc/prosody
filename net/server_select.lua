@@ -146,7 +146,7 @@ _maxreadlen = 25000 * 1024 -- max len of read buffer
 
 _checkinterval = 30 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
-_readtimeout = 6 * 60 * 60 -- allowed read idle time in secs
+_readtimeout = 14 * 60 -- allowed read idle time in secs
 
 local is_windows = package.config:sub(1,1) == "\\" -- check the directory separator, to detemine whether this is Windows
 _maxfd = (is_windows and math.huge) or luasocket._SETSIZE or 1024 -- max fd number, limit to 1024 by default to prevent glibc buffer overflow, but not on Windows
