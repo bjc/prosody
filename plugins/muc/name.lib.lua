@@ -20,7 +20,7 @@ local function set_name(room, name)
 	return true;
 end
 
-local function insert_name_into_form(event);
+local function insert_name_into_form(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_roomname";
 		type = "text-single";
