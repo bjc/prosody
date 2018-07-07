@@ -42,9 +42,14 @@ function form_t.form(layout, data, formtype)
 			form:text_tag("desc", field.desc);
 		end
 
-		local value = (data and data[field.name]) or field.value;
+		local value;
+		if data and data[field.name] ~= nil then
+			value = data[field.name];
+		else
+			value = field.value;
+		end
 
-		if value then
+		if value ~= nil then
 			-- Add value, depending on type
 			if field_type == "hidden" then
 				if type(value) == "table" then
