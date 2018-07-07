@@ -136,7 +136,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 
 	"plugins/mod_admin_adhoc.lua";
 	"plugins/mod_admin_telnet.lua";
-	"plugins/mod_groups.lua";
 	"plugins/mod_http_files.lua";
 	"plugins/mod_net_multiplex.lua";
 	"plugins/mod_privacy.lua";
