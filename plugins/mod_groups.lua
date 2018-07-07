@@ -10,8 +10,8 @@
 local groups;
 local members;
 
-local jid, datamanager = require "util.jid", require "util.datamanager";
-local jid_prep = jid.prep;
+local datamanager = require "util.datamanager";
+local jid_prep = require "util.jid".prep;
 
 local module_host = module:get_host();
 
