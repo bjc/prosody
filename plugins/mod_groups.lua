@@ -112,6 +112,8 @@ function module.load()
 				groups[curr_group][jid] = name or false;
 				members[jid] = members[jid] or {};
 				members[jid][#members[jid]+1] = curr_group;
+			elseif entryjid:match("%S") then
+				module:log("warn", "Invalid JID: %q", entryjid);
 			end
 		end
 	end
