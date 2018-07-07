@@ -10,7 +10,6 @@ local indexedbheap = require "util.indexedbheap";
 local log = require "util.logger".init("timer");
 local server = require "net.server";
 local get_time = require "util.time".now
-local async = require "util.async";
 local type = type;
 local debug_traceback = debug.traceback;
 local tostring = tostring;
@@ -104,16 +103,9 @@ local function reschedule(id, delay)
 	return id;
 end
 
-local function sleep(s)
-	local wait, done = async.waiter();
-	add_task(s, done);
-	wait();
-end
-
 return {
 	add_task = add_task;
 	stop = stop;
 	reschedule = reschedule;
-	sleep = sleep;
 };
 
