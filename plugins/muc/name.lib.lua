@@ -14,24 +14,27 @@ local function get_name(room)
 end
 
 local function set_name(room, name)
-	if name == "" or name == (jid_split(room.jid)) then name = nil; end
+	if name == "" then name = nil; end
 	if room._data.name == name then return false; end
 	room._data.name = name;
 	return true;
 end
 
-module:hook("muc-disco#info", function(event)
-	event.reply:tag("identity", {category="conference", type="text", name=get_name(event.room)}):up();
-end);
-
-module:hook("muc-config-form", function(event)
+local function insert_name_into_form(event);
 	table.insert(event.form, {
 		name = "muc#roomconfig_roomname";
 		type = "text-single";
 		label = "Name";
-		value = get_name(event.room) or "";
+		value = event.room._data.name;
 	});
-end, 100-1);
+end
+
+module:hook("muc-disco#info", function(event)
+	event.reply:tag("identity", {category="conference", type="text", name=get_name(event.room)}):up();
+	insert_name_into_form(event);
+end);
+
+module:hook("muc-config-form", insert_name_into_form, 100-1);
 
 module:hook("muc-config-submitted/muc#roomconfig_roomname", function(event)
 	if set_name(event.room, event.value) then
