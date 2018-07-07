@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local config = require "core.configmanager";
 local array = require "util.array";
 local set = require "util.set";
 local it = require "util.iterators";
@@ -196,6 +195,7 @@ function api:shared(...)
 end
 
 function api:get_option(name, default_value)
+	local config = require "core.configmanager";
 	local value = config.get(self.host, name);
 	if value == nil then
 		value = default_value;
