@@ -13,7 +13,6 @@ local logger = require "util.logger";
 local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
-local measure = require "core.statsmanager".measure;
 local st = require "util.stanza";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
@@ -411,6 +410,7 @@ function api:open_store(name, store_type)
 end
 
 function api:measure(name, stat_type)
+	local measure = require "core.statsmanager".measure;
 	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name);
 end
 
