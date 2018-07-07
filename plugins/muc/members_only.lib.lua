@@ -127,8 +127,9 @@ module:hook("muc-pre-invite", function(event)
 	local room = event.room;
 	if get_members_only(room) then
 		local stanza = event.stanza;
-		local affiliation = room:get_affiliation(stanza.attr.from);
-		if not room._data.allow_member_invites and valid_affiliations[affiliation or "none"] < valid_affiliations.admin then
+		local inviter_affiliation = room:get_affiliation(stanza.attr.from) or "none";
+		local required_affiliation = room._data.allow_member_invites and "member" or "admin";
+		if valid_affiliations[inviter_affiliation] < valid_affiliations[required_affiliation] then
 			event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
 		end
@@ -142,7 +143,8 @@ module:hook("muc-invite", function(event)
 		local stanza = event.stanza;
 		local invitee = stanza.attr.to;
 		local affiliation = room:get_affiliation(invitee);
-		if valid_affiliations[affiliation or "none"] <= valid_affiliations.none and room._data.allow_member_invites then
+		local invited_unaffiliated = valid_affiliations[affiliation or "none"] <= valid_affiliations.none;
+		if invited_unaffiliated then
 			local from = stanza:get_child("x", "http://jabber.org/protocol/muc#user")
 				:get_child("invite").attr.from;
 			module:log("debug", "%s invited %s into members only room %s, granting membership",
