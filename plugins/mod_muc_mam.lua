@@ -357,7 +357,7 @@ module:hook("muc-add-history", function (event)
 	save_to_history(room, stanza);
 end);
 
-if module:get_option_boolean("muc_log_presences", true) then
+if module:get_option_boolean("muc_log_presences", false) then
 	module:hook("muc-occupant-joined", function (event)
 		save_to_history(event.room, st.stanza("presence", { from = event.nick }):tag("x", { xmlns = "http://jabber.org/protocol/muc" }));
 	end);
