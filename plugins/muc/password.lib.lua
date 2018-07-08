@@ -65,6 +65,14 @@ module:hook("muc-invite", function(event)
 	end
 end);
 
+module:hook("muc-room-pre-create", function (event)
+	local stanza, room = event.stanza, event.room;
+	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
+	if not muc_x then return end
+	local password = muc_x:get_child_text("password", "http://jabber.org/protocol/muc");
+	set_password(room, password);
+end);
+
 return {
 	get = get_password;
 	set = set_password;
