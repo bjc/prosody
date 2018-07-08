@@ -42,8 +42,9 @@ end);
 -- Don't allow anyone to join room unless they provide the password
 module:hook("muc-occupant-pre-join", function(event)
 	local room, stanza = event.room, event.stanza;
-	local password = stanza:get_child("x", "http://jabber.org/protocol/muc");
-	password = password and password:get_child_text("password", "http://jabber.org/protocol/muc");
+	local muc_x = stanza:get_child("x", "http://jabber.org/protocol/muc");
+	if not muc_x then return end
+	local password = muc_x:get_child_text("password", "http://jabber.org/protocol/muc");
 	if not password or password == "" then password = nil; end
 	if get_password(room) ~= password then
 		local from, to = stanza.attr.from, stanza.attr.to;
