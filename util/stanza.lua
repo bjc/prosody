@@ -149,6 +149,16 @@ function stanza_mt:add_child(child)
 	return self;
 end
 
+function stanza_mt:remove_children(name, xmlns)
+	xmlns = xmlns or self.attr.xmlns;
+	return self:maptags(function (tag)
+		if (not name or tag.name == name) and tag.attr.xmlns == xmlns then
+			return nil;
+		end
+		return tag;
+	end);
+end
+
 function stanza_mt:get_child(name, xmlns)
 	for _, child in ipairs(self.tags) do
 		if (not name or child.name == name)
