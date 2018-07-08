@@ -235,4 +235,26 @@ describe("util.stanza", function()
 			assert.falsy(st.is_stanza({}));
 		end);
 	end);
+
+	describe("#remove_children", function ()
+		it("should work", function ()
+			local s = st.stanza("x", {xmlns="test"})
+				:tag("y", {xmlns="test"}):up()
+				:tag("z", {xmlns="test2"}):up()
+				:tag("x", {xmlns="test2"}):up()
+
+			s:remove_children("x");
+			assert.falsy(s:get_child("x"))
+			assert.truthy(s:get_child("z","test2"));
+			assert.truthy(s:get_child("x","test2"));
+
+			s:remove_children(nil, "test2");
+			assert.truthy(s:get_child("y"))
+			assert.falsy(s:get_child(nil,"test2"));
+
+			s:remove_children();
+			assert.falsy(s.tags[1]);
+		end);
+	end);
+
 end);
