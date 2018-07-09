@@ -653,6 +653,7 @@ local function archive_itemstore(archive, config, user, node)
 		return archive:delete(user);
 	end
 	function get_set:resize(size) -- luacheck: ignore 212/self
+		max_items = size;
 		return archive:delete(user, {
 			truncate = size;
 		});
