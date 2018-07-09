@@ -221,7 +221,7 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 	local base_presence do
 		-- Try to use main jid's presence
 		local pr = occupant:get_presence();
-		if pr and (pr.attr.type ~= "unavailable" and occupant.role ~= nil) then
+		if pr and (occupant.role ~= nil or pr.attr.type == "unavailable") then
 			base_presence = st.clone(pr);
 		else -- user is leaving but didn't send a leave presence. make one for them
 			base_presence = st.presence {from = occupant.nick; type = "unavailable";};
@@ -369,12 +369,18 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	end
 	occupant:set_session(real_jid, st.presence({type="unavailable"})
 		:tag('status'):text(error_message));
-	self:save_occupant(occupant);
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";})
-		:tag("status", {code = "307"}):up()
-		:tag("status", {code = "333"})
-	self:publicise_occupant_status(occupant, x);
-	if occupant.jid == real_jid then -- Was last session
+	local is_last_session = occupant.jid == real_jid;
+	if is_last_session then
+		occupant.role = nil;
+	end
+	local new_occupant = self:save_occupant(occupant);
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+	if is_last_session then
+		x:tag("status", {code = "307"}):up()
+		 :tag("status", {code = "333"});
+	end
+	self:publicise_occupant_status(new_occupant or occupant, x);
+	if is_last_session then
 		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
 	end
 	return true;
