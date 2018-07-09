@@ -64,4 +64,57 @@ describe("util.pubsub", function ()
 		end);
 
 	end);
+
+	describe("#issue1082", function ()
+		local service = pubsub.new();
+
+		it("creates a node with max_items = 1", function ()
+			assert.truthy(service:create("node", true, { max_items = 1 }));
+		end);
+
+		it("changes max_items to 2", function ()
+			assert.truthy(service:set_node_config("node", true, { max_items = 2 }));
+		end);
+
+		it("publishes one item", function ()
+			assert.truthy(service:publish("node", true, "1", "item 1"));
+		end);
+
+		it("should return one item", function ()
+			local ok, ret = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same({ "1", ["1"] = "item 1" }, ret);
+		end);
+
+		it("publishes another item", function ()
+			assert.truthy(service:publish("node", true, "2", "item 2"));
+		end);
+
+		it("should return two items", function ()
+			local ok, ret = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same({
+				"2",
+				"1",
+				["1"] = "item 1",
+				["2"] = "item 2",
+			}, ret);
+		end);
+
+		it("publishes yet another item", function ()
+			assert.truthy(service:publish("node", true, "3", "item 3"));
+		end);
+
+		it("should still return only two items", function ()
+			local ok, ret = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same({
+				"3",
+				"2",
+				["2"] = "item 2",
+				["3"] = "item 3",
+			}, ret);
+		end);
+
+	end);
 end);
