@@ -596,9 +596,10 @@ end
 local function archive_itemstore(archive, config, user, node)
 	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
 	local get_set = {};
+	local max_items = config["max_items"];
 	function get_set:items() -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
-			limit = tonumber(config["max_items"]);
+			limit = tonumber(max_items);
 			reverse = true;
 		});
 		if not data then
