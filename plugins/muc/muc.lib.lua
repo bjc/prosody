@@ -127,6 +127,7 @@ function room_mt:save_occupant(occupant)
 		occupant = nil
 	end
 	self._occupants[id] = occupant
+	return occupant
 end
 
 function room_mt:route_to_occupant(occupant, stanza)
