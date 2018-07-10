@@ -156,6 +156,7 @@ end);
 -- Automatically destroy empty non-persistent rooms
 module:hook("muc-occupant-left",function(event)
 	local room = event.room
+	if room.destroying then return end
 	if not room:has_occupant() and not persistent.get(room) then -- empty, non-persistent room
 		module:fire_event("muc-room-destroyed", { room = room });
 	end
