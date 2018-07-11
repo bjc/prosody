@@ -269,9 +269,7 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 	end
 
 	local self_p, self_x;
-	if can_see_real_jids(whois, occupant) then
-		self_p, self_x = get_full_p();
-	else
+	do
 		-- Can always see your own full jids
 		-- But not allowed to see actor's
 		self_x = st.clone(x.self or base_x);
@@ -603,10 +601,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 
 	if dest_occupant ~= nil then
 		dest_occupant:set_session(real_jid, stanza);
-		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-		if orig_occupant == nil and self:get_whois() == "anyone" then
-			dest_x:tag("status", {code = "100"}):up();
-		end
 		self:save_occupant(dest_occupant);
 
 		if orig_occupant == nil or muc_x then
@@ -616,9 +610,12 @@ function room_mt:handle_normal_presence(origin, stanza)
 				return occupant:get_presence(real_jid) == nil;
 			end)
 		end
-		local self_x;
+		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+		local self_x = st.clone(dest_x);
+		if orig_occupant == nil and self:get_whois() == "anyone" then
+			self_x:tag("status", {code = "100"}):up();
+		end
 		if nick_changed then
-			self_x = st.clone(dest_x);
 			self_x:tag("status", {code="210"}):up();
 		end
 		self:publicise_occupant_status(dest_occupant, {base=dest_x,self=self_x});
