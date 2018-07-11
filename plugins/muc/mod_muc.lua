@@ -207,6 +207,7 @@ end
 function delete_room(room)
 	module:log("debug", "Deleting %s", room.jid);
 	room_configs:set(jid_split(room.jid), nil);
+	room_state:set(jid_split(room.jid), nil);
 	persistent_rooms:set(nil, room.jid, nil);
 	room_items_cache[room.jid] = nil;
 end
