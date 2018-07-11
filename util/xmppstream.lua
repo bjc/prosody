@@ -130,16 +130,7 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 			t_insert(oldstanza.tags, stanza);
 		end
 	end
-	if lxp_supports_xmldecl then
-		function xml_handlers:XmlDecl(version, encoding, standalone)
-			session.xml_version = version;
-			session.xml_encoding = encoding;
-			session.xml_standalone = standalone;
-			if lxp_supports_bytecount then
-				cb_handleprogress(self:getcurrentbytecount());
-			end
-		end
-	end
+
 	function xml_handlers:StartCdataSection()
 		if lxp_supports_bytecount then
 			if stanza then
@@ -210,6 +201,18 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 		end
 	end
 
+	if lxp_supports_xmldecl then
+		function xml_handlers:XmlDecl(version, encoding, standalone)
+			if lxp_supports_bytecount then
+				cb_handleprogress(self:getcurrentbytecount());
+			end
+			if (encoding and encoding:lower() ~= "utf-8")
+			or (standalone == "no")
+			or (version and version ~= "1.0") then
+				return restricted_handler(self);
+			end
+		end
+	end
 	if lxp_supports_doctype then
 		xml_handlers.StartDoctypeDecl = restricted_handler;
 	end
