@@ -850,7 +850,7 @@ function room_mt:destroy(newjid, reason, password)
 	x:up();
 	self.destroying = reason or true;
 	self:clear(x);
-	module:fire_event("muc-room-destroyed", { room = self });
+	module:fire_event("muc-room-destroyed", { room = self, reason = reason, newjid = newjid, password = password });
 	return true;
 end
 
