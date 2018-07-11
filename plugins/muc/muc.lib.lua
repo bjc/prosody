@@ -843,7 +843,6 @@ end
 
 function room_mt:destroy(newjid, reason, password)
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-		:tag("item", { affiliation='none', role='none' }):up()
 		:tag("destroy", {jid=newjid});
 	if reason then x:tag("reason"):text(reason):up(); end
 	if password then x:tag("password"):text(password):up(); end
