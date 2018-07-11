@@ -188,7 +188,12 @@ local function restore_room(jid)
 			module:log("debug", "Could not restore state of room %s: %s", jid, s_err);
 		end
 		local room = muclib.restore_room(data, state);
-		return track_room(room);
+		if track_room(room) then
+			room_state:set(node, nil);
+			return room;
+		else
+			return false;
+		end
 	elseif err then
 		module:log("error", "Error restoring room %s from storage: %s", jid, err);
 		local room = muclib.new_room(jid, { locked = math.huge });
