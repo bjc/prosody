@@ -10,6 +10,7 @@ New features
     -   Store inactive rooms to disk
     -   Store rooms to disk on shutdown
     -   Voice requests
+    -   Tombstones in place of destroyed rooms
 -   PubSub features
     -   Persistence
     -   Affiliations
