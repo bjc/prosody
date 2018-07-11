@@ -404,6 +404,10 @@ for event_name, method in pairs {
 					room = nil;
 				else
 					local reply = st.error_reply(stanza, "cancel", "gone", room._data.reason)
+					if room._data.newjid then
+						local uri = "xmpp:"..room._data.newjid.."?join";
+						reply:get_child("error"):child_with_name("gone"):text(uri);
+					end
 					event.origin.send(reply);
 					return true;
 				end
