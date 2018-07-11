@@ -323,6 +323,29 @@ module:hook("muc-room-destroyed",function(event)
 	delete_room(room);
 end);
 
+if module:get_option_boolean("muc_tombstones", true) then
+
+	local ttl = module:get_option_number("muc_tombstone_expiry", 86400 * 31);
+
+	module:hook("muc-room-destroyed",function(event)
+		local room = event.room;
+		if not room:get_persistent() then return end
+
+		local tombstone = new_room(room.jid, {
+			locked = os.time() + ttl;
+			destroyed = true;
+			reason = event.reason;
+			newjid = event.newjid;
+			-- password?
+		});
+		tombstone.save = room_save;
+		tombstone:set_persistent(true);
+		tombstone:set_hidden(true);
+		tombstone:save(true);
+		return true;
+	end, -10);
+end
+
 do
 	local restrict_room_creation = module:get_option("restrict_room_creation");
 	if restrict_room_creation == true then
@@ -372,6 +395,25 @@ for event_name, method in pairs {
 		local origin, stanza = event.origin, event.stanza;
 		local room_jid = jid_bare(stanza.attr.to);
 		local room = get_room_from_jid(room_jid);
+
+		if room and room._data.destroyed then
+			if stanza.attr.type == nil and stanza.name == "presence" then
+				if room._data.locked < os.time() then
+					-- Allow the room to be recreated after time has passed
+					delete_room(room);
+					room = nil;
+				else
+					local reply = st.reply(stanza)
+						:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
+							:tag("item", { affiliation='none', role='none' }):up()
+							:tag("destroy", {jid=room._data.newjid}):text(room._data.reason);
+					reply.attr.type = "unavailable";
+					event.origin.send(reply);
+					return true;
+				end
+			end
+		end
+
 		if room == nil then
 			-- Watch presence to create rooms
 			if stanza.attr.type == nil and stanza.name == "presence" then
