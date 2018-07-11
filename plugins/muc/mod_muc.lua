@@ -403,11 +403,7 @@ for event_name, method in pairs {
 					delete_room(room);
 					room = nil;
 				else
-					local reply = st.reply(stanza)
-						:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-							:tag("item", { affiliation='none', role='none' }):up()
-							:tag("destroy", {jid=room._data.newjid}):text(room._data.reason);
-					reply.attr.type = "unavailable";
+					local reply = st.error_reply(stanza, "cancel", "gone", room._data.reason)
 					event.origin.send(reply);
 					return true;
 				end
