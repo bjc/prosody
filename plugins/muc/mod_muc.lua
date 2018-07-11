@@ -398,8 +398,8 @@ for event_name, method in pairs {
 
 		if room and room._data.destroyed then
 			if stanza.attr.type == nil and stanza.name == "presence" then
-				if room._data.locked < os.time() then
-					-- Allow the room to be recreated after time has passed
+				if is_admin(stanza.attr.from) or room._data.locked < os.time() then
+					-- Allow the room to be recreated by admin or after time has passed
 					delete_room(room);
 					room = nil;
 				else
