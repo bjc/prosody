@@ -39,7 +39,7 @@ end);
 
 module:hook("muc-room-destroyed", function(event)
 	set_persistent(event.room, false);
-end);
+end, -100);
 
 return {
 	get = get_persistent;
