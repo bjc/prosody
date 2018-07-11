@@ -439,14 +439,12 @@ function room_mt:handle_first_presence(origin, stanza)
 	if self:get_whois() == "anyone" then
 		dest_x:tag("status", {code = "100"}):up();
 	end
-	local self_x;
 	if nick_changed then
-		self_x = st.clone(dest_x);
-		self_x:tag("status", {code = "210"}):up();
+		dest_x:tag("status", {code = "210"}):up();
 	end
 	self:save_occupant(dest_occupant);
 
-	self:publicise_occupant_status(dest_occupant, {base = dest_x, self = self_x});
+	self:publicise_occupant_status(dest_occupant, dest_x);
 
 	module:fire_event("muc-occupant-joined", {
 		room = self;
