@@ -402,7 +402,7 @@ module:hook("muc-occupant-pre-join", function(event)
 end, -10);
 
 module:hook("muc-occupant-pre-join", function(event)
-	local nick = jid_resource(event.stanza.attr.from);
+	local nick = jid_resource(event.occupant.nick);
 	if not nick:find("%S") then
 		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden"));
 		return true;
