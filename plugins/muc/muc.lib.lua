@@ -409,6 +409,13 @@ module:hook("muc-occupant-pre-join", function(event)
 	end
 end, 1);
 
+module:hook("muc-occupant-pre-change", function(event)
+	if not jid_resource(event.dest_occupant.nick):find("%S") then
+		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden"));
+		return true;
+	end
+end, 1);
+
 function room_mt:handle_first_presence(origin, stanza)
 	if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
 		module:log("debug", "Room creation without <x>, possibly desynced");
