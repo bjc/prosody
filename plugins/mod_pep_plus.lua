@@ -62,6 +62,15 @@ local function nodestore(username)
 		return data, err;
 	end
 	function store:set(node, data)
+		if data then
+			-- Save the data without subscriptions
+			-- TODO Save explicit subscriptions maybe?
+			data = {
+				name = data.name;
+				config = data.config;
+				affiliations = data.affiliations;
+			};
+		end
 		return node_config:set(username, node, data);
 	end
 	function store:users()
