@@ -30,7 +30,7 @@ module:hook("muc-config-form", function(event)
 		desc = "In moderated rooms occupants must be given permission to speak by a room moderator";
 		value = get_moderated(event.room);
 	});
-end, 100-4);
+end, 80-3);
 
 module:hook("muc-config-submitted/muc#roomconfig_moderatedroom", function(event)
 	if set_moderated(event.room, event.value) then

@@ -59,7 +59,7 @@ module:hook("muc-config-form", function(event)
 		desc = "Specify the number of previous messages sent to new users when they join the room";
 		value = tostring(get_defaulthistorymessages(event.room))
 	});
-end, 100-10);
+end, 70-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_historylength", function(event)
 	if set_historylength(event.room, event.value) then

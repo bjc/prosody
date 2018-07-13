@@ -85,7 +85,7 @@ module:hook("muc-config-form", function(event)
 		label = "Allow members to invite new members";
 		value = get_allow_member_invites(event.room);
 	});
-end, 100-6);
+end, 90-3);
 
 module:hook("muc-config-submitted/muc#roomconfig_membersonly", function(event)
 	if set_members_only(event.room, event.value) then
