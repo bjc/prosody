@@ -458,6 +458,29 @@ function service:get_nodes(actor)
 	return true, self.nodes;
 end
 
+local function flatten_subscriptions(ret, serv, subs, node, node_obj)
+	for subscribed_jid, subscribed_nodes in pairs(subs) do
+		if node then -- Return only subscriptions to this node
+			if subscribed_nodes[node] then
+				ret[#ret+1] = {
+					node = node;
+					jid = subscribed_jid;
+					subscription = node_obj.subscribers[subscribed_jid];
+				};
+			end
+		else -- Return subscriptions to all nodes
+			local nodes = serv.nodes;
+			for subscribed_node in pairs(subscribed_nodes) do
+				ret[#ret+1] = {
+					node = subscribed_node;
+					jid = subscribed_jid;
+					subscription = nodes[subscribed_node].subscribers[subscribed_jid];
+				};
+			end
+		end
+	end
+end
+
 function service:get_subscriptions(node, actor, jid)
 	-- Access checking
 	local cap;
@@ -477,32 +500,19 @@ function service:get_subscriptions(node, actor, jid)
 			return false, "item-not-found";
 		end
 	end
+	local ret = {};
+	if jid == nil then
+		for _, subs in pairs(self.subscriptions) do
+			flatten_subscriptions(ret, self, subs, node, node_obj)
+		end
+		return true, ret;
+	end
 	local normal_jid = self.config.normalize_jid(jid);
 	local subs = self.subscriptions[normal_jid];
 	-- We return the subscription object from the node to save
 	-- a get_subscription() call for each node.
-	local ret = {};
 	if subs then
-		for subscribed_jid, subscribed_nodes in pairs(subs) do
-			if node then -- Return only subscriptions to this node
-				if subscribed_nodes[node] then
-					ret[#ret+1] = {
-						node = node;
-						jid = subscribed_jid;
-						subscription = node_obj.subscribers[subscribed_jid];
-					};
-				end
-			else -- Return subscriptions to all nodes
-				local nodes = self.nodes;
-				for subscribed_node in pairs(subscribed_nodes) do
-					ret[#ret+1] = {
-						node = subscribed_node;
-						jid = subscribed_jid;
-						subscription = nodes[subscribed_node].subscribers[subscribed_jid];
-					};
-				end
-			end
-		end
+		flatten_subscriptions(ret, self, subs, node, node_obj)
 	end
 	return true, ret;
 end
