@@ -29,8 +29,9 @@ end
 local function add_form_option(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_lang";
-		label = "Language tag for Room (e.g. 'en', 'de', 'fr' etc.)";
+		label = "Language tag for room (e.g. 'en', 'de', 'fr' etc.)";
 		type = "text-single";
+		desc = "Indicate the primary language spoken in this room";
 		value = get_language(event.room) or "";
 	});
 end

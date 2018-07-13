@@ -32,6 +32,7 @@ local function add_form_option(event)
 		name = "muc#roomconfig_roomdesc";
 		type = "text-single";
 		label = "Description";
+		desc = "A brief description of the room";
 		value = get_description(event.room) or "";
 	});
 end

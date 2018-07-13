@@ -26,7 +26,8 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_moderatedroom";
 		type = "boolean";
-		label = "Make Room Moderated?";
+		label = "Moderated (require permission to speak)";
+		desc = "In moderated rooms occupants must be given permission to speak by a room moderator";
 		value = get_moderated(event.room);
 	});
 end, 100-4);
@@ -40,6 +41,8 @@ end);
 module:hook("muc-get-default-role", function(event)
 	if event.affiliation == nil then
 		if get_moderated(event.room) then
+			-- XEP-0045:
+			-- An implementation MAY grant voice by default to visitors in unmoderated rooms.
 			return "visitor"
 		end
 	end

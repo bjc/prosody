@@ -41,7 +41,8 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_changesubject";
 		type = "boolean";
-		label = "Allow Occupants to Change Subject?";
+		label = "Allow anyone to set the room's subject";
+		desc = "Choose whether anyone, or only moderators, may set the room's subject";
 		value = get_changesubject(event.room);
 	});
 end, 100-8);
