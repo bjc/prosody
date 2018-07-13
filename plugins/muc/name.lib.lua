@@ -24,7 +24,7 @@ local function insert_name_into_form(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_roomname";
 		type = "text-single";
-		label = "Name";
+		label = "Title";
 		value = event.room._data.name;
 	});
 end

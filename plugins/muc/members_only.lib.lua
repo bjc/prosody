@@ -64,7 +64,7 @@ module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = get_members_only(event.room) and "muc_membersonly" or "muc_open"}):up();
 	table.insert(event.form, {
 		name = "{http://prosody.im/protocol/muc}roomconfig_allowmemberinvites";
-		label = "Allow members to invite new members?";
+		label = "Allow members to invite new members";
 		type = "boolean";
 		value = not not get_allow_member_invites(event.room);
 	});
@@ -75,13 +75,14 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_membersonly";
 		type = "boolean";
-		label = "Make Room Members-Only?";
+		label = "Only allow members to join";
+		desc = "Enable this to only allow access for room owners, admins and members";
 		value = get_members_only(event.room);
 	});
 	table.insert(event.form, {
 		name = "{http://prosody.im/protocol/muc}roomconfig_allowmemberinvites";
 		type = "boolean";
-		label = "Allow members to invite new members?";
+		label = "Allow members to invite new members";
 		value = get_allow_member_invites(event.room);
 	});
 end, 100-6);

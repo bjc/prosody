@@ -32,9 +32,9 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = 'muc#roomconfig_whois',
 		type = 'list-single',
-		label = 'Who May Discover Real JIDs?',
+		label = 'Addresses (JIDs) of room occupants may be viewed by:',
 		value = {
-			{ value = 'moderators', label = 'Moderators Only', default = whois == 'moderators' },
+			{ value = 'moderators', label = 'Moderators only', default = whois == 'moderators' },
 			{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
 		}
 	});

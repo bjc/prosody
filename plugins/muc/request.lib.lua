@@ -25,16 +25,18 @@ local voice_request_form = require "util.dataforms".new({
 		name = "muc#jid";
 		type = "jid-single";
 		label = "User ID";
+		desc = "The user's JID (address)";
 	},
 	{
 		name = "muc#roomnick";
 		type = "text-single";
-		label = "Room Nickname";
+		label = "Room nickname";
+		desc = "The user's nickname within the room";
 	},
 	{
 		name = "muc#role";
 		type = "list-single";
-		label = "Requested Role";
+		label = "Requested role";
 		value = "participant";
 		options = {
 			"none",
@@ -47,6 +49,7 @@ local voice_request_form = require "util.dataforms".new({
 		name = "muc#request_allow";
 		type = "boolean";
 		label = "Grant voice to this person?";
+		desc = "Specify whether this person is able to speak in a moderated room";
 		value = false;
 	}
 });

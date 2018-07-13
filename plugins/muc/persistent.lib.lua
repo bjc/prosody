@@ -22,7 +22,8 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_persistentroom";
 		type = "boolean";
-		label = "Make Room Persistent?";
+		label = "Persistent (room should remain even when it is empty)";
+		desc = "Rooms are automatically deleted when they are empty, unless this option is enabled";
 		value = get_persistent(event.room);
 	});
 end, 100-3);
