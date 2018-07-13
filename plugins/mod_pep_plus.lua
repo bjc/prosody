@@ -69,6 +69,7 @@ local function nodestore(username)
 				name = data.name;
 				config = data.config;
 				affiliations = data.affiliations;
+				subscribers = {};
 			};
 		end
 		return node_config:set(username, node, data);
