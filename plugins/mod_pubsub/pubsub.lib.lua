@@ -267,6 +267,44 @@ function handlers.owner_get_subscriptions(origin, stanza, subscriptions, service
 	return true;
 end
 
+function handlers.owner_set_subscriptions(origin, stanza, subscriptions, service)
+	local node = subscriptions.attr.node;
+	if not node then
+		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
+		return true;
+	end
+	if not service:may(node, stanza.attr.from, "subscribe_other") then
+		origin.send(pubsub_error_reply(stanza, "forbidden"));
+		return true;
+	end
+
+	local node_obj = service.nodes[node];
+	if not node_obj then
+		origin.send(pubsub_error_reply(stanza, "item-not-found"));
+		return true;
+	end
+
+	for subscription_tag in subscriptions:childtags("subscription") do
+		if subscription_tag.attr.subscription == 'subscribed' then
+			local ok, err = service:add_subscription(node, stanza.attr.from, subscription_tag.attr.jid);
+			if not ok then
+				origin.send(pubsub_error_reply(stanza, err));
+				return true;
+			end
+		elseif subscription_tag.attr.subscription == 'none' then
+			local ok, err = service:remove_subscription(node, stanza.attr.from, subscription_tag.attr.jid);
+			if not ok then
+				origin.send(pubsub_error_reply(stanza, err));
+				return true;
+			end
+		end
+	end
+
+	local reply = st.reply(stanza);
+	origin.send(reply);
+	return true;
+end
+
 function handlers.set_create(origin, stanza, create, service)
 	local node = create.attr.node;
 	local ok, ret, reply;
