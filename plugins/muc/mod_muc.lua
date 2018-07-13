@@ -85,6 +85,8 @@ local st = require "util.stanza";
 local cache = require "util.cache";
 local um_is_admin = require "core.usermanager".is_admin;
 
+module:require "muc/config_form_sections";
+
 module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
 module:add_feature("http://jabber.org/protocol/muc");

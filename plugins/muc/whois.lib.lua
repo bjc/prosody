@@ -38,7 +38,7 @@ module:hook("muc-config-form", function(event)
 			{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
 		}
 	});
-end, 100-9);
+end, 80-4);
 
 module:hook("muc-config-submitted/muc#roomconfig_whois", function(event)
 	if set_whois(event.room, event.value) then

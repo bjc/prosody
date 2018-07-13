@@ -26,7 +26,7 @@ module:hook("muc-config-form", function(event)
 		desc = "Rooms are automatically deleted when they are empty, unless this option is enabled";
 		value = get_persistent(event.room);
 	});
-end, 100-3);
+end, 100-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_persistentroom", function(event)
 	if set_persistent(event.room, event.value) then

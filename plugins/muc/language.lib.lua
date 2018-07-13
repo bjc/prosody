@@ -37,7 +37,7 @@ local function add_form_option(event)
 end
 
 module:hook("muc-disco#info", add_disco_form);
-module:hook("muc-config-form", add_form_option, 100-9.5);
+module:hook("muc-config-form", add_form_option, 100-3);
 
 module:hook("muc-config-submitted/muc#roomconfig_lang", function(event)
 	if set_language(event.room, event.value) then

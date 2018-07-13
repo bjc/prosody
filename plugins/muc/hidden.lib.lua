@@ -22,11 +22,11 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_publicroom";
 		type = "boolean";
-		label = "Include room in public lists";
+		label = "Include room information in public lists";
 		desc = "Enable this to allow people to find the room";
 		value = not get_hidden(event.room);
 	});
-end, 100-5);
+end, 100-9);
 
 module:hook("muc-config-submitted/muc#roomconfig_publicroom", function(event)
 	if set_hidden(event.room, not event.value) then

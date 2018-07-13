@@ -45,7 +45,7 @@ module:hook("muc-config-form", function(event)
 		desc = "Choose whether anyone, or only moderators, may set the room's subject";
 		value = get_changesubject(event.room);
 	});
-end, 100-8);
+end, 80-1);
 
 module:hook("muc-config-submitted/muc#roomconfig_changesubject", function(event)
 	if set_changesubject(event.room, event.value) then
