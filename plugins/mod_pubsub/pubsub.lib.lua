@@ -46,7 +46,6 @@ local function config_to_xep0060(node_config)
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
-		["pubsub#include_body"] = node_config["include_body"];
 	}
 end
 
@@ -57,7 +56,6 @@ local function config_from_xep0060(config)
 		["max_items"] = tonumber(config["pubsub#max_items"]);
 		["persist_items"] = config["pubsub#persist_items"];
 		["notification_type"] = config["pubsub#notification_type"];
-		["include_body"] = config["pubsub#include_body"];
 	}
 end
 
@@ -88,11 +86,6 @@ local node_config_form = dataform {
 		label = "Persist items to storage";
 	};
 	{
-		type = "boolean";
-		name = "pubsub#include_body";
-		label = "Receive message body in addition to payload?";
-	};
-	{
 		type = "list-single";
 		name = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
@@ -108,8 +101,12 @@ local options_form = dataform {
 		type = "hidden";
 		name = "FORM_TYPE";
 		value = "http://jabber.org/protocol/pubsub#subscribe_options";
-	}
-	-- No options yet. File a feature request ;)
+	};
+	{
+		type = "boolean";
+		name = "pubsub#include_body";
+		label = "Receive message body in addition to payload?";
+	};
 };
 
 local node_metadata_form = dataform {

@@ -51,13 +51,14 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 		message:add_child(item);
 	end
 
+	local summary;
 	-- Compose a sensible textual representation of at least Atom payloads
-	if node_obj and item and node_obj.config.include_body and item.tags[1] then
+	if item and item.tags[1] then
 		local payload = item.tags[1];
 		if payload.attr.xmlns == "http://www.w3.org/2005/Atom" then
 			message:reset();
 			local title = payload:get_child_text("title");
-			local summary = payload:get_child_text("summary");
+			summary = payload:get_child_text("summary");
 			if not summary and title then
 				local author = payload:find("author/name#");
 				summary = title;
@@ -65,13 +66,17 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 					summary = author .. " posted " .. summary;
 				end
 			end
-			if summary then
-				message:body(summary);
-			end
 		end
 	end
 
-	module:broadcast(jids, message, pairs);
+	for jid, options in pairs(jids) do
+		local new_stanza = st.clone(message);
+		if type(options) == "table" and options["pubsub#include_body"] then
+			new_stanza:body(summary);
+		end
+		new_stanza.attr.to = jid;
+		module:send(new_stanza);
+	end
 end
 
 function is_item_stanza(item)
