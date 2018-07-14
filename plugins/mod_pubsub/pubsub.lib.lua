@@ -38,6 +38,29 @@ local function pubsub_error_reply(stanza, error)
 end
 _M.pubsub_error_reply = pubsub_error_reply;
 
+-- util.pubsub is meant to be agnostic to XEP-0060
+local function config_to_xep0060(node_config)
+	return {
+		["pubsub#title"] = node_config["title"];
+		["pubsub#description"] = node_config["description"];
+		["pubsub#max_items"] = tostring(node_config["max_items"]);
+		["pubsub#persist_items"] = node_config["persist_items"];
+		["pubsub#notification_type"] = node_config["notification_type"];
+		["pubsub#include_body"] = node_config["include_body"];
+	}
+end
+
+local function config_from_xep0060(config)
+	return {
+		["title"] = config["pubsub#title"];
+		["description"] = config["pubsub#description"];
+		["max_items"] = tonumber(config["pubsub#max_items"]);
+		["persist_items"] = config["pubsub#persist_items"];
+		["notification_type"] = config["pubsub#notification_type"];
+		["include_body"] = config["pubsub#include_body"];
+	}
+end
+
 local node_config_form = dataform {
 	{
 		type = "hidden";
@@ -164,10 +187,7 @@ function _M.handle_disco_info_node(event, service)
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
 	if node_obj.config then
-		reply:add_child(node_metadata_form:form({
-			["pubsub#title"] = node_obj.config.title;
-			["pubsub#description"] = node_obj.config.description;
-		}, "result"));
+		reply:add_child(node_metadata_form:form(config_to_xep0060(node_obj.config), "result"));
 	end
 end
 
@@ -321,12 +341,7 @@ function handlers.set_create(origin, stanza, create, service)
 			origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 			return true;
 		end
-		config = {
-			["max_items"] = tonumber(form_data["pubsub#max_items"]);
-			["persist_items"] = form_data["pubsub#persist_items"];
-			["notification_type"] = form_data["pubsub#notification_type"];
-			["include_body"] = form_data["pubsub#include_body"];
-		};
+		config = config_from_xep0060(form_data);
 	end
 	if node then
 		ok, ret = service:create(node, stanza.attr.from, config);
@@ -509,14 +524,7 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 	end
 
 	local node_config = node_obj.config;
-	local pubsub_form_data = {
-		["pubsub#title"] = node_config["title"];
-		["pubsub#description"] = node_config["description"];
-		["pubsub#max_items"] = tostring(node_config["max_items"]);
-		["pubsub#persist_items"] = node_config["persist_items"];
-		["pubsub#notification_type"] = node_config["notification_type"];
-		["pubsub#include_body"] = node_config["include_body"];
-	}
+	local pubsub_form_data = config_to_xep0060(node_config);
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("configure", { node = node })
@@ -545,14 +553,7 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 		return true;
 	end
-	local new_config = {
-		["title"] = form_data["pubsub#title"];
-		["description"] = form_data["pubsub#description"];
-		["max_items"] = tonumber(form_data["pubsub#max_items"]);
-		["persist_items"] = form_data["pubsub#persist_items"];
-		["notification_type"] = form_data["pubsub#notification_type"];
-		["include_body"] = form_data["pubsub#include_body"];
-	};
+	local new_config = config_from_xep0060(form_data);
 	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, err));
@@ -563,10 +564,7 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 end
 
 function handlers.owner_get_default(origin, stanza, default, service) -- luacheck: ignore 212/default
-	local pubsub_form_data = {
-		["pubsub#max_items"] = tostring(service.node_defaults["max_items"]);
-		["pubsub#persist_items"] = service.node_defaults["persist_items"]
-	}
+	local pubsub_form_data = config_to_xep0060(service.node_defaults);
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("default")
