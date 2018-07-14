@@ -55,17 +55,9 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	-- Compose a sensible textual representation of at least Atom payloads
 	if item and item.tags[1] then
 		local payload = item.tags[1];
-		if payload.attr.xmlns == "http://www.w3.org/2005/Atom" then
-			local title = payload:get_child_text("title");
-			summary = payload:get_child_text("summary");
-			if not summary and title then
-				local author = payload:find("author/name#");
-				summary = title;
-				if author then
-					summary = author .. " posted " .. summary;
-				end
-			end
-		end
+		summary = module:fire_event("pubsub-summary/"..payload.attr.xmlns, {
+			kind = kind, node = node, jids = jids, actor = actor, item = item, payload = payload,
+		});
 	end
 
 	for jid, options in pairs(jids) do
@@ -81,6 +73,20 @@ end
 function is_item_stanza(item)
 	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
 end
+
+module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
+	local payload = event.item;
+	local title = payload:get_child_text("title");
+	local summary = payload:get_child_text("summary");
+	if not summary and title then
+		local author = payload:find("author/name#");
+		summary = title;
+		if author then
+			summary = author .. " posted " .. summary;
+		end
+	end
+	return summary;
+end);
 
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
