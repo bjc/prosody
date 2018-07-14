@@ -70,7 +70,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 
 	for jid, options in pairs(jids) do
 		local new_stanza = st.clone(message);
-		if type(options) == "table" and options["pubsub#include_body"] then
+		if summary and type(options) == "table" and options["pubsub#include_body"] then
 			new_stanza:body(summary);
 		end
 		new_stanza.attr.to = jid;
