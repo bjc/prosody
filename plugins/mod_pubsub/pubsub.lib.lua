@@ -24,6 +24,7 @@ local pubsub_errors = {
 	["nodeid-required"] = { "modify", "bad-request", nil, "nodeid-required" };
 	["item-not-found"] = { "cancel", "item-not-found" };
 	["not-subscribed"] = { "modify", "unexpected-request", nil, "not-subscribed" };
+	["invalid-options"] = { "modify", "bad-request", nil, "invalid-options" };
 	["forbidden"] = { "auth", "forbidden" };
 	["not-allowed"] = { "cancel", "not-allowed" };
 	["internal-server-error"] = { "wait", "internal-server-error" };
@@ -450,6 +451,35 @@ function handlers.get_options(origin, stanza, options, service)
 		:tag("pubsub", { xmlns = xmlns_pubsub })
 			:tag("options", { node = node, jid = jid })
 				:add_child(options_form:form(ret)));
+	return true;
+end
+
+function handlers.set_options(origin, stanza, options, service)
+	local node, jid = options.attr.node, options.attr.jid;
+	jid = jid_prep(jid);
+	if not (node and jid) then
+		origin.send(pubsub_error_reply(stanza, jid and "nodeid-required" or "invalid-jid"));
+		return true;
+	end
+	local ok, ret = service:get_subscription(node, stanza.attr.from, jid);
+	if not ok then
+		origin.send(pubsub_error_reply(stanza, ret));
+		return true;
+	elseif not ret then
+		origin.send(pubsub_error_reply(stanza, "not-subscribed"));
+		return true;
+	end
+	local new_subopts, err = options_form:data(options.tags[1]);
+	if not new_subopts then
+		origin.send(pubsub_error_reply(stanza, ret));
+		return true;
+	end
+	local ok, err = service:add_subscription(node, stanza.attr.from, jid, new_subopts);
+	if not ok then
+		origin.send(pubsub_error_reply(stanza, err));
+		return true;
+	end
+	origin.send(st.reply(stanza));
 	return true;
 end
 
