@@ -56,7 +56,6 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	if item and item.tags[1] then
 		local payload = item.tags[1];
 		if payload.attr.xmlns == "http://www.w3.org/2005/Atom" then
-			message:reset();
 			local title = payload:get_child_text("title");
 			summary = payload:get_child_text("summary");
 			if not summary and title then
