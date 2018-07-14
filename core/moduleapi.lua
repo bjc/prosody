@@ -366,7 +366,7 @@ function api:broadcast(jids, stanza, iter)
 	for jid in (iter or it.values)(jids) do
 		local new_stanza = st.clone(stanza);
 		new_stanza.attr.to = jid;
-		core_post_stanza(hosts[self.host], new_stanza);
+		self:send(new_stanza);
 	end
 end
 
