@@ -187,7 +187,10 @@ function _M.handle_disco_info_node(event, service)
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
 	if node_obj.config then
-		reply:add_child(node_metadata_form:form(config_to_xep0060(node_obj.config), "result"));
+		reply:add_child(node_metadata_form:form({
+			["pubsub#title"] = node_obj.config.title;
+			["pubsub#description"] = node_obj.config.description;
+		}, "result"));
 	end
 end
 
