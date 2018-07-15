@@ -155,7 +155,7 @@ function form_t.data(layout, stanza)
 			if field.required then
 				errors[field.name] = "Required value missing";
 			end
-		else
+		elseif field.name then
 			present[field.name] = true;
 			local reader = field_readers[field.type];
 			if reader then
