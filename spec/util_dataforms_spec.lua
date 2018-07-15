@@ -15,6 +15,10 @@ describe("util.dataforms", function ()
 				value = "xmpp:prosody.im/spec/util.dataforms#1",
 			};
 			{
+				type = "fixed";
+				value = "Fixed field";
+			},
+			{
 				type = "boolean",
 				label = "boolean-label",
 				name = "boolean-field",
@@ -308,6 +312,12 @@ describe("util.dataforms", function ()
 			assert.equal(nil, dataforms.get_type({}));
 			assert.equal(nil, dataforms.get_type(st.stanza("no-a-form")));
 			assert.equal("xmpp:prosody.im/spec/util.dataforms#1", dataforms.get_type(xform));
+		end);
+	end);
+
+	describe(":data", function ()
+		it("works", function ()
+			assert.truthy(some_form:data(xform));
 		end);
 	end);
 end);
