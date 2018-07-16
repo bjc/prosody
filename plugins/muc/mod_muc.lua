@@ -399,20 +399,20 @@ for event_name, method in pairs {
 		local room = get_room_from_jid(room_jid);
 
 		if room and room._data.destroyed then
-			if stanza.attr.type == nil and stanza.name == "presence" then
-				if is_admin(stanza.attr.from) or room._data.locked < os.time() then
-					-- Allow the room to be recreated by admin or after time has passed
-					delete_room(room);
-					room = nil;
-				else
+			if room._data.locked < os.time() or (is_admin(stanza.attr.from) and stanza.name == "presence" and stanza.attr.type == nil) then
+				-- Allow the room to be recreated by admin or after time has passed
+				delete_room(room);
+				room = nil;
+			else
+				if stanza.attr.type ~= "error" then
 					local reply = st.error_reply(stanza, "cancel", "gone", room._data.reason)
 					if room._data.newjid then
 						local uri = "xmpp:"..room._data.newjid.."?join";
 						reply:get_child("error"):child_with_name("gone"):text(uri);
 					end
 					event.origin.send(reply);
-					return true;
 				end
+				return true;
 			end
 		end
 
