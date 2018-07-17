@@ -1088,7 +1088,7 @@ module:hook("muc-invite", function(event)
 		local invite = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("invite");
 		local reason = invite:get_child_text("reason") or "";
 		stanza:tag("body")
-			:text(invite.attr.from.." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+			:text(jid_bare(stanza.attr.from).." invited you to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
 		:up();
 	end
 end);
