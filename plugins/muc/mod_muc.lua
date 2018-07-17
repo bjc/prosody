@@ -13,7 +13,7 @@
 -- delete_room(room)
 -- forget_room(room)
 -- get_room_from_jid(jid) -> room
--- each_room(local_only) -> () -> room
+-- each_room(live_only) -> () -> room
 -- shutdown_component()
 
 if module:get_host_type() ~= "component" then
@@ -249,8 +249,8 @@ function create_room(room_jid, config)
 	return track_room(room);
 end
 
-function each_room(local_only)
-	if local_only then
+function each_room(live_only)
+	if live_only then
 		return rooms:values();
 	end
 	return coroutine.wrap(function ()
