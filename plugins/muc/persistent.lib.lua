@@ -7,6 +7,9 @@
 -- COPYING file in the source package for more information.
 --
 
+local restrict_persistent = not module:get_option_boolean("muc_room_allow_persistent", true);
+local um_is_admin = require "core.usermanager".is_admin;
+
 local function get_persistent(room)
 	return room._data.persistent;
 end
@@ -19,6 +22,10 @@ local function set_persistent(room, persistent)
 end
 
 module:hook("muc-config-form", function(event)
+	if restrict_persistent and not um_is_admin(event.actor, module.host) then
+		-- Don't show option if hidden rooms are restricted and user is not admin of this host
+		return;
+	end
 	table.insert(event.form, {
 		name = "muc#roomconfig_persistentroom";
 		type = "boolean";
@@ -29,6 +36,9 @@ module:hook("muc-config-form", function(event)
 end, 100-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_persistentroom", function(event)
+	if restrict_persistent and not um_is_admin(event.actor, module.host) then
+		return; -- Not allowed
+	end
 	if set_persistent(event.room, event.value) then
 		event.status_codes["104"] = true;
 	end

@@ -7,6 +7,9 @@
 -- COPYING file in the source package for more information.
 --
 
+local restrict_public = not module:get_option_boolean("muc_room_allow_public", true);
+local um_is_admin = require "core.usermanager".is_admin;
+
 local function get_hidden(room)
 	return room._data.hidden;
 end
@@ -19,6 +22,10 @@ local function set_hidden(room, hidden)
 end
 
 module:hook("muc-config-form", function(event)
+	if restrict_public and not um_is_admin(event.actor, module.host) then
+		-- Don't show option if public rooms are restricted and user is not admin of this host
+		return;
+	end
 	table.insert(event.form, {
 		name = "muc#roomconfig_publicroom";
 		type = "boolean";
@@ -29,6 +36,9 @@ module:hook("muc-config-form", function(event)
 end, 100-9);
 
 module:hook("muc-config-submitted/muc#roomconfig_publicroom", function(event)
+	if restrict_public and not um_is_admin(event.actor, module.host) then
+		return; -- Not allowed
+	end
 	if set_hidden(event.room, not event.value) then
 		event.status_codes["104"] = true;
 	end
