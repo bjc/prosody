@@ -13,7 +13,9 @@
 -- delete_room(room)
 -- forget_room(room)
 -- get_room_from_jid(jid) -> room
--- each_room(live_only) -> () -> room
+-- each_room(live_only) -> () -> room [DEPRECATED]
+-- all_rooms() -> room
+-- live_rooms() -> room
 -- shutdown_component()
 
 if module:get_host_type() ~= "component" then
@@ -220,7 +222,7 @@ function delete_room(room)
 end
 
 function module.unload()
-	for room in rooms:values() do
+	for room in live_rooms() do
 		room:save(nil, true);
 		forget_room(room);
 	end
@@ -249,13 +251,10 @@ function create_room(room_jid, config)
 	return track_room(room);
 end
 
-function each_room(live_only)
-	if live_only then
-		return rooms:values();
-	end
+function all_rooms()
 	return coroutine.wrap(function ()
 		local seen = {}; -- Don't iterate over persistent rooms twice
-		for room in rooms:values() do
+		for room in live_rooms() do
 			coroutine.yield(room);
 			seen[room.jid] = true;
 		end
@@ -280,6 +279,17 @@ function each_room(live_only)
 	end);
 end
 
+function live_rooms()
+	return rooms:values();
+end
+
+function each_room(live_only)
+	if live_only then
+		return live_rooms();
+	end
+	return all_rooms();
+end
+
 module:hook("host-disco-items", function(event)
 	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
@@ -288,7 +298,7 @@ module:hook("host-disco-items", function(event)
 			reply:tag("item", { jid = jid, name = room_name }):up();
 		end
 	else
-		for room in each_room() do
+		for room in all_rooms() do
 			if not room:get_hidden() then
 				local jid, room_name = room.jid, room:get_name();
 				room_items_cache[jid] = room_name;
@@ -433,7 +443,7 @@ for event_name, method in pairs {
 end
 
 function shutdown_component()
-	for room in each_room(true) do
+	for room in live_rooms() do
 		room:save(nil, true);
 	end
 end
@@ -456,7 +466,7 @@ do -- Ad-hoc commands
 	};
 
 	local destroy_rooms_handler = adhoc_initial(destroy_rooms_layout, function()
-		return { rooms = array.collect(each_room()):pluck("jid"):sort(); };
+		return { rooms = array.collect(all_rooms()):pluck("jid"):sort(); };
 	end, function(fields, errors)
 		if errors then
 			local errmsg = {};
