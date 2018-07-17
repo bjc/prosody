@@ -801,7 +801,14 @@ function room_mt:process_form(origin, stanza)
 			end
 		end
 
-		local event = {room = self; origin = origin; stanza = stanza; fields = fields; status_codes = {};};
+		local event = {
+			room = self;
+			origin = origin;
+			stanza = stanza;
+			fields = fields;
+			status_codes = {};
+			actor = stanza.attr.from;
+		};
 		function event.update_option(name, field, allowed)
 			local new = fields[field];
 			if new == nil then return; end
