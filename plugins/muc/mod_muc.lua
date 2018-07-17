@@ -207,12 +207,14 @@ local function restore_room(jid)
 	end
 end
 
+-- Removes a room from memory, without saving it (save first if required)
 function forget_room(room)
 	module:log("debug", "Forgetting %s", room.jid);
 	rooms.save = nil;
 	rooms:set(room.jid, nil);
 end
 
+-- Removes a room from the database (may remain in memory)
 function delete_room(room)
 	module:log("debug", "Deleting %s", room.jid);
 	room_configs:set(jid_split(room.jid), nil);
