@@ -1132,7 +1132,7 @@ module:hook("muc-decline", function(event)
 		local decline = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
 		local reason = decline:get_child_text("reason") or "";
 		stanza:tag("body")
-			:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason == "" and (" ("..reason..")") or ""))
+			:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason ~= "" and (" ("..reason..")") or ""))
 		:up();
 	end
 end);
