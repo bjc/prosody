@@ -207,7 +207,6 @@ function core_route_stanza(origin, stanza)
 		-- old stanza routing code removed
 		core_post_stanza(origin, stanza);
 	else
-		log("debug", "Routing to remote...");
 		local host_session = hosts[from_host];
 		if not host_session then
 			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
@@ -218,7 +217,7 @@ function core_route_stanza(origin, stanza)
 				origin = origin, stanza = stanza, from_host = from_host, to_host = host });
 			stanza.attr.xmlns = xmlns; -- reset
 			if not routed then
-				log("debug", "... no, just kidding.");
+				log("debug", "Could not route stanza to remote");
 				if stanza.attr.type == "error" or (stanza.name == "iq" and stanza.attr.type == "result") then return; end
 				core_route_stanza(host_session, st.error_reply(stanza, "cancel", "not-allowed",
 					"Communication with remote domains is not enabled"));
