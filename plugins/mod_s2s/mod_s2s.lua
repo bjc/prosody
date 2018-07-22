@@ -110,14 +110,12 @@ function route_to_existing_session(event)
 			log("error", "Stanza: %s", tostring(stanza));
 			return false;
 		else
-			(host.log or log)("debug", "going to send stanza to "..to_host.." from "..from_host);
 			-- FIXME
 			if host.from_host ~= from_host then
 				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
 				log("error", "We are going to send from %s instead of %s", tostring(host.from_host), tostring(from_host));
 			end
 			if host.sends2s(stanza) then
-				host.log("debug", "stanza sent over %s", host.type);
 				return true;
 			end
 		end
