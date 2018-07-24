@@ -33,7 +33,7 @@ local function new_session(conn)
 	local filter = initialize_filters(session);
 	local w = conn.write;
 	session.send = function (t)
-		session.log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
+		session.log("debug", "Sending[%s]: %s", session.type, t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
 		if t.name then
 			t = filter("stanzas/out", t);
 		end
