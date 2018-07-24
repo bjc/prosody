@@ -541,7 +541,7 @@ local function initialize_session(session)
 	local w = conn.write;
 
 	function session.sends2s(t)
-		log("debug", "sending: %s", t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
+		log("debug", "Sending[%s]: %s", session.type, t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
 		if t.name then
 			t = filter("stanzas/out", t);
 		end
