@@ -71,12 +71,12 @@ local function item_to_xep54(item)
 		end
 
 		if prop_def.value then
-			t:tag(prop_def.value):text(item[1]):up();
+			t:text_tag(prop_def.value, item[1]);
 		elseif prop_def.values then
 			local prop_def_values = prop_def.values;
 			local repeat_last = prop_def_values.behaviour == "repeat-last" and prop_def_values[#prop_def_values];
 			for i=1,#item do
-				t:tag(prop_def.values[i] or repeat_last):text(item[i]):up();
+				t:text_tag(prop_def.values[i] or repeat_last, item[i]);
 			end
 		end
 	end
@@ -318,7 +318,7 @@ function vcard4:text(node, params, value) -- luacheck: ignore 212/params
 	self:tag(node:lower())
 	-- FIXME params
 	if type(value) == "string" then
-		self:tag("text"):text(value):up()
+		self:text_tag("text", value);
 	elseif vcard4[node] then
 		vcard4[node](value);
 	end
@@ -327,7 +327,7 @@ end
 
 function vcard4.N(value)
 	for i, k in ipairs(vCard_dtd.N.values) do
-		value:tag(k):text(value[i]):up();
+		value:text_tag(k, value[i]);
 	end
 end
 
@@ -339,17 +339,17 @@ local function item_to_vcard4(item)
 
 	local prop_def = vCard4_dtd[typ];
 	if prop_def == "text" then
-		t:tag("text"):text(item[1]):up();
+		t:text_tag("text", item[1]);
 	elseif prop_def == "uri" then
 		if item.ENCODING and item.ENCODING[1] == 'b' then
-			t:tag("uri"):text("data:;base64,"):text(item[1]):up();
+			t:text_tag("uri", "data:;base64," .. item[1]);
 		else
-			t:tag("uri"):text(item[1]):up();
+			t:text_tag("uri", item[1]);
 		end
 	elseif type(prop_def) == "table" then
 		if prop_def.values then
 			for i, v in ipairs(prop_def.values) do
-				t:tag(v:lower()):text(item[i] or ""):up();
+				t:text_tag(v:lower(), item[i]);
 			end
 		else
 			t:tag("unsupported",{xmlns="http://zash.se/protocol/vcardlib"})
