@@ -61,9 +61,11 @@ local function item_to_xep54(item)
 		end
 
 		if prop_def.props then
-			for _,v in pairs(prop_def.props) do
-				if item[v] then
-					t:tag(v):up();
+			for _,prop in pairs(prop_def.props) do
+				if item[prop] then
+					for _, v in ipairs(item[prop]) do
+						t:text_tag(prop, v);
+					end
 				end
 			end
 		end
