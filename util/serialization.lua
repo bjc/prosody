@@ -151,9 +151,9 @@ local function new(opt)
 			elseif mt then
 				tag = mt.__type;
 			end
-			if fr then
+			if type(fr) == "function" then
 				t = fr(t);
-				if tag then
+				if type(tag) == "string" then
 					o[l], l = tag, l + 1;
 				end
 			end
