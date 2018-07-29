@@ -423,7 +423,7 @@ module:hook("iq-result/bare/disco", function(event)
 		for jid, item in pairs(origin.roster) do -- for all interested contacts
 			if jid then
 				local contact_node, contact_host = jid_split(jid);
-				if contact_host == host and item.subscription == "both" or item.subscription == "from" then
+				if contact_host == host and (item.subscription == "both" or item.subscription == "from") then
 					update_subscriptions(user_bare, contact_node, notify);
 				end
 			end
