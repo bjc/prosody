@@ -278,9 +278,14 @@ local function new(session, stream_callbacks, stanza_size_limit)
 			if lxp_supports_bytecount then
 				n_outstanding_bytes = n_outstanding_bytes + #data;
 			end
-			local ok, err = parse(parser, data);
+			local _parser = parser;
+			local ok, err = parse(_parser, data);
 			if lxp_supports_bytecount and n_outstanding_bytes > stanza_size_limit then
 				return nil, "stanza-too-large";
+			end
+			if parser ~= _parser then
+				_parser:parse();
+				_parser:close();
 			end
 			return ok, err;
 		end,
