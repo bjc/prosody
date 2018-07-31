@@ -746,6 +746,10 @@ local function archive_itemstore(archive, config, user, node)
 		else
 			data, err = archive:delete(user, { key = key; });
 		end
+		-- TODO archive support for maintaining maximum items
+		archive:delete(user, {
+			truncate = max_items;
+		});
 		if not data then
 			module:log("error", "Unable to set item: %s", err);
 			return nil, err;
