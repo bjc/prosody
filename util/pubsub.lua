@@ -542,6 +542,13 @@ function service:set_node_config(node, actor, new_config)
 		return false, "item-not-found";
 	end
 
+	if self.config.check_node_config then
+		local ok = self.config.check_node_config(node, actor, new_config);
+		if not ok then
+			return false, "not-acceptable";
+		end
+	end
+
 	local old_config = node_obj.config;
 	node_obj.config = setmetatable(new_config, {__index=self.node_defaults});
 
