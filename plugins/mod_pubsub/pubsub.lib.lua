@@ -27,6 +27,7 @@ local pubsub_errors = {
 	["invalid-options"] = { "modify", "bad-request", nil, "invalid-options" };
 	["forbidden"] = { "auth", "forbidden" };
 	["not-allowed"] = { "cancel", "not-allowed" };
+	["not-acceptable"] = { "modify", "not-acceptable" };
 	["internal-server-error"] = { "wait", "internal-server-error" };
 };
 local function pubsub_error_reply(stanza, error)
