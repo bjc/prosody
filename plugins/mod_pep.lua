@@ -26,6 +26,8 @@ local host = module.host;
 local node_config = module:open_store("pep", "map");
 local known_nodes = module:open_store("pep");
 
+local max_max_items = module:get_option_number("pep_max_items", 256);
+
 function module.save()
 	return { services = services };
 end
@@ -36,6 +38,12 @@ end
 
 function is_item_stanza(item)
 	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
+end
+
+function check_node_config(node, actor, new_config)
+	if (new_config["max_items"] or 1) > max_max_items then
+		return false;
+	end
 end
 
 local function subscription_presence(username, recipient)
@@ -236,6 +244,8 @@ function get_pep_service(username)
 		end;
 
 		normalize_jid = jid_bare;
+
+		check_node_config = check_node_config;
 	});
 	local nodes, err = known_nodes:get(username);
 	if nodes then
