@@ -58,7 +58,7 @@ function form_t.form(layout, data, formtype)
 		end
 
 		local options = field.options;
-		if formtype == "form" and not options and value
+		if formtype == "form" and value
 		and (field_type == "list-single" or field_type == "list-multi") then
 			-- Allow passing dynamically generated options as values
 			options, value = value, nil;
