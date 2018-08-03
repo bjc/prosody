@@ -173,6 +173,7 @@ function track_room(room)
 		room.save = room_save;
 		return room;
 	end
+	-- Resource limit reached
 	return false;
 end
 
