@@ -26,7 +26,8 @@ local function new(layout)
 end
 
 function form_t.form(layout, data, formtype)
-	local form = st.stanza("x", { xmlns = xmlns_forms, type = formtype or "form" });
+	if not formtype then formtype = "form" end
+	local form = st.stanza("x", { xmlns = xmlns_forms, type = formtype });
 	if layout.title then
 		form:tag("title"):text(layout.title):up();
 	end
