@@ -50,7 +50,7 @@ function form_t.form(layout, data, formtype)
 			value = field.value;
 		end
 
-		if formtype ~= "result" and field.options then
+		if formtype == "form" and field.options then
 			local defaults = {};
 			for _, val in ipairs(field.options) do
 				if type(val) == "table" then
