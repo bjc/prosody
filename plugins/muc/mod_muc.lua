@@ -320,9 +320,11 @@ module:hook("muc-room-pre-create", function (event)
 	room:set_public(module:get_option_boolean("muc_room_default_public", false));
 	room:set_persistent(module:get_option_boolean("muc_room_default_persistent", room:get_persistent()));
 	room:set_members_only(module:get_option_boolean("muc_room_default_members_only", room:get_members_only()));
-	room:set_allow_member_invites(module:get_option_boolean("muc_room_default_allow_member_invites", room:get_allow_member_invites()));
+	room:set_allow_member_invites(module:get_option_boolean("muc_room_default_allow_member_invites",
+		room:get_allow_member_invites()));
 	room:set_moderated(module:get_option_boolean("muc_room_default_moderated", room:get_moderated()));
-	room:set_whois(module:get_option_boolean("muc_room_default_public_jids", room:get_whois() == "anyone") and "anyone" or "moderators");
+	room:set_whois(module:get_option_boolean("muc_room_default_public_jids",
+		room:get_whois() == "anyone") and "anyone" or "moderators");
 	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
 	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
 	room:set_language(event.stanza.attr["xml:lang"] or module:get_option_string("muc_room_default_language"));
@@ -416,7 +418,8 @@ for event_name, method in pairs {
 		local room = get_room_from_jid(room_jid);
 
 		if room and room._data.destroyed then
-			if room._data.locked < os.time() or (is_admin(stanza.attr.from) and stanza.name == "presence" and stanza.attr.type == nil) then
+			if room._data.locked < os.time()
+			or (is_admin(stanza.attr.from) and stanza.name == "presence" and stanza.attr.type == nil) then
 				-- Allow the room to be recreated by admin or after time has passed
 				delete_room(room);
 				room = nil;
@@ -487,7 +490,8 @@ do -- Ad-hoc commands
 		end
 		return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
 	end);
-	local destroy_rooms_desc = adhoc_new("Destroy Rooms", "http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
+	local destroy_rooms_desc = adhoc_new("Destroy Rooms",
+		"http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
 
 	module:provides("adhoc", destroy_rooms_desc);
 end

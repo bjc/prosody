@@ -81,7 +81,8 @@ module:hook("muc-voice-request", function(event)
 			["muc#roomnick"] = nick;
 		};
 
-		local message = st.message({ type = "normal"; from = event.room.jid }):add_child(voice_request_form:form(formdata)):up();
+		local message = st.message({ type = "normal"; from = event.room.jid })
+			:add_direct_child(voice_request_form:form(formdata));
 
 		event.room:broadcast(message, function (_, occupant)
 			return occupant.role == "moderator";
@@ -105,12 +106,14 @@ module:hook("muc-voice-response", function(event)
 	end
 
 	if not affected_occupant then
-		module:log("debug", "%s tried to grant voice to unknown occupant %s", jid_resource(occupant.nick), event.fields["muc#jid"]);
+		module:log("debug", "%s tried to grant voice to unknown occupant %s",
+			jid_resource(occupant.nick), event.fields["muc#jid"]);
 		return;
 	end
 
 	if affected_occupant.role ~= "visitor" then
-		module:log("debug", "%s tried to grant voice to %s but they already have it", jid_resource(occupant.nick), jid_resource(occupant.jid));
+		module:log("debug", "%s tried to grant voice to %s but they already have it",
+			jid_resource(occupant.nick), jid_resource(occupant.jid));
 		return;
 	end
 
