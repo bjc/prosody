@@ -44,6 +44,7 @@ function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node
 	if (new_config["max_items"] or 1) > max_max_items then
 		return false;
 	end
+	return true;
 end
 
 local function subscription_presence(username, recipient)
