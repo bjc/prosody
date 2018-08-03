@@ -188,6 +188,9 @@ local function restore_room(jid)
 	local data, err = room_configs:get(node);
 	if data then
 		module:log("debug", "Restoring room %s from storage", jid);
+		if module:fire_event("muc-room-pre-restore", { jid = jid, data = data }) == false then
+			return false;
+		end
 		local state, s_err = room_state:get(node);
 		if not state and s_err then
 			module:log("debug", "Could not restore state of room %s: %s", jid, s_err);
@@ -195,6 +198,7 @@ local function restore_room(jid)
 		local room = muclib.restore_room(data, state);
 		if track_room(room) then
 			room_state:set(node, nil);
+			module:fire_event("muc-room-restored", { jid = jid, room = room });
 			return room;
 		else
 			return false;
