@@ -28,6 +28,9 @@ end
 function form_t.form(layout, data, formtype)
 	if not formtype then formtype = "form" end
 	local form = st.stanza("x", { xmlns = xmlns_forms, type = formtype });
+	if formtype == "cancel" then
+		return form;
+	end
 	if layout.title then
 		form:tag("title"):text(layout.title):up();
 	end
