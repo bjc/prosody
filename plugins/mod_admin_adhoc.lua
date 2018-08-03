@@ -325,7 +325,7 @@ local get_online_users_layout = dataforms_new{
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
 	{ name = "max_items", type = "list-single", label = "Maximum number of users",
-		value = { "25", "50", "75", "100", "150", "200", "all" } };
+		options = { "25", "50", "75", "100", "150", "200", "all" } };
 	{ name = "details", type = "boolean", label = "Show details" };
 };
 
@@ -647,7 +647,10 @@ local shut_down_service_layout = dataforms_new{
 
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
 	{ name = "delay", type = "list-single", label = "Time delay before shutting down",
-		value = { {label = "30 seconds", value = "30"},
+		value = "5",
+		options = {
+				{label = "5 seconds", value = "5"},
+				{label = "30 seconds", value = "30"},
 			  {label = "60 seconds", value = "60"},
 			  {label = "90 seconds", value = "90"},
 			  {label = "2 minutes", value = "120"},
