@@ -24,7 +24,8 @@ local function set_whois(room, whois)
 end
 
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = get_whois(event.room) ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous"}):up();
+	local whois = get_whois(event.room) ~= "anyone" and "muc_semianonymous" or "muc_nonanonymous";
+	event.reply:tag("feature", { var = whois }):up();
 end);
 
 module:hook("muc-config-form", function(event)

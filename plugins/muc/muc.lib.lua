@@ -492,7 +492,8 @@ function room_mt:handle_normal_presence(origin, stanza)
 
 	if orig_occupant == nil and not muc_x and stanza.attr.type == nil then
 		module:log("debug", "Attempted join without <x>, possibly desynced");
-		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "You must join the room before sending presence updates"));
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found",
+			"You must join the room before sending presence updates"));
 		return true;
 	end
 
@@ -591,7 +592,8 @@ function room_mt:handle_normal_presence(origin, stanza)
 				orig_occupant:remove_session(real_jid);
 				log("debug", "generating nick change for %s", real_jid);
 				local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
-				-- self:build_item_list(orig_occupant, x, false, dest_nick); -- COMPAT: clients get confused if they see other items besides their own
+				-- COMPAT: clients get confused if they see other items besides their own
+				-- self:build_item_list(orig_occupant, x, false, dest_nick);
 				add_item(x, self:get_affiliation(bare_jid), orig_occupant.role, real_jid, dest_nick);
 				x:tag("status", {code = "303";}):up();
 				x:tag("status", {code = "110";}):up();
@@ -635,7 +637,8 @@ function room_mt:handle_normal_presence(origin, stanza)
 		end
 		self:publicise_occupant_status(dest_occupant, {base=dest_x,self=self_x});
 
-		if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then -- If user is swapping and wasn't last original session
+		if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then
+			-- If user is swapping and wasn't last original session
 			log("debug", "session %s split nicks; showing %s rejoining", real_jid, orig_occupant.nick);
 			-- Show the original nick joining again
 			local pr = st.clone(orig_occupant:get_presence());
@@ -892,7 +895,8 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 			return true;
 		end
 	end
-	if not item.attr.jid and item.attr.nick then -- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
+	if not item.attr.jid and item.attr.nick then
+		-- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 		local occupant = self:get_occupant_by_nick(self.jid.."/"..item.attr.nick);
 		if occupant then item.attr.jid = occupant.jid; end
 	elseif not item.attr.nick and item.attr.jid then
@@ -1131,9 +1135,8 @@ module:hook("muc-decline", function(event)
 	if not stanza:get_child("body") then
 		local decline = stanza:get_child("x", "http://jabber.org/protocol/muc#user"):get_child("decline");
 		local reason = decline:get_child_text("reason") or "";
-		stanza:tag("body")
-			:text(decline.attr.from.." declined your invite to the room "..room.jid..(reason ~= "" and (" ("..reason..")") or ""))
-		:up();
+		stanza:body(decline.attr.from.." declined your invite to the room "
+			..room.jid..(reason ~= "" and (" ("..reason..")") or ""));
 	end
 end);
 
@@ -1173,8 +1176,9 @@ end
 
 function room_mt:get_affiliation(jid)
 	local node, host, resource = jid_split(jid);
+	-- Affiliations are granted, revoked, and maintained based on the user's bare JID.
 	local bare = node and node.."@"..host or host;
-	local result = self._affiliations[bare]; -- Affiliations are granted, revoked, and maintained based on the user's bare JID.
+	local result = self._affiliations[bare];
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
