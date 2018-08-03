@@ -49,6 +49,27 @@ function form_t.form(layout, data, formtype)
 			value = field.value;
 		end
 
+		if formtype ~= "result" and field.options then
+			local defaults = {};
+			for _, val in ipairs(field.options) do
+				if type(val) == "table" then
+					form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
+					if val.default then
+						defaults[#defaults+1] = val.value;
+					end
+				else
+					form:tag("option", { label= val }):tag("value"):text(val):up():up();
+				end
+			end
+			if not value then
+				if field_type == "list-single" then
+					value = defaults[1];
+				elseif field_type == "list-multi" then
+					value = defaults;
+				end
+			end
+		end
+
 		if value ~= nil then
 			-- Add value, depending on type
 			if field_type == "hidden" then
@@ -78,40 +99,10 @@ function form_t.form(layout, data, formtype)
 					form:tag("value"):text(line):up();
 				end
 			elseif field_type == "list-single" then
-				if formtype ~= "result" then
-					local has_default = false;
-					for _, val in ipairs(field.options or value) do
-						if type(val) == "table" then
-							form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
-							if value == val.value or val.default and (not has_default) then
-								form:tag("value"):text(val.value):up();
-								has_default = true;
-							end
-						else
-							form:tag("option", { label= val }):tag("value"):text(val):up():up();
-						end
-					end
-				end
-				if (field.options or formtype == "result") and value then
 					form:tag("value"):text(value):up();
-				end
 			elseif field_type == "list-multi" then
-				if formtype ~= "result" then
-					for _, val in ipairs(field.options or value) do
-						if type(val) == "table" then
-							form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
-							if not field.options and val.default then
-								form:tag("value"):text(val.value):up();
-							end
-						else
-							form:tag("option", { label= val }):tag("value"):text(val):up():up();
-						end
-					end
-				end
-				if (field.options or formtype == "result") and value then
 					for _, val in ipairs(value) do
 						form:tag("value"):text(val):up();
-					end
 				end
 			end
 		end
