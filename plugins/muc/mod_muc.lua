@@ -351,6 +351,9 @@ if module:get_option_boolean("muc_tombstones", true) then
 	module:hook("muc-room-destroyed",function(event)
 		local room = event.room;
 		if not room:get_persistent() then return end
+		if room._data.destroyed then
+			return -- Allow destruction of tombstone
+		end
 
 		local tombstone = new_room(room.jid, {
 			locked = os.time() + ttl;
