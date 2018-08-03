@@ -40,7 +40,7 @@ function is_item_stanza(item)
 	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
 end
 
-function check_node_config(node, actor, new_config)
+function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
 	if (new_config["max_items"] or 1) > max_max_items then
 		return false;
 	end
