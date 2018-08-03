@@ -50,18 +50,17 @@ function form_t.form(layout, data, formtype)
 			end
 		end
 
-		local value;
+		local value = field.value;
+		local options = field.options;
+
 		if data and data[field.name] ~= nil then
 			value = data[field.name];
-		else
-			value = field.value;
-		end
 
-		local options = field.options;
-		if formtype == "form" and value
-		and (field_type == "list-single" or field_type == "list-multi") then
-			-- Allow passing dynamically generated options as values
-			options, value = value, nil;
+			if formtype == "form" and type(value) == "table"
+				and (field_type == "list-single" or field_type == "list-multi") then
+				-- Allow passing dynamically generated options as values
+				options, value = value, nil;
+			end
 		end
 
 		if formtype == "form" and options then
