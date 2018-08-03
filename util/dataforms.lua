@@ -57,9 +57,16 @@ function form_t.form(layout, data, formtype)
 			value = field.value;
 		end
 
-		if formtype == "form" and field.options then
+		local options = field.options;
+		if formtype == "form" and not options and value
+		and (field_type == "list-single" or field_type == "list-multi") then
+			-- Allow passing dynamically generated options as values
+			options, value = value, nil;
+		end
+
+		if formtype == "form" and options then
 			local defaults = {};
-			for _, val in ipairs(field.options) do
+			for _, val in ipairs(options) do
 				if type(val) == "table" then
 					form:tag("option", { label = val.label }):tag("value"):text(val.value):up():up();
 					if val.default then
