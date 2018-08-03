@@ -649,14 +649,14 @@ local shut_down_service_layout = dataforms_new{
 	{ name = "delay", type = "list-single", label = "Time delay before shutting down",
 		value = "5",
 		options = {
-				{label = "5 seconds", value = "5"},
-				{label = "30 seconds", value = "30"},
-			  {label = "60 seconds", value = "60"},
-			  {label = "90 seconds", value = "90"},
-			  {label = "2 minutes", value = "120"},
-			  {label = "3 minutes", value = "180"},
-			  {label = "4 minutes", value = "240"},
-			  {label = "5 minutes", value = "300"},
+			{label =  "5 seconds", value = "5"},
+			{label = "30 seconds", value = "30"},
+			{label = "60 seconds", value = "60"},
+			{label = "90 seconds", value = "90"},
+			{label = "2 minutes", value = "120"},
+			{label = "3 minutes", value = "180"},
+			{label = "4 minutes", value = "240"},
+			{label = "5 minutes", value = "300"},
 		};
 	};
 	{ name = "announcement", type = "text-multi", label = "Announcement" };
