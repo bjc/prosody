@@ -31,19 +31,23 @@ function form_t.form(layout, data, formtype)
 	if formtype == "cancel" then
 		return form;
 	end
-	if layout.title then
-		form:tag("title"):text(layout.title):up();
-	end
-	if layout.instructions then
-		form:tag("instructions"):text(layout.instructions):up();
+	if formtype ~= "submit" then
+		if layout.title then
+			form:tag("title"):text(layout.title):up();
+		end
+		if layout.instructions then
+			form:tag("instructions"):text(layout.instructions):up();
+		end
 	end
 	for _, field in ipairs(layout) do
 		local field_type = field.type or "text-single";
 		-- Add field tag
-		form:tag("field", { type = field_type, var = field.name, label = field.label });
+		form:tag("field", { type = field_type, var = field.name, label = formtype ~= "submit" and field.label or nil });
 
-		if field.desc then
-			form:text_tag("desc", field.desc);
+		if formtype ~= "submit" then
+			if field.desc then
+				form:text_tag("desc", field.desc);
+			end
 		end
 
 		local value;
@@ -120,7 +124,7 @@ function form_t.form(layout, data, formtype)
 			form:up();
 		end
 
-		if field.required then
+		if formtype == "form" and field.required then
 			form:tag("required"):up();
 		end
 
