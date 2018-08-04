@@ -592,6 +592,27 @@ function service:set_node_config(node, actor, new_config)
 	return true;
 end
 
+function service:get_node_config(node, actor)
+	if not self:may(node, actor, "get_configuration") then
+		return false, "forbidden";
+	end
+
+	local node_obj = self.nodes[node];
+	if not node_obj then
+		return false, "item-not-found";
+	end
+
+	local config_table = {};
+	for k, v in pairs(default_node_config) do
+		config_table[k] = v;
+	end
+	for k, v in pairs(node_obj.config) do
+		config_table[k] = v;
+	end
+
+	return true, config_table;
+end
+
 return {
 	new = new;
 };
