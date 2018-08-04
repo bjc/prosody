@@ -16,6 +16,7 @@ local default_config_mt = { __index = default_config };
 local default_node_config = {
 	["persist_items"] = false;
 	["max_items"] = 20;
+	["access_model"] = "open";
 };
 local default_node_config_mt = { __index = default_node_config };
 
@@ -82,13 +83,13 @@ function service:may(node, actor, action)
 	local node_aff = node_obj and (node_obj.affiliations[actor]
 	              or node_obj.affiliations[self.config.normalize_jid(actor)]);
 	local service_aff = self.affiliations[actor]
-	                 or self.config.get_affiliation(actor, node, action)
-	                 or "none";
+	                 or self.config.get_affiliation(actor, node, action);
+	local default_aff = self:get_default_affiliation(node, actor) or "none";
 
 	-- Check if node allows/forbids it
 	local node_capabilities = node_obj and node_obj.capabilities;
 	if node_capabilities then
-		local caps = node_capabilities[node_aff or service_aff];
+		local caps = node_capabilities[node_aff or service_aff or default_aff];
 		if caps then
 			local can = caps[action];
 			if can ~= nil then
@@ -99,7 +100,7 @@ function service:may(node, actor, action)
 
 	-- Check service-wide capabilities instead
 	local service_capabilities = self.config.capabilities;
-	local caps = service_capabilities[node_aff or service_aff];
+	local caps = service_capabilities[node_aff or service_aff or default_aff];
 	if caps then
 		local can = caps[action];
 		if can ~= nil then
@@ -108,6 +109,18 @@ function service:may(node, actor, action)
 	end
 
 	return false;
+end
+
+function service:get_default_affiliation(node, actor, action) -- luacheck: ignore 212
+	local node_obj = self.nodes[node];
+	local access_model = node_obj and node_obj.config.access_model
+		or self.config.node_defaults.access_model;
+
+	if access_model == "open" then
+		return "subscriber";
+	elseif access_model == "whitelist" then
+		return "none";
+	end
 end
 
 function service:set_affiliation(node, actor, jid, affiliation)
