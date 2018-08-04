@@ -121,6 +121,16 @@ function service:get_default_affiliation(node, actor, action) -- luacheck: ignor
 	elseif access_model == "whitelist" then
 		return "none";
 	end
+
+	if self.config.access_models then
+		local check = self.config.access_models[access_model];
+		if check then
+			local aff = check(actor);
+			if aff then
+				return aff;
+			end
+		end
+	end
 end
 
 function service:set_affiliation(node, actor, jid, affiliation)
