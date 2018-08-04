@@ -34,7 +34,7 @@ module:hook("muc-config-form", function(event)
 		name = 'muc#roomconfig_whois',
 		type = 'list-single',
 		label = 'Addresses (JIDs) of room occupants may be viewed by:',
-		value = {
+		options = {
 			{ value = 'moderators', label = 'Moderators only', default = whois == 'moderators' },
 			{ value = 'anyone',     label = 'Anyone',          default = whois == 'anyone' }
 		}
