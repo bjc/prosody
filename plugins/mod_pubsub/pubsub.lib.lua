@@ -187,6 +187,10 @@ function _M.get_feature_set(service)
 		end
 	end
 
+	if service.node_defaults.access_model then
+		supported_features:add("access-"..service.node_defaults.access_model);
+	end
+
 	return supported_features;
 end
 
