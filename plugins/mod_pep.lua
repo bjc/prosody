@@ -227,6 +227,7 @@ function get_pep_service(username)
 		node_defaults = {
 			["max_items"] = 1;
 			["persist_items"] = true;
+			["access_model"] = "presence";
 		};
 
 		autocreate_on_publish = true;
