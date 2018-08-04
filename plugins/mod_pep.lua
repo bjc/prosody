@@ -353,7 +353,7 @@ local function update_subscriptions(recipient, service_name, nodes)
 	end
 
 	for node in nodes - current do
-		service:add_subscription(node, recipient, recipient);
+		service:add_subscription(node, recipient, recipient, { presence = true });
 		resend_last_item(recipient, node, service);
 	end
 
