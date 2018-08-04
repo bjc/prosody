@@ -117,9 +117,9 @@ function service:get_default_affiliation(node, actor, action) -- luacheck: ignor
 		or self.config.node_defaults.access_model;
 
 	if access_model == "open" then
-		return "subscriber";
-	elseif access_model == "whitelist" then
 		return "none";
+	elseif access_model == "whitelist" then
+		return "restricted";
 	end
 
 	if self.config.access_models then
