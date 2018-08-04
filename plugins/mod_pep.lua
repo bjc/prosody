@@ -240,10 +240,16 @@ function get_pep_service(username)
 		get_affiliation = function (jid)
 			if jid_bare(jid) == user_bare then
 				return "owner";
-			elseif subscription_presence(username, jid) then
-				return "subscriber";
 			end
 		end;
+
+		access_models = {
+			presence = function (jid)
+				if subscription_presence(username, jid) then
+					return "subscriber";
+				end
+			end;
+		};
 
 		normalize_jid = jid_bare;
 
