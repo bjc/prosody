@@ -48,6 +48,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
+		["pubsub#access_model"] = node_config["access_model"];
 	}
 end
 
@@ -58,6 +59,7 @@ local function config_from_xep0060(config)
 		["max_items"] = tonumber(config["pubsub#max_items"]);
 		["persist_items"] = config["pubsub#persist_items"];
 		["notification_type"] = config["pubsub#notification_type"];
+		["access_model"] = config["pubsub#access_model"];
 	}
 end
 
@@ -86,6 +88,18 @@ local node_config_form = dataform {
 		type = "boolean";
 		name = "pubsub#persist_items";
 		label = "Persist items to storage";
+	};
+	{
+		type = "list-single";
+		name = "pubsub#access_model";
+		label = "Specify the subscriber model";
+		options = {
+			{ value = "authorize" },
+			{ value = "open" },
+			{ value = "presence" },
+			{ value = "roster" },
+			{ value = "whitelist" },
+		};
 	};
 	{
 		type = "list-single";
