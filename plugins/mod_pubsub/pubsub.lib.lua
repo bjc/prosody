@@ -12,6 +12,8 @@ local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
+local enable_publish_options = module:get_option_boolean("enable_publish_options", false);
+
 local _M = {};
 
 local handlers = {};
@@ -41,29 +43,9 @@ local function pubsub_error_reply(stanza, error)
 end
 _M.pubsub_error_reply = pubsub_error_reply;
 
--- util.pubsub is meant to be agnostic to XEP-0060
-local function config_to_xep0060(node_config)
-	return {
-		["pubsub#title"] = node_config["title"];
-		["pubsub#description"] = node_config["description"];
-		["pubsub#max_items"] = tostring(node_config["max_items"]);
-		["pubsub#persist_items"] = node_config["persist_items"];
-		["pubsub#notification_type"] = node_config["notification_type"];
-		["pubsub#access_model"] = node_config["access_model"];
-	}
-end
-
-local function config_from_xep0060(config)
-	return {
-		["title"] = config["pubsub#title"];
-		["description"] = config["pubsub#description"];
-		["max_items"] = tonumber(config["pubsub#max_items"]);
-		["persist_items"] = config["pubsub#persist_items"];
-		["notification_type"] = config["pubsub#notification_type"];
-		["access_model"] = config["pubsub#access_model"];
-	}
-end
-
+-- Note: If any config options are added that are of complex types,
+-- (not simply strings/numbers) then the publish-options code will
+-- need to be revisited
 local node_config_form = dataform {
 	{
 		type = "hidden";
@@ -142,6 +124,58 @@ local node_metadata_form = dataform {
 	};
 };
 
+local config_field_map = {
+	title = "pubsub#title";
+	description = "pubsub#description";
+	max_items = "pubsub#max_items";
+	persist_items = "pubsub#persist_items";
+	notification_type = "pubsub#notification_type";
+	access_model = "pubsub#access_model";
+};
+local reverse_config_field_map = {};
+for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
+
+-- util.pubsub is meant to be agnostic to XEP-0060
+local function config_to_xep0060(node_config)
+	return {
+		["pubsub#title"] = node_config["title"];
+		["pubsub#description"] = node_config["description"];
+		["pubsub#max_items"] = tostring(node_config["max_items"]);
+		["pubsub#persist_items"] = node_config["persist_items"];
+		["pubsub#notification_type"] = node_config["notification_type"];
+		["pubsub#access_model"] = node_config["access_model"];
+	}
+end
+
+local function config_from_xep0060(config, strict)
+	local ret = {};
+	for config_field, config_value in pairs(config) do
+		local mapped_name = reverse_config_field_map[config_field];
+		if mapped_name then
+			if mapped_name == "max_items" then
+				config_value = tonumber(config_value);
+			end
+			ret[mapped_name] = config_value;
+		elseif strict then
+			return nil, "unknown-field", config_field;
+		end
+	end
+	return ret;
+end
+
+-- Used to check that the config of a node is as expected (i.e. 'publish-options')
+local function check_preconditions(node_config, required_config)
+	if not (node_config and required_config) then
+		return false;
+	end
+	for config_field, value in pairs(required_config) do
+		if node_config[config_field] ~= value then
+			return false;
+		end
+	end
+	return true;
+end
+
 local service_method_feature_map = {
 	add_subscription = { "subscribe" };
 	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
@@ -149,7 +183,7 @@ local service_method_feature_map = {
 	get_items = { "retrieve-items" };
 	get_subscriptions = { "retrieve-subscriptions" };
 	node_defaults = { "retrieve-default" };
-	publish = { "publish" };
+	publish = { "publish", "multi-items", enable_publish_options and "publish-options" or nil };
 	purge = { "purge-nodes" };
 	retract = { "delete-items", "retract-items" };
 	set_node_config = { "config-node" };
@@ -512,6 +546,18 @@ function handlers.set_publish(origin, stanza, publish, service)
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
+	end
+	local publish_options = stanza.tags[1]:get_child("publish-options");
+	if enable_publish_options and publish_options then
+		-- Ensure that the node configuration matches the values in publish-options
+		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
+		local required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
+		local node_config = service:get_node_config(node, stanza.attr.from);
+		if not check_preconditions(node_config, required_config) then
+			local reply = pubsub_error_reply(stanza, "precondition-not-met");
+			origin.send(reply);
+			return true;
+		end
 	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id);
