@@ -188,6 +188,7 @@ function get_pep_service(username)
 				publish = true;
 				retract = true;
 				get_nodes = true;
+				get_configuration = true;
 
 				subscribe = true;
 				unsubscribe = true;
@@ -212,6 +213,7 @@ function get_pep_service(username)
 				delete = true;
 				get_nodes = true;
 				configure = true;
+				get_configuration = true;
 
 				subscribe = true;
 				unsubscribe = true;
