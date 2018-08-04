@@ -191,7 +191,7 @@ function archive:delete(username, query)
 				return item.when > query["end"];
 			end);
 		end
-		if query.truncate then
+		if query.truncate and #items > query.truncate then
 			if query.reverse then
 				-- Before: { 1, 2, 3, 4, 5, }
 				-- After: { 1, 2, 3 }
