@@ -191,6 +191,10 @@ function _M.get_feature_set(service)
 		supported_features:add("access-"..service.node_defaults.access_model);
 	end
 
+	if rawget(service.config, "itemstore") and rawget(service.config, "nodestore") then
+		supported_features:add("persistent-items");
+	end
+
 	return supported_features;
 end
 
