@@ -29,6 +29,7 @@ local pubsub_errors = {
 	["not-allowed"] = { "cancel", "not-allowed" };
 	["not-acceptable"] = { "modify", "not-acceptable" };
 	["internal-server-error"] = { "wait", "internal-server-error" };
+	["precondition-not-met"] = { "cancel", "conflict", nil, "precondition-not-met" };
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
