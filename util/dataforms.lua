@@ -113,10 +113,10 @@ function form_t.form(layout, data, formtype)
 					form:tag("value"):text(line):up();
 				end
 			elseif field_type == "list-single" then
-					form:tag("value"):text(value):up();
+				form:tag("value"):text(value):up();
 			elseif field_type == "list-multi" then
-					for _, val in ipairs(value) do
-						form:tag("value"):text(val):up();
+				for _, val in ipairs(value) do
+					form:tag("value"):text(val):up();
 				end
 			end
 		end
