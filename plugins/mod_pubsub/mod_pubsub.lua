@@ -25,6 +25,20 @@ function handle_pubsub_iq(event)
 	return lib_pubsub.handle_pubsub_iq(event, service);
 end
 
+-- An itemstore supports the following methods:
+--   items(): iterator over (id, item)
+--   get(id): return item with id
+--   set(id, item): set id to item
+--   clear(): clear all items
+--   resize(n): set new limit and trim oldest items
+--   tail(): return the latest item
+
+-- A nodestore supports the following methods:
+--   set(node_name, node_data)
+--   get(node_name)
+--   users(): iterator over (node_name)
+
+
 local node_store = module:open_store(module.name.."_nodes");
 
 local function create_simple_itemstore(node_config, node_name)
