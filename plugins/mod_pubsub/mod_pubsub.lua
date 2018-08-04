@@ -70,6 +70,14 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	end
 end
 
+local max_max_items = module:get_option_number("pubsub_max_items", 256);
+function check_node_config(node, actor, new_config) -- luacheck: ignore 212/actor 212/node
+	if (new_config["max_items"] or 1) > max_max_items then
+		return false;
+	end
+	return true;
+end
+
 function is_item_stanza(item)
 	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
 end
@@ -222,6 +230,7 @@ function module.load()
 		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
 		itemcheck = is_item_stanza;
+		check_node_config = check_node_config;
 		get_affiliation = get_affiliation;
 
 		normalize_jid = jid_bare;
