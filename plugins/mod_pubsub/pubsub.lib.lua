@@ -632,18 +632,12 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 		return true;
 	end
 
-	if not service:may(node, stanza.attr.from, "configure") then
-		origin.send(pubsub_error_reply(stanza, "forbidden"));
+	local ok, node_config = service:get_node_config(node, stanza.attr.from);
+	if not ok then
+		origin.send(pubsub_error_reply(stanza, node_config));
 		return true;
 	end
 
-	local node_obj = service.nodes[node];
-	if not node_obj then
-		origin.send(pubsub_error_reply(stanza, "item-not-found"));
-		return true;
-	end
-
-	local node_config = node_obj.config;
 	local pubsub_form_data = config_to_xep0060(node_config);
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
