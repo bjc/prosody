@@ -156,7 +156,7 @@ local function config_from_xep0060(config, strict)
 				config_value = tonumber(config_value);
 			end
 			ret[mapped_name] = config_value;
-		elseif strict then
+		elseif strict and config_field ~= "FORM_TYPE" then
 			return nil, "unknown-field", config_field;
 		end
 	end
