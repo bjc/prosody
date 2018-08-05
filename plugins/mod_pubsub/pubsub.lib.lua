@@ -552,8 +552,18 @@ function handlers.set_publish(origin, stanza, publish, service)
 		-- Ensure that the node configuration matches the values in publish-options
 		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
 		local required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
-		local node_config = service:get_node_config(node, stanza.attr.from);
-		if not check_preconditions(node_config, required_config) then
+		local node_accessible, node_config = service:get_node_config(node, stanza.attr.from);
+		if node_accessible == false and service.config.autocreate_on_publish then
+			module:log("debug", "creating node %s with publish-options", node)
+			-- we need to create the node here so that it is configured
+			-- correctly
+			local created, err = service:create(node, stanza.attr.from, required_config)
+			if not created then
+				local reply = pubsub_error_reply(stanza, err);
+				origin.send(reply);
+				return true;
+			end
+		elseif not check_preconditions(node_config, required_config) then
 			local reply = pubsub_error_reply(stanza, "precondition-not-met");
 			origin.send(reply);
 			return true;
