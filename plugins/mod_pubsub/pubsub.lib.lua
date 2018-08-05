@@ -95,7 +95,7 @@ local node_config_form = dataform {
 	};
 };
 
-local options_form = dataform {
+local subscribe_options_form = dataform {
 	{
 		type = "hidden";
 		name = "FORM_TYPE";
@@ -453,7 +453,7 @@ function handlers.set_subscribe(origin, stanza, subscribe, service)
 	end
 	local options_tag, options = stanza.tags[1]:get_child("options"), nil;
 	if options_tag then
-		options = options_form:data(options_tag.tags[1]);
+		options = subscribe_options_form:data(options_tag.tags[1]);
 	end
 	local ok, ret = service:add_subscription(node, stanza.attr.from, jid, options);
 	local reply;
@@ -508,7 +508,7 @@ function handlers.get_options(origin, stanza, options, service)
 	origin.send(st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub })
 			:tag("options", { node = node, jid = jid })
-				:add_child(options_form:form(ret)));
+				:add_child(subscribe_options_form:form(ret)));
 	return true;
 end
 
@@ -527,7 +527,7 @@ function handlers.set_options(origin, stanza, options, service)
 		origin.send(pubsub_error_reply(stanza, "not-subscribed"));
 		return true;
 	end
-	local new_subopts, err = options_form:data(options.tags[1]);
+	local new_subopts, err = subscribe_options_form:data(options.tags[1]);
 	if not new_subopts then
 		origin.send(pubsub_error_reply(stanza, ret));
 		return true;
