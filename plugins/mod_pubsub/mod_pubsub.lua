@@ -150,6 +150,10 @@ local function get_affiliation(jid)
 	end
 end
 
+function get_service()
+	return service;
+end
+
 function set_service(new_service)
 	service = new_service;
 	module.environment.service = service;
