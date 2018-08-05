@@ -662,7 +662,12 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 		origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
 		return true;
 	end
-	local form_data, err = node_config_form:data(config_form);
+	local ok, old_config = service:get_node_config(node, stanza.attr.from);
+	if not ok then
+		origin.send(pubsub_error_reply(stanza, old_config));
+		return true;
+	end
+	local form_data, err = node_config_form:data(config_form, old_config);
 	if not form_data then
 		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 		return true;
