@@ -347,5 +347,44 @@ describe("util.dataforms", function ()
 			assert.truthy(f:find("field/option"));
 		end);
 	end);
+
+	describe("using current values in place of missing fields", function ()
+		it("gets back the previous values when given an empty form", function ()
+			local current = {
+				["list-multi-field"] = {
+					"list-multi-option-value#2";
+				};
+				["list-single-field"] = "list-single-value#2";
+				["hidden-field"] = "hidden-value";
+				["boolean-field"] = false;
+				["text-multi-field"] = "words\ngo\nhere";
+				["jid-single-field"] = "alice@example.com";
+				["text-private-field"] = "hunter2";
+				["text-single-field"] = "text-single-value";
+				["jid-multi-field"] = {
+					"bob@example.net";
+				};
+			};
+			local expect = {
+				-- FORM_TYPE = "xmpp:prosody.im/spec/util.dataforms#1"; -- does this need to be included?
+				["list-multi-field"] = {
+					"list-multi-option-value#2";
+				};
+				["list-single-field"] = "list-single-value#2";
+				["hidden-field"] = "hidden-value";
+				["boolean-field"] = false;
+				["text-multi-field"] = "words\ngo\nhere";
+				["jid-single-field"] = "alice@example.com";
+				["text-private-field"] = "hunter2";
+				["text-single-field"] = "text-single-value";
+				["jid-multi-field"] = {
+					"bob@example.net";
+				};
+			};
+			local data, err = some_form:data(st.stanza("x", {xmlns="jabber:x:data"}), current);
+			assert.is.table(data, err);
+			assert.same(expect, data, "got back the same data");
+		end);
+	end);
 end);
 
