@@ -12,8 +12,6 @@ local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
-local enable_publish_options = module:get_option_boolean("enable_publish_options", true);
-
 local _M = {};
 
 local handlers = {};
@@ -198,7 +196,7 @@ local service_method_feature_map = {
 	get_items = { "retrieve-items" };
 	get_subscriptions = { "retrieve-subscriptions" };
 	node_defaults = { "retrieve-default" };
-	publish = { "publish", "multi-items", enable_publish_options and "publish-options" or nil };
+	publish = { "publish", "multi-items", "publish-options" };
 	purge = { "purge-nodes" };
 	retract = { "delete-items", "retract-items" };
 	set_node_config = { "config-node" };
@@ -563,7 +561,7 @@ function handlers.set_publish(origin, stanza, publish, service)
 		return true;
 	end
 	local publish_options = stanza.tags[1]:get_child("publish-options");
-	if enable_publish_options and publish_options then
+	if publish_options then
 		-- Ensure that the node configuration matches the values in publish-options
 		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
 		local required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
