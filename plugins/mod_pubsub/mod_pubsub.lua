@@ -150,6 +150,10 @@ local function get_affiliation(jid)
 	end
 end
 
+function get_service()
+	return service;
+end
+
 function set_service(new_service)
 	service = new_service;
 	module.environment.service = service;
@@ -196,6 +200,7 @@ function module.load()
 				publish = true;
 				retract = true;
 				get_nodes = true;
+				get_configuration = true;
 
 				subscribe = true;
 				unsubscribe = true;
@@ -220,6 +225,7 @@ function module.load()
 				delete = true;
 				get_nodes = true;
 				configure = true;
+				get_configuration = true;
 
 				subscribe = true;
 				unsubscribe = true;
