@@ -87,9 +87,9 @@ local node_config_form = dataform {
 		name = "pubsub#publish_model";
 		label = "Specify the publisher model";
 		options = {
-			{ value = "publishers" };
-			{ value = "subscribers" };
-			{ value = "open" };
+			"publishers";
+			"subscribers";
+			"open";
 		};
 	};
 	{
