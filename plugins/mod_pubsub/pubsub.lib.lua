@@ -12,7 +12,7 @@ local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 
-local enable_publish_options = module:get_option_boolean("enable_publish_options", false);
+local enable_publish_options = module:get_option_boolean("enable_publish_options", true);
 
 local _M = {};
 
