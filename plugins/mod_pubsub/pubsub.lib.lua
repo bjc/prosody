@@ -152,6 +152,9 @@ local function config_from_xep0060(config, strict)
 	for config_field, config_value in pairs(config) do
 		local mapped_name = reverse_config_field_map[config_field];
 		if mapped_name then
+			-- FIXME: The intention is to add "subtype" support to
+			-- util.dataforms, which will remove the need for this
+			-- ugly hack
 			if mapped_name == "max_items" then
 				config_value = tonumber(config_value);
 			end
