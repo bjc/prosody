@@ -22,6 +22,8 @@ local services = {};
 
 -- username -> recipient -> set of nodes
 local recipients = {};
+
+-- caps hash -> set of nodes
 local hash_map = {};
 
 local host = module.host;
