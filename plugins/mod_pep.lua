@@ -144,6 +144,10 @@ function get_pep_service(username)
 	end
 	service = pubsub.new({
 		capabilities = {
+			restricted = {
+				be_subscribed = false;
+				be_unsubscribed = true;
+			};
 			none = {
 				create = false;
 				publish = false;
