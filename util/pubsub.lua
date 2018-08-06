@@ -17,6 +17,7 @@ local default_node_config = {
 	["persist_items"] = false;
 	["max_items"] = 20;
 	["access_model"] = "open";
+	["publish_model"] = "publishers";
 };
 local default_node_config_mt = { __index = default_node_config };
 
@@ -365,7 +366,19 @@ end
 
 function service:publish(node, actor, id, item)
 	-- Access checking
-	if not self:may(node, actor, "publish") then
+	local may_publish = false;
+
+	if self:may(node, actor, "publish") then
+		may_publish = true;
+	else
+		local node_obj = self.nodes[node];
+		local publish_model = node_obj and node_obj.config.publish_model;
+		if publish_model == "open"
+		or (publish_model == "subscribers" and node_obj.subscribers[actor]) then
+			may_publish = true;
+		end
+	end
+	if not may_publish then
 		return false, "forbidden";
 	end
 	--
