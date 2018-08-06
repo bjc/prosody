@@ -32,11 +32,15 @@ local known_nodes = module:open_store("pep");
 local max_max_items = module:get_option_number("pep_max_items", 256);
 
 function module.save()
-	return { services = services };
+	return {
+		services = services;
+		recipients = recipients;
+	};
 end
 
 function module.restore(data)
 	services = data.services;
+	recipients = data.recipients;
 end
 
 function is_item_stanza(item)
