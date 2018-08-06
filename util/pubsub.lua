@@ -598,6 +598,18 @@ function service:set_node_config(node, actor, new_config)
 		end
 	end
 
+	if old_config["access_model"] ~= node_obj.config["access_model"] then
+		for subscriber in pairs(node_obj.subscribers) do
+			if not self:may(node, subscriber, "be_subscribed") then
+				local ok, err = self:remove_subscription(node, true, subscriber);
+				if not ok then
+					node_obj.config = old_config;
+					return ok, err;
+				end
+			end
+		end
+	end
+
 	if old_config["persist_items"] ~= node_obj.config["persist_items"] then
 		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
 	elseif old_config["max_items"] ~= node_obj.config["max_items"] then
