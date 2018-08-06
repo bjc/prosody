@@ -173,6 +173,10 @@ function module.load()
 
 	set_service(pubsub.new({
 		capabilities = {
+			restricted = {
+				be_subscribed = false;
+				be_unsubscribed = true;
+			};
 			none = {
 				create = false;
 				publish = false;
