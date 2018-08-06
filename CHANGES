@@ -14,7 +14,9 @@ New features
 -   PubSub features
     -   Persistence
     -   Affiliations
-    -   mod\_pep\_plus
+    -   Access models
+    -   "publish-options"
+-   PEP now uses our pubsub code and now shares the above features
 -   Asynchronous operations
 -   Busted for tests
 -   mod\_muc\_mam (XEP-0313 in groupchats)
