@@ -86,6 +86,16 @@ local node_config_form = dataform {
 	};
 	{
 		type = "list-single";
+		name = "pubsub#publish_model";
+		label = "Specify the publisher model";
+		options = {
+			{ value = "publishers" };
+			{ value = "subscribers" };
+			{ value = "open" };
+		};
+	};
+	{
+		type = "list-single";
 		name = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
 		options = {
@@ -131,6 +141,7 @@ local config_field_map = {
 	persist_items = "pubsub#persist_items";
 	notification_type = "pubsub#notification_type";
 	access_model = "pubsub#access_model";
+	publish_model = "pubsub#publish_model";
 };
 local reverse_config_field_map = {};
 for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
@@ -144,6 +155,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
 		["pubsub#access_model"] = node_config["access_model"];
+		["pubsub#publish_model"] = node_config["publish_model"];
 	}
 end
 
