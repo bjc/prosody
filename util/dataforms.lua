@@ -142,7 +142,7 @@ end
 
 local field_readers = {};
 
-function form_t.data(layout, stanza)
+function form_t.data(layout, stanza, current)
 	local data = {};
 	local errors = {};
 	local present = {};
@@ -157,7 +157,9 @@ function form_t.data(layout, stanza)
 		end
 
 		if not tag then
-			if field.required then
+			if current and current[field.name] ~= nil then
+				data[field.name] = current[field.name];
+			elseif field.required then
 				errors[field.name] = "Required value missing";
 			end
 		elseif field.name then

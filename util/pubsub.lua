@@ -565,6 +565,8 @@ function service:set_node_config(node, actor, new_config)
 		return false, "item-not-found";
 	end
 
+	setmetatable(new_config, {__index=self.node_defaults})
+
 	if self.config.check_node_config then
 		local ok = self.config.check_node_config(node, actor, new_config);
 		if not ok then
@@ -573,7 +575,7 @@ function service:set_node_config(node, actor, new_config)
 	end
 
 	local old_config = node_obj.config;
-	node_obj.config = setmetatable(new_config, {__index=self.node_defaults});
+	node_obj.config = new_config;
 
 	if self.config.nodestore then
 		local ok, err = save_node_to_store(self, node_obj);
