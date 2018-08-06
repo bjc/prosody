@@ -77,11 +77,11 @@ local node_config_form = dataform {
 		name = "pubsub#access_model";
 		label = "Specify the subscriber model";
 		options = {
-			{ value = "authorize" },
-			{ value = "open" },
-			{ value = "presence" },
-			{ value = "roster" },
-			{ value = "whitelist" },
+			{ value = "authorize" };
+			{ value = "open" };
+			{ value = "presence" };
+			{ value = "roster" };
+			{ value = "whitelist" };
 		};
 	};
 	{
