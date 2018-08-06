@@ -20,7 +20,7 @@ local empty_set = set_new();
 -- username -> util.pubsub service object
 local services = {};
 
--- username -> recipient -> set of full JID
+-- username -> recipient -> set of nodes
 local recipients = {};
 local hash_map = {};
 
