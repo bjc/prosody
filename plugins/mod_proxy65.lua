@@ -16,7 +16,8 @@ local b64 = require "util.encodings".base64.encode;
 local server = require "net.server";
 local portmanager = require "core.portmanager";
 
-local sessions, transfers = module:shared("sessions", "transfers");
+local sessions = module:shared("sessions");
+local transfers = module:shared("transfers");
 local max_buffer_size = 4096;
 
 local listener = {};
