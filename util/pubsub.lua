@@ -633,6 +633,9 @@ function service:get_node_config(node, actor)
 	for k, v in pairs(default_node_config) do
 		config_table[k] = v;
 	end
+	for k, v in pairs(self.node_defaults) do
+		config_table[k] = v;
+	end
 	for k, v in pairs(node_obj.config) do
 		config_table[k] = v;
 	end
