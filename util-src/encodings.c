@@ -79,9 +79,11 @@ static void base64_decode(luaL_Buffer *b, int c1, int c2, int c3, int c4, int n)
 	switch(--n) {
 		case 3:
 			s[2] = (char) tuple;
+			/* Falls through. */
 
 		case 2:
 			s[1] = (char)(tuple >> 8);
+			/* Falls through. */
 
 		case 1:
 			s[0] = (char)(tuple >> 16);
