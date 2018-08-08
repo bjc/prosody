@@ -176,28 +176,6 @@ function get_pep_service(username)
 
 				set_affiliation = false;
 			};
-			subscriber = {
-				create = false;
-				publish = false;
-				retract = false;
-				get_nodes = true;
-
-				subscribe = true;
-				unsubscribe = true;
-				get_subscription = true;
-				get_subscriptions = true;
-				get_items = true;
-
-				subscribe_other = false;
-				unsubscribe_other = false;
-				get_subscription_other = false;
-				get_subscriptions_other = false;
-
-				be_subscribed = true;
-				be_unsubscribed = true;
-
-				set_affiliation = false;
-			};
 			publisher = {
 				create = false;
 				publish = true;
@@ -271,7 +249,7 @@ function get_pep_service(username)
 		access_models = {
 			presence = function (jid)
 				if subscription_presence(username, jid) then
-					return "subscriber";
+					return "none";
 				end
 				return "restricted";
 			end;
