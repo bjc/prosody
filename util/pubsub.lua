@@ -10,11 +10,33 @@ local default_config = {
 	get_affiliation = function () end;
 	normalize_jid = function (jid) return jid; end;
 	capabilities = {
-		restricted = {
+		outcast = {
 			be_subscribed = false;
 			be_unsubscribed = true;
 		};
 		none = {
+			create = false;
+			publish = false;
+			retract = false;
+			get_nodes = true;
+
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			get_subscriptions = true;
+			get_items = false;
+
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			get_subscriptions_other = false;
+
+			be_subscribed = true;
+			be_unsubscribed = true;
+
+			set_affiliation = false;
+		};
+		member = {
 			create = false;
 			publish = false;
 			retract = false;
@@ -196,7 +218,7 @@ function service:get_default_affiliation(node, actor, action) -- luacheck: ignor
 	if access_model == "open" then
 		return "none";
 	elseif access_model == "whitelist" then
-		return "restricted";
+		return "outcast";
 	end
 
 	if self.config.access_models then
