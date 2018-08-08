@@ -552,6 +552,7 @@ rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 			if(strcmp(lua_tostring(L, idx), "unlimited") == 0) {
 				return RLIM_INFINITY;
 			}
+			return luaL_argerror(L, idx, "unexpected type");
 
 		case LUA_TNUMBER:
 			return lua_tointeger(L, idx);
