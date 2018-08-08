@@ -362,7 +362,7 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	if occupant == nil then return nil; end
 	local type, condition, text = stanza:get_error();
 	local error_message = "Kicked: "..(condition and condition:gsub("%-", " ") or "presence error");
-	if text and room:get_whois() == "anyone" then
+	if text and self:get_whois() == "anyone" then
 		error_message = error_message..": "..text;
 	end
 	occupant:set_session(real_jid, st.presence({type="unavailable"})
