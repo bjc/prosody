@@ -164,33 +164,32 @@ function api:depends(name)
 	return mod;
 end
 
--- Returns one or more shared tables at the specified virtual paths
--- Intentionally does not allow the table at a path to be _set_, it
--- is auto-created if it does not exist.
-function api:shared(...)
-	if not self.shared_data then self.shared_data = {}; end
-	local paths = { n = select("#", ...), ... };
-	local data_array = {};
-	local default_path_components = { self.host, self.name };
-	for i = 1, paths.n do
-		local path = paths[i];
-		if path:sub(1,1) ~= "/" then -- Prepend default components
-			local n_components = select(2, path:gsub("/", "%1"));
-			path = (n_components<#default_path_components and "/" or "")
-				..t_concat(default_path_components, "/", 1, #default_path_components-n_components).."/"..path;
-		end
-		local shared = shared_data[path];
-		if not shared then
-			shared = {};
-			if path:match("%-cache$") then
-				setmetatable(shared, { __mode = "kv" });
-			end
-			shared_data[path] = shared;
-		end
-		t_insert(data_array, shared);
-		self.shared_data[path] = shared;
+local function get_shared_table_from_path(module, tables, path)
+	if path:sub(1,1) ~= "/" then -- Prepend default components
+		local default_path_components = { module.host, module.name };
+		local n_components = select(2, path:gsub("/", "%1"));
+		path = (n_components<#default_path_components and "/" or "")
+			..t_concat(default_path_components, "/", 1, #default_path_components-n_components).."/"..path;
 	end
-	return unpack(data_array);
+	local shared = tables[path];
+	if not shared then
+		shared = {};
+		if path:match("%-cache$") then
+			setmetatable(shared, { __mode = "kv" });
+		end
+		tables[path] = shared;
+	end
+	return shared;
+end
+
+-- Returns a shared table at the specified virtual path
+-- Intentionally does not allow the table to be _set_, it
+-- is auto-created if it does not exist.
+function api:shared(path)
+	if not self.shared_data then self.shared_data = {}; end
+	local shared = get_shared_table_from_path(self, shared_data, path);
+	self.shared_data[path] = shared;
+	return shared;
 end
 
 function api:get_option(name, default_value)
