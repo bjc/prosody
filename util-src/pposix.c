@@ -237,6 +237,7 @@ int lc_syslog_log(lua_State *L) {
 }
 
 int lc_syslog_close(lua_State *L) {
+	(void)L;
 	closelog();
 
 	if(syslog_ident) {
@@ -649,6 +650,7 @@ int lc_getrlimit(lua_State *L) {
 }
 
 int lc_abort(lua_State *L) {
+	(void)L;
 	abort();
 	return 0;
 }
