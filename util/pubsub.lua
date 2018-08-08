@@ -9,7 +9,83 @@ local default_config = {
 	itemcheck = function () return true; end;
 	get_affiliation = function () end;
 	normalize_jid = function (jid) return jid; end;
-	capabilities = {};
+	capabilities = {
+		restricted = {
+			be_subscribed = false;
+			be_unsubscribed = true;
+		};
+		none = {
+			create = false;
+			publish = false;
+			retract = false;
+			get_nodes = true;
+
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			get_subscriptions = true;
+			get_items = true;
+
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			get_subscriptions_other = false;
+
+			be_subscribed = true;
+			be_unsubscribed = true;
+
+			set_affiliation = false;
+		};
+		publisher = {
+			create = false;
+			publish = true;
+			retract = true;
+			get_nodes = true;
+			get_configuration = true;
+
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			get_subscriptions = true;
+			get_items = true;
+
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			get_subscriptions_other = false;
+
+			be_subscribed = true;
+			be_unsubscribed = true;
+
+			set_affiliation = false;
+		};
+		owner = {
+			create = true;
+			publish = true;
+			retract = true;
+			delete = true;
+			get_nodes = true;
+			configure = true;
+			get_configuration = true;
+
+			subscribe = true;
+			unsubscribe = true;
+			get_subscription = true;
+			get_subscriptions = true;
+			get_items = true;
+
+
+			subscribe_other = true;
+			unsubscribe_other = true;
+			get_subscription_other = true;
+			get_subscriptions_other = true;
+
+			be_subscribed = true;
+			be_unsubscribed = true;
+
+			set_affiliation = true;
+		};
+	};
 };
 local default_config_mt = { __index = default_config };
 
