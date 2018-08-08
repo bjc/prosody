@@ -374,8 +374,7 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	local new_occupant = self:save_occupant(occupant);
 	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
 	if is_last_session then
-		x:tag("status", {code = "307"}):up()
-		 :tag("status", {code = "333"});
+		x:tag("status", {code = "333"});
 	end
 	self:publicise_occupant_status(new_occupant or occupant, x);
 	if is_last_session then
