@@ -33,12 +33,6 @@ describe("util.pubsub", function ()
 		local broadcaster = spy.new(function () end);
 		local service = pubsub.new({
 			broadcaster = broadcaster;
-			capabilities = {
-				none = {
-					subscribe = true;
-					be_subscribed = true;
-				};
-			}
 		});
 
 		it("creates a node", function ()
