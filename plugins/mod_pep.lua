@@ -273,6 +273,7 @@ function get_pep_service(username)
 				if subscription_presence(username, jid) then
 					return "subscriber";
 				end
+				return "restricted";
 			end;
 		};
 
