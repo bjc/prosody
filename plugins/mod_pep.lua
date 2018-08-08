@@ -171,12 +171,9 @@ function get_pep_service(username)
 		access_models = {
 			presence = function (jid)
 				if subscription_presence(username, jid) then
-					-- This is their affiliation level which determines
-					-- permissions, it is acceptable to be a subscriber
-					-- with no affiliation.
-					return "none";
+					return "member";
 				end
-				return "restricted";
+				return "outcast";
 			end;
 		};
 
