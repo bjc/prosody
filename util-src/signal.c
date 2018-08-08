@@ -26,7 +26,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <signal.h>
 #include <stdlib.h>
