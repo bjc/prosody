@@ -158,13 +158,13 @@ function get_pep_service(username)
 				create = false;
 				publish = false;
 				retract = false;
-				get_nodes = false;
+				get_nodes = true;
 
-				subscribe = false;
-				unsubscribe = false;
-				get_subscription = false;
-				get_subscriptions = false;
-				get_items = false;
+				subscribe = true;
+				unsubscribe = true;
+				get_subscription = true;
+				get_subscriptions = true;
+				get_items = true;
 
 				subscribe_other = false;
 				unsubscribe_other = false;
