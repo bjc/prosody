@@ -111,4 +111,56 @@ describe("util.pubsub", function ()
 		end);
 
 	end);
+
+	describe("access model", function ()
+		describe("open", function ()
+			local service;
+			before_each(function ()
+				service = pubsub.new();
+				-- Do not supply any config, 'open' should be default
+				service:create("test", true);
+			end);
+			it("should be the default", function ()
+				local ok, config = service:get_node_config("test", true);
+				assert.equal("open", config.access_model);
+			end);
+			it("should allow anyone to subscribe", function ()
+				local ok = service:add_subscription("test", "stranger", "stranger");
+				assert.is_true(ok);
+			end);
+			it("should not allow anyone to publish", function ()
+				assert.is_true(service:add_subscription("test", "stranger", "stranger"));
+				local ok, err = service:publish("test", "stranger", "item1", "foo");
+				assert.is_falsy(ok);
+				assert.equals("forbidden", err);
+			end);
+			it("should still reject outcast-affiliated entities", function ()
+				assert(service:set_affiliation("test", true, "enemy", "outcast"));
+				local ok, err = service:add_subscription("test", "enemy", "enemy");
+				assert.is_falsy(ok);
+				assert.equal("forbidden", err);
+			end);
+		end);
+		describe("whitelist", function ()
+			local service;
+			before_each(function ()
+				service = assert(pubsub.new());
+				assert.is_true(service:create("test", true, { access_model = "whitelist" }));
+			end);
+			it("should be present in the configuration", function ()
+				local ok, config = service:get_node_config("test", true);
+				assert.equal("whitelist", config.access_model);
+			end);
+			it("should not allow anyone to subscribe", function ()
+				local ok, err = service:add_subscription("test", "stranger", "stranger");
+				assert.is_false(ok);
+				assert.equals("forbidden", err);
+			end);
+			it("should not allow anyone to publish", function ()
+				local ok, err = service:publish("test", "stranger", "item1", "foo");
+				assert.is_falsy(ok);
+				assert.equals("forbidden", err);
+			end);
+		end);
+	end);
 end);
