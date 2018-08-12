@@ -124,6 +124,24 @@ describe("util.pubsub", function ()
 
 	end);
 
+	describe("node config", function ()
+		local service;
+		before_each(function ()
+			service = pubsub.new();
+			service:create("test", true);
+		end);
+		it("access is forbidden for unaffiliated entities", function ()
+			local ok, err = service:get_node_config("test", "stranger");
+			assert.is_falsy(ok);
+			assert.equals("forbidden", err);
+		end);
+		it("returns an error for nodes that do not exist", function ()
+			local ok, err = service:get_node_config("nonexistent", true);
+			assert.is_falsy(ok);
+			assert.equals("item-not-found", err);
+		end);
+	end);
+
 	describe("access model", function ()
 		describe("open", function ()
 			local service;
