@@ -11,6 +11,8 @@ local default_config = {
 	normalize_jid = function (jid) return jid; end;
 	capabilities = {
 		outcast = {
+			get_subscription = true;
+			get_subscriptions = true;
 			be_subscribed = false;
 			be_unsubscribed = true;
 		};
