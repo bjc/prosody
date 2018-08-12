@@ -3,6 +3,16 @@ setup(function ()
 	pubsub = require "util.pubsub";
 end);
 
+--[[TODO:
+ Retract
+ Purge
+ auto-create/auto-subscribe
+ Item store/node store
+ resize on max_items change
+ service creation config provides alternative node_defaults
+ get subscriptions
+]]
+
 describe("util.pubsub", function ()
 	describe("simple node creation and deletion", function ()
 		-- Roughly a port of scansion/scripts/pubsub_createdelete.scs
