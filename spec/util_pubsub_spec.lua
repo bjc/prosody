@@ -181,6 +181,30 @@ describe("util.pubsub", function ()
 				assert.equals("forbidden", err);
 			end);
 		end);
+		describe("change", function ()
+			local service;
+			before_each(function ()
+				service = pubsub.new();
+				service:create("test", true, { access_model = "open" });
+			end);
+			it("affects existing subscriptions", function ()
+				do
+					local ok = service:add_subscription("test", "stranger", "stranger");
+					assert.is_true(ok);
+				end
+				do
+					local ok, sub = service:get_subscription("test", "stranger", "stranger");
+					assert.is_true(ok);
+					assert.is_true(sub);
+				end
+				assert(service:set_node_config("test", true, { access_model = "whitelist" }));
+				do
+					local ok, sub = service:get_subscription("test", "stranger", "stranger");
+					assert.is_true(ok);
+					assert.is_nil(sub);
+				end
+			end);
+		end);
 	end);
 
 	describe("publish model", function ()
