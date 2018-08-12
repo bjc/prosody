@@ -1,6 +1,5 @@
 local logger = require "util.logger";
 local log = logger.init("util.async");
-local timer = require "util.timer";
 local new_id = require "util.id".short;
 
 local function checkthread()
@@ -246,16 +245,9 @@ local function ready()
 	return pcall(checkthread);
 end
 
-local function sleep(s)
-	local wait, done = waiter();
-	timer.add_task(s, done);
-	wait();
-end
-
 return {
 	ready = ready;
 	waiter = waiter;
 	guarder = guarder;
 	runner = runner;
-	sleep = sleep;
 };
