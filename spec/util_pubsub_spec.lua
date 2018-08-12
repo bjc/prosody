@@ -128,12 +128,6 @@ describe("util.pubsub", function ()
 				local ok = service:add_subscription("test", "stranger", "stranger");
 				assert.is_true(ok);
 			end);
-			it("should not allow anyone to publish", function ()
-				assert.is_true(service:add_subscription("test", "stranger", "stranger"));
-				local ok, err = service:publish("test", "stranger", "item1", "foo");
-				assert.is_falsy(ok);
-				assert.equals("forbidden", err);
-			end);
 			it("should still reject outcast-affiliated entities", function ()
 				assert(service:set_affiliation("test", true, "enemy", "outcast"));
 				local ok, err = service:add_subscription("test", "enemy", "enemy");
@@ -156,10 +150,74 @@ describe("util.pubsub", function ()
 				assert.is_false(ok);
 				assert.equals("forbidden", err);
 			end);
+		end);
+	end);
+
+	describe("publish model", function ()
+		describe("publishers", function ()
+			local service;
+			before_each(function ()
+				service = pubsub.new();
+				-- Do not supply any config, 'publishers' should be default
+				service:create("test", true);
+			end);
+			it("should be the default", function ()
+				local ok, config = service:get_node_config("test", true);
+				assert.equal("publishers", config.publish_model);
+			end);
 			it("should not allow anyone to publish", function ()
+				assert.is_true(service:add_subscription("test", "stranger", "stranger"));
 				local ok, err = service:publish("test", "stranger", "item1", "foo");
 				assert.is_falsy(ok);
 				assert.equals("forbidden", err);
+			end);
+			it("should allow publishers to publish", function ()
+				assert(service:set_affiliation("test", true, "mypublisher", "publisher"));
+				local ok, err = service:publish("test", "mypublisher", "item1", "foo");
+				assert.is_true(ok);
+			end);
+			it("should allow owners to publish", function ()
+				assert(service:set_affiliation("test", true, "myowner", "owner"));
+				local ok = service:publish("test", "myowner", "item1", "foo");
+				assert.is_true(ok);
+			end);
+		end);
+		describe("open", function ()
+			local service;
+			before_each(function ()
+				service = pubsub.new();
+				service:create("test", true, { publish_model = "open" });
+			end);
+			it("should allow anyone to publish", function ()
+				local ok = service:publish("test", "stranger", "item1", "foo");
+				assert.is_true(ok);
+			end);
+		end);
+		describe("subscribers", function ()
+			local service;
+			before_each(function ()
+				service = pubsub.new();
+				service:create("test", true, { publish_model = "subscribers" });
+			end);
+			it("should not allow non-subscribers to publish", function ()
+				local ok, err = service:publish("test", "stranger", "item1", "foo");
+				assert.is_falsy(ok);
+				assert.equals("forbidden", err);
+			end);
+			it("should allow subscribers to publish without an affiliation", function ()
+				assert.is_true(service:add_subscription("test", "stranger", "stranger"));
+				local ok  = service:publish("test", "stranger", "item1", "foo");
+				assert.is_true(ok);
+			end);
+			it("should allow publishers to publish without a subscription", function ()
+				assert(service:set_affiliation("test", true, "mypublisher", "publisher"));
+				local ok, err = service:publish("test", "mypublisher", "item1", "foo");
+				assert.is_true(ok);
+			end);
+			it("should allow owners to publish without a subscription", function ()
+				assert(service:set_affiliation("test", true, "myowner", "owner"));
+				local ok = service:publish("test", "myowner", "item1", "foo");
+				assert.is_true(ok);
 			end);
 		end);
 	end);
