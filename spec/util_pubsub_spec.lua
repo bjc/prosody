@@ -30,7 +30,10 @@ describe("util.pubsub", function ()
 	end);
 
 	describe("simple publishing", function ()
-		local broadcaster = spy.new(function () end);
+		local notified;
+		local broadcaster = spy.new(function (notif_type, node_name, subscribers, item)
+			notified = subscribers;
+		end);
 		local service = pubsub.new({
 			broadcaster = broadcaster;
 		});
@@ -45,6 +48,7 @@ describe("util.pubsub", function ()
 
 		it("publishes an item", function ()
 			assert.truthy(service:publish("node", true, "1", "item 1"));
+			assert.truthy(notified["someone"]);
 		end);
 
 		it("called the broadcaster", function ()
@@ -57,6 +61,14 @@ describe("util.pubsub", function ()
 			assert.same({ "1", ["1"] = "item 1" }, ret);
 		end);
 
+		it("lets someone unsubscribe", function ()
+			assert.truthy(service:remove_subscription("node", true, "someone"));
+		end);
+
+		it("does not send notifications after subscription is removed", function ()
+			assert.truthy(service:publish("node", true, "1", "item 1"));
+			assert.is_nil(notified["someone"]);
+		end);
 	end);
 
 	describe("#issue1082", function ()
