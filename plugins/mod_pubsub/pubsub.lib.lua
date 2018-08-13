@@ -62,6 +62,11 @@ local node_config_form = dataform {
 	};
 	{
 		type = "text-single";
+		name = "pubsub#type";
+		label = "The type of node data, usually specified by the namespace of the payload (if any)";
+	};
+	{
+		type = "text-single";
 		name = "pubsub#max_items";
 		label = "Max # of items to persist";
 	};
@@ -130,11 +135,16 @@ local node_metadata_form = dataform {
 		type = "text-single";
 		name = "pubsub#description";
 	};
+	{
+		type = "text-single";
+		name = "pubsub#type";
+	};
 };
 
 local config_field_map = {
 	title = "pubsub#title";
 	description = "pubsub#description";
+	payload_type = "pubsub#type";
 	max_items = "pubsub#max_items";
 	persist_items = "pubsub#persist_items";
 	notification_type = "pubsub#notification_type";
@@ -149,6 +159,7 @@ local function config_to_xep0060(node_config)
 	return {
 		["pubsub#title"] = node_config["title"];
 		["pubsub#description"] = node_config["description"];
+		["pubsub#type"] = node_config["payload_type"];
 		["pubsub#max_items"] = tostring(node_config["max_items"]);
 		["pubsub#persist_items"] = node_config["persist_items"];
 		["pubsub#notification_type"] = node_config["notification_type"];
@@ -259,6 +270,7 @@ function _M.handle_disco_info_node(event, service)
 		reply:add_child(node_metadata_form:form({
 			["pubsub#title"] = node_obj.config.title;
 			["pubsub#description"] = node_obj.config.description;
+			["pubsub#type"] = node_obj.config.payload_type;
 		}, "result"));
 	end
 end
