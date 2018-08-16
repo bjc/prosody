@@ -99,9 +99,9 @@ local node_config_form = dataform {
 	};
 	{
 		type = "boolean";
-		label = "Whether to deliver payloads with event notifications";
-		name = "pubsub#deliver_payloads";
-		value = true;
+		value = "true";
+		label = "Whether to deliver event notifications";
+		name = "pubsub#deliver_notifications";
 	};
 	{
 		type = "list-single";
