@@ -123,7 +123,12 @@ end
 
 local function get_broadcaster(username)
 	local user_bare = jid_join(username, host);
-	local function simple_broadcast(kind, node, jids, item)
+	local function simple_broadcast(kind, node, jids, item, _, node_obj)
+		if node_obj then
+			if node_obj.config["notify_"..kind] == false then
+				return;
+			end
+		end
 		if kind == "retract" then
 			kind = "items"; -- XEP-0060 signals retraction in an <items> container
 		end
