@@ -523,7 +523,7 @@ function service:retract(node, actor, id, retract)
 	end
 	self.events.fire_event("item-retracted", { node = node, actor = actor, id = id });
 	if retract then
-		self.config.broadcaster("items", node, node_obj.subscribers, retract, actor, node_obj, self);
+		self.config.broadcaster("retract", node, node_obj.subscribers, retract, actor, node_obj, self);
 	end
 	return true
 end

@@ -124,6 +124,9 @@ end
 local function get_broadcaster(username)
 	local user_bare = jid_join(username, host);
 	local function simple_broadcast(kind, node, jids, item)
+		if kind == "retract" then
+			kind = "items"; -- XEP-0060 signals retraction in an <items> container
+		end
 		local message = st.message({ from = user_bare, type = "headline" })
 			:tag("event", { xmlns = xmlns_pubsub_event })
 				:tag(kind, { node = node });
