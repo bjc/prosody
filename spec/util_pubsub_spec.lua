@@ -41,7 +41,7 @@ describe("util.pubsub", function ()
 
 	describe("simple publishing", function ()
 		local notified;
-		local broadcaster = spy.new(function (notif_type, node_name, subscribers, item)
+		local broadcaster = spy.new(function (notif_type, node_name, subscribers, item) -- luacheck: ignore 212
 			notified = subscribers;
 		end);
 		local service = pubsub.new({
