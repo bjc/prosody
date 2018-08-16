@@ -144,7 +144,7 @@ local room_miss = module:measure("room_miss", "rate")
 local room_eviction = module:measure("room_eviction", "rate");
 local rooms = cache.new(max_rooms or max_live_rooms, function (jid, room)
 	if max_rooms then
-		module:log("info", "Room limit of %d reached, no new rooms allowed");
+		module:log("info", "Room limit of %d reached, no new rooms allowed", max_rooms);
 		return false;
 	end
 	module:log("debug", "Evicting room %s", jid);
