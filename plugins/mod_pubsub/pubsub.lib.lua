@@ -116,6 +116,11 @@ local node_config_form = dataform {
 		label = "Whether to notify subscribers when the node is deleted";
 		name = "pubsub#notify_delete";
 	};
+	{
+		type = "boolean";
+		label = "Whether to notify subscribers when items are removed from the node";
+		name = "pubsub#notify_retract";
+	};
 };
 
 local subscribe_options_form = dataform {
@@ -162,6 +167,7 @@ local config_field_map = {
 	publish_model = "pubsub#publish_model";
 	notify_items = "pubsub#deliver_notifications";
 	notify_delete = "pubsub#notify_delete";
+	notify_retract = "pubsub#notify_retract";
 };
 local reverse_config_field_map = {};
 for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
@@ -179,6 +185,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#publish_model"] = node_config["publish_model"];
 		["pubsub#deliver_notifications"] = node_config["notify_items"];
 		["pubsub#notify_delete"] = node_config["notify_delete"];
+		["pubsub#notify_retract"] = node_config["notify_retract"];
 	}
 end
 
