@@ -47,6 +47,11 @@ local function create_simple_itemstore(node_config, node_name)
 end
 
 function simple_broadcast(kind, node, jids, item, actor, node_obj)
+	if node_obj then
+		if node_obj.config["notify_"..kind] == false then
+			return;
+		end
+	end
 	if kind == "retract" then
 		kind = "items"; -- XEP-0060 signals retraction in an <items> container
 	end
