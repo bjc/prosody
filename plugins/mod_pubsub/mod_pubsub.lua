@@ -47,6 +47,10 @@ local function create_simple_itemstore(node_config, node_name)
 end
 
 function simple_broadcast(kind, node, jids, item, actor, node_obj)
+	if kind == "retract" then
+		kind = "items"; -- XEP-0060 signals retraction in an <items> container
+	end
+
 	if item then
 		item = st.clone(item);
 		item.attr.xmlns = nil; -- Clear the pubsub namespace
