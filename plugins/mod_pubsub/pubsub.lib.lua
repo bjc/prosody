@@ -101,6 +101,7 @@ local node_config_form = dataform {
 		type = "boolean";
 		label = "Whether to deliver payloads with event notifications";
 		name = "pubsub#deliver_payloads";
+		value = true;
 	};
 	{
 		type = "list-single";
@@ -115,11 +116,13 @@ local node_config_form = dataform {
 		type = "boolean";
 		label = "Whether to notify subscribers when the node is deleted";
 		name = "pubsub#notify_delete";
+		value = true;
 	};
 	{
 		type = "boolean";
 		label = "Whether to notify subscribers when items are removed from the node";
 		name = "pubsub#notify_retract";
+		value = true;
 	};
 };
 
