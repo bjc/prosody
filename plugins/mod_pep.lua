@@ -138,6 +138,11 @@ local function get_broadcaster(username)
 		if item then
 			item = st.clone(item);
 			item.attr.xmlns = nil; -- Clear the pubsub namespace
+			if kind == "items" then
+				if node_obj and node_obj.config.include_payload == false then
+					item:maptags(function () return nil; end);
+				end
+			end
 			message:add_child(item);
 		end
 		for jid in pairs(jids) do
