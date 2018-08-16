@@ -59,8 +59,10 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	if item then
 		item = st.clone(item);
 		item.attr.xmlns = nil; -- Clear the pubsub namespace
-		if expose_publisher and actor then
-			item.attr.publisher = actor
+		if kind == "items" then
+			if expose_publisher and actor then
+				item.attr.publisher = actor
+			end
 		end
 	end
 
