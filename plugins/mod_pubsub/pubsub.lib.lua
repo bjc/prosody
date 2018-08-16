@@ -98,6 +98,11 @@ local node_config_form = dataform {
 		};
 	};
 	{
+		type = "boolean";
+		label = "Whether to deliver payloads with event notifications";
+		name = "pubsub#deliver_payloads";
+	};
+	{
 		type = "list-single";
 		name = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
@@ -150,6 +155,7 @@ local config_field_map = {
 	notification_type = "pubsub#notification_type";
 	access_model = "pubsub#access_model";
 	publish_model = "pubsub#publish_model";
+	notify_items = "pubsub#deliver_notifications";
 };
 local reverse_config_field_map = {};
 for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
@@ -165,6 +171,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#notification_type"] = node_config["notification_type"];
 		["pubsub#access_model"] = node_config["access_model"];
 		["pubsub#publish_model"] = node_config["publish_model"];
+		["pubsub#deliver_notifications"] = node_config["notify_items"];
 	}
 end
 
