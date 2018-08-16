@@ -104,6 +104,11 @@ local node_config_form = dataform {
 		name = "pubsub#deliver_notifications";
 	};
 	{
+		type = "boolean";
+		label = "Whether to deliver payloads with event notifications";
+		name = "pubsub#deliver_payloads";
+	};
+	{
 		type = "list-single";
 		name = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
@@ -171,6 +176,7 @@ local config_field_map = {
 	notify_items = "pubsub#deliver_notifications";
 	notify_delete = "pubsub#notify_delete";
 	notify_retract = "pubsub#notify_retract";
+	include_payload = "pubsub#deliver_payloads";
 };
 local reverse_config_field_map = {};
 for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
@@ -189,6 +195,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#deliver_notifications"] = node_config["notify_items"];
 		["pubsub#notify_delete"] = node_config["notify_delete"];
 		["pubsub#notify_retract"] = node_config["notify_retract"];
+		["pubsub#deliver_payloads"] =  node_config["include_payload"]
 	}
 end
 

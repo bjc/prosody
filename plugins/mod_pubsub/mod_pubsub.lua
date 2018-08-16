@@ -60,6 +60,9 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 		item = st.clone(item);
 		item.attr.xmlns = nil; -- Clear the pubsub namespace
 		if kind == "items" then
+			if node_obj and node_obj.config.include_payload == false then
+				item:maptags(function () return nil; end);
+			end
 			if expose_publisher and actor then
 				item.attr.publisher = actor
 			end
