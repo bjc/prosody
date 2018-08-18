@@ -310,5 +310,33 @@ describe("util.pubsub", function ()
 				assert.equal("bye", item);
 			end);
 		end);
+		describe("get_items()", function ()
+			it("fails on non-existent nodes", function ()
+				local ok, err = service:get_items("no-node", true);
+				assert.is_falsy(ok);
+				assert.equal("item-not-found", err);
+			end);
+			it("returns no items on an empty node", function ()
+				local ok, items = service:get_items("test", true);
+				assert.is_true(ok);
+				assert.equal(0, #items);
+				assert.is_nil(next(items));				
+			end);
+			it("returns no items on an empty node", function ()
+				local ok, items = service:get_items("test", true);
+				assert.is_true(ok);
+				assert.equal(0, #items);
+				assert.is_nil((next(items)));
+			end);
+			it("returns all published items", function ()
+				service:publish("test", true, "one", "hello world");
+				service:publish("test", true, "two", "hello again");
+				service:publish("test", true, "three", "hey");
+				service:publish("test", true, "one", "bye");
+				local ok, items = service:get_items("test", true);
+				assert.is_true(ok);
+				assert.same({ "one", "three", "two", two = "hello again", three = "hey", one = "bye" }, items);
+			end);
+		end);
 	end);
 end);
