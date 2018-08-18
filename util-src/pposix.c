@@ -517,7 +517,7 @@ int string2resource(const char *s) {
 		return RLIMIT_STACK;
 	}
 
-#if !(defined(sun) || defined(__sun))
+#if !(defined(sun) || defined(__sun) || defined(__APPLE__))
 
 	if(!strcmp(s, "MEMLOCK")) {
 		return RLIMIT_MEMLOCK;
