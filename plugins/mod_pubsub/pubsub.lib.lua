@@ -218,19 +218,6 @@ local function config_from_xep0060(config, strict)
 	return ret;
 end
 
--- Used to check that the config of a node is as expected (i.e. 'publish-options')
-local function check_preconditions(node_config, required_config)
-	if not (node_config and required_config) then
-		return false;
-	end
-	for config_field, value in pairs(required_config) do
-		if node_config[config_field] ~= value then
-			return false;
-		end
-	end
-	return true;
-end
-
 local service_method_feature_map = {
 	add_subscription = { "subscribe", "subscription-options" };
 	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
@@ -603,27 +590,12 @@ function handlers.set_publish(origin, stanza, publish, service)
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
+	local required_config = nil;
 	local publish_options = stanza.tags[1]:get_child("publish-options");
 	if publish_options then
 		-- Ensure that the node configuration matches the values in publish-options
 		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
-		local required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
-		local node_accessible, node_config = service:get_node_config(node, stanza.attr.from);
-		if node_accessible == false and service.config.autocreate_on_publish then
-			module:log("debug", "creating node %s with publish-options", node)
-			-- we need to create the node here so that it is configured
-			-- correctly
-			local created, err = service:create(node, stanza.attr.from, required_config)
-			if not created then
-				local reply = pubsub_error_reply(stanza, err);
-				origin.send(reply);
-				return true;
-			end
-		elseif not check_preconditions(node_config, required_config) then
-			local reply = pubsub_error_reply(stanza, "precondition-not-met");
-			origin.send(reply);
-			return true;
-		end
+		required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
 	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id);
@@ -633,7 +605,7 @@ function handlers.set_publish(origin, stanza, publish, service)
 			item.attr.id = id;
 		end
 	end
-	local ok, ret = service:publish(node, stanza.attr.from, id, item);
+	local ok, ret = service:publish(node, stanza.attr.from, id, item, required_config);
 	local reply;
 	if ok then
 		if type(ok) == "string" then
