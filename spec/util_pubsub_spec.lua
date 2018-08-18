@@ -270,7 +270,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should allow subscribers to publish without an affiliation", function ()
 				assert.is_true(service:add_subscription("test", "stranger", "stranger"));
-				local ok  = service:publish("test", "stranger", "item1", "foo");
+				local ok = service:publish("test", "stranger", "item1", "foo");
 				assert.is_true(ok);
 			end);
 			it("should allow publishers to publish without a subscription", function ()
@@ -320,7 +320,7 @@ describe("util.pubsub", function ()
 				local ok, items = service:get_items("test", true);
 				assert.is_true(ok);
 				assert.equal(0, #items);
-				assert.is_nil(next(items));				
+				assert.is_nil(next(items));
 			end);
 			it("returns no items on an empty node", function ()
 				local ok, items = service:get_items("test", true);
