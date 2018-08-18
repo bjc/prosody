@@ -410,7 +410,6 @@ module:hook("account-disco-info", function(event)
 
 	local supported_features = lib_pubsub.get_feature_set(service) + set.new{
 		-- Features not covered by the above
-		"access-presence",
 		"auto-subscribe",
 		"filtered-notifications",
 		"last-published",
