@@ -232,7 +232,7 @@ local function check_preconditions(node_config, required_config)
 end
 
 local service_method_feature_map = {
-	add_subscription = { "subscribe" };
+	add_subscription = { "subscribe", "subscription-options" };
 	create = { "create-nodes", "instant-nodes", "item-ids", "create-and-configure" };
 	delete = { "delete-nodes" };
 	get_items = { "retrieve-items" };
