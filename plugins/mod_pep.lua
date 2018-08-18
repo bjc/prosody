@@ -253,8 +253,7 @@ end
 
 local function resend_last_item(jid, node, service)
 	local ok, id, item = service:get_last_item(node, jid);
-	if not ok then return; end
-	if not id then return; end
+	if not (ok and id) then return; end
 	service.config.broadcaster("items", node, { [jid] = true }, item);
 end
 
