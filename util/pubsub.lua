@@ -509,7 +509,7 @@ function service:publish(node, actor, id, item, required_config)
 		return false, "precondition-not-met";
 	end
 	if not self.config.itemcheck(item) then
-		return nil, "internal-server-error";
+		return nil, "invalid-item";
 	end
 	local node_data = self.data[node];
 	local ok = node_data:set(id, item);
