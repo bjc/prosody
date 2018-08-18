@@ -872,8 +872,8 @@ local function archive_itemstore(archive, config, user, node)
 			truncate = size;
 		});
 	end
-	function get_set:tail()
-		-- This should conveniently return the last item
+	function get_set:head()
+		-- This should conveniently return the most recent item
 		local item = self:get(nil);
 		if item then
 			return item.attr.id, item;

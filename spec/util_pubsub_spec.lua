@@ -285,4 +285,30 @@ describe("util.pubsub", function ()
 			end);
 		end);
 	end);
+
+	describe("item API", function ()
+		local service;
+		before_each(function ()
+			service = pubsub.new();
+			service:create("test", true, { publish_model = "subscribers" });
+		end);
+		describe("get_last_item()", function ()
+			it("succeeds with nil on empty nodes", function ()
+				local ok, id, item = service:get_last_item("test", true);
+				assert.is_true(ok);
+				assert.is_nil(id);
+				assert.is_nil(item);
+			end);
+			it("succeeds and returns the last item", function ()
+				service:publish("test", true, "one", "hello world");
+				service:publish("test", true, "two", "hello again");
+				service:publish("test", true, "three", "hey");
+				service:publish("test", true, "one", "bye");
+				local ok, id, item = service:get_last_item("test", true);
+				assert.is_true(ok);
+				assert.equal("one", id);
+				assert.equal("bye", item);
+			end);
+		end);
+	end);
 end);

@@ -604,7 +604,7 @@ function service:get_last_item(node, actor)
 	end
 
 	-- Returns success, id, item
-	return true, self.data[node]:tail();
+	return true, self.data[node]:head();
 end
 
 function service:get_nodes(actor)
