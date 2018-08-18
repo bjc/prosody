@@ -413,7 +413,6 @@ module:hook("account-disco-info", function(event)
 		"auto-subscribe",
 		"filtered-notifications",
 		"last-published",
-		"persistent-items",
 		"presence-notifications",
 		"presence-subscribe",
 	};
