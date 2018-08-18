@@ -241,7 +241,7 @@ local service_method_feature_map = {
 	publish = { "publish", "multi-items", "publish-options" };
 	purge = { "purge-nodes" };
 	retract = { "delete-items", "retract-items" };
-	set_node_config = { "config-node" };
+	set_node_config = { "config-node", "meta-data" };
 	set_affiliation = { "modify-affiliations" };
 };
 local service_config_feature_map = {
