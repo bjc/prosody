@@ -602,7 +602,7 @@ function service:get_last_item(node, actor)
 	if not self.nodes[node] then
 		return false, "item-not-found";
 	end
-	
+
 	-- Returns success, id, item
 	return true, self.data[node]:tail();
 end
