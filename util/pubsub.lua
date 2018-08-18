@@ -598,8 +598,8 @@ function service:get_last_item(node, actor)
 	end
 	--
 
-	-- Check node exists
-	if not self.nodes[node] then
+	-- Check node exists and has an item published
+	if not (self.nodes[node] and self.data[node]) then
 		return false, "item-not-found";
 	end
 	
