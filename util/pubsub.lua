@@ -582,6 +582,7 @@ function service:get_last_item(node, actor)
 		return false, "forbidden";
 	end
 	--
+	-- Returns success, id, item
 	return true, self.data[node]:tail();
 end
 
