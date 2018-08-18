@@ -464,7 +464,20 @@ function service:delete(node, actor)
 	return true;
 end
 
-function service:publish(node, actor, id, item)
+-- Used to check that the config of a node is as expected (i.e. 'publish-options')
+local function check_preconditions(node_config, required_config)
+	if not (node_config and required_config) then
+		return false;
+	end
+	for config_field, value in pairs(required_config) do
+		if node_config[config_field] ~= value then
+			return false;
+		end
+	end
+	return true;
+end
+
+function service:publish(node, actor, id, item, required_config)
 	-- Access checking
 	local may_publish = false;
 
@@ -487,11 +500,13 @@ function service:publish(node, actor, id, item)
 		if not self.config.autocreate_on_publish then
 			return false, "item-not-found";
 		end
-		local ok, err = self:create(node, true);
+		local ok, err = self:create(node, true, required_config);
 		if not ok then
 			return ok, err;
 		end
 		node_obj = self.nodes[node];
+	elseif required_config and not check_preconditions(node_obj.config, required_config) then
+		return false, "precondition-not-met";
 	end
 	if not self.config.itemcheck(item) then
 		return nil, "internal-server-error";
