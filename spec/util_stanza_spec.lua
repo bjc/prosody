@@ -257,4 +257,75 @@ describe("util.stanza", function()
 		end);
 	end);
 
+	describe("#maptags", function ()
+		it("should work", function ()
+			local s = st.stanza("test")
+				:tag("one"):up()
+				:tag("two"):up()
+				:tag("one"):up()
+				:tag("three"):up();
+
+			local function one_filter(tag)
+				if tag.name == "one" then
+					return nil;
+				end
+				return tag;
+			end
+			assert.equal(4, #s.tags);
+			s:maptags(one_filter);
+			assert.equal(2, #s.tags);
+		end);
+
+		it("should work with multiple consecutive text nodes", function ()
+			local s = st.deserialize({
+				"\n";
+				{
+					"away";
+					name = "show";
+					attr = {};
+				};
+				"\n";
+				{
+					"I am away";
+					name = "status";
+					attr = {};
+				};
+				"\n";
+				{
+					"0";
+					name = "priority";
+					attr = {};
+				};
+				"\n";
+				{
+					name = "c";
+					attr = {
+						xmlns = "http://jabber.org/protocol/caps";
+						node = "http://psi-im.org";
+						hash = "sha-1";
+					};
+				};
+				"\n";
+				"\n";
+				name = "presence";
+				attr = {
+					to = "user@example.com/jflsjfld";
+					from = "room@chat.example.org/nick";
+				};
+			});
+
+			assert.equal(4, #s.tags);
+
+			s:maptags(function (tag) return tag; end);
+			assert.equal(4, #s.tags);
+
+			s:maptags(function (tag)
+				if tag.name == "c" then
+					return nil;
+				end
+				return tag;
+			end);
+			assert.equal(3, #s.tags);
+		end);
+	end);
 end);
