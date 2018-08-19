@@ -6,9 +6,16 @@
 -- COPYING file in the source package for more information.
 --
 
+if not (prosody and prosody.config_loaded) then
+	-- This module only supports loading inside Prosody, outside Prosody
+	-- you should directly require net.server_select or server_event, etc.
+	error(debug.traceback("Loading outside Prosody or Prosody not yet initialized"), 0);
+end
+
 local log = require "util.logger".init("net.server");
-local server_type = prosody and require "core.configmanager".get("*", "network_backend") or "select";
-if prosody and require "core.configmanager".get("*", "use_libevent") then
+local server_type = require "core.configmanager".get("*", "network_backend") or "select";
+
+if require "core.configmanager".get("*", "use_libevent") then
 	server_type = "event";
 end
 
