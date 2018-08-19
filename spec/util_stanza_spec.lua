@@ -327,5 +327,12 @@ describe("util.stanza", function()
 			end);
 			assert.equal(3, #s.tags);
 		end);
+		it("errors on invalid data - #981", function ()
+			local s = st.message({}, "Hello");
+			s.tags[1] = st.clone(s.tags[1]);
+			assert.has_error_match(function ()
+				s:maptags(function () end);
+			end, "Invalid stanza");
+		end);
 	end);
 end);
