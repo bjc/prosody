@@ -217,6 +217,7 @@ end
 function stanza_mt:maptags(callback)
 	local tags, curr_tag = self.tags, 1;
 	local n_children, n_tags = #self, #tags;
+	local max_iterations = n_children + 1;
 
 	local i = 1;
 	while curr_tag <= n_tags and n_tags > 0 do
@@ -236,6 +237,11 @@ function stanza_mt:maptags(callback)
 			curr_tag = curr_tag + 1;
 		end
 		i = i + 1;
+		if i > max_iterations then
+			-- COMPAT: Hopefully temporary guard against #981 while we
+			-- figure out the root cause
+			error("Invalid stanza state! Please report this error.");
+		end
 	end
 	return self;
 end
