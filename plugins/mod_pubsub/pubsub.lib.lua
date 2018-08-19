@@ -196,7 +196,7 @@ local function config_to_xep0060(node_config)
 		["pubsub#deliver_notifications"] = node_config["notify_items"];
 		["pubsub#notify_delete"] = node_config["notify_delete"];
 		["pubsub#notify_retract"] = node_config["notify_retract"];
-		["pubsub#deliver_payloads"] =  node_config["include_payload"]
+		["pubsub#deliver_payloads"] =  node_config["include_payload"];
 	}
 end
 
