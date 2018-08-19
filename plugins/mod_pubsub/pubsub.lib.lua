@@ -100,7 +100,7 @@ local node_config_form = dataform {
 	};
 	{
 		type = "boolean";
-		value = "true";
+		value = true;
 		label = "Whether to deliver event notifications";
 		name = "pubsub#deliver_notifications";
 	};
