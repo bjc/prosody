@@ -65,6 +65,7 @@ function startup.read_config()
 		print("");
 		os.exit(1);
 	end
+	prosody.config_loaded = true;
 end
 
 function startup.check_dependencies()
