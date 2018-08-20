@@ -77,6 +77,20 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 		end
 	end
 
+	local meta_ok, avatar_meta = pep_service:get_items("urn:xmpp:avatar:metadata", stanza.attr.from);
+	local data_ok, avatar_data = pep_service:get_items("urn:xmpp:avatar:data", stanza.attr.from);
+	if meta_ok and data_ok then
+		for _, hash in ipairs(avatar_meta) do
+			local meta = avatar_meta[hash];
+			local data = avatar_data[hash];
+			local info = meta.tags[1]:get_child("info");
+			vcard_temp:tag("PHOTO")
+				:text_tag("TYPE", info and info.attr.type)
+				:text_tag("BINVAL", data.tags[1]:get_text())
+				:up();
+		end
+	end
+
 	origin.send(st.reply(stanza):add_child(vcard_temp));
 	return true;
 end);
