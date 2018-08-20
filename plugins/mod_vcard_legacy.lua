@@ -53,3 +53,22 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 	origin.send(st.reply(stanza):add_child(vcard_temp));
 	return true;
 end);
+
+local function inject_xep153(event)
+	local origin, stanza = event.origin, event.stanza;
+	local username = origin.username;
+	if not username then return end
+	local pep = mod_pep.get_pep_service(username);
+
+	stanza:remove_children("x", "vcard-temp:x:update");
+	local x_update = st.stanza("x", { xmlns = "vcard-temp:x:update" });
+	local ok, avatar_hash = pep:get_last_item("urn:xmpp:avatar:metadata", true);
+	if ok and avatar_hash then
+		x_update:text_tag("photo", avatar_hash);
+	end
+	stanza:add_direct_child(x_update);
+end
+
+module:hook("pre-presence/full", inject_xep153, 1);
+module:hook("pre-presence/bare", inject_xep153, 1);
+module:hook("pre-presence/host", inject_xep153, 1);
