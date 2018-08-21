@@ -6,6 +6,8 @@ local mod_pep = module:depends("pep");
 local sha1 = require "util.hashes".sha1;
 local base64_decode = require "util.encodings".base64.decode;
 
+local vcards = module:open_store("vcard");
+
 module:add_feature("vcard-temp");
 module:add_feature("urn:xmpp:pep-vcard-conversion:0");
 
@@ -93,6 +95,10 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 				vcard_temp:up();
 			end
 		end
+	else
+		local legacy_vcard = st.deserialize(vcards:get(jid_split(stanza.attr.to) or origin.username));
+		origin.send(st.reply(stanza):add_child(legacy_vcard or vcard_temp));
+		return true;
 	end
 
 	local meta_ok, avatar_meta = pep_service:get_items("urn:xmpp:avatar:metadata", stanza.attr.from);
