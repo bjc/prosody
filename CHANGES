@@ -20,6 +20,7 @@ New features
 -   Asynchronous operations
 -   Busted for tests
 -   mod\_muc\_mam (XEP-0313 in groupchats)
+-   mod\_vcard\_legacy
 
 0.10.0
 ======
