@@ -3,6 +3,9 @@ local jid_split = require "util.jid".split;
 
 local mod_pep = module:depends("pep");
 
+local sha1 = require "util.hashes".sha1;
+local base64_decode = require "util.encodings".base64.decode;
+
 module:add_feature("vcard-temp");
 module:add_feature("urn:xmpp:pep-vcard-conversion:0");
 
@@ -107,6 +110,126 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 	end
 
 	origin.send(st.reply(stanza):add_child(vcard_temp));
+	return true;
+end);
+
+module:hook("iq-set/self/vcard-temp:vCard", function (event)
+	local origin, stanza = event.origin, event.stanza;
+	local pep_service = mod_pep.get_pep_service(origin.username);
+
+	local vcard_temp = stanza.tags[1];
+
+	local vcard4 = st.stanza("item", { xmlns = "http://jabber.org/protocol/pubsub", id = "current" })
+		:tag("vcard", { xmlns = 'urn:ietf:params:xml:ns:vcard-4.0' });
+
+	vcard4:tag("fn"):text_tag("text", vcard_temp:get_child_text("FN")):up();
+
+	local N = vcard_temp:get_child("N");
+
+	vcard4:tag("n")
+		:text_tag("surname", N and N:get_child_text("FAMILY"))
+		:text_tag("given", N and N:get_child_text("GIVEN"))
+		:text_tag("additional", N and N:get_child_text("MIDDLe"))
+		:text_tag("prefix", N and N:get_child_text("PREFIX"))
+		:text_tag("suffix", N and N:get_child_text("SUFFIX"))
+	:up();
+
+	for tag in vcard_temp:childtags() do
+		local typ = simple_map[tag.name:lower()];
+		if typ then
+			local text = tag:get_text();
+			if text then
+				vcard4:tag(tag.name:lower()):text_tag(typ, text):up();
+			end
+		elseif tag.name == "EMAIL" then
+			local text = tag:get_child_text("USERID");
+			if text then
+				vcard4:tag("email")
+				vcard4:text_tag("text", text)
+				vcard4:tag("parameters"):tag("type");
+				if tag:get_child("HOME") then
+					vcard4:text_tag("text", "home");
+				elseif tag:get_child("WORK") then
+					vcard4:text_tag("text", "work");
+				end
+				vcard4:up():up():up();
+			end
+		elseif tag.name == "TEL" then
+			local text = tag:get_child_text("NUMBER");
+			if text then
+				vcard4:tag("tel"):text_tag("uri", "tel:"..text);
+			end
+			vcard4:tag("parameters"):tag("type");
+			if tag:get_child("HOME") then
+				vcard4:text_tag("text", "home");
+			elseif tag:get_child("WORK") then
+				vcard4:text_tag("text", "work");
+			end
+			vcard4:up():up():up();
+		elseif tag.name == "ORG" then
+			local text = tag:get_child_text("ORGNAME");
+			if text then
+				vcard4:tag("org"):text_tag("text", text):up();
+			end
+		elseif tag.name == "DESC" then
+			local text = tag:get_text();
+			if text then
+				vcard4:tag("note"):text_tag("text", text):up();
+			end
+		elseif tag.name == "ADR" then
+			vcard4:tag("adr")
+				:text_tag("pobox", tag:get_child_text("POBOX"))
+				:text_tag("ext", tag:get_child_text("EXTADD"))
+				:text_tag("street", tag:get_child_text("STREET"))
+				:text_tag("locality", tag:get_child_text("LOCALITY"))
+				:text_tag("region", tag:get_child_text("REGION"))
+				:text_tag("code", tag:get_child_text("PCODE"))
+				:text_tag("country", tag:get_child_text("CTRY"));
+			vcard4:tag("parameters"):tag("type");
+			if tag:get_child("HOME") then
+				vcard4:text_tag("text", "home");
+			elseif tag:get_child("WORK") then
+				vcard4:text_tag("text", "work");
+			end
+			vcard4:up():up():up();
+		elseif tag.name == "PHOTO" then
+			local avatar_type = tag:get_child_text("TYPE");
+			local avatar_payload = tag:get_child_text("BINVAL");
+
+			if avatar_payload then
+				local avatar_raw = base64_decode(avatar_payload);
+				local avatar_hash = sha1(avatar_raw, true);
+
+				local avatar_meta = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
+					:tag("metadata", { xmlns="urn:xmpp:avatar:metadata" })
+						:tag("info", {
+							bytes = tostring(#avatar_raw),
+							id = avatar_hash,
+							type = avatar_type,
+						});
+
+				local avatar_data = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
+					:tag("data", { xmlns="urn:xmpp:avatar:data" })
+						:text(avatar_payload);
+
+				if pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data) then
+					pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta);
+				end
+			end
+		end
+	end
+
+	local ok, err = pep_service:publish("urn:xmpp:vcard4", origin.full_jid, "current", vcard4);
+	if ok then
+		origin.send(st.reply(stanza));
+	elseif err == "forbidden" then
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+	elseif err == "internal-server-error" then
+		origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
+	else
+		origin.send(st.error_reply(stanza, "modify", "undefined-condition", err));
+	end
+
 	return true;
 end);
 
