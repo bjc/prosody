@@ -212,7 +212,7 @@ function service:may(node, actor, action)
 	return false;
 end
 
-function service:get_default_affiliation(node, actor, action) -- luacheck: ignore 212
+function service:get_default_affiliation(node, actor)
 	local node_obj = self.nodes[node];
 	local access_model = node_obj and node_obj.config.access_model
 		or self.node_defaults.access_model;
