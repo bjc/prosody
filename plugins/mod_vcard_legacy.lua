@@ -73,6 +73,21 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 					end
 					vcard_temp:up();
 				end
+			elseif tag.name == "adr" then
+				vcard_temp:tag("ADR")
+					:text_tag("POBOX", tag:get_child_text("pobox"))
+					:text_tag("EXTADD", tag:get_child_text("ext"))
+					:text_tag("STREET", tag:get_child_text("street"))
+					:text_tag("LOCALITY", tag:get_child_text("locality"))
+					:text_tag("REGION", tag:get_child_text("region"))
+					:text_tag("PCODE", tag:get_child_text("code"))
+					:text_tag("CTRY", tag:get_child_text("country"));
+				if tag:find"parameters/type/text#" == "home" then
+					vcard_temp:tag("HOME"):up();
+				elseif tag:find"parameters/type/text#" == "work" then
+					vcard_temp:tag("WORK"):up();
+				end
+				vcard_temp:up();
 			end
 		end
 	end
