@@ -172,12 +172,12 @@ end
 local service = {};
 service_mt.__index = service;
 
-function service:jids_equal(jid1, jid2)
+function service:jids_equal(jid1, jid2) --> boolean
 	local normalize = self.config.normalize_jid;
 	return normalize(jid1) == normalize(jid2);
 end
 
-function service:may(node, actor, action)
+function service:may(node, actor, action) --> boolean
 	if actor == true then return true; end
 
 	local node_obj = self.nodes[node];
@@ -212,7 +212,7 @@ function service:may(node, actor, action)
 	return false;
 end
 
-function service:get_default_affiliation(node, actor)
+function service:get_default_affiliation(node, actor) --> affiliation
 	local node_obj = self.nodes[node];
 	local access_model = node_obj and node_obj.config.access_model
 		or self.node_defaults.access_model;
@@ -234,7 +234,7 @@ function service:get_default_affiliation(node, actor)
 	end
 end
 
-function service:set_affiliation(node, actor, jid, affiliation)
+function service:set_affiliation(node, actor, jid, affiliation) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "set_affiliation") then
 		return false, "forbidden";
@@ -271,7 +271,7 @@ function service:set_affiliation(node, actor, jid, affiliation)
 	return true;
 end
 
-function service:add_subscription(node, actor, jid, options)
+function service:add_subscription(node, actor, jid, options) --> ok, err
 	-- Access checking
 	local cap;
 	if actor == true or jid == actor or self:jids_equal(actor, jid) then
@@ -325,7 +325,7 @@ function service:add_subscription(node, actor, jid, options)
 	return true;
 end
 
-function service:remove_subscription(node, actor, jid)
+function service:remove_subscription(node, actor, jid) --> ok, err
 	-- Access checking
 	local cap;
 	if actor == true or jid == actor or self:jids_equal(actor, jid) then
@@ -377,7 +377,7 @@ function service:remove_subscription(node, actor, jid)
 	return true;
 end
 
-function service:get_subscription(node, actor, jid)
+function service:get_subscription(node, actor, jid) --> (true, subscription) or (false, err)
 	-- Access checking
 	local cap;
 	if actor == true or jid == actor or self:jids_equal(actor, jid) then
@@ -396,7 +396,7 @@ function service:get_subscription(node, actor, jid)
 	return true, node_obj.subscribers[jid];
 end
 
-function service:create(node, actor, options)
+function service:create(node, actor, options) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "create") then
 		return false, "forbidden";
@@ -435,7 +435,7 @@ function service:create(node, actor, options)
 	return true;
 end
 
-function service:delete(node, actor)
+function service:delete(node, actor) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "delete") then
 		return false, "forbidden";
@@ -477,7 +477,7 @@ local function check_preconditions(node_config, required_config)
 	return true;
 end
 
-function service:publish(node, actor, id, item, required_config)
+function service:publish(node, actor, id, item, required_config) --> ok, err
 	-- Access checking
 	local may_publish = false;
 
@@ -524,7 +524,7 @@ function service:publish(node, actor, id, item, required_config)
 	return true;
 end
 
-function service:retract(node, actor, id, retract)
+function service:retract(node, actor, id, retract) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "retract") then
 		return false, "forbidden";
@@ -545,7 +545,7 @@ function service:retract(node, actor, id, retract)
 	return true
 end
 
-function service:purge(node, actor, notify)
+function service:purge(node, actor, notify) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "retract") then
 		return false, "forbidden";
@@ -567,7 +567,7 @@ function service:purge(node, actor, notify)
 	return true
 end
 
-function service:get_items(node, actor, id)
+function service:get_items(node, actor, id) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "get_items") then
 		return false, "forbidden";
@@ -593,7 +593,7 @@ function service:get_items(node, actor, id)
 	end
 end
 
-function service:get_last_item(node, actor)
+function service:get_last_item(node, actor) --> (true, id, node) or (false, err)
 	-- Access checking
 	if not self:may(node, actor, "get_items") then
 		return false, "forbidden";
@@ -609,7 +609,7 @@ function service:get_last_item(node, actor)
 	return true, self.data[node]:head();
 end
 
-function service:get_nodes(actor)
+function service:get_nodes(actor) --> (true, map) or (false, err)
 	-- Access checking
 	if not self:may(nil, actor, "get_nodes") then
 		return false, "forbidden";
@@ -641,7 +641,7 @@ local function flatten_subscriptions(ret, serv, subs, node, node_obj)
 	end
 end
 
-function service:get_subscriptions(node, actor, jid)
+function service:get_subscriptions(node, actor, jid) --> (true, array) or (false, err)
 	-- Access checking
 	local cap;
 	if actor == true or jid == actor or self:jids_equal(actor, jid) then
@@ -678,7 +678,7 @@ function service:get_subscriptions(node, actor, jid)
 end
 
 -- Access models only affect 'none' affiliation caps, service/default access level...
-function service:set_node_capabilities(node, actor, capabilities)
+function service:set_node_capabilities(node, actor, capabilities) --> ok, err
 	-- Access checking
 	if not self:may(node, actor, "configure") then
 		return false, "forbidden";
@@ -692,7 +692,7 @@ function service:set_node_capabilities(node, actor, capabilities)
 	return true;
 end
 
-function service:set_node_config(node, actor, new_config)
+function service:set_node_config(node, actor, new_config) --> ok, err
 	if not self:may(node, actor, "configure") then
 		return false, "forbidden";
 	end
@@ -743,7 +743,7 @@ function service:set_node_config(node, actor, new_config)
 	return true;
 end
 
-function service:get_node_config(node, actor)
+function service:get_node_config(node, actor) --> ok, err
 	if not self:may(node, actor, "get_configuration") then
 		return false, "forbidden";
 	end
