@@ -450,9 +450,9 @@ for event_name, method in pairs {
 			else
 				return;
 			end
-                elseif room == false then -- Error loading room
-                        origin.send(st.error_reply(stanza, "wait", "resource-constraint"));
-                        return true;
+		elseif room == false then -- Error loading room
+			origin.send(st.error_reply(stanza, "wait", "resource-constraint"));
+			return true;
 		end
 		return room[method](room, origin, stanza);
 	end, -2)
