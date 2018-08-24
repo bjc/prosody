@@ -95,9 +95,8 @@ module:hook("item-removed/feature", clear_disco_cache);
 module:hook("item-removed/extension", clear_disco_cache);
 
 -- Handle disco requests to the server
-module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(event)
+module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
 	if node and node ~= "" and node ~= "http://prosody.im#"..get_server_caps_hash() then
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
@@ -117,9 +116,8 @@ module:hook("iq/host/http://jabber.org/protocol/disco#info:query", function(even
 	origin.send(reply);
 	return true;
 end);
-module:hook("iq/host/http://jabber.org/protocol/disco#items:query", function(event)
+module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
 	if node and node ~= "" then
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#items', node=node});
@@ -155,9 +153,8 @@ end);
 
 -- Handle disco requests to user accounts
 if module:get_host_type() ~= "local" then	return end -- skip for components
-module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(event)
+module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
 	local username = jid_split(stanza.attr.to) or origin.username;
 	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
@@ -182,9 +179,8 @@ module:hook("iq/bare/http://jabber.org/protocol/disco#info:query", function(even
 		return true;
 	end
 end);
-module:hook("iq/bare/http://jabber.org/protocol/disco#items:query", function(event)
+module:hook("iq-get/bare/http://jabber.org/protocol/disco#items:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type ~= "get" then return; end
 	local node = stanza.tags[1].attr.node;
 	local username = jid_split(stanza.attr.to) or origin.username;
 	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
