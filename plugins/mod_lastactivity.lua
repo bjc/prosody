@@ -24,22 +24,20 @@ module:hook("pre-presence/bare", function(event)
 	end
 end, 10);
 
-module:hook("iq/bare/jabber:iq:last:query", function(event)
+module:hook("iq-get/bare/jabber:iq:last:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	if stanza.attr.type == "get" then
-		local username = jid_split(stanza.attr.to) or origin.username;
-		if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
-			local seconds, text = "0", "";
-			if map[username] then
-				seconds = tostring(os.difftime(os.time(), map[username].t));
-				text = map[username].s;
-			end
-			origin.send(st.reply(stanza):tag('query', {xmlns='jabber:iq:last', seconds=seconds}):text(text));
-		else
-			origin.send(st.error_reply(stanza, 'auth', 'forbidden'));
+	local username = jid_split(stanza.attr.to) or origin.username;
+	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+		local seconds, text = "0", "";
+		if map[username] then
+			seconds = tostring(os.difftime(os.time(), map[username].t));
+			text = map[username].s;
 		end
-		return true;
+		origin.send(st.reply(stanza):tag('query', {xmlns='jabber:iq:last', seconds=seconds}):text(text));
+	else
+		origin.send(st.error_reply(stanza, 'auth', 'forbidden'));
 	end
+	return true;
 end);
 
 module.save = function()
