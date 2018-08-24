@@ -41,8 +41,6 @@ end
 
 module:hook("iq-get/host/jabber:iq:version:query", function(event)
 	local stanza = event.stanza;
-	if stanza.attr.to == module.host then
-		event.origin.send(st.reply(stanza):add_child(query));
-		return true;
-	end
+	event.origin.send(st.reply(stanza):add_child(query));
+	return true;
 end);
