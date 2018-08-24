@@ -39,9 +39,9 @@ if not module:get_option_boolean("hide_os_type") then
 	end
 end
 
-module:hook("iq/host/jabber:iq:version:query", function(event)
+module:hook("iq-get/host/jabber:iq:version:query", function(event)
 	local stanza = event.stanza;
-	if stanza.attr.type == "get" and stanza.attr.to == module.host then
+	if stanza.attr.to == module.host then
 		event.origin.send(st.reply(stanza):add_child(query));
 		return true;
 	end
