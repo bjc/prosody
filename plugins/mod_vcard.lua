@@ -29,7 +29,7 @@ local function handle_vcard(event)
 		else
 			session.send(st.error_reply(stanza, "cancel", "item-not-found"));
 		end
-	else
+	else -- stanza.attr.type == "set"
 		if not to then
 			if vcards:set(session.username, st.preserialize(stanza.tags[1])) then
 				session.send(st.reply(stanza));
