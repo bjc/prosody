@@ -32,7 +32,7 @@ module:hook("iq/self/jabber:iq:private:query", function(event)
 			origin.send(st.reply(stanza):add_child(query));
 		end
 		return true;
-	else -- type == set
+	else -- stanza.attr.type == "set"
 		local data;
 		if #tag ~= 0 then
 			data = st.preserialize(tag);
