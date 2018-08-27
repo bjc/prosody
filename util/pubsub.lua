@@ -321,7 +321,7 @@ function service:add_subscription(node, actor, jid, options)
 		end
 	end
 
-	self.events.fire_event("subscription-added", { node = node, jid = jid, normalized_jid = normal_jid, options = options });
+	self.events.fire_event("subscription-added", { service = self, node = node, jid = jid, normalized_jid = normal_jid, options = options });
 	return true;
 end
 
@@ -373,7 +373,7 @@ function service:remove_subscription(node, actor, jid)
 		end
 	end
 
-	self.events.fire_event("subscription-removed", { node = node, jid = jid, normalized_jid = normal_jid });
+	self.events.fire_event("subscription-removed", { service = self, node = node, jid = jid, normalized_jid = normal_jid });
 	return true;
 end
 
@@ -422,7 +422,7 @@ function service:create(node, actor, options)
 	end
 
 	self.data[node] = self.config.itemstore(self.nodes[node].config, node);
-	self.events.fire_event("node-created", { node = node, actor = actor });
+	self.events.fire_event("node-created", { service = self, node = node, actor = actor });
 	if actor ~= true then
 		local ok, err = self:set_affiliation(node, true, actor, "owner");
 		if not ok then
@@ -459,7 +459,7 @@ function service:delete(node, actor)
 		end
 	end
 
-	self.events.fire_event("node-deleted", { node = node, actor = actor });
+	self.events.fire_event("node-deleted", { service = self, node = node, actor = actor });
 	self.config.broadcaster("delete", node, node_obj.subscribers, nil, actor, node_obj, self);
 	return true;
 end
@@ -517,7 +517,7 @@ function service:publish(node, actor, id, item, required_config)
 		return nil, "internal-server-error";
 	end
 	if type(ok) == "string" then id = ok; end
-	local event_data = { node = node, actor = actor, id = id, item = item };
+	local event_data = { service = self, node = node, actor = actor, id = id, item = item };
 	self.events.fire_event("item-published/"..node, event_data);
 	self.events.fire_event("item-published", event_data);
 	self.config.broadcaster("items", node, node_obj.subscribers, item, actor, node_obj, self);
@@ -538,7 +538,7 @@ function service:retract(node, actor, id, retract)
 	if not ok then
 		return nil, "internal-server-error";
 	end
-	self.events.fire_event("item-retracted", { node = node, actor = actor, id = id });
+	self.events.fire_event("item-retracted", { service = self, node = node, actor = actor, id = id });
 	if retract then
 		self.config.broadcaster("retract", node, node_obj.subscribers, retract, actor, node_obj, self);
 	end
@@ -560,7 +560,7 @@ function service:purge(node, actor, notify)
 	else
 		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
 	end
-	self.events.fire_event("node-purged", { node = node, actor = actor });
+	self.events.fire_event("node-purged", { service = self, node = node, actor = actor });
 	if notify then
 		self.config.broadcaster("purge", node, node_obj.subscribers, nil, actor, node_obj, self);
 	end
