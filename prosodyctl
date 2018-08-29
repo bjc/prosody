@@ -864,7 +864,7 @@ function commands.check(arg)
 			print("    "..tostring(deprecated_global_options))
 			ok = false;
 		end
-		for host, options in enabled_hosts() do
+		for host, options in it.filter(function (h) return h ~= "*" end, pairs(configmanager.getconfig())) do
 			local host_options = set.new(it.to_array(it.keys(options)));
 			local misplaced_options = set.intersection(host_options, known_global_options);
 			for name in pairs(options) do
@@ -884,6 +884,9 @@ function commands.check(arg)
 				print("");
 				print("    You need to move the following option"..(n>1 and "s" or "")..": "..table.concat(it.to_array(misplaced_options), ", "));
 			end
+		end
+		for host, options in enabled_hosts() do
+			local host_options = set.new(it.to_array(it.keys(options)));
 			local subdomain = host:match("^[^.]+");
 			if not(host_options:contains("component_module")) and (subdomain == "jabber" or subdomain == "xmpp"
 			   or subdomain == "chat" or subdomain == "im") then
