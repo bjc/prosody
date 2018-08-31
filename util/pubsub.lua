@@ -583,7 +583,7 @@ function service:purge(node, actor, notify) --> ok, err
 	return true
 end
 
-function service:get_items(node, actor, id) --> ok, err
+function service:get_items(node, actor, id) --> (true, { id, [id] = node }) or (false, err)
 	-- Access checking
 	if not self:may(node, actor, "get_items") then
 		return false, "forbidden";
