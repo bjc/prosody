@@ -11,10 +11,26 @@ local default_config = {
 	normalize_jid = function (jid) return jid; end;
 	capabilities = {
 		outcast = {
+			create = false;
+			publish = false;
+			retract = false;
+			get_nodes = false;
+
+			subscribe = false;
+			unsubscribe = false;
 			get_subscription = true;
 			get_subscriptions = true;
+			get_items = false;
+
+			subscribe_other = false;
+			unsubscribe_other = false;
+			get_subscription_other = false;
+			get_subscriptions_other = false;
+
 			be_subscribed = false;
 			be_unsubscribed = true;
+
+			set_affiliation = false;
 		};
 		none = {
 			create = false;
