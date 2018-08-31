@@ -386,5 +386,20 @@ describe("util.dataforms", function ()
 			assert.same(expect, data, "got back the same data");
 		end);
 	end);
+
+	describe("field 'var' property", function ()
+		it("works as expected", function ()
+			local f = dataforms.new {
+				{
+					var = "someprefix#the-field",
+					name = "the_field",
+					type = "text-single",
+				}
+			};
+			local x = f:form({the_field = "hello"});
+			assert.equal("someprefix#the-field", x:find"field@var");
+			assert.equal("hello", x:find"field/value#");
+		end);
+	end);
 end);
 
