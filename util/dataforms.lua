@@ -42,7 +42,7 @@ function form_t.form(layout, data, formtype)
 	for _, field in ipairs(layout) do
 		local field_type = field.type or "text-single";
 		-- Add field tag
-		form:tag("field", { type = field_type, var = field.name, label = formtype ~= "submit" and field.label or nil });
+		form:tag("field", { type = field_type, var = field.var or field.name, label = formtype ~= "submit" and field.label or nil });
 
 		if formtype ~= "submit" then
 			if field.desc then
@@ -150,7 +150,7 @@ function form_t.data(layout, stanza, current)
 	for _, field in ipairs(layout) do
 		local tag;
 		for field_tag in stanza:childtags("field") do
-			if field.name == field_tag.attr.var then
+			if (field.var or field.name) == field_tag.attr.var then
 				tag = field_tag;
 				break;
 			end
