@@ -572,7 +572,8 @@ function handlers.set_options(origin, stanza, options, service)
 		origin.send(pubsub_error_reply(stanza, "not-subscribed"));
 		return true;
 	end
-	local new_subopts, err = subscribe_options_form:data(options.tags[1]);
+	local old_subopts = ret;
+	local new_subopts, err = subscribe_options_form:data(options.tags[1], old_subopts);
 	if not new_subopts then
 		origin.send(pubsub_error_reply(stanza, ret));
 		return true;
