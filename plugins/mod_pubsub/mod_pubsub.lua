@@ -114,7 +114,7 @@ function is_item_stanza(item)
 end
 
 module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
-	local payload = event.item;
+	local payload = event.payload;
 	local title = payload:get_child_text("title");
 	local summary = payload:get_child_text("summary");
 	if not summary and title then
