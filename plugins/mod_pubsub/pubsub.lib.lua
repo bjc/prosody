@@ -71,6 +71,7 @@ local node_config_form = dataform {
 	};
 	{
 		type = "text-single";
+		datatype = "xs:integer";
 		name = "max_items";
 		var = "pubsub#max_items";
 		label = "Max # of items to persist";
