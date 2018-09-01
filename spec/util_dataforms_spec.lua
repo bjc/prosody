@@ -401,5 +401,27 @@ describe("util.dataforms", function ()
 			assert.equal("hello", x:find"field/value#");
 		end);
 	end);
+
+	describe("validation", function ()
+		local f = dataforms.new {
+			{
+				name = "number",
+				type = "text-single",
+				datatype = "xs:integer",
+			},
+		};
+
+		it("works", function ()
+			local d = f:data(f:form({number = 1}));
+			assert.equal(1, d.number);
+		end);
+
+		it("works", function ()
+			local d,e = f:data(f:form({number = "nan"}));
+			assert.not_equal(1, d.number);
+			assert.table(e);
+			assert.string(e.number);
+		end);
+	end);
 end);
 
