@@ -9,6 +9,7 @@
 local setmetatable = setmetatable;
 local ipairs = ipairs;
 local type, next = type, next;
+local tonumber = tonumber;
 local t_concat = table.concat;
 local st = require "util.stanza";
 local jid_prep = require "util.jid".prep;
@@ -17,6 +18,7 @@ local _ENV = nil;
 -- luacheck: std none
 
 local xmlns_forms = 'jabber:x:data';
+local xmlns_validate = 'http://jabber.org/protocol/xdata-validate';
 
 local form_t = {};
 local form_mt = { __index = form_t };
@@ -49,6 +51,13 @@ function form_t.form(layout, data, formtype)
 				form:text_tag("desc", field.desc);
 			end
 		end
+
+		if formtype == "form" and field.datatype then
+			form:tag("validate", { xmlns = xmlns_validate, datatype = field.datatype });
+			-- <basic/> assumed
+			form:up();
+		end
+
 
 		local value = field.value;
 		local options = field.options;
@@ -85,6 +94,10 @@ function form_t.form(layout, data, formtype)
 		end
 
 		if value ~= nil then
+			if type(value) == "number" then
+				-- TODO validate that this is ok somehow, eg check field.datatype
+				value = ("%g"):format(value);
+			end
 			-- Add value, depending on type
 			if field_type == "hidden" then
 				if type(value) == "table" then
@@ -141,6 +154,7 @@ function form_t.form(layout, data, formtype)
 end
 
 local field_readers = {};
+local data_validators = {};
 
 function form_t.data(layout, stanza, current)
 	local data = {};
@@ -166,7 +180,17 @@ function form_t.data(layout, stanza, current)
 			present[field.name] = true;
 			local reader = field_readers[field.type];
 			if reader then
-				data[field.name], errors[field.name] = reader(tag, field.required);
+				local value, err = reader(tag, field.required);
+				local validator = field.datatype and data_validators[field.datatype];
+				if value ~= nil and validator then
+					local valid, ret = validator(value, field);
+					if valid then
+						value = ret;
+					else
+						value, err = nil, ret or field.datatype;
+					end
+				end
+				data[field.name], errors[field.name] = value, err;
 			end
 		end
 	end
@@ -263,6 +287,17 @@ field_readers["boolean"] =
 field_readers["hidden"] =
 	function (field_tag)
 		return field_tag:get_child_text("value");
+	end
+
+data_validators["xs:integer"] =
+	function (data)
+		local n = tonumber(data);
+		if not n then
+			return false, "not a number";
+		elseif n % 1 ~= 0 then
+			return false, "not an integer";
+		end
+		return true, n;
 	end
 
 
