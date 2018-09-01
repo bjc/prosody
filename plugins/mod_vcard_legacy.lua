@@ -59,6 +59,20 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 					end
 					vcard_temp:up();
 				end
+			elseif tag.name == "tel" then
+				local text = tag:get_child_text("uri");
+				if text then
+					if text:sub(1, 4) == "tel:" then
+						text = text:sub(5)
+					end
+					vcard_temp:tag("TEL"):text_tag("NUMBER", text);
+					if tag:find"parameters/type/text#" == "home" then
+						vcard_temp:tag("HOME"):up();
+					elseif tag:find"parameters/type/text#" == "work" then
+						vcard_temp:tag("WORK"):up();
+					end
+					vcard_temp:up();
+				end
 			end
 		end
 	end
