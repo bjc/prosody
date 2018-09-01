@@ -9,7 +9,9 @@ local base64_decode = require "util.encodings".base64.decode;
 local vcards = module:open_store("vcard");
 
 module:add_feature("vcard-temp");
-module:add_feature("urn:xmpp:pep-vcard-conversion:0");
+module:hook("account-disco-info", function (event)
+	event.reply:tag("feature", { var = "urn:xmpp:pep-vcard-conversion:0" }):up();
+end);
 
 -- Simple translations
 -- <foo><text>hey</text></foo> -> <FOO>hey</FOO>
