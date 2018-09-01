@@ -53,32 +53,38 @@ local node_config_form = dataform {
 	};
 	{
 		type = "text-single";
-		name = "pubsub#title";
+		name = "title";
+		var = "pubsub#title";
 		label = "Title";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#description";
+		name = "description";
+		var = "pubsub#description";
 		label = "Description";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#type";
+		name = "payload_type";
+		var = "pubsub#type";
 		label = "The type of node data, usually specified by the namespace of the payload (if any)";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#max_items";
+		name = "max_items";
+		var = "pubsub#max_items";
 		label = "Max # of items to persist";
 	};
 	{
 		type = "boolean";
-		name = "pubsub#persist_items";
+		name = "persist_items";
+		var = "pubsub#persist_items";
 		label = "Persist items to storage";
 	};
 	{
 		type = "list-single";
-		name = "pubsub#access_model";
+		name = "access_model";
+		var = "pubsub#access_model";
 		label = "Specify the subscriber model";
 		options = {
 			"authorize",
@@ -90,7 +96,8 @@ local node_config_form = dataform {
 	};
 	{
 		type = "list-single";
-		name = "pubsub#publish_model";
+		name = "publish_model";
+		var = "pubsub#publish_model";
 		label = "Specify the publisher model";
 		options = {
 			"publishers";
@@ -102,17 +109,20 @@ local node_config_form = dataform {
 		type = "boolean";
 		value = true;
 		label = "Whether to deliver event notifications";
-		name = "pubsub#deliver_notifications";
+		name = "notify_items";
+		var = "pubsub#deliver_notifications";
 	};
 	{
 		type = "boolean";
 		value = true;
 		label = "Whether to deliver payloads with event notifications";
-		name = "pubsub#deliver_payloads";
+		name = "include_payload";
+		var = "pubsub#deliver_payloads";
 	};
 	{
 		type = "list-single";
-		name = "pubsub#notification_type";
+		name = "notification_type";
+		var = "pubsub#notification_type";
 		label = "Specify the delivery style for notifications";
 		options = {
 			{ label = "Messages of type normal", value = "normal" },
@@ -122,13 +132,15 @@ local node_config_form = dataform {
 	{
 		type = "boolean";
 		label = "Whether to notify subscribers when the node is deleted";
-		name = "pubsub#notify_delete";
+		name = "notify_delete";
+		var = "pubsub#notify_delete";
 		value = true;
 	};
 	{
 		type = "boolean";
 		label = "Whether to notify subscribers when items are removed from the node";
-		name = "pubsub#notify_retract";
+		name = "notify_retract";
+		var = "pubsub#notify_retract";
 		value = true;
 	};
 };
@@ -165,60 +177,6 @@ local node_metadata_form = dataform {
 		name = "pubsub#type";
 	};
 };
-
-local config_field_map = {
-	title = "pubsub#title";
-	description = "pubsub#description";
-	payload_type = "pubsub#type";
-	max_items = "pubsub#max_items";
-	persist_items = "pubsub#persist_items";
-	notification_type = "pubsub#notification_type";
-	access_model = "pubsub#access_model";
-	publish_model = "pubsub#publish_model";
-	notify_items = "pubsub#deliver_notifications";
-	notify_delete = "pubsub#notify_delete";
-	notify_retract = "pubsub#notify_retract";
-	include_payload = "pubsub#deliver_payloads";
-};
-local reverse_config_field_map = {};
-for k, v in pairs(config_field_map) do reverse_config_field_map[v] = k; end
-
--- util.pubsub is meant to be agnostic to XEP-0060
-local function config_to_xep0060(node_config)
-	return {
-		["pubsub#title"] = node_config["title"];
-		["pubsub#description"] = node_config["description"];
-		["pubsub#type"] = node_config["payload_type"];
-		["pubsub#max_items"] = tostring(node_config["max_items"]);
-		["pubsub#persist_items"] = node_config["persist_items"];
-		["pubsub#notification_type"] = node_config["notification_type"];
-		["pubsub#access_model"] = node_config["access_model"];
-		["pubsub#publish_model"] = node_config["publish_model"];
-		["pubsub#deliver_notifications"] = node_config["notify_items"];
-		["pubsub#notify_delete"] = node_config["notify_delete"];
-		["pubsub#notify_retract"] = node_config["notify_retract"];
-		["pubsub#deliver_payloads"] =  node_config["include_payload"];
-	}
-end
-
-local function config_from_xep0060(config, strict)
-	local ret = {};
-	for config_field, config_value in pairs(config) do
-		local mapped_name = reverse_config_field_map[config_field];
-		if mapped_name then
-			-- FIXME: The intention is to add "subtype" support to
-			-- util.dataforms, which will remove the need for this
-			-- ugly hack
-			if mapped_name == "max_items" then
-				config_value = tonumber(config_value);
-			end
-			ret[mapped_name] = config_value;
-		elseif strict and config_field ~= "FORM_TYPE" then
-			return nil, "unknown-field", config_field;
-		end
-	end
-	return ret;
-end
 
 local service_method_feature_map = {
 	add_subscription = { "subscribe", "subscription-options" };
@@ -445,7 +403,7 @@ function handlers.set_create(origin, stanza, create, service)
 			origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 			return true;
 		end
-		config = config_from_xep0060(form_data);
+		config = form_data;
 	end
 	if node then
 		ok, ret = service:create(node, stanza.attr.from, config);
@@ -598,7 +556,7 @@ function handlers.set_publish(origin, stanza, publish, service)
 	if publish_options then
 		-- Ensure that the node configuration matches the values in publish-options
 		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
-		required_config = config_from_xep0060(node_config_form:data(publish_options_form), true);
+		required_config = node_config_form:data(publish_options_form);
 	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id);
@@ -679,11 +637,10 @@ function handlers.owner_get_configure(origin, stanza, config, service)
 		return true;
 	end
 
-	local pubsub_form_data = config_to_xep0060(node_config);
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("configure", { node = node })
-				:add_child(node_config_form:form(pubsub_form_data));
+				:add_child(node_config_form:form(node_config));
 	origin.send(reply);
 	return true;
 end
@@ -708,12 +665,11 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 		origin.send(pubsub_error_reply(stanza, old_config));
 		return true;
 	end
-	local form_data, err = node_config_form:data(config_form, old_config);
-	if not form_data then
+	local new_config, err = node_config_form:data(config_form, old_config);
+	if not new_config then
 		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
 		return true;
 	end
-	local new_config = config_from_xep0060(form_data);
 	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, err));
@@ -724,11 +680,10 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 end
 
 function handlers.owner_get_default(origin, stanza, default, service) -- luacheck: ignore 212/default
-	local pubsub_form_data = config_to_xep0060(service.node_defaults);
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub_owner })
 			:tag("default")
-				:add_child(node_config_form:form(pubsub_form_data));
+				:add_child(node_config_form:form(service.node_defaults));
 	origin.send(reply);
 	return true;
 end
