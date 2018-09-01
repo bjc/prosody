@@ -107,11 +107,15 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 		for _, hash in ipairs(avatar_meta) do
 			local meta = avatar_meta[hash];
 			local data = avatar_data[hash];
-			local info = meta.tags[1]:get_child("info");
-			vcard_temp:tag("PHOTO")
-				:text_tag("TYPE", info and info.attr.type)
-				:text_tag("BINVAL", data.tags[1]:get_text())
-				:up();
+			local info = meta and meta.tags[1]:get_child("info");
+			vcard_temp:tag("PHOTO");
+			if info and info.attr.type then
+				vcard_temp:text_tag("TYPE", info.attr.type);
+			end
+			if data then
+				vcard_temp:text_tag("BINVAL", data.tags[1]:get_text());
+			end
+			vcard_temp:up();
 		end
 	end
 
