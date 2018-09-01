@@ -42,6 +42,14 @@ local function pubsub_error_reply(stanza, error)
 end
 _M.pubsub_error_reply = pubsub_error_reply;
 
+local function dataform_error_message(err) -- ({ string : string }) -> string?
+	local out = {};
+	for field, errmsg in pairs(err) do
+		table.insert(out, ("%s: %s"):format(field, errmsg))
+	end
+	return table.concat(out, "; ");
+end
+
 -- Note: If any config options are added that are of complex types,
 -- (not simply strings/numbers) then the publish-options code will
 -- need to be revisited
@@ -400,8 +408,8 @@ function handlers.set_create(origin, stanza, create, service)
 			return true;
 		end
 		local form_data, err = node_config_form:data(config_form);
-		if not form_data then
-			origin.send(st.error_reply(stanza, "modify", "bad-request", err));
+		if err then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", dataform_error_message(err)));
 			return true;
 		end
 		config = form_data;
@@ -457,7 +465,13 @@ function handlers.set_subscribe(origin, stanza, subscribe, service)
 	end
 	local options_tag, options = stanza.tags[1]:get_child("options"), nil;
 	if options_tag then
-		options = subscribe_options_form:data(options_tag.tags[1]);
+		-- FIXME form parsing errors ignored here, why?
+		local err
+		options, err = subscribe_options_form:data(options_tag.tags[1]);
+		if err then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", dataform_error_message(err)));
+			return true
+		end
 	end
 	local ok, ret = service:add_subscription(node, stanza.attr.from, jid, options);
 	local reply;
@@ -533,8 +547,8 @@ function handlers.set_options(origin, stanza, options, service)
 	end
 	local old_subopts = ret;
 	local new_subopts, err = subscribe_options_form:data(options.tags[1], old_subopts);
-	if not new_subopts then
-		origin.send(pubsub_error_reply(stanza, ret));
+	if err then
+		origin.send(st.error_reply(stanza, "modify", "bad-request", dataform_error_message(err)));
 		return true;
 	end
 	local ok, err = service:add_subscription(node, stanza.attr.from, jid, new_subopts);
@@ -557,7 +571,12 @@ function handlers.set_publish(origin, stanza, publish, service)
 	if publish_options then
 		-- Ensure that the node configuration matches the values in publish-options
 		local publish_options_form = publish_options:get_child("x", "jabber:x:data");
-		required_config = node_config_form:data(publish_options_form);
+		local err;
+		required_config, err = node_config_form:data(publish_options_form);
+		if err then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", dataform_error_message(err)));
+			return true
+		end
 	end
 	local item = publish:get_child("item");
 	local id = (item and item.attr.id);
@@ -667,8 +686,8 @@ function handlers.owner_set_configure(origin, stanza, config, service)
 		return true;
 	end
 	local new_config, err = node_config_form:data(config_form, old_config);
-	if not new_config then
-		origin.send(st.error_reply(stanza, "modify", "bad-request", err));
+	if err then
+		origin.send(st.error_reply(stanza, "modify", "bad-request", dataform_error_message(err)));
 		return true;
 	end
 	local ok, err = service:set_node_config(node, stanza.attr.from, new_config);
