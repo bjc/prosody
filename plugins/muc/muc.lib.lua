@@ -70,6 +70,7 @@ function room_mt:new_occupant(bare_real_jid, nick)
 	return occupant;
 end
 
+-- nick is in the form of an in-room JID
 function room_mt:get_occupant_by_nick(nick)
 	local occupant = self._occupants[nick];
 	if occupant == nil then return nil end
@@ -1450,8 +1451,10 @@ function _M.restore_room(frozen, state)
 	room._affiliation_data = frozen._affiliation_data;
 
 	if frozen.jid and frozen._affiliations then
+		-- Old storage format
 		room._affiliations = frozen._affiliations;
 	else
+		-- New storage format
 		for jid, data in pairs(frozen) do
 			local node, host, resource = jid_split(jid);
 			if host:sub(1,1) ~= "_" and not resource and type(data) == "string" then
