@@ -187,7 +187,7 @@ function form_t.data(layout, stanza, current)
 					if valid then
 						value = ret;
 					else
-						value, err = nil, ret or field.datatype;
+						value, err = nil, ret or ("Invalid value for data of type " .. field.datatype);
 					end
 				end
 				data[field.name], errors[field.name] = value, err;
