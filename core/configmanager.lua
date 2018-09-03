@@ -7,8 +7,8 @@
 --
 
 local _G = _G;
-local setmetatable, rawget, rawset, io, error, dofile, type, pairs =
-      setmetatable, rawget, rawset, io, error, dofile, type, pairs;
+local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs =
+      setmetatable, rawget, rawset, io, os, error, dofile, type, pairs;
 local format, math_max = string.format, math.max;
 
 local envload = require"util.envload".envload;
@@ -109,6 +109,9 @@ do
 			Component = true, component = true,
 			Include = true, include = true, RunScript = true }, {
 				__index = function (_, k)
+					if k:match("^ENV_") then
+						return os.getenv(k:sub(5));
+					end
 					return rawget(_G, k);
 				end,
 				__newindex = function (_, k, v)
