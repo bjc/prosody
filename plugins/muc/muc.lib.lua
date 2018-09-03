@@ -334,13 +334,23 @@ function room_mt:send_occupant_list(to, filter)
 end
 
 function room_mt:get_disco_info(stanza)
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info");
-	local form = dataform.new {
-		{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" };
-	};
-	local formdata = {};
-	module:fire_event("muc-disco#info", {room = self; reply = reply; form = form, formdata = formdata ;});
-	reply:add_child(form:form(formdata, "result"));
+	local node = stanza.tags[1].attr.node or "";
+	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info", { node = node });
+	local event_name = "muc-disco#info";
+	local event_data = { room = self, reply = reply, stanza = stanza };
+
+	if node ~= "" then
+		event_name = event_name.."/"..node;
+	else
+		event_data.form = dataform.new {
+			{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#roominfo" };
+		};
+		event_data.formdata = {};
+	end
+	module:fire_event(event_name, event_data);
+	if event_data.form then
+		reply:add_child(event_data.form:form(event_data.formdata, "result"));
+	end
 	return reply;
 end
 module:hook("muc-disco#info", function(event)
