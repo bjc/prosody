@@ -1198,7 +1198,8 @@ function room_mt:each_affiliation(with_affiliation)
 	end
 end
 
-function room_mt:set_affiliation(actor, jid, affiliation, reason)
+function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
+	module:log("debug", "data is %s", tostring(data));
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
 	local node, host, resource = jid_split(jid);
@@ -1240,6 +1241,13 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 
 	-- Set in 'database'
 	self._affiliations[jid] = affiliation;
+	if not affiliation or data == false or (data ~= nil and next(data) == nil) then
+		module:log("debug", "Clearing affiliation data for %s", jid);
+		self._affiliation_data[jid] = nil;
+	elseif data then
+		module:log("debug", "Updating affiliation data for %s", jid);
+		self._affiliation_data[jid] = data;
+	end
 
 	-- Update roles
 	local role = self:get_default_role(affiliation);
@@ -1297,6 +1305,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason)
 		affiliation = affiliation or "none";
 		reason = reason;
 		previous_affiliation = target_affiliation;
+		data = data and data or nil; -- coerce false to nil
 		in_room = next(occupants_updated) ~= nil;
 	});
 
@@ -1369,6 +1378,7 @@ function _M.new_room(jid, config)
 		_occupants = {};
 		_data = config or {};
 		_affiliations = {};
+		_affiliation_data = {};
 	}, room_mt);
 end
 
@@ -1389,6 +1399,7 @@ function room_mt:freeze(live)
 			jid = self.jid;
 			_data = self._data;
 			_affiliations = self._affiliations;
+			_affiliation_data = self._affiliation_data;
 		};
 	end
 	if live then
@@ -1425,6 +1436,8 @@ function _M.restore_room(frozen, state)
 
 	local occupants = {};
 	local room_name, room_host = jid_split(room_jid);
+
+	room._affiliation_data = frozen._affiliation_data;
 
 	if frozen.jid and frozen._affiliations then
 		room._affiliations = frozen._affiliations;
