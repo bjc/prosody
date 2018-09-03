@@ -81,6 +81,11 @@ room_mt.send_history = history.send;
 room_mt.get_historylength = history.get_length;
 room_mt.set_historylength = history.set_length;
 
+local register = module:require "muc/register";
+room_mt.get_registered_nick = register.get_registered_nick;
+room_mt.get_registered_jid = register.get_registered_jid;
+room_mt.handle_register_iq = register.handle_register_iq;
+
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -401,6 +406,7 @@ for event_name, method in pairs {
 	["iq-get/bare/http://jabber.org/protocol/muc#owner:query"] = "handle_owner_query_get_to_room" ;
 	["message/bare"] = "handle_message_to_room" ;
 	["presence/bare"] = "handle_presence_to_room" ;
+	["iq/bare/jabber:iq:register:query"] = "handle_register_iq";
 	-- Host room
 	["iq-get/host/http://jabber.org/protocol/disco#info:query"] = "handle_disco_info_get_query" ;
 	["iq-get/host/http://jabber.org/protocol/disco#items:query"] = "handle_disco_items_get_query" ;
