@@ -161,8 +161,8 @@ local function handle_register_iq(room, origin, stanza)
 			return true;
 		end
 
-		-- Kick any sessions that are not using this nick before we register it
 		if enforce_nick then
+			-- Kick any sessions that are not using this nick before we register it
 			local required_room_nick = room.jid.."/"..desired_nick;
 			for room_nick, occupant in room:each_occupant() do
 				if occupant.bare_jid == user_jid and room_nick ~= required_room_nick then
