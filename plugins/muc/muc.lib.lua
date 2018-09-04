@@ -740,7 +740,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 		stanza.attr.from, stanza.attr.to = current_nick, occupant.jid;
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, occupant.jid);
 		local iq_ns = stanza.tags[1].attr.xmlns;
-		if iq_ns == 'vcard-temp' or iq_ns == "http://jabber.org/protocol/pubsub" then
+		if iq_ns == 'vcard-temp' or iq_ns == "http://jabber.org/protocol/pubsub" or iq_ns == "urn:ietf:params:xml:ns:vcard-4.0" then
 			stanza.attr.to = jid_bare(stanza.attr.to);
 		end
 		self:route_stanza(stanza);
