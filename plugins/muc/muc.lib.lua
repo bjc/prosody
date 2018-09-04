@@ -19,6 +19,7 @@ local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
 local jid_join = require "util.jid".join;
 local jid_resource = require "util.jid".resource;
+local resourceprep = require "util.encodings".stringprep.resourceprep;
 local st = require "util.stanza";
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
@@ -906,11 +907,19 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 			return true;
 		end
 	end
+	if item.attr.nick then -- Validate provided nick
+		item.attr.nick = resourceprep(item.attr.nick);
+		if not item.attr.nick then
+			origin.send(st.error_reply(stanza, "modify", "jid-malformed", "invalid nickname"));
+			return true;
+		end
+	end
 	if not item.attr.jid and item.attr.nick then
 		-- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 		local occupant = self:get_occupant_by_nick(self.jid.."/"..item.attr.nick);
 		if occupant then item.attr.jid = occupant.jid; end
-	elseif not item.attr.nick and item.attr.jid then
+	elseif item.attr.role and not item.attr.nick and item.attr.jid then
+		-- Role changes should use nick, but we have a JID so pull the nick from that
 		local nick = self:get_occupant_jid(item.attr.jid);
 		if nick then item.attr.nick = jid_resource(nick); end
 	end
@@ -918,7 +927,15 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	local reason = item:get_child_text("reason");
 	local success, errtype, err
 	if item.attr.affiliation and item.attr.jid and not item.attr.role then
-		success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, reason);
+		local registration_data;
+		if item.attr.nick then
+			local room_nick = self.jid.."/"..item.attr.nick;
+			if self:get_occupant_by_nick(room_nick) then
+				self:set_role(true, room_nick, nil, "This nickname is reserved");
+			end
+			registration_data = { reserved_nickname = item.attr.nick };
+		end
+		success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, reason, registration_data);
 	elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
 		success, errtype, err = self:set_role(actor, self.jid.."/"..item.attr.nick, item.attr.role, reason);
 	else
