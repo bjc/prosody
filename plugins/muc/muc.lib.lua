@@ -1465,7 +1465,7 @@ function _M.restore_room(frozen, state)
 	local occupants = {};
 	local room_name, room_host = jid_split(room_jid);
 
-	room._affiliation_data = frozen._affiliation_data;
+	room._affiliation_data = frozen._affiliation_data or {};
 
 	if frozen.jid and frozen._affiliations then
 		-- Old storage format
