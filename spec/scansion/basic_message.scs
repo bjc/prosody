@@ -1,0 +1,174 @@
+# A script testing basic message routing and delivery
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+[Client] Juliet's phone
+	jid: juliet@localhost
+	password: password
+	resource: mobile
+
+---------
+
+# Act 1, scene 1
+# The clients connect
+
+Romeo connects
+
+Juliet connects
+
+Juliet's phone connects
+
+# Romeo publishes his presence. Juliet has not, and so does not receive presence.
+
+Romeo sends:
+	<presence/>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}" />
+
+# Romeo sends a message to Juliet's full JID
+
+Romeo sends:
+	<message to="${Juliet's full JID}" type="chat">
+		<body>Hello Juliet!</body>
+	</message>
+
+Juliet receives:
+	<message to="${Juliet's full JID}" from="${Romeo's full JID}" type="chat">
+		<body>Hello Juliet!</body>
+	</message>
+
+# Romeo sends a message to Juliet's phone
+
+Romeo sends:
+	<message to="${Juliet's phone's full JID}" type="chat">
+		<body>Hello Juliet, on your phone.</body>
+	</message>
+
+Juliet's phone receives:
+	<message to="${Juliet's phone's full JID}" from="${Romeo's full JID}" type="chat">
+		<body>Hello Juliet, on your phone.</body>
+	</message>
+
+# Scene 2
+# This requires the server to support offline messages (which is optional).
+
+# Romeo sends a message to Juliet's bare JID. This is not immediately delivered, as she
+# has not published presence on either of her resources.
+
+Romeo sends:
+	<message to="juliet@localhost" type="chat">
+		<body>Hello Juliet, are you there?</body>
+	</message>
+
+# Juliet sends presence on her phone, and should receive the message there
+
+Juliet's phone sends:
+	<presence/>
+
+Juliet's phone receives:
+	<presence/>
+
+Juliet's phone receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>Hello Juliet, are you there?</body>
+		<delay xmlns='urn:xmpp:delay' from='localhost' />
+	</message>	
+
+# Romeo sends another bare-JID message, it should be delivered
+# instantly to Juliet's phone
+
+Romeo sends:
+	<message to="juliet@localhost" type="chat">
+		<body>Oh, hi!</body>
+	</message>
+
+Juliet's phone receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>Oh, hi!</body>
+	</message>	
+
+# Juliet's laptop goes online, but with a negative priority
+
+Juliet sends:
+	<presence>
+		<priority>-1</priority>
+	</presence>
+
+Juliet receives:
+	<presence from="${Juliet's full JID}">
+		<priority>-1</priority>
+	</presence>
+
+Juliet's phone receives:
+	<presence from="${Juliet's full JID}">
+		<priority>-1</priority>
+	</presence>
+
+# Again, Romeo sends a message to her bare JID, but it should
+# only get delivered to her phone:
+
+Romeo sends:
+	<message to="juliet@localhost" type="chat">
+		<body>How are you?</body>
+	</message>
+
+Juliet's phone receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>How are you?</body>
+	</message>	
+
+# Romeo sends direct to Juliet's full JID, and she should receive it
+
+Romeo sends:
+	<message to="${Juliet's full JID}" type="chat">
+		<body>Are you hiding?</body>
+	</message>
+
+Juliet receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>Are you hiding?</body>
+	</message>
+
+# Juliet publishes non-negative presence
+
+Juliet sends:
+	<presence/>
+
+Juliet receives:
+	<presence from="${Juliet's full JID}"/>
+
+Juliet's phone receives:
+	<presence from="${Juliet's full JID}"/>
+
+# And now Romeo's bare JID messages get delivered to both resources
+# (server behaviour may vary here)
+
+Romeo sends:
+	<message to="juliet@localhost" type="chat">
+		<body>There!</body>
+	</message>
+
+Juliet receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>There!</body>
+	</message>
+
+Juliet's phone receives:
+	<message from="${Romeo's full JID}" type="chat">
+		<body>There!</body>
+	</message>
+
+# The End
+
+Romeo disconnects
+
+Juliet disconnects
+
+Juliet's phone disconnects

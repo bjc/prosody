@@ -1,0 +1,61 @@
+[Client] Romeo
+	jid: admin@localhost
+	password: password
+
+// admin@localhost is assumed to have node creation privileges
+
+---------
+
+Romeo connects
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='create1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<create node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id='create1'/>
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='create2'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<create node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="error" id='create2'>
+		<error type="cancel">
+			<conflict xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</iq>
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='delete1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<delete node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id='delete1'/>
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='delete2'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<delete node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="error" id='delete2'>
+		<error type="cancel">
+			<item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</iq>
+
+Romeo disconnects
+
+// vim: syntax=xml:

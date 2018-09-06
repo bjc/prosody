@@ -1,0 +1,286 @@
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+[Client] Rosaline
+	jid: user3@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Submit config form
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Juliet's JID}" />
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq from='room@conference.localhost' id='member1' type='result'/>
+
+# Juliet connects, and joins the room
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+# Juliet retrieves the registration form
+
+Juliet sends:
+	<iq id='jw81b36f' to='room@conference.localhost' type='get'>
+		<query xmlns='jabber:iq:register'/>
+	</iq>
+
+Juliet receives:
+	<iq type='result' from='room@conference.localhost' id='jw81b36f'>
+		<query xmlns='jabber:iq:register'>
+			<x type='form' xmlns='jabber:x:data'>
+				<field type='hidden' var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#register</value>
+				</field>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
+			</x>
+		</query>
+	</iq>
+
+Juliet sends:
+	<iq id='nv71va54' to='room@conference.localhost' type='set'>
+		<query xmlns='jabber:iq:register'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#register</value>
+				</field>
+				<field var='muc#register_roomnick'>
+					<value>Juliet</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='member' jid="${Juliet's full JID}" role='participant'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Juliet receives:
+	<iq type='result' from='room@conference.localhost' id='nv71va54'/>
+
+# Juliet discovers her reserved nick
+
+Juliet sends:
+	<iq id='getnick1' to='room@conference.localhost' type='get'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item'/>
+	</iq>
+
+Juliet receives:
+	<iq type='result' from='room@conference.localhost' id='getnick1'>
+		<query xmlns='http://jabber.org/protocol/disco#info'>
+			<identity category='conference' name='Juliet' type='text'/>
+		</query>
+	</iq>
+
+# Juliet leaves the room:
+
+Juliet sends:
+	<presence type="unavailable" to="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<presence type='unavailable' from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's full JID}" affiliation='member' role='none'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's full JID}" affiliation='member' role='participant'/>
+		</x>
+	</presence>
+
+# Rosaline connect and tries to join the room as Juliet
+
+Rosaline connects
+
+Rosaline sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Rosaline receives:
+	<presence type='error' from='room@conference.localhost/Juliet'>
+		<error type='cancel'>
+			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+		<x xmlns='http://jabber.org/protocol/muc'/>
+	</presence>
+
+# In a heated moment, Juliet unregisters from the room
+
+Juliet sends:
+	<iq type='set' to='room@conference.localhost' id='unreg1'>
+		<query xmlns='jabber:iq:register'>
+			<remove/>
+		</query>
+	</iq>
+
+Juliet receives:
+	<iq type='result' from='room@conference.localhost' id='unreg1'/>
+
+# Rosaline attempts once more to sneak into the room, disguised as Juliet
+
+Rosaline sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Rosaline receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='owner' role='moderator'/>
+		</x>
+	</presence>
+
+Rosaline receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='none' jid="${Rosaline's full JID}" role='participant'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='none' jid="${Rosaline's full JID}" role='participant'/>
+		</x>
+	</presence>
+
+# On discovering the ruse, Romeo restores Juliet's nick and status within the room
+
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Juliet's JID}" nick='Juliet' />
+		</query>
+	</iq>
+
+# Rosaline is evicted from the room
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet' type='unavailable'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='307'/>
+			<item affiliation='none' role='none' jid="${Rosaline's full JID}">
+				<reason>This nickname is reserved</reason>
+			</item>
+		</x>
+	</presence>
+
+Romeo receives:
+	<iq type='result' id='member1' from='room@conference.localhost' />
+
+Rosaline receives:
+	<presence type='unavailable' from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='307'/>
+			<item affiliation='none' jid="${Rosaline's full JID}" role='none'>
+				<reason>This nickname is reserved</reason>
+			</item>
+			<status code='110'/>
+		</x>
+	</presence>
+
+# Rosaline, frustrated, attempts to get back into the room...
+
+Rosaline sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+# ...but once again, is denied
+
+Rosaline receives:
+	<presence type='error' from='room@conference.localhost/Juliet'>
+		<error type='cancel'>
+			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+		<x xmlns='http://jabber.org/protocol/muc'/>
+	</presence>
+
+# Juliet, however, quietly joins the room with success
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Juliet" />
+

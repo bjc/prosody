@@ -1,0 +1,16 @@
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Romeo sends:
+	<presence/>
+
+Romeo receives:
+	<presence/>
+
+Romeo disconnects
+

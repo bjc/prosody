@@ -1,0 +1,39 @@
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Juliet connects
+
+Romeo sends:
+	<presence/>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}" />
+
+Romeo sends:
+	<iq type="get" id="roster1">
+		<query xmlns='jabber:iq:roster'/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="roster1">
+		<query xmlns="jabber:iq:roster"/>
+	</iq>
+
+Romeo disconnects
+
+#Juliet receives:
+#	<presence from="${Romeo's full JID}" />
+#
+#Juliet receives:
+#	<presence from="${Romeo's full JID}" type="unavailable" />
+#
+#Juliet disconnects
