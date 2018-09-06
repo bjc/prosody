@@ -240,8 +240,13 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 					:tag("data", { xmlns="urn:xmpp:avatar:data" })
 						:text(avatar_payload);
 
-				if pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data) then
-					pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta);
+				local ok, err = pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data)
+				if ok then
+					ok, err = pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta);
+				end
+				if not ok then
+					handle_error(origin, stanza, err);
+					return true;
 				end
 			end
 		end
