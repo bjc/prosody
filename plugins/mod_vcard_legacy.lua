@@ -266,11 +266,11 @@ local function inject_xep153(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	if not username then return end
-	local pep = mod_pep.get_pep_service(username);
+	local pep_service = mod_pep.get_pep_service(username);
 
 	stanza:remove_children("x", "vcard-temp:x:update");
 	local x_update = st.stanza("x", { xmlns = "vcard-temp:x:update" });
-	local ok, avatar_hash = pep:get_last_item("urn:xmpp:avatar:metadata", true);
+	local ok, avatar_hash = pep_service:get_last_item("urn:xmpp:avatar:metadata", true);
 	if ok and avatar_hash then
 		x_update:text_tag("photo", avatar_hash);
 	end
