@@ -111,9 +111,10 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 
 	local meta_ok, avatar_meta = pep_service:get_items("urn:xmpp:avatar:metadata", stanza.attr.from);
 	local data_ok, avatar_data = pep_service:get_items("urn:xmpp:avatar:data", stanza.attr.from);
-	if meta_ok and data_ok then
-		for _, hash in ipairs(avatar_meta) do
-			local meta = avatar_meta[hash];
+
+	if data_ok then
+		for _, hash in ipairs(avatar_data) do
+			local meta = meta_ok and avatar_meta[hash];
 			local data = avatar_data[hash];
 			local info = meta and meta.tags[1]:get_child("info");
 			vcard_temp:tag("PHOTO");
