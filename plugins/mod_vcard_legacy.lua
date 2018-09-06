@@ -13,6 +13,16 @@ module:hook("account-disco-info", function (event)
 	event.reply:tag("feature", { var = "urn:xmpp:pep-vcard-conversion:0" }):up();
 end);
 
+local function handle_error(origin, stanza, err)
+	if err == "forbidden" then
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+	elseif err == "internal-server-error" then
+		origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
+	else
+		origin.send(st.error_reply(stanza, "modify", "undefined-condition", err));
+	end
+end
+
 -- Simple translations
 -- <foo><text>hey</text></foo> -> <FOO>hey</FOO>
 local simple_map = {
@@ -240,12 +250,8 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 	local ok, err = pep_service:publish("urn:xmpp:vcard4", origin.full_jid, "current", vcard4);
 	if ok then
 		origin.send(st.reply(stanza));
-	elseif err == "forbidden" then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
-	elseif err == "internal-server-error" then
-		origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
 	else
-		origin.send(st.error_reply(stanza, "modify", "undefined-condition", err));
+		handle_error(origin, stanza, err);
 	end
 
 	return true;
