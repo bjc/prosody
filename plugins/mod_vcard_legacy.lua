@@ -137,7 +137,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 		:tag("vcard", { xmlns = 'urn:ietf:params:xml:ns:vcard-4.0' });
 
 	if pep_service:purge("urn:xmpp:avatar:metadata", origin.full_jid) then
-		pep_service:publish("urn:xmpp:avatar:data", origin.full_jid);
+		pep_service:purge("urn:xmpp:avatar:data", origin.full_jid);
 	end
 
 	vcard4:tag("fn"):text_tag("text", vcard_temp:get_child_text("FN")):up();
