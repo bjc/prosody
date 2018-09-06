@@ -1,0 +1,162 @@
+[Client] Balthasar
+	jid: admin@localhost
+	password: password
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='create1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<create node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="error" id='create1'>
+		<error type="auth">
+			<forbidden xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+	</iq>
+
+Balthasar connects
+
+Balthasar sends:
+	<iq type='set' to='pubsub.localhost' id='create2'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<create node='princely_musings'/>
+		</pubsub>
+	</iq>
+
+Balthasar receives:
+	<iq type="result" id='create2'/>
+
+Balthasar sends:
+	<iq type="set" to="pubsub.localhost" id='create3'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<create node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Balthasar receives:
+	<iq type="error" id='create3'>
+		<error type="cancel">
+			<conflict xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</iq>
+
+Juliet connects
+
+Juliet sends:
+	<iq type="set" to="pubsub.localhost" id='sub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<subscribe node="princely_musings" jid="${Romeo's full JID}"/>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<iq type="error" id='sub1'/>
+
+Juliet sends:
+	<iq type="set" to="pubsub.localhost" id='sub2'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<subscribe node="princely_musings" jid="${Juliet's full JID}"/>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<iq type="result" id='sub2'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<subscription jid="${Juliet's full JID}" node='princely_musings' subscription='subscribed'/>
+		</pubsub>
+	</iq>
+
+Balthasar sends:
+	<iq type="get" id='aff1' to='pubsub.localhost'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<affiliations node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Balthasar receives:
+	<iq type="result" id='aff1' from='pubsub.localhost'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<affiliations node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Balthasar sends:
+	<iq type="set" id='aff2' to='pubsub.localhost'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<affiliations node="princely_musings">
+				<affiliation jid="${Romeo's JID}" affiliation="publisher"/>
+			</affiliations>
+		</pubsub>
+	</iq>
+
+Balthasar receives:
+	<iq type="result" id='aff2' from='pubsub.localhost'/>
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='pub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="princely_musings">
+				<item id="current">
+					<entry xmlns="http://www.w3.org/2005/Atom">
+						<title>Soliloquy</title>
+						<summary>Lorem ipsum dolor sit amet</summary>
+					</entry>
+				</item>
+			</publish>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<message type="headline" from="pubsub.localhost">
+		<event xmlns="http://jabber.org/protocol/pubsub#event">
+			<items node="princely_musings">
+				<item id="current">
+					<entry xmlns="http://www.w3.org/2005/Atom">
+						<title>Soliloquy</title>
+						<summary>Lorem ipsum dolor sit amet</summary>
+					</entry>
+				</item>
+			</items>
+		</event>
+	</message>
+
+Romeo receives:
+	<iq type="result" id='pub1'/>
+
+Juliet sends:
+	<iq type="set" to="pubsub.localhost" id='unsub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<unsubscribe node="princely_musings" jid="${Juliet's full JID}"/>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<iq type="result" id='unsub1'/>
+
+Balthasar sends:
+	<iq type="set" to="pubsub.localhost" id='del1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<delete node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Balthasar receives:
+	<iq type="result" from='pubsub.localhost' id='del1'/>
+
+Romeo disconnects
+
+// vim: syntax=xml:

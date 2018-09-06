@@ -1,0 +1,109 @@
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+[Client] Juliet's phone
+	jid: user2@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Submit config form
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+# Juliet connects, and joins the room
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+# Juliet's phone connects, and joins the room
+Juliet's phone connects
+
+Juliet's phone sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet's phone receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet's phone receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet's phone receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='none' jid="${Juliet's phone's full JID}" role='participant'/>
+			<item affiliation='none' jid="${Juliet's full JID}" role='participant'/>
+		</x>
+	</presence>
+
+# Juliet leaves with an error
+Juliet sends:
+	<presence type='error' to='room@conference.localhost'>
+		<error type='cancel'>
+			<service-unavailable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>Test error</text>
+		</error>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's phone's full JID}" affiliation='none' role='participant'/>
+		</x>
+	</presence>

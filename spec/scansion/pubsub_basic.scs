@@ -1,0 +1,102 @@
+[Client] Romeo
+	jid: admin@localhost
+	password: password
+
+// admin@localhost is assumed to have node creation privileges
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='create1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<create node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id='create1'/>
+
+Juliet connects
+
+-- Juliet sends:
+-- 	<iq type="set" to="pubsub.localhost">
+-- 		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+-- 			<subscribe node="princely_musings" jid="${Romeo's full JID}"/>
+-- 		</pubsub>
+-- 	</iq>
+-- 
+-- Juliet receives:
+-- 	<iq type="error"/>
+
+Juliet sends:
+	<iq type="set" to="pubsub.localhost" id='sub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<subscribe node="princely_musings" jid="${Juliet's full JID}"/>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<iq type="result" id='sub1'/>
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='pub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="princely_musings">
+				<item id="current">
+					<entry xmlns="http://www.w3.org/2005/Atom">
+						<title>Soliloquy</title>
+						<summary>Lorem ipsum dolor sit amet</summary>
+					</entry>
+				</item>
+			</publish>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id='pub1'/>
+
+Juliet receives:
+	<message type="headline" from="pubsub.localhost">
+		<event xmlns="http://jabber.org/protocol/pubsub#event">
+			<items node="princely_musings">
+				<item id="current">
+					<entry xmlns="http://www.w3.org/2005/Atom">
+						<title>Soliloquy</title>
+						<summary>Lorem ipsum dolor sit amet</summary>
+					</entry>
+				</item>
+			</items>
+		</event>
+	</message>
+
+Juliet sends:
+	<iq type="set" to="pubsub.localhost" id='unsub1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<unsubscribe node="princely_musings" jid="${Juliet's full JID}"/>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<iq type="result" id='unsub1'/>
+
+Juliet disconnects
+
+Romeo sends:
+	<iq type="set" to="pubsub.localhost" id='del1'>
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<delete node="princely_musings"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id='del1'/>
+
+Romeo disconnects
+
+// vim: syntax=xml:

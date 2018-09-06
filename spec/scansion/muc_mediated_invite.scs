@@ -1,0 +1,74 @@
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Submit config form
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+# Juliet connects
+Juliet connects
+
+Juliet sends:
+	<presence/>
+
+Juliet receives:
+	<presence/>
+
+
+# Romeo invites Juliet to join the room
+
+Romeo sends:
+	<message to="room@conference.localhost" id="invite1">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<invite to="${Juliet's JID}" />
+		</x>
+	</message>
+
+Juliet receives:
+	<message from="room@conference.localhost" id="invite1">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<invite from="room@conference.localhost/Romeo">
+				<reason/>
+			</invite>
+		</x>
+		<body>room@conference.localhost/Romeo invited you to the room room@conference.localhost</body>
+		<x xmlns="jabber:x:conference" jid="room@conference.localhost"/>
+	</message>
