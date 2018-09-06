@@ -129,6 +129,10 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 		end
 	end
 
+	if not vcard_temp.tags[1] then
+		vcard_temp = st.deserialize(vcards:get(jid_split(stanza.attr.to) or origin.username)) or vcard_temp;
+	end
+
 	origin.send(st.reply(stanza):add_child(vcard_temp));
 	return true;
 end);
