@@ -111,9 +111,9 @@ static int lc_daemonize(lua_State *L) {
 	}
 
 	/* Make sure accidental use of FDs 0, 1, 2 don't cause weirdness */
-	stdin = freopen("/dev/null", "r", stdin);
-	stdout = freopen("/dev/null", "w", stdout);
-	stderr = freopen("/dev/null", "w", stderr);
+	freopen("/dev/null", "r", stdin);
+	freopen("/dev/null", "w", stdout);
+	freopen("/dev/null", "w", stderr);
 
 	/* Final fork, use it wisely */
 	if(fork()) {
