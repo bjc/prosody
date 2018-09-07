@@ -58,7 +58,7 @@
 #include <linux/falloc.h>
 #endif
 
-#if !defined(WITHOUT_MALLINFO) && defined(__linux__)
+#if !defined(WITHOUT_MALLINFO) && defined(__linux__) && defined(__GLIBC__)
 #include <malloc.h>
 #define WITH_MALLINFO
 #endif
