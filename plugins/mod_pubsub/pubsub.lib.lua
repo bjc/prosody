@@ -56,7 +56,7 @@ end
 local node_config_form = dataform {
 	{
 		type = "hidden";
-		name = "FORM_TYPE";
+		var = "FORM_TYPE";
 		value = "http://jabber.org/protocol/pubsub#node_config";
 	};
 	{
@@ -157,7 +157,7 @@ local node_config_form = dataform {
 local subscribe_options_form = dataform {
 	{
 		type = "hidden";
-		name = "FORM_TYPE";
+		var = "FORM_TYPE";
 		value = "http://jabber.org/protocol/pubsub#subscribe_options";
 	};
 	{
@@ -170,7 +170,7 @@ local subscribe_options_form = dataform {
 local node_metadata_form = dataform {
 	{
 		type = "hidden";
-		name = "FORM_TYPE";
+		var = "FORM_TYPE";
 		value = "http://jabber.org/protocol/pubsub#meta-data";
 	};
 	{
