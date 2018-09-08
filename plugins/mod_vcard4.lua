@@ -3,7 +3,9 @@ local jid_split = require "util.jid".split;
 
 local mod_pep = module:depends("pep");
 
-module:add_feature("urn:ietf:params:xml:ns:vcard-4.0");
+module:hook("account-disco-info", function (event)
+	event.reply:tag("feature", { var = "urn:ietf:params:xml:ns:vcard-4.0" }):up();
+end);
 
 module:hook("iq-get/bare/urn:ietf:params:xml:ns:vcard-4.0:vcard", function (event)
 	local origin, stanza = event.origin, event.stanza;
