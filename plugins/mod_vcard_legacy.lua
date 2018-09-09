@@ -158,7 +158,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 	vcard4:tag("n")
 		:text_tag("surname", N and N:get_child_text("FAMILY"))
 		:text_tag("given", N and N:get_child_text("GIVEN"))
-		:text_tag("additional", N and N:get_child_text("MIDDLe"))
+		:text_tag("additional", N and N:get_child_text("MIDDLE"))
 		:text_tag("prefix", N and N:get_child_text("PREFIX"))
 		:text_tag("suffix", N and N:get_child_text("SUFFIX"))
 	:up();
