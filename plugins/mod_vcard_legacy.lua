@@ -124,7 +124,7 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 			if data then
 				vcard_temp:text_tag("BINVAL", data.tags[1]:get_text());
 			elseif info and info.attr.url then
-				vcard_temp:text_tag("EXTVAL", info.attr.uri);
+				vcard_temp:text_tag("EXTVAL", info.attr.url);
 			end
 			vcard_temp:up();
 		end
