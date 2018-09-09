@@ -20,6 +20,7 @@ MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
 LUACHECK=luacheck
+BUSTED=busted
 
 .PHONY: all test coverage clean install
 
@@ -68,7 +69,7 @@ clean:
 	$(MAKE) clean -C util-src
 
 test:
-	busted --lua=$(RUNWITH)
+	$(BUSTED) --lua=$(RUNWITH)
 
 coverage:
 	-rm -- luacov.*
