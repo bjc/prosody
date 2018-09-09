@@ -205,6 +205,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 			if text then
 				vcard4:tag("note"):text_tag("text", text):up();
 			end
+			-- <note> gets mapped into <NOTE> in the other direction
 		elseif tag.name == "ADR" then
 			vcard4:tag("adr")
 				:text_tag("pobox", tag:get_child_text("POBOX"))
@@ -224,6 +225,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 		elseif tag.name == "PHOTO" then
 			local avatar_type = tag:get_child_text("TYPE");
 			local avatar_payload = tag:get_child_text("BINVAL");
+			-- Can EXTVAL be translated? No way to know the sha1 of the data?
 
 			if avatar_payload then
 				local avatar_raw = base64_decode(avatar_payload);
