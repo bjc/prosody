@@ -21,7 +21,7 @@ Romeo sends:
 
 Romeo receives:
 	<presence from='room@conference.localhost/Romeo'>
-		<x xmlns='http://jabber.org/protocol/muc#user'>
+		<x xmlns='http://jabber.org/protocol/muc#user' scansion:strict='false'>
 			<status code='201'/>
 			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
 			<status code='110'/>
@@ -86,7 +86,7 @@ Juliet's phone receives:
 
 Romeo receives:
 	<presence from='room@conference.localhost/Juliet'>
-		<x xmlns='http://jabber.org/protocol/muc#user'>
+		<x xmlns='http://jabber.org/protocol/muc#user' scansion:strict='false'>
 			<item affiliation='none' jid="${Juliet's phone's full JID}" role='participant'/>
 			<item affiliation='none' jid="${Juliet's full JID}" role='participant'/>
 		</x>

@@ -90,7 +90,9 @@ Balthasar sends:
 Balthasar receives:
 	<iq type="result" id='aff1' from='pubsub.localhost'>
 		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
-			<affiliations node="princely_musings"/>
+			<affiliations node="princely_musings">
+				<affiliation affiliation='owner' jid='admin@localhost' xmlns='http://jabber.org/protocol/pubsub#owner'/>
+			</affiliations>
 		</pubsub>
 	</iq>
 
@@ -98,6 +100,7 @@ Balthasar sends:
 	<iq type="set" id='aff2' to='pubsub.localhost'>
 		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
 			<affiliations node="princely_musings">
+				<affiliation affiliation='owner' jid='admin@localhost' xmlns='http://jabber.org/protocol/pubsub#owner'/>
 				<affiliation jid="${Romeo's JID}" affiliation="publisher"/>
 			</affiliations>
 		</pubsub>
