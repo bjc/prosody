@@ -25,7 +25,7 @@ Romeo sends:
 
 Romeo receives:
 	<iq type="result" id="roster1">
-		<query xmlns="jabber:iq:roster"/>
+		<query ver='{scansion:any}' xmlns="jabber:iq:roster"/>
 	</iq>
 
 Romeo disconnects

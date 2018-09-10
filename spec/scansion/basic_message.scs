@@ -78,7 +78,7 @@ Juliet's phone receives:
 Juliet's phone receives:
 	<message from="${Romeo's full JID}" type="chat">
 		<body>Hello Juliet, are you there?</body>
-		<delay xmlns='urn:xmpp:delay' from='localhost' />
+		<delay xmlns='urn:xmpp:delay' from='localhost' stamp='{scansion:any}' />
 	</message>	
 
 # Romeo sends another bare-JID message, it should be delivered
