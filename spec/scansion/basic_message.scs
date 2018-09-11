@@ -1,4 +1,4 @@
-# A script testing basic message routing and delivery
+# Basic message routing and delivery
 
 [Client] Romeo
 	jid: user@localhost

@@ -1,3 +1,5 @@
+# Basic roster test
+
 [Client] Romeo
 	jid: user@localhost
 	password: password
