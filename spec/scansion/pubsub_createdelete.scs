@@ -1,3 +1,5 @@
+# Pubsub: Create and delete
+
 [Client] Romeo
 	jid: admin@localhost
 	password: password

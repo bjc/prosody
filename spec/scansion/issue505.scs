@@ -1,3 +1,5 @@
+# Issue 505: mod_muc doesn’t forward part statuses
+
 [Client] Romeo
 	jid: user@localhost
 	password: password

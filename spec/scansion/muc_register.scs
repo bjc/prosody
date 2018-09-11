@@ -1,3 +1,5 @@
+# MUC: Room registration and reserved nicknames
+
 [Client] Romeo
 	jid: user@localhost
 	password: password

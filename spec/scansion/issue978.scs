@@ -1,3 +1,4 @@
+# Issue 978: MUC does not carry error into occupant leave status (single client)
 [Client] Romeo
 	jid: user@localhost
 	password: password

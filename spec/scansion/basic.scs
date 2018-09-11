@@ -1,3 +1,5 @@
+# Basic login and initial presence
+
 [Client] Romeo
 	jid: user@localhost
 	password: password

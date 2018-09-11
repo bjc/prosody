@@ -1,3 +1,5 @@
+# Pubsub: Node creation, publish, subscribe, affiliations and delete
+
 [Client] Balthasar
 	jid: admin@localhost
 	password: password

@@ -1,3 +1,5 @@
+# Pubsub: Basic support
+
 [Client] Romeo
 	jid: admin@localhost
 	password: password
