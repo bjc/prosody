@@ -4,6 +4,8 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 
+--luacheck: ignore
+
 --[[
 This file is a template for writing a net.server compatible backend.
 ]]
