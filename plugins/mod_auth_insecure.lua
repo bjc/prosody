@@ -11,7 +11,7 @@ local datamanager = require "util.datamanager";
 local new_sasl = require "util.sasl".new;
 
 local host = module.host;
-local provider = { name = "any" };
+local provider = { name = "insecure" };
 
 assert(module:get_option_string("insecure_open_authentication") == "Yes please, I know what I'm doing!");
 
