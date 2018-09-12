@@ -67,6 +67,7 @@ storage = "memory"
 -- For advanced logging see https://prosody.im/doc/logging
 log = "*console"
 
+daemonize = true
 pidfile = "prosody.pid"
 
 VirtualHost "localhost"
