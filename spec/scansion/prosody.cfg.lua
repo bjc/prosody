@@ -67,6 +67,8 @@ storage = "memory"
 -- For advanced logging see https://prosody.im/doc/logging
 log = "*console"
 
+pidfile = "prosody.pid"
+
 VirtualHost "localhost"
 
 Component "conference.localhost" "muc"
