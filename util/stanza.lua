@@ -347,12 +347,6 @@ function stanza_mt.get_error(stanza)
 	return error_type, condition or "undefined-condition", text;
 end
 
-local id = 0;
-local function new_id()
-	id = id + 1;
-	return "lx"..id;
-end
-
 local function preserialize(stanza)
 	local s = { name = stanza.name, attr = stanza.attr };
 	for _, child in ipairs(stanza) do
@@ -430,8 +424,10 @@ local function message(attr, body)
 	end
 end
 local function iq(attr)
-	if attr and not attr.id then attr.id = new_id(); end
-	return new_stanza("iq", attr or { id = new_id() });
+	if not (attr and attr.id) then
+		error("iq stanzas require an id attribute");
+	end
+	return new_stanza("iq", attr);
 end
 
 local function reply(orig)
@@ -502,7 +498,6 @@ return {
 	stanza_mt = stanza_mt;
 	stanza = new_stanza;
 	is_stanza = is_stanza;
-	new_id = new_id;
 	preserialize = preserialize;
 	deserialize = deserialize;
 	clone = clone;
