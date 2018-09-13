@@ -454,6 +454,7 @@ function interface:tlshandskake()
 		self.onreadable = nil;
 		self._tls = true;
 		self:on("status", "ssl-handshake-complete");
+		self.init = nil; -- Restore default method
 		self:init();
 	elseif err == "wantread" then
 		log("debug", "TLS handshake on %s to wait until readable", self);
@@ -488,6 +489,9 @@ local function wrapsocket(client, server, pattern, listeners, tls_ctx) -- luasoc
 	if client.getsockname then
 		conn.sockname, conn.sockport = client:getsockname();
 	end
+	if tls_ctx then
+		conn.init = interface.starttls;
+	end
 	return conn;
 end
 
@@ -507,12 +511,8 @@ end
 
 -- Initialization
 function interface:init()
-	if self.tls_ctx and not self._tls then
-		return self:starttls();
-	else
-		self:setwritetimeout();
-		return self:setflags(true, true);
-	end
+	self:setwritetimeout();
+	return self:setflags(true, true);
 end
 
 function interface:pause()
