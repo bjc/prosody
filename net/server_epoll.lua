@@ -637,7 +637,7 @@ function interface:onconnect()
 	self:on("connect");
 end
 
-local function addserver(addr, port, listeners, read_size, tls_ctx)
+local function listen(addr, port, listeners, config)
 	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
 	if not conn then return conn, err; end
 	conn:settimeout(0);
@@ -645,15 +645,24 @@ local function addserver(addr, port, listeners, read_size, tls_ctx)
 		conn = conn;
 		created = gettime();
 		listeners = listeners;
-		read_size = read_size;
+		read_size = config and config.read_size;
 		onreadable = interface.onacceptable;
-		tls_ctx = tls_ctx;
-		tls_direct = tls_ctx and true or false;
+		tls_ctx = config and config.tls_ctx;
+		tls_direct = config and config.tls_direct;
 		sockname = addr;
 		sockport = port;
 	}, interface_mt);
 	server:add(true, false);
 	return server;
+end
+
+-- COMPAT
+local function addserver(addr, port, listeners, read_size, tls_ctx)
+	return listen(addr, port, listeners, {
+		read_size = read_size;
+		tls_ctx = tls_ctx;
+		tls_direct = tls_ctx and true or false;
+	});
 end
 
 -- COMPAT
@@ -792,6 +801,7 @@ return {
 	addserver = addserver;
 	addclient = addclient;
 	add_task = addtimer;
+	listen = listen;
 	at = at;
 	loop = loop;
 	closeall = closeall;
