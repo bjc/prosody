@@ -30,12 +30,44 @@ Romeo receives:
 		<query ver='{scansion:any}' xmlns="jabber:iq:roster"/>
 	</iq>
 
-Romeo disconnects
+# Add nurse to roster
 
-#Juliet receives:
-#	<presence from="${Romeo's full JID}" />
-#
-#Juliet receives:
-#	<presence from="${Romeo's full JID}" type="unavailable" />
-#
-#Juliet disconnects
+Romeo sends:
+	<iq type="set" id="roster2">
+		<query xmlns="jabber:iq:roster">
+			<item jid='nurse@localhost'/>
+		</query>
+	</iq>
+
+# Receive the roster add result
+
+Romeo receives:
+	<iq type="result" id="roster2"/>
+
+# Receive the roster push
+
+Romeo receives:
+	<iq type="set" id="{scansion:any}">
+		<query xmlns='jabber:iq:roster' ver='{scansion:any}'>
+			<item jid='nurse@localhost' subscription='none'/>
+		</query>
+	</iq>
+
+Romeo sends:
+	<iq type="result" id="fixme"/>
+
+# Fetch the roster, it should include nurse now
+
+Romeo sends:
+	<iq type="get" id="roster3">
+		<query xmlns='jabber:iq:roster'/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="roster3">
+		<query xmlns='jabber:iq:roster' ver="{scansion:any}">
+			<item subscription='none' jid='nurse@localhost'/>
+		</query>
+	</iq>
+
+Romeo disconnects
