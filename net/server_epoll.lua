@@ -454,7 +454,6 @@ function interface:tlshandskake()
 		self.onreadable = nil;
 		self._tls = true;
 		self:on("status", "ssl-handshake-complete");
-		self.init = nil; -- Restore default method
 		self:init();
 	elseif err == "wantread" then
 		log("debug", "TLS handshake on %s to wait until readable", self);
@@ -489,9 +488,6 @@ local function wrapsocket(client, server, pattern, listeners, tls_ctx) -- luasoc
 	if client.getsockname then
 		conn.sockname, conn.sockport = client:getsockname();
 	end
-	if tls_ctx then
-		conn.init = interface.starttls;
-	end
 	return conn;
 end
 
@@ -504,9 +500,13 @@ function interface:onacceptable()
 		self:pausefor(cfg.accept_retry_interval);
 		return;
 	end
-	local client = wrapsocket(conn, self, nil, self.listeners, self.tls_ctx);
+	local client = wrapsocket(conn, self, nil, self.listeners);
 	log("debug", "New connection %s", tostring(client));
-	client:init();
+	if self.tls_direct then
+		client:starttls(self.tls_ctx);
+	else
+		client:init();
+	end
 end
 
 -- Initialization
@@ -559,6 +559,7 @@ local function addserver(addr, port, listeners, pattern, tls_ctx)
 		_pattern = pattern;
 		onreadable = interface.onacceptable;
 		tls_ctx = tls_ctx;
+		tls_direct = tls_ctx and true or false;
 		sockname = addr;
 		sockport = port;
 	}, interface_mt);
@@ -572,7 +573,11 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls_ctx)
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
-	client:init();
+	if tls_ctx then
+		client:starttls(tls_ctx);
+	else
+		client:init();
+	end
 	return client;
 end
 
@@ -583,7 +588,11 @@ local function addclient(addr, port, listeners, pattern, tls_ctx)
 	conn:settimeout(0);
 	conn:connect(addr, port);
 	local client = wrapsocket(conn, nil, pattern, listeners, tls_ctx)
-	client:init();
+	if tls_ctx then
+		client:starttls(tls_ctx);
+	else
+		client:init();
+	end
 	return client, conn;
 end
 
