@@ -84,9 +84,20 @@ describe("util.stanza", function()
 	end);
 
 	describe("#iq()", function()
-		it("should work", function()
-			local i = st.iq();
-			assert.are.equal(i.name, "iq");
+		it("should create an iq stanza", function()
+			local i = st.iq({ id = "foo" });
+			assert.are.equal("iq", i.name);
+			assert.are.equal("foo", i.attr.id);
+		end);
+
+		it("should reject stanzas with no id", function ()
+			assert.has.error_match(function ()
+				local i = st.iq();
+			end, "id attribute");
+
+			assert.has.error_match(function ()
+				local i = st.iq({ foo = "bar" });
+			end, "id attribute");
 		end);
 	end);
 
