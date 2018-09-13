@@ -37,6 +37,7 @@ local default_config = { __index = {
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
 	read_retry_delay = 1e-06;
+	read_size = 8192;
 	connect_timeout = 20;
 	handshake_timeout = 60;
 	max_wait = 86400;
@@ -306,7 +307,7 @@ end
 
 -- Called when socket is readable
 function interface:onreadable()
-	local data, err, partial = self.conn:receive(self.read_size);
+	local data, err, partial = self.conn:receive(self.read_size or cfg.read_size);
 	if data then
 		self:onconnect();
 		self:on("incoming", data);
