@@ -132,7 +132,7 @@ Juliet sends:
 
 Juliet receives:
 	<iq type='result' from='room@conference.localhost' id='getnick1'>
-		<query xmlns='http://jabber.org/protocol/disco#info'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item'>
 			<identity category='conference' name='Juliet' type='text'/>
 		</query>
 	</iq>
@@ -286,6 +286,20 @@ Juliet receives:
 Romeo receives:
 	<presence from="room@conference.localhost/Juliet" />
 
+# Romeo checks whether he has reserved his own nick yet
+
+Romeo sends:
+	<iq id='getnick1' to='room@conference.localhost' type='get'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item'/>
+	</iq>
+
+# But no nick is returned, as he hasn't registered yet!
+
+Romeo receives:
+	<iq type='result' from='room@conference.localhost' id='getnick1'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item' scansion:strict='true' />
+	</iq>
+
 # Romeo updates his own registration
 	
 Romeo sends:
@@ -346,7 +360,7 @@ Romeo sends:
 
 Romeo receives:
 	<iq type='result' from='room@conference.localhost' id='getnick1'>
-		<query xmlns='http://jabber.org/protocol/disco#info'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item'>
 			<identity category='conference' name='Romeo' type='text'/>
 		</query>
 	</iq>
