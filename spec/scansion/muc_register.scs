@@ -286,3 +286,68 @@ Juliet receives:
 Romeo receives:
 	<presence from="room@conference.localhost/Juliet" />
 
+# Romeo updates his own registration
+	
+Romeo sends:
+	<iq id='jw81b36f' to='room@conference.localhost' type='get'>
+		<query xmlns='jabber:iq:register'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' from='room@conference.localhost' id='jw81b36f'>
+		<query xmlns='jabber:iq:register'>
+			<x type='form' xmlns='jabber:x:data'>
+				<field type='hidden' var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#register</value>
+				</field>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
+			</x>
+		</query>
+	</iq>
+
+Romeo sends:
+	<iq id='nv71va54' to='room@conference.localhost' type='set'>
+		<query xmlns='jabber:iq:register'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#register</value>
+				</field>
+				<field var='muc#register_roomnick'>
+					<value>Romeo</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='owner' jid="${Romeo's full JID}" role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<iq type='result' from='room@conference.localhost' id='nv71va54'/>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item role='moderator' xmlns='http://jabber.org/protocol/muc#user' affiliation='owner'/>
+		</x>
+	</presence>
+
+# Romeo discovers his reserved nick
+
+Romeo sends:
+	<iq id='getnick1' to='room@conference.localhost' type='get'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='x-roomuser-item'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' from='room@conference.localhost' id='getnick1'>
+		<query xmlns='http://jabber.org/protocol/disco#info'>
+			<identity category='conference' name='Romeo' type='text'/>
+		</query>
+	</iq>
+
