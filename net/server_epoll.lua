@@ -203,7 +203,7 @@ function interface:socket()
 end
 
 function interface:set_mode(new_mode)
-	self._pattern = new_mode;
+	self.read_size = new_mode;
 end
 
 function interface:setoption(k, v)
@@ -306,7 +306,7 @@ end
 
 -- Called when socket is readable
 function interface:onreadable()
-	local data, err, partial = self.conn:receive(self._pattern);
+	local data, err, partial = self.conn:receive(self.read_size);
 	if data then
 		self:onconnect();
 		self:on("incoming", data);
@@ -470,14 +470,14 @@ function interface:tlshandskake()
 	end
 end
 
-local function wrapsocket(client, server, pattern, listeners, tls_ctx) -- luasocket object -> interface object
+local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luasocket object -> interface object
 	client:settimeout(0);
 	local conn = setmetatable({
 		conn = client;
 		_server = server;
 		created = gettime();
 		listeners = listeners;
-		_pattern = pattern or (server and server._pattern);
+		read_size = read_size or (server and server.read_size);
 		writebuffer = {};
 		tls_ctx = tls_ctx;
 	}, interface_mt);
@@ -548,7 +548,7 @@ function interface:onconnect()
 	self:on("connect");
 end
 
-local function addserver(addr, port, listeners, pattern, tls_ctx)
+local function addserver(addr, port, listeners, read_size, tls_ctx)
 	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
 	if not conn then return conn, err; end
 	conn:settimeout(0);
@@ -556,7 +556,7 @@ local function addserver(addr, port, listeners, pattern, tls_ctx)
 		conn = conn;
 		created = gettime();
 		listeners = listeners;
-		_pattern = pattern;
+		read_size = read_size;
 		onreadable = interface.onacceptable;
 		tls_ctx = tls_ctx;
 		tls_direct = tls_ctx and true or false;
@@ -568,8 +568,8 @@ local function addserver(addr, port, listeners, pattern, tls_ctx)
 end
 
 -- COMPAT
-local function wrapclient(conn, addr, port, listeners, pattern, tls_ctx)
-	local client = wrapsocket(conn, nil, pattern, listeners, tls_ctx);
+local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx)
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx);
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
@@ -582,12 +582,12 @@ local function wrapclient(conn, addr, port, listeners, pattern, tls_ctx)
 end
 
 -- New outgoing TCP connection
-local function addclient(addr, port, listeners, pattern, tls_ctx)
+local function addclient(addr, port, listeners, read_size, tls_ctx)
 	local conn, err = socket.tcp();
 	if not conn then return conn, err; end
 	conn:settimeout(0);
 	conn:connect(addr, port);
-	local client = wrapsocket(conn, nil, pattern, listeners, tls_ctx)
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx)
 	if tls_ctx then
 		client:starttls(tls_ctx);
 	else
