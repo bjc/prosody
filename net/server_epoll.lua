@@ -390,10 +390,10 @@ function interface:close()
 	if self.writebuffer and self.writebuffer[1] then
 		self:setflags(false, true); -- Flush final buffer contents
 		self.write, self.send = noop, noop; -- No more writing
-		log("debug", "Close %s after writing", tostring(self));
+		log("debug", "Close %s after writing", self);
 		self.ondrain = interface.close;
 	else
-		log("debug", "Close %s now", tostring(self));
+		log("debug", "Close %s now", self);
 		self.write, self.send = noop, noop;
 		self.close = noop;
 		self:on("disconnect");
@@ -421,12 +421,12 @@ end
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	if self.writebuffer and self.writebuffer[1] then
-		log("debug", "Start TLS on %s after write", tostring(self));
+		log("debug", "Start TLS on %s after write", self);
 		self.ondrain = interface.starttls;
 		self.starttls = false;
 		self:setflags(nil, true); -- make sure wantwrite is set
 	else
-		log("debug", "Start TLS on %s now", tostring(self));
+		log("debug", "Start TLS on %s now", self);
 		self:setflags(false, false);
 		local conn, err = luasec.wrap(self.conn, tls_ctx or self.tls_ctx);
 		if not conn then
@@ -449,22 +449,22 @@ function interface:tlshandskake()
 	self:setreadtimeout(false);
 	local ok, err = self.conn:dohandshake();
 	if ok then
-		log("debug", "TLS handshake on %s complete", tostring(self));
+		log("debug", "TLS handshake on %s complete", self);
 		self.onwritable = nil;
 		self.onreadable = nil;
 		self._tls = true;
 		self:on("status", "ssl-handshake-complete");
 		self:init();
 	elseif err == "wantread" then
-		log("debug", "TLS handshake on %s to wait until readable", tostring(self));
+		log("debug", "TLS handshake on %s to wait until readable", self);
 		self:setflags(true, false);
 		self:setreadtimeout(cfg.handshake_timeout);
 	elseif err == "wantwrite" then
-		log("debug", "TLS handshake on %s to wait until writable", tostring(self));
+		log("debug", "TLS handshake on %s to wait until writable", self);
 		self:setflags(false, true);
 		self:setwritetimeout(cfg.handshake_timeout);
 	else
-		log("debug", "TLS handshake error on %s: %s", tostring(self), err);
+		log("debug", "TLS handshake error on %s: %s", self, err);
 		self:on("disconnect", err);
 		self:destroy();
 	end
