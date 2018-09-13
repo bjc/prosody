@@ -92,11 +92,11 @@ describe("util.stanza", function()
 
 		it("should reject stanzas with no id", function ()
 			assert.has.error_match(function ()
-				local i = st.iq();
+				st.iq();
 			end, "id attribute");
 
 			assert.has.error_match(function ()
-				local i = st.iq({ foo = "bar" });
+				st.iq({ foo = "bar" });
 			end, "id attribute");
 		end);
 	end);
