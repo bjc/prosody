@@ -513,7 +513,8 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luas
 		listeners = listeners;
 		read_size = read_size or (server and server.read_size);
 		writebuffer = {};
-		tls_ctx = tls_ctx;
+		tls_ctx = tls_ctx or (server and server.tls_ctx);
+		tls_direct = server and server.tls_direct;
 	}, interface_mt);
 
 	conn:updatenames();
