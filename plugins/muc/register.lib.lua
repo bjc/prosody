@@ -174,7 +174,7 @@ local function handle_register_iq(room, origin, stanza)
 		-- Checks passed, save the registration
 		if registered_nick ~= desired_nick then
 			local registration_data = { reserved_nickname = desired_nick };
-			local ok, err_type, err_condition = room:set_affiliation(true, user_jid, "member", nil, registration_data);
+			local ok, err_type, err_condition = room:set_affiliation(true, user_jid, affiliation or "member", nil, registration_data);
 			if not ok then
 				origin.send(st.error_reply(stanza, err_type, err_condition));
 				return true;
