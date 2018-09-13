@@ -11,6 +11,8 @@
 
 local log = require "util.logger".init("rostermanager");
 
+local new_id = require "util.id".short;
+
 local pairs = pairs;
 local tostring = tostring;
 local type = type;
@@ -61,7 +63,7 @@ local function roster_push(username, host, jid)
 	local roster = jid and hosts[host] and hosts[host].sessions[username] and hosts[host].sessions[username].roster;
 	if roster then
 		local item = hosts[host].sessions[username].roster[jid];
-		local stanza = st.iq({type="set"});
+		local stanza = st.iq({type="set", id=new_id()});
 		stanza:tag("query", {xmlns = "jabber:iq:roster", ver = tostring(roster[false].version or "1")  });
 		if item then
 			stanza:tag("item", {jid = jid, subscription = item.subscription, name = item.name, ask = item.ask});
