@@ -649,7 +649,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 	return interface
 end
 
-local function handleserver( server, addr, port, pattern, listener, sslctx )  -- creates an server interface
+local function handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- creates an server interface
 	debug "creating server interface..."
 	local interface = {
 		_connections = 0;
@@ -695,7 +695,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 			interface._connections = interface._connections + 1  -- increase connection count
 			local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 			--vdebug( "client id:", clientinterface, "startssl:", startssl )
-			if has_luasec and sslctx then
+			if has_luasec and startssl then
 				clientinterface:starttls(sslctx, true)
 			else
 				clientinterface:_start_session( true )
@@ -714,9 +714,9 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 	return interface
 end
 
-local function addserver( addr, port, listener, pattern, sslctx, startssl )  -- TODO: check arguments
-	--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
-	if sslctx and not has_luasec then
+local function listen(addr, port, listener, config)
+	config = config or {}
+	if config.sslctx and not has_luasec then
 		debug "fatal error: luasec not found"
 		return nil, "luasec not found"
 	end
@@ -725,9 +725,18 @@ local function addserver( addr, port, listener, pattern, sslctx, startssl )  -- 
 		debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 		return nil, err
 	end
-	local interface = handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- new server handler
+	local interface = handleserver( server, addr, port, config.read_size, listener, config.tls_ctx, config.tls_direct)  -- new server handler
 	debug( "new server created with id:", tostring(interface))
 	return interface
+end
+
+local function addserver( addr, port, listener, pattern, sslctx )  -- TODO: check arguments
+	--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
+	return listen( addr, port, listener, {
+		read_size = pattern,
+		tls_ctx = sslctx,
+		tls_direct = not not sslctx,
+	});
 end
 
 local function wrapclient( client, ip, port, listeners, pattern, sslctx )
@@ -890,6 +899,7 @@ return {
 	event_base = base,
 	addevent = newevent,
 	addserver = addserver,
+	listen = listen,
 	addclient = addclient,
 	wrapclient = wrapclient,
 	setquitting = setquitting,

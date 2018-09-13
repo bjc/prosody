@@ -68,6 +68,7 @@ local idfalse
 local closeall
 local addsocket
 local addserver
+local listen
 local addtimer
 local getserver
 local wrapserver
@@ -157,7 +158,7 @@ _maxsslhandshake = 30 -- max handshake round-trips
 
 ----------------------------------// PRIVATE //--
 
-wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- this function wraps a server -- FIXME Make sure FD < _maxfd
+wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, ssldirect ) -- this function wraps a server -- FIXME Make sure FD < _maxfd
 
 	if socket:getfd() >= _maxfd then
 		out_error("server.lua: Disallowed FD number: "..socket:getfd())
@@ -244,13 +245,13 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 		local client, err = accept( socket )	-- try to accept
 		if client then
 			local ip, clientport = client:getpeername( )
-			local handler, client, err = wrapconnection( handler, listeners, client, ip, serverport, clientport, pattern, sslctx ) -- wrap new client socket
+			local handler, client, err = wrapconnection( handler, listeners, client, ip, serverport, clientport, pattern, sslctx, ssldirect ) -- wrap new client socket
 			if err then -- error while wrapping ssl socket
 				return false
 			end
 			connections = connections + 1
 			out_put( "server.lua: accepted new client connection from ", tostring(ip), ":", tostring(clientport), " to ", tostring(serverport))
-			if dispatch and not sslctx then -- SSL connections will notify onconnect when handshake completes
+			if dispatch and not ssldirect then -- SSL connections will notify onconnect when handshake completes
 				return dispatch( handler );
 			end
 			return;
@@ -264,7 +265,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 	return handler
 end
 
-wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx ) -- this function wraps a client to a handler object
+wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx, ssldirect ) -- this function wraps a client to a handler object
 
 	if socket:getfd() >= _maxfd then
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
@@ -666,7 +667,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	_socketlist[ socket ] = handler
 	_readlistlen = addsocket(_readlist, socket, _readlistlen)
 
-	if sslctx and has_luasec then
+	if sslctx and ssldirect and has_luasec then
 		out_put "server.lua: auto-starting ssl negotiation..."
 		handler.autostart_ssl = true;
 		local ok, err = handler:starttls(sslctx);
@@ -741,9 +742,13 @@ end
 
 ----------------------------------// PUBLIC //--
 
-addserver = function( addr, port, listeners, pattern, sslctx ) -- this function provides a way for other scripts to reg a server
+listen = function ( addr, port, listeners, config )
 	addr = addr or "*"
+	config = config or {}
 	local err
+	local sslctx = config.tls_ctx;
+	local ssldirect = config.tls_direct;
+	local pattern = config.read_size;
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
 	elseif type ( addr ) ~= "string" then
@@ -764,7 +769,7 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 		out_error( "server.lua, [", addr, "]:", port, ": ", err )
 		return nil, err
 	end
-	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx ) -- wrap new server socket
+	local handler, err = wrapserver( listeners, server, addr, port, pattern, sslctx, ssldirect ) -- wrap new server socket
 	if not handler then
 		server:close( )
 		return nil, err
@@ -775,6 +780,14 @@ addserver = function( addr, port, listeners, pattern, sslctx ) -- this function 
 	_socketlist[ server ] = handler
 	out_put( "server.lua: new "..(sslctx and "ssl " or "").."server listener on '[", addr, "]:", port, "'" )
 	return handler
+end
+
+addserver = function( addr, port, listeners, pattern, sslctx ) -- this function provides a way for other scripts to reg a server
+	return listen(addr, port, listeners, {
+		read_size = pattern;
+		tls_ctx = sslctx;
+		tls_direct = sslctx and true or false;
+	});
 end
 
 getserver = function ( addr, port )
@@ -985,7 +998,7 @@ end
 --// EXPERIMENTAL //--
 
 local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx )
-	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, sslctx)
 	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
@@ -1121,6 +1134,7 @@ return {
 	stats = stats,
 	closeall = closeall,
 	addserver = addserver,
+	listen = listen,
 	getserver = getserver,
 	setlogger = setlogger,
 	getsettings = getsettings,
