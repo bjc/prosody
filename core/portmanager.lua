@@ -10,6 +10,7 @@ local set = require "util.set";
 local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
 local type, tonumber, tostring, ipairs = type, tonumber, tostring, ipairs;
+local pairs = pairs;
 
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
@@ -227,13 +228,53 @@ end
 
 -- Event handlers
 
+local function add_sni_host(host, service)
+	-- local global_ssl_config = config.get(host, "ssl") or {};
+	for name, interface, port, n, active_service --luacheck: ignore 213
+		in active_services:iter(service, nil, nil, nil) do
+		if active_service.server.hosts and active_service.tls_cfg then
+			-- local config_prefix = (active_service.config_prefix or name).."_";
+			-- if config_prefix == "_" then
+				-- config_prefix = "";
+			-- end
+			-- local prefix_ssl_config = config.get(host, config_prefix.."ssl") or global_ssl_config;
+			-- FIXME only global 'ssl' settings are mixed in here
+			-- TODO per host and per service settings should be merged in,
+			-- without overriding the per-host certificate
+			local ssl, err, cfg = certmanager.create_context(host, "server");
+			if ssl then
+				active_service.server.hosts[host] = ssl;
+				if not active_service.tls_cfg.certificate then
+					active_service.server.tls_ctx = ssl;
+					active_service.tls_cfg = cfg;
+				end
+			else
+				log("error", "err = %q", err);
+			end
+		end
+	end
+end
+
 prosody.events.add_handler("item-added/net-provider", function (event)
 	local item = event.item;
 	register_service(item.name, item);
+	for host in pairs(prosody.hosts) do
+		add_sni_host(host, item.name);
+	end
 end);
 prosody.events.add_handler("item-removed/net-provider", function (event)
 	local item = event.item;
 	unregister_service(item.name, item);
+end);
+
+prosody.events.add_handler("host-activated", add_sni_host);
+prosody.events.add_handler("host-deactivated", function (host)
+	for name, interface, port, n, active_service --luacheck: ignore 213
+		in active_services:iter(nil, nil, nil, nil) do
+		if active_service.tls_cfg then
+			active_service.server.hosts[host] = nil;
+		end
+	end
 end);
 
 return {
