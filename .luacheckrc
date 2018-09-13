@@ -176,7 +176,4 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	for _, file in ipairs(exclude_files) do
 		files[file] = { only = {} }
 	end
-else
-	max_cyclomatic_complexity = 50
-	max_line_length = 120
 end
