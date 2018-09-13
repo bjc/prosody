@@ -126,7 +126,11 @@ local function activate(service_name)
 				end
 				if not err then
 					-- Start listening on interface+port
-					local handler, err = server.addserver(interface, port_number, listener, mode, ssl);
+					local handler, err = server.listen(interface, port_number, listener, {
+						read_size = mode,
+						tls_ctx = ssl,
+						tls_direct = service_info.encryption == "ssl";
+					});
 					if not handler then
 						log("error", "Failed to open server port %d on %s, %s", port_number, interface,
 							error_to_friendly_message(service_name, port_number, err));
