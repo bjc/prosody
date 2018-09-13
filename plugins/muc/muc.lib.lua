@@ -337,7 +337,7 @@ end
 
 function room_mt:get_disco_info(stanza)
 	local node = stanza.tags[1].attr.node or "";
-	local reply = st.reply(stanza):query("http://jabber.org/protocol/disco#info", { node = node });
+	local reply = st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info", node = node });
 	local event_name = "muc-disco#info";
 	local event_data = { room = self, reply = reply, stanza = stanza };
 
