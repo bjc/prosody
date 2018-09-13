@@ -90,7 +90,7 @@ describe("util.stanza", function()
 		end);
 	end);
 
-	describe("#iq()", function()
+	describe("#presence()", function ()
 		it("should work", function()
 			local p = st.presence();
 			assert.are.equal(p.name, "presence");
