@@ -965,7 +965,8 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		or self:get_members_only() and self:get_whois() == "anyone" and affiliation_rank >= valid_affiliations.member then
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
 			for jid in self:each_affiliation(_aff or "none") do
-				reply:tag("item", {affiliation = _aff, jid = jid}):up();
+				local nick = self:get_registered_nick(jid);
+				reply:tag("item", {affiliation = _aff, jid = jid, nick = nick }):up();
 			end
 			origin.send(reply:up());
 			return true;

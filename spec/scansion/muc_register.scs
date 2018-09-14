@@ -365,3 +365,19 @@ Romeo receives:
 		</query>
 	</iq>
 
+# To check the status of the room is as expected, Romeo requests the member list
+
+Romeo sends:
+	<iq id='member3' to='room@conference.localhost' type='get'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member'/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq from='room@conference.localhost' type='result' id='member3'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item jid="${Juliet's JID}" affiliation='member' nick='Juliet'/>
+		</query>
+	</iq>
+
