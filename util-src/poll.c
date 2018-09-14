@@ -34,6 +34,10 @@
 #define STATE_MT "util.poll.select"
 #endif
 
+#if (LUA_VERSION_NUM == 501)
+#define luaL_setmetatable(L, tname) luaL_getmetatable(L, tname); lua_setmetatable(L, -2)
+#endif
+
 /*
  * Structure to keep state for each type of API
  */
@@ -380,7 +384,9 @@ int Lnew(lua_State *L) {
  * Open library
  */
 int luaopen_util_poll(lua_State *L) {
+#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
+#endif
 
 	luaL_newmetatable(L, STATE_MT);
 	{
