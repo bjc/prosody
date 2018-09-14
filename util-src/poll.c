@@ -228,7 +228,7 @@ int Ldel(lua_State *L) {
 /*
  * Check previously manipulated event state for FDs ready for reading or writing
  */
-inline int Lpushevent(lua_State *L, struct Lpoll_state *state) {
+int Lpushevent(lua_State *L, struct Lpoll_state *state) {
 #ifdef USE_EPOLL
 
 	if(state->processed > 0) {
