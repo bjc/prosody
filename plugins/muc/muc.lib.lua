@@ -930,9 +930,12 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 		local registration_data;
 		if item.attr.nick then
 			local room_nick = self.jid.."/"..item.attr.nick;
-			if self:get_occupant_by_nick(room_nick) then
+			local existing_occupant = self:get_occupant_by_nick(room_nick);
+			if existing_occupant and existing_occupant.bare_jid ~= item.attr.jid then
+				module:log("debug", "Existing occupant for %s: %s does not match %s", room_nick, existing_occupant.bare_jid, item.attr.jid);
 				self:set_role(true, room_nick, nil, "This nickname is reserved");
 			end
+			module:log("debug", "Reserving %s for %s (%s)", item.attr.nick, item.attr.jid, item.attr.affiliation);
 			registration_data = { reserved_nickname = item.attr.nick };
 		end
 		success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, reason, registration_data);
