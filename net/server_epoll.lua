@@ -310,6 +310,19 @@ function interface:del()
 	return true;
 end
 
+function interface:setflags(r, w)
+	if not(self._wantread or self._wantwrite) then
+		if not(r or w) then
+			return true; -- no change
+		end
+		return self:add(r, w);
+	end
+	if not(r or w) then
+		return self:del();
+	end
+	return self:set(r, w);
+end
+
 -- Called when socket is readable
 function interface:onreadable()
 	local data, err, partial = self.conn:receive(self.read_size or cfg.read_size);
