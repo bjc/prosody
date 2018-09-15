@@ -602,11 +602,11 @@ local function addclient(addr, port, listeners, read_size, tls_ctx)
 	return client, conn;
 end
 
-local function watchfd(fd, onreadable, onwriteable)
+local function watchfd(fd, onreadable, onwritable)
 	local conn = setmetatable({
 		conn = fd;
 		onreadable = onreadable;
-		onwriteable = onwriteable;
+		onwritable = onwritable;
 		close = function (self)
 			self:del();
 		end
@@ -617,7 +617,7 @@ local function watchfd(fd, onreadable, onwriteable)
 		end;
 		-- Otherwise it'll need to be something LuaSocket-compatible
 	end
-	conn:add(onreadable, onwriteable);
+	conn:add(onreadable, onwritable);
 	return conn;
 end;
 
