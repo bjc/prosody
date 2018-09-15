@@ -132,7 +132,7 @@ function interface_mt:__tostring()
 	elseif self.sockname or self.peername then
 		return ("FD %d (%s, %d)"):format(self:getfd(), self.sockname or self.peername, self.sockport or self.peerport);
 	end
-	return ("%s FD %d"):format(tostring(self.conn), self:getfd());
+	return ("FD %d"):format(self:getfd());
 end
 
 -- Replace the listener and tell the old one
