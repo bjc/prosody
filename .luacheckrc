@@ -148,7 +148,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	"spec/core_configmanager_spec.lua";
 	"spec/core_moduleapi_spec.lua";
 	"spec/net_http_parser_spec.lua";
-	"spec/util_cache_spec.lua";
 	"spec/util_events_spec.lua";
 	"spec/util_http_spec.lua";
 	"spec/util_ip_spec.lua";
