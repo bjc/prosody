@@ -288,7 +288,7 @@ describe("util.cache", function()
 			expect_kv("c", 3, c4:head());
 			expect_kv("a", 1, c4:tail());
 
-			local c5 = cache.new(3, function (k, v)
+			local c5 = cache.new(3, function (k, v) --luacheck: ignore 212/v
 				if k == "a" then
 					return nil;
 				elseif k == "b" then
