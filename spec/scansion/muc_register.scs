@@ -413,6 +413,42 @@ Romeo receives:
 		</x>
 	</presence>
 
+# Rosaline tries to register her own nickname, but unaffiliated
+# registration is disabled by default
+
+Rosaline sends:
+	<iq id='reg990' to='room@conference.localhost' type='get'>
+		<query xmlns='jabber:iq:register'/>
+	</iq>
+
+Rosaline receives:
+	<iq type='error' from='room@conference.localhost' id='reg990'>
+		<error type='auth'>
+			<registration-required xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+	</iq>
+
+Rosaline sends:
+	<iq id='reg991' to='room@conference.localhost' type='set'>
+		<query xmlns='jabber:iq:register'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#register</value>
+				</field>
+				<field var='muc#register_roomnick'>
+					<value>Romeo</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Rosaline receives:
+	<iq id='reg991' type='error'>
+		<error type='auth'>
+			<registration-required xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+	</iq>
+
 # Romeo reserves her nickname for her
 
 Romeo sends:
