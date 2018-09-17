@@ -151,7 +151,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	"spec/util_events_spec.lua";
 	"spec/util_http_spec.lua";
 	"spec/util_ip_spec.lua";
-	"spec/util_json_spec.lua";
 	"spec/util_multitable_spec.lua";
 	"spec/util_rfc6724_spec.lua";
 	"spec/util_throttle_spec.lua";

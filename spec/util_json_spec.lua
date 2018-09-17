@@ -42,7 +42,7 @@ describe("util.json", function()
 					local f = assert(io.open(path.."/"..name));
 					local content = assert(f:read("*a"));
 					assert(f:close());
-					if skip:find(name) then
+					if skip:find(name) then --luacheck: ignore 542
 						-- Skip
 					elseif name:match("^pass") then
 						valid_data[name] = content;
