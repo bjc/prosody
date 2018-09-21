@@ -38,7 +38,11 @@ local function get_http_event(host, app_path, key)
 	if app_path == "/" and path:sub(1,1) == "/" then
 		app_path = "";
 	end
-	return method:upper().." "..host..app_path..path;
+	if host == "*" then
+		return method:upper().." "..app_path..path;
+	else
+		return method:upper().." "..host..app_path..path;
+	end
 end
 
 local function get_base_path(host_module, app_name, default_app_path)
