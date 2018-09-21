@@ -875,9 +875,9 @@ function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
 	local type;
-	for host in values(array.collect(keys(prosody.hosts)):sort()) do
+	for host, host_session in it.sorted_pairs(prosody.hosts) do
 		i = i + 1;
-		type = hosts[host].type;
+		type = host_session.type;
 		if type == "local" then
 			print(host);
 		else
@@ -896,14 +896,11 @@ def_env.port = {};
 function def_env.port:list()
 	local print = self.session.print;
 	local services = portmanager.get_active_services().data;
-	local ordered_services, n_ports = {}, 0;
-	for service, interfaces in pairs(services) do
-		table.insert(ordered_services, service);
-	end
-	table.sort(ordered_services);
-	for _, service in ipairs(ordered_services) do
+	local n_services, n_ports = 0, 0;
+	for service, interfaces in it.sorted_pairs(services) do
+		n_services = n_services + 1;
 		local ports_list = {};
-		for interface, ports in pairs(services[service]) do
+		for interface, ports in pairs(interfaces) do
 			for port in pairs(ports) do
 				table.insert(ports_list, "["..interface.."]:"..port);
 			end
@@ -911,7 +908,7 @@ function def_env.port:list()
 		n_ports = n_ports + #ports_list;
 		print(service..": "..table.concat(ports_list, ", "));
 	end
-	return true, #ordered_services.." services listening on "..n_ports.." ports";
+	return true, n_services.." services listening on "..n_ports.." ports";
 end
 
 function def_env.port:close(close_port, close_interface)
