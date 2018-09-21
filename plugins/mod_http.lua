@@ -38,11 +38,7 @@ local function get_http_event(host, app_path, key)
 	if app_path == "/" and path:sub(1,1) == "/" then
 		app_path = "";
 	end
-	if host == "*" then
-		return method:upper().." "..app_path..path;
-	else
-		return method:upper().." "..host..app_path..path;
-	end
+	return method:upper().." "..host..app_path..path;
 end
 
 local function get_base_path(host_module, app_name, default_app_path)
@@ -176,13 +172,7 @@ module:wrap_object_event(server._events, false, function (handlers, event_name, 
 		-- Not included in eg http-error events
 		request.ip = get_ip_from_request(request);
 	end
-	local ret = handlers(event_name, event_data);
-	if ret ~= nil then
-		return ret;
-	end
-	local host = (request.headers.host or ""):match("[^:]+");
-	local host_event = request.method.." "..host..request.path:match("[^?]*");
-	return handlers(host_event, event_data);
+	return handlers(event_name, event_data);
 end);
 
 module:provides("net", {

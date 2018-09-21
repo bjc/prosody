@@ -219,7 +219,7 @@ function handle_request(conn, request, finish_cb)
 		err_code, err = 400, "Invalid path";
 	elseif not hosts[host] then
 		if hosts[default_host] then
-			request.host = default_host;
+			host = default_host;
 		elseif host then
 			err_code, err = 404, "Unknown host: "..host;
 		else
@@ -233,7 +233,7 @@ function handle_request(conn, request, finish_cb)
 		return;
 	end
 
-	local event = request.method.." "..request.path:match("[^?]*");
+	local event = request.method.." "..host..request.path:match("[^?]*");
 	local payload = { request = request, response = response };
 	log("debug", "Firing event: %s", event);
 	local result = events.fire_event(event, payload);
