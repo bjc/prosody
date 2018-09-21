@@ -219,7 +219,7 @@ function handle_request(conn, request, finish_cb)
 		err_code, err = 400, "Invalid path";
 	elseif not hosts[host] then
 		if hosts[default_host] then
-			host = default_host;
+			request.host = default_host;
 		elseif host then
 			err_code, err = 404, "Unknown host: "..host;
 		else
