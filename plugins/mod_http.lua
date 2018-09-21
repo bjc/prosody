@@ -38,7 +38,11 @@ local function get_http_event(host, app_path, key)
 	if app_path == "/" and path:sub(1,1) == "/" then
 		app_path = "";
 	end
-	return method:upper().." "..host..app_path..path;
+	if host == "*" then
+		return method:upper().." "..app_path..path;
+	else
+		return method:upper().." "..host..app_path..path;
+	end
 end
 
 local function get_base_path(host_module, app_name, default_app_path)
@@ -85,7 +89,10 @@ function moduleapi.http_url(module, app_name, default_path)
 end
 
 function module.add_host(module)
-	local host = module:get_option_string("http_host", module.host);
+	local host = module.host;
+	if host ~= "*" then
+		host = module:get_option_string("http_host", host);
+	end
 	local apps = {};
 	module.environment.apps = apps;
 	local function http_app_added(event)
@@ -144,11 +151,15 @@ function module.add_host(module)
 
 	module:handle_items("http-provider", http_app_added, http_app_removed);
 
-	server.add_host(host);
-	function module.unload()
-		server.remove_host(host);
+	if host ~= "*" then
+		server.add_host(host);
+		function module.unload()
+			server.remove_host(host);
+		end
 	end
 end
+
+module.add_host(module); -- set up handling on global context too
 
 local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", "::1" })._items;
 
