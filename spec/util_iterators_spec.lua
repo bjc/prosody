@@ -11,4 +11,34 @@ describe("util.iterators", function ()
 			assert.same(output, expect);
 		end);
 	end);
+
+	describe("sorted_pairs", function ()
+		it("should produce sorted pairs", function ()
+			local orig = { b = 1, c = 2, a = "foo", d = false };
+			local n, last_key = 0, nil;
+			for k, v in iter.sorted_pairs(orig) do
+				n = n + 1;
+				if last_key then
+					assert(k > last_key, "Expected "..k.." > "..last_key)
+				end
+				last_key = k;
+			end
+			assert.equal("d", last_key);
+			assert.equal(4, n);
+		end);
+
+		it("should allow a custom sort function", function ()
+			local orig = { b = 1, c = 2, a = "foo", d = false };
+			local n, last_key = 0, nil;
+			for k, v in iter.sorted_pairs(orig, function (a, b) return a > b end) do
+				n = n + 1;
+				if last_key then
+					assert(k < last_key, "Expected "..k.." > "..last_key)
+				end
+				last_key = k;
+			end
+			assert.equal("a", last_key);
+			assert.equal(4, n);
+		end);
+	end);
 end);
