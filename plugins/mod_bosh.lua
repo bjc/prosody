@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+module:set_global();
+
 local new_xmpp_stream = require "util.xmppstream".new;
 local sm = require "core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
@@ -273,11 +275,6 @@ function stream_callbacks.streamopened(context, attr)
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
-			return;
-		elseif to_host ~= module.host then
-			-- Could be meant for a different instance of the module
-			-- if multiple instances are loaded with the same URL then this can happen
-			context.ignore_request = true;
 			return;
 		end
 		if not rid or (not wait and attr.wait or wait < 0 or wait % 1 ~= 0) then
