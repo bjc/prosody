@@ -404,12 +404,14 @@ function def_env.module:unload(name, hosts)
 	return ok, (ok and "Module unloaded from "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+local function _sort_hosts(a, b)
+	if a == "*" then return true
+	elseif b == "*" then return false
+	else return a < b; end
+end
+
 function def_env.module:reload(name, hosts)
-	hosts = array.collect(get_hosts_set(hosts, name)):sort(function (a, b)
-		if a == "*" then return true
-		elseif b == "*" then return false
-		else return a < b; end
-	end);
+	hosts = array.collect(get_hosts_set(hosts, name)):sort(_sort_hosts)
 
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
