@@ -172,7 +172,13 @@ module:wrap_object_event(server._events, false, function (handlers, event_name, 
 		-- Not included in eg http-error events
 		request.ip = get_ip_from_request(request);
 	end
-	return handlers(event_name, event_data);
+	local ret = handlers(event_name, event_data);
+	if ret ~= nil then
+		return ret;
+	end
+	local host = (request.headers.host or ""):match("[^:]+");
+	local host_event = request.method.." "..host..request.path:match("[^?]*");
+	return handlers(host_event, event_data);
 end);
 
 module:provides("net", {

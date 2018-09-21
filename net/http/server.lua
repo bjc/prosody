@@ -233,7 +233,7 @@ function handle_request(conn, request, finish_cb)
 		return;
 	end
 
-	local event = request.method.." "..host..request.path:match("[^?]*");
+	local event = request.method.." "..request.path:match("[^?]*");
 	local payload = { request = request, response = response };
 	log("debug", "Firing event: %s", event);
 	local result = events.fire_event(event, payload);
