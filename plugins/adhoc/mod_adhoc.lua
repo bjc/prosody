@@ -5,9 +5,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local it = require "util.iterators";
 local st = require "util.stanza";
-local keys = require "util.iterators".keys;
-local array_collect = require "util.array".collect;
 local is_admin = require "core.usermanager".is_admin;
 local jid_split = require "util.jid".split;
 local adhoc_handle_cmd = module:require "adhoc".handle_cmd;
@@ -54,9 +53,7 @@ module:hook("host-disco-items-node", function (event)
 	local admin = is_admin(from, stanza.attr.to);
 	local global_admin = is_admin(from);
 	local username, hostname = jid_split(from);
-	local nodes = array_collect(keys(commands)):sort();
-	for _, node in ipairs(nodes) do
-		local command = commands[node];
+	for node, command in it.sorted_pairs(commands) do
 		if (command.permission == "admin" and admin)
 		    or (command.permission == "global_admin" and global_admin)
 		    or (command.permission == "local_user" and hostname == module.host)
