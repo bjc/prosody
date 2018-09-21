@@ -1,8 +1,9 @@
 -- XEP-0157: Contact Addresses for XMPP Services for Prosody
 --
--- Copyright (C) 2011-2016 Kim Alvefur
+-- Copyright (C) 2011-2018 Kim Alvefur
 --
--- This file is MIT/X11 licensed.
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
 --
 
 local array = require "util.array";
