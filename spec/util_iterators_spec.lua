@@ -21,6 +21,7 @@ describe("util.iterators", function ()
 				if last_key then
 					assert(k > last_key, "Expected "..k.." > "..last_key)
 				end
+				assert.equal(orig[k], v);
 				last_key = k;
 			end
 			assert.equal("d", last_key);
@@ -35,6 +36,7 @@ describe("util.iterators", function ()
 				if last_key then
 					assert(k < last_key, "Expected "..k.." > "..last_key)
 				end
+				assert.equal(orig[k], v);
 				last_key = k;
 			end
 			assert.equal("a", last_key);
