@@ -177,6 +177,19 @@ function it.to_array(f, s, var)
 	return t;
 end
 
+function it.sorted_pairs(t, sort_func)
+	local keys = it.to_array(it.keys(t));
+	table.sort(keys, sort_func);
+	local i = 0;
+	return function ()
+		i = i + 1;
+		local key = keys[i];
+		if key ~= nil then
+			return key, t[key];
+		end
+	end;
+end
+
 -- Treat the return of an iterator as key,value pairs,
 -- and build a table
 function it.to_table(f, s, var)
