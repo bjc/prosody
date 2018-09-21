@@ -315,16 +315,17 @@ end
 
 module:hook("c2s-read-timeout", keepalive, -0.9);
 
+module:depends("http");
+module:provides("http", {
+	name = "websocket";
+	default_path = "xmpp-websocket";
+	route = {
+		["GET"] = handle_request;
+		["GET /"] = handle_request;
+	};
+});
+
 function module.add_host(module)
-	module:depends("http");
-	module:provides("http", {
-		name = "websocket";
-		default_path = "xmpp-websocket";
-		route = {
-			["GET"] = handle_request;
-			["GET /"] = handle_request;
-		};
-	});
 	module:hook("c2s-read-timeout", keepalive, -0.9);
 
 	if cross_domain ~= true then
