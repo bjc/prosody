@@ -233,10 +233,15 @@ function handle_request(conn, request, finish_cb)
 		return;
 	end
 
-	local event = request.method.." "..host..request.path:match("[^?]*");
+	local global_event = request.method.." "..request.path:match("[^?]*");
+	local host_event = request.method.." "..host..request.path:match("[^?]*");
 	local payload = { request = request, response = response };
-	log("debug", "Firing event: %s", event);
-	local result = events.fire_event(event, payload);
+	log("debug", "Firing event: %s", global_event);
+	local result = events.fire_event(global_event, payload);
+	if result == nil then
+		log("debug", "Firing event: %s", host_event);
+		result = events.fire_event(host_event, payload);
+	end
 	if result ~= nil then
 		if result ~= true then
 			local body;
