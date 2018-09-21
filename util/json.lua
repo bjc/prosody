@@ -7,10 +7,10 @@
 --
 
 local type = type;
-local t_insert, t_concat, t_remove, t_sort = table.insert, table.concat, table.remove, table.sort;
+local t_insert, t_concat, t_remove = table.insert, table.concat, table.remove;
 local s_char = string.char;
 local tostring, tonumber = tostring, tonumber;
-local pairs, ipairs = pairs, ipairs;
+local pairs, ipairs, spairs = pairs, ipairs, require "util.iterators".sorted_pairs;
 local next = next;
 local getmetatable, setmetatable = getmetatable, setmetatable;
 local print = print;
@@ -95,25 +95,12 @@ function tablesave(o, buffer)
 	if next(__hash) ~= nil or next(hash) ~= nil or next(__array) == nil then
 		t_insert(buffer, "{");
 		local mark = #buffer;
-		if buffer.ordered then
-			local keys = {};
-			for k in pairs(hash) do
-				t_insert(keys, k);
-			end
-			t_sort(keys);
-			for _,k in ipairs(keys) do
-				stringsave(k, buffer);
-				t_insert(buffer, ":");
-				simplesave(hash[k], buffer);
-				t_insert(buffer, ",");
-			end
-		else
-			for k,v in pairs(hash) do
-				stringsave(k, buffer);
-				t_insert(buffer, ":");
-				simplesave(v, buffer);
-				t_insert(buffer, ",");
-			end
+		local _pairs = buffer.ordered and spairs or pairs;
+		for k,v in _pairs(hash) do
+			stringsave(k, buffer);
+			t_insert(buffer, ":");
+			simplesave(v, buffer);
+			t_insert(buffer, ",");
 		end
 		if next(__hash) ~= nil then
 			t_insert(buffer, "\"__hash\":[");
