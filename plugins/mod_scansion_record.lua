@@ -88,6 +88,9 @@ record[[
 module:hook_global("server-stopping", function ()
 	record("# recording ended on "..dt.datetime().."\n");
 	module:log("info", "Scansion recording available in %s", record_file);
+end);
+
+prosody.events.add_handler("server-cleanup", function ()
 	scan:close();
 	head:close()
 end);
