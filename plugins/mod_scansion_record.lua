@@ -80,7 +80,7 @@ module:hook("resource-bind", function (event)
 		password = "password",
 	});
 
-	module:log("warn", "Connected: %s's %s", user.character, device);
+	module:log("warn", "Connected: %s", session.scansion_id);
 	record_event(session, "connects");
 
 	filters.add_filter(session, "stanzas/in", record_stanza_in);
