@@ -1,0 +1,72 @@
+# Publishing a nickname in PEP and receiving a notification
+
+[Client] Romeo
+	jid: romeo@localhost/nJi7BeTR
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id="4" type="set">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="http://jabber.org/protocol/nick">
+	      <item id="current">
+	        <nickname xmlns="http://jabber.org/protocol/nick"/>
+	      </item>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Romeo receives:
+	<iq id="4" to="romeo@localhost/nJi7BeTR" type="result">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="http://jabber.org/protocol/nick">
+	      <item id="current"/>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Romeo sends:
+	<presence>
+	  <c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="http://code.matthewwild.co.uk/clix/" ver="jC32N+FhQoLrZ7nNQtZK3aqR0Fk="/>
+	</presence>
+
+Romeo receives:
+	<iq id="disco" to="romeo@localhost/nJi7BeTR" from="romeo@localhost" type="get">
+	  <query xmlns="http://jabber.org/protocol/disco#info" node="http://code.matthewwild.co.uk/clix/#jC32N+FhQoLrZ7nNQtZK3aqR0Fk="/>
+	</iq>
+
+Romeo receives:
+	<presence from="romeo@localhost/nJi7BeTR">
+	  <c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="http://code.matthewwild.co.uk/clix/" ver="jC32N+FhQoLrZ7nNQtZK3aqR0Fk="/>
+	</presence>
+
+Romeo sends:
+	<iq id="disco" type="result" to="romeo@localhost">
+	  <query xmlns="http://jabber.org/protocol/disco#info" node="http://code.matthewwild.co.uk/clix/#jC32N+FhQoLrZ7nNQtZK3aqR0Fk=">
+	    <identity type="console" name="clix" category="client"/>
+	    <feature var="http://jabber.org/protocol/disco#items"/>
+	    <feature var="http://jabber.org/protocol/disco#info"/>
+	    <feature var="http://jabber.org/protocol/caps"/>
+	    <feature var="http://jabber.org/protocol/nick+notify"/>
+	  </query>
+	</iq>
+
+Romeo receives:
+	<message type="headline" from="romeo@localhost" to="romeo@localhost/nJi7BeTR">
+	  <event xmlns="http://jabber.org/protocol/pubsub#event">
+	    <items node="http://jabber.org/protocol/nick">
+	      <item id="current">
+	        <nickname xmlns="http://jabber.org/protocol/nick"/>
+	      </item>
+	    </items>
+	  </event>
+	</message>
+
+Romeo sends:
+	<presence type="unavailable"/>
+
+Romeo disconnects
+
