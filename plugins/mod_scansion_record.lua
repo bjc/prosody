@@ -9,10 +9,10 @@ local id = require "util.id";
 
 local record_file = require "util.datamanager".getpath(id.medium():lower(), "scansion", os.date("%Y%b%d"):lower(), "scs", true);
 
-local fh = io.open(record_file, "w");
+local scan = io.open(record_file, "w");
 
 local function record(string)
-	fh:write(string);
+	scan:write(string);
 end
 
 local function record_event(session, event)
