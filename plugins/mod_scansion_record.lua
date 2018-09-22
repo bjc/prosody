@@ -15,6 +15,7 @@ local function record(string)
 end
 
 local function record_event(session, event)
+	record(session.scansion_id.." "..event.."\n\n");
 end
 
 local function record_stanza(stanza, session, verb)
@@ -22,9 +23,13 @@ local function record_stanza(stanza, session, verb)
 end
 
 local function record_stanza_in(stanza, session)
+	record_stanza(stanza, session, "sends")
+	return stanza;
 end
 
 local function record_stanza_out(stanza, session)
+	record_stanza(stanza, session, "receives")
+	return stanza;
 end
 
 module:hook("resource-bind", function (event)
