@@ -45,7 +45,7 @@ module:hook("resource-bind", function (event)
 	end
 	session.scansion_character = user.character;
 	session.scansion_device = device;
-	session.scansion_id = user.character..(device ~= "" and "'s "..device" or device);
+	session.scansion_id = user.character..(device ~= "" and "'s "..device or device);
 
 	full_jids[session.full_jid] = session.scansion_id;
 
