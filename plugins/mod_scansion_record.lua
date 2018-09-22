@@ -2,8 +2,6 @@ local names = { "Romeo", "Juliet", "Mercutio", "Tybalt", "Benvolio" };
 local devices = { "", "phone", "laptop", "tablet", "toaster", "fridge", "shoe" };
 local users = {};
 
-local full_jids = {};
-
 local filters = require "util.filters";
 local id = require "util.id";
 local dt = require "util.datetime";
@@ -68,8 +66,6 @@ module:hook("resource-bind", function (event)
 	session.scansion_character = user.character;
 	session.scansion_device = device;
 	session.scansion_id = user.character..(device ~= "" and "'s "..device or device);
-
-	full_jids[session.full_jid] = session.scansion_id;
 
 	module:log("warn", "Connected: %s's %s", user.character, device);
 	record_event(session, "connects");
