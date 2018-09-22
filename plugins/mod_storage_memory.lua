@@ -128,7 +128,7 @@ function archive_store:delete(username, query)
 		i = old[i];
 		t = i.when;
 		if not(qstart >= t and qend <= t and (not qwith or i.with == qwith)) then
-			self:append(username, i.key, i.value, t, i.with);
+			self:append(username, i.key, i.value(), t, i.with);
 		end
 	end
 	if #new == 0 then
