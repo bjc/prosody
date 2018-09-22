@@ -11,7 +11,8 @@ local record_file = require "util.datamanager".getpath(id.medium(), module.host,
 local fh = io.open(record_file, "w");
 
 local function record(string)
-	
+	fh:write(string);
+end
 
 local function record_event(session, event)
 end
