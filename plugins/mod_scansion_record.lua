@@ -8,6 +8,8 @@ local id = require "util.id";
 
 local record_file = require "util.datamanager".getpath(id.medium(), module.host, os.date("%Y-%m-%d"), "scs", true);
 
+local fh = io.open(record_file, "w");
+
 local function record(string)
 	
 
