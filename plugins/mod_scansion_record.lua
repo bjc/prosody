@@ -7,7 +7,7 @@ local full_jids = {};
 local filters = require "util.filters";
 local id = require "util.id";
 
-local record_file = require "util.datamanager".getpath(id.medium():lower(), module.host, os.date("%Y%b%d"):lower(), "scs", true);
+local record_file = require "util.datamanager".getpath(id.medium():lower(), "scansion", os.date("%Y%b%d"):lower(), "scs", true);
 
 local fh = io.open(record_file, "w");
 
