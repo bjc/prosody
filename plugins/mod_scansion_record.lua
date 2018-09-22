@@ -6,8 +6,11 @@ local full_jids = {};
 
 local filters = require "util.filters";
 local id = require "util.id";
+local dm = require "util.datamanager";
 
-local record_file = require "util.datamanager".getpath(id.medium():lower(), "scansion", os.date("%Y%b%d"):lower(), "scs", true);
+local record_id = id.medium():lower();
+local record_date = os.date("%Y%b%d"):lower();
+local record_file = dm.getpath(record_id, "scansion", record_date, "scs", true);
 
 local scan = io.open(record_file, "w");
 
