@@ -42,11 +42,11 @@ module:hook("resource-bind", function (event)
 		};
 	end
 	local user = users[session.username];
-	local device = user.devices[event.resource];
+	local device = user.devices[session.resource];
 	if not device then
 		user.n_devices = user.n_devices + 1;
 		device = devices[user.n_devices] or ("device"..id.short());
-		user.devices[event.resource] = device;
+		user.devices[session.resource] = device;
 	end
 	session.scansion_character = user.character;
 	session.scansion_device = device;
