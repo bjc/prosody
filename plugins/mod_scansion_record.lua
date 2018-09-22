@@ -6,6 +6,7 @@ local full_jids = {};
 
 local filters = require "util.filters";
 local id = require "util.id";
+local dt = require "util.datetime";
 local dm = require "util.datamanager";
 
 local record_id = id.medium():lower();
@@ -77,7 +78,15 @@ module:hook("resource-bind", function (event)
 	filters.add_filter(session, "stanzas/out", record_stanza_out);
 end);
 
+record_header("# mod_scansion_record on host '"..module.host.."' recording started "..dt.datetime().."\n\n");
+
+record[[
+-----
+
+]]
+
 module:hook_global("server-stopping", function ()
+	record("# recording ended on "..dt.datetime().."\n");
 	module:log("info", "Scansion recording available in %s", record_file);
 	scan:close();
 	head:close()
