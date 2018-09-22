@@ -23,6 +23,14 @@ local function record_header(string)
 	head:write(string);
 end
 
+local function record_object(class, name, props)
+	head:write(("[%s] %s\n"):format(class, name));
+	for k,v in pairs(props) do
+		head:write(("\t%s: %s\n"):format(k, v));
+	end
+	head:write("\n");
+end
+
 local function record_event(session, event)
 	record(session.scansion_id.." "..event.."\n\n");
 end
@@ -66,6 +74,11 @@ module:hook("resource-bind", function (event)
 	session.scansion_character = user.character;
 	session.scansion_device = device;
 	session.scansion_id = user.character..(device ~= "" and "'s "..device or device);
+
+	record_object("Client", user.character, {
+		jid = session.full_jid,
+		password = "password",
+	});
 
 	module:log("warn", "Connected: %s's %s", user.character, device);
 	record_event(session, "connects");
