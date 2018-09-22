@@ -87,6 +87,13 @@ module:hook("resource-bind", function (event)
 	filters.add_filter(session, "stanzas/out", record_stanza_out);
 end);
 
+module:hook("resource-unbind", function (event)
+	local session = event.session;
+	if session.scansion_id then
+		record_event(session, "disconnects");
+	end
+end)
+
 record_header("# mod_scansion_record on host '"..module.host.."' recording started "..dt.datetime().."\n\n");
 
 record[[
