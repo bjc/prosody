@@ -72,5 +72,5 @@ module:hook("resource-bind", function (event)
 end);
 
 module:hook_global("server-stopping", function ()
-	fh:close();
+	scan:close();
 end);
