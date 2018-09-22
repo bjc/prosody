@@ -75,7 +75,7 @@ module:hook("resource-bind", function (event)
 	session.scansion_device = device;
 	session.scansion_id = user.character..(device ~= "" and "'s "..device or device);
 
-	record_object("Client", user.character, {
+	record_object("Client", session.scansion_id, {
 		jid = session.full_jid,
 		password = "password",
 	});
