@@ -32,7 +32,9 @@ end
 
 local function record_stanza_out(stanza, session)
 	if stanza.attr.xmlns == nil then
-		record_stanza(stanza, session, "receives");
+		if not (stanza.name == "iq" and stanza:get_child("bind", "urn:ietf:params:xml:ns:xmpp-bind")) then
+			record_stanza(stanza, session, "receives");
+		end
 	end
 	return stanza;
 end
