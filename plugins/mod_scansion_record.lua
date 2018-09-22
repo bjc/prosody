@@ -10,12 +10,18 @@ local dm = require "util.datamanager";
 
 local record_id = id.medium():lower();
 local record_date = os.date("%Y%b%d"):lower();
+local header_file = dm.getpath(record_id, "scansion", record_date, "sch", true);
 local record_file = dm.getpath(record_id, "scansion", record_date, "scs", true);
 
+local head = io.open(header_file, "w");
 local scan = io.open(record_file, "w");
 
 local function record(string)
 	scan:write(string);
+end
+
+local function record_header(string)
+	head:write(string);
 end
 
 local function record_event(session, event)
@@ -74,4 +80,5 @@ end);
 module:hook_global("server-stopping", function ()
 	module:log("info", "Scansion recording available in %s", record_file);
 	scan:close();
+	head:close()
 end);
