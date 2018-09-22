@@ -55,6 +55,7 @@ module:hook("resource-bind", function (event)
 	full_jids[session.full_jid] = session.scansion_id;
 
 	module:log("warn", "Connected: %s's %s", user.character, device);
+	record_event(session, "connects");
 
 	filters.add_filter(session, "stanzas/in", record_stanza_in);
 	filters.add_filter(session, "stanzas/out", record_stanza_out);
