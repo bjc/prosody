@@ -24,12 +24,16 @@ local function record_stanza(stanza, session, verb)
 end
 
 local function record_stanza_in(stanza, session)
-	record_stanza(stanza, session, "sends")
+	if stanza.attr.xmlns == nil then
+		record_stanza(stanza, session, "sends")
+	end
 	return stanza;
 end
 
 local function record_stanza_out(stanza, session)
-	record_stanza(stanza, session, "receives")
+	if stanza.attr.xmlns == nil then
+		record_stanza(stanza, session, "receives");
+	end
 	return stanza;
 end
 
