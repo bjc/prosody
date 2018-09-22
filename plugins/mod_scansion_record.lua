@@ -72,5 +72,6 @@ module:hook("resource-bind", function (event)
 end);
 
 module:hook_global("server-stopping", function ()
+	module:log("info", "Scansion recording available in %s", record_file);
 	scan:close();
 end);
