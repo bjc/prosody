@@ -6,7 +6,7 @@ local full_jids = {};
 
 local id = require "util.id";
 
-local record_file = require "util.datamanager".getpath(id.medium(), module.host, os.date("%Y-%m-%d"), "scs", true);
+local record_file = require "util.datamanager".getpath(id.medium():lower(), module.host, os.date("%Y%b%d"):lower(), "scs", true);
 
 local fh = io.open(record_file, "w");
 
