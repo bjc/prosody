@@ -9,11 +9,11 @@ local dm = require "util.datamanager";
 
 local record_id = id.medium():lower();
 local record_date = os.date("%Y%b%d"):lower();
-local header_file = dm.getpath(record_id, "scansion", record_date, "sch", true);
-local record_file = dm.getpath(record_id, "scansion", record_date, "scs", true);
+local header_file = dm.getpath(record_id, "scansion", record_date, "scs", true);
+local record_file = dm.getpath(record_id, "scansion", record_date, "log", true);
 
 local head = io.open(header_file, "w");
-local scan = io.open(record_file, "w");
+local scan = io.open(record_file, "w+");
 
 local function record(string)
 	scan:write(string);
@@ -96,10 +96,15 @@ record[[
 
 module:hook_global("server-stopping", function ()
 	record("# recording ended on "..dt.datetime().."\n");
-	module:log("info", "Scansion recording available in %s", record_file);
+	module:log("info", "Scansion recording available in %s", header_file);
 end);
 
 prosody.events.add_handler("server-cleanup", function ()
+	scan:seek("set", 0);
+	for line in scan:lines() do
+		head:write(line, "\n");
+	end
 	scan:close();
+	os.remove(record_file);
 	head:close()
 end);
