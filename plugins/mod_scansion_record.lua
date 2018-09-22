@@ -18,7 +18,7 @@ local function record_event(session, event)
 end
 
 local function record_stanza(stanza, session, verb)
-	record(session.scansion_id.." "..verb..":\n\t"..tostring(stanza).."\n\n";
+	record(session.scansion_id.." "..verb..":\n\t"..tostring(stanza).."\n\n");
 end
 
 local function record_stanza_in(stanza, session)
