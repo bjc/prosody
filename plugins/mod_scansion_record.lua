@@ -54,3 +54,6 @@ module:hook("resource-bind", function (event)
 	filters.add_filter(session, "stanzas/out", record_stanza_out);
 end);
 
+module:hook_global("server-shutdown", function ()
+	fh:close();
+end);
