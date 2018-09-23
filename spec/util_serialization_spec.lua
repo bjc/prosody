@@ -1,5 +1,4 @@
 local serialization = require "util.serialization";
-local envload = require "util.envload";
 
 describe("util.serialization", function ()
 	describe("serialize", function ()
@@ -15,9 +14,8 @@ describe("util.serialization", function ()
 			local function test(data)
 				local serialized = serialization.serialize(data);
 				assert.is_string(serialized);
-				local chunk, err = envload.envload("return ("..serialized..");");
-				assert.is_function(chunk, err);
-				assert.same(data, chunk());
+				local deserialized, err = serialization.deserialize(serialized);
+				assert.same(data, deserialized, err);
 			end
 
 			test({});
