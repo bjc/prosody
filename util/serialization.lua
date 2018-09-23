@@ -142,7 +142,7 @@ local function new(opt)
 		if freeze then
 			-- opportunity to do pre-serialization
 			local mt = getmetatable(t);
-			local fr = (freeze ~= true and freeze[mt]);
+			local fr = (type(freeze) == "table" and freeze[mt]);
 			local mf = mt and mt.__freeze;
 			local tag;
 			if type(fr) == "string" then
