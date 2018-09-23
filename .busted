@@ -1,0 +1,10 @@
+return {
+  _all = {
+  },
+  default = {
+    ["exclude-tags"] = "mod_bosh";
+  },
+  bosh = {
+    tags = "mod_bosh";
+  }
+}
