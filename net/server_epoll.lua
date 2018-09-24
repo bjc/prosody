@@ -271,7 +271,7 @@ function interface:add(r, w)
 	end
 	self._wantread, self._wantwrite = r, w;
 	fds[fd] = self;
-	log("debug", "Registered %s", self);
+	log("debug", "Watching %s", self);
 	return true;
 end
 
@@ -306,7 +306,7 @@ function interface:del()
 	end
 	self._wantread, self._wantwrite = nil, nil;
 	fds[fd] = nil;
-	log("debug", "Unregistered %s", self);
+	log("debug", "Unwatched %s", self);
 	return true;
 end
 
