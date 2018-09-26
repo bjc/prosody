@@ -139,6 +139,7 @@ end
 function interface:setlistener(listeners)
 	self:on("detach");
 	self.listeners = listeners;
+	self:on("attach");
 end
 
 -- Call a listener callback
