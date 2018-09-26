@@ -331,6 +331,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		drain = listeners.ondrain
 		handler.onreadtimeout = listeners.onreadtimeout
 		detach = listeners.ondetach
+		if listeners.onattach then
+			listeners.onattach(self)
+		end
 	end
 	handler.getstats = function( )
 		return readtraffic, sendtraffic
