@@ -415,7 +415,7 @@ function interface_mt:setoption(option, value)
 	return false, "setoption not implemented";
 end
 
-function interface_mt:setlistener(listener)
+function interface_mt:setlistener(listener, data)
 	self:ondetach(); -- Notify listener that it is no longer responsible for this connection
 	self.onconnect = listener.onconnect;
 	self.ondisconnect = listener.ondisconnect;
@@ -426,7 +426,7 @@ function interface_mt:setlistener(listener)
 	self.ondetach = listener.ondetach;
 	self.onattach = listener.onattach;
 	self.ondrain = listener.ondrain;
-	self:onattach();
+	self:onattach(data);
 end
 
 -- Stub handlers

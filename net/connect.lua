@@ -56,7 +56,7 @@ function pending_connection_listeners.onconnect(conn)
 	end
 	pending_connections_map[conn] = nil;
 	p:log("debug", "Successfully connected");
-	conn:setlistener(p.listeners);
+	conn:setlistener(p.listeners, p.data);
 	return p.listeners.onconnect(conn);
 end
 

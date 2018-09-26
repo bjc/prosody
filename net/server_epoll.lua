@@ -136,10 +136,10 @@ function interface_mt:__tostring()
 end
 
 -- Replace the listener and tell the old one
-function interface:setlistener(listeners)
+function interface:setlistener(listeners, data)
 	self:on("detach");
 	self.listeners = listeners;
-	self:on("attach");
+	self:on("attach", data);
 end
 
 -- Call a listener callback

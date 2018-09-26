@@ -321,7 +321,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	handler.onreadtimeout = onreadtimeout;
 
-	handler.setlistener = function( self, listeners )
+	handler.setlistener = function( self, listeners, data )
 		if detach then
 			detach(self) -- Notify listener that it is no longer responsible for this connection
 		end
@@ -332,7 +332,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		handler.onreadtimeout = listeners.onreadtimeout
 		detach = listeners.ondetach
 		if listeners.onattach then
-			listeners.onattach(self)
+			listeners.onattach(self, data)
 		end
 	end
 	handler.getstats = function( )
