@@ -501,15 +501,20 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luas
 		tls_ctx = tls_ctx;
 	}, interface_mt);
 
-	local ok, peername, peerport = pcall(client.getpeername, client);
-	if ok then
-		conn.peername, conn.peerport = peername, peerport;
-	end
-	local ok, sockname, sockport = pcall(client.getsockname, client);
-	if ok then
-		conn.sockname, conn.sockport = sockname, sockport;
-	end
+	conn:updatenames();
 	return conn;
+end
+
+function interface:updatenames()
+	local conn = self.conn;
+	local ok, peername, peerport = pcall(conn.getpeername, conn);
+	if ok then
+		self.peername, self.peerport = peername, peerport;
+	end
+	local ok, sockname, sockport = pcall(conn.getsockname, conn);
+	if ok then
+		self.sockname, self.sockport = sockname, sockport;
+	end
 end
 
 -- A server interface has new incoming connections waiting
