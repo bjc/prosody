@@ -501,11 +501,13 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luas
 		tls_ctx = tls_ctx;
 	}, interface_mt);
 
-	if client.getpeername then
-		conn.peername, conn.peerport = client:getpeername();
+	local ok, peername, peerport = pcall(client.getpeername, client);
+	if ok then
+		conn.peername, conn.peerport = peername, peerport;
 	end
-	if client.getsockname then
-		conn.sockname, conn.sockport = client:getsockname();
+	local ok, sockname, sockport = pcall(client.getsockname, client);
+	if ok then
+		conn.sockname, conn.sockport = sockname, sockport;
 	end
 	return conn;
 end
