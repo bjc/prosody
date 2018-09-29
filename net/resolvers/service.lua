@@ -35,6 +35,9 @@ function methods:next(cb)
 	dns_resolver:lookup(function (answer)
 		if answer then
 			if #answer == 0 then
+				if self.extra and self.extra.default_port then
+					table.insert(targets, { self.domain, self.extra.default_port, self.conn_type, self.extra });
+				end
 				ready();
 				return;
 			end
