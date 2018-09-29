@@ -36,7 +36,7 @@ function methods:next(cb)
 		if answer then
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
-					table.insert(targets, { self.domain, self.extra.default_port, self.conn_type, self.extra });
+					table.insert(targets, { self.hostname, self.extra.default_port, self.conn_type, self.extra });
 				end
 				ready();
 				return;
@@ -53,12 +53,12 @@ function methods:next(cb)
 			end
 		end
 		ready();
-	end, "_" .. self.service .. "._" .. self.conn_type .. "." .. self.domain, "SRV", "IN");
+	end, "_" .. self.service .. "._" .. self.conn_type .. "." .. self.hostname, "SRV", "IN");
 end
 
-local function new(domain, service, conn_type, extra)
+local function new(hostname, service, conn_type, extra)
 	return setmetatable({
-		domain = domain;
+		hostname = hostname;
 		service = service;
 		conn_type = conn_type or "tcp";
 		extra = extra;
