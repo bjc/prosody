@@ -877,7 +877,7 @@ function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
 	local type;
-	for host, host_session in it.sorted_pairs(prosody.hosts) do
+	for host, host_session in iterators.sorted_pairs(prosody.hosts) do
 		i = i + 1;
 		type = host_session.type;
 		if type == "local" then
@@ -899,7 +899,7 @@ function def_env.port:list()
 	local print = self.session.print;
 	local services = portmanager.get_active_services().data;
 	local n_services, n_ports = 0, 0;
-	for service, interfaces in it.sorted_pairs(services) do
+	for service, interfaces in iterators.sorted_pairs(services) do
 		n_services = n_services + 1;
 		local ports_list = {};
 		for interface, ports in pairs(interfaces) do
