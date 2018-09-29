@@ -104,7 +104,8 @@ files["plugins/"] = {
 	};
 }
 files["spec/"] = {
-	std = "+busted"
+	std = "+busted";
+	globals = { "randomize" };
 }
 files["prosody.cfg.lua"] = {
 	ignore = { "131" };
