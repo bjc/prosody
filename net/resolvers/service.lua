@@ -34,6 +34,11 @@ function methods:next(cb)
 	local dns_resolver = adns.resolver();
 	dns_resolver:lookup(function (answer)
 		if answer then
+			if #answer == 0 then
+				ready();
+				return;
+			end
+
 			if #answer == 1 and answer[1].srv.target == "." then -- No service here
 				ready();
 				return;
