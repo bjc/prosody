@@ -34,6 +34,11 @@ function methods:next(cb)
 	local dns_resolver = adns.resolver();
 	dns_resolver:lookup(function (answer)
 		if answer then
+			if #answer == 1 and answer[1].srv.target == "." then -- No service here
+				ready();
+				return;
+			end
+
 			table.sort(answer, function (a, b) return a.priority > b.priority end);
 			for _, record in ipairs(answer) do
 				table.insert(targets, { record.srv.target, record.srv.port, self.conn_type, self.extra });
