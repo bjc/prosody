@@ -1402,8 +1402,6 @@ function stats_methods:histogram()
 			return self;
 		end
 
-		local raw_histogram = require "util.statistics".get_histogram(data);
-
 		local graph_width, graph_height = 50, 10;
 		local eighth_chars = "   ▁▂▃▄▅▆▇█";
 
