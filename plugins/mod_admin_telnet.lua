@@ -5,6 +5,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- luacheck: ignore 212/self
 
 module:set_global();
 
@@ -35,7 +36,7 @@ local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
 
 local function redirect_output(target, session)
-	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(target, k); end });
+	local env = setmetatable({ print = session.print }, { __index = function (_, k) return rawget(target, k); end });
 	env.dofile = function(name)
 		local f, err = envloadfile(name, env);
 		if not f then return f, err; end
@@ -163,7 +164,7 @@ function console_listener.onreadtimeout(conn)
 	end
 end
 
-function console_listener.ondisconnect(conn, err)
+function console_listener.ondisconnect(conn, err) -- luacheck: ignore 212/err
 	local session = sessions[conn];
 	if session then
 		session.disconnect();
@@ -361,7 +362,7 @@ function def_env.module:load(name, hosts, config)
 	hosts = get_hosts_set(hosts);
 
 	-- Load the module for each host
-	local ok, err, count, mod = true, nil, 0, nil;
+	local ok, err, count, mod = true, nil, 0;
 	for host in hosts do
 		if (not modulemanager.is_loaded(host, name)) then
 			mod, err = modulemanager.load(host, name, config);
@@ -569,7 +570,7 @@ local function show_c2s(callback)
 	end);
 end
 
-function def_env.c2s:count(match_jid)
+function def_env.c2s:count()
 	return true, "Total: "..  iterators.count(values(module:shared"/*/c2s/sessions")) .." clients";
 end
 
@@ -653,6 +654,7 @@ function def_env.s2s:show(match_jid, annotate)
 
 		if (not match_jid) or remotehost:match(match_jid) or localhost:match(match_jid) then
 			table.insert(s2s_list, sess_lines);
+			-- luacheck: ignore 421/print
 			local print = function (s) table.insert(sess_lines, "        "..s); end
 			if session.sendq then
 				print("There are "..#session.sendq.." queued outgoing stanzas for this connection");
@@ -832,7 +834,7 @@ function def_env.s2s:close(from, to)
 
 	local match_id;
 	if from and not to then
-		match_id, from = from;
+		match_id, from = from, nil;
 	elseif not to then
 		return false, "Syntax: s2s:close('from', 'to') - Closes all s2s sessions from 'from' to 'to'";
 	elseif from == to then
@@ -917,7 +919,7 @@ function def_env.port:close(close_port, close_interface)
 	close_port = assert(tonumber(close_port), "Invalid port number");
 	local n_closed = 0;
 	local services = portmanager.get_active_services().data;
-	for service, interfaces in pairs(services) do
+	for service, interfaces in pairs(services) do -- luacheck: ignore 213
 		for interface, ports in pairs(interfaces) do
 			if not close_interface or close_interface == interface then
 				if ports[close_port] then
@@ -1151,7 +1153,7 @@ function def_env.debug:events(host, event)
 	return true, helpers.show_events(events_obj, event);
 end
 
-function def_env.debug:timers(filter)
+function def_env.debug:timers()
 	local socket = require "socket";
 	local print = self.session.print;
 	local add_task = require"util.timer".add_task;
@@ -1170,7 +1172,7 @@ function def_env.debug:timers(filter)
 	end
 	if server.event_base then
 		local count = 0;
-		for k, v in pairs(debug.getregistry()) do
+		for _, v in pairs(debug.getregistry()) do
 			if type(v) == "function" and v.callback and v.callback == add_task._on_timer then
 				count = count + 1;
 			end
@@ -1190,7 +1192,7 @@ end
 def_env.timer = { info = def_env.debug.timers };
 
 module:hook("server-stopping", function(event)
-	for conn, session in pairs(sessions) do
+	for _, session in pairs(sessions) do
 		session.print("Shutting down: "..(event.reason or "unknown reason"));
 	end
 end);
@@ -1225,7 +1227,6 @@ end
 
 local stats_methods = {};
 function stats_methods:bounds(_lower, _upper)
-	local statistics = require "util.statistics";
 	for _, stat_info in ipairs(self) do
 		local data = stat_info[4];
 		if data then
@@ -1240,7 +1241,7 @@ function stats_methods:bounds(_lower, _upper)
 				units = data.units;
 			};
 			local sum = 0;
-			for i, v in ipairs(data.samples) do
+			for _, v in ipairs(data.samples) do
 				if v > upper then
 					break;
 				elseif v>=lower then
@@ -1272,7 +1273,7 @@ function stats_methods:trim(lower, upper)
 				units = data.units;
 			};
 			local sum = 0;
-			for i, v in ipairs(data.samples) do
+			for _, v in ipairs(data.samples) do
 				if v > new_data.max then
 					break;
 				elseif v>=new_data.min then
@@ -1416,7 +1417,7 @@ function stats_methods:histogram()
 				histogram[i] = 0;
 			end
 			local max_bin_samples = 0;
-			for i, d in ipairs(data.samples) do
+			for _, d in ipairs(data.samples) do
 				local bucket = math.floor(1+(n_buckets-1)/(range/(d-data.min)));
 				histogram[bucket] = histogram[bucket] + 1;
 				if histogram[bucket] > max_bin_samples then
@@ -1473,7 +1474,7 @@ local function stats_tostring(stats)
 		if #stat_info.output > 0 then
 			print("\n#"..stat_info[1]);
 			print("");
-			for i, v in ipairs(stat_info.output) do
+			for _, v in ipairs(stat_info.output) do
 				print(v);
 			end
 			print("");
@@ -1489,7 +1490,6 @@ local function new_stats_context(self)
 end
 
 function def_env.stats:show(filter)
-	local print = self.session.print;
 	local stats, changed, extra = require "core.statsmanager".get_stats();
 	local available, displayed = 0, 0;
 	local displayed_stats = new_stats_context(self);
