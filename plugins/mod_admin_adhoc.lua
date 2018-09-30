@@ -808,6 +808,7 @@ local deactivate_host_handler = adhoc_simple(deactivate_host_layout, function(fi
 	end
 end);
 
+-- luacheck: max_line_length 180
 
 local add_user_desc = adhoc_new("Add User", "http://jabber.org/protocol/admin#add-user", add_user_command_handler, "admin");
 local change_user_password_desc = adhoc_new("Change User Password", "http://jabber.org/protocol/admin#change-user-password", change_user_password_command_handler, "admin");
