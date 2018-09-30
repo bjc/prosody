@@ -119,6 +119,7 @@ function route_to_existing_session(event)
 			if host.sendq then
 				t_insert(host.sendq, queued_item);
 			else
+				-- luacheck: ignore 122
 				host.sendq = { queued_item };
 			end
 			host.log("debug", "stanza [%s] queued ", stanza.name);
@@ -175,7 +176,7 @@ function module.add_host(module)
 	module:hook("route/remote", route_to_new_session, -10);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
-	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza)
+	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
 		if session.type == "s2sout" then
 			-- Stream is authenticated and we are seem to be done with feature negotiation,
 			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
@@ -497,10 +498,13 @@ local function session_close(session, reason, remote_reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, stanza);
+					log("debug", "Disconnecting %s[%s], <stream:error> is: %s",
+					session.host or session.ip or "(unknown host)", session.type, stanza);
 					session.sends2s(stanza);
 				elseif reason.name then -- a stanza
-					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s", session.from_host or "(unknown host)", session.to_host or "(unknown host)", session.type, reason);
+					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
+						session.from_host or "(unknown host)", session.to_host or "(unknown host)",
+						session.type, reason);
 					session.sends2s(reason);
 				end
 			end
@@ -509,8 +513,11 @@ local function session_close(session, reason, remote_reason)
 		session.sends2s("</stream:stream>");
 		function session.sends2s() return false; end
 
+		-- luacheck: ignore 422/reason
+		-- FIXME reason should be managed in a place common to c2s, s2s, bosh, component etc
 		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
-		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper), session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
+		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper),
+			session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
@@ -529,7 +536,7 @@ local function session_close(session, reason, remote_reason)
 	end
 end
 
-function session_stream_attrs(session, from, to, attr)
+function session_stream_attrs(session, from, to, attr) -- luacheck: ignore 212/session
 	if not from or (hosts[from] and hosts[from].modules.dialback) then
 		attr["xmlns:db"] = 'jabber:server:dialback';
 	end
@@ -597,7 +604,7 @@ local function initialize_session(session)
 	session.close = session_close;
 
 	local handlestanza = stream_callbacks.handlestanza;
-	function session.dispatch_stanza(session, stanza)
+	function session.dispatch_stanza(session, stanza) -- luacheck: ignore 432/session
 		return handlestanza(session, stanza);
 	end
 
