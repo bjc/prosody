@@ -8,6 +8,8 @@
 
 --- Module containing all the logic for connecting to a remote server
 
+-- luacheck: ignore 432/err
+
 local portmanager = require "core.portmanager";
 local wrapclient = require "net.server".wrapclient;
 local initialize_filters = require "util.filters".initialize;
@@ -16,7 +18,6 @@ local new_ip = require "util.ip".new_ip;
 local rfc6724_dest = require "util.rfc6724".destination;
 local socket = require "socket";
 local adns = require "net.adns";
-local dns = require "net.dns";
 local t_insert, t_sort, ipairs = table.insert, table.sort, ipairs;
 local local_addresses = require "util.net".local_addresses;
 
@@ -174,6 +175,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 	if not err then
 		local IPs = {};
 		host_session.ip_hosts = IPs;
+    :make
 		local handle4, handle6;
 		local have_other_result = not(has_ipv4) or not(has_ipv6) or false;
 
