@@ -34,8 +34,8 @@ local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
 
-local function redirect_output(_G, session)
-	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(_G, k); end });
+local function redirect_output(target, session)
+	local env = setmetatable({ print = session.print }, { __index = function (t, k) return rawget(target, k); end });
 	env.dofile = function(name)
 		local f, err = envloadfile(name, env);
 		if not f then return f, err; end
