@@ -95,6 +95,8 @@ local function session_close(session, reason)
 		session.send(st.stanza("close", { xmlns = xmlns_framing }));
 		function session.send() return false; end
 
+		-- luacheck: ignore 422/reason
+		-- FIXME reason should be handled in common place
 		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
 		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
 
