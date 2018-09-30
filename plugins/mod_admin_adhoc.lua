@@ -295,7 +295,7 @@ local get_user_stats_handler = adhoc_simple(get_user_stats_layout, function(fiel
 		return generate_error_message(err);
 	end
 
-	local user, host, resource = jid.split(fields.accountjid);
+	local user, host = jid.split(fields.accountjid);
 	if host ~= module_host then
 		return { status = "completed", error = { message = "Tried to get stats for a user on " .. host .. " but command was sent to " .. module_host } };
 	elseif not usermanager_user_exists(user, host) then
@@ -594,7 +594,7 @@ end, function(fields, err)
 	end
 
 	local ok_list, err_list = {}, {};
-	for host_name, host in pairs(hosts) do
+	for host_name in pairs(hosts) do
 		if modulemanager.is_loaded(host_name, fields.module)  then
 			local ok, err = modulemanager.reload(host_name, fields.module);
 			if ok then
@@ -739,7 +739,7 @@ end, function(fields, err)
 	end
 
 	local ok_list, err_list = {}, {};
-	for host_name, host in pairs(hosts) do
+	for host_name in pairs(hosts) do
 		if modulemanager.is_loaded(host_name, fields.module)  then
 			local ok, err = modulemanager.unload(host_name, fields.module);
 			if ok then
