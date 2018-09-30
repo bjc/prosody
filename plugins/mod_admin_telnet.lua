@@ -18,7 +18,6 @@ local helpers = require "util.helpers";
 local _G = _G;
 
 local prosody = _G.prosody;
-local hosts = prosody.hosts;
 
 local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
@@ -948,9 +947,9 @@ local console_room_mt = {
 
 local function check_muc(jid)
 	local room_name, host = jid_split(jid);
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
-	elseif not hosts[host].modules.muc then
+	elseif not prosody.hosts[host].modules.muc then
 		return nil, "Host '"..host.."' is not a MUC service";
 	end
 	return room_name, host;
@@ -963,8 +962,8 @@ function def_env.muc:create(room_jid, config)
 	end
 	if not room_name then return nil, host end
 	if config ~= nil and type(config) ~= "table" then return nil, "Config must be a table"; end
-	if hosts[host].modules.muc.get_room_from_jid(room_jid) then return nil, "Room exists already" end
-	return hosts[host].modules.muc.create_room(room_jid, config);
+	if prosody.hosts[host].modules.muc.get_room_from_jid(room_jid) then return nil, "Room exists already" end
+	return prosody.hosts[host].modules.muc.create_room(room_jid, config);
 end
 
 function def_env.muc:room(room_jid)
@@ -972,7 +971,7 @@ function def_env.muc:room(room_jid)
 	if not room_name then
 		return room_name, host;
 	end
-	local room_obj = hosts[host].modules.muc.get_room_from_jid(room_jid);
+	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
 	if not room_obj then
 		return nil, "No such room: "..room_jid;
 	end
@@ -980,7 +979,7 @@ function def_env.muc:room(room_jid)
 end
 
 function def_env.muc:list(host)
-	local host_session = hosts[host];
+	local host_session = prosody.hosts[host];
 	if not host_session or not host_session.modules.muc then
 		return nil, "Please supply the address of a local MUC component";
 	end
@@ -998,7 +997,7 @@ local um = require"core.usermanager";
 def_env.user = {};
 function def_env.user:create(jid, password)
 	local username, host = jid_split(jid);
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif um.user_exists(username, host) then
 		return nil, "User exists";
@@ -1013,7 +1012,7 @@ end
 
 function def_env.user:delete(jid)
 	local username, host = jid_split(jid);
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif not um.user_exists(username, host) then
 		return nil, "No such user";
@@ -1028,7 +1027,7 @@ end
 
 function def_env.user:password(jid, password)
 	local username, host = jid_split(jid);
-	if not hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif not um.user_exists(username, host) then
 		return nil, "No such user";
@@ -1044,7 +1043,7 @@ end
 function def_env.user:list(host, pat)
 	if not host then
 		return nil, "No host given";
-	elseif not hosts[host] then
+	elseif not prosody.hosts[host] then
 		return nil, "No such host";
 	end
 	local print = self.session.print;
@@ -1063,9 +1062,9 @@ def_env.xmpp = {};
 
 local st = require "util.stanza";
 function def_env.xmpp:ping(localhost, remotehost)
-	if hosts[localhost] then
+	if prosody.hosts[localhost] then
 		module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
-				:tag("ping", {xmlns="urn:xmpp:ping"}), hosts[localhost]);
+				:tag("ping", {xmlns="urn:xmpp:ping"}), prosody.hosts[localhost]);
 		return true, "Sent ping";
 	else
 		return nil, "No such host";
@@ -1143,10 +1142,10 @@ end
 function def_env.debug:events(host, event)
 	local events_obj;
 	if host and host ~= "*" then
-		if not hosts[host] then
+		if not prosody.hosts[host] then
 			return false, "Unknown host: "..host;
 		end
-		events_obj = hosts[host].events;
+		events_obj = prosody.hosts[host].events;
 	else
 		events_obj = prosody.events;
 	end
