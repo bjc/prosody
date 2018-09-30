@@ -47,7 +47,7 @@ function methods:next(cb)
 				return;
 			end
 
-			table.sort(answer, function (a, b) return a.srv.priority > b.srv.priority end);
+			table.sort(answer, function (a, b) return a.srv.priority < b.srv.priority end);
 			for _, record in ipairs(answer) do
 				table.insert(targets, { record.srv.target, record.srv.port, self.conn_type, self.extra });
 			end
