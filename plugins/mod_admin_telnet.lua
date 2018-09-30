@@ -1328,7 +1328,7 @@ function stats_methods:cfgraph()
 			table.insert(stat_info.output, s);
 		end
 
-		if data and data.sample_count > 0 then
+		if data and data.sample_count and data.sample_count > 0 then
 			local raw_histogram = require "util.statistics".get_histogram(data);
 
 			local graph_width, graph_height = 50, 10;
