@@ -1483,8 +1483,9 @@ local function stats_tostring(stats)
 	return #stats.." statistics displayed";
 end
 
+local stats_mt = {__index = stats_methods, __tostring = stats_tostring }
 local function new_stats_context(self)
-	return setmetatable({ session = self.session, stats = true }, {__index = stats_methods, __tostring = stats_tostring });
+	return setmetatable({ session = self.session, stats = true }, stats_mt);
 end
 
 function def_env.stats:show(filter)
