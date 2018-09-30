@@ -175,7 +175,7 @@ function s2sout.try_connect(host_session, connect_host, connect_port, err)
 	if not err then
 		local IPs = {};
 		host_session.ip_hosts = IPs;
-    :make
+		-- luacheck: ignore 231/handle4 231/handle6
 		local handle4, handle6;
 		local have_other_result = not(has_ipv4) or not(has_ipv6) or false;
 
