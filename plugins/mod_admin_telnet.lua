@@ -1300,7 +1300,7 @@ end
 function stats_methods:summary()
 	local statistics = require "util.statistics";
 	for _, stat_info in ipairs(self) do
-		local name, type, value, data = stat_info[1], stat_info[2], stat_info[3], stat_info[4];
+		local type, value, data = stat_info[2], stat_info[3], stat_info[4];
 		if data and data.samples then
 			table.insert(stat_info.output, string.format("Count: %d (%d captured)",
 				data.count,
