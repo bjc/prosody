@@ -14,6 +14,7 @@ local modulemanager = require "core.modulemanager";
 local s2smanager = require "core.s2smanager";
 local portmanager = require "core.portmanager";
 local helpers = require "util.helpers";
+local server = require "net.server";
 
 local _G = _G;
 
