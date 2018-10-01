@@ -107,25 +107,6 @@ die() {
    exit 1
 }
 
-find_helper() {
-   explanation="$1"
-   shift
-   tried="$*"
-   while [ -n "$1" ]
-do
-      found=`find_program "$1"`
-      if [ -n "$found" ]
-      then
-         echo "$1 found at $found"
-         HELPER=$1
-         return
-      fi
-      shift
-   done
-   echo "Could not find $explanation. Tried: $tried."
-   die "Make sure one of them is installed and available in your PATH."
-}
-
 case `echo -n x` in
 -n*) echo_n_flag='';;
 *)   echo_n_flag='-n';;
