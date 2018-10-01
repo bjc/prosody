@@ -92,7 +92,7 @@ EOF
 # Helper functions
 
 find_program() {
-   prog=`command -v "$1" 2>/dev/null`
+   prog=$(command -v "$1" 2>/dev/null)
    if [ -n "$prog" ]
    then
       dirname "$prog"
@@ -124,9 +124,9 @@ echo_n() {
 
 while [ -n "$1" ]
 do
-   value="`echo $1 | sed 's/[^=]*.\(.*\)/\1/'`"
-   key="`echo $1 | sed 's/=.*//'`"
-   if `echo "$value" | grep "~" >/dev/null 2>/dev/null`
+   value=$(echo "$1" | sed 's/[^=]*.\(.*\)/\1/')
+   key=$(echo "$1" | sed 's/=.*//')
+   if echo "$value" | grep "~" >/dev/null 2>/dev/null
    then
       echo
       echo '*WARNING*: the "~" sign is not expanded in flags.'
@@ -338,7 +338,7 @@ then
 fi
 
 detect_lua_version() {
-   detected_lua=`$1 -e 'print(_VERSION:match(" (5%.[123])$"))' 2> /dev/null`
+   detected_lua=$("$1" -e 'print(_VERSION:match(" (5%.[123])$"))' 2> /dev/null)
    if [ "$detected_lua" != "nil" ]
    then
       if [ "$LUA_VERSION_SET" != "yes" ]
@@ -367,7 +367,7 @@ search_interpreter() {
          find_lua="$LUA_BINDIR"
       fi
    else
-      find_lua=`find_program lua$suffix`
+      find_lua=$(find_program lua"$suffix")
    fi
    if [ -n "$find_lua" -a -x "$find_lua/lua$suffix" ]
    then
@@ -380,7 +380,7 @@ search_interpreter() {
          fi
          if [ "$LUA_DIR_SET" != "yes" ]
          then
-            LUA_DIR=`dirname "$find_lua"`
+            LUA_DIR=$(dirname "$find_lua")
          fi
          LUA_SUFFIX="$suffix"
          return 0
