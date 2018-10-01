@@ -20,15 +20,23 @@ local configs = {
 		storage = "sql";
 		sql = { driver = "SQLite3", database = "prosody-tests.sqlite" };
 	};
+	mysql = {
+		storage = "sql";
+		sql = { driver = "MySQL",  database = "prosody", username = "prosody", password = "secret", host = "localhost" };
+	};
+	postgres = {
+		storage = "sql";
+		sql = { driver = "PostgreSQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" };
+	};
 };
 
 local test_host = "storage-unit-tests.invalid";
 
 describe("storagemanager", function ()
-	for _, backend in ipairs({ "internal", "sqlite" }) do
+	for backend, backend_config in pairs(configs) do
 		local tagged_name = "#"..backend;
-		if backend ~= configs[backend].storage then
-			tagged_name = tagged_name.." #"..configs[backend].storage;
+		if backend ~= backend_config.storage then
+			tagged_name = tagged_name.." #"..backend_config.storage;
 		end
 		insulate(tagged_name.." #storage backend", function ()
 			mock_prosody();
@@ -41,7 +49,6 @@ describe("storagemanager", function ()
 			-- Simple check to ensure insulation is working correctly
 			assert.is_nil(config.get(test_host, "storage"));
 
-			local backend_config = configs[backend];
 			for k, v in pairs(backend_config) do
 				config.set(test_host, k, v);
 			end
