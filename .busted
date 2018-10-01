@@ -2,9 +2,12 @@ return {
   _all = {
   },
   default = {
-    ["exclude-tags"] = "mod_bosh";
-  },
+    ["exclude-tags"] = "mod_bosh,storage";
+  };
   bosh = {
     tags = "mod_bosh";
-  }
+  };
+  storage = {
+    tags = "storage";
+  };
 }
