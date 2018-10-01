@@ -19,6 +19,7 @@ local form_layout = require "util.dataforms".new({
 	{ name = "support", var = "support-addresses", type = "list-multi" },
 });
 
+-- JIDs of configured service admins are used as fallback
 local admins = module:get_option_inherited_set("admins", {});
 
 local contact_config = module:get_option("contact_info", {
