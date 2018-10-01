@@ -82,6 +82,7 @@ coverage:
 lint:
 	$(LUACHECK) -q $$(HGPLAIN= hg files -I '**.lua') prosody prosodyctl
 	@echo $$(sed -n '/^\tlocal exclude_files/,/^}/p;' .luacheckrc | sed '1d;$d' | wc -l) files ignored
+	shellcheck configure
 
 util/%.so:
 	$(MAKE) install -C util-src
