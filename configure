@@ -107,7 +107,8 @@ die() {
    exit 1
 }
 
-case `echo -n x` in
+# shellcheck disable=SC2039
+case $(echo -n x) in
 -n*) echo_n_flag='';;
 *)   echo_n_flag='-n';;
 esac
@@ -130,6 +131,7 @@ do
    then
       echo
       echo '*WARNING*: the "~" sign is not expanded in flags.'
+      # shellcheck disable=SC2016
       echo 'If you mean the home directory, use $HOME instead.'
       echo
    fi
