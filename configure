@@ -127,6 +127,7 @@ while [ -n "$1" ]
 do
    value=$(echo "$1" | sed 's/[^=]*.\(.*\)/\1/')
    key=$(echo "$1" | sed 's/=.*//')
+   # shellcheck disable=SC2088
    if echo "$value" | grep "~" >/dev/null 2>/dev/null
    then
       echo
