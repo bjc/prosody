@@ -317,7 +317,7 @@ do
    shift
 done
 
-if [ "$PREFIX_SET" = "yes" -a ! "$SYSCONFDIR_SET" = "yes" ]
+if [ "$PREFIX_SET" = "yes" && ! "$SYSCONFDIR_SET" = "yes" ]
 then
    if [ "$PREFIX" = "/usr" ]
    then SYSCONFDIR=/etc/$APP_DIRNAME
@@ -325,7 +325,7 @@ then
    fi
 fi
 
-if [ "$PREFIX_SET" = "yes" -a ! "$DATADIR_SET" = "yes" ]
+if [ "$PREFIX_SET" = "yes" && ! "$DATADIR_SET" = "yes" ]
 then
    if [ "$PREFIX" = "/usr" ]
    then DATADIR=/var/lib/$APP_DIRNAME
@@ -333,7 +333,7 @@ then
    fi
 fi
 
-if [ "$PREFIX_SET" = "yes" -a ! "$LIBDIR_SET" = "yes" ]
+if [ "$PREFIX_SET" = "yes" && ! "$LIBDIR_SET" = "yes" ]
 then
    LIBDIR=$PREFIX/lib
 fi
@@ -370,7 +370,7 @@ search_interpreter() {
    else
       find_lua=$(find_program lua"$suffix")
    fi
-   if [ -n "$find_lua" -a -x "$find_lua/lua$suffix" ]
+   if [ -n "$find_lua" && -x "$find_lua/lua$suffix" ]
    then
       if detect_lua_version "$find_lua/lua$suffix"
       then
@@ -393,13 +393,13 @@ search_interpreter() {
 lua_interp_found=no
 if [ "$LUA_SUFFIX_SET" != "yes" ]
 then
-   if [ "$LUA_VERSION_SET" = "yes" -a "$LUA_VERSION" = "5.1" ]
+   if [ "$LUA_VERSION_SET" = "yes" && "$LUA_VERSION" = "5.1" ]
    then
       suffixes="5.1 51 -5.1 -51"
-   elif [ "$LUA_VERSION_SET" = "yes" -a "$LUA_VERSION" = "5.2" ]
+   elif [ "$LUA_VERSION_SET" = "yes" && "$LUA_VERSION" = "5.2" ]
    then
       suffixes="5.2 52 -5.2 -52"
-   elif [ "$LUA_VERSION_SET" = "yes" -a "$LUA_VERSION" = "5.3" ]
+   elif [ "$LUA_VERSION_SET" = "yes" && "$LUA_VERSION" = "5.3" ]
    then
       suffixes="5.3 53 -5.3 -53"
    else
@@ -418,7 +418,7 @@ else
 }
 fi
 
-if [ "$lua_interp_found" != "yes" -a "$RUNWITH_SET" != "yes" ]
+if [ "$lua_interp_found" != "yes" && "$RUNWITH_SET" != "yes" ]
 then
    if [ "$LUA_VERSION_SET" ]; then
       interp="Lua $LUA_VERSION";
@@ -434,7 +434,7 @@ then
    die "You may want to use the flags --with-lua, --with-lua-bin and/or --lua-suffix. See --help."
 fi
 
-if [ "$LUA_VERSION_SET" = "yes" -a "$RUNWITH_SET" != "yes" ]
+if [ "$LUA_VERSION_SET" = "yes" && "$RUNWITH_SET" != "yes" ]
 then
    echo_n "Checking if $LUA_BINDIR/lua$LUA_SUFFIX is Lua version $LUA_VERSION... "
    if detect_lua_version "$LUA_BINDIR/lua$LUA_SUFFIX"
@@ -518,7 +518,7 @@ OPENSSL_LIBS="-l$OPENSSL_LIB"
 
 if [ "$PRNG" = "OPENSSL" ]; then
    PRNGLIBS=$OPENSSL_LIBS
-elif [ "$PRNG" = "ARC4RANDOM" -a "$(uname)" = "Linux" ]; then
+elif [ "$PRNG" = "ARC4RANDOM" && "$(uname)" = "Linux" ]; then
    PRNGLIBS="-lbsd"
 fi
 
