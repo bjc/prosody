@@ -15,10 +15,13 @@ end);
 
 describe("util.pubsub", function ()
 	describe("simple node creation and deletion", function ()
+		randomize(false); -- These tests are ordered
+
 		-- Roughly a port of scansion/scripts/pubsub_createdelete.scs
 		local service = pubsub.new();
 
 		describe("#create", function ()
+			randomize(false); -- These tests are ordered
 			it("creates a new node", function ()
 				assert.truthy(service:create("princely_musings", true));
 			end);
@@ -29,6 +32,7 @@ describe("util.pubsub", function ()
 		end);
 
 		describe("#delete", function ()
+			randomize(false); -- These tests are ordered
 			it("deletes the node", function ()
 				assert.truthy(service:delete("princely_musings", true));
 			end);
@@ -40,6 +44,8 @@ describe("util.pubsub", function ()
 	end);
 
 	describe("simple publishing", function ()
+		randomize(false); -- These tests are ordered
+
 		local notified;
 		local broadcaster = spy.new(function (notif_type, node_name, subscribers, item) -- luacheck: ignore 212
 			notified = subscribers;
@@ -82,6 +88,8 @@ describe("util.pubsub", function ()
 	end);
 
 	describe("#issue1082", function ()
+		randomize(false); -- These tests are ordered
+
 		local service = pubsub.new();
 
 		it("creates a node with max_items = 1", function ()
