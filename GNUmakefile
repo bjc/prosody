@@ -73,7 +73,7 @@ test:
 
 coverage:
 	-rm -- luacov.*
-	busted --lua=$(RUNWITH) -c
+	$(BUSTED) --lua=$(RUNWITH) -c
 	luacov
 	luacov-console
 	luacov-console -s
