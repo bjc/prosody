@@ -44,10 +44,12 @@ local bosh_max_polling = module:get_option_number("bosh_max_polling", 5);
 local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
-local cross_domain = module:get_option("cross_domain_bosh", false);
+local cross_domain = module:get_option("cross_domain_bosh");
 
-if cross_domain == true then cross_domain = "*"; end
-if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
+if cross_domain ~= nil then
+	module:log("info", "The 'cross_domain_bosh' option has been deprecated");
+	module:depends("http_crossdomain");
+end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 
@@ -91,22 +93,6 @@ function check_inactive(now, session, context, reason) -- luacheck: ignore 212/n
 	end
 end
 
-local function set_cross_domain_headers(response)
-	local headers = response.headers;
-	headers.access_control_allow_methods = "GET, POST, OPTIONS";
-	headers.access_control_allow_headers = "Content-Type";
-	headers.access_control_max_age = "7200";
-	headers.access_control_allow_origin = cross_domain;
-	return response;
-end
-
-function handle_OPTIONS(event)
-	if cross_domain and event.request.headers.origin then
-		set_cross_domain_headers(event.response);
-	end
-	return "";
-end
-
 function handle_POST(event)
 	log("debug", "Handling new request %s: %s\n----------", tostring(event.request), tostring(event.request.body));
 
@@ -120,10 +106,6 @@ function handle_POST(event)
 
 	local headers = response.headers;
 	headers.content_type = "text/xml; charset=utf-8";
-
-	if cross_domain and request.headers.origin then
-		set_cross_domain_headers(response);
-	end
 
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
@@ -511,8 +493,6 @@ module:provides("http", {
 	route = {
 		["GET"] = GET_response;
 		["GET /"] = GET_response;
-		["OPTIONS"] = handle_OPTIONS;
-		["OPTIONS /"] = handle_OPTIONS;
 		["POST"] = handle_POST;
 		["POST /"] = handle_POST;
 	};
