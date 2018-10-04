@@ -29,18 +29,11 @@ local t_concat = table.concat;
 
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
-local cross_domain = module:get_option_set("cross_domain_websocket", {});
-if cross_domain:contains("*") or cross_domain:contains(true) then
-	cross_domain = true;
+local cross_domain = module:get_option("cross_domain_websocket");
+if cross_domain ~= nil then
+	module:log("info", "The 'cross_domain_websocket' option has been deprecated");
+	module:depends("http_crossdomain");
 end
-
-local function check_origin(origin)
-	if cross_domain == true then
-		return true;
-	end
-	return cross_domain:contains(origin);
-end
-
 local xmlns_framing = "urn:ietf:params:xml:ns:xmpp-framing";
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_client = "jabber:client";
@@ -156,11 +149,6 @@ function handle_request(event)
 	if not wants_xmpp then
 		module:log("debug", "Client didn't want to talk XMPP, list of protocols was %s", request.headers.sec_websocket_protocol or "(empty)");
 		return 501;
-	end
-
-	if not check_origin(request.headers.origin or "") then
-		module:log("debug", "Origin %s is not allowed by 'cross_domain_websocket'", request.headers.origin or "(missing header)");
-		return 403;
 	end
 
 	local function websocket_close(code, message)
@@ -329,22 +317,4 @@ module:provides("http", {
 
 function module.add_host(module)
 	module:hook("c2s-read-timeout", keepalive, -0.9);
-
-	if cross_domain ~= true then
-		local url = require "socket.url";
-		local ws_url = module:http_url("websocket", "xmpp-websocket");
-		local url_components = url.parse(ws_url);
-		-- The 'Origin' consists of the base URL without path
-		url_components.path = nil;
-		local this_origin = url.build(url_components);
-		local local_cross_domain = module:get_option_set("cross_domain_websocket", { this_origin });
-		-- Don't add / remove something added by another host
-		-- This might be weird with random load order
-		local_cross_domain:exclude(cross_domain);
-		cross_domain:include(local_cross_domain);
-		module:log("debug", "cross_domain = %s", tostring(cross_domain));
-		function module.unload()
-			cross_domain:exclude(local_cross_domain);
-		end
-	end
 end
