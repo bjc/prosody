@@ -22,6 +22,11 @@ server.set_default_host(module:get_option_string("http_default_host"));
 server.set_option("body_size_limit", module:get_option_number("http_max_content_size"));
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
 
+-- CORS settigs
+local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "POST", "PUT", "OPTIONS" });
+local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
+local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
+
 local function get_http_event(host, app_path, key)
 	local method, path = key:match("^(%S+)%s+(.+)$");
 	if not method then -- No path specified, default to "" (base path)
@@ -83,6 +88,13 @@ function moduleapi.http_url(module, app_name, default_path)
 	return "http://disabled.invalid/";
 end
 
+local function apply_cors_headers(response, methods, headers, max_age, origin)
+	response.headers.access_control_allow_methods = tostring(methods);
+	response.headers.access_control_allow_headers = tostring(headers);
+	response.headers.access_control_max_age = tostring(max_age)
+	response.headers.access_control_allow_origin = origin or "*";
+end
+
 function module.add_host(module)
 	local host = module.host;
 	if host ~= "*" then
@@ -101,6 +113,12 @@ function module.add_host(module)
 		end
 		apps[app_name] = apps[app_name] or {};
 		local app_handlers = apps[app_name];
+
+		local function cors_handler(event_data)
+			local request, response = event_data.request, event_data.response;
+			apply_cors_headers(response, opt_methods, opt_headers, opt_max_age, request.headers.origin);
+		end
+
 		for key, handler in pairs(event.item.route or {}) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
@@ -121,6 +139,7 @@ function module.add_host(module)
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = handler;
 					module:hook_object_event(server, event_name, handler);
+					module:hook_object_event(server, event_name, cors_handler, 1);
 				else
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
 				end
