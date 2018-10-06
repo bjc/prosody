@@ -13,8 +13,8 @@ module:add_feature("jabber:iq:version");
 local version;
 
 local query = st.stanza("query", {xmlns = "jabber:iq:version"})
-	:tag("name"):text("Prosody"):up()
-	:tag("version"):text(prosody.version):up();
+	:text_tag("name", "Prosody")
+	:text_tag("version", prosody.version);
 
 if not module:get_option_boolean("hide_os_type") then
 	if os.getenv("WINDIR") then
@@ -35,7 +35,7 @@ if not module:get_option_boolean("hide_os_type") then
 	end
 	if version then
 		version = version:match("^%s*(.-)%s*$") or version;
-		query:tag("os"):text(version):up();
+		query:text_tag("os", version);
 	end
 end
 
