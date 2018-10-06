@@ -40,7 +40,7 @@ if not module:get_option_boolean("hide_os_type") then
 end
 
 module:hook("iq-get/host/jabber:iq:version:query", function(event)
-	local stanza = event.stanza;
-	event.origin.send(st.reply(stanza):add_child(query));
+	local origin, stanza = event.origin, event.stanza;
+	origin.send(st.reply(stanza):add_child(query));
 	return true;
 end);
