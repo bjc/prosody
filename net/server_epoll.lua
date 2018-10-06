@@ -671,10 +671,9 @@ local function link(from, to)
 	to:set(nil, true);
 end
 
--- XXX What uses this?
--- net.adns
-function interface:set_send(new_send)
-	self.send = new_send;
+-- COMPAT
+-- net.adns calls this but then replaces :send so this can be a noop
+function interface:set_send(new_send) -- luacheck: ignore/212
 end
 
 -- Close all connections and servers
