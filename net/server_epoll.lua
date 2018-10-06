@@ -267,7 +267,7 @@ function interface:add(r, w)
 	if w == nil then w = self._wantwrite; end
 	local ok, err, errno = poll:add(fd, r, w);
 	if not ok then
-		log("error", "Could not register %s: %s(%d)", self, err);
+		log("error", "Could not register %s: %s(%d)", self, err, errno);
 		return ok, err;
 	end
 	self._wantread, self._wantwrite = r, w;
