@@ -673,7 +673,7 @@ end
 
 -- COMPAT
 -- net.adns calls this but then replaces :send so this can be a noop
-function interface:set_send(new_send) -- luacheck: ignore/212
+function interface:set_send(new_send) -- luacheck: ignore 212
 end
 
 -- Close all connections and servers
