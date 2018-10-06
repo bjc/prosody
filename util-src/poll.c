@@ -293,7 +293,7 @@ int Lwait(lua_State *L) {
 	tv.tv_sec = (time_t)timeout;
 	tv.tv_usec = ((suseconds_t)(timeout * 1000000)) % 1000000;
 
-	ret = select(FD_SETSIZE, &state->readable, &state->writable, NULL, &tv);
+	ret = select(FD_SETSIZE, &state->readable, &state->writable, &state->err, &tv);
 #endif
 
 	if(ret == 0) {
