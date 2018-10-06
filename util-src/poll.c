@@ -29,9 +29,9 @@
 #include <lauxlib.h>
 
 #ifdef USE_EPOLL
-#define STATE_MT "util.poll.epoll"
+#define STATE_MT "util.poll<epoll>"
 #else
-#define STATE_MT "util.poll.select"
+#define STATE_MT "util.poll<select>"
 #endif
 
 #if (LUA_VERSION_NUM == 501)
