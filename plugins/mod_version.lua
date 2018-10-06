@@ -10,13 +10,12 @@ local st = require "util.stanza";
 
 module:add_feature("jabber:iq:version");
 
-local platform;
-
 local query = st.stanza("query", {xmlns = "jabber:iq:version"})
 	:text_tag("name", "Prosody")
 	:text_tag("version", prosody.version);
 
 if not module:get_option_boolean("hide_os_type") then
+	local platform;
 	if os.getenv("WINDIR") then
 		platform = "Windows";
 	else
