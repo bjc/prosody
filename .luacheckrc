@@ -1,5 +1,4 @@
 cache = true
-unused_secondaries = false
 codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log", "143/table", "113/unpack" }
 
@@ -124,7 +123,8 @@ files["prosody.cfg.lua"] = {
 if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	-- These files have not yet been brought up to standard
 	-- Do not add more files here, but do help us fix these!
-	unused_secondaries = true
+	unused_secondaries = false
+
 	local exclude_files = {
 	"doc/net.server.lua";
 
