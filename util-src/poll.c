@@ -92,6 +92,7 @@ int Ladd(lua_State *L) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(EEXIST));
 		lua_pushinteger(L, EEXIST);
+		return 3;
 	}
 
 	FD_CLR(fd, &state->readable);
