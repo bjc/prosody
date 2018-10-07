@@ -66,6 +66,13 @@ int Ladd(lua_State *L) {
 	int wantread = lua_toboolean(L, 3);
 	int wantwrite = lua_toboolean(L, 4);
 
+	if(fd < 0) {
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(EBADF));
+		lua_pushinteger(L, EBADF);
+		return 3;
+	}
+
 #ifdef USE_EPOLL
 	struct epoll_event event;
 	event.data.fd = fd;
@@ -87,6 +94,13 @@ int Ladd(lua_State *L) {
 	return 1;
 
 #else
+
+	if(fd > FD_SETSIZE) {
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(EBADF));
+		lua_pushinteger(L, EBADF);
+		return 3;
+	}
 
 	if(FD_ISSET(fd, &state->all)) {
 		lua_pushnil(L);
