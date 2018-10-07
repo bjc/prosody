@@ -389,6 +389,8 @@ int Lnew(lua_State *L) {
 	FD_ZERO(&state->wantwrite);
 	FD_ZERO(&state->readable);
 	FD_ZERO(&state->writable);
+	FD_ZERO(&state->all);
+	FD_ZERO(&state->err);
 	state->processed = FD_SETSIZE;
 #endif
 
