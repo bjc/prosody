@@ -734,6 +734,11 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
 			return true;
 		end
+		-- XEP-0410 MUC Self-Ping #1220
+		if to == current_nick and stanza.attr.type == "get" and stanza:get_child("ping", "urn:xmpp:ping") then
+			self:route_stanza(st.reply(stanza));
+			return true;
+		end
 		do -- construct_stanza_id
 			stanza.attr.id = base64.encode(occupant.jid.."\0"..stanza.attr.id.."\0"..md5(from));
 		end
