@@ -714,7 +714,7 @@ local function loop(once)
 				poll:del(fd);
 			end
 		elseif r ~= "timeout" then
-			log("debug", "epoll_wait error: %s", tostring(r));
+			log("debug", "epoll_wait error: %s[%d]", r, w);
 		end
 	until once or (quitting and next(fds) == nil);
 	return quitting;
