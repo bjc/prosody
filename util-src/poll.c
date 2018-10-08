@@ -19,7 +19,7 @@
 #ifdef USE_EPOLL
 #include <sys/epoll.h>
 #ifndef MAX_EVENTS
-#define MAX_EVENTS 10
+#define MAX_EVENTS 64
 #endif
 #else
 #include <sys/select.h>
