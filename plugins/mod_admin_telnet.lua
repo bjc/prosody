@@ -1143,10 +1143,13 @@ end
 function def_env.debug:events(host, event)
 	local events_obj;
 	if host and host ~= "*" then
-		if not prosody.hosts[host] then
+		if host == "http" then
+			events_obj = require "net.http.server"._events;
+		elseif not prosody.hosts[host] then
 			return false, "Unknown host: "..host;
+		else
+			events_obj = prosody.hosts[host].events;
 		end
-		events_obj = prosody.hosts[host].events;
 	else
 		events_obj = prosody.events;
 	end
