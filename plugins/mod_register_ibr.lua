@@ -158,7 +158,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	local user = { username = username , host = host, additional = data, ip = session.ip, session = session, allowed = true }
+	local user = { username = username, password = password, host = host, additional = data, ip = session.ip, session = session, allowed = true }
 	module:fire_event("user-registering", user);
 	if not user.allowed then
 		log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
