@@ -107,12 +107,12 @@ local function activate(service_name)
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port,
 					active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
-				local ssl, err;
+				local ssl, cfg, err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
 					local global_ssl_config = config.get("*", "ssl") or {};
 					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
-					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server",
+					ssl, err, cfg = certmanager.create_context(service_info.name.." port "..port, "server",
 						prefix_ssl_config[interface],
 						prefix_ssl_config[port],
 						prefix_ssl_config,
@@ -130,6 +130,7 @@ local function activate(service_name)
 						read_size = mode,
 						tls_ctx = ssl,
 						tls_direct = service_info.encryption == "ssl";
+						sni_hosts = {},
 					});
 					if not handler then
 						log("error", "Failed to open server port %d on %s, %s", port_number, interface,
@@ -140,6 +141,7 @@ local function activate(service_name)
 						active_services:add(service_name, interface, port_number, {
 							server = handler;
 							service = service_info;
+							tls_cfg = cfg;
 						});
 					end
 				end
