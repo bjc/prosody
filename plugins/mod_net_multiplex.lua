@@ -18,7 +18,7 @@ end
 module:hook("service-added", function (event) add_service(event.service); end);
 module:hook("service-removed", function (event)	available_services[event.service] = nil; end);
 
-for service_name, services in pairs(portmanager.get_registered_services()) do
+for _, services in pairs(portmanager.get_registered_services()) do
 	for _, service in ipairs(services) do
 		add_service(service);
 	end
@@ -38,11 +38,11 @@ function listener.onincoming(conn, data)
 	for service, multiplex_pattern in pairs(available_services) do
 		if buf:match(multiplex_pattern) then
 			module:log("debug", "Routing incoming connection to %s", service.name);
-			local listener = service.listener;
-			conn:setlistener(listener);
-			local onconnect = listener.onconnect;
+			local next_listener = service.listener;
+			conn:setlistener(next_listener);
+			local onconnect = next_listener.onconnect;
 			if onconnect then onconnect(conn) end
-			return listener.onincoming(conn, buf);
+			return next_listener.onincoming(conn, buf);
 		end
 	end
 	if #buf > max_buffer_len then -- Give up
@@ -52,7 +52,7 @@ function listener.onincoming(conn, data)
 	end
 end
 
-function listener.ondisconnect(conn, err)
+function listener.ondisconnect(conn)
 	buffers[conn] = nil; -- warn if no buffer?
 end
 
