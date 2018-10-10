@@ -108,7 +108,9 @@ describe("storagemanager", function ()
 						with = "contact@example.com";
 					});
 					assert.truthy(data);
+					local count = 0;
 					for id, item, when in data do
+						count = count + 1;
 						assert.truthy(id);
 						assert(st.is_stanza(item));
 						assert.equal("test", item.name);
@@ -116,10 +118,20 @@ describe("storagemanager", function ()
 						assert.equal(2, #item.tags);
 						assert.equal(test_time, when);
 					end
+					assert.equal(1, count);
 				end);
 				it("can be purged", function ()
 					local ok, err = archive:delete("user");
 					assert.truthy(ok);
+					local data, err = archive:find("user", {
+						with = "contact@example.com";
+					});
+					assert.truthy(data);
+					local count = 0;
+					for id, item, when in data do -- luacheck: ignore id item when
+						count = count + 1;
+					end
+					assert.equal(0, count);
 				end);
 			end);
 		end);
