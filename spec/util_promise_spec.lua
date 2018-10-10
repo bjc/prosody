@@ -1,6 +1,7 @@
 local promise = require "util.promise";
 
 describe("util.promise", function ()
+	--luacheck: ignore 212/resolve 212/reject
 	describe("new()", function ()
 		it("returns a promise object", function ()
 			assert(promise.new());
@@ -72,7 +73,7 @@ describe("util.promise", function ()
 		r("foo");
 		assert.spy(cb1).was_called(1);
 		assert.spy(cb2).was_called(1);
-		assert.equal("foo", result);		
+		assert.equal("foo", result);
 	end);
 	it("automatically rejects on error", function ()
 		local r;
@@ -107,7 +108,7 @@ describe("util.promise", function ()
 		r("oh doh");
 		assert.spy(cb).was_called(0);
 		assert.spy(err_cb).was_called(1);
-		assert.equal("oh doh", result);		
+		assert.equal("oh doh", result);
 	end);
 	it("supports chaining of rejected promises", function ()
 		local r, result;
@@ -123,7 +124,7 @@ describe("util.promise", function ()
 		local cb2 = spy.new(function (v)
 			result = v;
 		end);
-		local err_cb2 = spy.new(function (v) end);
+		local err_cb2 = spy.new(function () end);
 		p:next(cb, err_cb):next(cb2, err_cb2)
 		assert.spy(cb).was_called(0);
 		assert.spy(err_cb).was_called(0);
@@ -134,7 +135,7 @@ describe("util.promise", function ()
 		assert.spy(err_cb).was_called(1);
 		assert.spy(cb2).was_called(1);
 		assert.spy(err_cb2).was_called(0);
-		assert.equal("ok", result);		
+		assert.equal("ok", result);
 	end);
 
 	describe("race()", function ()
@@ -251,9 +252,7 @@ describe("util.promise", function ()
 	describe("reject()", function ()
 		it("returns a rejected promise", function ()
 			local p = promise.reject("foo");
-			local cb = spy.new(function (v)
-				result = v;
-			end);			
+			local cb = spy.new(function () end);
 			p:next(cb);
 			assert.spy(cb).was_called(1);
 			assert.spy(cb).was_called_with("foo");
