@@ -89,6 +89,7 @@ function serve(opts)
 	if type(opts) ~= "table" then -- assume path string
 		opts = { path = opts };
 	end
+	-- luacheck: ignore 431
 	local base_path = opts.path;
 	local dir_indices = opts.index_files or dir_indices;
 	local directory_index = opts.directory_index;
