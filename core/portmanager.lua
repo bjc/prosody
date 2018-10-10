@@ -95,7 +95,7 @@ local function activate(service_name)
 		   }
 	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
-	local mode, ssl = listener.default_mode or default_mode;
+	local mode = listener.default_mode or default_mode;
 	local hooked_ports = {};
 
 	for interface in bind_interfaces do
@@ -107,7 +107,7 @@ local function activate(service_name)
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port,
 					active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
-				local err;
+				local ssl, err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
 					local global_ssl_config = config.get("*", "ssl") or {};
