@@ -462,7 +462,7 @@ end
 --- Initialization
 
 
-local function create_table(engine, name) -- luacheck: ignore 431/engine
+local function create_table(engine) -- luacheck: ignore 431/engine
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
