@@ -138,7 +138,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 
 	"plugins/mod_http_files.lua";
 	"plugins/mod_net_multiplex.lua";
-	"plugins/mod_privacy.lua";
 	"plugins/mod_storage_sql1.lua";
 
 	"spec/core_configmanager_spec.lua";
