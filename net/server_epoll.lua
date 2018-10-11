@@ -21,6 +21,8 @@ local socket = require "socket";
 local luasec = require "ssl";
 local gettime = require "util.time".now;
 local createtable = require "util.table".create;
+local inet = require "util.net";
+local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 
 local poll = require "util.poll".new();
@@ -614,7 +616,8 @@ local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx)
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
-	client:init();
+	local ok, err = client:init();
+	if not ok then return ok, err; end
 	if tls_ctx then
 		client:starttls(tls_ctx);
 	end
@@ -623,12 +626,20 @@ end
 
 -- New outgoing TCP connection
 local function addclient(addr, port, listeners, read_size, tls_ctx)
-	local conn, err = socket.tcp();
-	if not conn then return conn, err; end
+	local n = inet_pton(addr);
+	if not n then return nil, "invalid-ip"; end
+	local create
+	if #n == 16 then
+		create = socket.tcp6 or socket.tcp;
+	else
+		create = socket.tcp4 or socket.tcp;
+	end
+	local conn, err = create();
 	conn:settimeout(0);
 	conn:connect(addr, port);
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx)
-	client:init();
+	local ok, err = client:init();
+	if not ok then return ok, err; end
 	if tls_ctx then
 		client:starttls(tls_ctx);
 	end
