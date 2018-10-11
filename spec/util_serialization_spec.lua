@@ -44,6 +44,14 @@ describe("util.serialization", function ()
 			test({foo={[100]={{"bar"},{baz=1}}}});
 			test({["goto"] = {["function"]={["do"]="keywords"}}});
 		end);
+
+		it("can serialize with metatables", function ()
+			local s = serialization.new({ freeze = true });
+			local t = setmetatable({ a = "hi" }, { __freeze = function (t) return { t.a } end });
+			local rt = serialization.deserialize(s(t));
+			assert.same({"hi"}, rt);
+		end);
+
 	end);
 end);
 

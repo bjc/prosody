@@ -139,25 +139,23 @@ local function new(opt)
 		end
 
 		o[t] = true;
-		if freeze then
+
+		if freeze == true then
 			-- opportunity to do pre-serialization
 			local mt = getmetatable(t);
-			local fr = (type(freeze) == "table" and freeze[mt]);
-			local mf = mt and mt.__freeze;
-			local tag;
-			if type(fr) == "string" then
-				tag = fr;
-				fr = mf;
-			elseif mt then
-				tag = mt.__type;
-			end
-			if type(fr) == "function" then
-				t = fr(t);
-				if type(tag) == "string" then
-					o[l], l = tag, l + 1;
+			if type(mt) == "table" then
+				local tag = mt.__name;
+				local fr = mt.__freeze;
+
+				if type(fr) == "function" then
+					t = fr(t);
+					if type(tag) == "string" then
+						o[l], l = tag, l + 1;
+					end
 				end
 			end
 		end
+
 		o[l], l = tstart, l + 1;
 		local indent = s_rep(indentwith, d);
 		local numkey = 1;
