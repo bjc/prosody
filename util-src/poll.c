@@ -351,6 +351,10 @@ int Lgetfd(lua_State *L) {
 int Lgc(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 
+	if(state->epoll_fd != -1) {
+		return 0;
+	}
+
 	if(close(state->epoll_fd) == 0) {
 		state->epoll_fd = -1;
 	}
