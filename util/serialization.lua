@@ -262,7 +262,7 @@ end
 local function deserialize(str)
 	if type(str) ~= "string" then return nil; end
 	str = "return "..str;
-	local f, err = envload(str, "@data", {});
+	local f, err = envload(str, "=serialized data", {});
 	if not f then return nil, err; end
 	local success, ret = pcall(f);
 	if not success then return nil, ret; end
