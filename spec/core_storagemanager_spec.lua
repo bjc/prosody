@@ -205,6 +205,35 @@ describe("storagemanager", function ()
 					end);
 				end);
 
+				it("can selectively delete items", function ()
+					local delete_id;
+					do
+						local data = assert(archive:find("user", {}));
+						local count = 0;
+						for id, item, when in data do --luacheck: ignore 213/item 213/when
+							count = count + 1;
+							if count == 2 then
+								delete_id = id;
+							end
+							assert.truthy(id);
+						end
+						assert.equal(#test_data, count);
+					end
+
+					assert(archive:delete("user", { key = delete_id }));
+
+					do
+						local data = assert(archive:find("user", {}));
+						local count = 0;
+						for id, item, when in data do --luacheck: ignore 213/item 213/when
+							count = count + 1;
+							assert.truthy(id);
+							assert.not_equal(delete_id, id);
+						end
+						assert.equal(#test_data-1, count);
+					end
+				end);
+
 				it("can be purged", function ()
 					local ok, err = archive:delete("user");
 					assert.truthy(ok);
@@ -217,6 +246,82 @@ describe("storagemanager", function ()
 						count = count + 1;
 					end
 					assert.equal(0, count);
+				end);
+
+				it("can truncate the oldest items", function ()
+					local username = "user-truncate";
+					for i = 1, 10 do
+						assert(archive:append(username, nil, test_stanza, i, "contact@example.com"));
+					end
+					assert(archive:delete(username, { truncate = 3 }));
+
+					do
+						local data = assert(archive:find(username, {}));
+						local count = 0;
+						for id, item, when in data do --luacheck: ignore 213/when
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert(when > 7, ("%d > 7"):format(when));
+						end
+						assert.equal(3, count);
+					end
+				end);
+
+				it("overwrites existing keys with new data", function ()
+					local prefix = ("a"):rep(50);
+					local username = "user-overwrite";
+					assert(archive:append(username, prefix.."-1", test_stanza, test_time, "contact@example.com"));
+					assert(archive:append(username, prefix.."-2", test_stanza, test_time, "contact@example.com"));
+
+					do
+						local data = assert(archive:find(username, {}));
+						local count = 0;
+						for id, item, when in data do --luacheck: ignore 213/when
+							count = count + 1;
+							assert.truthy(id);
+							assert.equals(("%s-%d"):format(prefix, count), id);
+							assert(st.is_stanza(item));
+						end
+						assert.equal(2, count);
+					end
+
+					local new_stanza = st.clone(test_stanza);
+					new_stanza.attr.foo = "bar";
+					assert(archive:append(username, prefix.."-2", new_stanza, test_time+1, "contact2@example.com"));
+
+					do
+						local data = assert(archive:find(username, {}));
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equals(("%s-%d"):format(prefix, count), id);
+							assert(st.is_stanza(item));
+							if count == 2 then
+								assert.equals(test_time+1, when);
+								assert.equals("bar", item.attr.foo);
+							end
+						end
+						assert.equal(2, count);
+					end
+				end);
+
+				it("can contain multiple long unique keys #issue1073", function ()
+					local prefix = ("a"):rep(50);
+					assert(archive:append("user-issue1073", prefix.."-1", test_stanza, test_time, "contact@example.com"));
+					assert(archive:append("user-issue1073", prefix.."-2", test_stanza, test_time, "contact@example.com"));
+
+					local data = assert(archive:find("user-issue1073", {}));
+					local count = 0;
+					for id, item, when in data do --luacheck: ignore 213/when
+						print(id)
+						count = count + 1;
+						assert.truthy(id);
+						assert(st.is_stanza(item));
+					end
+					assert.equal(2, count);
+					assert(archive:delete("user-issue1073"));
 				end);
 			end);
 		end);
