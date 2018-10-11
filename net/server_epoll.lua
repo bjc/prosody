@@ -25,7 +25,7 @@ local inet = require "util.net";
 local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 
-local poll = require "util.poll".new();
+local poll = assert(require "util.poll".new());
 
 local _ENV = nil;
 -- luacheck: std none
