@@ -217,7 +217,7 @@ local function new(opt)
 		return '"' .. s_gsub(s, "[%z\1-\31\"\'\\\127-\255]", string_escapes) .. '"';
 	end
 
-	if hex then
+	if type(hex) == "string" then
 		function types.string(s)
 			local esc = serialize_string(s);
 			if #esc > (#s*2+2+#hex) then
