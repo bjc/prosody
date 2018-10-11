@@ -315,7 +315,6 @@ describe("storagemanager", function ()
 					local data = assert(archive:find("user-issue1073", {}));
 					local count = 0;
 					for id, item, when in data do --luacheck: ignore 213/when
-						print(id)
 						count = count + 1;
 						assert.truthy(id);
 						assert(st.is_stanza(item));
