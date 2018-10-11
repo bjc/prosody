@@ -386,8 +386,19 @@ int Lnew(lua_State *L) {
 
 	/* Initialize state */
 #ifdef USE_EPOLL
-	state->epoll_fd = epoll_create1(0);
+	state->epoll_fd = -1;
 	state->processed = 0;
+
+	int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+
+	if(epoll_fd <= 0) {
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		lua_pushinteger(L, errno);
+		return 3;
+	}
+
+	state->epoll_fd = epoll_fd;
 #else
 	FD_ZERO(&state->wantread);
 	FD_ZERO(&state->wantwrite);
