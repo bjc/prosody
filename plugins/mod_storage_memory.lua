@@ -30,7 +30,7 @@ end
 
 function keyval_store:set(username, data)
 	if data ~= nil then
-		data = envload("return "..serialize(data), "@data", {});
+		data = envload("return "..serialize(data), "=(data)", {});
 	end
 	self.store[username or NULL] = data;
 	return true;
@@ -47,9 +47,9 @@ function archive_store:append(username, key, value, when, with)
 	end
 	if is_stanza(value) then
 		value = st.preserialize(value);
-		value = envload("return xml"..serialize(value), "@stanza", { xml = st.deserialize })
+		value = envload("return xml"..serialize(value), "=(stanza)", { xml = st.deserialize })
 	else
-		value = envload("return "..serialize(value), "@data", {});
+		value = envload("return "..serialize(value), "=(data)", {});
 	end
 	local a = self.store[username or NULL];
 	if not a then
