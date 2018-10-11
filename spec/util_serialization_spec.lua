@@ -19,6 +19,13 @@ describe("util.serialization", function ()
 			assert.is_string(serialization.serialize(function () end, "debug"));
 		end);
 
+		it("rejects cycles", function ()
+			assert.has_error(function ()
+				local t = {}
+				t[t] = { t };
+				serialization.serialize(t)
+			end);
+		end);
 
 		it("roundtrips", function ()
 			local function test(data)
