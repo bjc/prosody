@@ -20,11 +20,6 @@ local pcall = pcall;
 local envload = require"util.envload".envload;
 
 local pos_inf, neg_inf = math.huge, -math.huge;
-local m_log = math.log;
-local m_log10 = math.log10 or function (n)
-	return m_log(n, 10);
-end
-local m_floor = math.floor;
 -- luacheck: ignore 143/math
 local m_type = math.type or function (n)
 	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
@@ -124,7 +119,6 @@ local function new(opt)
 	local unquoted = opt.unquoted == nil and "^[%a_][%w_]*$" or opt.unquoted;
 	local hex = opt.hex;
 	local freeze = opt.freeze;
-	local precision = opt.precision or 10;
 
 	-- serialize one table, recursively
 	-- t - table being serialized
@@ -237,12 +231,7 @@ local function new(opt)
 		elseif t ~= t then
 			return "(0/0)";
 		end
-		local log = m_floor(m_log10(t));
-		if log > precision then
-			return s_format("%.18e", t);
-		else
-			return s_format("%.18g", t);
-		end
+		return s_format("%.18g", t);
 	end
 
 	-- Are these faster than tostring?
