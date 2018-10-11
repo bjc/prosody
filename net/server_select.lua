@@ -50,7 +50,8 @@ local coroutine_yield = coroutine.yield
 local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
-local getaddrinfo = luasocket.dns.getaddrinfo
+local inet = require "util.net";
+local inet_pton = inet.pton;
 
 --// extern lib methods //--
 
@@ -1007,14 +1008,16 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	elseif sslctx and not has_luasec then
 		err = "luasec not found"
 	end
-	if getaddrinfo and not typ then
-		local addrinfo, err = getaddrinfo(address)
-		if not addrinfo then return nil, err end
-		if addrinfo[1] and addrinfo[1].family == "inet6" then
-			typ = "tcp6"
+	if not typ then
+		local n = inet_pton(addr);
+		if not n then return nil, "invalid-ip"; end
+		if #n == 16 then
+			typ = "tcp6";
+		elseif #n == 4 then
+			typ = "tcp4";
 		end
 	end
-	local create = luasocket[typ or "tcp"]
+	local create = luasocket[typ] or luasocket.tcp;
 	if type( create ) ~= "function"  then
 		err = "invalid socket type"
 	end
