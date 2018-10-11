@@ -11,6 +11,7 @@ describe("util.format", function()
 			assert.equal("true", format("%s", true));
 			assert.equal("[true]", format("%d", true));
 			assert.equal("% [true]", format("%%", true));
+			assert.equal("{ }", format("%q", { }));
 		end);
 	end);
 end);

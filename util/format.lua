@@ -6,6 +6,7 @@ local tostring = tostring;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
 local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local type = type;
+local dump = require "util.serialization".new("debug");
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -34,7 +35,10 @@ local function format(formatstring, ...)
 			if arg == nil then
 				args[i] = "nil";
 				spec = "<%s>";
-			elseif option == "q" or option == "s" then -- arg should be string
+			elseif option == "q" then
+				args[i] = dump(arg);
+				spec = "%s";
+			elseif option == "s" then
 				args[i] = tostring(arg);
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
 				args[i] = tostring(arg);
