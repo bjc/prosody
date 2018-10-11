@@ -98,28 +98,113 @@ describe("storagemanager", function ()
 					:tag("foo"):up()
 					:tag("foo"):up();
 				local test_time = 1539204123;
+
+				local test_data = {
+					{ nil, test_stanza, test_time, "contact@example.com" };
+					{ nil, test_stanza, test_time+1, "contact2@example.com" };
+					{ nil, test_stanza, test_time+2, "contact2@example.com" };
+					{ nil, test_stanza, test_time-1, "contact2@example.com" };
+				};
+
 				it("can be added to", function ()
-					local ok = archive:append("user", nil, test_stanza, 1539204123, "contact@example.com");
-					assert.truthy(ok);
+					for _, data_item in ipairs(test_data) do
+						local ok = archive:append("user", unpack(data_item, 1, 4));
+						assert.truthy(ok);
+					end
 				end);
 
-				it("can be queried", function ()
-					local data, err = archive:find("user", {
-						with = "contact@example.com";
-					});
-					assert.truthy(data);
-					local count = 0;
-					for id, item, when in data do
-						count = count + 1;
-						assert.truthy(id);
-						assert(st.is_stanza(item));
-						assert.equal("test", item.name);
-						assert.equal("urn:example:foo", item.attr.xmlns);
-						assert.equal(2, #item.tags);
-						assert.equal(test_time, when);
-					end
-					assert.equal(1, count);
+				describe("can be queried", function ()
+					it("for all items", function ()
+						local data, err = archive:find("user", {});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert.equal(test_data[count][3], when);
+						end
+						assert.equal(#test_data, count);
+					end);
+
+					it("by JID", function ()
+						local data, err = archive:find("user", {
+							with = "contact@example.com";
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert.equal(test_time, when);
+						end
+						assert.equal(1, count);
+					end);
+
+					it("by time (end)", function ()
+						local data, err = archive:find("user", {
+							["end"] = test_time;
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert(test_time >= when);
+						end
+						assert.equal(2, count);
+					end);
+
+					it("by time (start)", function ()
+						local data, err = archive:find("user", {
+							["start"] = test_time;
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert(test_time <= when);
+						end
+						assert.equal(#test_data -1, count);
+					end);
+
+					it("by time (start+end)", function ()
+						local data, err = archive:find("user", {
+							["start"] = test_time;
+							["end"] = test_time+1;
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert(when >= test_time, ("%d >= %d"):format(when, test_time));
+							assert(when <= test_time+1, ("%d <= %d"):format(when, test_time+1));
+						end
+						assert.equal(2, count);
+					end);
 				end);
+
 				it("can be purged", function ()
 					local ok, err = archive:delete("user");
 					assert.truthy(ok);
