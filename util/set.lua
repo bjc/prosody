@@ -23,6 +23,14 @@ function items_mt.__call(items, _, k)
 	return next(items, k);
 end
 
+function set_mt:__freeze()
+	local a, i = {}, 1;
+	for item in self._items do
+		a[i], i = item, i+1;
+	end
+	return a;
+end
+
 local function new(list)
 	local items = setmetatable({}, items_mt);
 	local set = { _items = items };
