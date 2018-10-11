@@ -103,7 +103,7 @@ local function new(opt)
 		opt.equals = opt.equals or "=";
 	end
 
-	local fallback = opt.fatal and fatal_error or opt.fallback or default_fallback;
+	local fallback = opt.fallback or opt.fatal == false and default_fallback or fatal_error;
 
 	local function ser(v)
 		return (types[type(v)] or fallback)(v);

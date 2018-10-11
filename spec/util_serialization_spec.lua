@@ -7,8 +7,18 @@ describe("util.serialization", function ()
 			assert.is_string(serialization.serialize(nil));
 			assert.is_string(serialization.serialize(1));
 			assert.is_string(serialization.serialize(true));
-			assert.is_string(serialization.serialize(function () end));
 		end);
+
+		it("rejects function by default", function ()
+			assert.has_error(function ()
+				serialization.serialize(function () end)
+			end);
+		end);
+
+		it("makes a string in debug mode", function ()
+			assert.is_string(serialization.serialize(function () end, "debug"));
+		end);
+
 
 		it("roundtrips", function ()
 			local function test(data)
