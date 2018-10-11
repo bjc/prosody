@@ -496,7 +496,7 @@ local function create_table(engine) -- luacheck: ignore 431/engine
 		Column { name="with", type="TEXT", nullable=false }; -- related id
 		Column { name="type", type="TEXT", nullable=false };
 		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosodyarchive_index", unique = true, "host", "user", "store", "key" };
+		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
 		Index { name="prosodyarchive_with_when", "host", "user", "store", "with", "when" };
 		Index { name="prosodyarchive_when", "host", "user", "store", "when" };
 	};
@@ -509,13 +509,30 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 	local changes = false;
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
-			local result = engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'");
-			if result:rowcount() > 0 then
-				changes = true;
-				if apply_changes then
-					module:log("info", "Upgrading database schema...");
-					engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT");
-					module:log("info", "Database table automatically upgraded");
+			do
+				local result = engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'");
+				if result:rowcount() > 0 then
+					changes = true;
+					if apply_changes then
+						module:log("info", "Upgrading database schema (value column size)...");
+						engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT");
+						module:log("info", "Database table automatically upgraded");
+					end
+				end
+			end
+
+			do
+				-- Ensure index is not unique (issue #1087)
+				local result = assert(engine:execute([[SHOW INDEX FROM prosodyarchive WHERE key_name='prosodyarchive_index' and non_unique=0]]));
+				if result:rowcount() > 0 then
+					changes = true;
+					if apply_changes then
+						module:log("info", "Upgrading database schema (prosodyarchive_index)...");
+						engine:execute[[ALTER TABLE "prosodyarchive" DROP INDEX prosodyarchive_index;]];
+						local new_index = sql.Index { table = "prosodyarchive", name="prosodyarchive_index", "host", "user", "store", "key" };
+						engine:_create_index(new_index);
+						module:log("info", "Database table automatically upgraded");
+					end
 				end
 			end
 			return true;
