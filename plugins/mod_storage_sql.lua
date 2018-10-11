@@ -398,6 +398,15 @@ function archive_store:delete(username, query)
 				LIMIT %s OFFSET ?;
 				]];
 				unlimited = "-1";
+			elseif engine.params.driver == "MySQL" then
+				sql_query = [[
+				DELETE result FROM prosodyarchive AS result JOIN (
+					SELECT sort_id FROM prosodyarchive
+					WHERE %s
+					ORDER BY "sort_id" %s
+					LIMIT %s OFFSET ?
+				) AS limiter on result.sort_id = limiter.sort_id;]];
+				unlimited = "18446744073709551615";
 			else
 				sql_query = [[
 				DELETE FROM "prosodyarchive"
@@ -407,9 +416,6 @@ function archive_store:delete(username, query)
 					ORDER BY "sort_id" %s
 					LIMIT %s OFFSET ?
 				);]];
-				if engine.params.driver == "MySQL" then
-					unlimited = "18446744073709551615";
-				end
 			end
 			sql_query = string.format(sql_query, t_concat(where, " AND "),
 				query.reverse and "ASC" or "DESC", unlimited);
