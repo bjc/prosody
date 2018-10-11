@@ -42,6 +42,7 @@ describe("util.serialization", function ()
 			test("nödåtgärd");
 			test({1,2,3,4});
 			test({foo={[100]={{"bar"},{baz=1}}}});
+			test({["goto"] = {["function"]={["do"]="keywords"}}});
 		end);
 	end);
 end);
