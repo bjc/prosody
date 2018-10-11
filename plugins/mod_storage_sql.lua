@@ -142,7 +142,7 @@ function keyval_store:users()
 		]];
 		return engine:select(select_sql, host, self.store);
 	end);
-	if not ok then return ok, result end
+	if not ok then error(result); end
 	return iterator(result);
 end
 
