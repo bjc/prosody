@@ -359,6 +359,8 @@ local function preserialize(stanza)
 	return s;
 end
 
+stanza_mt.__freeze = preserialize;
+
 local function deserialize(stanza)
 	-- Set metatable
 	if stanza then
