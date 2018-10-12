@@ -742,7 +742,7 @@ local function loop(once)
 				log("debug", "Removing unknown fd %d", fd);
 				poll:del(fd);
 			end
-		elseif r ~= "timeout" then
+		elseif r ~= "timeout" and r ~= "signal" then
 			log("debug", "epoll_wait error: %s[%d]", r, w);
 		end
 	until once or (quitting and next(fds) == nil);
