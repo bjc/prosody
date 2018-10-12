@@ -645,7 +645,7 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
 	local conn, err = create();
 	local ok, err = conn:settimeout(0);
 	if not ok then return ok, err; end
-	local ok, err = conn:connect(addr, port);
+	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx)
 	local ok, err = client:init();

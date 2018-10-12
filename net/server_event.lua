@@ -747,7 +747,7 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 		return nil, err
 	end
 	client:settimeout( 0 )  -- set nonblocking
-	local res, err = client:connect( addr, serverport )  -- connect
+	local res, err = client:setpeername( addr, serverport )  -- connect
 	if res or ( err == "timeout" ) then
 		local ip, port = client:getsockname( )
 		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
