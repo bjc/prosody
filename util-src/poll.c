@@ -316,6 +316,11 @@ int Lwait(lua_State *L) {
 		lua_pushstring(L, "timeout");
 		return 2;
 	}
+	else if(ret < 0 && errno == EINTR) {
+		lua_pushnil(L);
+		lua_pushstring(L, "signal");
+		return 2;
+	}
 	else if(ret < 0) {
 		ret = errno;
 		lua_pushnil(L);
