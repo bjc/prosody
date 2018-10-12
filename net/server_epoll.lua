@@ -625,14 +625,22 @@ local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx)
 end
 
 -- New outgoing TCP connection
-local function addclient(addr, port, listeners, read_size, tls_ctx)
-	local n = inet_pton(addr);
-	if not n then return nil, "invalid-ip"; end
-	local create
-	if #n == 16 then
-		create = socket.tcp6 or socket.tcp;
-	else
-		create = socket.tcp4 or socket.tcp;
+local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
+	local create;
+	if not typ then
+		local n = inet_pton(addr);
+		if not n then return nil, "invalid-ip"; end
+		if #n == 16 then
+			typ = "tcp6";
+		else
+			typ = "tcp4";
+		end
+	end
+	if typ then
+		create = socket[typ];
+	end
+	if type(create) ~= "function" then
+		return nil, "invalid socket type";
 	end
 	local conn, err = create();
 	conn:settimeout(0);
