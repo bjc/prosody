@@ -496,7 +496,7 @@ local function create_table(engine) -- luacheck: ignore 431/engine
 		Column { name="with", type="TEXT", nullable=false }; -- related id
 		Column { name="type", type="TEXT", nullable=false };
 		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosodyarchive_index", "host", "user", "store", "key" };
+		Index { name="prosodyarchive_index", unique = engine.params.driver ~= "MySQL", "host", "user", "store", "key" };
 		Index { name="prosodyarchive_with_when", "host", "user", "store", "with", "when" };
 		Index { name="prosodyarchive_when", "host", "user", "store", "when" };
 	};
