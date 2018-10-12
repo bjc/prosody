@@ -737,7 +737,7 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 			typ = "tcp4";
 		end
 	end
-	local create = socket[typ] or socket.tcp;
+	local create = socket[typ];
 	if type( create ) ~= "function"  then
 		return nil, "invalid socket type"
 	end
