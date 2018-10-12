@@ -77,6 +77,10 @@ local function check_dependencies()
 				["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
 			});
 		fatal = true;
+	elseif not socket.tcp4 then
+		-- COMPAT LuaSocket before being IP-version agnostic
+		socket.tcp4 = socket.tcp;
+		socket.udp4 = socket.udp;
 	end
 
 	local lfs, err = softreq "lfs"
