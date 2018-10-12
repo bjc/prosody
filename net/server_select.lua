@@ -1017,7 +1017,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 			typ = "tcp4";
 		end
 	end
-	local create = luasocket[typ] or luasocket.tcp;
+	local create = luasocket[typ];
 	if type( create ) ~= "function"  then
 		err = "invalid socket type"
 	end
