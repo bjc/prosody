@@ -27,6 +27,7 @@ local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 
 local poller = require "util.poll"
 local EEXIST = poller.EEXIST;
+local ENOENT = poller.ENOENT;
 
 local poll = assert(poller.new());
 
@@ -310,7 +311,7 @@ function interface:del()
 		return nil, "unregistered fd";
 	end
 	local ok, err, errno = poll:del(fd);
-	if not ok then
+	if not ok and errno ~= ENOENT then
 		log("error", "Could not unregister %s: %s(%d)", self, err, errno);
 		return ok, err;
 	end
