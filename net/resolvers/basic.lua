@@ -31,7 +31,7 @@ function methods:next(cb)
 		if #is_ip == 16 then
 			cb(self.conn_type.."6", self.hostname, self.port, self.extra);
 		elseif #is_ip == 4 then
-			cb(self.conn_type, self.hostname, self.port, self.extra);
+			cb(self.conn_type.."4", self.hostname, self.port, self.extra);
 		end
 		return;
 	end
@@ -41,7 +41,7 @@ function methods:next(cb)
 	dns_resolver:lookup(function (answer)
 		if answer then
 			for _, record in ipairs(answer) do
-				table.insert(targets, { self.conn_type, record.a, self.port, self.extra });
+				table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
 			end
 		end
 		ready();
