@@ -452,7 +452,7 @@ int luaopen_util_poll(lua_State *L) {
 #endif
 	}
 
-	lua_createtable(L, 0, 2);
+	lua_createtable(L, 0, 3);
 	{
 		lua_pushcfunction(L, Lnew);
 		lua_setfield(L, -2, "new");
@@ -461,6 +461,7 @@ int luaopen_util_poll(lua_State *L) {
 		lua_setfield(L, -2, #named_error);
 
 		push_errno(EEXIST);
+		push_errno(ENOENT);
 
 	}
 	return 1;
