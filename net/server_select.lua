@@ -1032,7 +1032,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 		return nil, err
 	end
 	client:settimeout( 0 )
-	local ok, err = client:connect( address, port )
+	local ok, err = client:setpeername( address, port )
 	if ok or err == "timeout" or err == "Operation already in progress" then
 		return wrapclient( client, address, port, listeners, pattern, sslctx )
 	else
