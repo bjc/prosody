@@ -15,6 +15,9 @@ local function mock_prosody()
 end
 
 local configs = {
+	memory = {
+		storage = "memory";
+	};
 	internal = {
 		storage = "internal";
 	};
