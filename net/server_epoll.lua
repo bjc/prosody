@@ -643,8 +643,10 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
 		return nil, "invalid socket type";
 	end
 	local conn, err = create();
-	conn:settimeout(0);
-	conn:connect(addr, port);
+	local ok, err = conn:settimeout(0);
+	if not ok then return ok, err; end
+	local ok, err = conn:connect(addr, port);
+	if not ok and err ~= "timeout" then return ok, err; end
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx)
 	local ok, err = client:init();
 	if not ok then return ok, err; end
