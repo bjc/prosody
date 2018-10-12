@@ -25,7 +25,10 @@ local inet = require "util.net";
 local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 
-local poll = assert(require "util.poll".new());
+local poller = require "util.poll"
+local EEXIST = poller.EEXIST;
+
+local poll = assert(poller.new());
 
 local _ENV = nil;
 -- luacheck: std none
@@ -269,6 +272,10 @@ function interface:add(r, w)
 	if w == nil then w = self._wantwrite; end
 	local ok, err, errno = poll:add(fd, r, w);
 	if not ok then
+		if errno == EEXIST then
+			log("debug", "%s already registered!", self);
+			return self:set(r, w); -- So try to change its flags
+		end
 		log("error", "Could not register %s: %s(%d)", self, err, errno);
 		return ok, err;
 	end
