@@ -71,7 +71,7 @@ function stream_callbacks.streamopened(session, attr)
 	end
 	session.version = tonumber(attr.version) or 0;
 	session.streamid = uuid_generate();
-	(session.log or session)("debug", "Client sent opening <stream:stream> to %s", session.host);
+	(session.log or log)("debug", "Client sent opening <stream:stream> to %s", session.host);
 
 	if not hosts[session.host] or not hosts[session.host].modules.c2s then
 		-- We don't serve this host...
