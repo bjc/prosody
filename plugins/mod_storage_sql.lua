@@ -522,7 +522,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 			end
 
 			do
-				-- Ensure index is not unique (issue #1087)
+				-- Ensure index is not unique (issue #1073)
 				local result = assert(engine:execute([[SHOW INDEX FROM prosodyarchive WHERE key_name='prosodyarchive_index' and non_unique=0]]));
 				if result:rowcount() > 0 then
 					changes = true;
