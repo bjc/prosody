@@ -61,4 +61,27 @@ describe("util.http", function()
 			});
 		end);
 	end);
+
+	describe("normalize_path", function ()
+		it("root path is always '/'", function ()
+			assert.equal("/", http.normalize_path("/"));
+			assert.equal("/", http.normalize_path(""));
+			assert.equal("/", http.normalize_path("/", true));
+			assert.equal("/", http.normalize_path("", true));
+		end);
+
+		it("works", function ()
+			assert.equal("/foo", http.normalize_path("foo"));
+			assert.equal("/foo", http.normalize_path("/foo"));
+			assert.equal("/foo", http.normalize_path("foo/"));
+			assert.equal("/foo", http.normalize_path("/foo/"));
+		end);
+
+		it("is_dir works", function ()
+			assert.equal("/foo/", http.normalize_path("foo", true));
+			assert.equal("/foo/", http.normalize_path("/foo", true));
+			assert.equal("/foo/", http.normalize_path("foo/", true));
+			assert.equal("/foo/", http.normalize_path("/foo/", true));
+		end);
+	end);
 end);
