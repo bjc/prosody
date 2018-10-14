@@ -57,8 +57,19 @@ local function contains_token(field, token)
 	return field:find(","..token:lower()..",", 1, true) ~= nil;
 end
 
+local function normalize_path(path, is_dir)
+	if is_dir then
+		if path:sub(-1,-1) ~= "/" then path = path.."/"; end
+	else
+		if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
+	end
+	if path:sub(1,1) ~= "/" then path = "/"..path; end
+	return path;
+end
+
 return {
 	urlencode = urlencode, urldecode = urldecode;
 	formencode = formencode, formdecode = formdecode;
 	contains_token = contains_token;
+	normalize_path = normalize_path;
 };
