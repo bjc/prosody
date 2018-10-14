@@ -13,6 +13,7 @@ local portmanager = require "core.portmanager";
 local moduleapi = require "core.moduleapi";
 local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
+local normalize_path = require "util.http".normalize_path;
 
 local server = require "net.http.server";
 
@@ -20,16 +21,6 @@ server.set_default_host(module:get_option_string("http_default_host"));
 
 server.set_option("body_size_limit", module:get_option_number("http_max_content_size"));
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
-
-local function normalize_path(path, is_dir)
-	if is_dir then
-		if path:sub(-1,-1) ~= "/" then path = path.."/"; end
-	else
-		if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
-	end
-	if path:sub(1,1) ~= "/" then path = "/"..path; end
-	return path;
-end
 
 local function get_http_event(host, app_path, key)
 	local method, path = key:match("^(%S+)%s+(.+)$");
