@@ -21,8 +21,12 @@ server.set_default_host(module:get_option_string("http_default_host"));
 server.set_option("body_size_limit", module:get_option_number("http_max_content_size"));
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
 
-local function normalize_path(path)
-	if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
+local function normalize_path(path, is_dir)
+	if is_dir then
+		if path:sub(-1,-1) ~= "/" then path = path.."/"; end
+	else
+		if path:sub(-1,-1) == "/" then path = path:sub(1, -2); end
+	end
 	if path:sub(1,1) ~= "/" then path = "/"..path; end
 	return path;
 end
@@ -70,7 +74,7 @@ function moduleapi.http_url(module, app_name, default_path)
 				scheme = (external_url.scheme or services[1].service.name);
 				host = (external_url.host or module:get_option_string("http_host", module.host));
 				port = tonumber(external_url.port) or port or 80;
-				path = normalize_path(external_url.path or "/")..
+				path = normalize_path(external_url.path or "/", true)..
 					(get_base_path(module, app_name, default_path or "/"..app_name):sub(2));
 			}
 			if ports_by_scheme[url.scheme] == url.port then url.port = nil end
