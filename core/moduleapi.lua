@@ -287,7 +287,7 @@ end
 
 function api:get_option_path(name, default, parent)
 	if parent == nil then
-		parent = parent or self:get_directory();
+		parent = self:get_directory();
 	elseif prosody.paths[parent] then
 		parent = prosody.paths[parent];
 	end
