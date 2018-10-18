@@ -55,18 +55,6 @@ local function new_resolve_functions(p)
 	return _resolve, _reject;
 end
 
-local function new(f)
-	local p = setmetatable({ _state = "pending", _next = next_pending, _pending_on_fulfilled = {}, _pending_on_rejected = {} }, promise_mt);
-	if f then
-		local resolve, reject = new_resolve_functions(p);
-		local ok, ret = pcall(f, resolve, reject);
-		if not ok and p._state == "pending" then
-			reject(ret);
-		end
-	end
-	return p;
-end
-
 local function wrap_handler(f, resolve, reject)
 	return function (param)
 		local ok, ret = pcall(f, param);
@@ -78,17 +66,16 @@ local function wrap_handler(f, resolve, reject)
 	end;
 end
 
-function promise_methods:next(on_fulfilled, on_rejected)
-	return new(function (resolve, reject)
-		self:_next(
-			on_fulfilled and wrap_handler(on_fulfilled, resolve, reject) or nil,
-			on_rejected and wrap_handler(on_rejected, resolve, reject) or nil
-		);
-	end);
-end
-
-function promise_methods:catch(on_rejected)
-	return self:next(nil, on_rejected);
+local function new(f)
+	local p = setmetatable({ _state = "pending", _next = next_pending, _pending_on_fulfilled = {}, _pending_on_rejected = {} }, promise_mt);
+	if f then
+		local resolve, reject = new_resolve_functions(p);
+		local ok, ret = pcall(f, resolve, reject);
+		if not ok and p._state == "pending" then
+			reject(ret);
+		end
+	end
+	return p;
 end
 
 local function all(promises)
@@ -124,6 +111,19 @@ local function reject(v)
 	return new(function (_, _reject)
 		_reject(v);
 	end);
+end
+
+function promise_methods:next(on_fulfilled, on_rejected)
+	return new(function (resolve, reject) --luacheck: ignore 431/resolve 431/reject
+		self:_next(
+			on_fulfilled and wrap_handler(on_fulfilled, resolve, reject) or nil,
+			on_rejected and wrap_handler(on_rejected, resolve, reject) or nil
+		);
+	end);
+end
+
+function promise_methods:catch(on_rejected)
+	return self:next(nil, on_rejected);
 end
 
 return {
