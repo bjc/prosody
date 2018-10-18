@@ -1,6 +1,10 @@
 local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
+function promise_mt:__tostring()
+	return  "promise (" .. (self._state or "invalid") .. ")";
+end
+
 local function is_promise(o)
 	local mt = getmetatable(o);
 	return mt == promise_mt;
