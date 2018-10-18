@@ -253,7 +253,7 @@ describe("util.promise", function ()
 		it("returns a rejected promise", function ()
 			local p = promise.reject("foo");
 			local cb = spy.new(function () end);
-			p:next(cb);
+			p:catch(cb);
 			assert.spy(cb).was_called(1);
 			assert.spy(cb).was_called_with("foo");
 		end);

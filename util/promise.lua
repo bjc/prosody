@@ -119,7 +119,7 @@ local function resolve(v)
 end
 
 local function reject(v)
-	return new(function (_reject)
+	return new(function (_, _reject)
 		_reject(v);
 	end);
 end
