@@ -138,6 +138,11 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 	return true;
 end);
 
+local node_defaults = {
+	access_model = "open";
+	_defaults_only = true;
+};
+
 module:hook("iq-set/self/vcard-temp:vCard", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local pep_service = mod_pep.get_pep_service(origin.username);
@@ -149,7 +154,12 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 
 	if pep_service:purge("urn:xmpp:avatar:metadata", origin.full_jid) then
 		pep_service:purge("urn:xmpp:avatar:data", origin.full_jid);
+	else
+		pep_service:create("urn:xmpp:avatar:metadata", origin.full_jid, node_defaults);
+		pep_service:create("urn:xmpp:avatar:data", origin.full_jid, node_defaults);
 	end
+
+	pep_service:create("urn:xmpp:vcard4", origin.full_jid, node_defaults);
 
 	vcard4:tag("fn"):text_tag("text", vcard_temp:get_child_text("FN")):up();
 
