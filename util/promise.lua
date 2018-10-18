@@ -51,6 +51,7 @@ local function new_resolve_functions(p)
 		if resolved then return; end
 		resolved = true;
 		if is_promise(e) then
+			print ("WOAH") assert(false)
 			e:next(new_resolve_functions(p));
 		elseif promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
 			p.reason = e;
@@ -117,6 +118,10 @@ local function reject(v)
 	end);
 end
 
+local function try(f)
+	return resolve():next(function () return f(); end);
+end
+
 function promise_methods:next(on_fulfilled, on_rejected)
 	return new(function (resolve, reject) --luacheck: ignore 431/resolve 431/reject
 		self:_next(
@@ -142,4 +147,5 @@ return {
 	reject = reject;
 	all = all;
 	race = race;
+	try = try;
 }
