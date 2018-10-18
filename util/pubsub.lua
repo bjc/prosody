@@ -493,7 +493,7 @@ local function check_preconditions(node_config, required_config)
 	return true;
 end
 
-function service:publish(node, actor, id, item, required_config) --> ok, err
+function service:publish(node, actor, id, item, requested_config) --> ok, err
 	-- Access checking
 	local may_publish = false;
 
@@ -516,13 +516,16 @@ function service:publish(node, actor, id, item, required_config) --> ok, err
 		if not self.config.autocreate_on_publish then
 			return false, "item-not-found";
 		end
-		local ok, err = self:create(node, true, required_config);
+		local ok, err = self:create(node, true, requested_config);
 		if not ok then
 			return ok, err;
 		end
 		node_obj = self.nodes[node];
-	elseif required_config and not check_preconditions(node_obj.config, required_config) then
-		return false, "precondition-not-met";
+	elseif requested_config and not requested_config._defaults_only then
+		-- Check that node has the requested config before we publish
+		if not check_preconditions(node_obj.config, requested_config) then
+			return false, "precondition-not-met";
+		end
 	end
 	if not self.config.itemcheck(item) then
 		return nil, "invalid-item";

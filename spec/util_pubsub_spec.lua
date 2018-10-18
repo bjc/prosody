@@ -87,6 +87,34 @@ describe("util.pubsub", function ()
 		end);
 	end);
 
+	describe("publish with config", function ()
+		randomize(false); -- These tests are ordered
+
+		local broadcaster = spy.new(function (notif_type, node_name, subscribers, item) -- luacheck: ignore 212
+		end);
+		local service = pubsub.new({
+			broadcaster = broadcaster;
+			autocreate_on_publish = true;
+		});
+
+		it("automatically creates node with requested config", function ()
+			assert(service:publish("node", true, "1", "item 1", { myoption = true }));
+
+			local ok, config = assert(service:get_node_config("node", true));
+			assert.equals(true, config.myoption);
+		end);
+
+		it("fails to publish to a node with differing config", function ()
+			local ok, err = service:publish("node", true, "1", "item 2", { myoption = false });
+			assert.falsy(ok);
+			assert.equals("precondition-not-met", err);
+		end);
+
+		it("allows to publish to a node with differing config when only defaults are suggested", function ()
+			assert(service:publish("node", true, "1", "item 2", { _defaults_only = true, myoption = false }));
+		end);
+	end);
+
 	describe("#issue1082", function ()
 		randomize(false); -- These tests are ordered
 
