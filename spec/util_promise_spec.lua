@@ -331,4 +331,55 @@ describe("util.promise", function ()
 			assert.spy(on_finally_err).was_called_with(test_error);
 		end);
 	end);
+	describe("try()", function ()
+		it("works with functions that return a promise", function ()
+			local resolve;
+			local p = promise.try(function ()
+				return promise.new(function (_resolve)
+					resolve = _resolve;
+				end);
+			end);
+			assert.is_function(resolve);
+			local on_resolved = spy.new(function () end);
+			p:next(on_resolved);
+			assert.spy(on_resolved).was_not_called();
+			resolve("foo");
+			assert.spy(on_resolved).was_called_with("foo");
+		end);
+
+		it("works with functions that return a value", function ()
+			local p = promise.try(function ()
+				return "foo";
+			end);
+			local on_resolved = spy.new(function () end);
+			p:next(on_resolved);
+			assert.spy(on_resolved).was_called_with("foo");
+		end);
+
+		it("works with functions that return a promise that rejects", function ()
+			local reject;
+			local p = promise.try(function ()
+				return promise.new(function (_, _reject)
+					reject = _reject;
+				end);
+			end);
+			assert.is_function(reject);
+			local on_rejected = spy.new(function () end);
+			p:catch(on_rejected);
+			assert.spy(on_rejected).was_not_called();
+			reject("foo");
+			assert.spy(on_rejected).was_called_with("foo");
+		end);
+
+		it("works with functions that throw errors", function ()
+			local test_error = {};
+			local p = promise.try(function ()
+				error(test_error);
+			end);
+			local on_rejected = spy.new(function () end);
+			p:catch(on_rejected);
+			assert.spy(on_rejected).was_called(1);
+			assert.spy(on_rejected).was_called_with(test_error);
+		end);
+	end);
 end);
