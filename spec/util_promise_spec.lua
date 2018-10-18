@@ -264,4 +264,71 @@ describe("util.promise", function ()
 			assert.spy(cb).was_called(0);
 		end);
 	end);
+	describe("finally()", function ()
+		local p, p2, resolve, reject, on_finally;
+		before_each(function ()
+			p = promise.new(function (_resolve, _reject)
+				resolve, reject = _resolve, _reject;
+			end);
+			on_finally = spy.new(function () end);
+			p2 = p:finally(on_finally);
+		end);
+		it("runs when a promise is resolved", function ()
+			assert.spy(on_finally).was_called(0);
+			resolve("foo");
+			assert.spy(on_finally).was_called(1);
+			assert.spy(on_finally).was_not_called_with("foo");
+		end);
+		it("runs when a promise is rejected", function ()
+			assert.spy(on_finally).was_called(0);
+			reject("foo");
+			assert.spy(on_finally).was_called(1);
+			assert.spy(on_finally).was_not_called_with("foo");
+		end);
+		it("returns a promise that fulfills with the original value", function ()
+			local cb2 = spy.new(function () end);
+			p2:next(cb2);
+			assert.spy(on_finally).was_called(0);
+			assert.spy(cb2).was_called(0);
+			resolve("foo");
+			assert.spy(on_finally).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(on_finally).was_not_called_with("foo");
+			assert.spy(cb2).was_called_with("foo");
+		end);
+		it("returns a promise that rejects with the original error", function ()
+			local on_finally_err = spy.new(function () end);
+			local on_finally_ok = spy.new(function () end);
+			p2:catch(on_finally_err);
+			p2:next(on_finally_ok);
+			assert.spy(on_finally).was_called(0);
+			assert.spy(on_finally_err).was_called(0);
+			reject("foo");
+			assert.spy(on_finally).was_called(1);
+			-- Since the original promise was rejected, the finally promise should also be
+			assert.spy(on_finally_ok).was_called(0);
+			assert.spy(on_finally_err).was_called(1);
+			assert.spy(on_finally).was_not_called_with("foo");
+			assert.spy(on_finally_err).was_called_with("foo");
+		end);
+		it("returns a promise that rejects with an uncaught error inside on_finally", function ()
+			p = promise.new(function (_resolve, _reject)
+				resolve, reject = _resolve, _reject;
+			end);
+			local test_error = {};
+			on_finally = spy.new(function () error(test_error) end);
+			p2 = p:finally(on_finally);
+
+			local on_finally_err = spy.new(function () end);
+			p2:catch(on_finally_err);
+			assert.spy(on_finally).was_called(0);
+			assert.spy(on_finally_err).was_called(0);
+			reject("foo");
+			assert.spy(on_finally).was_called(1);
+			assert.spy(on_finally_err).was_called(1);
+			assert.spy(on_finally).was_not_called_with("foo");
+			assert.spy(on_finally).was_not_called_with(test_error);
+			assert.spy(on_finally_err).was_called_with(test_error);
+		end);
+	end);
 end);

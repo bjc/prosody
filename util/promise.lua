@@ -126,6 +126,12 @@ function promise_methods:catch(on_rejected)
 	return self:next(nil, on_rejected);
 end
 
+function promise_methods:finally(on_finally)
+	local function _on_finally(value) on_finally(); return value; end
+	local function _on_catch_finally(err) on_finally(); return reject(err); end
+	return self:next(_on_finally, _on_catch_finally);
+end
+
 return {
 	new = new;
 	resolve = resolve;
