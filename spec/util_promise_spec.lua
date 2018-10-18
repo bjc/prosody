@@ -257,5 +257,11 @@ describe("util.promise", function ()
 			assert.spy(cb).was_called(1);
 			assert.spy(cb).was_called_with("foo");
 		end);
+		it("returns a rejected promise and does not call on_fulfilled", function ()
+			local p = promise.reject("foo");
+			local cb = spy.new(function () end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+		end);
 	end);
 end);
