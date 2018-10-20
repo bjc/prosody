@@ -43,6 +43,10 @@ end
 function module.restore(data)
 	services = data.services;
 	recipients = data.recipients;
+	for username, service in pairs(services) do
+		local user_bare = jid_join(username, host);
+		module:add_item("pep-service", { service = service, jid = user_bare });
+	end
 end
 
 function is_item_stanza(item)
