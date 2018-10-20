@@ -1,0 +1,86 @@
+# mod_scansion_record on host 'localhost' recording started 2018-10-20T15:00:12Z
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id="lx2" type="get">
+		<vCard xmlns="vcard-temp"/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="lx2" to="${Romeo's full JID}">
+		<vCard xmlns="vcard-temp"/>
+	</iq>
+
+Romeo sends:
+	<iq id="lx3" type="set">
+		<vCard xmlns="vcard-temp">
+			<FN>Romeo Montague</FN>
+			<N>
+				<FAMILY>Montague</FAMILY>
+				<GIVEN>Romeo</GIVEN>
+				<MIDDLE/>
+				<PREFIX/>
+				<SUFFIX/>
+			</N>
+		</vCard>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="lx3" to="${Romeo's full JID}"/>
+
+Romeo sends:
+	<iq id="lx4" type="get">
+		<vCard xmlns="vcard-temp"/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="lx4" to="${Romeo's full JID}">
+		<vCard xmlns="vcard-temp">
+			<FN>Romeo Montague</FN>
+			<N>
+				<FAMILY>Montague</FAMILY>
+				<GIVEN>Romeo</GIVEN>
+				<MIDDLE/>
+				<PREFIX/>
+				<SUFFIX/>
+			</N>
+		</vCard>
+	</iq>
+
+Romeo disconnects
+
+Juliet connects
+
+Juliet sends:
+	<iq type="get" id="lx3" to="romeo@localhost">
+		<vCard xmlns="vcard-temp"/>
+	</iq>
+
+Juliet receives:
+	<iq type="result" from="romeo@localhost" id="lx3" to="${Juliet's full JID}">
+		<vCard xmlns="vcard-temp">
+			<FN>Romeo Montague</FN>
+			<N>
+				<FAMILY>Montague</FAMILY>
+				<GIVEN>Romeo</GIVEN>
+				<MIDDLE/>
+				<PREFIX/>
+				<SUFFIX/>
+			</N>
+		</vCard>
+	</iq>
+
+Juliet disconnects
+
+# recording ended on 2018-10-20T15:02:14Z
