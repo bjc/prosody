@@ -166,6 +166,7 @@ function get_pep_service(username)
 		return service;
 	end
 	service = pubsub.new({
+		pep_username = username;
 		node_defaults = {
 			["max_items"] = 1;
 			["persist_items"] = true;
