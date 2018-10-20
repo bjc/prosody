@@ -13,6 +13,8 @@
 
 Romeo connects
 
+# Romeo sets his vCard
+# FN and N are required by the schema and mod_vcard_legacy will always inject them
 Romeo sends:
 	<iq id="lx3" type="set">
 		<vCard xmlns="vcard-temp">
@@ -58,6 +60,7 @@ Juliet sends:
 		<vCard xmlns="vcard-temp"/>
 	</iq>
 
+# Juliet can see Romeo's vCard since it's public
 Juliet receives:
 	<iq type="result" from="romeo@localhost" id="lx3" to="${Juliet's full JID}">
 		<vCard xmlns="vcard-temp">
