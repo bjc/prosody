@@ -158,6 +158,21 @@ local function get_broadcaster(username)
 	return simple_broadcast;
 end
 
+local function on_node_creation(event)
+	local service = event.service;
+	local node = event.node;
+	local username = service.config.pep_username;
+
+	local service_recipients = recipients[username];
+	if not service_recipients then return; end
+
+	for recipient, nodes in pairs(service_recipients) do
+		if nodes:contains(node) then
+			service:add_subscription(node, recipient, recipient, { presence = true });
+		end
+	end
+end
+
 function get_pep_service(username)
 	module:log("debug", "get_pep_service(%q)", username);
 	local user_bare = jid_join(username, host);
@@ -174,7 +189,7 @@ function get_pep_service(username)
 		};
 
 		autocreate_on_publish = true;
-		autocreate_on_subscribe = true;
+		autocreate_on_subscribe = false;
 
 		nodestore = nodestore(username);
 		itemstore = simple_itemstore(username);
@@ -215,6 +230,11 @@ function get_pep_service(username)
 	module:add_item("pep-service", { service = service, jid = user_bare });
 	return service;
 end
+
+module:hook("item-added/pep-service", function (event)
+	local service = event.item.service;
+	module:hook_object_event(service.events, "node-created", on_node_creation);
+end);
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
