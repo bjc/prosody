@@ -154,12 +154,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 
 	if pep_service:purge("urn:xmpp:avatar:metadata", origin.full_jid) then
 		pep_service:purge("urn:xmpp:avatar:data", origin.full_jid);
-	else
-		pep_service:create("urn:xmpp:avatar:metadata", origin.full_jid, node_defaults);
-		pep_service:create("urn:xmpp:avatar:data", origin.full_jid, node_defaults);
 	end
-
-	pep_service:create("urn:xmpp:vcard4", origin.full_jid, node_defaults);
 
 	vcard4:tag("fn"):text_tag("text", vcard_temp:get_child_text("FN")):up();
 
@@ -253,9 +248,9 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 					:tag("data", { xmlns="urn:xmpp:avatar:data" })
 						:text(avatar_payload);
 
-				local ok, err = pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data)
+				local ok, err = pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data, node_defaults)
 				if ok then
-					ok, err = pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta);
+					ok, err = pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta, node_defaults);
 				end
 				if not ok then
 					handle_error(origin, stanza, err);
@@ -265,7 +260,7 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 		end
 	end
 
-	local ok, err = pep_service:publish("urn:xmpp:vcard4", origin.full_jid, "current", vcard4);
+	local ok, err = pep_service:publish("urn:xmpp:vcard4", origin.full_jid, "current", vcard4, node_defaults);
 	if ok then
 		origin.send(st.reply(stanza));
 	else
