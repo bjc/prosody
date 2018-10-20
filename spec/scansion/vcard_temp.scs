@@ -14,16 +14,6 @@
 Romeo connects
 
 Romeo sends:
-	<iq id="lx2" type="get">
-		<vCard xmlns="vcard-temp"/>
-	</iq>
-
-Romeo receives:
-	<iq type="result" id="lx2" to="${Romeo's full JID}">
-		<vCard xmlns="vcard-temp"/>
-	</iq>
-
-Romeo sends:
 	<iq id="lx3" type="set">
 		<vCard xmlns="vcard-temp">
 			<FN>Romeo Montague</FN>
