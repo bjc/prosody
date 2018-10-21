@@ -1,4 +1,5 @@
 local serialize = require "util.serialization".serialize;
+local array = require "util.array";
 local envload = require "util.envload".envload;
 local st = require "util.stanza";
 local is_stanza = st.is_stanza or function (s) return getmetatable(s) == st.stanza_mt end
@@ -113,25 +114,70 @@ function archive_store:delete(username, query)
 		self.store[username or NULL] = nil;
 		return true;
 	end
-	local old = self.store[username or NULL];
-	if not old then return true; end
-	local qstart = query.start or -math.huge;
-	local qend = query["end"] or math.huge;
-	local qwith = query.with;
-	local new = {};
-	self.store[username or NULL] = new;
-	local t;
-	for i = 1, #old do
-		i = old[i];
-		t = i.when;
-		if not(qstart >= t and qend <= t and (not qwith or i.with == qwith)) then
-			self:append(username, i.key, i.value(), t, i.with);
+	local items = self.store[username or NULL];
+	if not items then
+		-- Store is empty
+		return 0;
+	end
+	items = array(items);
+	local count_before = #items;
+	if query then
+		if query.key then
+			items:filter(function (item)
+				return item.key ~= query.key;
+			end);
+		end
+		if query.with then
+			items:filter(function (item)
+				return item.with ~= query.with;
+			end);
+		end
+		if query.start then
+			items:filter(function (item)
+				return item.when < query.start;
+			end);
+		end
+		if query["end"] then
+			items:filter(function (item)
+				return item.when > query["end"];
+			end);
+		end
+		if query.truncate and #items > query.truncate then
+			if query.reverse then
+				-- Before: { 1, 2, 3, 4, 5, }
+				-- After: { 1, 2, 3 }
+				for i = #items, query.truncate + 1, -1 do
+					items[i] = nil;
+				end
+			else
+				-- Before: { 1, 2, 3, 4, 5, }
+				-- After: { 3, 4, 5 }
+				local offset = #items - query.truncate;
+				for i = 1, #items do
+					items[i] = items[i+offset];
+				end
+			end
 		end
 	end
-	if #new == 0 then
-		self.store[username or NULL] = nil;
+	local count = count_before - #items;
+	if count == 0 then
+		return 0; -- No changes, skip write
 	end
-	return true;
+	setmetatable(items, nil);
+
+	do -- re-index by key
+		for k in pairs(items) do
+			if type(k) == "string" then
+				items[k] = nil;
+			end
+		end
+
+		for i = 1, #items do
+			items[ items[i].key ] = i;
+		end
+	end
+
+	return count;
 end
 
 archive_store.purge = _purge_store;
