@@ -1,3 +1,4 @@
+local unpack = table.unpack or unpack;
 local server = require "net.server_select";
 package.loaded["net.server"] = server;
 
