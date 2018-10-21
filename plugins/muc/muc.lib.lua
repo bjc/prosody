@@ -1346,6 +1346,15 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 	return true;
 end
 
+function room_mt:get_affiliation_data(jid, key)
+	local data = self._affiliation_data[jid];
+	if not data then return nil; end
+	if key then
+		return data[key];
+	end
+	return data;
+end
+
 function room_mt:get_role(nick)
 	local occupant = self:get_occupant_by_nick(nick);
 	return occupant and occupant.role or nil;
