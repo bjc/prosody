@@ -42,9 +42,6 @@ local archive_store = {};
 archive_store.__index = archive_store;
 
 function archive_store:append(username, key, value, when, with)
-	if type(when) ~= "number" then
-		when, with, value = value, when, with;
-	end
 	if is_stanza(value) then
 		value = st.preserialize(value);
 		value = envload("return xml"..serialize(value), "=(stanza)", { xml = st.deserialize })
