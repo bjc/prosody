@@ -922,7 +922,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	if not item.attr.jid and item.attr.nick then
 		-- COMPAT Workaround for Miranda sending 'nick' instead of 'jid' when changing affiliation
 		local occupant = self:get_occupant_by_nick(self.jid.."/"..item.attr.nick);
-		if occupant then item.attr.jid = occupant.jid; end
+		if occupant then item.attr.jid = occupant.bare_jid; end
 	elseif item.attr.role and not item.attr.nick and item.attr.jid then
 		-- Role changes should use nick, but we have a JID so pull the nick from that
 		local nick = self:get_occupant_jid(item.attr.jid);
