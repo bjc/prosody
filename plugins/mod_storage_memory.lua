@@ -53,7 +53,6 @@ function archive_store:append(username, key, value, when, with)
 		a = {};
 		self.store[username or NULL] = a;
 	end
-	local i = #a+1;
 	local v = { key = key, when = when, with = with, value = value };
 	if not key then
 		key = tostring(a):match"%x+$"..tostring(v):match"%x+$";
@@ -62,6 +61,7 @@ function archive_store:append(username, key, value, when, with)
 	if a[key] then
 		table.remove(a, a[key]);
 	end
+	local i = #a+1;
 	a[i] = v;
 	a[key] = i;
 	return key;
