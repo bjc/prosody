@@ -11,7 +11,7 @@ local is_stanza = require"util.stanza".is_stanza;
 local t_concat = table.concat;
 
 local noop = function() end
-local unpack = unpack
+local unpack = table.unpack or unpack;
 local function iterator(result)
 	return function(result_)
 		local row = result_();
