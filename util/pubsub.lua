@@ -762,7 +762,7 @@ function service:set_node_config(node, actor, new_config) --> ok, err
 	return true;
 end
 
-function service:get_node_config(node, actor) --> ok, err
+function service:get_node_config(node, actor) --> (true, config) or (false, err)
 	if not self:may(node, actor, "get_configuration") then
 		return false, "forbidden";
 	end
