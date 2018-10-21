@@ -1,0 +1,108 @@
+# MUC: Room registration and reserved nicknames
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Submit config form
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Juliet's JID}" />
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq from='room@conference.localhost' id='member1' type='result'/>
+
+# Juliet connects, and joins the room
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+# Romeo makes Juliet a member of the room, however his client is buggy and only
+# specifies her nickname
+
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' nick='Juliet' />
+		</query>
+	</iq>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='member' role='participant' jid="${Juliet's full JID}">
+				<actor jid="${Romeo's full JID}" nick='Romeo'/>
+			</item>
+		</x>
+	</presence>
+
+Romeo receives:
+	<iq type='result' id='member1' from='room@conference.localhost' />
+
+Juliet receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation='member' role='participant' jid="${Juliet's full JID}">
+				<actor nick='Romeo' />
+			</item>
+			<status xmlns='http://jabber.org/protocol/muc#user' code='110'/>
+		</x>
+	</presence>
