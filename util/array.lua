@@ -52,11 +52,30 @@ function array_mt.__eq(a, b)
 	return true;
 end
 
+function array_mt.__div(a1, func)
+	local a2 = new_array();
+	local o = 0;
+	for i = 1, #a1 do
+		local new_value = func(a1[i]);
+		if new_value ~= nil then
+			o = o + 1;
+			a2[o] = new_value;
+		end
+	end
+	return a2;
+end
+
 setmetatable(array, { __call = new_array });
 
 -- Read-only methods
 function array_methods:random()
 	return self[math_random(1, #self)];
+end
+
+-- Return a random value excluding the one at idx
+function array_methods:random_other(idx)
+	local max = #self;
+	return self[((math.random(1, max-1)+(idx-1))%max)+1];
 end
 
 -- These methods can be called two ways:
