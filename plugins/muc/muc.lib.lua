@@ -1222,17 +1222,14 @@ end
 
 -- Iterates over jid, affiliation pairs
 function room_mt:each_affiliation(with_affiliation)
-	if not with_affiliation then
-		return pairs(self._affiliations);
-	else
-		return function(_affiliations, jid)
-			local affiliation;
-			repeat -- Iterate until we get a match
-				jid, affiliation = next(_affiliations, jid);
-			until jid == nil or affiliation == with_affiliation
-			return jid, affiliation;
-		end, self._affiliations, nil
-	end
+	local _affiliations, _affiliation_data = self._affiliations, self._affiliation_data;
+	return function(_, jid)
+		local affiliation;
+		repeat -- Iterate until we get a match
+			jid, affiliation = next(_affiliations, jid);
+		until with_affiliation == nil or jid == nil or affiliation == with_affiliation
+		return jid, affiliation, _affiliation_data[jid];
+	end, nil, nil;
 end
 
 function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
