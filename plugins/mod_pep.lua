@@ -271,7 +271,7 @@ local function update_subscriptions(recipient, service_name, nodes)
 	end
 
 	local current = service_recipients[recipient];
-	if not current or type(current) ~= "table" then
+	if not current then
 		current = empty_set;
 	end
 
@@ -322,15 +322,11 @@ module:hook("presence/bare", function(event)
 				if hash_map[hash] then
 					update_subscriptions(recipient, username, hash_map[hash]);
 				else
-					recipients[username][recipient] = hash;
-					local from_bare = origin.type == "c2s" and origin.username.."@"..origin.host;
-					if is_self or origin.type ~= "c2s" or (recipients[from_bare] and recipients[from_bare][origin.full_jid]) ~= hash then
-						-- COMPAT from ~= stanza.attr.to because OneTeam can't deal with missing from attribute
-						origin.send(
-							st.stanza("iq", {from=user_bare, to=stanza.attr.from, id="disco", type="get"})
-								:tag("query", {xmlns = "http://jabber.org/protocol/disco#info", node = query_node})
-						);
-					end
+					-- COMPAT from ~= stanza.attr.to because OneTeam can't deal with missing from attribute
+					origin.send(
+						st.stanza("iq", {from=user_bare, to=stanza.attr.from, id="disco", type="get"})
+							:tag("query", {xmlns = "http://jabber.org/protocol/disco#info", node = query_node})
+					);
 				end
 			end
 		end
@@ -365,12 +361,7 @@ module:hook("iq-result/bare/disco", function(event)
 		user_bare = jid_join(username, host);
 	end
 	local contact = stanza.attr.from;
-	local current = recipients[username] and recipients[username][contact];
-	if type(current) ~= "string" then return; end -- check if waiting for recipient's response
-	local ver = current;
-	if not string.find(current, "#") then
-		ver = calculate_hash(disco.tags); -- calculate hash
-	end
+	local ver = calculate_hash(disco.tags); -- calculate hash
 	local notify = set_new();
 	for _, feature in pairs(disco.tags) do
 		if feature.name == "feature" and feature.attr.var then
