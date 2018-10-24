@@ -657,7 +657,10 @@ local function copy(from, to, umask, owner, group)
 	end
 	assert(input:close());
 	assert(output:close());
-	if owner and group then
+	if not prosody.installed then
+		-- FIXME this is possibly specific to GNU chown
+		os.execute(("chown -c --reference=%s %s"):format(sh_esc(cert_basedir), sh_esc(to)));
+	elseif owner and group then
 		local ok = os.execute(("chown %s:%s %s"):format(sh_esc(owner), sh_esc(group), sh_esc(to)));
 		assert(ok == true or ok == 0, "Failed to change ownership of "..to);
 	end
@@ -734,7 +737,8 @@ function commands.cert(arg)
 			show_warning("The directory "..cert_basedir.." does not exist");
 			return 1; -- TODO Should we create it?
 		end
-		if pposix.getuid() ~= cert_dir_attrs.uid then
+		local uid = pposix.getuid();
+		if uid ~= 0 and uid ~= cert_dir_attrs.uid then
 			show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
 			return 1;
 		elseif not cert_dir_attrs.permissions then -- COMPAT with LuaFilesystem < 1.6.2 (hey CentOS!)
