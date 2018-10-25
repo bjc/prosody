@@ -138,6 +138,43 @@ describe("util.promise", function ()
 		assert.equal("ok", result);
 	end);
 
+	it("propagates errors down the chain, even when some handlers are not provided", function ()
+		local r, result;
+		local test_error = {};
+		local p = promise.new(function (resolve, reject)
+			r = resolve;
+		end);
+		local cb = spy.new(function () end);
+		local err_cb = spy.new(function (e) result = e end);
+		local p2 = p:next(function () error(test_error) end);
+		local p3 = p2:next(cb)
+		p3:catch(err_cb);
+		assert.spy(cb).was_called(0);
+		assert.spy(err_cb).was_called(0);
+		r("oh doh");
+		assert.spy(cb).was_called(0);
+		assert.spy(err_cb).was_called(1);
+		assert.equal(test_error, result);
+	end);
+
+	it("propagates values down the chain, even when some handlers are not provided", function ()
+		local r;
+		local p = promise.new(function (resolve, reject)
+			r = resolve;
+		end);
+		local cb = spy.new(function () end);
+		local err_cb = spy.new(function () end);
+		local p2 = p:next(function (v) return v; end);
+		local p3 = p2:catch(err_cb)
+		p3:next(cb);
+		assert.spy(cb).was_called(0);
+		assert.spy(err_cb).was_called(0);
+		r(1337);
+		assert.spy(cb).was_called(1);
+		assert.spy(cb).was_called_with(1337);
+		assert.spy(err_cb).was_called(0);
+	end);
+
 	describe("race()", function ()
 		it("works with fulfilled promises", function ()
 			local p1, p2 = promise.resolve("yep"), promise.resolve("nope");
