@@ -485,20 +485,27 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		out_error( "server.lua, lock() is deprecated" )
 		handler.lock_read (self, switch)
 		if switch == true then
-			local tmp = _sendlistlen
-			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
-			_writetimes[ handler ] = nil
-			if _sendlistlen ~= tmp then
-				nosend = true
-			end
+			handler.pause_writes (self)
 		elseif switch == false then
-			if nosend then
-				nosend = false
-				write( "" )
-			end
+			handler.resume_writes (self)
 		end
 		return noread, nosend
 	end
+	handler.pause_writes = function (self)
+		local tmp = _sendlistlen
+		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
+		_writetimes[ handler ] = nil
+		if _sendlistlen ~= tmp then
+			nosend = true
+		end
+	end
+	handler.resume_writes = function (self)
+		if nosend then
+			nosend = false
+			write( "" )
+		end
+	end
+
 	local _readbuffer = function( ) -- this function reads data
 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
 		if not err or (err == "wantread" or err == "timeout") then -- received something
@@ -716,7 +723,7 @@ local function link(sender, receiver, buffersize)
 	function receiver.sendbuffer()
 		_sendbuffer();
 		if sender_locked and receiver.bufferlen() < buffersize then
-			sender:resume(); -- Unlock now
+			sender:lock_read(false); -- Unlock now
 			sender_locked = nil;
 		end
 	end
@@ -726,7 +733,7 @@ local function link(sender, receiver, buffersize)
 		_readbuffer();
 		if not sender_locked and receiver.bufferlen() >= buffersize then
 			sender_locked = true;
-			sender:pause();
+			sender:lock_read(true);
 		end
 	end
 	sender:set_mode("*a");
