@@ -183,7 +183,7 @@ describe("util.promise", function ()
 		assert.spy(cb).was_called(0);
 
 		local cb2 = spy.new(function () end);
-		local p3 = p2:catch(cb2);
+		p2:catch(cb2);
 		assert.spy(cb2).was_called(0);
 	end);
 
@@ -195,7 +195,7 @@ describe("util.promise", function ()
 
 		local cb2 = spy.new(function () end);
 		local cb2_err = spy.new(function () end);
-		local p3 = p2:next(cb2, cb2_err);
+		p2:next(cb2, cb2_err);
 		assert.spy(cb2).was_called(0);
 		assert.spy(cb2_err).was_called(1);
 		assert.spy(cb2_err).was_called_with("foo");
