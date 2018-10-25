@@ -147,4 +147,5 @@ return {
 	all = all;
 	race = race;
 	try = try;
+	is_promise = is_promise;
 }
