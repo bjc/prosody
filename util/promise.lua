@@ -10,17 +10,32 @@ local function is_promise(o)
 	return mt == promise_mt;
 end
 
-local function next_pending(self, on_fulfilled, on_rejected)
-	table.insert(self._pending_on_fulfilled, on_fulfilled);
-	table.insert(self._pending_on_rejected, on_rejected);
+local function wrap_handler(f, resolve, reject, default)
+	if not f then
+		return default;
+	end
+	return function (param)
+		local ok, ret = pcall(f, param);
+		if ok then
+			resolve(ret);
+		else
+			reject(ret);
+		end
+		return true;
+	end;
 end
 
-local function next_fulfilled(promise, on_fulfilled, on_rejected) -- luacheck: ignore 212/on_rejected
-	on_fulfilled(promise.value);
+local function next_pending(self, on_fulfilled, on_rejected, resolve, reject)
+	table.insert(self._pending_on_fulfilled, wrap_handler(on_fulfilled, resolve, reject, resolve));
+	table.insert(self._pending_on_rejected, wrap_handler(on_rejected, resolve, reject, reject));
 end
 
-local function next_rejected(promise, on_fulfilled, on_rejected) -- luacheck: ignore 212/on_fulfilled
-	on_rejected(promise.reason);
+local function next_fulfilled(promise, on_fulfilled, on_rejected, resolve, reject) -- luacheck: ignore 212/on_rejected
+	wrap_handler(on_fulfilled, resolve, reject)(promise.value);
+end
+
+local function next_rejected(promise, on_fulfilled, on_rejected, resolve, reject) -- luacheck: ignore 212/on_fulfilled
+	wrap_handler(on_rejected, resolve, reject)(promise.reason);
 end
 
 local function promise_settle(promise, new_state, new_next, cbs, value)
@@ -57,17 +72,6 @@ local function new_resolve_functions(p)
 		end
 	end
 	return _resolve, _reject;
-end
-
-local function wrap_handler(f, resolve, reject)
-	return function (param)
-		local ok, ret = pcall(f, param);
-		if ok then
-			resolve(ret);
-		else
-			reject(ret);
-		end
-	end;
 end
 
 local function new(f)
@@ -123,10 +127,7 @@ end
 
 function promise_methods:next(on_fulfilled, on_rejected)
 	return new(function (resolve, reject) --luacheck: ignore 431/resolve 431/reject
-		self:_next(
-			on_fulfilled and wrap_handler(on_fulfilled, resolve, reject) or nil,
-			on_rejected and wrap_handler(on_rejected, resolve, reject) or nil
-		);
+		self:_next(on_fulfilled, on_rejected, resolve, reject);
 	end);
 end
 
