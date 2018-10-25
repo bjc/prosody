@@ -51,7 +51,6 @@ local function new_resolve_functions(p)
 		if resolved then return; end
 		resolved = true;
 		if is_promise(e) then
-			print ("WOAH") assert(false)
 			e:next(new_resolve_functions(p));
 		elseif promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
 			p.reason = e;
