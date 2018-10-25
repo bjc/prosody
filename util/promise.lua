@@ -31,11 +31,11 @@ local function next_pending(self, on_fulfilled, on_rejected, resolve, reject)
 end
 
 local function next_fulfilled(promise, on_fulfilled, on_rejected, resolve, reject) -- luacheck: ignore 212/on_rejected
-	wrap_handler(on_fulfilled, resolve, reject)(promise.value);
+	wrap_handler(on_fulfilled, resolve, reject, resolve)(promise.value);
 end
 
 local function next_rejected(promise, on_fulfilled, on_rejected, resolve, reject) -- luacheck: ignore 212/on_fulfilled
-	wrap_handler(on_rejected, resolve, reject)(promise.reason);
+	wrap_handler(on_rejected, resolve, reject, reject)(promise.reason);
 end
 
 local function promise_settle(promise, new_state, new_next, cbs, value)

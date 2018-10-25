@@ -142,7 +142,7 @@ describe("util.promise", function ()
 		local r, result;
 		local test_error = {};
 		local p = promise.new(function (resolve, reject)
-			r = resolve;
+			r = reject;
 		end);
 		local cb = spy.new(function () end);
 		local err_cb = spy.new(function (e) result = e end);
@@ -154,7 +154,8 @@ describe("util.promise", function ()
 		r("oh doh");
 		assert.spy(cb).was_called(0);
 		assert.spy(err_cb).was_called(1);
-		assert.equal(test_error, result);
+		assert.spy(err_cb).was_called_with("oh doh");
+		assert.equal("oh doh", result);
 	end);
 
 	it("propagates values down the chain, even when some handlers are not provided", function ()
@@ -173,6 +174,31 @@ describe("util.promise", function ()
 		assert.spy(cb).was_called(1);
 		assert.spy(cb).was_called_with(1337);
 		assert.spy(err_cb).was_called(0);
+	end);
+
+	it("fulfilled promises do not call error handlers and do propagate value", function ()
+		local p = promise.resolve("foo");
+		local cb = spy.new(function () end);
+		local p2 = p:catch(cb);
+		assert.spy(cb).was_called(0);
+
+		local cb2 = spy.new(function () end);
+		local p3 = p2:catch(cb2);
+		assert.spy(cb2).was_called(0);
+	end);
+
+	it("rejected promises do not call fulfilled handlers and do propagate reason", function ()
+		local p = promise.reject("foo");
+		local cb = spy.new(function () end);
+		local p2 = p:next(cb);
+		assert.spy(cb).was_called(0);
+
+		local cb2 = spy.new(function () end);
+		local cb2_err = spy.new(function () end);
+		local p3 = p2:next(cb2, cb2_err);
+		assert.spy(cb2).was_called(0);
+		assert.spy(cb2_err).was_called(1);
+		assert.spy(cb2_err).was_called_with("foo");
 	end);
 
 	describe("race()", function ()
