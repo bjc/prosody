@@ -44,7 +44,6 @@ if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
 		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
 end
-
 local use_total = module:get_option_boolean("mam_include_total", true);
 
 local cleanup;
