@@ -409,8 +409,10 @@ function interface:write(data)
 	else
 		self.writebuffer = { data };
 	end
-	self:setwritetimeout();
-	self:set(nil, true);
+	if not self._write_lock then
+		self:setwritetimeout();
+		self:set(nil, true);
+	end
 	return #data;
 end
 interface.send = interface.write;
@@ -588,6 +590,20 @@ function interface:pausefor(t)
 		end
 		self:set(true);
 	end);
+end
+
+function interface:pause_writes()
+	self._write_lock = true;
+	self:setwritetimeout(false);
+	self:set(nil, false);
+end
+
+function interface:resume_writes()
+	self._write_lock = nil;
+	if self.writebuffer[1] then
+		self:setwritetimeout();
+		self:set(nil, true);
+	end
 end
 
 -- Connected!

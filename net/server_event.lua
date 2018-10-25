@@ -273,6 +273,19 @@ function interface_mt:resume()
 	end
 end
 
+function interface_mt:pause_writes()
+	return self:_lock(self.nointerface, self.noreading, true);
+end
+
+function interface_mt:resume_writes()
+	self:_lock(self.nointerface, self.noreading, false);
+	if self.writecallback and not self.eventwrite then
+		self.eventwrite = addevent( base, self.conn, EV_WRITE, self.writecallback, cfg.WRITE_TIMEOUT );  -- register callback
+		return true;
+	end
+end
+
+
 function interface_mt:counter(c)
 	if c then
 		self._connections = self._connections + c
