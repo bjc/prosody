@@ -129,6 +129,9 @@ end
 
 function api:depends(name)
 	local modulemanager = require"core.modulemanager";
+	if self:get_option_inherited_set("modules_disabled", {}):contains(name) then
+		error("Dependency on disabled module mod_"..name);
+	end
 	if not self.dependencies then
 		self.dependencies = {};
 		self:hook("module-reloaded", function (event)
@@ -144,9 +147,6 @@ function api:depends(name)
 				modulemanager.unload(self.host, self.name);
 			end
 		end);
-	end
-	if self:get_option_inherited_set("modules_disabled", {}):contains(name) then
-		self:log("warn", "Loading prerequisite mod_%s despite it being disabled", name);
 	end
 	local mod = modulemanager.get_module(self.host, name) or modulemanager.get_module("*", name);
 	if mod and mod.module.host == "*" and self.host ~= "*"
