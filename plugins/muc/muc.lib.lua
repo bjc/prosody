@@ -1233,7 +1233,6 @@ function room_mt:each_affiliation(with_affiliation)
 end
 
 function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
-	module:log("debug", "data is %s", tostring(data));
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
 	local node, host, resource = jid_split(jid);
