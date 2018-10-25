@@ -41,11 +41,8 @@ local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
 if not archive.find then
-	module:log("debug", "Attempt to open archive storage returned a valid driver but it does not seem to implement the storage API");
-	module:log("debug", "mod_%s does not support archiving", archive._provided_by or archive.name and "storage_"..archive.name.."(?)" or "<unknown>");
-	module:log("debug", "See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
-	module:log("info", "Using in-memory fallback archive driver");
-	archive = module:require "fallback_archive";
+	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
+		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
 end
 
 local use_total = module:get_option_boolean("mam_include_total", true);
