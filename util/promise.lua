@@ -15,7 +15,7 @@ local function wrap_handler(f, resolve, reject, default)
 		return default;
 	end
 	return function (param)
-		local ok, ret = pcall(f, param);
+		local ok, ret = xpcall(f, debug.traceback, param);
 		if ok then
 			resolve(ret);
 		else
