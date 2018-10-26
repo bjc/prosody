@@ -19,12 +19,9 @@ local prosody = prosody;
 local hosts = prosody.hosts;
 
 local xpcall = require "util.xpcall".xpcall;
-local setmetatable, rawget = setmetatable, rawget;
-local ipairs, pairs, type, tostring, t_insert = ipairs, pairs, type, tostring, table.insert;
-
 local debug_traceback = debug.traceback;
-local select = select;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local setmetatable, rawget = setmetatable, rawget;
+local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
 
 local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s", "s2s_auth_certs"};
 local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s"};
@@ -178,7 +175,7 @@ local function do_load_module(host, module_name, state)
 	api_instance.path = err;
 
 	modulemap[host][module_name] = pluginenv;
-	local ok, err = xpcall(mod, debug.traceback);
+	local ok, err = xpcall(mod, debug_traceback);
 	if ok then
 		-- Call module's "load"
 		if module_has_method(pluginenv, "load") then
@@ -320,7 +317,7 @@ end
 function call_module_method(module, method, ...)
 	local f = rawget(module.module, method);
 	if type(f) == "function" then
-		return pcall(f, ...);
+		return xpcall(f, debug_traceback, ...);
 	else
 		return false, "no-such-method";
 	end
