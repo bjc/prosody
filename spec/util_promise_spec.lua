@@ -201,6 +201,55 @@ describe("util.promise", function ()
 		assert.spy(cb2_err).was_called_with("foo");
 	end);
 
+	describe("allows callbacks to return", function ()
+		it("pending promises", function ()
+			local r;
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return promise.new(function (resolve)
+					r = resolve;
+				end);
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(0);
+			r("hello");
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with("hello");
+		end);
+
+		it("resolved promises", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return promise.resolve("hello");
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with("hello");
+		end);
+
+		it("rejected promises", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return promise.reject("hello");
+			end);
+			local cb2 = spy.new(function ()
+				return promise.reject("goodbye");
+			end);
+			local cb3 = spy.new(function () end);
+			p:next(cb):catch(cb2):catch(cb3);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with("hello");
+			assert.spy(cb3).was_called(1);
+			assert.spy(cb3).was_called_with("goodbye");
+		end);
+	end);
+
 	describe("race()", function ()
 		it("works with fulfilled promises", function ()
 			local p1, p2 = promise.resolve("yep"), promise.resolve("nope");
