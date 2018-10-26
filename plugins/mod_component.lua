@@ -9,7 +9,8 @@
 module:set_global();
 
 local t_concat = table.concat;
-local xpcall, tostring, type = xpcall, tostring, type;
+local tostring, type = tostring, type;
+local xpcall = require "util.xpcall".xpcall;
 local traceback = debug.traceback;
 
 local logger = require "util.logger";
@@ -238,7 +239,7 @@ function stream_callbacks.handlestanza(session, stanza)
 	end
 
 	if stanza then
-		return xpcall(function () return core_process_stanza(session, stanza) end, handleerr);
+		return xpcall(core_process_stanza, handleerr, session, stanza);
 	end
 end
 
