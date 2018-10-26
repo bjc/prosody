@@ -65,9 +65,7 @@ local function new_resolve_functions(p)
 	local function _reject(e)
 		if resolved then return; end
 		resolved = true;
-		if is_promise(e) then
-			e:next(new_resolve_functions(p));
-		elseif promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
+		if promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
 			p.reason = e;
 		end
 	end
