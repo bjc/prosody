@@ -13,7 +13,7 @@ local get_time = require "util.time".now
 local type = type;
 local debug_traceback = debug.traceback;
 local tostring = tostring;
-local xpcall = xpcall;
+local xpcall = require "util.xpcall".xpcall;
 local math_max = math.max;
 
 local _ENV = nil;
@@ -26,24 +26,20 @@ local _active_timers = 0;
 local h = indexedbheap.create();
 local params = {};
 local next_time = nil;
-local _id, _callback, _now, _param;
-local function _call() return _callback(_now, _id, _param); end
 local function _traceback_handler(err) log("error", "Traceback[timer]: %s", debug_traceback(tostring(err), 2)); end
 local function _on_timer(now)
 	local peek;
 	while true do
 		peek = h:peek();
 		if peek == nil or peek > now then break; end
-		local _;
-		_, _callback, _id = h:pop();
-		_now = now;
-		_param = params[_id];
-		params[_id] = nil;
-		--item(now, id, _param); -- FIXME pcall
-		local success, err = xpcall(_call, _traceback_handler);
+		local _, callback, id = h:pop();
+		local param = params[id];
+		params[id] = nil;
+		--item(now, id, _param);
+		local success, err = xpcall(callback, _traceback_handler, now, id, param);
 		if success and type(err) == "number" then
-			h:insert(_callback, err + now, _id); -- re-add
-			params[_id] = _param;
+			h:insert(callback, err + now, id); -- re-add
+			params[id] = param;
 		end
 	end
 

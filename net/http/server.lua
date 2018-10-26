@@ -8,7 +8,7 @@ local os_date = os.date;
 local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
-local xpcall = xpcall;
+local xpcall = require "util.xpcall".xpcall;
 local traceback = debug.traceback;
 local tostring = tostring;
 local cache = require "util.cache";
@@ -88,8 +88,6 @@ setmetatable(events._handlers, {
 });
 
 local handle_request;
-local _1, _2, _3;
-local function _handle_request() return handle_request(_1, _2, _3); end
 
 local last_err;
 local function _traceback_handler(err) last_err = err; log("error", "Traceback[httpserver]: %s", traceback(tostring(err), 2)); end
@@ -107,9 +105,7 @@ function listener.onconnect(conn)
 		while sessions[conn] and #pending > 0 do
 			local request = t_remove(pending);
 			--log("debug", "process_next: %s", request.path);
-			--handle_request(conn, request, process_next);
-			_1, _2, _3 = conn, request, process_next;
-			if not xpcall(_handle_request, _traceback_handler) then
+			if not xpcall(handle_request, _traceback_handler, conn, request, process_next) then
 				conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = last_err }));
 				conn:close();
 			end
