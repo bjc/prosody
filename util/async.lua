@@ -1,6 +1,7 @@
 local logger = require "util.logger";
 local log = logger.init("util.async");
 local new_id = require "util.id".short;
+local xpcall = require "util.xpcall".xpcall;
 
 local function checkthread()
 	local thread, main = coroutine.running();
@@ -27,7 +28,7 @@ local function call_watcher(runner, watcher_name, ...)
 		return false;
 	end
 	runner:log("debug", "Calling '%s' watcher", watcher_name);
-	local ok, err = pcall(watcher, runner, ...); -- COMPAT: Switch to xpcall after Lua 5.1
+	local ok, err = xpcall(watcher, debug.traceback, runner, ...);
 	if not ok then
 		runner:log("error", "Error in '%s' watcher: %s", watcher_name, err);
 		return nil, err;

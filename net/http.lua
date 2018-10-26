@@ -20,8 +20,9 @@ local ssl_available = pcall(require, "ssl");
 
 local t_insert, t_concat = table.insert, table.concat;
 local pairs = pairs;
-local tonumber, tostring, xpcall, traceback =
-      tonumber, tostring, xpcall, debug.traceback;
+local tonumber, tostring, traceback =
+      tonumber, tostring, debug.traceback;
+local xpcall = require "util.xpcall".xpcall;
 local error = error
 local setmetatable = setmetatable;
 
@@ -101,7 +102,7 @@ function listener.onconnect(conn)
 		end
 
 		log("debug", "Request '%s': Calling callback, status %s", req.id, code or "---");
-		return log_if_failed(req.id, xpcall(function () return callback(content, code, response, request) end, handleerr));
+		return log_if_failed(req.id, xpcall(callback, handleerr, content, code, response, request));
 	end
 	req.reader = request_reader;
 	req.state = "status";

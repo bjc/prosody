@@ -1,6 +1,8 @@
 local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
+local xpcall = require "util.xpcall".xpcall;
+
 function promise_mt:__tostring()
 	return  "promise (" .. (self._state or "invalid") .. ")";
 end
