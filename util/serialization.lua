@@ -38,7 +38,7 @@ local function fatal_error(obj, why)
 	error("Can't serialize "..type(obj) .. (why and ": ".. why or ""));
 end
 
-local function default_fallback(x, why)
+local function nonfatal_fallback(x, why)
 	return s_format("nil --[[%s: %s]]", type(x), why or "fail");
 end
 
@@ -84,7 +84,7 @@ local function new(opt)
 		opt.preset = "oneline";
 		opt.freeze = true;
 		opt.fatal = false;
-		opt.fallback = default_fallback;
+		opt.fallback = nonfatal_fallback;
 		opt.unquoted = true;
 	end
 	if opt.preset == "oneline" then
@@ -100,7 +100,7 @@ local function new(opt)
 		opt.unquoted = true;
 	end
 
-	local fallback = opt.fallback or opt.fatal == false and default_fallback or fatal_error;
+	local fallback = opt.fallback or opt.fatal == false and nonfatal_fallback or fatal_error;
 
 	local function ser(v)
 		return (types[type(v)] or fallback)(v);
