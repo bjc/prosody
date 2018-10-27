@@ -119,6 +119,7 @@ local function new(opt)
 	local unquoted = opt.unquoted == nil and "^[%a_][%w_]*$" or opt.unquoted;
 	local hex = opt.hex;
 	local freeze = opt.freeze;
+	local maxdepth = opt.maxdepth or 127;
 
 	-- serialize one table, recursively
 	-- t - table being serialized
@@ -127,7 +128,7 @@ local function new(opt)
 	-- l - position in o of where to insert next token
 	-- d - depth, used for indentation
 	local function serialize_table(t, o, l, d)
-		if o[t] or d > 127 then
+		if o[t] or d > maxdepth then
 			o[l], l = fallback(t, "recursion"), l + 1;
 			return l;
 		end
