@@ -120,6 +120,7 @@ local function new(opt)
 	local hex = opt.hex;
 	local freeze = opt.freeze;
 	local maxdepth = opt.maxdepth or 127;
+	local multirefs = opt.multiref;
 
 	-- serialize one table, recursively
 	-- t - table being serialized
@@ -136,7 +137,10 @@ local function new(opt)
 			return l;
 		end
 
+		-- Keep track of table loops
+		local ot = t; -- reference pre-freeze
 		o[t] = true;
+		o[ot] = true;
 
 		if freeze == true then
 			-- opportunity to do pre-serialization
@@ -200,6 +204,12 @@ local function new(opt)
 			o[l], l = s_rep(indentwith, d-1), l + 1;
 		end
 		o[l], l = tend, l +1;
+
+		if multirefs then
+			o[t] = nil;
+			o[ot] = nil;
+		end
+
 		return l;
 	end
 
