@@ -29,5 +29,5 @@ end
 module:depends "adhoc";
 local adhoc_new = module:require "adhoc".new;
 local descriptor = adhoc_new("Ping", "ping", ping_command_handler);
-module:add_item ("adhoc", descriptor);
+module:provides("adhoc", descriptor);
 
