@@ -475,8 +475,8 @@ function interface:tlshandskake()
 		self:del();
 		local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
 		if not ok then
-			log("error", "Failed to initialize TLS: %s", conn);
 			conn, err = ok, conn;
+			log("error", "Failed to initialize TLS: %s", err);
 		end
 		if not conn then
 			self:on("disconnect", err);
