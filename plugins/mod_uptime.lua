@@ -44,4 +44,4 @@ end
 
 local descriptor = adhoc_new("Get uptime", "uptime", uptime_command_handler);
 
-module:add_item ("adhoc", descriptor);
+module:provides("adhoc", descriptor);
