@@ -27,6 +27,14 @@ describe("util.serialization", function ()
 			end);
 		end);
 
+		it("rejects multiple references to same table", function ()
+			assert.has_error(function ()
+				local t1 = {};
+				local t2 = { t1, t1 };
+				serialization.serialize(t2);
+			end);
+		end);
+
 		it("roundtrips", function ()
 			local function test(data)
 				local serialized = serialization.serialize(data);
