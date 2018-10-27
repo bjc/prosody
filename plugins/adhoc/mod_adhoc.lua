@@ -98,5 +98,5 @@ local function adhoc_removed(event)
 	commands[event.item.node] = nil;
 end
 
-module:handle_items("adhoc", adhoc_added, adhoc_removed);
+module:handle_items("adhoc", adhoc_added, adhoc_removed); -- COMPAT pre module:provides() introduced in 0.9
 module:handle_items("adhoc-provider", adhoc_added, adhoc_removed);
