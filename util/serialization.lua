@@ -39,7 +39,7 @@ local function fatal_error(obj, why)
 end
 
 local function nonfatal_fallback(x, why)
-	return s_format("nil --[[%s: %s]]", type(x), why or "fail");
+	return s_format("{__type=%q,__error=%q}", type(x), why or "fail");
 end
 
 local string_escapes = {
