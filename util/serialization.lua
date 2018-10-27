@@ -128,8 +128,11 @@ local function new(opt)
 	-- l - position in o of where to insert next token
 	-- d - depth, used for indentation
 	local function serialize_table(t, o, l, d)
-		if o[t] or d > maxdepth then
-			o[l], l = fallback(t, "recursion"), l + 1;
+		if o[t] then
+			o[l], l = fallback(t, "table has multiple references"), l + 1;
+			return l;
+		elseif d > maxdepth then
+			o[l], l = fallback(t, "max table depth reached"), l + 1;
 			return l;
 		end
 
