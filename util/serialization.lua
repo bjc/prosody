@@ -85,6 +85,7 @@ local function new(opt)
 		opt.freeze = true;
 		opt.fatal = false;
 		opt.fallback = default_fallback;
+		opt.unquoted = true;
 	end
 	if opt.preset == "oneline" then
 		opt.indentwith = opt.indentwith or "";
@@ -96,6 +97,7 @@ local function new(opt)
 		opt.itemstart = opt.itemstart or "";
 		opt.itemlast = opt.itemlast or "";
 		opt.equals = opt.equals or "=";
+		opt.unquoted = true;
 	end
 
 	local fallback = opt.fallback or opt.fatal == false and default_fallback or fatal_error;
@@ -116,7 +118,7 @@ local function new(opt)
 	local kstart = opt.kstart or "[";
 	local kend = opt.kend or "]";
 	local equals = opt.equals or " = ";
-	local unquoted = opt.unquoted == nil and "^[%a_][%w_]*$" or opt.unquoted;
+	local unquoted = opt.unquoted == true and "^[%a_][%w_]*$" or opt.unquoted;
 	local hex = opt.hex;
 	local freeze = opt.freeze;
 	local maxdepth = opt.maxdepth or 127;
