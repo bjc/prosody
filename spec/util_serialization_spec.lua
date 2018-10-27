@@ -25,13 +25,27 @@ describe("util.serialization", function ()
 				t[t] = { t };
 				serialization.serialize(t)
 			end);
+			-- also with multirefs allowed
+			assert.has_error(function ()
+				local t = {}
+				t[t] = { t };
+				serialization.serialize(t, { multirefs = true })
+			end);
 		end);
 
 		it("rejects multiple references to same table", function ()
 			assert.has_error(function ()
 				local t1 = {};
 				local t2 = { t1, t1 };
-				serialization.serialize(t2);
+				serialization.serialize(t2, { multirefs = false });
+			end);
+		end);
+
+		it("optionally allows multiple references to same table", function ()
+			assert.has_error(function ()
+				local t1 = {};
+				local t2 = { t1, t1 };
+				serialization.serialize(t2, { multirefs = true });
 			end);
 		end);
 
