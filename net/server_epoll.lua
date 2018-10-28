@@ -106,9 +106,13 @@ local function runtimers(next_delay, min_wait)
 		end
 		local new_timeout = f(now);
 		if new_timeout then
-			-- Schedule for 'delay' from the time actually scheduled,
-			-- not from now, in order to prevent timer drift.
-			timer[1] = t + new_timeout;
+			-- Schedule for 'delay' from the time actually scheduled, not from now,
+			-- in order to prevent timer drift, unless it already drifted way out of sync.
+			if (t + new_timeout) > ( now - new_timeout ) then
+				timer[1] = t + new_timeout;
+			else
+				timer[1] = now + new_timeout;
+			end
 			resort_timers = true;
 		else
 			t_remove(timers, i);
