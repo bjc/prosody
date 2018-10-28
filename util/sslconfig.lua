@@ -70,7 +70,7 @@ finalisers.curveslist = finalisers.ciphers;
 -- protocol = "x" should enable only that protocol
 -- protocol = "x+" should enable x and later versions
 
-local protocols = { "sslv2", "sslv3", "tlsv1", "tlsv1_1", "tlsv1_2" };
+local protocols = { "sslv2", "sslv3", "tlsv1", "tlsv1_1", "tlsv1_2", "tlsv1_3" };
 for i = 1, #protocols do protocols[protocols[i] .. "+"] = i - 1; end
 
 -- this interacts with ssl.options as well to add no_x
