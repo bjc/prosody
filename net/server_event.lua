@@ -253,6 +253,7 @@ end
 
 --TODO: Deprecate
 function interface_mt:lock_read(switch)
+	log("warn", ":lock_read is deprecated, use :pasue() and :resume()");
 	if switch then
 		return self:pause();
 	else
