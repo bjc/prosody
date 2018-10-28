@@ -483,6 +483,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		return noread;
 	end
 	handler.lock = function( self, switch )
+		out_error( "server.lua, lock() is deprecated" )
 		handler.lock_read (self, switch)
 		if switch == true then
 			handler.write = idfalse
