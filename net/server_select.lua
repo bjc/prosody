@@ -424,9 +424,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		bufferlen = bufferlen + #data
 		if bufferlen > maxsendlen then
 			_closelist[ handler ] = "send buffer exceeded"	 -- cannot close the client at the moment, have to wait to the end of the cycle
-			handler.write = idfalse -- don't write anymore
 			return false
-		elseif socket and not _sendlist[ socket ] then
+		elseif not nosend and socket and not _sendlist[ socket ] then
 			_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
 		end
 		bufferqueuelen = bufferqueuelen + 1
@@ -486,7 +485,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		out_error( "server.lua, lock() is deprecated" )
 		handler.lock_read (self, switch)
 		if switch == true then
-			handler.write = idfalse
 			local tmp = _sendlistlen
 			_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 			_writetimes[ handler ] = nil
@@ -494,7 +492,6 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				nosend = true
 			end
 		elseif switch == false then
-			handler.write = write
 			if nosend then
 				nosend = false
 				write( "" )
