@@ -459,26 +459,28 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.lock_read = function (self, switch)
 		out_error( "server.lua, lock_read() is deprecated, use pause() and resume()" )
 		if switch == true then
-			local tmp = _readlistlen
-			_readlistlen = removesocket( _readlist, socket, _readlistlen )
-			_readtimes[ handler ] = nil
-			if _readlistlen ~= tmp then
-				noread = true
-			end
+			return self:pause()
 		elseif switch == false then
-			if noread then
-				noread = false
-				_readlistlen = addsocket(_readlist, socket, _readlistlen)
-				_readtimes[ handler ] = _currenttime
-			end
+			return self:resume()
 		end
 		return noread
 	end
 	handler.pause = function (self)
-		return self:lock_read(true);
+		local tmp = _readlistlen
+		_readlistlen = removesocket( _readlist, socket, _readlistlen )
+		_readtimes[ handler ] = nil
+		if _readlistlen ~= tmp then
+			noread = true
+		end
+		return noread;
 	end
 	handler.resume = function (self)
-		return self:lock_read(false);
+		if noread then
+			noread = false
+			_readlistlen = addsocket(_readlist, socket, _readlistlen)
+			_readtimes[ handler ] = _currenttime
+		end
+		return noread;
 	end
 	handler.lock = function( self, switch )
 		handler.lock_read (switch)
