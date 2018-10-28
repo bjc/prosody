@@ -456,8 +456,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		maxreadlen = readlen or maxreadlen
 		return bufferlen, maxreadlen, maxsendlen
 	end
-	--TODO: Deprecate
 	handler.lock_read = function (self, switch)
+		out_error( "server.lua, lock_read() is deprecated, use pause() and resume()" )
 		if switch == true then
 			local tmp = _readlistlen
 			_readlistlen = removesocket( _readlist, socket, _readlistlen )
