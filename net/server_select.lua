@@ -483,7 +483,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		return noread;
 	end
 	handler.lock = function( self, switch )
-		handler.lock_read (switch)
+		handler.lock_read (self, switch)
 		if switch == true then
 			handler.write = idfalse
 			local tmp = _sendlistlen
