@@ -719,7 +719,7 @@ local function link(sender, receiver, buffersize)
 	function receiver.sendbuffer()
 		_sendbuffer();
 		if sender_locked and receiver.bufferlen() < buffersize then
-			sender:lock_read(false); -- Unlock now
+			sender:resume(); -- Unlock now
 			sender_locked = nil;
 		end
 	end
@@ -729,7 +729,7 @@ local function link(sender, receiver, buffersize)
 		_readbuffer();
 		if not sender_locked and receiver.bufferlen() >= buffersize then
 			sender_locked = true;
-			sender:lock_read(true);
+			sender:pause();
 		end
 	end
 	sender:set_mode("*a");
