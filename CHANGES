@@ -22,7 +22,7 @@ New features
 -   mod\_muc\_mam (XEP-0313 in groupchats)
 -   mod\_vcard\_legacy (XEP-0398)
 -   mod\_vcard4 (XEP-0292)
--   mod\_csi (XEP-0352)
+-   mod\_csi, mod\_csi\_simple (XEP-0352)
 -   New experimental network backend "epoll"
 
 0.10.0
