@@ -46,7 +46,7 @@ modules_enabled = {
 
 	-- Not essential, but recommended
 		"carbons"; -- Keep multiple clients in sync
-		"pep"; -- Enables users to publish their mood, activity, playing music and more
+		"pep"; -- Enables users to publish their avatar, mood, activity, playing music and more
 		"private"; -- Private XML storage (for room bookmarks, etc.)
 		"blocklist"; -- Allow users to block communications with other users
 		"vcard"; -- Allow users to set vCards
