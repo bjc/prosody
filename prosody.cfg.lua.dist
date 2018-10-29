@@ -198,6 +198,8 @@ VirtualHost "localhost"
 
 ---Set up a MUC (multi-user chat) room server on conference.example.com:
 --Component "conference.example.com" "muc"
+--- Store MUC messages in an archive and allow users to access it
+--modules_enabled = { "muc_mam" }
 
 ---Set up an external component (default component port is 5347)
 --
