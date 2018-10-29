@@ -49,7 +49,8 @@ modules_enabled = {
 		"pep"; -- Enables users to publish their avatar, mood, activity, playing music and more
 		"private"; -- Private XML storage (for room bookmarks, etc.)
 		"blocklist"; -- Allow users to block communications with other users
-		"vcard"; -- Allow users to set vCards
+		"vcard4"; -- User profiles (stored in PEP)
+		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
 
 	-- Nice to have
 		"version"; -- Replies to server version requests
