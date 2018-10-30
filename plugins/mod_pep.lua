@@ -464,6 +464,6 @@ module:hook("account-disco-items", function(event)
 	if not ok then return; end
 
 	for node, node_obj in pairs(ret) do
-		reply:tag("item", { jid = user_bare, node = node, name = node_obj.config.name }):up();
+		reply:tag("item", { jid = user_bare, node = node, name = node_obj.config.title }):up();
 	end
 end);
