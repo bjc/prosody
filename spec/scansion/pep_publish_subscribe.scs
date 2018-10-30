@@ -1,0 +1,210 @@
+# PEP publish, subscribe and publish-options
+
+[Client] Romeo
+	jid: pep-test-wjebo4kg@localhost
+	password: password
+
+[Client] Juliet
+	jid: pep-test-tqvqu_pv@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence>
+		<c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/>
+	</presence>
+
+Romeo receives:
+	<iq type='get' id='disco' from="${Romeo's JID}">
+		<query node='http://code.matthewwild.co.uk/verse/#PDH7CGVPRERS2WUqBD18PHGEzaY=' xmlns='http://jabber.org/protocol/disco#info'/>
+	</iq>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}">
+		<c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/>
+	</presence>
+
+Romeo sends:
+	<iq type='get' id='6'>
+		<query ver='' xmlns='jabber:iq:roster'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='6'>
+		<query ver='1' xmlns='jabber:iq:roster'/>
+	</iq>
+
+Juliet connects
+
+Juliet sends:
+	<presence>
+		<c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/>
+	</presence>
+
+Juliet receives:
+	<iq type='get' id='disco' from="${Juliet's JID}">
+		<query node='http://code.matthewwild.co.uk/verse/#PDH7CGVPRERS2WUqBD18PHGEzaY=' xmlns='http://jabber.org/protocol/disco#info'/>
+	</iq>
+
+Juliet receives:
+	<presence from="${Juliet's full JID}">
+		<c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/>
+	</presence>
+
+Juliet sends:
+	<iq type='get' id='6'>
+		<query ver='' xmlns='jabber:iq:roster'/>
+	</iq>
+
+Juliet receives:
+	<iq type='result' id='6'>
+		<query ver='1' xmlns='jabber:iq:roster'/>
+	</iq>
+
+Romeo sends:
+	<iq type='result' id='disco' to='pep-test-wjebo4kg@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#PDH7CGVPRERS2WUqBD18PHGEzaY='><identity type='pc' name='Verse' category='client'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='http://jabber.org/protocol/disco#items'/><feature var='http://jabber.org/protocol/caps'/></query></iq>
+
+Romeo sends:
+	<presence type='subscribe' to="${Juliet's JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='set' id='{scansion:any}'><query ver='1' xmlns='jabber:iq:roster'><item ask='subscribe' jid='pep-test-tqvqu_pv@localhost' subscription='none'/></query></iq>
+
+Romeo receives:
+	<presence type='unavailable' to='pep-test-wjebo4kg@localhost' from='pep-test-tqvqu_pv@localhost'/>
+
+Juliet receives:
+	<presence type='subscribe' from='pep-test-wjebo4kg@localhost' to='pep-test-tqvqu_pv@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Juliet sends:
+	<iq type='result' id='disco' to='pep-test-tqvqu_pv@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#PDH7CGVPRERS2WUqBD18PHGEzaY='><identity type='pc' name='Verse' category='client'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='http://jabber.org/protocol/disco#items'/><feature var='http://jabber.org/protocol/caps'/></query></iq>
+
+Juliet sends:
+	<presence type='subscribe' to="${Romeo's JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Juliet receives:
+	<iq type='set' id='{scansion:any}'><query ver='2' xmlns='jabber:iq:roster'><item ask='subscribe' jid='pep-test-wjebo4kg@localhost' subscription='none'/></query></iq>
+
+Juliet receives:
+	<presence type='unavailable' to='pep-test-tqvqu_pv@localhost' from='pep-test-wjebo4kg@localhost'/>
+
+Romeo receives:
+	<presence type='subscribe' from='pep-test-tqvqu_pv@localhost' to='pep-test-wjebo4kg@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo sends:
+	<iq type='result' id='fixme'/>
+
+Romeo sends:
+	<presence type='subscribed' to='pep-test-tqvqu_pv@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='set' id='{scansion:any}'><query ver='3' xmlns='jabber:iq:roster'><item ask='subscribe' jid='pep-test-tqvqu_pv@localhost' subscription='from'/></query></iq>
+
+Juliet receives:
+	<presence type='subscribed' from='pep-test-wjebo4kg@localhost' to='pep-test-tqvqu_pv@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Juliet receives:
+	<iq type='set' id='{scansion:any}'><query ver='3' xmlns='jabber:iq:roster'><item jid='pep-test-wjebo4kg@localhost' subscription='to'/></query></iq>
+
+Juliet receives:
+	<presence to='pep-test-tqvqu_pv@localhost' from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/><delay xmlns='urn:xmpp:delay' stamp='{scansion:any}' from='localhost'/></presence>
+
+Juliet sends:
+	<presence type='subscribed' to='pep-test-wjebo4kg@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Juliet receives:
+	<iq type='set' id='{scansion:any}'><query ver='4' xmlns='jabber:iq:roster'><item jid='pep-test-wjebo4kg@localhost' subscription='both'/></query></iq>
+
+Juliet receives:
+	<presence to='pep-test-tqvqu_pv@localhost' from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/><delay xmlns='urn:xmpp:delay' stamp='{scansion:any}' from='localhost'/></presence>
+
+Romeo receives:
+	<presence type='subscribed' from='pep-test-tqvqu_pv@localhost' to='pep-test-wjebo4kg@localhost'><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='set' id='{scansion:any}'><query ver='4' xmlns='jabber:iq:roster'><item jid='pep-test-tqvqu_pv@localhost' subscription='both'/></query></iq>
+
+Romeo receives:
+	<presence to='pep-test-wjebo4kg@localhost' from="${Juliet's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='PDH7CGVPRERS2WUqBD18PHGEzaY=' node='http://code.matthewwild.co.uk/verse/'/><delay xmlns='urn:xmpp:delay' stamp='{scansion:any}' from='localhost'/></presence>
+
+Juliet sends:
+	<iq type='result' id='fixme'/>
+
+Romeo sends:
+	<iq type='result' id='fixme'/>
+
+Romeo sends:
+	<iq type='result' id='fixme'/>
+
+Romeo sends:
+	<presence><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='m/sIsyfzKk8X1okZMtStR43nQQg=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='get' id='disco' from='pep-test-wjebo4kg@localhost'><query node='http://code.matthewwild.co.uk/verse/#m/sIsyfzKk8X1okZMtStR43nQQg=' xmlns='http://jabber.org/protocol/disco#info'/></iq>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='m/sIsyfzKk8X1okZMtStR43nQQg=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='get' id='disco' from='pep-test-tqvqu_pv@localhost'><query node='http://code.matthewwild.co.uk/verse/#m/sIsyfzKk8X1okZMtStR43nQQg=' xmlns='http://jabber.org/protocol/disco#info'/></iq>
+
+Juliet receives:
+	<presence from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='m/sIsyfzKk8X1okZMtStR43nQQg=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo sends:
+	<presence><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='IfQwbaaDB4LEP5tkGArEaB/3Y+s=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='get' id='disco' from='pep-test-wjebo4kg@localhost'><query node='http://code.matthewwild.co.uk/verse/#IfQwbaaDB4LEP5tkGArEaB/3Y+s=' xmlns='http://jabber.org/protocol/disco#info'/></iq>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='IfQwbaaDB4LEP5tkGArEaB/3Y+s=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Romeo receives:
+	<iq type='get' id='disco' from='pep-test-tqvqu_pv@localhost'><query node='http://code.matthewwild.co.uk/verse/#IfQwbaaDB4LEP5tkGArEaB/3Y+s=' xmlns='http://jabber.org/protocol/disco#info'/></iq>
+
+Romeo sends:
+	<iq type='result' id='disco' to='pep-test-wjebo4kg@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#m/sIsyfzKk8X1okZMtStR43nQQg='/></iq>
+
+Romeo sends:
+	<iq type='result' id='disco' to='pep-test-tqvqu_pv@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#m/sIsyfzKk8X1okZMtStR43nQQg='/></iq>
+
+Romeo sends:
+	<iq type='result' id='disco' to='pep-test-wjebo4kg@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#IfQwbaaDB4LEP5tkGArEaB/3Y+s='><identity type='pc' name='Verse' category='client'/><feature var='http://jabber.org/protocol/tune+notify'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='http://jabber.org/protocol/disco#items'/><feature var='http://jabber.org/protocol/caps'/><feature var='http://jabber.org/protocol/mood+notify'/></query></iq>
+
+Juliet receives:
+	<presence from="${Romeo's full JID}"><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' ver='IfQwbaaDB4LEP5tkGArEaB/3Y+s=' node='http://code.matthewwild.co.uk/verse/'/></presence>
+
+Juliet sends:
+	<iq type='result' id='fixme'/>
+
+Juliet sends:
+	<iq type='set' id='7'><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></publish></pubsub></iq>
+
+Juliet receives:
+	<iq type='result' id='7' ><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/tune'><item id='current'/></publish></pubsub></iq>
+
+Juliet sends:
+	<iq type='set' id='8'><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/mood'><item><mood xmlns='http://jabber.org/protocol/mood'><happy/></mood></item></publish><publish-options><x type='submit' xmlns='jabber:x:data'><field type='hidden' var='FORM_TYPE'><value>http://jabber.org/protocol/pubsub#publish-options</value></field><field var='pubsub#persist_items'><value>true</value></field><field var='pubsub#access_model'><value>whitelist</value></field></x></publish-options></pubsub></iq>
+
+Juliet receives:
+	<iq type='result' id='8'><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/mood'><item id='{scansion:any}'/></publish></pubsub></iq>
+
+Juliet sends:
+	<iq type='result' id='{scansion:any}'/>
+
+Romeo receives:
+	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
+
+Romeo sends:
+	<iq type='result' id='disco' to='pep-test-tqvqu_pv@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#IfQwbaaDB4LEP5tkGArEaB/3Y+s='><identity type='pc' name='Verse' category='client'/><feature var='http://jabber.org/protocol/tune+notify'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='http://jabber.org/protocol/disco#items'/><feature var='http://jabber.org/protocol/caps'/><feature var='http://jabber.org/protocol/mood+notify'/></query></iq>
+
+Romeo receives:
+	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
+
+Juliet disconnects
+
+Romeo disconnects
