@@ -1,0 +1,205 @@
+# pubsub#title as name attribute in disco#items
+# Issue 1226
+
+[Client] Romeo
+	password: password
+	jid: jqpcrbq@localhost
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id="67eb1f47-1e69-4cb3-91e2-4d5943e72d4c" type="set">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="http://jabber.org/protocol/tune">
+				<item id="current">
+					<tune xmlns="http://jabber.org/protocol/tune"/>
+				</item>
+			</publish>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq id="67eb1f47-1e69-4cb3-91e2-4d5943e72d4c" type="result">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="http://jabber.org/protocol/tune">
+				<item id="current"/>
+			</publish>
+		</pubsub>
+	</iq>
+
+Romeo sends:
+	<iq id="52d74a36-afb0-4028-87ed-b25b988b049e" type="get">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<configure node="http://jabber.org/protocol/tune"/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq id="52d74a36-afb0-4028-87ed-b25b988b049e" type="result">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<configure node="http://jabber.org/protocol/tune">
+				<x xmlns="jabber:x:data" type="form">
+					<field var="FORM_TYPE" type="hidden">
+						<value>http://jabber.org/protocol/pubsub#node_config</value>
+					</field>
+					<field var="pubsub#title" label="Title" type="text-single"/>
+					<field var="pubsub#description" label="Description" type="text-single"/>
+					<field var="pubsub#type" label="The type of node data, usually specified by the namespace of the payload (if any)" type="text-single"/>
+					<field var="pubsub#max_items" label="Max # of items to persist" type="text-single">
+						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="xs:integer"/>
+						<value>1</value>
+					</field>
+					<field var="pubsub#persist_items" label="Persist items to storage" type="boolean">
+						<value>1</value>
+					</field>
+					<field var="pubsub#access_model" label="Specify the subscriber model" type="list-single">
+						<option label="authorize">
+							<value>authorize</value>
+						</option>
+						<option label="open">
+							<value>open</value>
+						</option>
+						<option label="presence">
+							<value>presence</value>
+						</option>
+						<option label="roster">
+							<value>roster</value>
+						</option>
+						<option label="whitelist">
+							<value>whitelist</value>
+						</option>
+						<value>presence</value>
+					</field>
+					<field var="pubsub#publish_model" label="Specify the publisher model" type="list-single">
+						<option label="publishers">
+							<value>publishers</value>
+						</option>
+						<option label="subscribers">
+							<value>subscribers</value>
+						</option>
+						<option label="open">
+							<value>open</value>
+						</option>
+						<value>publishers</value>
+					</field>
+					<field var="pubsub#deliver_notifications" label="Whether to deliver event notifications" type="boolean">
+						<value>1</value>
+					</field>
+					<field var="pubsub#deliver_payloads" label="Whether to deliver payloads with event notifications" type="boolean">
+						<value>1</value>
+					</field>
+					<field var="pubsub#notification_type" label="Specify the delivery style for notifications" type="list-single">
+						<option label="Messages of type normal">
+							<value>normal</value>
+						</option>
+						<option label="Messages of type headline">
+							<value>headline</value>
+						</option>
+						<value>headline</value>
+					</field>
+					<field var="pubsub#notify_delete" label="Whether to notify subscribers when the node is deleted" type="boolean">
+						<value>1</value>
+					</field>
+					<field var="pubsub#notify_retract" label="Whether to notify subscribers when items are removed from the node" type="boolean">
+						<value>1</value>
+					</field>
+				</x>
+			</configure>
+		</pubsub>
+	</iq>
+
+Romeo sends:
+	<iq id="a73aac09-74be-4ee2-97e5-571bbdbcd956" type="set">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+			<configure node="http://jabber.org/protocol/tune">
+				<x xmlns="jabber:x:data" type="submit">
+					<field var="FORM_TYPE" type="hidden">
+						<value>http://jabber.org/protocol/pubsub#node_config</value>
+					</field>
+					<field var="pubsub#title" type="text-single" label="Title">
+						<value>Nice tunes</value>
+					</field>
+					<field var="pubsub#description" type="text-single" label="Description"/>
+					<field var="pubsub#type" type="text-single" label="The type of node data, usually specified by the namespace of the payload (if any)"/>
+					<field var="pubsub#max_items" type="text-single" label="Max # of items to persist">
+						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="xs:integer"/>
+						<value>1</value>
+					</field>
+					<field var="pubsub#persist_items" type="boolean" label="Persist items to storage">
+						<value>1</value>
+					</field>
+					<field var="pubsub#access_model" type="list-single" label="Specify the subscriber model">
+						<option label="authorize">
+							<value>authorize</value>
+						</option>
+						<option label="open">
+							<value>open</value>
+						</option>
+						<option label="presence">
+							<value>presence</value>
+						</option>
+						<option label="roster">
+							<value>roster</value>
+						</option>
+						<option label="whitelist">
+							<value>whitelist</value>
+						</option>
+						<value>presence</value>
+					</field>
+					<field var="pubsub#publish_model" type="list-single" label="Specify the publisher model">
+						<option label="publishers">
+							<value>publishers</value>
+						</option>
+						<option label="subscribers">
+							<value>subscribers</value>
+						</option>
+						<option label="open">
+							<value>open</value>
+						</option>
+						<value>publishers</value>
+					</field>
+					<field var="pubsub#deliver_notifications" type="boolean" label="Whether to deliver event notifications">
+						<value>1</value>
+					</field>
+					<field var="pubsub#deliver_payloads" type="boolean" label="Whether to deliver payloads with event notifications">
+						<value>1</value>
+					</field>
+					<field var="pubsub#notification_type" type="list-single" label="Specify the delivery style for notifications">
+						<option label="Messages of type normal">
+							<value>normal</value>
+						</option>
+						<option label="Messages of type headline">
+							<value>headline</value>
+						</option>
+						<value>headline</value>
+					</field>
+					<field var="pubsub#notify_delete" type="boolean" label="Whether to notify subscribers when the node is deleted">
+						<value>1</value>
+					</field>
+					<field var="pubsub#notify_retract" type="boolean" label="Whether to notify subscribers when items are removed from the node">
+						<value>1</value>
+					</field>
+				</x>
+			</configure>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq id="a73aac09-74be-4ee2-97e5-571bbdbcd956" type="result"/>
+
+Romeo sends:
+	<iq id="ab0e92d2-c06b-4987-9d45-f9f9e7721709" type="get">
+		<query xmlns="http://jabber.org/protocol/disco#items"/>
+	</iq>
+
+Romeo receives:
+	<iq id="ab0e92d2-c06b-4987-9d45-f9f9e7721709" type="result">
+		<query xmlns="http://jabber.org/protocol/disco#items">
+			<item name="Nice tunes" node="http://jabber.org/protocol/tune" jid="${Romeo's JID}"/>
+		</query>
+	</iq>
+
+Romeo disconnects
+

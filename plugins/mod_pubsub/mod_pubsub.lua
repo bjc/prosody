@@ -152,7 +152,7 @@ module:hook("host-disco-items", function (event)
 		return;
 	end
 	for node, node_obj in pairs(ret) do
-		reply:tag("item", { jid = module.host, node = node, name = node_obj.config.name }):up();
+		reply:tag("item", { jid = module.host, node = node, name = node_obj.config.title }):up();
 	end
 end);
 
