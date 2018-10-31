@@ -57,6 +57,13 @@ Romeo sends:
 	</iq>
 
 Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's JID}" affiliation='member' />
+		</x>
+	</message>
+
+Romeo receives:
 	<iq from='room@conference.localhost' id='member1' type='result'/>
 
 # Juliet connects, and joins the room
@@ -186,6 +193,15 @@ Juliet sends:
 Juliet receives:
 	<iq type='result' from='room@conference.localhost' id='unreg1'/>
 
+# Romeo is notified of Juliet's sad decision
+
+Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user' scansion:strict='true'>
+			<item jid="${Juliet's JID}" />
+		</x>
+	</message>
+
 # Rosaline attempts once more to sneak into the room, disguised as Juliet
 
 Rosaline sends:
@@ -235,6 +251,15 @@ Romeo receives:
 			</item>
 		</x>
 	</presence>
+
+# An out-of-room affiliation change is received for Juliet
+
+Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's JID}" affiliation='member' />
+		</x>
+	</message>
 
 Romeo receives:
 	<iq type='result' id='member1' from='room@conference.localhost' />
