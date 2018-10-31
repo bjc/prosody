@@ -57,7 +57,7 @@ end
 
 function _M.only_with_min_role(role)
 	local min_role_value = _M.valid_roles[role];
-	return function (nick, occupant)
+	return function (nick, occupant) --luacheck: ignore 212/nick
 		if _M.valid_roles[occupant.role or "none"] >= min_role_value then
 			return true;
 		end
