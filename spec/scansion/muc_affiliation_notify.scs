@@ -131,7 +131,7 @@ Romeo sends:
 		<body>Finished!</body>
 	</message>
 
-Juliet receives: 
+Juliet receives:
 	<message type="groupchat" from="room@conference.localhost/Romeo">
 		<body>Finished!</body>
 	</message>
