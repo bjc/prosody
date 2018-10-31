@@ -55,4 +55,13 @@ function _M.filter_muc_x(stanza)
 	return stanza:maptags(muc_x_filter);
 end
 
+function _M.only_with_min_role(role)
+	local min_role_value = _M.valid_roles[role];
+	return function (nick, occupant)
+		if _M.valid_roles[occupant.role or "none"] >= min_role_value then
+			return true;
+		end
+	end;
+end
+
 return _M;
