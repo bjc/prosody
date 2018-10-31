@@ -53,6 +53,13 @@ Romeo sends:
 	</iq>
 
 Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's JID}" affiliation='member' xmlns='http://jabber.org/protocol/muc#user'/>
+		</x>
+	</message>
+
+Romeo receives:
 	<iq from='room@conference.localhost' id='member1' type='result'/>
 
 # Juliet connects, and joins the room
