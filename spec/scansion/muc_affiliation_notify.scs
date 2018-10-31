@@ -1,0 +1,137 @@
+# MUC: Notification of affiliation changes of non-occupants
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+[Client] Rosaline
+	jid: user3@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Submit config form
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+# Promote Juliet to member
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Juliet's JID}" />
+		</query>
+	</iq>
+
+# Juliet is not in the room, so an affiliation change message is received
+
+Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's JID}" affiliation='member' xmlns='http://jabber.org/protocol/muc#user'/>
+		</x>
+	</message>
+
+# The affiliation change succeeded
+
+Romeo receives:
+	<iq from='room@conference.localhost' id='member1' type='result'/>
+
+# Juliet connects, and joins the room
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+# To check the status of the room is as expected, Romeo requests the member list
+
+Romeo sends:
+	<iq id='member3' to='room@conference.localhost' type='get'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member'/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq from='room@conference.localhost' type='result' id='member3'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Juliet's JID}" />
+		</query>
+	</iq>
+
+# Romeo grants membership to Rosaline, who is not in the room
+
+Romeo sends:
+	<iq id='member2' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Rosaline's JID}" />
+		</query>
+	</iq>
+
+Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Rosaline's JID}" affiliation='member' xmlns='http://jabber.org/protocol/muc#user'/>
+		</x>
+	</message>
+
+Romeo receives:
+	<iq type='result' id='member2' from='room@conference.localhost' />
+
+Romeo sends:
+	<message type="groupchat" to="room@conference.localhost">
+		<body>Finished!</body>
+	</message>
+
+Juliet receives: 
+	<message type="groupchat" from="room@conference.localhost/Romeo">
+		<body>Finished!</body>
+	</message>
