@@ -1313,20 +1313,31 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		end
 	end
 	local is_semi_anonymous = self:get_whois() == "moderators";
-	for occupant, old_role in pairs(occupants_updated) do
-		self:publicise_occupant_status(occupant, x, nil, actor, reason);
-		if occupant.role == nil then
-			module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
-		elseif is_semi_anonymous and
-			(old_role == "moderator" and occupant.role ~= "moderator") or
-			(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
-			-- Send everyone else's presences (as jid visibility has changed)
-			for real_jid in occupant:each_session() do
-				self:send_occupant_list(real_jid, function(occupant_jid, occupant) --luacheck: ignore 212 433
-					return occupant.bare_jid ~= jid;
-				end);
+
+	if next(occupants_updated) ~= nil then
+		for occupant, old_role in pairs(occupants_updated) do
+			self:publicise_occupant_status(occupant, x, nil, actor, reason);
+			if occupant.role == nil then
+				module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+			elseif is_semi_anonymous and
+				(old_role == "moderator" and occupant.role ~= "moderator") or
+				(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
+				-- Send everyone else's presences (as jid visibility has changed)
+				for real_jid in occupant:each_session() do
+					self:send_occupant_list(real_jid, function(occupant_jid, occupant) --luacheck: ignore 212 433
+						return occupant.bare_jid ~= jid;
+					end);
+				end
 			end
 		end
+	else
+		-- Announce affiliation change for a user that is not currently in the room,
+		-- XEP-0045 (v1.31.2) example 195
+		-- add_item(x, affiliation, role, jid, nick, actor_nick, actor_jid, reason)
+		local announce_msg = st.message({ from = self.jid })
+			:add_child(add_item(st.clone(x), affiliation, nil, jid, nil, nil, nil, reason));
+		local min_role = is_semi_anonymous and "moderator" or "none";
+		self:broadcast(announce_msg, muc_util.only_with_min_role(min_role));
 	end
 
 	self:save(true);
