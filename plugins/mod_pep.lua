@@ -250,9 +250,6 @@ end
 module:hook("iq/bare/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/bare/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
-module:add_identity("pubsub", "pep", module:get_option_string("name", "Prosody"));
-module:add_feature("http://jabber.org/protocol/pubsub#publish");
-
 local function get_caps_hash_from_presence(stanza, current)
 	local t = stanza.attr.type;
 	if not t then
