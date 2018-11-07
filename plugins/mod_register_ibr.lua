@@ -18,6 +18,10 @@ local additional_fields = module:get_option("additional_registration_fields", {}
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
 	module:get_option_boolean("require_encryption", false));
 
+pcall(function ()
+	module:depends("register_limits");
+end);
+
 local account_details = module:open_store("account_details");
 
 local field_map = {
