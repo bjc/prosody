@@ -197,6 +197,12 @@ function driver:open(store, typ) -- luacheck: ignore 212/self
 	return nil, "unsupported-store";
 end
 
+function driver:purge(user) -- luacheck: ignore 212/self
+	for _, store in pairs(memory) do
+		store[user] = nil;
+	end
+end
+
 if auto_purge_enabled then
 	module:hook("resource-unbind", function (event)
 		local user_bare_jid = event.session.username.."@"..event.session.host;
