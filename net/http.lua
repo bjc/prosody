@@ -24,7 +24,6 @@ local tonumber, tostring, traceback =
       tonumber, tostring, debug.traceback;
 local xpcall = require "util.xpcall".xpcall;
 local error = error
-local setmetatable = setmetatable;
 
 local log = require "util.logger".init("http");
 
@@ -273,7 +272,12 @@ local function new(options)
 		options = options;
 		request = request;
 		new = options and function (new_options)
-			return new(setmetatable(new_options, { __index = options }));
+			local final_options = {};
+			for k, v in pairs(options) do final_options[k] = v; end
+			if new_options then
+				for k, v in pairs(new_options) do final_options[k] = v; end
+			end
+			return new(final_options);
 		end or new;
 		events = events.new();
 	};
