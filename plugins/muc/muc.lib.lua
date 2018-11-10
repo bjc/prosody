@@ -39,7 +39,7 @@ function room_mt:__tostring()
 end
 
 function room_mt.save()
-	-- overriden by mod_muc.lua
+	-- overridden by mod_muc.lua
 end
 
 function room_mt:get_occupant_jid(real_jid)
@@ -279,7 +279,7 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 		self_p = st.clone(base_presence):add_child(self_x);
 	end
 
-	-- General populance
+	-- General populace
 	for occupant_nick, n_occupant in self:each_occupant() do
 		if occupant_nick ~= occupant.nick then
 			local pr;
@@ -609,7 +609,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 				x:tag("status", {code = "303";}):up();
 				x:tag("status", {code = "110";}):up();
 				self:route_stanza(generated_unavail:add_child(x));
-				dest_nick = nil; -- set dest_nick to nil; so general populance doesn't see it for whole orig_occupant
+				dest_nick = nil; -- set dest_nick to nil; so general populace doesn't see it for whole orig_occupant
 			end
 		end
 
@@ -966,7 +966,7 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 	local _aff_rank = valid_affiliations[_aff or "none"];
 	local _rol = item.attr.role;
 	if _aff and _aff_rank and not _rol then
-		-- You need to be at least an admin, and be requesting info about your affifiliation or lower
+		-- You need to be at least an admin, and be requesting info about your affiliation or lower
 		-- e.g. an admin can't ask for a list of owners
 		local affiliation_rank = valid_affiliations[affiliation or "none"];
 		if (affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank)
@@ -1291,7 +1291,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 			-- Outcast can be by host.
 			is_host_only and affiliation == "outcast" and select(2, jid_split(occupant.bare_jid)) == host
 		) then
-			-- need to publcize in all cases; as affiliation in <item/> has changed.
+			-- need to publicize in all cases; as affiliation in <item/> has changed.
 			occupants_updated[occupant] = occupant.role;
 			if occupant.role ~= role and (
 				is_downgrade or
