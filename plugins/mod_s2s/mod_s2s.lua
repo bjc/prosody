@@ -27,8 +27,8 @@ local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
 local fire_global_event = prosody.events.fire_event;
 local runner = require "util.async".runner;
-
-local s2sout = module:require("s2sout");
+local connect = require "net.connect".connect;
+local service = require "net.resolvers.service";
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
@@ -44,6 +44,8 @@ local measure_ipv6 = module:measure("ipv6", "amount");
 local sessions = module:shared("sessions");
 
 local runner_callbacks = {};
+
+local listener = {};
 
 local log = module._log;
 
@@ -154,17 +156,13 @@ function route_to_new_session(event)
 	local from_host, to_host, stanza = event.from_host, event.to_host, event.stanza;
 	log("debug", "opening a new outgoing connection for this stanza");
 	local host_session = s2s_new_outgoing(from_host, to_host);
+	host_session.version = 1;
 
 	-- Store in buffer
 	host_session.bounce_sendq = bounce_sendq;
 	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
-	s2sout.initiate_connection(host_session);
-	if (not host_session.connecting) and (not host_session.conn) then
-		log("warn", "Connection to %s failed already, destroying session...", to_host);
-		s2s_destroy_session(host_session, "Connection failed");
-		return false;
-	end
+	connect(service.new(to_host, "xmpp-server", "tcp", { default_port = 5269 }), listener, nil, { session = host_session });
 	return true;
 end
 
@@ -479,8 +477,6 @@ function stream_callbacks.error(session, error, data)
 	end
 end
 
-local listener = {};
-
 --- Session methods
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local function session_close(session, reason, remote_reason)
@@ -679,11 +675,16 @@ function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
 		sessions[conn] = nil;
+		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", session.from_host, session.to_host, err or "connection closed");
+		s2s_destroy_session(session, err);
+	end
+end
+
+function listener.onfail(data, err)
+	local session = data and data.session;
+	if session then
 		if err and session.direction == "outgoing" and session.notopen then
 			(session.log or log)("debug", "s2s connection attempt failed: %s", err);
-			if s2sout.attempt_connection(session, err) then
-				return; -- Session lives for now
-			end
 		end
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", session.from_host, session.to_host, err or "connection closed");
 		s2s_destroy_session(session, err);
@@ -705,6 +706,15 @@ end
 
 function listener.ondetach(conn)
 	sessions[conn] = nil;
+end
+
+function listener.onattach(conn, data)
+	local session = data and data.session;
+	if session then
+		session.conn = conn;
+		sessions[conn] = session;
+		initialize_session(session);
+	end
 end
 
 function check_auth_policy(event)
@@ -729,8 +739,6 @@ function check_auth_policy(event)
 end
 
 module:hook("s2s-check-certificate", check_auth_policy, -1);
-
-s2sout.set_listener(listener);
 
 module:hook("server-stopping", function(event)
 	local reason = event.reason;
