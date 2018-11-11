@@ -1,9 +1,10 @@
 
 local setmetatable, getmetatable = setmetatable, getmetatable;
-local ipairs, unpack, select = ipairs, table.unpack or unpack, select; --luacheck: ignore 113 143
+local ipairs = ipairs;
 local tostring = tostring;
 local type = type;
-local assert, pcall, xpcall, debug_traceback = assert, pcall, xpcall, debug.traceback;
+local assert, pcall, debug_traceback = assert, pcall, debug.traceback;
+local xpcall = require "util.xpcall".xpcall;
 local t_concat = table.concat;
 local log = require "util.logger".init("sql");
 
@@ -200,11 +201,9 @@ function engine:_transaction(func, ...)
 		if not ok then return ok, err; end
 	end
 	--assert(not self.__transaction, "Recursive transactions not allowed");
-	local args, n_args = {...}, select("#", ...);
-	local function f() return func(unpack(args, 1, n_args)); end
 	log("debug", "SQL transaction begin [%s]", tostring(func));
 	self.__transaction = true;
-	local success, a, b, c = xpcall(f, handleerr);
+	local success, a, b, c = xpcall(func, handleerr, ...);
 	self.__transaction = nil;
 	if success then
 		log("debug", "SQL transaction success [%s]", tostring(func));
