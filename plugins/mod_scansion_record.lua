@@ -6,6 +6,7 @@ local filters = require "util.filters";
 local id = require "util.id";
 local dt = require "util.datetime";
 local dm = require "util.datamanager";
+local st = require "util.stanza";
 
 local record_id = id.medium():lower();
 local record_date = os.date("%Y%b%d"):lower();
@@ -41,7 +42,9 @@ end
 
 local function record_stanza_in(stanza, session)
 	if stanza.attr.xmlns == nil then
-		record_stanza(stanza, session, "sends")
+		local copy = st.clone(stanza);
+		copy.attr.from = nil;
+		record_stanza(copy, session, "sends")
 	end
 	return stanza;
 end
@@ -49,7 +52,11 @@ end
 local function record_stanza_out(stanza, session)
 	if stanza.attr.xmlns == nil then
 		if not (stanza.name == "iq" and stanza:get_child("bind", "urn:ietf:params:xml:ns:xmpp-bind")) then
-			record_stanza(stanza, session, "receives");
+			local copy = st.clone(stanza);
+			if copy.attr.to == session.full_jid then
+				copy.attr.to = nil;
+			end
+			record_stanza(copy, session, "receives");
 		end
 	end
 	return stanza;
