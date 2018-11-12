@@ -1,0 +1,101 @@
+# MUC: Allow members to fetch the affiliation lists in open non-anonymous rooms
+
+[Client] Romeo
+	jid: romeo@localhost/MsliYo9C
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost/vJrUtY4Z
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to='issue1230@conference.localhost/romeo'>
+	<x xmlns='http://jabber.org/protocol/muc'/>
+	</presence>
+
+Romeo receives:
+	<presence from='issue1230@conference.localhost/romeo'>
+	<x xmlns='http://jabber.org/protocol/muc#user'>
+	<status code='201'/>
+	<item jid="${Romeo's JID}" role='moderator' affiliation='owner'/>
+	<status code='110'/>
+	</x>
+	</presence>
+
+Romeo receives:
+	<message from='issue1230@conference.localhost' type='groupchat'>
+	<subject/>
+	</message>
+
+Romeo sends:
+	<iq id='lx3' type='set' to='issue1230@conference.localhost'>
+	<query xmlns='http://jabber.org/protocol/muc#owner'>
+	<x type='submit' xmlns='jabber:x:data'>
+	<field var='FORM_TYPE'>
+	<value>http://jabber.org/protocol/muc#roomconfig</value>
+	</field>
+	<field var='muc#roomconfig_whois'>
+	<value>anyone</value>
+	</field>
+	</x>
+	</query>
+	</iq>
+
+Romeo receives:
+	<iq from='issue1230@conference.localhost' type='result' id='lx3'/>
+
+Romeo receives:
+	<message from='issue1230@conference.localhost' type='groupchat'>
+	<x xmlns='http://jabber.org/protocol/muc#user'>
+	<status code='172'/>
+	</x>
+	</message>
+
+Juliet connects
+
+Juliet sends:
+	<presence to='issue1230@conference.localhost/juliet'>
+	<x xmlns='http://jabber.org/protocol/muc'/>
+	</presence>
+
+Juliet receives:
+	<presence from='issue1230@conference.localhost/romeo'>
+	<x xmlns='http://jabber.org/protocol/muc#user'>
+	<item jid="${Romeo's JID}" role='moderator' affiliation='owner'/>
+	</x>
+	</presence>
+
+Juliet receives:
+	<presence from='issue1230@conference.localhost/juliet'>
+	<x xmlns='http://jabber.org/protocol/muc#user'>
+	<status code='100'/>
+	<item jid="${Juliet's JID}" role='participant' affiliation='none'/>
+	<status code='110'/>
+	</x>
+	</presence>
+
+Juliet receives:
+	<message from='issue1230@conference.localhost' type='groupchat'>
+	<subject/>
+	</message>
+
+Juliet sends:
+	<iq id='lx2' type='get' to='issue1230@conference.localhost'>
+	<query xmlns='http://jabber.org/protocol/muc#admin'>
+	<item affiliation='member'/>
+	</query>
+	</iq>
+
+Juliet receives:
+	<iq from='issue1230@conference.localhost' type='result' id='lx2'>
+	<query xmlns='http://jabber.org/protocol/muc#admin'/>
+	</iq>
+
+Juliet disconnects
+
+Romeo disconnects
+
