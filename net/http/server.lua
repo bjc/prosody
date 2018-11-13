@@ -236,7 +236,6 @@ function handle_request(conn, request, finish_cb)
 				err_code, err = 400, "Missing or invalid 'Host' header";
 			end
 		end
-		local host_event = request.method.." "..host..request.path:match("[^?]*");
 
 		if err then
 			response.status_code = err_code;
@@ -244,6 +243,7 @@ function handle_request(conn, request, finish_cb)
 			return;
 		end
 
+		local host_event = request.method.." "..host..request.path:match("[^?]*");
 		log("debug", "Firing event: %s", host_event);
 		result = events.fire_event(host_event, payload);
 	end
