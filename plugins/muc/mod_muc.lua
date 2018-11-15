@@ -251,12 +251,29 @@ function get_room_from_jid(room_jid)
 	return restore_room(room_jid);
 end
 
+local function set_room_defaults(room, lang)
+	room:set_public(module:get_option_boolean("muc_room_default_public", false));
+	room:set_persistent(module:get_option_boolean("muc_room_default_persistent", room:get_persistent()));
+	room:set_members_only(module:get_option_boolean("muc_room_default_members_only", room:get_members_only()));
+	room:set_allow_member_invites(module:get_option_boolean("muc_room_default_allow_member_invites",
+		room:get_allow_member_invites()));
+	room:set_moderated(module:get_option_boolean("muc_room_default_moderated", room:get_moderated()));
+	room:set_whois(module:get_option_boolean("muc_room_default_public_jids",
+		room:get_whois() == "anyone") and "anyone" or "moderators");
+	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
+	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
+	room:set_language(lang or module:get_option_string("muc_room_default_language"));
+end
+
 function create_room(room_jid, config)
 	local exists = get_room_from_jid(room_jid);
 	if exists then
 		return nil, "room-exists";
 	end
 	local room = muclib.new_room(room_jid, config);
+	if not config then
+		set_room_defaults(room);
+	end
 	module:fire_event("muc-room-created", {
 		room = room;
 	});
@@ -321,18 +338,7 @@ module:hook("host-disco-items", function(event)
 end);
 
 module:hook("muc-room-pre-create", function (event)
-	local room = event.room;
-	room:set_public(module:get_option_boolean("muc_room_default_public", false));
-	room:set_persistent(module:get_option_boolean("muc_room_default_persistent", room:get_persistent()));
-	room:set_members_only(module:get_option_boolean("muc_room_default_members_only", room:get_members_only()));
-	room:set_allow_member_invites(module:get_option_boolean("muc_room_default_allow_member_invites",
-		room:get_allow_member_invites()));
-	room:set_moderated(module:get_option_boolean("muc_room_default_moderated", room:get_moderated()));
-	room:set_whois(module:get_option_boolean("muc_room_default_public_jids",
-		room:get_whois() == "anyone") and "anyone" or "moderators");
-	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
-	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
-	room:set_language(event.stanza.attr["xml:lang"] or module:get_option_string("muc_room_default_language"));
+	set_room_defaults(event.room, event.stanza.attr["xml:lang"]);
 end, 1);
 
 module:hook("muc-room-pre-create", function(event)
