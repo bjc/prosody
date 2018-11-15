@@ -510,12 +510,12 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 	if params.driver == "MySQL" then
 		local success,err = engine:transaction(function()
 			do
-				local result = engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'");
+				local result = assert(engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'"));
 				if result:rowcount() > 0 then
 					changes = true;
 					if apply_changes then
 						module:log("info", "Upgrading database schema (value column size)...");
-						engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT");
+						assert(engine:execute("ALTER TABLE \"prosody\" MODIFY COLUMN \"value\" MEDIUMTEXT"));
 						module:log("info", "Database table automatically upgraded");
 					end
 				end
@@ -528,9 +528,9 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 					changes = true;
 					if apply_changes then
 						module:log("info", "Upgrading database schema (prosodyarchive_index)...");
-						engine:execute[[ALTER TABLE "prosodyarchive" DROP INDEX prosodyarchive_index;]];
+						assert(engine:execute[[ALTER TABLE "prosodyarchive" DROP INDEX prosodyarchive_index;]]);
 						local new_index = sql.Index { table = "prosodyarchive", name="prosodyarchive_index", "host", "user", "store", "key" };
-						engine:_create_index(new_index);
+						assert(engine:_create_index(new_index));
 						module:log("info", "Database table automatically upgraded");
 					end
 				end
