@@ -398,7 +398,7 @@ local function deserialize(stanza)
 	return stanza;
 end
 
-local function clone(stanza)
+local function _clone(stanza)
 	local attr, tags = {}, {};
 	for k,v in pairs(stanza.attr) do attr[k] = v; end
 	local old_namespaces, namespaces = stanza.namespaces;
@@ -410,12 +410,19 @@ local function clone(stanza)
 	for i=1,#stanza do
 		local child = stanza[i];
 		if child.name then
-			child = clone(child);
+			child = _clone(child);
 			t_insert(tags, child);
 		end
 		t_insert(new, child);
 	end
 	return setmetatable(new, stanza_mt);
+end
+
+local function clone(stanza)
+	if not is_stanza(stanza) then
+		error("bad argument to clone: expected stanza, got "..type(stanza));
+	end
+	return _clone(stanza);
 end
 
 local function message(attr, body)
