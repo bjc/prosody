@@ -48,6 +48,9 @@ local queue_size = module:get_option_number("csi_queue_size", 256);
 
 module:hook("csi-is-stanza-important", function (event)
 	local stanza = event.stanza;
+	if not st.is_stanza(stanza) then
+		return true;
+	end
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
