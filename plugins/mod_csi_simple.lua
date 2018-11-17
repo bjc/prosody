@@ -48,6 +48,9 @@ local queue_size = module:get_option_number("csi_queue_size", 256);
 
 module:hook("csi-is-stanza-important", function (event)
 	local stanza = event.stanza;
+	if not st.is_stanza(stanza) then
+		return true;
+	end
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
@@ -82,8 +85,10 @@ module:hook("csi-client-inactive", function (event)
 				pump:flush();
 				send(stanza);
 			else
-				stanza = st.clone(stanza);
-				stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = bare_jid, stamp = dt.datetime()}));
+				if st.is_stanza(stanza) then
+					stanza = st.clone(stanza);
+					stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = bare_jid, stamp = dt.datetime()}));
+				end
 				pump:push(stanza);
 			end
 			return true;

@@ -346,4 +346,18 @@ describe("util.stanza", function()
 			end, "Invalid stanza");
 		end);
 	end);
+
+	describe("#clone", function ()
+		it("works", function ()
+			local s = st.message({type="chat"}, "Hello"):reset();
+			local c = st.clone(s);
+			assert.same(s, c);
+		end);
+
+		it("works", function ()
+			assert.has_error(function ()
+				st.clone("this is not a stanza");
+			end);
+		end);
+	end);
 end);
