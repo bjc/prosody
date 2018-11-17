@@ -1009,7 +1009,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 		err = "luasec not found"
 	end
 	if not typ then
-		local n = inet_pton(addr);
+		local n = inet_pton(address);
 		if not n then return nil, "invalid-ip"; end
 		if #n == 16 then
 			typ = "tcp6";
