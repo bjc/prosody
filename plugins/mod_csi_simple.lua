@@ -86,7 +86,9 @@ end, -1);
 
 module:hook("csi-client-inactive", function (event)
 	local session = event.origin;
-	if session.pump then
+	if session.conn and session.conn and session.conn.pause_writes then
+		session.conn:pause_writes();
+	elseif session.pump then
 		session.pump:pause();
 	else
 		local bare_jid = jid.join(session.username, session.host);
@@ -115,6 +117,8 @@ module:hook("csi-client-active", function (event)
 	local session = event.origin;
 	if session.pump then
 		session.pump:resume();
+	elseif session.conn and session.conn and session.conn.resume_writes then
+		session.conn:resume_writes();
 	end
 end);
 
