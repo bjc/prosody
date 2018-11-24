@@ -275,7 +275,8 @@ module:hook("stream-features", function(event)
 		if mechanisms[1] then
 			features:add_child(mechanisms);
 		elseif not next(sasl_mechanisms) then
-			log("warn", "No available SASL mechanisms, verify that the configured authentication module is working");
+			local authmod = module:get_option_string("authentication", "internal_plain");
+			log("error", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
 		else
 			log("warn", "All available authentication mechanisms are either disabled or not suitable for an insecure connection");
 		end
