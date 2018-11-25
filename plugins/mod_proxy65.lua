@@ -121,6 +121,12 @@ function module.add_host(module)
 			return true;
 		end
 
+		if not proxy_port then
+			module:log("warn", "Not listening on any port");
+			origin.send(st.error_reply(stanza, "wait", "item-not-found", "Not listening on any port"));
+			return true;
+		end
+
 		local sid = stanza.tags[1].attr.sid;
 		origin.send(st.reply(stanza):tag("query", {xmlns="http://jabber.org/protocol/bytestreams", sid=sid})
 			:tag("streamhost", {jid=host, host=proxy_address, port=proxy_port}));
