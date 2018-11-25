@@ -92,7 +92,6 @@ function module.add_host(module)
 	local host, name = module:get_host(), module:get_option_string("name", "SOCKS5 Bytestreams Service");
 
 	local proxy_address = module:get_option_string("proxy65_address", host);
-	local proxy_port = next(portmanager.get_active_services():search("proxy65", nil)[1] or {});
 	local proxy_acl = module:get_option_array("proxy65_acl");
 
 	-- COMPAT w/pre-0.9 where proxy65_port was specified in the components section of the config
@@ -121,6 +120,7 @@ function module.add_host(module)
 			return true;
 		end
 
+		local proxy_port = next(portmanager.get_active_services():search("proxy65", nil)[1] or {});
 		if not proxy_port then
 			module:log("warn", "Not listening on any port");
 			origin.send(st.error_reply(stanza, "wait", "item-not-found", "Not listening on any port"));
