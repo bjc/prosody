@@ -81,7 +81,7 @@ module:hook("csi-client-inactive", function (event)
 		pump:pause();
 		session.pump = pump;
 		function session.send(stanza)
-			if module:fire_event("csi-stanza-is-important", { stanza = stanza, session = session }) then
+			if module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
 				pump:flush();
 				send(stanza);
 			else
