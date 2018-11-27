@@ -81,11 +81,11 @@ module:hook("csi-client-inactive", function (event)
 		pump:pause();
 		session.pump = pump;
 		function session.send(stanza)
-			if module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
+			if session.state == "active" or module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
 				pump:flush();
 				send(stanza);
 			else
-				if st.is_stanza(stanza) then
+				if st.is_stanza(stanza) and stanza.attr.xmlns == nil and stanza.name ~= "iq" then
 					stanza = st.clone(stanza);
 					stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = bare_jid, stamp = dt.datetime()}));
 				end

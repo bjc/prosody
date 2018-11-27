@@ -11,6 +11,7 @@ end);
 function refire_event(name)
 	return function (event)
 		if event.origin.username then
+			session.state = event.stanza.name;
 			module:fire_event(name, event);
 			return true;
 		end
