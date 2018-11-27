@@ -85,7 +85,7 @@ module:hook("csi-client-inactive", function (event)
 				pump:flush();
 				send(stanza);
 			else
-				if st.is_stanza(stanza) then
+				if st.is_stanza(stanza) and st.attr.xmlns == nil and st.name ~= "iq" then
 					stanza = st.clone(stanza);
 					stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = bare_jid, stamp = dt.datetime()}));
 				end
