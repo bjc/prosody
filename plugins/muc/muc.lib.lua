@@ -428,13 +428,6 @@ module:hook("muc-occupant-pre-change", function(event)
 end, 1);
 
 function room_mt:handle_first_presence(origin, stanza)
-	if not stanza:get_child("x", "http://jabber.org/protocol/muc") then
-		module:log("debug", "Room creation without <x>, possibly desynced");
-
-		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-		return true;
-	end
-
 	local real_jid = stanza.attr.from;
 	local dest_jid = stanza.attr.to;
 	local bare_jid = jid_bare(real_jid);
