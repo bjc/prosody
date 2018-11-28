@@ -28,13 +28,12 @@ local function format(formatstring, ...)
 		if spec ~= "%%" then
 			i = i + 1;
 			local arg = args[i];
-			if arg == nil then -- special handling for nil
-				arg = "<nil>"
-				args[i] = "<nil>";
-			end
 
 			local option = spec:sub(-1);
-			if option == "q" or option == "s" then -- arg should be string
+			if arg == nil then
+				args[i] = "nil";
+				spec = "<%s>";
+			elseif option == "q" or option == "s" then -- arg should be string
 				args[i] = tostring(arg);
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
 				args[i] = tostring(arg);
