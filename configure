@@ -404,7 +404,9 @@ then
    then
       suffixes="5.3 53 -5.3 -53"
    else
-      suffixes="5.1 51 -5.1 -51 5.2 52 -5.2 -52 5.3 53 -5.3 -53"
+      suffixes="5.1 51 -5.1 -51"
+      suffixes="$suffixes 5.2 52 -5.2 -52"
+      suffixes="$suffixes 5.3 53 -5.3 -53"
    fi
    for suffix in "" $suffixes
    do
