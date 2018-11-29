@@ -9,7 +9,7 @@
 local softreq = require "util.dependencies".softreq;
 local random_bytes = require "util.random".bytes;
 
-local bit = assert(softreq"bit" or softreq"bit32",
+local bit = assert(softreq"bit32" or softreq"bit",
 	"No bit module found. See https://prosody.im/doc/depends#bitop");
 local band = bit.band;
 local bor = bit.bor;
