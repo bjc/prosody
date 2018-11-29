@@ -237,7 +237,7 @@ do
    --lua-version|--with-lua-version)
       [ -n "$value" ] || die "Missing value in flag $key."
       LUA_VERSION="$value"
-      [ "$LUA_VERSION" = "5.1" ] || [ "$LUA_VERSION" = "5.2" ] || [ "$LUA_VERSION" = "5.3" ] || die "Invalid Lua version in flag $key."
+      [ "$LUA_VERSION" = "5.1" ] || [ "$LUA_VERSION" = "5.2" ] || [ "$LUA_VERSION" = "5.3" ] || [ "$LUA_VERSION" = "5.4" ] || die "Invalid Lua version in flag $key."
       LUA_VERSION_SET=yes
       ;;
    --with-lua)
@@ -340,7 +340,7 @@ then
 fi
 
 detect_lua_version() {
-   detected_lua=$("$1" -e 'print(_VERSION:match(" (5%.[123])$"))' 2> /dev/null)
+   detected_lua=$("$1" -e 'print(_VERSION:match(" (5%.[1234])$"))' 2> /dev/null)
    if [ "$detected_lua" != "nil" ]
    then
       if [ "$LUA_VERSION_SET" != "yes" ]
@@ -403,10 +403,14 @@ then
    elif [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.3" ]
    then
       suffixes="5.3 53 -5.3 -53"
+   elif [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.4" ]
+   then
+      suffixes="5.4 54 -5.4 -54"
    else
       suffixes="5.1 51 -5.1 -51"
       suffixes="$suffixes 5.2 52 -5.2 -52"
       suffixes="$suffixes 5.3 53 -5.3 -53"
+      suffixes="$suffixes 5.4 54 -5.4 -54"
    fi
    for suffix in "" $suffixes
    do
