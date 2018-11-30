@@ -35,13 +35,28 @@ local _ENV = nil;
 -- luacheck: std none
 
 local default_config = { __index = {
+	-- If a connection is silent for this long, close it unless onreadtimeout says not to
 	read_timeout = 14 * 60;
+
+	-- How long to wait for a socket to become writable after queuing data to send
 	write_timeout = 60;
+
+	-- Some number possibly influencing how many pending connections can be accepted
 	tcp_backlog = 128;
+
+	-- If accepting a new incoming connection fails, wait this long before trying again
 	accept_retry_interval = 10;
+
+	-- If there is still more data to read from LuaSocktes buffer, wait this long and read again
 	read_retry_delay = 1e-06;
+
+	-- Size of chunks to read from sockets
 	read_size = 8192;
+
+	-- Timeout used during between steps in TLS handshakes
 	handshake_timeout = 60;
+
+	-- Maximum and minimum amount of time to sleep waiting for events (adjusted for pending timers)
 	max_wait = 86400;
 	min_wait = 1e-06;
 }};
