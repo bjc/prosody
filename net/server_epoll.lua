@@ -36,7 +36,7 @@ local _ENV = nil;
 
 local default_config = { __index = {
 	read_timeout = 14 * 60;
-	write_timeout = 7;
+	write_timeout = 60;
 	tcp_backlog = 128;
 	accept_retry_interval = 10;
 	read_retry_delay = 1e-06;
