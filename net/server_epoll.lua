@@ -41,7 +41,6 @@ local default_config = { __index = {
 	accept_retry_interval = 10;
 	read_retry_delay = 1e-06;
 	read_size = 8192;
-	connect_timeout = 20;
 	handshake_timeout = 60;
 	max_wait = 86400;
 	min_wait = 1e-06;
