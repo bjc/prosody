@@ -361,41 +361,31 @@ end
 
 stanza_mt.__freeze = preserialize;
 
-local function deserialize(stanza)
+local function deserialize(serialized)
 	-- Set metatable
-	if stanza then
-		local attr = stanza.attr;
-		for i=1,#attr do attr[i] = nil; end
+	if serialized then
+		local attr = serialized.attr;
 		local attrx = {};
-		for att in pairs(attr) do
-			if s_find(att, "|", 1, true) and not s_find(att, "\1", 1, true) then
-				local ns,na = s_match(att, "^([^|]+)|(.+)$");
-				attrx[ns.."\1"..na] = attr[att];
-				attr[att] = nil;
-			end
-		end
-		for a,v in pairs(attrx) do
-			attr[a] = v;
-		end
-		setmetatable(stanza, stanza_mt);
-		for _, child in ipairs(stanza) do
-			if type(child) == "table" then
-				deserialize(child);
-			end
-		end
-		if not stanza.tags then
-			-- Rebuild tags
-			local tags = {};
-			for _, child in ipairs(stanza) do
-				if type(child) == "table" then
-					t_insert(tags, child);
+		for att, val in pairs(attr) do
+			if type(att) == "string" then
+				if s_find(att, "|", 1, true) and not s_find(att, "\1", 1, true) then
+					local ns,na = s_match(att, "^([^|]+)|(.+)$");
+					attrx[ns.."\1"..na] = val;
+				else
+					attrx[att] = val;
 				end
 			end
-			stanza.tags = tags;
 		end
+		local stanza = new_stanza(serialized.name, attrx);
+		for _, child in ipairs(serialized) do
+			if type(child) == "table" then
+				stanza:add_direct_child(deserialize(child));
+			elseif type(child) == "string" then
+				stanza:add_direct_child(child);
+			end
+		end
+		return stanza;
 	end
-
-	return stanza;
 end
 
 local function _clone(stanza)
