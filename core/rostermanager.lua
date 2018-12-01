@@ -263,15 +263,15 @@ end
 
 function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
-	return roster[false].pending[jid];
+	return roster[false].pending[jid] ~= nil;
 end
-local function set_contact_pending_in(username, host, jid)
+local function set_contact_pending_in(username, host, jid, stanza)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	if item and (item.subscription == "from" or item.subscription == "both") then
 		return; -- false
 	end
-	roster[false].pending[jid] = true;
+	roster[false].pending[jid] = st.is_stanza(stanza) and st.preserialize(stanza) or true;
 	return save_roster(username, host, roster, jid);
 end
 function is_contact_pending_out(username, host, jid)
