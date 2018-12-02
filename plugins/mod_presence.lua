@@ -81,7 +81,7 @@ function handle_normal_presence(origin, stanza)
 			end
 		end
 		for jid, pending_request in pairs(roster[false].pending) do -- resend incoming subscription requests
-			local subscribe = st.clone(st.deserialize(pending_request));
+			local subscribe = st.deserialize(pending_request);
 			subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
 			origin.send(subscribe);
 		end
