@@ -4,23 +4,33 @@ local st = require "util.stanza";
 describe("util.stanza", function()
 	describe("#preserialize()", function()
 		it("should work", function()
-			local stanza = st.stanza("message", { a = "a" });
+			local stanza = st.stanza("message", { type = "chat" }):text_tag("body", "Hello");
 			local stanza2 = st.preserialize(stanza);
-			assert.is_string(stanza2 and stanza.name, "preserialize returns a stanza");
+			assert.is_table(stanza2, "Preserialized stanza is a table");
+			assert.is_nil(getmetatable(stanza2), "Preserialized stanza has no metatable");
+			assert.is_string(stanza2.name, "Preserialized stanza has a name field");
+			assert.equal(stanza.name, stanza2.name, "Preserialized stanza has same name as the input stanza");
+			assert.same(stanza.attr, stanza2.attr, "Preserialized stanza same attr table as input stanza");
 			assert.is_nil(stanza2.tags, "Preserialized stanza has no tag list");
 			assert.is_nil(stanza2.last_add, "Preserialized stanza has no last_add marker");
-			assert.is_nil(getmetatable(stanza2), "Preserialized stanza has no metatable");
+			assert.is_table(stanza2[1], "Preserialized child element preserved");
+			assert.equal("body", stanza2[1].name, "Preserialized child element name preserved");
 		end);
 	end);
 
-	describe("#preserialize()", function()
+	describe("#deserialize()", function()
 		it("should work", function()
-			local stanza = st.stanza("message", { a = "a" });
+			local stanza = { name = "message", attr = { type = "chat" }, { name = "body", attr = { }, "Hello" } };
 			local stanza2 = st.deserialize(st.preserialize(stanza));
-			assert.is_string(stanza2 and stanza.name, "deserialize returns a stanza");
-			assert.is_table(stanza2.attr, "Deserialized stanza has attributes");
-			assert.are.equal(stanza2.attr.a, "a", "Deserialized stanza retains attributes");
-			assert.is_table(getmetatable(stanza2), "Deserialized stanza has metatable");
+
+			assert.is_table(stanza2, "Deserialized stanza is a table");
+			assert.equal(st.stanza_mt, getmetatable(stanza2), "Deserialized stanza has stanza metatable");
+			assert.is_string(stanza2.name, "Deserialized stanza has a name field");
+			assert.equal(stanza.name, stanza2.name, "Deserialized stanza has same name as the input table");
+			assert.same(stanza.attr, stanza2.attr, "Deserialized stanza same attr table as input table");
+			assert.is_table(stanza2.tags, "Deserialized stanza has tag list");
+			assert.is_table(stanza2[1], "Deserialized child element preserved");
+			assert.equal("body", stanza2[1].name, "Deserialized child element name preserved");
 		end);
 	end);
 

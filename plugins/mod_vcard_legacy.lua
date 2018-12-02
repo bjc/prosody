@@ -274,6 +274,7 @@ local function inject_xep153(event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	if not username then return end
+	if stanza.attr.type then return end
 	local pep_service = mod_pep.get_pep_service(username);
 
 	stanza:remove_children("x", "vcard-temp:x:update");
