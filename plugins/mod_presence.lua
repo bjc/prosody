@@ -81,9 +81,13 @@ function handle_normal_presence(origin, stanza)
 			end
 		end
 		for jid, pending_request in pairs(roster[false].pending) do -- resend incoming subscription requests
-			local subscribe = st.deserialize(pending_request);
-			subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
-			origin.send(subscribe);
+			if type(pending_request) == "table" then
+				local subscribe = st.deserialize(pending_request);
+				subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
+				origin.send(subscribe);
+			else
+				origin.send(st.presence({type="subscribe", from=jid}));
+			end
 		end
 		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
