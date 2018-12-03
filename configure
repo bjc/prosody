@@ -469,24 +469,37 @@ if [ -f "$lua_h" ]
 then
    echo "lua.h found in $lua_h"
 else
-   v_dir="$LUA_INCDIR/lua/$LUA_VERSION"
-   lua_h="$v_dir/lua.h"
-   if [ -f "$lua_h" ]
-   then
+  for postfix in "$LUA_VERSION" "$LUA_SUFFIX"; do
+    if ! [ "$postfix" = "" ]; then
+      v_dir="$LUA_INCDIR/lua/$postfix";
+    else
+      v_dir="$LUA_INCDIR/lua";
+    fi
+    lua_h="$v_dir/lua.h"
+    if [ -f "$lua_h" ]
+    then
       echo "lua.h found in $lua_h"
       LUA_INCDIR="$v_dir"
-   else
-      d_dir="$LUA_INCDIR/lua$LUA_VERSION"
+      break;
+    else
+      d_dir="$LUA_INCDIR/lua$postfix"
       lua_h="$d_dir/lua.h"
       if [ -f "$lua_h" ]
       then
-         echo "lua.h found in $lua_h (Debian/Ubuntu)"
-         LUA_INCDIR="$d_dir"
+        echo "lua.h found in $lua_h"
+        LUA_INCDIR="$d_dir"
+        break;
       else
-         echo "lua.h not found (looked in $LUA_INCDIR, $v_dir, $d_dir)"
-         die "You may want to use the flag --with-lua or --with-lua-include. See --help."
+        lua_h_search="$lua_h_search\n  $v_dir/lua.h\n  $d_dir/lua.h"
       fi
-   fi
+    fi
+  done
+  if [ ! -f "$lua_h" ]; then
+    echo "lua.h not found. Looked for:"
+    echo "$lua_h_search" | uniq
+    echo
+    die "You may want to use the flag --with-lua or --with-lua-include. See --help."
+  fi
 fi
 
 if [ "$lua_interp_found" = "yes" ]
