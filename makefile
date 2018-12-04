@@ -19,6 +19,8 @@ INSTALL_EXEC=$(INSTALL) -m755
 MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
+LUACHECK=luacheck
+
 .PHONY: all test clean install
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
@@ -67,6 +69,11 @@ clean:
 	rm -f prosody.cfg.lua.install
 	rm -f prosody.version
 	$(MAKE) clean -C util-src
+
+lint:
+	$(LUACHECK) -q $$(HGPLAIN= hg files -I '**.lua') prosody prosodyctl
+	@echo $$(sed -n '/^\tlocal exclude_files/,/^}/p;' .luacheckrc | sed '1d;$d' | wc -l) files ignored
+	shellcheck configure
 
 test:
 	busted --lua=$(RUNWITH)
