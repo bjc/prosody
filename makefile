@@ -20,6 +20,7 @@ MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
 LUACHECK=luacheck
+BUSTED=busted
 
 .PHONY: all test clean install
 
@@ -76,7 +77,7 @@ lint:
 	shellcheck configure
 
 test:
-	busted --lua=$(RUNWITH)
+	$(BUSTED) --lua=$(RUNWITH)
 
 
 prosody.install: prosody
