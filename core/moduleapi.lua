@@ -20,7 +20,7 @@ local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select = ipairs, pairs, select;
 local tonumber, tostring = tonumber, tostring;
 local require = require;
-local pack = table.pack or function(...) return {n=select("#",...), ...}; end -- table.pack is only in 5.2
+local pack = table.pack or require "util.table".pack; -- table.pack is only in 5.2
 local unpack = table.unpack or unpack; --luacheck: ignore 113 -- renamed in 5.2
 
 local prosody = prosody;
