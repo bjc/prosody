@@ -11,9 +11,9 @@
 local it = {};
 
 local t_insert = table.insert;
-local select, next = select, next;
-local unpack = table.unpack or unpack; --luacheck: ignore 113 143
-local pack = table.pack or function (...) return { n = select("#", ...), ... }; end -- luacheck: ignore 143
+local next = next;
+local unpack = table.unpack or unpack; --luacheck: ignore 113
+local pack = table.pack or require "util.table".pack;
 local type = type;
 local table, setmetatable = table, setmetatable;
 
