@@ -2,6 +2,7 @@ cache = true
 codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log", "143/table", "113/unpack" }
 
+std = "lua53c"
 max_line_length = 150
 
 read_globals = {
