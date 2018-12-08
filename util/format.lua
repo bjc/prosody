@@ -3,12 +3,13 @@
 --
 
 local tostring = tostring;
-local select = select;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
+local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local type = type;
 
 local function format(formatstring, ...)
-	local args, args_length = { ... }, select('#', ...);
+	local args = pack(...);
+	local args_length = args.n;
 
 	-- format specifier spec:
 	-- 1. Start: '%%'
