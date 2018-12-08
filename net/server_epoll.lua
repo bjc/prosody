@@ -577,6 +577,8 @@ function interface:onacceptable()
 	client:init();
 	if self.tls_direct then
 		client:starttls(self.tls_ctx);
+	else
+		client:onconnect();
 	end
 end
 
