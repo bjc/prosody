@@ -22,6 +22,7 @@ local prosody = _G.prosody;
 
 local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
 local jid_bare, jid_split, jid_join = import("util.jid", "bare", "prepped_split", "join");
