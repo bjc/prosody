@@ -20,7 +20,6 @@ local pcall = pcall;
 local envload = require"util.envload".envload;
 
 local pos_inf, neg_inf = math.huge, -math.huge;
--- luacheck: ignore 143/math
 local m_type = math.type or function (n)
 	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
 end;
