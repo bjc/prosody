@@ -363,6 +363,13 @@ function commands.about(arg)
 				.."\n  ";
 		end)));
 	print("");
+	local have_pposix, pposix = pcall(require, "util.pposix");
+	if have_pposix and pposix.uname then
+		print("# Operating system");
+		local uname, err = pposix.uname();
+		print(uname and uname.sysname .. " " .. uname.release or "Unknown POSIX", err or "");
+		print("");
+	end
 	print("# Lua environment");
 	print("Lua version:             ", _G._VERSION);
 	print("");
