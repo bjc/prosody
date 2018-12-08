@@ -16,6 +16,7 @@ local bor = bit.bor;
 local bxor = bit.bxor;
 local lshift = bit.lshift;
 local rshift = bit.rshift;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local t_concat = table.concat;
 local s_byte = string.byte;
