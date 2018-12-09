@@ -38,7 +38,8 @@ local function parse(s)
 		local year, month, day, hour, min, sec, tzd;
 		year, month, day, hour, min, sec, tzd = s:match("^(%d%d%d%d)%-?(%d%d)%-?(%d%d)T(%d%d):(%d%d):(%d%d)%.?%d*([Z+%-]?.*)$");
 		if year then
-			local time_offset = os_difftime(os_time(os_date("*t")), os_time(os_date("!*t"))); -- to deal with local timezone
+			local now = os_time();
+			local time_offset = os_difftime(os_time(os_date("*t", now)), os_time(os_date("!*t", now))); -- to deal with local timezone
 			local tzd_offset = 0;
 			if tzd ~= "" and tzd ~= "Z" then
 				local sign, h, m = tzd:match("([+%-])(%d%d):?(%d*)");
