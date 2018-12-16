@@ -51,6 +51,16 @@ Romeo receives:
 	</message>
 
 Romeo sends:
+	<message to="issue667@conference.localhost" type="groupchat">
+		<body>Lorem ipsum dolor sit amet</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<body>Lorem ipsum dolor sit amet</body>
+	</message>
+
+Romeo sends:
 	<presence to="issue667@conference.localhost/Romeo">
 		<x xmlns="http://jabber.org/protocol/muc"/>
 	</presence>
@@ -68,6 +78,11 @@ Romeo receives:
 	<message type="groupchat" from="issue667@conference.localhost/Romeo">
 		<subject>Greetings</subject>
 		<body>Hello everyone</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<body>Lorem ipsum dolor sit amet</body>
 	</message>
 
 Romeo receives:
