@@ -42,6 +42,33 @@ Romeo receives:
 		<body>Hello everyone</body>
 	</message>
 
+# Resync
+Romeo sends:
+	<presence to="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+# Presences
+Romeo receives:
+	<presence from="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="owner" role="moderator" jid="${Romeo's full JID}"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Greetings</subject>
+		<body>Hello everyone</body>
+	</message>
+
+# the still empty subject
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost">
+		<subject/>
+	</message>
+
 # this is a subject change
 Romeo sends:
 	<message to="issue667@conference.localhost" type="groupchat">
