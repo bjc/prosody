@@ -12,6 +12,7 @@
 local log = require "util.logger".init("rostermanager");
 
 local new_id = require "util.id".short;
+local new_cache = require "util.cache".new;
 
 local pairs = pairs;
 local tostring = tostring;
@@ -111,6 +112,23 @@ local function load_roster(username, host)
 	else -- Attempt to load roster for non-loaded user
 		log("debug", "load_roster: loading for offline user: %s", jid);
 	end
+	local roster_cache = hosts[host] and hosts[host].roster_cache;
+	if not roster_cache then
+		if hosts[host] then
+			roster_cache = new_cache(1024);
+			hosts[host].roster_cache = roster_cache;
+		end
+	else
+		roster = roster_cache:get(jid);
+		if roster then
+			log("debug", "load_roster: cache hit");
+			roster_cache:set(jid, roster);
+			if user then user.roster = roster; end
+			return roster;
+		else
+			log("debug", "load_roster: cache miss, loading from storage");
+		end
+	end
 	local roster_store = storagemanager.open(host, "roster", "keyval");
 	local data, err = roster_store:get(username);
 	roster = data or {};
@@ -133,6 +151,10 @@ local function load_roster(username, host)
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });
+	end
+	if roster_cache and not user then
+		log("debug", "load_roster: caching loaded roster");
+		roster_cache:set(jid, roster);
 	end
 	return roster, err;
 end
