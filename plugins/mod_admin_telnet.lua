@@ -521,6 +521,9 @@ local function session_flags(session, line)
 	if session.remote then
 		line[#line+1] = "(remote)";
 	end
+	if session.is_bidi then
+		line[#line+1] = "(bidi)";
+	end
 	return table.concat(line, " ");
 end
 
