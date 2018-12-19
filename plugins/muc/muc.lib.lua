@@ -61,7 +61,7 @@ module:hook("muc-get-default-role", function(event)
 	elseif event.affiliation_rank >= valid_affiliations.none then
 		return "participant";
 	end
-end);
+end, -1);
 
 --- Occupant functions
 function room_mt:new_occupant(bare_real_jid, nick)
