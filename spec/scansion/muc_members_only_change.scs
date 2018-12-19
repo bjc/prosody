@@ -1,4 +1,4 @@
-# MUC: Room registration and reserved nicknames
+# MUC: Members-only rooms kick members who lose affiliation
 
 [Client] Romeo
 	jid: user@localhost
