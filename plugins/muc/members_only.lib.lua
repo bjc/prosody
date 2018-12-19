@@ -104,7 +104,7 @@ module:hook("muc-get-default-role", function(event)
 	if not event.affiliation and get_members_only(event.room) then
 		return false;
 	end
-end);
+end, 2);
 
 -- registration required for entering members-only room
 module:hook("muc-occupant-pre-join", function(event)
