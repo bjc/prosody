@@ -1254,7 +1254,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 	else
 		local actor_affiliation = self:get_affiliation(actor);
 		if actor_affiliation == "owner" then
-			if jid_bare(actor) == jid then -- self change
+			if jid_bare(actor) == jid and is_downgrade then -- self change
 				-- need at least one owner
 				local is_last = true;
 				for j in self:each_affiliation("owner") do
