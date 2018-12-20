@@ -504,3 +504,25 @@ Rosaline receives:
 			<status xmlns='http://jabber.org/protocol/muc#user' code='110'/>
 		</x>
 	</presence>
+
+# Romeo sets their their own nickname via admin query (see #1273)
+Romeo sends:
+	<iq to="room@conference.localhost" id="reserve" type="set">
+		<query xmlns="http://jabber.org/protocol/muc#admin">
+			<item nick="Romeo" affiliation="owner" jid="${Romeo's JID}"/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<presence from="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item xmlns="http://jabber.org/protocol/muc#user" role="moderator" jid="${Romeo's full JID}" affiliation="owner">
+				<actor xmlns="http://jabber.org/protocol/muc#user" nick="Romeo"/>
+			</item>
+			<status xmlns="http://jabber.org/protocol/muc#user" code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<iq from="room@conference.localhost" id="reserve" type="result"/>
+
