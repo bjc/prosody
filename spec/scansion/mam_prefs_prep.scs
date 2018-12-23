@@ -1,0 +1,36 @@
+# mod_mam shold apply JIDprep in prefs
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id="lx2" type="set">
+		<prefs xmlns="urn:xmpp:mam:2" default="roster">
+			<always>
+				<jid>JULIET@MONTAGUE.LIT</jid>
+			</always>
+			<never>
+				<jid>MONTAGUE@MONTAGUE.LIT</jid>
+			</never>
+		</prefs>
+	</iq>
+
+Romeo receives:
+	<iq id="lx2" type="result">
+		<prefs xmlns="urn:xmpp:mam:2" default="roster">
+			<always>
+				<jid>juliet@montague.lit</jid>
+			</always>
+			<never>
+				<jid>montague@montague.lit</jid>
+			</never>
+		</prefs>
+	</iq>
+
+Romeo disconnects
+

@@ -25,7 +25,7 @@ modules_enabled = {
 		"time"; -- Let others know the time here on this server
 		"ping"; -- Replies to XMPP pings with pongs
 		"register"; -- Allow users to register on this server using a client and change passwords
-		--"mam"; -- Store messages in an archive and allow users to access it
+		"mam"; -- Store messages in an archive and allow users to access it
 
 	-- HTTP modules
 		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
@@ -59,6 +59,7 @@ insecure_open_authentication = "Yes please, I know what I'm doing!"
 
 storage = "memory"
 
+mam_smart_enable = true
 
 -- For the "sql" backend, you can uncomment *one* of the below to configure:
 --sql = { driver = "SQLite3", database = "prosody.sqlite" } -- Default. 'database' is the filename.
