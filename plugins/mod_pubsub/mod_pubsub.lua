@@ -99,7 +99,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 end
 
 local max_max_items = module:get_option_number("pubsub_max_items", 256);
-function check_node_config(node, actor, new_config) -- luacheck: ignore 212/actor 212/node
+function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
 	if (new_config["max_items"] or 1) > max_max_items then
 		return false;
 	end
