@@ -136,9 +136,6 @@ local function get_broadcaster(username)
 		if kind == "retract" then
 			kind = "items"; -- XEP-0060 signals retraction in an <items> container
 		end
-		local message = st.message({ from = user_bare, type = "headline" })
-			:tag("event", { xmlns = xmlns_pubsub_event })
-				:tag(kind, { node = node });
 		if item then
 			item = st.clone(item);
 			item.attr.xmlns = nil; -- Clear the pubsub namespace
@@ -147,6 +144,12 @@ local function get_broadcaster(username)
 					item:maptags(function () return nil; end);
 				end
 			end
+		end
+
+		local message = st.message({ from = user_bare, type = "headline" })
+			:tag("event", { xmlns = xmlns_pubsub_event })
+				:tag(kind, { node = node });
+		if item then
 			message:add_child(item);
 		end
 		for jid in pairs(jids) do
