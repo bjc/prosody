@@ -2,6 +2,7 @@
 -- Copyright (C) 2008-2017 Matthew Wild
 -- Copyright (C) 2008-2017 Waqas Hussain
 -- Copyright (C) 2011-2017 Kim Alvefur
+-- Copyright (C) 2018 Emmanuel Gil Peyrot
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -10,6 +11,7 @@
 --
 
 local st = require"util.stanza";
+local jid_prep = require"util.jid".prep;
 local xmlns_mam = "urn:xmpp:mam:2";
 
 local default_attrs = {
@@ -42,16 +44,20 @@ local function fromstanza(prefstanza)
 	local always = prefstanza:get_child("always");
 	if always then
 		for rule in always:childtags("jid") do
-			local jid = rule:get_text();
-			prefs[jid] = true;
+			local jid = jid_prep(rule:get_text());
+			if jid then
+				prefs[jid] = true;
+			end
 		end
 	end
 
 	local never = prefstanza:get_child("never");
 	if never then
 		for rule in never:childtags("jid") do
-			local jid = rule:get_text();
-			prefs[jid] = false;
+			local jid = jid_prep(rule:get_text());
+			if jid then
+				prefs[jid] = false;
+			end
 		end
 	end
 
