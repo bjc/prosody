@@ -8,6 +8,7 @@ local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local cache = require "util.cache";
 local set = require "util.set";
+local new_id = require "util.id".medium;
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -147,7 +148,8 @@ local function get_broadcaster(username)
 			end
 		end
 
-		local message = st.message({ from = user_bare, type = "headline" })
+		local id = new_id();
+		local message = st.message({ from = user_bare, type = "headline", id = id })
 			:tag("event", { xmlns = xmlns_pubsub_event })
 				:tag(kind, { node = node });
 
