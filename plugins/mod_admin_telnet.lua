@@ -31,6 +31,7 @@ local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
 local envloadfile = require "util.envload".envloadfile;
 local has_pposix, pposix = pcall(require, "util.pposix");
+local async = require "util.async";
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -48,6 +49,21 @@ end
 
 console = {};
 
+local runner_callbacks = {};
+
+function runner_callbacks:ready()
+	self.data.conn:resume();
+end
+
+function runner_callbacks:waiting()
+	self.data.conn:pause();
+end
+
+function runner_callbacks:error(err)
+	module:log("error", "Traceback[telnet]: %s", err);
+end
+
+
 function console:new_session(conn)
 	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
@@ -62,6 +78,11 @@ function console:new_session(conn)
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
+
+	session.thread = async.runner(function (line)
+		console:process_line(session, line);
+		session.send(string.char(0));
+	end, runner_callbacks, session);
 
 	-- Load up environment with helper objects
 	for name, t in pairs(def_env) do
@@ -151,8 +172,7 @@ function console_listener.onincoming(conn, data)
 
 	for line in data:gmatch("[^\n]*[\n\004]") do
 		if session.closed then return end
-		console:process_line(session, line);
-		session.send(string.char(0));
+		session.thread:run(line);
 	end
 	session.partial_data = data:match("[^\n]+$");
 end
