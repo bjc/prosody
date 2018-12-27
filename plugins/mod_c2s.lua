@@ -106,7 +106,13 @@ function stream_callbacks.streamopened(session, attr)
 	if features.tags[1] or session.full_jid then
 		send(features);
 	else
-		(session.log or log)("warn", "No stream features to offer");
+		if session.secure then
+			-- Normally STARTTLS would be offered
+			(session.log or log)("warn", "No stream features to offer on secure session. Check authentication settings.");
+		else
+			-- Here SASL should be offered
+			(session.log or log)("warn", "No stream features to offer on insecure session. Check encryption and security settings.");
+		end
 		session:close{ condition = "undefined-condition", text = "No stream features to proceed with" };
 	end
 end
