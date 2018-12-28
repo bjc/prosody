@@ -1067,13 +1067,12 @@ def_env.xmpp = {};
 
 local st = require "util.stanza";
 function def_env.xmpp:ping(localhost, remotehost)
-	if prosody.hosts[localhost] then
-		module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
-				:tag("ping", {xmlns="urn:xmpp:ping"}), prosody.hosts[localhost]);
-		return true, "Sent ping";
-	else
+	if not prosody.hosts[localhost] then
 		return nil, "No such host";
 	end
+	module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
+			:tag("ping", {xmlns="urn:xmpp:ping"}), prosody.hosts[localhost]);
+	return true, "Sent ping";
 end
 
 def_env.dns = {};
