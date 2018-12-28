@@ -1086,13 +1086,28 @@ end
 def_env.xmpp = {};
 
 local st = require "util.stanza";
-function def_env.xmpp:ping(localhost, remotehost)
+local new_id = require "util.id".medium;
+function def_env.xmpp:ping(localhost, remotehost, timeout)
 	if not prosody.hosts[localhost] then
 		return nil, "No such host";
 	end
-	module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
-			:tag("ping", {xmlns="urn:xmpp:ping"}), prosody.hosts[localhost]);
-	return true, "Sent ping";
+	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
+			:tag("ping", {xmlns="urn:xmpp:ping"});
+	local ret, err;
+	local wait, done = async.waiter();
+	module:context(localhost):send_iq(iq, nil, timeout)
+		:next(function (ret_) ret = ret_; end,
+			function (err_) err = err_; end)
+		:finally(done);
+	wait();
+	if ret then
+		return true, "pong from " .. ret.stanza.attr.from;
+	elseif type(err) == "table" and st.is_stanza(err.stanza) then
+		local t, cond, text = err.stanza:get_error();
+		return false, text or cond or t;
+	else
+		return false, tostring(err);
+	end
 end
 
 def_env.dns = {};
