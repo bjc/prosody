@@ -423,8 +423,14 @@ local function message(attr, body)
 	end
 end
 local function iq(attr)
-	if not (attr and attr.id) then
+	if not attr then
+		error("iq stanzas require id and type attributes");
+	end
+	if not attr.id then
 		error("iq stanzas require an id attribute");
+	end
+	if not attr.type then
+		error("iq stanzas require a type attribute");
 	end
 	return new_stanza("iq", attr);
 end

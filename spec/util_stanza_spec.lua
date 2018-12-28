@@ -95,19 +95,30 @@ describe("util.stanza", function()
 
 	describe("#iq()", function()
 		it("should create an iq stanza", function()
-			local i = st.iq({ id = "foo" });
+			local i = st.iq({ type = "get", id = "foo" });
 			assert.are.equal("iq", i.name);
 			assert.are.equal("foo", i.attr.id);
+			assert.are.equal("get", i.attr.type);
 		end);
+
+		it("should reject stanzas with no attributes", function ()
+			assert.has.error_match(function ()
+				st.iq();
+			end, "attributes");
+		end);
+
 
 		it("should reject stanzas with no id", function ()
 			assert.has.error_match(function ()
-				st.iq();
+				st.iq({ type = "get" });
 			end, "id attribute");
+		end);
 
+		it("should reject stanzas with no type", function ()
 			assert.has.error_match(function ()
-				st.iq({ foo = "bar" });
-			end, "id attribute");
+				st.iq({ id = "foo" });
+			end, "type attribute");
+
 		end);
 	end);
 
