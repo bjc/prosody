@@ -361,6 +361,71 @@ function api:send(stanza, origin)
 	return core_post_stanza(origin or hosts[self.host], stanza);
 end
 
+function api:send_iq(stanza, origin, timeout)
+	local iq_cache = self._iq_cache;
+	if not iq_cache then
+		iq_cache = require "util.cache".new(256, function (_, iq)
+			iq.reject("evicted");
+			self:unhook(iq.result_event, iq.result_handler);
+			self:unhook(iq.error_event, iq.error_handler);
+		end);
+		self._iq_cache = iq_cache;
+	end
+	return require "util.promise".new(function (resolve, reject)
+		local event_type;
+		if stanza.attr.from == self.host then
+			event_type = "host";
+		else -- assume bare since we can't hook full jids
+			event_type = "bare";
+		end
+		local result_event = "iq-result/"..event_type.."/"..stanza.attr.id;
+		local error_event = "iq-error/"..event_type.."/"..stanza.attr.id;
+		local cache_key = event_type.."/"..stanza.attr.id;
+
+		local function result_handler(event)
+			if event.stanza.attr.from == stanza.attr.to then
+				resolve(event);
+				return true;
+			end
+		end
+
+		local function error_handler(event)
+			if event.stanza.attr.from == stanza.attr.to then
+				reject(event);
+				return true;
+			end
+		end
+
+		if iq_cache:get(cache_key) then
+			error("choose another iq stanza id attribute")
+		end
+
+		self:hook(result_event, result_handler);
+		self:hook(error_event, error_handler);
+
+		local timeout_handle = self:add_timer(timeout or 120, function ()
+			reject("timeout");
+			self:unhook(result_event, result_handler);
+			self:unhook(error_event, error_handler);
+			iq_cache:set(cache_key, nil);
+		end);
+
+		local ok = iq_cache:set(cache_key, {
+			reject = reject, resolve = resolve,
+			timeout_handle = timeout_handle,
+			result_event = result_event, error_event = error_event,
+			result_handler = result_handler, error_handler = error_handler;
+		});
+
+		if not ok then
+			reject("cache insertion failure");
+			return;
+		end
+
+		self:send(stanza, origin);
+	end);
+end
+
 function api:broadcast(jids, stanza, iter)
 	for jid in (iter or it.values)(jids) do
 		local new_stanza = st.clone(stanza);
