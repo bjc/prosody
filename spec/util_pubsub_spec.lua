@@ -375,4 +375,34 @@ describe("util.pubsub", function ()
 			end);
 		end);
 	end);
+
+	describe("restoring data from nodestore", function ()
+		local nodestore = {
+			data = {
+				test = {
+					name = "test";
+					config = {};
+					affiliations = {};
+					subscribers = {
+						["someone"] = true;
+					};
+				}
+			}
+		};
+		function nodestore:users()
+			return pairs(self.data)
+		end
+		function nodestore:get(key)
+			return self.data[key];
+		end
+		local service = pubsub.new({
+			nodestore = nodestore;
+		});
+		it("subscriptions", function ()
+			local ok, ret = service:get_subscriptions(nil, true, nil)
+			assert.is_true(ok);
+			assert.same({ { node = "test", jid = "someone", subscription = true, } }, ret);
+		end);
+	end);
+
 end);
