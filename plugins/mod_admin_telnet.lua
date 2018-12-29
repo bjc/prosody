@@ -1088,8 +1088,17 @@ def_env.xmpp = {};
 local st = require "util.stanza";
 local new_id = require "util.id".medium;
 function def_env.xmpp:ping(localhost, remotehost, timeout)
-	if not prosody.hosts[localhost] then
-		return nil, "No such host";
+	localhost = select(2, jid_split(localhost));
+	remotehost = select(2, jid_split(remotehost));
+	if not localhost then
+		return nil, "Invalid sender hostname";
+	elseif not prosody.hosts[localhost] then
+		return nil, "No such local host";
+	end
+	if not remotehost then
+		return nil, "Invalid destination hostname";
+	elseif prosody.hosts[remotehost] then
+		return nil, "Both hosts are local";
 	end
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
