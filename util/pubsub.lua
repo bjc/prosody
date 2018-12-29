@@ -177,6 +177,20 @@ local function new(config)
 		for node_name in config.nodestore:users() do
 			service.nodes[node_name] = load_node_from_store(service, node_name);
 			service.data[node_name] = config.itemstore(service.nodes[node_name].config, node_name);
+
+			for jid in pairs(service.nodes[node_name].subscribers) do
+				local normal_jid = service.config.normalize_jid(jid);
+				local subs = service.subscriptions[normal_jid];
+				if subs then
+					if not subs[jid] then
+						subs[jid] = { [node_name] = true };
+					else
+						subs[jid][node_name] = true;
+					end
+				else
+					service.subscriptions[normal_jid] = { [jid] = { [node_name] = true } };
+				end
+			end
 		end
 	end
 
