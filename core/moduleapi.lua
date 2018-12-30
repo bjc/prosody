@@ -15,6 +15,7 @@ local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local st = require "util.stanza";
 local cache = require "util.cache";
+local errutil = require "util.error";
 local promise = require "util.promise";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
@@ -367,7 +368,10 @@ function api:send_iq(stanza, origin, timeout)
 	local iq_cache = self._iq_cache;
 	if not iq_cache then
 		iq_cache = cache.new(256, function (_, iq)
-			iq.reject("evicted");
+			iq.reject(errutil.new({
+				type = "wait", condition = "resource-constraint",
+				text = "evicted from iq tracking cache"
+			}));
 			self:unhook(iq.result_event, iq.result_handler);
 			self:unhook(iq.error_event, iq.error_handler);
 		end);
@@ -393,20 +397,29 @@ function api:send_iq(stanza, origin, timeout)
 
 		local function error_handler(event)
 			if event.stanza.attr.from == stanza.attr.to then
-				reject(event);
+				local error_type, condition, text = event.stanza:get_error();
+				local err = errutil.new({ type = error_type, condition = condition, text = text }, event);
+				reject(err);
 				return true;
 			end
 		end
 
 		if iq_cache:get(cache_key) then
-			error("choose another iq stanza id attribute")
+			reject(errutil.new({
+				type = "modify", condition = "conflict",
+				text = "iq stanza id attribute already used",
+			}));
+			return;
 		end
 
 		self:hook(result_event, result_handler);
 		self:hook(error_event, error_handler);
 
 		local timeout_handle = self:add_timer(timeout or 120, function ()
-			reject("timeout");
+			reject(errutil.new({
+				type = "wait", condition = "remote-server-timeout",
+				text = "IQ stanza timed out",
+			}));
 			self:unhook(result_event, result_handler);
 			self:unhook(error_event, error_handler);
 			iq_cache:set(cache_key, nil);
@@ -420,7 +433,10 @@ function api:send_iq(stanza, origin, timeout)
 		});
 
 		if not ok then
-			reject("cache insertion failure");
+			reject(errutil.new({
+				type = "wait", condition = "internal-server-error",
+				text = "Could not store IQ tracking data"
+			}));
 			return;
 		end
 
