@@ -33,8 +33,20 @@ local function coerce(ok, err, ...)
 	return ok, new_err, ...;
 end
 
+local function from_stanza(stanza, context)
+	local error_type, condition, text = stanza:get_error();
+	return setmetatable({
+		type = error_type or "cancel";
+		condition = condition or "undefined-condition";
+		text = text;
+
+		context = context or { stanza = stanza };
+	}, error_mt);
+end
+
 return {
 	new = new;
 	coerce = coerce;
 	is_err = is_err;
+	from_stanza = from_stanza;
 }
