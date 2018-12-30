@@ -1111,9 +1111,6 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	wait();
 	if ret then
 		return true, "pong from " .. ret.stanza.attr.from;
-	elseif type(err) == "table" and st.is_stanza(err.stanza) then
-		local t, cond, text = err.stanza:get_error();
-		return false, text or cond or t;
 	else
 		return false, tostring(err);
 	end
