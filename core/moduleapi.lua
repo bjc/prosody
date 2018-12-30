@@ -397,9 +397,7 @@ function api:send_iq(stanza, origin, timeout)
 
 		local function error_handler(event)
 			if event.stanza.attr.from == stanza.attr.to then
-				local error_type, condition, text = event.stanza:get_error();
-				local err = errutil.new({ type = error_type, condition = condition, text = text }, event);
-				reject(err);
+				reject(errutil.from_stanza(event.stanza), event);
 				return true;
 			end
 		end
