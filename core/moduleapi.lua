@@ -14,6 +14,8 @@ local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local st = require "util.stanza";
+local cache = require "util.cache";
+local promise = require "util.promise";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -364,14 +366,14 @@ end
 function api:send_iq(stanza, origin, timeout)
 	local iq_cache = self._iq_cache;
 	if not iq_cache then
-		iq_cache = require "util.cache".new(256, function (_, iq)
+		iq_cache = cache.new(256, function (_, iq)
 			iq.reject("evicted");
 			self:unhook(iq.result_event, iq.result_handler);
 			self:unhook(iq.error_event, iq.error_handler);
 		end);
 		self._iq_cache = iq_cache;
 	end
-	return require "util.promise".new(function (resolve, reject)
+	return promise.new(function (resolve, reject)
 		local event_type;
 		if stanza.attr.from == self.host then
 			event_type = "host";
