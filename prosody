@@ -80,4 +80,4 @@ end
 
 loop();
 
-startup.shutdown();
+thread:run(startup.shutdown);
