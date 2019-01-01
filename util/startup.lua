@@ -624,6 +624,22 @@ function startup.make_dummy_hosts()
 	end
 end
 
+function startup.cleanup()
+	prosody.log("info", "Shutdown status: Cleaning up");
+	prosody.events.fire_event("server-cleanup");
+end
+
+function startup.shutdown()
+	prosody.log("info", "Shutting down...");
+	startup.cleanup();
+	prosody.events.fire_event("server-stopped");
+	prosody.log("info", "Shutdown complete");
+
+	prosody.log("debug", "Shutdown reason was: %s", prosody.shutdown_reason or "not specified");
+	prosody.log("debug", "Exiting with status code: %d", prosody.shutdown_code or 0);
+	os.exit(prosody.shutdown_code);
+end
+
 -- prosodyctl only
 function startup.prosodyctl()
 	prosody.process_type = "prosodyctl";

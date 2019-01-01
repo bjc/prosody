@@ -78,18 +78,6 @@ local function loop()
 	end
 end
 
-local function cleanup()
-	prosody.log("info", "Shutdown status: Cleaning up");
-	prosody.events.fire_event("server-cleanup");
-end
-
 loop();
 
-prosody.log("info", "Shutting down...");
-cleanup();
-prosody.events.fire_event("server-stopped");
-prosody.log("info", "Shutdown complete");
-
-prosody.log("debug", "Shutdown reason was: %s", prosody.shutdown_reason or "not specified");
-prosody.log("debug", "Exiting with status code: %d", prosody.shutdown_code or 0);
-os.exit(prosody.shutdown_code, true);
+startup.shutdown();
