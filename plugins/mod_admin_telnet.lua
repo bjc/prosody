@@ -496,6 +496,9 @@ function def_env.config:load(filename, format)
 end
 
 function def_env.config:get(host, key)
+	if key == nil then
+		host, key = "*", host;
+	end
 	local config_get = require "core.configmanager".get
 	return true, tostring(config_get(host, key));
 end
