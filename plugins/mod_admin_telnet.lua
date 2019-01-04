@@ -1543,7 +1543,7 @@ function def_env.stats:show(filter)
 	local stats, changed, extra = require "core.statsmanager".get_stats();
 	local available, displayed = 0, 0;
 	local displayed_stats = new_stats_context(self);
-	for name, value in pairs(stats) do
+	for name, value in iterators.sorted_pairs(stats) do
 		available = available + 1;
 		if not filter or name:match(filter) then
 			displayed = displayed + 1;
