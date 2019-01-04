@@ -32,6 +32,7 @@ local envload = require "util.envload".envload;
 local envloadfile = require "util.envload".envloadfile;
 local has_pposix, pposix = pcall(require, "util.pposix");
 local async = require "util.async";
+local serialize = require "util.serialization".new({ fatal = false, unquoted = true});
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -500,7 +501,7 @@ function def_env.config:get(host, key)
 		host, key = "*", host;
 	end
 	local config_get = require "core.configmanager".get
-	return true, tostring(config_get(host, key));
+	return true, serialize(config_get(host, key));
 end
 
 function def_env.config:reload()
