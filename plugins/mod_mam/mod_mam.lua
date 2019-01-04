@@ -375,7 +375,7 @@ if cleanup_after ~= "never" then
 				sum = sum + tonumber(ok) or 0;
 			end
 		end
-		module:log("info", "Deleted expired %d messages for %d users", sum, num_users);
+		module:log("info", "Deleted %d expired messages for %d users", sum, num_users);
 	end);
 
 	cleanup_task = module:add_timer(1, function ()
