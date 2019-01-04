@@ -508,9 +508,9 @@ function api:open_store(name, store_type)
 	return require"core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
-function api:measure(name, stat_type)
+function api:measure(name, stat_type, conf)
 	local measure = require "core.statsmanager".measure;
-	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name);
+	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name, conf);
 end
 
 function api:measure_object_event(events_object, event_name, stat_name)
