@@ -60,9 +60,9 @@ local changed_stats = {};
 local stats_extra = {};
 
 if stats then
-	function measure(type, name)
+	function measure(type, name, conf)
 		local f = assert(stats[type], "unknown stat type: "..type);
-		return f(name);
+		return f(name, conf);
 	end
 
 	if stats_interval then
