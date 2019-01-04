@@ -495,9 +495,9 @@ function def_env.config:load(filename, format)
 	return true, "Config loaded";
 end
 
-function def_env.config:get(host, section, key)
+function def_env.config:get(host, key)
 	local config_get = require "core.configmanager".get
-	return true, tostring(config_get(host, section, key));
+	return true, tostring(config_get(host, key));
 end
 
 function def_env.config:reload()
