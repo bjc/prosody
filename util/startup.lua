@@ -395,6 +395,13 @@ function startup.init_http_client()
 		{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
 end
 
+function startup.init_promise()
+	local promise = require "util.promise";
+
+	local timer = require "util.timer";
+	promise.set_nexttick(function(f) return timer.add_task(0, f); end);
+end
+
 function startup.init_data_store()
 	require "core.storagemanager";
 end
@@ -647,6 +654,7 @@ function startup.prosody()
 	startup.log_greeting();
 	startup.log_startup_warnings();
 	startup.load_secondary_libraries();
+	startup.init_promise();
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();
