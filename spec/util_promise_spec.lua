@@ -668,4 +668,18 @@ describe("util.promise", function ()
 			assert.spy(on_rejected).was_called_with(test_error);
 		end);
 	end);
+	describe("set_nexttick()", function ()
+		it("works", function ()
+			local next_tick = spy.new(function (f)
+				f();
+			end)
+			local cb = spy.new();
+			promise.set_nexttick(next_tick);
+			promise.new(function (y, _)
+				y("okay");
+			end):next(cb);
+			assert.spy(next_tick).was.called();
+			assert.spy(cb).was.called_with("okay");
+		end);
+	end)
 end);

@@ -78,14 +78,20 @@ local function new_resolve_functions(p)
 	return _resolve, _reject;
 end
 
+local next_tick = function (f)
+	f();
+end
+
 local function new(f)
 	local p = setmetatable({ _state = "pending", _next = next_pending, _pending_on_fulfilled = {}, _pending_on_rejected = {} }, promise_mt);
 	if f then
-		local resolve, reject = new_resolve_functions(p);
-		local ok, ret = xpcall(f, debug.traceback, resolve, reject);
-		if not ok and p._state == "pending" then
-			reject(ret);
-		end
+		next_tick(function()
+			local resolve, reject = new_resolve_functions(p);
+			local ok, ret = xpcall(f, debug.traceback, resolve, reject);
+			if not ok and p._state == "pending" then
+				reject(ret);
+			end
+		end);
 	end
 	return p;
 end
@@ -203,4 +209,5 @@ return {
 	race = race;
 	try = try;
 	is_promise = is_promise;
+	set_nexttick = function(new_next_tick) next_tick = new_next_tick; end;
 }
