@@ -87,6 +87,9 @@ function startup.init_logging()
 	-- Initialize logging
 	local loggingmanager = require "core.loggingmanager"
 	loggingmanager.reload_logging();
+	prosody.events.add_handler("config-reloaded", function ()
+		prosody.events.fire_event("reopen-log-files");
+	end);
 	prosody.events.add_handler("reopen-log-files", function ()
 		loggingmanager.reload_logging();
 		prosody.events.fire_event("logging-reloaded");
