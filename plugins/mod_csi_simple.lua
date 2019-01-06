@@ -73,6 +73,9 @@ module:hook("csi-is-stanza-important", function (event)
 		if stanza:get_child("body") then
 			return true;
 		end
+		if stanza:get_child("subject") then
+			return true;
+		end
 		return false;
 	end
 	return true;
