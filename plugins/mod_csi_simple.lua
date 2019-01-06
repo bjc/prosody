@@ -63,8 +63,10 @@ module:hook("csi-is-stanza-important", function (event)
 		if st_type == "headline" then
 			return false;
 		end
-		local body = stanza:get_child_text("body");
-		return body;
+		if stanza:get_child("body") then
+			return true;
+		end
+		return false;
 	end
 	return true;
 end, -1);
