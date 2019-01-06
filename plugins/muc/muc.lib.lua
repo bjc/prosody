@@ -23,7 +23,7 @@ local resourceprep = require "util.encodings".stringprep.resourceprep;
 local st = require "util.stanza";
 local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
-local id = require "util.id";
+local new_id = require "util.id".medium;
 
 local log = module._log;
 
@@ -1039,7 +1039,7 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 	local from = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(from);
 	if not stanza.attr.id then
-		stanza.attr.id = id.medium()
+		stanza.attr.id = new_id()
 	end
 	if module:fire_event("muc-occupant-groupchat", {
 		room = self; origin = origin; stanza = stanza; from = from; occupant = occupant;
