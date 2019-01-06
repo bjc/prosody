@@ -66,6 +66,10 @@ module:hook("csi-is-stanza-important", function (event)
 		if stanza:get_child("sent", "urn:xmpp:carbons:2") then
 			return true;
 		end
+		local forwarded = stanza:find("{urn:xmpp:carbons:2}received/{urn:xmpp:forward:0}/{jabber:client}message");
+		if forwarded then
+			stanza = forwarded;
+		end
 		if stanza:get_child("body") then
 			return true;
 		end
