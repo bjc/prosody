@@ -358,14 +358,18 @@ if cleanup_after ~= "never" then
 		local users = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do
-			if date < cut_off then
+			if date <= cut_off then
 				module:log("debug", "Messages from %q should be expired", date);
 				local messages_this_day = cleanup_storage:get(date);
 				if messages_this_day then
 					for user in pairs(messages_this_day) do
 						users[user] = true;
 					end
-					cleanup_storage:set(date, nil);
+					if date < cut_off then
+						-- Messages from the same day as the cut-off might not have expired yet,
+						-- but all earlier will have, so clear storage for those days.
+						cleanup_storage:set(date, nil);
+					end
 				end
 			end
 		end
