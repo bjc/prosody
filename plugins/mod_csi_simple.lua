@@ -63,6 +63,9 @@ module:hook("csi-is-stanza-important", function (event)
 		if st_type == "headline" then
 			return false;
 		end
+		if stanza:get_child("sent", "urn:xmpp:carbons:2") then
+			return true;
+		end
 		if stanza:get_child("body") then
 			return true;
 		end
