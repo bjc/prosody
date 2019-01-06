@@ -172,7 +172,7 @@ if have_signal then
 		signal.signal("SIGHUP", function ()
 			module:log("info", "Received SIGHUP");
 			prosody.reload_config();
-			prosody.reopen_logfiles();
+			-- this also reloads logging
 		end);
 
 		signal.signal("SIGINT", function ()
