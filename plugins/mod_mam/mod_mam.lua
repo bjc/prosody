@@ -351,8 +351,10 @@ if cleanup_after ~= "never" then
 	function schedule_cleanup(username, date)
 		cleanup_map:set(date or datestamp(), username, true);
 	end
+	local cleanup_time = module:measure("cleanup", "times");
 
 	cleanup_runner = require "util.async".runner(function ()
+		local cleanup_done = cleanup_time();
 		local users = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do
@@ -376,6 +378,7 @@ if cleanup_after ~= "never" then
 			end
 		end
 		module:log("info", "Deleted %d expired messages for %d users", sum, num_users);
+		cleanup_done();
 	end);
 
 	cleanup_task = module:add_timer(1, function ()
