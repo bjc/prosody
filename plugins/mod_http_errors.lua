@@ -26,21 +26,24 @@ local html = [[
 <meta charset="utf-8">
 <title>{title}</title>
 <style>
-body{
-	margin-top:14%;
-	text-align:center;
-	background-color:#F8F8F8;
-	font-family:sans-serif;
+body {
+	margin-top : 14%;
+	text-align : center;
+	background-color : #F8F8F8;
+	font-family : sans-serif
 }
-h1{
-	font-size:xx-large;
+
+h1 {
+	font-size : xx-large
 }
-p{
-	font-size:x-large;
+
+p {
+	font-size : x-large
 }
+
 p+p {
-	font-size:large;
-	font-family:courier;
+	font-size : large;
+	font-family : courier
 }
 </style>
 </head>
