@@ -63,8 +63,23 @@ module:hook("csi-is-stanza-important", function (event)
 		if st_type == "headline" then
 			return false;
 		end
-		local body = stanza:get_child_text("body");
-		return body;
+		if stanza:get_child("sent", "urn:xmpp:carbons:2") then
+			return true;
+		end
+		local forwarded = stanza:find("{urn:xmpp:carbons:2}received/{urn:xmpp:forward:0}/{jabber:client}message");
+		if forwarded then
+			stanza = forwarded;
+		end
+		if stanza:get_child("body") then
+			return true;
+		end
+		if stanza:get_child("subject") then
+			return true;
+		end
+		if stanza:get_child("encryption", "urn:xmpp:eme:0") then
+			return true;
+		end
+		return false;
 	end
 	return true;
 end, -1);
