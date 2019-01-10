@@ -83,7 +83,7 @@ local jid_split = require "util.jid".prepped_split;
 local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
-local command = arg[1];
+local command = table.remove(arg, 1);
 
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
@@ -1365,7 +1365,7 @@ local command_runner = async.runner(function ()
 		os.exit(0);
 	end
 
-	os.exit(commands[command]({ select(2, unpack(arg)) }));
+	os.exit(commands[command](arg));
 end, watchers);
 
 command_runner:run(true);
