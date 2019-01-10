@@ -229,7 +229,8 @@ local function isrunning()
 	return true, signal.kill(pid, 0) == 0;
 end
 
-local function start(source_dir)
+local function start(source_dir, lua)
+	lua = lua and lua .. " " or "";
 	local ok, ret = isrunning();
 	if not ok then
 		return ok, ret;
@@ -238,9 +239,9 @@ local function start(source_dir)
 		return false, "already-running";
 	end
 	if not source_dir then
-		os.execute("./prosody");
+		os.execute(lua .. "./prosody");
 	else
-		os.execute(source_dir.."/../../bin/prosody");
+		os.execute(lua .. source_dir.."/../../bin/prosody");
 	end
 	return true;
 end
