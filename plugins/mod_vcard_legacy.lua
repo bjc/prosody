@@ -130,10 +130,6 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 		end
 	end
 
-	if not vcard_temp.tags[1] then
-		vcard_temp = st.deserialize(vcards:get(jid_split(stanza.attr.to) or origin.username)) or vcard_temp;
-	end
-
 	origin.send(st.reply(stanza):add_child(vcard_temp));
 	return true;
 end);
@@ -310,3 +306,21 @@ end
 module:hook("pre-presence/full", inject_xep153, 1);
 module:hook("pre-presence/bare", inject_xep153, 1);
 module:hook("pre-presence/host", inject_xep153, 1);
+
+module:hook("resource-bind", function (event)
+	local session = event.session;
+	local username = session.username;
+	local vcard_temp = vcards:get(username);
+	if not vcard_temp then
+		session.log("debug", "No legacy vCard to migrate or already migrated");
+		return;
+	end
+	vcard_temp = st.deserialize(vcard_temp);
+	local pep_service = mod_pep.get_pep_service(username);
+	local ok, err = save_to_pep(pep_service, true, vcard_to_pep(vcard_temp));
+	if ok and vcards:set(username, nil) then
+		session.log("info", "Migrated vCard-temp to PEP");
+	else
+		session.log("info", "Failed to migrate vCard-temp to PEP: %s", err or "problem emptying 'vcard' store");
+	end
+end);
