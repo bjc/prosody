@@ -222,7 +222,7 @@ function commands.start(arg)
 	end
 
 	--luacheck: ignore 411/ret
-	local ok, ret = prosodyctl.start(prosody.paths.source);
+	local ok, ret = prosodyctl.start(prosody.paths.source, arg[-1]);
 	if ok then
 		local daemonize = configmanager.get("*", "daemonize");
 		if daemonize == nil then
