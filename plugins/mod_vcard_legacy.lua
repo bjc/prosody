@@ -143,18 +143,11 @@ local node_defaults = {
 	_defaults_only = true;
 };
 
-module:hook("iq-set/self/vcard-temp:vCard", function (event)
-	local origin, stanza = event.origin, event.stanza;
-	local pep_service = mod_pep.get_pep_service(origin.username);
-
-	local vcard_temp = stanza.tags[1];
+function vcard_to_pep(vcard_temp)
+	local avatars = {};
 
 	local vcard4 = st.stanza("item", { xmlns = "http://jabber.org/protocol/pubsub", id = "current" })
 		:tag("vcard", { xmlns = 'urn:ietf:params:xml:ns:vcard-4.0' });
-
-	if pep_service:purge("urn:xmpp:avatar:metadata", origin.full_jid) then
-		pep_service:purge("urn:xmpp:avatar:data", origin.full_jid);
-	end
 
 	vcard4:tag("fn"):text_tag("text", vcard_temp:get_child_text("FN")):up();
 
@@ -248,19 +241,39 @@ module:hook("iq-set/self/vcard-temp:vCard", function (event)
 					:tag("data", { xmlns="urn:xmpp:avatar:data" })
 						:text(avatar_payload);
 
-				local ok, err = pep_service:publish("urn:xmpp:avatar:data", origin.full_jid, avatar_hash, avatar_data, node_defaults)
-				if ok then
-					ok, err = pep_service:publish("urn:xmpp:avatar:metadata", origin.full_jid, avatar_hash, avatar_meta, node_defaults);
-				end
-				if not ok then
-					handle_error(origin, stanza, err);
-					return true;
-				end
+				table.insert(avatars, { hash = avatar_hash, meta = avatar_meta, data = avatar_data });
 			end
 		end
 	end
+	return vcard4, avatars;
+end
 
-	local ok, err = pep_service:publish("urn:xmpp:vcard4", origin.full_jid, "current", vcard4, node_defaults);
+function save_to_pep(pep_service, actor, vcard4, avatars)
+
+	if pep_service:purge("urn:xmpp:avatar:metadata", actor) then
+		pep_service:purge("urn:xmpp:avatar:data", actor);
+	end
+
+	for _, avatar in ipairs(avatars) do
+		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, node_defaults)
+		if ok then
+			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, node_defaults);
+		end
+		if not ok then
+			return ok, err;
+		end
+	end
+
+	return pep_service:publish("urn:xmpp:vcard4", actor, "current", vcard4, node_defaults);
+end
+
+module:hook("iq-set/self/vcard-temp:vCard", function (event)
+	local origin, stanza = event.origin, event.stanza;
+	local pep_service = mod_pep.get_pep_service(origin.username);
+
+	local vcard_temp = stanza.tags[1];
+
+	local ok, err = save_to_pep(pep_service, origin.full_jid, vcard_to_pep(vcard_temp));
 	if ok then
 		origin.send(st.reply(stanza));
 	else
