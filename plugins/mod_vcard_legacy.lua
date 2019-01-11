@@ -254,10 +254,18 @@ function save_to_pep(pep_service, actor, vcard4, avatars)
 		pep_service:purge("urn:xmpp:avatar:data", actor);
 	end
 
+	local avatar_defaults = node_defaults;
+	if #avatars > 1 then
+		avatar_defaults = {};
+		for k,v in pairs(node_defaults) do
+			avatar_defaults[k] = v;
+		end
+		avatar_defaults.max_items = #avatars;
+	end
 	for _, avatar in ipairs(avatars) do
-		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, node_defaults)
+		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults)
 		if ok then
-			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, node_defaults);
+			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, avatar_defaults);
 		end
 		if not ok then
 			return ok, err;
