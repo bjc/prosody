@@ -9,6 +9,7 @@ TRUNK
 -   Archive quotas
 -   mod\_mimicking
 -   Rewritten migrator
+-   SCRAM-SHA-256
 
 0.11.0
 ======
