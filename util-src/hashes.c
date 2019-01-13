@@ -99,7 +99,7 @@ MAKE_HMAC_FUNCTION(Lhmac_sha256, EVP_sha256, SHA256_DIGEST_LENGTH, SHA256_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_sha512, EVP_sha512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, EVP_md5, MD5_DIGEST_LENGTH, MD5_CTX)
 
-static int LscramHi(lua_State *L) {
+static int Lpbkdf2_sha1(lua_State *L) {
 	unsigned char out[SHA_DIGEST_LENGTH];
 
 	size_t pass_len, salt_len;
@@ -127,7 +127,8 @@ static const luaL_Reg Reg[] = {
 	{ "hmac_sha256",	Lhmac_sha256	},
 	{ "hmac_sha512",	Lhmac_sha512	},
 	{ "hmac_md5",		Lhmac_md5	},
-	{ "scram_Hi_sha1",	LscramHi	},
+	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
+	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
 	{ NULL,			NULL		}
 };
 
