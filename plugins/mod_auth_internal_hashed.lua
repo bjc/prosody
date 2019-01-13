@@ -9,7 +9,7 @@
 
 local max = math.max;
 
-local getAuthenticationDatabaseSHA1 = require "util.sasl.scram".getAuthenticationDatabaseSHA1;
+local scram_hashers = require "util.sasl.scram".hashers;
 local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
@@ -21,7 +21,8 @@ local host = module.host;
 
 local accounts = module:open_store("accounts");
 
-
+local hash_name = module:get_option_string("password_hash", "SHA-1");
+local get_auth_db = assert(scram_hashers[hash_name], "SCRAM-"..hash_name.." not supported by SASL library");
 
 -- Default; can be set per-user
 local default_iteration_count = 4096;
@@ -49,7 +50,7 @@ function provider.test_password(username, password)
 		return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 	end
 
-	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
+	local valid, stored_key, server_key = get_auth_db(password, credentials.salt, credentials.iteration_count);
 
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
@@ -67,7 +68,7 @@ function provider.set_password(username, password)
 	if account then
 		account.salt = generate_uuid();
 		account.iteration_count = max(account.iteration_count or 0, default_iteration_count);
-		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
+		local valid, stored_key, server_key = get_auth_db(password, account.salt, account.iteration_count);
 		local stored_key_hex = to_hex(stored_key);
 		local server_key_hex = to_hex(server_key);
 
@@ -98,7 +99,7 @@ function provider.create_user(username, password)
 		return accounts:set(username, {});
 	end
 	local salt = generate_uuid();
-	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, default_iteration_count);
+	local valid, stored_key, server_key = get_auth_db(password, salt, default_iteration_count);
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
 	return accounts:set(username, {
@@ -116,7 +117,7 @@ function provider.get_sasl_handler()
 		plain_test = function(_, username, password, realm)
 			return usermanager.test_password(username, realm, password), true;
 		end,
-		scram_sha_1 = function(_, username)
+		["scram_"..hash_name:gsub("%-","_"):lower()] = function(_, username)
 			local credentials = accounts:get(username);
 			if not credentials then return; end
 			if credentials.password then
