@@ -26,6 +26,7 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
+#include <openssl/evp.h>
 
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
@@ -137,54 +138,18 @@ MAKE_HMAC_FUNCTION(Lhmac_sha512, EVP_sha512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, EVP_md5, MD5_DIGEST_LENGTH, MD5_CTX)
 
 static int LscramHi(lua_State *L) {
-	union xory {
-		unsigned char bytes[SHA_DIGEST_LENGTH];
-		uint32_t quadbytes[SHA_DIGEST_LENGTH / 4];
-	};
-	int i;
-	SHA_CTX ctx, ctxo;
-	unsigned char Ust[SHA_DIGEST_LENGTH];
-	union xory Und;
-	union xory res;
-	size_t str_len, salt_len;
-	struct hash_desc desc;
-	const char *str = luaL_checklstring(L, 1, &str_len);
-	const char *salt = luaL_checklstring(L, 2, &salt_len);
-	char *salt2;
+	unsigned char out[SHA_DIGEST_LENGTH];
+
+	size_t pass_len, salt_len;
+	const char *pass = luaL_checklstring(L, 1, &pass_len);
+	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
 	const int iter = luaL_checkinteger(L, 3);
 
-	desc.Init = (int (*)(void *))SHA1_Init;
-	desc.Update = (int (*)(void *, const void *, size_t))SHA1_Update;
-	desc.Final = (int (*)(unsigned char *, void *))SHA1_Final;
-	desc.digestLength = SHA_DIGEST_LENGTH;
-	desc.ctx = &ctx;
-	desc.ctxo = &ctxo;
-
-	salt2 = malloc(salt_len + 4);
-
-	if(salt2 == NULL) {
-		return luaL_error(L, "Out of memory in scramHi");
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha1(), SHA_DIGEST_LENGTH, out) == 0) {
+		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	memcpy(salt2, salt, salt_len);
-	memcpy(salt2 + salt_len, "\0\0\0\1", 4);
-	hmac(&desc, str, str_len, salt2, salt_len + 4, Ust);
-	free(salt2);
-
-	memcpy(res.bytes, Ust, sizeof(res));
-
-	for(i = 1; i < iter; i++) {
-		int j;
-		hmac(&desc, str, str_len, (char *)Ust, sizeof(Ust), Und.bytes);
-
-		for(j = 0; j < SHA_DIGEST_LENGTH / 4; j++) {
-			res.quadbytes[j] ^= Und.quadbytes[j];
-		}
-
-		memcpy(Ust, Und.bytes, sizeof(Ust));
-	}
-
-	lua_pushlstring(L, (char *)res.bytes, SHA_DIGEST_LENGTH);
+	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
 
 	return 1;
 }
