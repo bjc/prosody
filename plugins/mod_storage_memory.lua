@@ -22,6 +22,10 @@ local function _purge_store(self, username)
 	return true;
 end
 
+local function _users(self)
+	return next, self.store, nil;
+end
+
 local keyval_store = {};
 keyval_store.__index = keyval_store;
 
@@ -39,8 +43,12 @@ end
 
 keyval_store.purge = _purge_store;
 
+keyval_store.users = _users;
+
 local archive_store = {};
 archive_store.__index = archive_store;
+
+archive_store.users = _users;
 
 function archive_store:append(username, key, value, when, with)
 	if is_stanza(value) then
