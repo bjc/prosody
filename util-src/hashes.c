@@ -116,6 +116,23 @@ static int Lpbkdf2_sha1(lua_State *L) {
 	return 1;
 }
 
+
+static int Lpbkdf2_sha256(lua_State *L) {
+	unsigned char out[SHA256_DIGEST_LENGTH];
+
+	size_t pass_len, salt_len;
+	const char *pass = luaL_checklstring(L, 1, &pass_len);
+	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
+	const int iter = luaL_checkinteger(L, 3);
+
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha256(), SHA256_DIGEST_LENGTH, out) == 0) {
+		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
+	}
+
+	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
+	return 1;
+}
+
 static const luaL_Reg Reg[] = {
 	{ "sha1",		Lsha1		},
 	{ "sha224",		Lsha224		},
@@ -129,6 +146,7 @@ static const luaL_Reg Reg[] = {
 	{ "hmac_md5",		Lhmac_md5	},
 	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
 	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
+	{ "pbkdf2_hmac_sha256",	Lpbkdf2_sha256	},
 	{ NULL,			NULL		}
 };
 
