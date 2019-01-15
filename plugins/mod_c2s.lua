@@ -290,7 +290,7 @@ function listener.onconnect(conn)
 			if data then
 				local ok, err = stream:feed(data);
 				if not ok then
-					log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+					log("debug", "Received invalid XML (%s) %d bytes: %q", tostring(err), #data, data:sub(1, 300));
 					session:close("not-well-formed");
 				end
 			end
