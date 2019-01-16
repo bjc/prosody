@@ -1255,7 +1255,7 @@ local function format_stat(type, value, ref_value)
 	--do return tostring(value) end
 	if type == "duration" then
 		if ref_value < 0.001 then
-			return ("%d µs"):format(value*1000000);
+			return ("%g µs"):format(value*1000000);
 		elseif ref_value < 0.9 then
 			return ("%0.2f ms"):format(value*1000);
 		end
