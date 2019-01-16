@@ -50,6 +50,9 @@ local resting_session = { -- Resting, not dead
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
 		end;
+		reset_stream = function (session)
+			session.log("debug", "Attempt to reset stream of already-closed session");
+		end;
 		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
 
