@@ -15,6 +15,7 @@ for i = 0, 255 do
 	local u = format("%%%02x", i);
 	url_codes[c] = u;
 	url_codes[u] = c;
+	url_codes[u:upper()] = c;
 end
 local function urlencode(s)
 	return s and (s:gsub("[^a-zA-Z0-9.~_-]", url_codes));
