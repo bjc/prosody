@@ -28,6 +28,11 @@ describe("util.http", function()
 		it("should decode important URL characters", function()
 			assert.are.equal("This & that = something", http.urldecode("This%20%26%20that%20%3d%20something"), "Important URL chars escaped");
 		end);
+
+		it("should decode both lower and uppercase", function ()
+			assert.are.equal("This & that = {something}.", http.urldecode("This%20%26%20that%20%3D%20%7Bsomething%7D%2E"), "Important URL chars escaped");
+		end);
+
 	end);
 
 	describe("#formencode()", function()
