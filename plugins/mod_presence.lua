@@ -63,6 +63,7 @@ function handle_normal_presence(origin, stanza)
 			core_post_stanza(origin, stanza, true);
 		end
 	end
+	stanza.attr.to = nil;
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
 		module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
 		origin.presence = stanza; -- FIXME repeated later
