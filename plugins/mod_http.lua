@@ -14,6 +14,7 @@ local moduleapi = require "core.moduleapi";
 local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
 local normalize_path = require "util.http".normalize_path;
+local set = require "util.set";
 
 local server = require "net.http.server";
 
@@ -23,7 +24,7 @@ server.set_option("body_size_limit", module:get_option_number("http_max_content_
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
 
 -- CORS settigs
-local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "POST", "PUT", "OPTIONS" });
+local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "OPTIONS" });
 local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
 local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
 
@@ -114,9 +115,11 @@ function module.add_host(module)
 		apps[app_name] = apps[app_name] or {};
 		local app_handlers = apps[app_name];
 
+		local app_methods = opt_methods;
+
 		local function cors_handler(event_data)
 			local request, response = event_data.request, event_data.response;
-			apply_cors_headers(response, opt_methods, opt_headers, opt_max_age, request.headers.origin);
+			apply_cors_headers(response, app_methods, opt_headers, opt_max_age, request.headers.origin);
 		end
 
 		local function options_handler(event_data)
@@ -127,6 +130,10 @@ function module.add_host(module)
 		for key, handler in pairs(event.item.route or {}) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
+				local method = event_name:match("^%S+");
+				if not app_methods:contains(method) then
+					app_methods = app_methods + set.new{ method };
+				end
 				local options_event_name = event_name:gsub("^%S+", "OPTIONS");
 				if type(handler) ~= "function" then
 					local data = handler;
