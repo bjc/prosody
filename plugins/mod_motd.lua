@@ -18,12 +18,10 @@ local st = require "util.stanza";
 motd_text = motd_text:gsub("^%s*(.-)%s*$", "%1"):gsub("\n[ \t]+", "\n"); -- Strip indentation from the config
 
 module:hook("presence/initial", function (event)
-		local session, stanza = event.origin, event.stanza;
-		if not stanza.attr.type and not stanza.attr.to then
-			local motd_stanza =
-				st.message({ to = session.full_jid, from = motd_jid })
-					:tag("body"):text(motd_text);
-			module:send(motd_stanza);
-			module:log("debug", "MOTD send to user %s", session.full_jid);
-		end
+	local session, stanza = event.origin, event.stanza;
+	local motd_stanza =
+		st.message({ to = session.full_jid, from = motd_jid })
+			:tag("body"):text(motd_text);
+	module:send(motd_stanza);
+	module:log("debug", "MOTD send to user %s", session.full_jid);
 end, 1);
