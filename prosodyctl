@@ -1300,8 +1300,6 @@ local command_runner = async.runner(function ()
 			end
 		end
 
-		table.remove(arg, 1);
-
 		local module = modulemanager.get_module("*", module_name);
 		if not module then
 			show_message("Failed to load module '"..module_name.."': Unknown error");
