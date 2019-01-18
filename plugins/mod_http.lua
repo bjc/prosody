@@ -119,9 +119,15 @@ function module.add_host(module)
 			apply_cors_headers(response, opt_methods, opt_headers, opt_max_age, request.headers.origin);
 		end
 
+		local function options_handler(event_data)
+			cors_handler(event_data);
+			return "";
+		end
+
 		for key, handler in pairs(event.item.route or {}) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
+				local options_event_name = event_name:gsub("^%S+", "OPTIONS");
 				if type(handler) ~= "function" then
 					local data = handler;
 					handler = function () return data; end
@@ -140,6 +146,7 @@ function module.add_host(module)
 					app_handlers[event_name] = handler;
 					module:hook_object_event(server, event_name, handler);
 					module:hook_object_event(server, event_name, cors_handler, 1);
+					module:hook_object_event(server, options_event_name, options_handler, -1);
 				else
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
 				end
