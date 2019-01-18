@@ -159,7 +159,7 @@ function handle_request(event)
 	end
 
 	if not check_origin(request.headers.origin or "") then
-		module:log("debug", "Origin %s is not allowed by 'cross_domain_websocket'", request.headers.origin or "(missing header)");
+		module:log("debug", "Origin %s is not allowed by 'cross_domain_websocket' [ %s ]", request.headers.origin or "(missing header)", cross_domain);
 		return 403;
 	end
 
