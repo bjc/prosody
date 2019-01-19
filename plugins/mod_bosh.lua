@@ -48,7 +48,6 @@ local cross_domain = module:get_option("cross_domain_bosh");
 
 if cross_domain ~= nil then
 	module:log("info", "The 'cross_domain_bosh' option has been deprecated");
-	module:depends("http_crossdomain");
 end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;

@@ -32,7 +32,6 @@ local consider_websocket_secure = module:get_option_boolean("consider_websocket_
 local cross_domain = module:get_option("cross_domain_websocket");
 if cross_domain ~= nil then
 	module:log("info", "The 'cross_domain_websocket' option has been deprecated");
-	module:depends("http_crossdomain");
 end
 local xmlns_framing = "urn:ietf:params:xml:ns:xmpp-framing";
 local xmlns_streams = "http://etherx.jabber.org/streams";
