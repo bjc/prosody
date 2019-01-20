@@ -378,7 +378,7 @@ if cleanup_after ~= "never" then
 			local ok, err = archive:delete(user, { ["end"] = os.time() - cleanup_after; })
 			if ok then
 				num_users = num_users + 1;
-				sum = sum + tonumber(ok) or 0;
+				sum = sum + (tonumber(ok) or 0);
 			end
 		end
 		module:log("info", "Deleted %d expired messages for %d users", sum, num_users);
