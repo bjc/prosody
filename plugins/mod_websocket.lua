@@ -338,6 +338,11 @@ function module.add_host(module)
 		url_components.path = nil;
 		local this_origin = url.build(url_components);
 		local local_cross_domain = module:get_option_set("cross_domain_websocket", { this_origin });
+		if local_cross_domain:contains(true) then
+			module:log("error", "cross_domain_websocket = true only works in the global section");
+			return;
+		end
+
 		-- Don't add / remove something added by another host
 		-- This might be weird with random load order
 		local_cross_domain:exclude(cross_domain);
