@@ -74,8 +74,9 @@ test:
 
 integration-test: all
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
-	$(SCANSION) -d ./spec/scansion
-	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop
+	$(SCANSION) -d ./spec/scansion; R=$$? \
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
+	exit $$R
 
 coverage:
 	-rm -- luacov.*
