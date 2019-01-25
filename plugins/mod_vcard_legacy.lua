@@ -1,4 +1,4 @@
-local st = require "util.stanza"
+local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 
 local mod_pep = module:depends("pep");
@@ -259,7 +259,7 @@ function save_to_pep(pep_service, actor, vcard4, avatars)
 		avatar_defaults.max_items = #avatars;
 	end
 	for _, avatar in ipairs(avatars) do
-		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults)
+		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults);
 		if ok then
 			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, avatar_defaults);
 		end
