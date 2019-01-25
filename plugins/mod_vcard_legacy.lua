@@ -315,8 +315,15 @@ module:hook("resource-bind", function (event)
 		session.log("debug", "No legacy vCard to migrate or already migrated");
 		return;
 	end
-	vcard_temp = st.deserialize(vcard_temp);
 	local pep_service = mod_pep.get_pep_service(username);
+	if pep_service:get_last_item("urn:xmpp:vcard4", true)
+	or pep_service:get_last_item("urn:xmpp:avatar:metadata", true)
+	or pep_service:get_last_item("urn:xmpp:avatar:data", true) then
+		session.log("debug", "Already PEP data, not overwriting with migrated data");
+		vcards:set(username, nil);
+		return;
+	end
+	vcard_temp = st.deserialize(vcard_temp);
 	local ok, err = save_to_pep(pep_service, true, vcard_to_pep(vcard_temp));
 	if ok and vcards:set(username, nil) then
 		session.log("info", "Migrated vCard-temp to PEP");
