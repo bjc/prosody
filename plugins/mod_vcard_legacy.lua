@@ -307,6 +307,7 @@ module:hook("pre-presence/full", inject_xep153, 1);
 module:hook("pre-presence/bare", inject_xep153, 1);
 module:hook("pre-presence/host", inject_xep153, 1);
 
+if module:get_option_boolean("upgrade_legacy_vcards", true) then
 module:hook("resource-bind", function (event)
 	local session = event.session;
 	local username = session.username;
@@ -331,3 +332,4 @@ module:hook("resource-bind", function (event)
 		session.log("info", "Failed to migrate vCard-temp to PEP: %s", err or "problem emptying 'vcard' store");
 	end
 end);
+end
