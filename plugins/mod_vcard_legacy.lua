@@ -245,30 +245,36 @@ function vcard_to_pep(vcard_temp)
 end
 
 function save_to_pep(pep_service, actor, vcard4, avatars)
+	if avatars then
 
-	if pep_service:purge("urn:xmpp:avatar:metadata", actor) then
-		pep_service:purge("urn:xmpp:avatar:data", actor);
+		if pep_service:purge("urn:xmpp:avatar:metadata", actor) then
+			pep_service:purge("urn:xmpp:avatar:data", actor);
+		end
+
+		local avatar_defaults = node_defaults;
+		if #avatars > 1 then
+			avatar_defaults = {};
+			for k,v in pairs(node_defaults) do
+				avatar_defaults[k] = v;
+			end
+			avatar_defaults.max_items = #avatars;
+		end
+		for _, avatar in ipairs(avatars) do
+			local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults);
+			if ok then
+				ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, avatar_defaults);
+			end
+			if not ok then
+				return ok, err;
+			end
+		end
 	end
 
-	local avatar_defaults = node_defaults;
-	if #avatars > 1 then
-		avatar_defaults = {};
-		for k,v in pairs(node_defaults) do
-			avatar_defaults[k] = v;
-		end
-		avatar_defaults.max_items = #avatars;
-	end
-	for _, avatar in ipairs(avatars) do
-		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults);
-		if ok then
-			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, avatar_defaults);
-		end
-		if not ok then
-			return ok, err;
-		end
+	if vcard4 then
+		return pep_service:publish("urn:xmpp:vcard4", actor, "current", vcard4, node_defaults);
 	end
 
-	return pep_service:publish("urn:xmpp:vcard4", actor, "current", vcard4, node_defaults);
+	return true;
 end
 
 module:hook("iq-set/self/vcard-temp:vCard", function (event)
@@ -317,15 +323,21 @@ module:hook("resource-bind", function (event)
 		return;
 	end
 	local pep_service = mod_pep.get_pep_service(username);
-	if pep_service:get_last_item("urn:xmpp:vcard4", true)
-	or pep_service:get_last_item("urn:xmpp:avatar:metadata", true)
+	vcard_temp = st.deserialize(vcard_temp);
+	local vcard4, avatars = vcard_to_pep(vcard_temp);
+	if pep_service:get_last_item("urn:xmpp:vcard4", true) then
+		vcard4 = nil;
+	end
+	if pep_service:get_last_item("urn:xmpp:avatar:metadata", true)
 	or pep_service:get_last_item("urn:xmpp:avatar:data", true) then
+		avatars = nil;
+	end
+	if not (vcard4 or avatars) then
 		session.log("debug", "Already PEP data, not overwriting with migrated data");
 		vcards:set(username, nil);
 		return;
 	end
-	vcard_temp = st.deserialize(vcard_temp);
-	local ok, err = save_to_pep(pep_service, true, vcard_to_pep(vcard_temp));
+	local ok, err = save_to_pep(pep_service, true, vcard4, avatars);
 	if ok and vcards:set(username, nil) then
 		session.log("info", "Migrated vCard-temp to PEP");
 	else
