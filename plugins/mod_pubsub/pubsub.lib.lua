@@ -295,14 +295,20 @@ end
 
 function handlers.get_items(origin, stanza, items, service)
 	local node = items.attr.node;
-	local item = items:get_child("item");
-	local item_id = item and item.attr.id;
+
+	local requested_items = {};
+	for item in items:childtags("item") do
+		table.insert(requested_items, item.attr.id);
+	end
+	if requested_items[1] == nil then
+		requested_items = nil;
+	end
 
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
-	local ok, results = service:get_items(node, stanza.attr.from, item_id);
+	local ok, results = service:get_items(node, stanza.attr.from, requested_items);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, results));
 		return true;
