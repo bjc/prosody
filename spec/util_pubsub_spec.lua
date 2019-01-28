@@ -170,6 +170,37 @@ describe("util.pubsub", function ()
 
 	end);
 
+	describe("the thing", function ()
+		randomize(false); -- These tests are ordered
+
+		local service = pubsub.new();
+
+		it("creates a node with some items", function ()
+			assert.truthy(service:create("node", true, { max_items = 3 }));
+			assert.truthy(service:publish("node", true, "1", "item 1"));
+			assert.truthy(service:publish("node", true, "2", "item 2"));
+			assert.truthy(service:publish("node", true, "3", "item 3"));
+		end);
+
+		it("should return the requested item", function ()
+			local ok, ret = service:get_items("node", true, "1");
+			assert.truthy(ok);
+			assert.same({ "1", ["1"] = "item 1" }, ret);
+		end);
+
+		it("should return multiple requested items", function ()
+			local ok, ret = service:get_items("node", true, { "1", "2" });
+			assert.truthy(ok);
+			assert.same({
+				"1",
+				"2",
+				["1"] = "item 1",
+				["2"] = "item 2",
+			}, ret);
+		end);
+	end);
+
+
 	describe("node config", function ()
 		local service;
 		before_each(function ()
