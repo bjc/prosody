@@ -600,7 +600,7 @@ function service:purge(node, actor, notify) --> ok, err
 	return true
 end
 
-function service:get_items(node, actor, id) --> (true, { id, [id] = node }) or (false, err)
+function service:get_items(node, actor, ids) --> (true, { id, [id] = node }) or (false, err)
 	-- Access checking
 	if not self:may(node, actor, "get_items") then
 		return false, "forbidden";
@@ -610,20 +610,25 @@ function service:get_items(node, actor, id) --> (true, { id, [id] = node }) or (
 	if not node_obj then
 		return false, "item-not-found";
 	end
-	if id then -- Restrict results to a single specific item
-		local with_id = self.data[node]:get(id);
-		if not with_id then
-			return true, { };
+	if type(ids) == "string" then -- COMPAT see #1305
+		ids = { ids };
+	end
+	local data = {};
+	if ids then
+		for _, key in ipairs(ids) do
+			local value = self.data[node]:get(key);
+			if value then
+				data[#data+1] = key;
+				data[key] = value;
+			end
 		end
-		return true, { id, [id] = with_id };
 	else
-		local data = {}
 		for key, value in self.data[node]:items() do
 			data[#data+1] = key;
 			data[key] = value;
 		end
-		return true, data;
 	end
+	return true, data;
 end
 
 function service:get_last_item(node, actor) --> (true, id, node) or (false, err)
