@@ -727,7 +727,7 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	else -- Type is "get" or "set"
 		local current_nick = self:get_occupant_jid(from);
 		if not current_nick then
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
 			return true;
 		end
 		if not occupant then -- recipient not in room
@@ -760,7 +760,7 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	if not current_nick then -- not in room
 		if type ~= "error" then
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable"));
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
 		end
 		return true;
 	end
@@ -1057,7 +1057,7 @@ end
 module:hook("muc-occupant-groupchat", function(event)
 	local role_rank = valid_roles[event.occupant and event.occupant.role or "none"];
 	if role_rank <= valid_roles.none then
-		event.origin.send(st.error_reply(event.stanza, "cancel", "not-acceptable"));
+		event.origin.send(st.error_reply(event.stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
 		return true;
 	elseif role_rank <= valid_roles.visitor then
 		event.origin.send(st.error_reply(event.stanza, "auth", "forbidden"));
