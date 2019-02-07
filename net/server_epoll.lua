@@ -39,7 +39,7 @@ local default_config = { __index = {
 	read_timeout = 14 * 60;
 
 	-- How long to wait for a socket to become writable after queuing data to send
-	write_timeout = 60;
+	send_timeout = 60;
 
 	-- Some number possibly influencing how many pending connections can be accepted
 	tcp_backlog = 128;
@@ -266,7 +266,7 @@ function interface:setwritetimeout(t)
 		end
 		return
 	end
-	t = t or cfg.write_timeout;
+	t = t or cfg.send_timeout;
 	if self._writetimeout then
 		self._writetimeout[1] = gettime() + t;
 		resort_timers = true;
