@@ -39,7 +39,7 @@ local default_config = { __index = {
 	read_timeout = 14 * 60;
 
 	-- How long to wait for a socket to become writable after queuing data to send
-	write_timeout = 60;
+	send_timeout = 60;
 
 	-- Some number possibly influencing how many pending connections can be accepted
 	tcp_backlog = 128;
@@ -54,7 +54,7 @@ local default_config = { __index = {
 	read_size = 8192;
 
 	-- Timeout used during between steps in TLS handshakes
-	handshake_timeout = 60;
+	ssl_handshake_timeout = 60;
 
 	-- Maximum and minimum amount of time to sleep waiting for events (adjusted for pending timers)
 	max_wait = 86400;
@@ -271,7 +271,7 @@ function interface:setwritetimeout(t)
 		end
 		return
 	end
-	t = t or cfg.write_timeout;
+	t = t or cfg.send_timeout;
 	if self._writetimeout then
 		self._writetimeout[1] = gettime() + t;
 		resort_timers = true;
@@ -523,11 +523,11 @@ function interface:tlshandskake()
 	elseif err == "wantread" then
 		log("debug", "TLS handshake on %s to wait until readable", self);
 		self:set(true, false);
-		self:setreadtimeout(cfg.handshake_timeout);
+		self:setreadtimeout(cfg.ssl_handshake_timeout);
 	elseif err == "wantwrite" then
 		log("debug", "TLS handshake on %s to wait until writable", self);
 		self:set(false, true);
-		self:setwritetimeout(cfg.handshake_timeout);
+		self:setwritetimeout(cfg.ssl_handshake_timeout);
 	else
 		log("debug", "TLS handshake error on %s: %s", self, err);
 		self:on("disconnect", err);
