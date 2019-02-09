@@ -41,6 +41,9 @@ local default_config = { __index = {
 	-- How long to wait for a socket to become writable after queuing data to send
 	send_timeout = 60;
 
+	-- How long to wait for a socket to become writable after creation
+	connect_timeout = 20;
+
 	-- Some number possibly influencing how many pending connections can be accepted
 	tcp_backlog = 128;
 
@@ -585,7 +588,7 @@ end
 
 -- Initialization
 function interface:init()
-	self:setwritetimeout();
+	self:setwritetimeout(cfg.connect_timeout);
 	return self:add(true, true);
 end
 
