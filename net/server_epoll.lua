@@ -39,7 +39,7 @@ local default_config = { __index = {
 	read_timeout = 14 * 60;
 
 	-- How long to wait for a socket to become writable after queuing data to send
-	send_timeout = 60;
+	send_timeout = 180;
 
 	-- How long to wait for a socket to become writable after creation
 	connect_timeout = 20;
