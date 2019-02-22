@@ -9,6 +9,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local cache = require "util.cache";
 local set = require "util.set";
 local new_id = require "util.id".medium;
+local storagemanager = require "core.storagemanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -114,10 +115,11 @@ local function nodestore(username)
 end
 
 local function simple_itemstore(username)
+	local driver = storagemanager.get_driver(module.host, "pep_data");
 	return function (config, node)
 		if config["persist_items"] then
 			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
-			local archive = module:open_store("pep_"..node, "archive");
+			local archive = driver:open("pep_"..node, "archive");
 			return lib_pubsub.archive_itemstore(archive, config, username, node, false);
 		else
 			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
