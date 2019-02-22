@@ -3,6 +3,7 @@ local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
 local usermanager = require "core.usermanager";
 local new_id = require "util.id".medium;
+local storagemanager = require "core.storagemanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -42,7 +43,8 @@ end
 local node_store = module:open_store(module.name.."_nodes");
 
 local function create_simple_itemstore(node_config, node_name)
-	local archive = module:open_store("pubsub_"..node_name, "archive");
+	local driver = storagemanager.get_driver(module.host, "pubsub_data");
+	local archive = driver:open("pubsub_"..node_name, "archive");
 	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
 end
 
