@@ -1369,6 +1369,18 @@ function room_mt:get_role(nick)
 end
 
 function room_mt:may_set_role(actor, occupant, role)
+	local event = {
+		room = self,
+		actor = actor,
+		occupant = occupant,
+		role = role,
+	};
+
+	module:fire_event("muc-pre-set-role", event);
+	if event.allowed ~= nil then
+		return event.allowed, event.error, event.condition;
+	end
+
 	-- Can't do anything to other owners or admins
 	local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
 	if occupant_affiliation == "owner" or occupant_affiliation == "admin" then
