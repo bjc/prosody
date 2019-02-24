@@ -1368,6 +1368,30 @@ function room_mt:get_role(nick)
 	return occupant and occupant.role or nil;
 end
 
+function room_mt:may_set_role(actor, occupant, role)
+	-- Can't do anything to other owners or admins
+	local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
+	if occupant_affiliation == "owner" or occupant_affiliation == "admin" then
+		return nil, "cancel", "not-allowed";
+	end
+
+	-- If you are trying to give or take moderator role you need to be an owner or admin
+	if occupant.role == "moderator" or role == "moderator" then
+		local actor_affiliation = self:get_affiliation(actor);
+		if actor_affiliation ~= "owner" and actor_affiliation ~= "admin" then
+			return nil, "cancel", "not-allowed";
+		end
+	end
+
+	-- Need to be in the room and a moderator
+	local actor_occupant = self:get_occupant_by_real_jid(actor);
+	if not actor_occupant or actor_occupant.role ~= "moderator" then
+		return nil, "cancel", "not-allowed";
+	end
+
+	return true;
+end
+
 function room_mt:set_role(actor, occupant_jid, role, reason)
 	if not actor then return nil, "modify", "not-acceptable"; end
 
@@ -1382,24 +1406,9 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	if actor == true then
 		actor = nil -- So we can pass it safely to 'publicise_occupant_status' below
 	else
-		-- Can't do anything to other owners or admins
-		local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
-		if occupant_affiliation == "owner" or occupant_affiliation == "admin" then
-			return nil, "cancel", "not-allowed";
-		end
-
-		-- If you are trying to give or take moderator role you need to be an owner or admin
-		if occupant.role == "moderator" or role == "moderator" then
-			local actor_affiliation = self:get_affiliation(actor);
-			if actor_affiliation ~= "owner" and actor_affiliation ~= "admin" then
-				return nil, "cancel", "not-allowed";
-			end
-		end
-
-		-- Need to be in the room and a moderator
-		local actor_occupant = self:get_occupant_by_real_jid(actor);
-		if not actor_occupant or actor_occupant.role ~= "moderator" then
-			return nil, "cancel", "not-allowed";
+		local allowed, err, condition = self:may_set_role(actor, occupant, role)
+		if not allowed then
+			return allowed, err, condition;
 		end
 	end
 
