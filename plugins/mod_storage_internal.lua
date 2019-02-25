@@ -196,6 +196,16 @@ function archive:dates(username)
 	return array(items):pluck("when"):map(datetime.date):unique();
 end
 
+function archive:summary(username, query)
+	local iter, err = self:find(username, query)
+	if not iter then return iter, err; end
+	local summary = {};
+	for _, _, _, with in iter do
+		summary[with] = (summary[with] or 0) + 1;
+	end
+	return summary;
+end
+
 function archive:delete(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	if not query or next(query) == nil then
