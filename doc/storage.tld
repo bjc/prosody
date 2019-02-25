@@ -47,6 +47,9 @@ interface archive_store
 
 	-- Array of dates which do have messages (Optional?)
 	dates  : ( self, string? ) -> ({ string }) | (nil, string)
+
+	-- Map of counts per "with" field
+	summary : ( self, string?, archive_query? ) -> ( { string : integer } ) | (nil, string)
 end
 
 -- This represents moduleapi
