@@ -419,6 +419,41 @@ function archive_store:find(username, query)
 	end, total;
 end
 
+function archive_store:summary(username, query)
+	query = query or {};
+	local user,store = username,self.store;
+	local ok, result = engine:transaction(function()
+		local sql_query = [[
+		SELECT DISTINCT "with", COUNT(*)
+		FROM "prosodyarchive"
+		WHERE %s
+		GROUP BY "with"
+		ORDER BY "sort_id" %s%s;
+		]];
+		local args = { host, user or "", store, };
+		local where = { "\"host\" = ?", "\"user\" = ?", "\"store\" = ?", };
+
+		archive_where(query, args, where);
+
+		archive_where_id_range(query, args, where);
+
+		if query.limit then
+			args[#args+1] = query.limit;
+		end
+
+		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse
+			and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
+		return engine:select(sql_query, unpack(args));
+	end);
+	if not ok then return ok, result end
+	local summary = {};
+	for row in result do
+		local with, count = row[1], row[2];
+		summary[with] = count;
+	end
+	return summary;
+end
+
 function archive_store:delete(username, query)
 	query = query or {};
 	local user,store = username,self.store;
