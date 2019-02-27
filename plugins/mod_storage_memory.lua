@@ -68,46 +68,66 @@ function archive_store:append(username, key, value, when, with)
 	return key;
 end
 
-local function archive_iter (a, start, stop, step, limit, when_start, when_end, match_with)
-	local item, when, with;
-	local count = 0;
-	coroutine.yield(true); -- Ready
-	for i = start, stop, step do
-		item = a[i];
-		when, with = item.when, item.with;
-		if when >= when_start and when_end >= when and (not match_with or match_with == with) then
-			coroutine.yield(item.key, item.value(), when, with);
-			count = count + 1;
-			if limit and count >= limit then return end
-		end
-	end
-end
-
 function archive_store:find(username, query)
-	local a = self.store[username or NULL] or {};
-	local start, stop, step = 1, #a, 1;
-	local qstart, qend, qwith = -math.huge, math.huge;
-	local limit;
+	local items = self.store[username or NULL];
+	if not items then
+		return function () end, 0;
+	end
+	local count = #items;
+	local i = 0;
 	if query then
-		module:log("debug", "query included")
+		items = array():append(items);
+		if query.key then
+			items:filter(function (item)
+				return item.key == query.key;
+			end);
+		end
+		if query.with then
+			items:filter(function (item)
+				return item.with == query.with;
+			end);
+		end
+		if query.start then
+			items:filter(function (item)
+				return item.when >= query.start;
+			end);
+		end
+		if query["end"] then
+			items:filter(function (item)
+				return item.when <= query["end"];
+			end);
+		end
+		count = #items;
 		if query.reverse then
-			start, stop, step = stop, start, -1;
+			items:reverse();
 			if query.before then
-				start = a[query.before];
+				for j = 1, count do
+					if (items[j].key or tostring(j)) == query.before then
+						i = j;
+						break;
+					end
+				end
 			end
 		elseif query.after then
-			start = a[query.after];
+			for j = 1, count do
+				if (items[j].key or tostring(j)) == query.after then
+					i = j;
+					break;
+				end
+			end
 		end
-		limit = query.limit;
-		qstart = query.start or qstart;
-		qend = query["end"] or qend;
-		qwith = query.with;
+		if query.limit and #items - i > query.limit then
+			items[i+query.limit+1] = nil;
+		end
 	end
-	if not start then return nil, "invalid-key"; end
-	local iter = coroutine.wrap(archive_iter);
-	iter(a, start, stop, step, limit, qstart, qend, qwith);
-	return iter;
+	return function ()
+		i = i + 1;
+		local item = items[i];
+		if not item then return; end
+		return item.key, item.value(), item.when, item.with;
+	end, count;
 end
+
 
 function archive_store:delete(username, query)
 	if not query or next(query) == nil then
