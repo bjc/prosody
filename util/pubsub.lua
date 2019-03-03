@@ -436,10 +436,19 @@ function service:create(node, actor, options) --> ok, err
 		return false, "conflict";
 	end
 
+	local config = setmetatable(options or {}, {__index=self.node_defaults});
+
+	if self.config.check_node_config then
+		local ok = self.config.check_node_config(node, actor, config);
+		if not ok then
+			return false, "not-acceptable";
+		end
+	end
+
 	self.nodes[node] = {
 		name = node;
 		subscribers = {};
-		config = setmetatable(options or {}, {__index=self.node_defaults});
+		config = config;
 		affiliations = {};
 	};
 
