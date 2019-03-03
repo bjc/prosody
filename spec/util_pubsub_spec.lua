@@ -436,4 +436,45 @@ describe("util.pubsub", function ()
 		end);
 	end);
 
+	describe("node config checking", function ()
+		local service;
+		before_each(function ()
+			service = pubsub.new({
+				check_node_config = function (node, actor, config) -- luacheck: ignore 212
+					return config["max_items"] <= 20;
+				end;
+			});
+		end);
+
+		it("defaults, then configure", function ()
+			local ok, err = service:create("node", true);
+			assert.is_true(ok, err);
+
+			local ok, err = service:set_node_config("node", true, { max_items = 10 });
+			assert.is_true(ok, err);
+
+			local ok, err = service:set_node_config("node", true, { max_items = 100 });
+			assert.falsy(ok, err);
+			assert.equals(err, "not-acceptable");
+		end);
+
+		it("create with ok config, then configure", function ()
+			local ok, err = service:create("node", true, { max_items = 10 });
+			assert.is_true(ok, err);
+
+			local ok, err = service:set_node_config("node", true, { max_items = 100 });
+			assert.falsy(ok, err);
+
+			local ok, err = service:set_node_config("node", true, { max_items = 10 });
+			assert.is_true(ok, err);
+		end);
+
+		it("create with unacceptable config", function ()
+			local ok, err = service:create("node", true, { max_items = 100 });
+			assert.falsy(ok, err);
+		end);
+
+
+	end);
+
 end);
