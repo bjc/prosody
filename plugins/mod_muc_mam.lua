@@ -341,6 +341,7 @@ local function save_to_history(self, stanza)
 	-- Policy check
 	if not archiving_enabled(self) then return end -- Don't log
 
+	-- Save the type in the 'with' field, allows storing presence without conflicts
 	local with = stanza.name
 	if stanza.attr.type then
 		with = with .. "<" .. stanza.attr.type
