@@ -208,6 +208,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		if not is_stanza(item) then
 			item = st.deserialize(item);
 		end
+		item.attr.to = nil;
 		item.attr.xmlns = "jabber:client";
 		fwd_st:add_child(item);
 
@@ -329,6 +330,7 @@ local function save_to_history(self, stanza)
 
 	if stanza.name == "message" and self:get_whois() == "anyone" then
 		stored_stanza = st.clone(stanza);
+		stored_stanza.attr.to = nil;
 		local actor = jid_bare(self._occupants[stanza.attr.from].jid);
 		local affiliation = self:get_affiliation(actor) or "none";
 		local role = self:get_role(actor) or self:get_default_role(affiliation);
