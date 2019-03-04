@@ -341,12 +341,12 @@ local function save_to_history(self, stanza)
 	-- Policy check
 	if not archiving_enabled(self) then return end -- Don't log
 
-	-- And stash it
 	local with = stanza.name
 	if stanza.attr.type then
 		with = with .. "<" .. stanza.attr.type
 	end
 
+	-- And stash it
 	local id = archive:append(room_node, nil, stored_stanza, time_now(), with);
 
 	if id then
