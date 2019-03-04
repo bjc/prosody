@@ -127,19 +127,29 @@ function archive_store:find(username, query)
 		if query.reverse then
 			items:reverse();
 			if query.before then
+				local found = false;
 				for j = 1, #items do
 					if (items[j].key or tostring(j)) == query.before then
+						found = true;
 						i = j;
 						break;
 					end
 				end
+				if not found then
+					return nil, "item-not-found";
+				end
 			end
 		elseif query.after then
+			local found = false;
 			for j = 1, #items do
 				if (items[j].key or tostring(j)) == query.after then
+					found = true;
 					i = j;
 					break;
 				end
+			end
+			if not found then
+				return nil, "item-not-found";
 			end
 		end
 		if query.limit and #items - i > query.limit then
