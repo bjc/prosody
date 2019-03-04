@@ -21,6 +21,7 @@ local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local dataform = require "util.dataforms".new;
+local get_form_type = require "util.dataforms".get_type;
 
 local mod_muc = module:depends"muc";
 local get_room_from_jid = mod_muc.get_room_from_jid;
@@ -131,7 +132,11 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	local qstart, qend;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
-		local err;
+		local form_type, err = get_form_type(form);
+		if form_type ~= xmlns_mam then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Unexpected FORM_TYPE, expected '"..xmlns_mam.."'"));
+			return true;
+		end
 		form, err = query_form:data(form);
 		if err then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", select(2, next(err))));
