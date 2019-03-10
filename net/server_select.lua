@@ -184,6 +184,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, ssldi
 	handler.sslctx = function( )
 		return sslctx
 	end
+	handler.hosts = {} -- sni
 	handler.remove = function( )
 		connections = connections - 1
 		if handler then
@@ -627,9 +628,18 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
 			local oldsocket, err = socket
 			socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
+
 			if not socket then
 				out_put( "server.lua: error while starting tls on client: ", tostring(err or "unknown error") )
 				return nil, err -- fatal error
+			end
+
+			if socket.sni then
+				if self.servername then
+					socket:sni(self.servername);
+				elseif self.server() and self.server().hosts then
+					socket:sni(self.server().hosts, true);
+				end
 			end
 
 			socket:settimeout( 0 )
