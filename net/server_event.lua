@@ -164,6 +164,15 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 		debug( "fatal error while ssl wrapping:", err )
 		return false
 	end
+
+	if self.conn.sni then
+		if self.servername then
+			self.conn:sni(self.servername);
+		elseif self._server and self._server.hosts then
+			self.conn:sni(self._server.hosts, true);
+		end
+	end
+
 	self.conn:settimeout( 0 )  -- set non blocking
 	local handshakecallback = coroutine_wrap(function( event )
 		local _, err
@@ -665,6 +674,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx, star
 
 		_ip = addr, _port = port, _pattern = pattern,
 		_sslctx = sslctx;
+		hosts = {};
 	}
 	interface.id = tostring(interface):match("%x+$");
 	interface.readcallback = function( event )  -- server handler, called on incoming connections
