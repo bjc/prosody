@@ -509,6 +509,13 @@ function interface:tlshandskake()
 		end
 		conn:settimeout(0);
 		self.conn = conn;
+		if conn.sni then
+			if self.servername then
+				conn:sni(self.servername);
+			elseif self._server and self._server.hosts then
+				conn:sni(self._server.hosts, true);
+			end
+		end
 		self:on("starttls");
 		self.ondrain = nil;
 		self.onwritable = interface.tlshandskake;
@@ -649,6 +656,7 @@ local function listen(addr, port, listeners, config)
 		onreadable = interface.onacceptable;
 		tls_ctx = config and config.tls_ctx;
 		tls_direct = config and config.tls_direct;
+		hosts = config and config.sni_hosts;
 		sockname = addr;
 		sockport = port;
 	}, interface_mt);
