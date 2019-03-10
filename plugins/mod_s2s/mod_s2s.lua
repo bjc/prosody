@@ -738,6 +738,9 @@ module:provides("net", {
 	listener = listener;
 	default_port = 5269;
 	encryption = "starttls";
+	ssl_config = {
+		verify = { "peer", "client_once", };
+	};
 	multiplex = {
 		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:server%1.*>";
 	};
