@@ -512,7 +512,7 @@ function interface:tlshandskake()
 		if conn.sni then
 			if self.servername then
 				conn:sni(self.servername);
-			elseif self._server and self._server.hosts then
+			elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
 				conn:sni(self._server.hosts, true);
 			end
 		end

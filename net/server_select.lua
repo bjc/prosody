@@ -637,7 +637,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if socket.sni then
 				if self.servername then
 					socket:sni(self.servername);
-				elseif self.server() and self.server().hosts then
+				elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
 					socket:sni(self.server().hosts, true);
 				end
 			end
