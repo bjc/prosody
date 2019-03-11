@@ -738,7 +738,7 @@ module:provides("net", {
 	listener = listener;
 	default_port = 5269;
 	encryption = "starttls";
-	ssl_config = {
+	ssl_config = { -- FIXME This is not used atm, see mod_tls
 		verify = { "peer", "client_once", };
 	};
 	multiplex = {
