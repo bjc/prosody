@@ -387,6 +387,10 @@ function commands.about(arg)
 	end
 	print("LuaRocks:        ", luarocks_status);
 	print("");
+	print("# Network");
+	print("");
+	print("Backend: "..require "net.server".get_backend());
+	print("");
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
 	local luaevent =dependencies.softreq"luaevent";
