@@ -24,7 +24,7 @@ PRNG=
 PRNGLIBS=
 
 CFLAGS="-fPIC -std=c99"
-CFLAGS="$CFLAGS -Wall -pedantic"
+CFLAGS="$CFLAGS -Wall -pedantic -Wextra -Wshadow -Wformat=2"
 LDFLAGS="-shared"
 
 IDN_LIBRARY="idn"
