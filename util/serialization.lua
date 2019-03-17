@@ -16,6 +16,8 @@ local s_char = string.char;
 local s_match = string.match;
 local t_concat = table.concat;
 
+local to_hex = require "util.hex".to;
+
 local pcall = pcall;
 local envload = require"util.envload".envload;
 
@@ -23,15 +25,6 @@ local pos_inf, neg_inf = math.huge, -math.huge;
 local m_type = math.type or function (n)
 	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
 end;
-
-local char_to_hex = {};
-for i = 0,255 do
-	char_to_hex[s_char(i)] = s_format("%02x", i);
-end
-
-local function to_hex(s)
-	return (s_gsub(s, ".", char_to_hex));
-end
 
 local function rawpairs(t)
 	return next, t, nil;
