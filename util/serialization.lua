@@ -33,6 +33,10 @@ local function to_hex(s)
 	return (s_gsub(s, ".", char_to_hex));
 end
 
+local function rawpairs(t)
+	return next, t, nil;
+end
+
 local function fatal_error(obj, why)
 	error("Can't serialize "..type(obj) .. (why and ": ".. why or ""));
 end
@@ -122,6 +126,7 @@ local function new(opt)
 	local freeze = opt.freeze;
 	local maxdepth = opt.maxdepth or 127;
 	local multirefs = opt.multiref;
+	local table_pairs = opt.table_iterator or rawpairs;
 
 	-- serialize one table, recursively
 	-- t - table being serialized
@@ -164,7 +169,7 @@ local function new(opt)
 		local numkey = 1;
 		local ktyp, vtyp;
 		local had_items = false;
-		for k,v in next,t do
+		for k,v in table_pairs(t) do
 			had_items = true;
 			o[l], l = itemstart, l + 1;
 			o[l], l = indent, l + 1;
