@@ -498,7 +498,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 	if orig_occupant == nil and not muc_x and stanza.attr.type == nil then
 		module:log("debug", "Attempted join without <x>, possibly desynced");
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found",
-			"You must join the room before sending presence updates"));
+			"You are not currently connected to this chat"));
 		return true;
 	end
 
