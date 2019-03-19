@@ -4,7 +4,7 @@
 -- This file is MIT/X11 licensed.
 
 if module:get_host_type() ~= "component" then
-	module:log("error", "mod_%s should be loaded only on a MUC component, not normal hosts", module.name);
+	module:log_status("error", "mod_%s should be loaded only on a MUC component, not normal hosts", module.name);
 	return;
 end
 
