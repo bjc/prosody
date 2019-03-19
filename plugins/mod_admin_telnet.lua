@@ -480,7 +480,12 @@ function def_env.module:list(hosts)
 			end
 		else
 			for _, name in ipairs(modules) do
-				print("    "..name);
+				local status, status_text = modulemanager.get_module(host, name).module:get_status();
+				local status_summary = "";
+				if status == "warn" or status == "error" then
+					status_summary = (" (%s: %s)"):format(status, status_text);
+				end
+				print(("    %s%s"):format(name, status_summary));
 			end
 		end
 	end
