@@ -17,6 +17,8 @@ local st = require "util.stanza";
 local cache = require "util.cache";
 local errutil = require "util.error";
 local promise = require "util.promise";
+local time_now = require "util.time".now;
+local format = require "util.format".format;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -511,6 +513,35 @@ end
 
 function api:measure_global_event(event_name, stat_name)
 	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
+end
+
+local status_priorities = { error = 3, warn = 2, info = 1, core = 0 };
+
+function api:set_status(status_type, status_message, override)
+	local priority = status_priorities[status_type];
+	if not priority then
+		self:log("error", "set_status: Invalid status type '%s', assuming 'info'");
+		status_type, priority = "info", status_priorities.info;
+	end
+	local current_priority = status_priorities[self.status_type] or 0;
+	-- By default an 'error' status can only be overwritten by another 'error' status
+	if (current_priority >= status_priorities.error and priority < current_priority and override ~= true)
+	or (override == false and current_priority > priority) then
+		self:log("debug", "Ignoring status");
+		return;
+	end
+	self.status_type, self.status_message, self.status_time = status_type, status_message, time_now();
+	self:log("debug", "New status: %s", status_type);
+	self:fire_event("module-status/updated", { name = self.name });
+end
+
+function api:log_status(level, msg, ...)
+	self:set_status(level, format(msg, ...));
+	return self:log(level, msg, ...);
+end
+
+function api:get_status()
+	return self.status_type, self.status_message, self.status_time;
 end
 
 return api;
