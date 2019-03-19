@@ -49,6 +49,7 @@ function module.add_host(module)
 	local send;
 
 	local function on_destroy(session, err) --luacheck: ignore 212/err
+		module:set_status("warn", err and ("Disconnected: "..err) or "Disconnected");
 		env.connected = false;
 		env.session = false;
 		send = nil;
@@ -102,6 +103,7 @@ function module.add_host(module)
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
 		module:fire_event("component-authenticated", { session = session });
+		module:set_status("info", "Connected");
 
 		return true;
 	end
