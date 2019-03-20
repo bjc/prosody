@@ -16,6 +16,7 @@ local deps = require"util.dependencies";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
+local get_traceback_table = require "util.debug".get_traceback_table;
 
 local encodings = deps.softreq"util.encodings";
 local nameprep = encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
@@ -100,8 +101,17 @@ end
 -- Built-in Lua parser
 do
 	local pcall = _G.pcall;
+	local function get_line_number(config_file)
+		local tb = get_traceback_table(nil, 2);
+		for i = 1, #tb do
+			if tb[i].info.short_src == config_file then
+				return tb[i].info.currentline;
+			end
+		end
+	end
 	parser = {};
 	function parser.load(data, config_file, config_table)
+		local set_options = {}; -- set_options[host.."/"..option_name] = true (when the option has been set already in this file)
 		local warnings = {};
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
@@ -116,6 +126,12 @@ do
 					return rawget(_G, k);
 				end,
 				__newindex = function (_, k, v)
+					local host = env.__currenthost or "*";
+					local option_path = host.."/"..k;
+					if set_options[option_path] then
+						t_insert(warnings, ("%s:%d: Duplicate option '%s'"):format(config_file, get_line_number(config_file), k));
+					end
+					set_options[option_path] = true;
 					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
