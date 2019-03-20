@@ -7,6 +7,7 @@ local logger = require "util.logger";
 local log = logger.init("startup");
 
 local config = require "core.configmanager";
+local config_warnings;
 
 local dependencies = require "util.dependencies";
 
@@ -64,6 +65,8 @@ function startup.read_config()
 		print("**************************");
 		print("");
 		os.exit(1);
+	elseif err and #err > 0 then
+		config_warnings = err;
 	end
 	prosody.config_loaded = true;
 end
@@ -98,6 +101,9 @@ end
 
 function startup.log_startup_warnings()
 	dependencies.log_warnings();
+	for _, warning in ipairs(config_warnings) do
+		log("warn", "Configuration warning: %s", warning);
+	end
 end
 
 function startup.sanity_check()
