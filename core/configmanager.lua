@@ -7,8 +7,8 @@
 --
 
 local _G = _G;
-local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs =
-      setmetatable, rawget, rawset, io, os, error, dofile, type, pairs;
+local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs =
+      setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs;
 local format, math_max, t_insert = string.format, math.max, table.insert;
 
 local envload = require"util.envload".envload;
@@ -212,6 +212,11 @@ do
 			if f then
 				local ret, err = parser.load(f:read("*a"), file, config_table);
 				if not ret then error(err:gsub("%[string.-%]", file), 0); end
+				if err then
+					for _, warning in ipairs(err) do
+						t_insert(warnings, warning);
+					end
+				end
 			end
 			if not f then error("Error loading included "..file..": "..err, 0); end
 			return f, err;
