@@ -101,8 +101,10 @@ end
 
 function startup.log_startup_warnings()
 	dependencies.log_warnings();
-	for _, warning in ipairs(config_warnings) do
-		log("warn", "Configuration warning: %s", warning);
+	if config_warnings then
+		for _, warning in ipairs(config_warnings) do
+			log("warn", "Configuration warning: %s", warning);
+		end
 	end
 end
 
