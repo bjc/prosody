@@ -8,6 +8,8 @@ local new_id = require "util.id".medium;
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});
 
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+
 local memory = setmetatable({}, {
 	__index = function(t, k)
 		local store = module:shared(k)
@@ -51,6 +53,12 @@ archive_store.__index = archive_store;
 
 archive_store.users = _users;
 
+archive_store.caps = {
+	total = true;
+	quota = archive_item_limit;
+	truncate = true;
+};
+
 function archive_store:append(username, key, value, when, with)
 	if is_stanza(value) then
 		value = st.preserialize(value);
@@ -70,6 +78,8 @@ function archive_store:append(username, key, value, when, with)
 	end
 	if a[key] then
 		table.remove(a, a[key]);
+	elseif #a >= archive_item_limit then
+		return nil, "quota-limit";
 	end
 	local i = #a+1;
 	a[i] = v;
