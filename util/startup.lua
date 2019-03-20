@@ -96,7 +96,7 @@ function startup.init_logging()
 	end);
 end
 
-function startup.log_dependency_warnings()
+function startup.log_startup_warnings()
 	dependencies.log_warnings();
 end
 
@@ -518,7 +518,7 @@ function startup.prosodyctl()
 	startup.read_version();
 	startup.switch_user();
 	startup.check_dependencies();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.check_unwriteable();
 	startup.load_libraries();
 	startup.init_http_client();
@@ -543,7 +543,7 @@ function startup.prosody()
 	startup.add_global_prosody_functions();
 	startup.read_version();
 	startup.log_greeting();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.load_secondary_libraries();
 	startup.init_http_client();
 	startup.init_data_store();
