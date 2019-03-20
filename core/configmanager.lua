@@ -9,7 +9,7 @@
 local _G = _G;
 local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs =
       setmetatable, rawget, rawset, io, os, error, dofile, type, pairs;
-local format, math_max = string.format, math.max;
+local format, math_max, t_insert = string.format, math.max, table.insert;
 
 local envload = require"util.envload".envload;
 local deps = require"util.dependencies";
@@ -102,6 +102,7 @@ do
 	local pcall = _G.pcall;
 	parser = {};
 	function parser.load(data, config_file, config_table)
+		local warnings = {};
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -217,7 +218,7 @@ do
 			return nil, err;
 		end
 
-		return true;
+		return true, warnings;
 	end
 
 end
