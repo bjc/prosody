@@ -302,11 +302,19 @@ local function message_handler(event, c2s)
 		local time = time_now();
 		local ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
 		if not ok and err == "quota-limit" then
-			if archive.caps and archive.caps.truncate then
-				module:log("debug", "User '%s' over quota, trimming archive", store_user);
+			if type(cleanup_after) == "number" then
+				module:log("debug", "User '%s' over quota, cleaning archive", store_user);
+				local cleaned = archive:delete(store_user, {
+					["end"] = (os.time() - cleanup_after);
+				});
+				if cleaned then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+			if not ok and (archive.caps and archive.caps.truncate) then
+				module:log("debug", "User '%s' over quota, truncating archive", store_user);
 				local truncated = archive:delete(store_user, {
 					truncate = archive_item_limit - 1;
-					["end"] = type(cleanup_after) == "number" and (os.time() - cleanup_after) or nil;
 				});
 				if truncated then
 					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
