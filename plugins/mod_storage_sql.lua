@@ -238,7 +238,8 @@ archive_store.caps = {
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
-	local cache_key = jid_join(username, host, self.store);
+	local user,store = username,self.store;
+	local cache_key = jid_join(username, host, store);
 	local item_count = archive_item_count_cache:get(cache_key);
 	if not item_count then
 		local ok, ret = engine:transaction(function()
@@ -265,7 +266,6 @@ function archive_store:append(username, key, value, when, with)
 		return nil, "quota-limit";
 	end
 
-	local user,store = username,self.store;
 	when = when or os.time();
 	with = with or "";
 	local ok, ret = engine:transaction(function()
