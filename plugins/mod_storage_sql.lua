@@ -150,7 +150,7 @@ end
 
 --- Archive store API
 
-local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+local archive_item_limit = module:get_option_number("storage_archive_item_limit");
 local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
 -- luacheck: ignore 512 431/user 431/store
@@ -261,9 +261,11 @@ function archive_store:append(username, key, value, when, with)
 		archive_item_count_cache:set(cache_key, item_count);
 	end
 
-	module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
-	if item_count >= archive_item_limit then
-		return nil, "quota-limit";
+	if archive_item_limit then
+		module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
+		if item_count >= archive_item_limit then
+			return nil, "quota-limit";
+		end
 	end
 
 	when = when or os.time();
