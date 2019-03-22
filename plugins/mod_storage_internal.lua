@@ -9,7 +9,7 @@ local jid_join = require "util.jid".join;
 
 local host = module.host;
 
-local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 10000);
 local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
 local driver = {};
