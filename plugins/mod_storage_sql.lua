@@ -327,38 +327,36 @@ local function archive_where(query, args, where)
 	end
 end
 local function archive_where_id_range(query, args, where)
-	local args_len = #args
 	-- Before or after specific item, exclusive
+	local id_lookup_sql = [[
+	SELECT "sort_id"
+	FROM "prosodyarchive"
+	WHERE "key" = ? AND "host" = ? AND "user" = ? AND "store" = ?
+	LIMIT 1;
+	]];
 	if query.after then  -- keys better be unique!
-		where[#where+1] = [[
-		"sort_id" > COALESCE(
-			(
-				SELECT "sort_id"
-				FROM "prosodyarchive"
-				WHERE "key" = ? AND "host" = ? AND "user" = ? AND "store" = ?
-				LIMIT 1
-			), 0)
-		]];
-		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.after, args[1], args[2], args[3];
-		args_len = args_len + 4
+		local after_id = nil;
+		for row in engine:select(id_lookup_sql, query.after, host, user or "", store) do
+			after_id = row[1];
+		end
+		if not after_id then
+			return nil, "item-not-found";
+		end
+		where[#where+1] = '"sort_id" > ?';
+		args[#args+1] = after_id;
 	end
 	if query.before then
-		where[#where+1] = [[
-		"sort_id" < COALESCE(
-			(
-				SELECT "sort_id"
-				FROM "prosodyarchive"
-				WHERE "key" = ? AND "host" = ? AND "user" = ? AND "store" = ?
-				LIMIT 1
-			),
-			(
-				SELECT MAX("sort_id")+1
-				FROM "prosodyarchive"
-			)
-		)
-		]]
-		args[args_len+1], args[args_len+2], args[args_len+3], args[args_len+4] = query.before, args[1], args[2], args[3];
+		local before_id = nil;
+		for row in engine:select(id_lookup_sql, query.after, host, user or "", store) do
+			before_id = row[1];
+		end
+		if not before_id then
+			return nil, "item-not-found";
+		end
+		where[#where+1] = '"sort_id" < ?';
+		args[#args+1] = before_id;
 	end
+	return true;
 end
 
 function archive_store:find(username, query)
@@ -398,7 +396,8 @@ function archive_store:find(username, query)
 			end
 		end
 
-		archive_where_id_range(query, args, where);
+		local ok, err = archive_where_id_range(query, args, where);
+		if not ok then return ok, err; end
 
 		if query.limit then
 			args[#args+1] = query.limit;
@@ -466,7 +465,8 @@ function archive_store:delete(username, query)
 			table.remove(where, 2);
 		end
 		archive_where(query, args, where);
-		archive_where_id_range(query, args, where);
+		local ok, err = archive_where_id_range(query, args, where);
+		if not ok then return ok, err; end
 		if query.truncate == nil then
 			sql_query = sql_query:format(t_concat(where, " AND "));
 		else
