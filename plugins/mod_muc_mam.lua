@@ -29,7 +29,7 @@ local is_stanza = st.is_stanza;
 local tostring = tostring;
 local time_now = os.time;
 local m_min = math.min;
-local timestamp, timestamp_parse = require "util.datetime".datetime, require "util.datetime".parse;
+local timestamp, timestamp_parse, datestamp = import( "util.datetime", "datetime", "parse", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 
 local default_history_length = 20;
@@ -37,6 +37,10 @@ local max_history_length = module:get_option_number("max_history_messages", math
 
 local function get_historylength(room)
 	return math.min(room._data.history_length or default_history_length, max_history_length);
+end
+
+function schedule_cleanup()
+	-- replaced by non-noop later if cleanup is enabled
 end
 
 local log_all_rooms = module:get_option_boolean("muc_log_all_rooms", false);
@@ -351,6 +355,7 @@ local function save_to_history(self, stanza)
 	local id = archive:append(room_node, nil, stored_stanza, time_now(), with);
 
 	if id then
+		schedule_cleanup(room_node);
 		stanza:add_direct_child(st.stanza("stanza-id", { xmlns = xmlns_st_id, by = self.jid, id = id }));
 	end
 end
@@ -386,3 +391,75 @@ module:add_feature(xmlns_mam);
 module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var=xmlns_mam}):up();
 end);
+
+-- Cleanup
+
+local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
+local cleanup_interval = module:get_option_number("muc_log_cleanup_interval", 4 * 60 * 60);
+
+if cleanup_after ~= "never" then
+	local cleanup_storage = module:open_store("muc_log_cleanup");
+	local cleanup_map = module:open_store("muc_log_cleanup", "map");
+
+	local day = 86400;
+	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
+	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
+	if not n then
+		module:log("error", "Could not parse muc_log_expires_after string %q", cleanup_after);
+		return false;
+	end
+
+	cleanup_after = tonumber(n) * ( multipliers[m] or 1 );
+
+	module:log("debug", "muc_log_expires_after = %d -- in seconds", cleanup_after);
+
+	if not archive.delete then
+		module:log("error", "muc_log_expires_after set but mod_%s does not support deleting", archive._provided_by);
+		return false;
+	end
+
+	-- For each day, store a set of rooms that have new messages. To expire
+	-- messages, we collect the union of sets of rooms from dates that fall
+	-- outside the cleanup range.
+
+	function schedule_cleanup(roomname, date)
+		cleanup_map:set(date or datestamp(), roomname, true);
+	end
+
+	cleanup_runner = require "util.async".runner(function ()
+		local rooms = {};
+		local cut_off = datestamp(os.time() - cleanup_after);
+		for date in cleanup_storage:users() do
+			if date <= cut_off then
+				module:log("debug", "Messages from %q should be expired", date);
+				local messages_this_day = cleanup_storage:get(date);
+				if messages_this_day then
+					for room in pairs(messages_this_day) do
+						rooms[room] = true;
+					end
+					if date < cut_off then
+						-- Messages from the same day as the cut-off might not have expired yet,
+						-- but all earlier will have, so clear storage for those days.
+						cleanup_storage:set(date, nil);
+					end
+				end
+			end
+		end
+		local sum, num_rooms = 0, 0;
+		for room in pairs(rooms) do
+			local ok, err = archive:delete(room, { ["end"] = os.time() - cleanup_after; })
+			if ok then
+				num_rooms = num_rooms + 1;
+				sum = sum + (tonumber(ok) or 0);
+			end
+		end
+		module:log("info", "Deleted %d expired messages for %d rooms", sum, num_rooms);
+	end);
+
+	cleanup_task = module:add_timer(1, function ()
+		cleanup_runner:run(true);
+		return cleanup_interval;
+	end);
+else
+	module:log("debug", "Archive expiry disabled");
+end
