@@ -232,6 +232,8 @@ end
 local archive_store = {}
 archive_store.caps = {
 	total = true;
+	quota = archive_item_limit;
+	truncate = true;
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
