@@ -109,7 +109,7 @@ function archive:append(username, key, value, when, with)
 		key = id();
 	end
 
-	module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
+	module:log("debug", "%s has %d items out of %d limit in store %s", username, item_count, archive_item_limit, self.store);
 
 	value.key = key;
 
