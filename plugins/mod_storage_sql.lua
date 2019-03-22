@@ -384,6 +384,9 @@ function archive_store:find(username, query)
 					total = row[1];
 				end
 			end
+			if query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
+				archive_item_count_cache:set(cache_key, total);
+			end
 			if query.limit == 0 then -- Skip the real query
 				return noop, total;
 			end
