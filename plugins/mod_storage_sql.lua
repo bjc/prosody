@@ -7,6 +7,7 @@ local sql = require "util.sql";
 local xml_parse = require "util.xml".parse;
 local uuid = require "util.uuid";
 local resolve_relative_path = require "util.paths".resolve_relative_path;
+local jid_join = require "util.jid".join;
 
 local is_stanza = require"util.stanza".is_stanza;
 local t_concat = table.concat;
@@ -237,7 +238,8 @@ archive_store.caps = {
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
-	local item_count = archive_item_count_cache:get(username);
+	local cache_key = jid_join(username, host, self.store);
+	local item_count = archive_item_count_cache:get(cache_key);
 	if not item_count then
 		local ok, ret = engine:transaction(function()
 			local count_sql = [[
@@ -255,7 +257,7 @@ function archive_store:append(username, key, value, when, with)
 			module:log("error", "Failed while checking quota for %s: %s", username, ret);
 			return nil, "Failure while checking quota";
 		end
-		archive_item_count_cache:set(username, item_count);
+		archive_item_count_cache:set(cache_key, item_count);
 	end
 
 	module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
@@ -280,7 +282,7 @@ function archive_store:append(username, key, value, when, with)
 			local result, err = engine:delete(delete_sql, host, user or "", store, key);
 			if result then
 				item_count = item_count - result:affected();
-				archive_item_count_cache:set(username, item_count);
+				archive_item_count_cache:set(cache_key, item_count);
 			end
 		else
 			item_count = item_count + 1;
@@ -288,7 +290,7 @@ function archive_store:append(username, key, value, when, with)
 		end
 		local t, encoded_value = assert(serialize(value));
 		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
-		archive_item_count_cache:set(username, item_count+1);
+		archive_item_count_cache:set(cache_key, item_count+1);
 		return key;
 	end);
 	if not ok then return ok, ret; end
@@ -460,7 +462,8 @@ function archive_store:delete(username, query)
 		end
 		return engine:delete(sql_query, unpack(args));
 	end);
-	archive_item_count_cache:set(username, nil);
+	local cache_key = jid_join(username, host, self.store);
+	archive_item_count_cache:set(cache_key, nil);
 	return ok and stmt:affected(), stmt;
 end
 

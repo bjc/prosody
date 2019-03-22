@@ -5,6 +5,7 @@ local datetime = require "util.datetime";
 local st = require "util.stanza";
 local now = require "util.time".now;
 local id = require "util.id".medium;
+local jid_join = require "util.jid".join;
 
 local host = module.host;
 
@@ -64,7 +65,8 @@ function archive:append(username, key, value, when, with)
 	value.attr.stamp = datetime.datetime(when);
 	value.attr.stamp_legacy = datetime.legacy(when);
 
-	local item_count = archive_item_count_cache:get(username);
+	local cache_key = jid_join(username, host, self.store);
+	local item_count = archive_item_count_cache:get(cache_key);
 
 	if key then
 		local items, err = datamanager.list_load(username, host, self.store);
@@ -72,7 +74,7 @@ function archive:append(username, key, value, when, with)
 
 		-- Check the quota
 		item_count = items and #items or 0;
-		archive_item_count_cache:set(username, item_count);
+		archive_item_count_cache:set(cache_key, item_count);
 		if item_count >= archive_item_limit then
 			module:log("debug", "%s reached or over quota, not adding to store", username);
 			return nil, "quota-limit";
@@ -89,7 +91,7 @@ function archive:append(username, key, value, when, with)
 			items:push(value);
 			local ok, err = datamanager.list_store(username, host, self.store, items);
 			if not ok then return ok, err; end
-			archive_item_count_cache:set(username, #items);
+			archive_item_count_cache:set(cache_key, #items);
 			return key;
 		end
 	else
@@ -98,7 +100,7 @@ function archive:append(username, key, value, when, with)
 			local items, err = datamanager.list_load(username, host, self.store);
 			if not items and err then return items, err; end
 			item_count = items and #items or 0;
-			archive_item_count_cache:set(username, item_count);
+			archive_item_count_cache:set(cache_key, item_count);
 		end
 		if item_count >= archive_item_limit then
 			module:log("debug", "%s reached or over quota, not adding to store", username);
@@ -113,7 +115,7 @@ function archive:append(username, key, value, when, with)
 
 	local ok, err = datamanager.list_append(username, host, self.store, value);
 	if not ok then return ok, err; end
-	archive_item_count_cache:set(username, item_count+1);
+	archive_item_count_cache:set(cache_key, item_count+1);
 	return key;
 end
 
@@ -195,8 +197,9 @@ function archive:dates(username)
 end
 
 function archive:delete(username, query)
+	local cache_key = jid_join(username, host, self.store);
 	if not query or next(query) == nil then
-		archive_item_count_cache:set(username, nil);
+		archive_item_count_cache:set(cache_key, nil);
 		return datamanager.list_store(username, host, self.store, nil);
 	end
 	local items, err = datamanager.list_load(username, host, self.store);
@@ -204,7 +207,7 @@ function archive:delete(username, query)
 		if err then
 			return items, err;
 		end
-		archive_item_count_cache:set(username, 0);
+		archive_item_count_cache:set(cache_key, 0);
 		-- Store is empty
 		return 0;
 	end
@@ -254,7 +257,7 @@ function archive:delete(username, query)
 	end
 	local ok, err = datamanager.list_store(username, host, self.store, items);
 	if not ok then return ok, err; end
-	archive_item_count_cache:set(username, #items);
+	archive_item_count_cache:set(cache_key, #items);
 	return count;
 end
 
