@@ -350,7 +350,7 @@ if cleanup_after ~= "never" then
 
 	function schedule_cleanup(username, date)
 		cleanup_map:set(date or datestamp(), username, true);
-	end
+		end
 	local cleanup_time = module:measure("cleanup", "times");
 
 	cleanup_runner = require "util.async".runner(function ()
