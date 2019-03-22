@@ -362,7 +362,11 @@ end
 function archive_store:find(username, query)
 	query = query or {};
 	local user,store = username,self.store;
-	local total;
+	local cache_key = jid_join(username, host, self.store);
+	local total = archive_item_count_cache:get(cache_key);
+	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
+		return noop, total;
+	end
 	local ok, result = engine:transaction(function()
 		local sql_query = [[
 		SELECT "key", "type", "value", "when", "with"
