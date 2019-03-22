@@ -285,7 +285,6 @@ function archive_store:append(username, key, value, when, with)
 				archive_item_count_cache:set(cache_key, item_count);
 			end
 		else
-			item_count = item_count + 1;
 			key = uuid.generate();
 		end
 		local t, encoded_value = assert(serialize(value));
