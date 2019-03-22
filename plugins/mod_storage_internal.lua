@@ -47,6 +47,12 @@ end
 local archive = {};
 driver.archive = { __index = archive };
 
+archive.caps = {
+	total = true;
+	quota = archive_item_limit;
+	truncate = true;
+};
+
 function archive:append(username, key, value, when, with)
 	when = when or now();
 	if not st.is_stanza(value) then
