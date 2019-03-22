@@ -282,7 +282,6 @@ function archive_store:append(username, key, value, when, with)
 			local result, err = engine:delete(delete_sql, host, user or "", store, key);
 			if result then
 				item_count = item_count - result:affected();
-				archive_item_count_cache:set(cache_key, item_count);
 			end
 		else
 			key = uuid.generate();
