@@ -147,6 +147,16 @@ function archive_store:find(username, query)
 	end, count;
 end
 
+function archive:summary(username, query)
+	local iter, err = self:find(username, query)
+	if not iter then return iter, err; end
+	local summary = {};
+	for _, _, _, with in iter do
+		summary[with] = (summary[with] or 0) + 1;
+	end
+	return summary;
+end
+
 
 function archive_store:delete(username, query)
 	if not query or next(query) == nil then
