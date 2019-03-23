@@ -147,7 +147,7 @@ function archive_store:find(username, query)
 	end, count;
 end
 
-function archive:summary(username, query)
+function archive_store:summary(username, query)
 	local iter, err = self:find(username, query)
 	if not iter then return iter, err; end
 	local summary = {};
