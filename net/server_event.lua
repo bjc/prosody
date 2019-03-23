@@ -658,7 +658,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 	return interface
 end
 
-local function handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- creates an server interface
+local function handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- creates a server interface
 	debug "creating server interface..."
 	local interface = {
 		_connections = 0;
