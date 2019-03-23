@@ -451,17 +451,17 @@ if test < 1 and do_complicated_function(test) == false or seven == 8 and nine ==
 end
 ```
 
-* Separate statements onto multiple lines. Do not use semicolons as statement terminators.
+* Separate statements onto multiple lines. Use semicolons as statement terminators.
 
 ```lua
 -- bad
-local whatever = "sure";
-a = 1; b = 2
+local whatever = "sure"
+a = 1 b = 2
 
 -- good
-local whatever = "sure"
-a = 1
-b = 2
+local whatever = "sure";
+a = 1;
+b = 2;
 ```
 
 ## Spacing
