@@ -64,6 +64,9 @@ local function new(size, allow_wrapping)
 				return pos+1, t._items[read_pos];
 			end, self, 0;
 		end;
+		consume = function (self)
+			return self.pop, self;
+		end;
 	};
 end
 
