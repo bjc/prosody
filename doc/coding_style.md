@@ -131,7 +131,6 @@ constants from C.
 
 ```lua
 local player = { name = "Jack", class = "Rogue" }
-}
 ```
 
 * Items should be separated by commas. If there are many items, put each
