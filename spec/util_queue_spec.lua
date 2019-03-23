@@ -100,4 +100,41 @@ describe("util.queue", function()
 
 		end);
 	end);
+	describe("consume()", function ()
+		it("should work", function ()
+			local q = queue.new(10);
+			for i = 1, 5 do
+				q:push(i);
+			end
+			local c = 0;
+			for i in q:consume() do
+				assert(i == c + 1);
+				assert(q:count() == (5-i));
+				c = i;
+			end
+		end);
+
+		it("should work even if items are pushed in the loop", function ()
+			local q = queue.new(10);
+			for i = 1, 5 do
+				q:push(i);
+			end
+			local c = 0;
+			for i in q:consume() do
+				assert(i == c + 1);
+				if c < 3 then
+					assert(q:count() == (5-i));
+				else
+					assert(q:count() == (6-i));
+				end
+
+				c = i;
+
+				if c == 3 then
+					q:push(6);
+				end
+			end
+			assert.equal(c, 6);
+		end);
+	end);
 end);
