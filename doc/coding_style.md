@@ -330,7 +330,7 @@ than if it says `check_version = function()` under some indentation level.
 
 ## Variable declaration
 
-* Always use `local` to declare variables. 
+* Always use `local` to declare variables.
 
 ```lua
 -- bad
@@ -446,8 +446,8 @@ if test < 1 and do_complicated_function(test) == false or seven == 8 and nine ==
 
 -- good
 if test < 1 and do_complicated_function(test) == false or seven == 8 and nine == 10 then
-   do_other_complicated_function() 
-   return false 
+   do_other_complicated_function()
+   return false
 end
 ```
 
@@ -466,7 +466,7 @@ b = 2
 
 ## Spacing
 
-* Use a space after `--`. 
+* Use a space after `--`.
 
 ```lua
 --bad
