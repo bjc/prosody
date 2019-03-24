@@ -10,6 +10,7 @@ local jid = require "util.jid";
 local st = require "util.stanza";
 local dt = require "util.datetime";
 local new_queue = require "util.queue".new;
+local filters = require "util.filters";
 
 local function new_pump(output, ...)
 	-- luacheck: ignore 212/self
@@ -92,10 +93,22 @@ local function with_timestamp(stanza, from)
 	return stanza;
 end
 
+local function manage_buffer(stanza, session)
+	local ctr = session.csi_counter or 0;
+	if ctr >= queue_size or module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
+		session.conn:resume_writes();
+	else
+		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
+	end
+	session.csi_counter = ctr + 1;
+	return stanza;
+end
+
 module:hook("csi-client-inactive", function (event)
 	local session = event.origin;
 	if session.conn and session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
+		filters.add_filter(session, "stanzas/out", manage_buffer);
 	elseif session.pump then
 		session.pump:pause();
 	else
@@ -122,7 +135,16 @@ module:hook("csi-client-active", function (event)
 	if session.pump then
 		session.pump:resume();
 	elseif session.conn and session.conn and session.conn.resume_writes then
+		filters.remove_filter(session, "stanzas/out", manage_buffer);
 		session.conn:resume_writes();
 	end
 end);
 
+
+module:hook("c2s-ondrain", function (event)
+	local session = event.session;
+	if session.state == "inactive" and session.conn and session.conn and session.conn.pause_writes then
+		session.csi_counter = 0;
+		session.conn:pause_writes();
+	end
+end);
