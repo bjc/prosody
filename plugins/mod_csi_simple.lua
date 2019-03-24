@@ -111,3 +111,24 @@ module:hook("c2s-ondrain", function (event)
 		session.conn:pause_writes();
 	end
 end);
+
+function module.load()
+	for _, user_session in pairs(prosody.hosts[module.host].sessions) do
+		for _, session in pairs(user_session.sessions) do
+			if session.state == "inactive" then
+				enable_optimizations(session);
+			end
+		end
+	end
+end
+
+function module.unload()
+	for _, user_session in pairs(prosody.hosts[module.host].sessions) do
+		for _, session in pairs(user_session.sessions) do
+			if session.state == "inactive" then
+				disble_optimizations(session);
+			end
+		end
+	end
+end
+
