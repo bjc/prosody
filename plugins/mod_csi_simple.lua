@@ -71,6 +71,7 @@ local function manage_buffer(stanza, session)
 end
 
 local function flush_buffer(data, session)
+	session.log("debug", "Client sent something, flushing buffer once");
 	session.conn:resume_writes();
 	return data;
 end
@@ -109,6 +110,7 @@ module:hook("c2s-ondrain", function (event)
 	if session.state == "inactive" and session.conn and session.conn and session.conn.pause_writes then
 		session.csi_counter = 0;
 		session.conn:pause_writes();
+		session.log("debug", "Buffer flushed, resuming inactive mode");
 	end
 end);
 
