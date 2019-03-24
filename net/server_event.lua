@@ -304,7 +304,7 @@ end
 
 -- Public methods
 function interface_mt:write(data)
-	if self.nowriting then return nil, "locked" end
+	if self.nointerface then return nil, "locked"; end
 	--vdebug( "try to send data to client, id/data:", self.id, data )
 	data = tostring( data )
 	local len = #data
@@ -316,7 +316,7 @@ function interface_mt:write(data)
 	end
 	t_insert(self.writebuffer, data) -- new buffer
 	self.writebufferlen = total
-	if not self.eventwrite then  -- register new write event
+	if not self.eventwrite and not self.nowriting  then  -- register new write event
 		--vdebug( "register new write event" )
 		self.eventwrite = addevent( base, self.conn, EV_WRITE, self.writecallback, cfg.WRITE_TIMEOUT )
 	end
