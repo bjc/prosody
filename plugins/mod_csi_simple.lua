@@ -75,8 +75,7 @@ local function flush_buffer(data, session)
 	return data;
 end
 
-module:hook("csi-client-inactive", function (event)
-	local session = event.origin;
+function enable_optimizations(session)
 	if session.conn and session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
 		filters.add_filter(session, "stanzas/out", manage_buffer);
@@ -84,15 +83,24 @@ module:hook("csi-client-inactive", function (event)
 	else
 		session.log("warn", "Session connection does not support write pausing");
 	end
-end);
+end
 
-module:hook("csi-client-active", function (event)
-	local session = event.origin;
+function disble_optimizations(session)
 	if session.conn and session.conn and session.conn.resume_writes then
 		filters.remove_filter(session, "stanzas/out", manage_buffer);
 		filters.remove_filter(session, "bytes/in", flush_buffer);
 		session.conn:resume_writes();
 	end
+end
+
+module:hook("csi-client-inactive", function (event)
+	local session = event.origin;
+	enable_optimizations(session);
+end);
+
+module:hook("csi-client-active", function (event)
+	local session = event.origin;
+	disble_optimizations(session);
 end);
 
 
