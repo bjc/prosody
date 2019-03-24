@@ -497,14 +497,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		local tmp = _sendlistlen
 		_sendlistlen = removesocket( _sendlist, socket, _sendlistlen )
 		_writetimes[ handler ] = nil
-		if _sendlistlen ~= tmp then
-			nosend = true
-		end
+		nosend = true
 	end
 	handler.resume_writes = function (self)
-		if nosend then
-			nosend = false
-			write( "" )
+		nosend = false
+		if bufferlen > 0 then
+			_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
 		end
 	end
 
