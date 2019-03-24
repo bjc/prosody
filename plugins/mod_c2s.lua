@@ -332,6 +332,13 @@ function listener.onreadtimeout(conn)
 	end
 end
 
+function listener.ondrain(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("c2s-ondrain", { session = session });
+	end
+end
+
 local function keepalive(event)
 	local session = event.session;
 	if not session.notopen then
