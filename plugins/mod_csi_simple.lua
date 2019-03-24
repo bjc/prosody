@@ -61,7 +61,11 @@ end
 
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
-	if ctr >= queue_size or module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
+	if ctr >= queue_size then
+		session.log("debug", "Queue size limit hit, flushing buffer");
+		session.conn:resume_writes();
+	elseif module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
+		session.log("debug", "Important stanza, flushing buffer");
 		session.conn:resume_writes();
 	else
 		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
