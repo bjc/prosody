@@ -84,6 +84,14 @@ module:hook("csi-is-stanza-important", function (event)
 	return true;
 end, -1);
 
+local function with_timestamp(stanza, from)
+	if st.is_stanza(stanza) and stanza.attr.xmlns == nil and stanza.name ~= "iq" then
+		stanza = st.clone(stanza);
+		stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = from, stamp = dt.datetime()}));
+	end
+	return stanza;
+end
+
 module:hook("csi-client-inactive", function (event)
 	local session = event.origin;
 	if session.conn and session.conn and session.conn.pause_writes then
@@ -102,11 +110,7 @@ module:hook("csi-client-inactive", function (event)
 				pump:flush();
 				send(stanza);
 			else
-				if st.is_stanza(stanza) and stanza.attr.xmlns == nil and stanza.name ~= "iq" then
-					stanza = st.clone(stanza);
-					stanza:add_direct_child(st.stanza("delay", {xmlns = "urn:xmpp:delay", from = bare_jid, stamp = dt.datetime()}));
-				end
-				pump:push(stanza);
+				pump:push(with_timestamp(stanza, bare_jid));
 			end
 			return true;
 		end
