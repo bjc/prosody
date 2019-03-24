@@ -109,9 +109,15 @@ local function flush_buffer(data, session)
 	return data;
 end
 
+local function flush_pump(data, session)
+	session.pump:flush();
+	return data;
+end
+
 module:hook("csi-client-inactive", function (event)
 	local session = event.origin;
 	if session.conn and session.conn and session.conn.pause_writes then
+		session.log("info", "Native net.server buffer management mode");
 		session.conn:pause_writes();
 		filters.add_filter(session, "stanzas/out", manage_buffer);
 		filters.add_filter(session, "bytes/in", flush_buffer);
@@ -124,6 +130,7 @@ module:hook("csi-client-inactive", function (event)
 		local pump = new_pump(session.send, queue_size);
 		pump:pause();
 		session.pump = pump;
+		filters.add_filter(session, "bytes/in", flush_pump);
 		function session.send(stanza)
 			if session.state == "active" or module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
 				pump:flush();
