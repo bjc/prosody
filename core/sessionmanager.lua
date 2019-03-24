@@ -32,20 +32,26 @@ local function new_session(conn)
 	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
 	local filter = initialize_filters(session);
 	local w = conn.write;
+
+	function session.rawsend(t)
+		t = filter("bytes/out", tostring(t));
+		if t then
+			local ret, err = w(conn, t);
+			if not ret then
+				session.log("debug", "Error writing to connection: %s", tostring(err));
+				return false, err;
+			end
+		end
+		return true;
+	end
+
 	session.send = function (t)
 		session.log("debug", "Sending[%s]: %s", session.type, t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
 		if t.name then
 			t = filter("stanzas/out", t);
 		end
 		if t then
-			t = filter("bytes/out", tostring(t));
-			if t then
-				local ret, err = w(conn, t);
-				if not ret then
-					session.log("debug", "Error writing to connection: %s", tostring(err));
-					return false, err;
-				end
-			end
+			return session.rawsend(t);
 		end
 		return true;
 	end
