@@ -381,4 +381,35 @@ describe("util.stanza", function()
 			end);
 		end);
 	end);
+
+	describe("top_tag", function ()
+		local xml_parse = require "util.xml".parse;
+		it("works", function ()
+			local s = st.message({type="chat"}, "Hello");
+			local top_tag = s:top_tag();
+			assert.is_string(top_tag);
+			assert.not_equal("/>", top_tag:sub(-2, -1));
+			assert.equal(">", top_tag:sub(-1, -1));
+			local s2 = xml_parse(top_tag.."</message>");
+			assert(st.is_stanza(s2));
+			assert.equal("message", s2.name);
+			assert.equal(0, #s2);
+			assert.equal(0, #s2.tags);
+			assert.equal("chat", s2.attr.type);
+		end);
+
+		it("works with namespaced attributes", function ()
+			local s = xml_parse[[<message foo:bar='true' xmlns:foo='my-awesome-ns'/>]];
+			local top_tag = s:top_tag();
+			assert.is_string(top_tag);
+			assert.not_equal("/>", top_tag:sub(-2, -1));
+			assert.equal(">", top_tag:sub(-1, -1));
+			local s2 = xml_parse(top_tag.."</message>");
+			assert(st.is_stanza(s2));
+			assert.equal("message", s2.name);
+			assert.equal(0, #s2);
+			assert.equal(0, #s2.tags);
+			assert.equal("true", s2.attr["my-awesome-ns\1bar"]);
+		end);
+	end);
 end);
