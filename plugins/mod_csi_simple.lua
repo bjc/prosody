@@ -90,7 +90,7 @@ function enable_optimizations(session)
 	end
 end
 
-function disble_optimizations(session)
+function disable_optimizations(session)
 	if session.conn and session.conn and session.conn.resume_writes then
 		filters.remove_filter(session, "stanzas/out", manage_buffer);
 		filters.remove_filter(session, "bytes/in", flush_buffer);
@@ -105,7 +105,7 @@ end);
 
 module:hook("csi-client-active", function (event)
 	local session = event.origin;
-	disble_optimizations(session);
+	disable_optimizations(session);
 end);
 
 
@@ -132,9 +132,8 @@ function module.unload()
 	for _, user_session in pairs(prosody.hosts[module.host].sessions) do
 		for _, session in pairs(user_session.sessions) do
 			if session.state == "inactive" then
-				disble_optimizations(session);
+				disable_optimizations(session);
 			end
 		end
 	end
 end
-
