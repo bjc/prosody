@@ -62,10 +62,10 @@ end
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
 	if ctr >= queue_size then
-		session.log("debug", "Queue size limit hit, flushing buffer");
+		session.log("debug", "Queue size limit hit, flushing buffer (queue size is %d)", session.csi_counter);
 		session.conn:resume_writes();
 	elseif module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
-		session.log("debug", "Important stanza, flushing buffer");
+		session.log("debug", "Important stanza, flushing buffer (queue size is %d)", session.csi_counter);
 		session.conn:resume_writes();
 	else
 		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
@@ -75,7 +75,7 @@ local function manage_buffer(stanza, session)
 end
 
 local function flush_buffer(data, session)
-	session.log("debug", "Client sent something, flushing buffer once");
+	session.log("debug", "Client sent something, flushing buffer once (queue size is %d)", session.csi_counter);
 	session.conn:resume_writes();
 	return data;
 end
@@ -112,9 +112,9 @@ end);
 module:hook("c2s-ondrain", function (event)
 	local session = event.session;
 	if session.state == "inactive" and session.conn and session.conn and session.conn.pause_writes then
-		session.csi_counter = 0;
 		session.conn:pause_writes();
-		session.log("debug", "Buffer flushed, resuming inactive mode");
+		session.log("debug", "Buffer flushed, resuming inactive mode (queue size was %d)", session.csi_counter);
+		session.csi_counter = 0;
 	end
 end);
 
