@@ -18,6 +18,9 @@ local getstyle, getstring = require "util.termcolours".getstyle, require "util.t
 local config = require "core.configmanager";
 local logger = require "util.logger";
 
+local have_pposix, pposix = pcall(require, "util.pposix");
+have_pposix = have_pposix and pposix._VERSION == "0.4.0";
+
 local _ENV = nil;
 -- luacheck: std none
 
@@ -231,6 +234,22 @@ local function log_to_console(sink_config)
 	end
 end
 log_sink_types.console = log_to_console;
+
+if have_pposix then
+	local syslog_opened;
+	local function log_to_syslog(sink_config) -- luacheck: ignore 212/sink_config
+		if not syslog_opened then
+			local facility = sink_config.syslog_facility or config.get("*", "syslog_facility");
+			pposix.syslog_open(sink_config.syslog_name or "prosody", facility);
+			syslog_opened = true;
+		end
+		local syslog = pposix.syslog_log;
+		return function (name, level, message, ...)
+			syslog(level, name, format(message, ...));
+		end;
+	end
+	log_sink_types.syslog = log_to_syslog;
+end
 
 local function register_sink_type(name, sink_maker)
 	local old_sink_maker = log_sink_types[name];
