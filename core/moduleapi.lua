@@ -531,7 +531,6 @@ function api:set_status(status_type, status_message, override)
 		return;
 	end
 	self.status_type, self.status_message, self.status_time = status_type, status_message, time_now();
-	self:log("debug", "New status: %s", status_type);
 	self:fire_event("module-status/updated", { name = self.name });
 end
 
