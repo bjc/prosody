@@ -527,7 +527,7 @@ function api:set_status(status_type, status_message, override)
 	-- By default an 'error' status can only be overwritten by another 'error' status
 	if (current_priority >= status_priorities.error and priority < current_priority and override ~= true)
 	or (override == false and current_priority > priority) then
-		self:log("debug", "Ignoring status");
+		self:log("debug", "moduleapi: ignoring status [prio %d override %s]: %s", priority, override, status_message);
 		return;
 	end
 	self.status_type, self.status_message, self.status_time = status_type, status_message, time_now();
