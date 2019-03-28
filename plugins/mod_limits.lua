@@ -84,8 +84,13 @@ local function filter_hook(session)
 	local session_type = session.type:match("^[^_]+");
 	local filter_set, opts = type_filters[session_type], limits[session_type];
 	if opts then
-		session.throttle = throttle.create(opts.bytes_per_second * opts.burst_seconds, opts.burst_seconds);
-		filters.add_filter(session, "bytes/in", filter_set.bytes_in, 1000);
+		if session.conn and session.conn.setlimit then
+			session.conn:setlimit(opts.bytes_per_second);
+			-- Currently no burst support
+		else
+			session.throttle = throttle.create(opts.bytes_per_second * opts.burst_seconds, opts.burst_seconds);
+			filters.add_filter(session, "bytes/in", filter_set.bytes_in, 1000);
+		end
 	end
 end
 
@@ -106,9 +111,14 @@ function module.add_host(module)
 			local session_type = session.type:match("^[^_]+");
 			local jid = session.username .. "@" .. session.host;
 			if unlimited_jids:contains(jid) then
-				local filter_set = type_filters[session_type];
-				filters.remove_filter(session, "bytes/in", filter_set.bytes_in);
-				session.throttle = nil;
+				if session.conn and session.conn.setlimit then
+					session.conn:setlimit(0);
+					-- Currently no burst support
+				else
+					local filter_set = type_filters[session_type];
+					filters.remove_filter(session, "bytes/in", filter_set.bytes_in);
+					session.throttle = nil;
+				end
 			end
 		end);
 	end
