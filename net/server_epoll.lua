@@ -340,22 +340,25 @@ function interface:onreadable()
 		self:onconnect();
 		self:on("incoming", data);
 	else
+		if err == "wantread" then
+			self:set(true, nil);
+			err = "timeout";
+		elseif err == "wantwrite" then
+			self:set(nil, true);
+			err = "timeout";
+		end
 		if partial and partial ~= "" then
 			self:onconnect();
 			self:on("incoming", partial, err);
 		end
-		if err == "wantread" then
-			self:set(true, nil);
-		elseif err == "wantwrite" then
-			self:set(nil, true);
-		elseif err ~= "timeout" then
+		if err ~= "timeout" then
 			self:on("disconnect", err);
 			self:destroy()
 			return;
 		end
 	end
 	if not self.conn then return; end
-	if self.conn:dirty() then
+	if self._wantread and self.conn:dirty() then
 		self:setreadtimeout(false);
 		self:pausefor(cfg.read_retry_delay);
 	else
