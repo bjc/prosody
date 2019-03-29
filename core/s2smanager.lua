@@ -26,10 +26,10 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function new_incoming(conn)
-	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
-	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
-	incoming_s2s[session] = true;
-	return session;
+	local host_session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
+	host_session.log = logger_init("s2sin"..tostring(host_session):match("[a-f0-9]+$"));
+	incoming_s2s[host_session] = true;
+	return host_session;
 end
 
 local function new_outgoing(from_host, to_host)
