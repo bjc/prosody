@@ -21,6 +21,7 @@ local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local generate_identifier = require "util.id".short;
+local sessionlib = require "util.session";
 
 local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
@@ -29,7 +30,12 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function new_session(conn)
-	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
+	local session = sessionlib.new("c2s");
+	sessionlib.set_id(session);
+	sessionlib.set_logger(session);
+	sessionlib.set_conn(session, conn);
+
+	session.conntime = gettime();
 	local filter = initialize_filters(session);
 	local w = conn.write;
 
