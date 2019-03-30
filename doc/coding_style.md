@@ -13,7 +13,7 @@ This style guides lists the coding conventions used in the
 for i, pkg in ipairs(packages) do
     for name, version in pairs(pkg) do
         if name == searched then
-            print(version)
+            print(version);
         end
     end
 end
@@ -69,7 +69,7 @@ unless you are writing a function that operates on generic tables.
 
 ```lua
 for _, item in ipairs(items) do
-   do_something_with_item(item)
+   do_something_with_item(item);
 end
 ```
 
@@ -85,7 +85,7 @@ local c = function()
 end
 
 -- good
-local this_is_my_object = {}
+local this_is_my_object = {};
 
 local function do_that_thing()
    -- ...stuff...
@@ -113,7 +113,7 @@ end
 
 -- good
 local function is_evil(alignment)
-   return alignment < 100
+   return alignment < 100;
 end
 ```
 
@@ -130,7 +130,7 @@ constants from C.
 * When creating a table, prefer populating its fields all at once, if possible:
 
 ```lua
-local player = { name = "Jack", class = "Rogue" }
+local player = { name = "Jack", class = "Rogue" };
 ```
 
 * Items should be separated by commas. If there are many items, put each
@@ -145,7 +145,7 @@ local player = {
 ```
 
 > **Rationale:** This makes the structure of your tables more evident at a glance.
-Trailing commas make it quicker to add new fields and produces shorter diffs.
+Trailing semi-colons make it quicker to add new fields and produces shorter diffs.
 
 * Use plain `key` syntax whenever possible, use `["key"]` syntax when using names
 that can't be represented as identifiers and avoid mixing representations in
@@ -153,9 +153,9 @@ a declaration:
 
 ```lua
 local mytable = {
-   ["1394-E"] = val1,
-   ["UTF-8"] = val2,
-   ["and"] = val2,
+   ["1394-E"] = val1;
+   ["UTF-8"] = val2;
+   ["and"] = val2;
 }
 ```
 
@@ -165,8 +165,8 @@ local mytable = {
 that contain double quotes.
 
 ```lua
-local name = "Prosody"
-local sentence = 'The name of the program is "Prosody"'
+local name = "Prosody";
+local sentence = 'The name of the program is "Prosody"';
 ```
 
 > **Rationale:** Double quotes are used as string delimiters in a larger number of
@@ -218,12 +218,12 @@ end
 -- good
 local function is_good_name(name, options, args)
    if #name < 3 or #name > 30 then
-      return false
+      return false;
    end
 
    -- ...stuff...
 
-   return true
+   return true;
 end
 ```
 
@@ -236,8 +236,8 @@ end
 -- bad
 local data = get_data"KRP"..tostring(area_number)
 -- good
-local data = get_data("KRP"..tostring(area_number))
-local data = get_data("KRP")..tostring(area_number)
+local data = get_data("KRP"..tostring(area_number));
+local data = get_data("KRP")..tostring(area_number);
 ```
 
 > **Rationale:** It is not obvious at a glace what the precedence rules are
@@ -251,8 +251,8 @@ lines.
 
 ```lua
 local an_instance = a_module.new {
-   a_parameter = 42,
-   another_parameter = "yay",
+   a_parameter = 42;
+   another_parameter = "yay";
 }
 ```
 
@@ -265,15 +265,15 @@ so there are no precedence issues.
 
 ```lua
 local luke = {
-   jedi = true,
-   age = 28,
+   jedi = true;
+   age = 28;
 }
 
 -- bad
 local is_jedi = luke["jedi"]
 
 -- good
-local is_jedi = luke.jedi
+local is_jedi = luke.jedi;
 ```
 
 * Use subscript notation `[]` when accessing properties with a variable or if using a table as a list.
@@ -282,11 +282,11 @@ local is_jedi = luke.jedi
 local vehicles = load_vehicles_from_disk("vehicles.dat")
 
 if vehicles["Porsche"] then
-   porsche_handler(vehicles["Porsche"])
-   vehicles["Porsche"] = nil
+   porsche_handler(vehicles["Porsche"]);
+   vehicles["Porsche"] = nil;
 end
 for name, cars in pairs(vehicles) do
-   regular_handler(cars)
+   regular_handler(cars);
 end
 ```
 
@@ -298,7 +298,7 @@ to be used as a record/object field.
 * When declaring modules and classes, declare functions external to the table definition:
 
 ```lua
-local my_module = {}
+local my_module = {};
 
 function my_module.a_function(x)
    -- code
@@ -337,7 +337,7 @@ than if it says `check_version = function()` under some indentation level.
 superpower = get_superpower()
 
 -- good
-local superpower = get_superpower()
+local superpower = get_superpower();
 ```
 
 > **Rationale:** Not doing so will result in global variables to avoid polluting
@@ -366,18 +366,18 @@ end
 
 -- good
 local bad = function()
-   test()
-   print("doing stuff..")
+   test();
+   print("doing stuff..");
 
    --...other stuff...
 
-   local name = get_name()
+   local name = get_name();
 
    if name == "test" then
-      return false
+      return false;
    end
 
-   return name
+   return name;
 end
 ```
 
@@ -410,11 +410,11 @@ easier to scan visually:
 ```lua
 local function default_name(name)
    -- return the default "Waldo" if name is nil
-   return name or "Waldo"
+   return name or "Waldo";
 end
 
 local function brew_coffee(machine)
-   return (machine and machine.is_loaded) and "coffee brewing" or "fill your water"
+   return (machine and machine.is_loaded) and "coffee brewing" or "fill your water";
 end
 ```
 
@@ -434,7 +434,7 @@ if test then break end
 if not ok then return nil, "this failed for this reason: " .. reason end
 
 -- good
-use_callback(x, function(k) return k.last end)
+use_callback(x, function(k) return k.last end);
 
 -- good
 if test then
@@ -446,8 +446,8 @@ if test < 1 and do_complicated_function(test) == false or seven == 8 and nine ==
 
 -- good
 if test < 1 and do_complicated_function(test) == false or seven == 8 and nine == 10 then
-   do_other_complicated_function()
-   return false
+   do_other_complicated_function();
+   return false;
 end
 ```
 
@@ -491,17 +491,17 @@ dog.set( "attr",{
 })
 
 -- good
-local x = y * 9
-local numbers = {1, 2, 3}
+local x = y * 9;
+local numbers = {1, 2, 3};
 local strings = {
     "hello";
     "Lua";
     "world";
 }
 dog.set("attr", {
-   age = "1 year",
-   breed = "Bernese Mountain Dog",
-})
+   age = "1 year";
+   breed = "Bernese Mountain Dog";
+});
 ```
 
 * Indent tables and functions according to the start of the line, not the construct:
@@ -522,7 +522,7 @@ local my_table = {
     "world";
 }
 using_a_callback(x, function(...)
-   print("hello")
+   print("hello");
 end)
 ```
 
@@ -534,7 +534,7 @@ replacing `x` with `xy` in the `using_a_callback` example above).
 
 ```lua
 -- okay
-local message = "Hello, "..user.."! This is your day # "..day.." in our platform!"
+local message = "Hello, "..user.."! This is your day # "..day.." in our platform!";
 ```
 
 > **Rationale:** Being at the baseline, the dots already provide some visual spacing.
@@ -582,8 +582,8 @@ local a               = 1
 local long_identifier = 2
 
 -- good
-local a = 1
-local long_identifier = 2
+local a = 1;
+local long_identifier = 2;
 ```
 
 > **Rationale:** This produces extra diffs which add noise to `git blame`.
@@ -592,8 +592,8 @@ local long_identifier = 2
 
 ```lua
 -- okay
-sys_command(form, UI_FORM_UPDATE_NODE, "a",      FORM_NODE_HIDDEN,  false)
-sys_command(form, UI_FORM_UPDATE_NODE, "sample", FORM_NODE_VISIBLE, false)
+sys_command(form, UI_FORM_UPDATE_NODE, "a",      FORM_NODE_HIDDEN,  false);
+sys_command(form, UI_FORM_UPDATE_NODE, "sample", FORM_NODE_VISIBLE, false);
 ```
 
 ## Typing
@@ -603,8 +603,8 @@ for function arguments:
 
 ```lua
 function manif.load_manifest(repo_url, lua_version)
-   assert(type(repo_url) == "string")
-   assert(type(lua_version) == "string" or not lua_version)
+   assert(type(repo_url) == "string");
+   assert(type(lua_version) == "string" or not lua_version);
 
    -- ...
 end
@@ -617,7 +617,7 @@ end
 local total_score = review_score .. ""
 
 -- good
-local total_score = tostring(review_score)
+local total_score = tostring(review_score);
 ```
 
 ## Errors
@@ -636,9 +636,9 @@ Follow [these guidelines](http://hisham.hm/2014/01/02/how-to-write-lua-modules-i
 * Always require a module into a local variable named after the last component of the module’s full name.
 
 ```lua
-local bar = require("foo.bar") -- requiring the module
+local bar = require("foo.bar"); -- requiring the module
 
-bar.say("hello") -- using the module
+bar.say("hello"); -- using the module
 ```
 
 * Don’t rename modules arbitrarily:
@@ -657,7 +657,7 @@ the whole module path.
 
 ```lua
 --- @module foo.bar
-local bar = {}
+local bar = {};
 ```
 
 * Try to use names that won't clash with your local variables. For instance, don't
@@ -672,7 +672,7 @@ That is, `local function helper_foo()` means that `helper_foo` is really local.
 
 ```lua
 function bar.say(greeting)
-   print(greeting)
+   print(greeting);
 end
 ```
 
@@ -702,14 +702,14 @@ and do something like this instead:
 
 ```lua
 -- good
-local messagepack = require("messagepack")
-local mpack = messagepack.new({integer = "unsigned"})
+local messagepack = require("messagepack");
+local mpack = messagepack.new({integer = "unsigned"});
 ```
 
 * The invocation of require may omit parentheses around the module name:
 
 ```lua
-local bla = require "bla"
+local bla = require "bla";
 ```
 
 ## Metatables, classes and objects
@@ -739,7 +739,7 @@ return { new = new };
 my_object.my_method(my_object)
 
 -- good
-my_object:my_method()
+my_object:my_method();
 ```
 
 > **Rationale:** This makes it explicit that the intent is to use the function as a method.
@@ -780,8 +780,8 @@ its arguments; it's better to spell out in the argument what the API the
 function implements is, instead of adding `_` variables.
 
 ```
-local foo, bar = some_function() --luacheck: ignore 212/foo
-print(bar)
+local foo, bar = some_function(); --luacheck: ignore 212/foo
+print(bar);
 ```
 
 * luacheck warning 542 (empty if branch) can also be ignored, when a sequence
@@ -790,11 +790,11 @@ and one of the cases is meant to mean "pass". For example:
 
 ```lua
 if warning >= 600 and warning <= 699 then
-   print("no whitespace warnings")
+   print("no whitespace warnings");
 elseif warning == 542 then --luacheck: ignore 542
    -- pass
 else
-   print("got a warning: "..warning)
+   print("got a warning: "..warning);
 end
 ```
 
