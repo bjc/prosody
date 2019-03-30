@@ -32,7 +32,7 @@ local function new_incoming(conn)
 	sessionlib.set_logger(host_session);
 	sessionlib.set_conn(host_session, conn);
 	host_session.direction = "incoming";
-	host_session.session.hosts = {};
+	host_session.hosts = {};
 	incoming_s2s[host_session] = true;
 	return host_session;
 end
