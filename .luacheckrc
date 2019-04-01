@@ -131,42 +131,42 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	unused_secondaries = false
 
 	local exclude_files = {
-	"doc/net.server.lua";
+		"doc/net.server.lua";
 
-	"fallbacks/bit.lua";
-	"fallbacks/lxp.lua";
+		"fallbacks/bit.lua";
+		"fallbacks/lxp.lua";
 
-	"net/cqueues.lua";
-	"net/dns.lua";
-	"net/server_select.lua";
+		"net/cqueues.lua";
+		"net/dns.lua";
+		"net/server_select.lua";
 
-	"plugins/mod_storage_sql1.lua";
+		"plugins/mod_storage_sql1.lua";
 
-	"spec/core_configmanager_spec.lua";
-	"spec/core_moduleapi_spec.lua";
-	"spec/net_http_parser_spec.lua";
-	"spec/util_events_spec.lua";
-	"spec/util_http_spec.lua";
-	"spec/util_ip_spec.lua";
-	"spec/util_multitable_spec.lua";
-	"spec/util_rfc6724_spec.lua";
-	"spec/util_throttle_spec.lua";
-	"spec/util_xmppstream_spec.lua";
+		"spec/core_configmanager_spec.lua";
+		"spec/core_moduleapi_spec.lua";
+		"spec/net_http_parser_spec.lua";
+		"spec/util_events_spec.lua";
+		"spec/util_http_spec.lua";
+		"spec/util_ip_spec.lua";
+		"spec/util_multitable_spec.lua";
+		"spec/util_rfc6724_spec.lua";
+		"spec/util_throttle_spec.lua";
+		"spec/util_xmppstream_spec.lua";
 
-	"tools/ejabberd2prosody.lua";
-	"tools/ejabberdsql2prosody.lua";
-	"tools/erlparse.lua";
-	"tools/jabberd14sql2prosody.lua";
-	"tools/migration/migrator.cfg.lua";
-	"tools/migration/migrator/jabberd14.lua";
-	"tools/migration/migrator/mtools.lua";
-	"tools/migration/migrator/prosody_files.lua";
-	"tools/migration/migrator/prosody_sql.lua";
-	"tools/migration/prosody-migrator.lua";
-	"tools/openfire2prosody.lua";
-	"tools/xep227toprosody.lua";
+		"tools/ejabberd2prosody.lua";
+		"tools/ejabberdsql2prosody.lua";
+		"tools/erlparse.lua";
+		"tools/jabberd14sql2prosody.lua";
+		"tools/migration/migrator.cfg.lua";
+		"tools/migration/migrator/jabberd14.lua";
+		"tools/migration/migrator/mtools.lua";
+		"tools/migration/migrator/prosody_files.lua";
+		"tools/migration/migrator/prosody_sql.lua";
+		"tools/migration/prosody-migrator.lua";
+		"tools/openfire2prosody.lua";
+		"tools/xep227toprosody.lua";
 
-	"util/sasl/digest-md5.lua";
+		"util/sasl/digest-md5.lua";
 	}
 	for _, file in ipairs(exclude_files) do
 		files[file] = { only = {} }
