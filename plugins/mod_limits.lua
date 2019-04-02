@@ -100,7 +100,7 @@ end
 function module.add_host(module)
 	local unlimited_jids = module:get_option_inherited_set("unlimited_jids", {});
 
-	if not unlimited_jids:empy() then
+	if not unlimited_jids:empty() then
 		module:hook("authentication-success", function (event)
 			local session = event.session;
 			local session_type = session.type:match("^[^_]+");
