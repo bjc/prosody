@@ -46,6 +46,12 @@ if not mime_map then
 	end
 end
 
+local function get_calling_module()
+	local info = debug.getinfo(3, "S");
+	if not info then return "An unknown module"; end
+	return info.source:match"mod_[^/\\.]+" or info.short_src;
+end
+
 -- COMPAT -- TODO deprecate
 function serve(opts)
 	if type(opts) ~= "table" then -- assume path string
@@ -67,12 +73,12 @@ function serve(opts)
 		opts.index_files = dir_indices;
 	end
 	-- TODO Crank up to warning
-	module:log("debug", "Use of mod_http_files.serve() should be updated to use net.http.files");
+	module:log("debug", "%s should be updated to use 'net.http.files' insead of mod_http_files", get_calling_module());
 	return fileserver.serve(opts);
 end
 
 function wrap_route(routes)
-	module:log("debug", "Use of mod_http_files.wrap_route() should be updated to use net.http.files");
+	module:log("debug", "%s should be updated to use 'net.http.files' insead of mod_http_files", get_calling_module());
 	for route,handler in pairs(routes) do
 		if type(handler) ~= "function" then
 			routes[route] = fileserver.serve(handler);
