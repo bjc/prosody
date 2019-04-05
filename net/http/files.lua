@@ -6,9 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-module:depends("http");
 local server = require"net.http.server";
 local lfs = require "lfs";
+local new_cache = require "util.cache".new;
+local log = require "util.logger".init("net.http.files");
 
 local os_date = os.date;
 local open = io.open;
@@ -16,48 +17,14 @@ local stat = lfs.attributes;
 local build_path = require"socket.url".build_path;
 local path_sep = package.config:sub(1,1);
 
-local base_path = module:get_option_path("http_files_dir", module:get_option_path("http_path"));
-local cache_size = module:get_option_number("http_files_cache_size", 128);
-local cache_max_file_size = module:get_option_number("http_files_cache_max_file_size", 4096);
-local dir_indices = module:get_option_array("http_index_files", { "index.html", "index.htm" });
-local directory_index = module:get_option_boolean("http_dir_listing");
-
-local mime_map = module:shared("/*/http_files/mime").types;
-if not mime_map then
-	mime_map = {
-		html = "text/html", htm = "text/html",
-		xml = "application/xml",
-		txt = "text/plain",
-		css = "text/css",
-		js = "application/javascript",
-		png = "image/png",
-		gif = "image/gif",
-		jpeg = "image/jpeg", jpg = "image/jpeg",
-		svg = "image/svg+xml",
-	};
-	module:shared("/*/http_files/mime").types = mime_map;
-
-	local mime_types, err = open(module:get_option_path("mime_types_file", "/etc/mime.types", "config"), "r");
-	if mime_types then
-		local mime_data = mime_types:read("*a");
-		mime_types:close();
-		setmetatable(mime_map, {
-			__index = function(t, ext)
-				local typ = mime_data:match("\n(%S+)[^\n]*%s"..(ext:lower()).."%s") or "application/octet-stream";
-				t[ext] = typ;
-				return typ;
-			end
-		});
-	end
-end
 
 local forbidden_chars_pattern = "[/%z]";
-if prosody.platform == "windows" then
+if package.config:sub(1,1) == "\\" then
 	forbidden_chars_pattern = "[/%z\001-\031\127\"*:<>?|]"
 end
 
 local urldecode = require "util.http".urldecode;
-function sanitize_path(path)
+local function sanitize_path(path) --> util.paths or util.http?
 	if not path then return end
 	local out = {};
 
@@ -83,15 +50,16 @@ function sanitize_path(path)
 	return "/"..table.concat(out, "/");
 end
 
-local cache = require "util.cache".new(cache_size);
-
-function serve(opts)
+local function serve(opts)
 	if type(opts) ~= "table" then -- assume path string
 		opts = { path = opts };
 	end
+	local mime_map = opts.mime_map or { html = "text/html" };
+	local cache = new_cache(opts.cache_size or 256);
+	local cache_max_file_size = tonumber(opts.cache_max_file_size) or 1024
 	-- luacheck: ignore 431
 	local base_path = opts.path;
-	local dir_indices = opts.index_files or dir_indices;
+	local dir_indices = opts.index_files or { "index.html", "index.htm" };
 	local directory_index = opts.directory_index;
 	local function serve_file(event, path)
 		local request, response = event.request, event.response;
@@ -151,7 +119,7 @@ function serve(opts)
 		else
 			local f, err = open(full_path, "rb");
 			if not f then
-				module:log("debug", "Could not open %s. Error was %s", full_path, err);
+				log("debug", "Could not open %s. Error was %s", full_path, err);
 				return 403;
 			end
 			local ext = full_path:match("%.([^./]+)$");
@@ -159,7 +127,7 @@ function serve(opts)
 			response_headers.content_type = content_type;
 			if attr.size > cache_max_file_size then
 				response_headers.content_length = attr.size;
-				module:log("debug", "%d > cache_max_file_size", attr.size);
+				log("debug", "%d > cache_max_file_size", attr.size);
 				return response:send_file(f);
 			else
 				data = f:read("*a");
@@ -174,25 +142,7 @@ function serve(opts)
 	return serve_file;
 end
 
-function wrap_route(routes)
-	for route,handler in pairs(routes) do
-		if type(handler) ~= "function" then
-			routes[route] = serve(handler);
-		end
-	end
-	return routes;
-end
-
-if base_path then
-	module:provides("http", {
-		route = {
-			["GET /*"] = serve {
-				path = base_path;
-				directory_index = directory_index;
-			}
-		};
-	});
-else
-	module:log("debug", "http_files_dir not set, assuming use by some other module");
-end
+return {
+	serve = serve;
+}
 
