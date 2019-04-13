@@ -704,6 +704,7 @@ function resolver:adddefaultnameservers()    -- - - - -  adddefaultnameservers
 					end
 				end
 			end
+			resolv_conf:close();
 		end
 		if not self.server or #self.server == 0 then
 			-- TODO log warning about no nameservers, adding localhost as the default nameserver
