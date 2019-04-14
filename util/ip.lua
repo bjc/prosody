@@ -203,7 +203,7 @@ local rfc6598 = new_ip("100.64.0.0");
 function ip_methods:private()
 	local private = self.scope ~= 0xE;
 	if not private and self.proto == "IPv4" then
-		return match(self, rfc1918_8, 8) or match(self, rfc1918_12, 12) or match(self, rfc1918_16) or match(self, rfc6598, 10);
+		return match(self, rfc1918_8, 8) or match(self, rfc1918_12, 12) or match(self, rfc1918_16, 16) or match(self, rfc6598, 10);
 	end
 	return private;
 end
