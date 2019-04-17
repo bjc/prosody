@@ -250,6 +250,7 @@ function commands.help(session, data)
 		print [[c2s:show_secure() - Show all encrypted client connections]]
 		print [[c2s:show_tls() - Show TLS cipher info for encrypted sessions]]
 		print [[c2s:close(jid) - Close all sessions for the specified JID]]
+		print [[c2s:closeall() - Close all active c2s connections ]]
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
 		print [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
@@ -657,6 +658,16 @@ function def_env.c2s:close(match_jid)
 			count = count + 1;
 			session:close();
 		end
+	end);
+	return true, "Total: "..count.." sessions closed";
+end
+
+function def_env.c2s:closeall()
+	local count = 0;
+	--luacheck: ignore 212/jid
+	show_c2s(function (jid, session)
+		count = count + 1;
+		session:close();
 	end);
 	return true, "Total: "..count.." sessions closed";
 end
