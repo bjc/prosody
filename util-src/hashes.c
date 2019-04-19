@@ -76,44 +76,6 @@ struct hash_desc {
 	void *ctx, *ctxo;
 };
 
-static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
-                 const char *msg, size_t msg_len, unsigned char *result) {
-	union xory {
-		unsigned char bytes[64];
-		uint32_t quadbytes[16];
-	};
-
-	int i;
-	unsigned char hashedKey[64]; /* Maximum used digest length */
-	union xory k_ipad, k_opad;
-
-	if(key_len > 64) {
-		desc->Init(desc->ctx);
-		desc->Update(desc->ctx, key, key_len);
-		desc->Final(hashedKey, desc->ctx);
-		key = (const char *)hashedKey;
-		key_len = desc->digestLength;
-	}
-
-	memcpy(k_ipad.bytes, key, key_len);
-	memset(k_ipad.bytes + key_len, 0, 64 - key_len);
-	memcpy(k_opad.bytes, k_ipad.bytes, 64);
-
-	for(i = 0; i < 16; i++) {
-		k_ipad.quadbytes[i] ^= HMAC_IPAD;
-		k_opad.quadbytes[i] ^= HMAC_OPAD;
-	}
-
-	desc->Init(desc->ctx);
-	desc->Update(desc->ctx, k_ipad.bytes, 64);
-	desc->Init(desc->ctxo);
-	desc->Update(desc->ctxo, k_opad.bytes, 64);
-	desc->Update(desc->ctx, msg, msg_len);
-	desc->Final(result, desc->ctx);
-	desc->Update(desc->ctxo, result, desc->digestLength);
-	desc->Final(result, desc->ctxo);
-}
-
 #define MAKE_HMAC_FUNCTION(myFunc, evp, size, type) \
 static int myFunc(lua_State *L) { \
 	unsigned char hash[size], result[2*size]; \
