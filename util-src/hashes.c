@@ -215,7 +215,7 @@ LUALIB_API int luaopen_util_hashes(lua_State *L) {
 	luaL_checkversion(L);
 #endif
 	lua_newtable(L);
-	luaL_setfuncs(L, Reg, 0);;
+	luaL_setfuncs(L, Reg, 0);
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
 	return 1;
