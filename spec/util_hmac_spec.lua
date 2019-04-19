@@ -1,5 +1,8 @@
 -- Test cases from RFC 4231
 
+-- Yes, the lines are long, it's annoying to split the long hex things.
+-- luacheck: ignore 631
+
 local hmac = require "util.hmac";
 local hex = require "util.hex";
 
