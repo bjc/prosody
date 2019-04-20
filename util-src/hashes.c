@@ -100,39 +100,36 @@ MAKE_HMAC_FUNCTION(Lhmac_sha512, EVP_sha512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, EVP_md5, MD5_DIGEST_LENGTH, MD5_CTX)
 
 static int Lpbkdf2_sha1(lua_State *L) {
+	unsigned char out[SHA_DIGEST_LENGTH];
+
 	size_t pass_len, salt_len;
 	const char *pass = luaL_checklstring(L, 1, &pass_len);
 	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
 	const int iter = luaL_checkinteger(L, 3);
-	const size_t len = luaL_optinteger(L, 4, SHA_DIGEST_LENGTH);
 
-	luaL_Buffer b;
-	unsigned char *out = (unsigned char *)luaL_buffinitsize(L, &b, len);
-
-	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha1(), len, out) == 0) {
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha1(), SHA_DIGEST_LENGTH, out) == 0) {
 		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	luaL_pushresultsize(&b, len);
+	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
+
 	return 1;
 }
 
 
 static int Lpbkdf2_sha256(lua_State *L) {
+	unsigned char out[SHA256_DIGEST_LENGTH];
+
 	size_t pass_len, salt_len;
 	const char *pass = luaL_checklstring(L, 1, &pass_len);
 	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
 	const int iter = luaL_checkinteger(L, 3);
-	const int len = luaL_optinteger(L, 4, SHA256_DIGEST_LENGTH);
 
-	luaL_Buffer b;
-	unsigned char *out = (unsigned char *)luaL_buffinitsize(L, &b, len);
-
-	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha256(), len, out) == 0) {
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha256(), SHA256_DIGEST_LENGTH, out) == 0) {
 		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	luaL_pushresultsize(&b, len);
+	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
 	return 1;
 }
 
