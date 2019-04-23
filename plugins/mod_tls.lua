@@ -52,12 +52,15 @@ function module.load()
 	local parent_s2s = rawgetopt(parent,  "s2s_ssl") or NULL;
 	local host_s2s   = rawgetopt(modhost, "s2s_ssl") or parent_s2s;
 
+	module:log("debug", "Creating context for c2s");
 	ssl_ctx_c2s, err, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
 	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err); end
 
+	module:log("debug", "Creating context for s2sout");
 	ssl_ctx_s2sout, err, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s); -- for outgoing server connections
 	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", err); end
 
+	module:log("debug", "Creating context for s2sin");
 	ssl_ctx_s2sin, err, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
 	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", err); end
 end
