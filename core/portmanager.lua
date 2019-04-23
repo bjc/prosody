@@ -112,6 +112,7 @@ local function activate(service_name)
 				if service_info.encryption == "ssl" then
 					local global_ssl_config = config.get("*", "ssl") or {};
 					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
+					log("debug", "Creating context for direct TLS service %s on port %d", service_info.name, port);
 					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server",
 						prefix_ssl_config[interface],
 						prefix_ssl_config[port],
