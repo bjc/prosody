@@ -113,6 +113,7 @@ local function activate(service_name)
 				if service_info.encryption == "ssl" then
 					local global_ssl_config = config.get("*", "ssl") or {};
 					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
+					log("debug", "Creating context for direct TLS service %s on port %d", service_info.name, port);
 					ssl, err, cfg = certmanager.create_context(service_info.name.." port "..port, "server",
 						prefix_ssl_config[interface],
 						prefix_ssl_config[port],
@@ -254,7 +255,6 @@ local function add_sni_host(host, service)
 		end
 	end
 end
-
 prosody.events.add_handler("item-added/net-provider", function (event)
 	local item = event.item;
 	register_service(item.name, item);

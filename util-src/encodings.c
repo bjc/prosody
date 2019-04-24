@@ -299,7 +299,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 		return 1;
 	}
 
-	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, 0, NULL, &err);
+	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, USPREP_ALLOW_UNASSIGNED, NULL, &err);
 
 	if(U_FAILURE(err)) {
 		lua_pushnil(L);
