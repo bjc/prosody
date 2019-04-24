@@ -276,6 +276,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 	int32_t unprepped_len, prepped_len, output_len;
 	const char *input;
 	char output[1024];
+	int flags = USPREP_ALLOW_UNASSIGNED;
 
 	UChar unprepped[1024]; /* Temporary unicode buffer (1024 characters) */
 	UChar prepped[1024];
@@ -294,6 +295,11 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 		return 1;
 	}
 
+	/* strict */
+	if(lua_toboolean(L, 2)) {
+		flags = 0;
+	}
+
 	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
 
 	if(U_FAILURE(err)) {
@@ -301,7 +307,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 		return 1;
 	}
 
-	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, USPREP_ALLOW_UNASSIGNED, NULL, &err);
+	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, flags, NULL, &err);
 
 	if(U_FAILURE(err)) {
 		lua_pushnil(L);
@@ -397,6 +403,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 	const char *s;
 	char string[1024];
 	int ret;
+	Stringprep_profile_flags flags = 0;
 
 	if(!lua_isstring(L, 1)) {
 		lua_pushnil(L);
@@ -405,13 +412,18 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 
 	s = check_utf8(L, 1, &len);
 
+	/* strict */
+	if(lua_toboolean(L, 2)) {
+		flags = STRINGPREP_NO_UNASSIGNED;
+	}
+
 	if(s == NULL || len >= 1024 || len != strlen(s)) {
 		lua_pushnil(L);
 		return 1; /* TODO return error message */
 	}
 
 	strcpy(string, s);
-	ret = stringprep(string, 1024, (Stringprep_profile_flags)0, profile);
+	ret = stringprep(string, 1024, flags, profile);
 
 	if(ret == STRINGPREP_OK) {
 		lua_pushstring(L, string);
