@@ -11,10 +11,15 @@ assert(encodings.confusable, "This module requires that Prosody be built with IC
 local skeleton = encodings.confusable.skeleton;
 
 local usage = require "util.prosodyctl".show_usage;
-local warn = require "util.prosodyctl".show_warning;
-local users = require "usermanager".users;
+local usermanager = require "core.usermanager";
+local storagemanager = require "core.storagemanager";
 
-local skeletons = module:open_store("skeletons");
+local skeletons
+function module.load()
+	if module.host ~= "*" then
+		skeletons = module:open_store("skeletons");
+	end
+end
 
 module:hook("user-registered", function(user)
 	skeletons:set(skeleton(user.username), { username = user.username });
@@ -42,13 +47,13 @@ function module.command(arg)
 	if not host_session then
 		return "No such host";
 	end
-	local provider = host_session.users;
-	if not(provider) or provider.name == "null" then
-		usermanager.initialize_host(host);
-	end
-	storagemanager.initialize_host(host);
 
-	for user in users(host) do
-		datamanager.store(skeleton(user), host, "skeletons", {username = user});
+	storagemanager.initialize_host(host);
+	usermanager.initialize_host(host);
+
+	skeletons = storagemanager.open(host, "skeletons");
+
+	for user in usermanager.users(host) do
+		skeletons:set(skeleton(user), { username = user });
 	end
 end
