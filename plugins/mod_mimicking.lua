@@ -37,7 +37,7 @@ end);
 
 function module.command(arg)
 	if (arg[1] ~= "bootstrap" or not arg[2]) then
-		usage("mod_mimicking bootstrap <host>", "Initialize skeleton database");
+		usage("mod_mimicking bootstrap <host>", "Initialize username mimicry index");
 		return;
 	end
 
