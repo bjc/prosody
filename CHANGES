@@ -3,7 +3,6 @@ TRUNK
 
 -   Module statuses
 -   SNI support (not completely finished)
--   Improved message expiry in MAM
 -   CORS handling now provided by mod\_http
 -   CSI improvements
 -   mod\_limits: Exempted JIDs
