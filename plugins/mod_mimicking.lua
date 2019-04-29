@@ -1,11 +1,15 @@
 -- Prosody IM
 -- Copyright (C) 2012 Florian Zeitz
+-- Copyright (C) 2019 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
 
-local skeleton = require "util.confusable".skeleton;
+local encodings = require "util.encodings";
+assert(encodings.confusable, "This module requires that Prosody be built with ICU");
+local skeleton = encodings.confusable.skeleton;
+
 local datamanager = require "util.datamanager";
 local usage = require "util.prosodyctl".show_usage;
 local warn = require "util.prosodyctl".show_warning;
