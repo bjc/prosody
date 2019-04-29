@@ -324,6 +324,11 @@ UStringPrepProfile *icu_resourceprep;
 UStringPrepProfile *icu_saslprep;
 USpoofChecker *icu_spoofcheck;
 
+#if (U_ICU_VERSION_MAJOR_NUM < 58)
+/* COMPAT */
+#define USPOOF_CONFUSABLE (USPOOF_SINGLE_SCRIPT_CONFUSABLE | USPOOF_MIXED_SCRIPT_CONFUSABLE | USPOOF_WHOLE_SCRIPT_CONFUSABLE)
+#endif
+
 /* initialize global ICU stringprep profiles */
 void init_icu() {
 	UErrorCode err = U_ZERO_ERROR;
