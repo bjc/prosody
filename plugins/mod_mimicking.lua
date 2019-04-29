@@ -19,11 +19,11 @@ module:hook("user-registered", function(user)
 	datamanager.store(skeleton(user.username), user.host, "skeletons", {username = user.username});
 end);
 
-module:hook("user-deregistered", function(user)
+module:hook("user-deleted", function(user)
 	datamanager.store(skeleton(user.username), user.host, "skeletons", nil);
 end);
 
-module:hook("registration-attempt", function(user)
+module:hook("user-registering", function(user)
 	if datamanager.load(skeleton(user.username), user.host, "skeletons") then
 		user.allowed = false;
 	end
