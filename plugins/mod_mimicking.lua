@@ -10,21 +10,22 @@ local encodings = require "util.encodings";
 assert(encodings.confusable, "This module requires that Prosody be built with ICU");
 local skeleton = encodings.confusable.skeleton;
 
-local datamanager = require "util.datamanager";
 local usage = require "util.prosodyctl".show_usage;
 local warn = require "util.prosodyctl".show_warning;
 local users = require "usermanager".users;
 
+local skeletons = module:open_store("skeletons");
+
 module:hook("user-registered", function(user)
-	datamanager.store(skeleton(user.username), user.host, "skeletons", {username = user.username});
+	skeletons:set(skeleton(user.username), { username = user.username });
 end);
 
 module:hook("user-deleted", function(user)
-	datamanager.store(skeleton(user.username), user.host, "skeletons", nil);
+	skeletons:set(skeleton(user.username), nil);
 end);
 
 module:hook("user-registering", function(user)
-	if datamanager.load(skeleton(user.username), user.host, "skeletons") then
+	if skeletons:get(skeleton(user.username)) then
 		user.allowed = false;
 	end
 end);
