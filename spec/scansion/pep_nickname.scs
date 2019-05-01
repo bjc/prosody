@@ -1,7 +1,7 @@
 # Publishing a nickname in PEP and receiving a notification
 
 [Client] Romeo
-	jid: romeo@localhost/nJi7BeTR
+	jid: romeo@localhost
 	password: password
 
 -----
@@ -20,7 +20,7 @@ Romeo sends:
 	</iq>
 
 Romeo receives:
-	<iq id="4" to="romeo@localhost/nJi7BeTR" type="result">
+	<iq id="4" type="result">
 	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
 	    <publish node="http://jabber.org/protocol/nick">
 	      <item id="current"/>
@@ -34,12 +34,12 @@ Romeo sends:
 	</presence>
 
 Romeo receives:
-	<iq id="disco" to="romeo@localhost/nJi7BeTR" from="romeo@localhost" type="get">
+	<iq id="disco" from="romeo@localhost" type="get">
 	  <query xmlns="http://jabber.org/protocol/disco#info" node="http://code.matthewwild.co.uk/clix/#jC32N+FhQoLrZ7nNQtZK3aqR0Fk="/>
 	</iq>
 
 Romeo receives:
-	<presence from="romeo@localhost/nJi7BeTR">
+	<presence>
 	  <c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="http://code.matthewwild.co.uk/clix/" ver="jC32N+FhQoLrZ7nNQtZK3aqR0Fk="/>
 	</presence>
 
@@ -55,10 +55,10 @@ Romeo sends:
 	</iq>
 
 Romeo receives:
-	<message type="headline" from="romeo@localhost" to="romeo@localhost/nJi7BeTR">
+	<message type="headline" from="romeo@localhost">
 	  <event xmlns="http://jabber.org/protocol/pubsub#event">
 	    <items node="http://jabber.org/protocol/nick">
-	      <item id="current">
+	      <item id="current" publisher="${Romeo's JID}">
 	        <nickname xmlns="http://jabber.org/protocol/nick"/>
 	      </item>
 	    </items>

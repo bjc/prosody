@@ -67,7 +67,7 @@ Juliet receives:
 	<message type="headline" from="pubsub.localhost">
 		<event xmlns="http://jabber.org/protocol/pubsub#event">
 			<items node="princely_musings">
-				<item id="current">
+				<item id="current" publisher="${Romeo's JID}">
 					<entry xmlns="http://www.w3.org/2005/Atom">
 						<title>Soliloquy</title>
 						<summary>Lorem ipsum dolor sit amet</summary>

@@ -607,6 +607,9 @@ function handlers.set_publish(origin, stanza, publish, service)
 			item.attr.id = id;
 		end
 	end
+	if item then
+		item.attr.publisher = service.config.normalize_jid(stanza.attr.from);
+	end
 	local ok, ret = service:publish(node, stanza.attr.from, id, item, required_config);
 	local reply;
 	if ok then
@@ -795,8 +798,8 @@ function handlers.owner_set_affiliations(origin, stanza, affiliations, service)
 	return true;
 end
 
-local function create_encapsulating_item(id, payload)
-	local item = st.stanza("item", { id = id, xmlns = xmlns_pubsub });
+local function create_encapsulating_item(id, payload, publisher)
+	local item = st.stanza("item", { id = id, publisher = publisher, xmlns = xmlns_pubsub });
 	item:add_child(payload);
 	return item;
 end

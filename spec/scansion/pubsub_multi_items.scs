@@ -159,10 +159,10 @@ Alice receives:
 	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":3nvB2E20p1iuM6lOPaP6">
 	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
 	    <items node="e96caf12-264f-4e5a-988e-00ae191771b6">
-	      <item xmlns="http://jabber.org/protocol/pubsub" id="20e9eb9e-8acb-436e-a486-40e80400faf1">
+	      <item publisher="${Alice's JID}" xmlns="http://jabber.org/protocol/pubsub" id="20e9eb9e-8acb-436e-a486-40e80400faf1">
 		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">foo</foo>
 	      </item>
-	      <item xmlns="http://jabber.org/protocol/pubsub" id="4b94623d-1127-41c0-ac47-e283fd890557">
+	      <item publisher="${Alice's JID}" xmlns="http://jabber.org/protocol/pubsub" id="4b94623d-1127-41c0-ac47-e283fd890557">
 		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">bar</foo>
 	      </item>
 	    </items>
@@ -180,10 +180,10 @@ Alice receives:
 	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":XQdyK54iyOKiJvUoX9t_">
 	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
 	    <items node="e96caf12-264f-4e5a-988e-00ae191771b6">
-	      <item xmlns="http://jabber.org/protocol/pubsub" id="20e9eb9e-8acb-436e-a486-40e80400faf1">
+	      <item xmlns="http://jabber.org/protocol/pubsub" publisher="${Alice's JID}" id="20e9eb9e-8acb-436e-a486-40e80400faf1">
 		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">foo</foo>
 	      </item>
-	      <item xmlns="http://jabber.org/protocol/pubsub" id="4b94623d-1127-41c0-ac47-e283fd890557">
+	      <item xmlns="http://jabber.org/protocol/pubsub" publisher="${Alice's JID}" id="4b94623d-1127-41c0-ac47-e283fd890557">
 		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">bar</foo>
 	      </item>
 	    </items>
