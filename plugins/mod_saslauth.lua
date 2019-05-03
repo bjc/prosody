@@ -248,7 +248,7 @@ module:hook("stream-features", function(event)
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
 		origin.sasl_handler = sasl_handler;
 		if origin.encrypted then
-			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
+			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
 				local socket = origin.conn:socket();
