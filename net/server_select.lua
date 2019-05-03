@@ -124,7 +124,7 @@ local _maxsslhandshake
 
 _server = { } -- key = port, value = table; list of listening servers
 _readlist = { } -- array with sockets to read from
-_sendlist = { } -- arrary with sockets to write to
+_sendlist = { } -- array with sockets to write to
 _timerlist = { } -- array of timer functions
 _socketlist = { } -- key = socket, value = wrapped socket (handlers)
 _readtimes = { } -- key = handler, value = timestamp of last data reading
@@ -150,7 +150,7 @@ _checkinterval = 30 -- interval in secs to check idle clients
 _sendtimeout = 60000 -- allowed send idle time in secs
 _readtimeout = 14 * 60 -- allowed read idle time in secs
 
-local is_windows = package.config:sub(1,1) == "\\" -- check the directory separator, to detemine whether this is Windows
+local is_windows = package.config:sub(1,1) == "\\" -- check the directory separator, to determine whether this is Windows
 _maxfd = (is_windows and math.huge) or luasocket._SETSIZE or 1024 -- max fd number, limit to 1024 by default to prevent glibc buffer overflow, but not on Windows
 _maxselectlen = luasocket._SETSIZE or 1024 -- But this still applies on Windows
 
