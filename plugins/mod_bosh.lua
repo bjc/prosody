@@ -55,6 +55,27 @@ local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 -- All sessions, and sessions that have no requests open
 local sessions = module:shared("sessions");
 
+local measure_active = module:measure("active_sessions", "amount");
+local measure_inactive = module:measure("inactive_sessions", "amount");
+local report_bad_host = module:measure("bad_host", "rate");
+local report_bad_sid = module:measure("bad_sid", "rate");
+local report_new_sid = module:measure("new_sid", "rate");
+local report_timeout = module:measure("timeout", "rate");
+
+module:hook("stats-update", function ()
+	local active = 0;
+	local inactive = 0;
+	for _, session in pairs(sessions) do
+		if #session.requests > 0 then
+			active = active + 1;
+		else
+			inactive = inactive + 1;
+		end
+	end
+	measure_active(active);
+	measure_inactive(inactive);
+end);
+
 -- Used to respond to idle sessions (those with waiting requests)
 function on_destroy_request(request)
 	log("debug", "Request destroyed: %s", tostring(request));
@@ -74,7 +95,7 @@ function on_destroy_request(request)
 			if session.inactive_timer then
 				session.inactive_timer:stop();
 			end
-			session.inactive_timer = module:add_timer(max_inactive, check_inactive, session, request.context,
+			session.inactive_timer = module:add_timer(max_inactive, session_timeout, session, request.context,
 				"BOSH client silent for over "..max_inactive.." seconds");
 			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
@@ -85,8 +106,9 @@ function on_destroy_request(request)
 	end
 end
 
-function check_inactive(now, session, context, reason) -- luacheck: ignore 212/now
+function session_timeout(now, session, context, reason) -- luacheck: ignore 212/now
 	if not session.destroyed then
+		report_timeout();
 		sessions[context.sid] = nil;
 		sm_destroy_session(session, reason);
 	end
@@ -186,6 +208,7 @@ function handle_POST(event)
 		return;
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
+	report_bad_sid();
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams, condition = "item-not-found" });
 	return tostring(close_reply) .. "\n";
@@ -253,6 +276,7 @@ function stream_callbacks.streamopened(context, attr)
 		local wait = tonumber(attr.wait);
 		if not to_host then
 			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
+			report_bad_host();
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
@@ -290,6 +314,7 @@ function stream_callbacks.streamopened(context, attr)
 
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
+		report_new_sid();
 
 		module:fire_event("bosh-session", { session = session, request = request });
 
@@ -344,6 +369,7 @@ function stream_callbacks.streamopened(context, attr)
 	if not session then
 		-- Unknown sid
 		log("info", "Client tried to use sid '%s' which we don't know about", sid);
+		report_bad_sid();
 		response:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
 		context.notopen = nil;
 		return;
