@@ -402,6 +402,7 @@ function commands.about(arg)
 	local module_versions, longest_name = {}, 8;
 	local luaevent =dependencies.softreq"luaevent";
 	dependencies.softreq"ssl";
+	dependencies.softreq"DBI";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
 		and name ~= "_G" and not name:match("%.") then
