@@ -554,6 +554,12 @@ local function session_flags(session, line)
 	if session.is_bidi then
 		line[#line+1] = "(bidi)";
 	end
+	if session.bosh_version then
+		line[#line+1] = "(bosh)";
+	end
+	if session.websocket_request then
+		line[#line+1] = "(websocket)";
+	end
 	return table.concat(line, " ");
 end
 
