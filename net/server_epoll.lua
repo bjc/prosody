@@ -600,10 +600,10 @@ function interface:pausefor(t)
 	self:set(false);
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
+		self:set(true);
 		if self.conn and self.conn:dirty() then
 			self:onreadable();
 		end
-		self:set(true);
 	end);
 end
 
