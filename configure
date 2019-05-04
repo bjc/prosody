@@ -419,6 +419,13 @@ else
 }
 fi
 
+# See #1353
+if [ "$LUA_DIR_SET" != "yes" ] && [ "$LUA_DIR" = "/" ]
+then
+   LUA_DIR="/usr"
+fi
+
+
 if [ "$lua_interp_found" != "yes" ] && [ "$RUNWITH_SET" != "yes" ]
 then
    if [ "$LUA_VERSION_SET" ]; then
