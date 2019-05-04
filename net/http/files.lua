@@ -94,6 +94,7 @@ local function serve(opts)
 		if data and data.etag == etag then
 			response_headers.content_type = data.content_type;
 			data = data.data;
+			cache:get(orig_path, data);
 		elseif attr.mode == "directory" and path then
 			if full_path:sub(-1) ~= "/" then
 				local dir_path = { is_absolute = true, is_directory = true };
