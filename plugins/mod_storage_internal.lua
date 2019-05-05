@@ -125,6 +125,9 @@ function archive:find(username, query)
 		if err then
 			return items, err;
 		elseif query then
+			if query.before or query.after then
+				return nil, "item-not-found";
+			end
 			if query.total then
 				return function () end, 0;
 			end
