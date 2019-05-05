@@ -509,6 +509,19 @@ function archive_store:delete(username, query)
 	return ok and stmt:affected(), stmt;
 end
 
+function archive_store:users()
+	local ok, result = engine:transaction(function()
+		local select_sql = [[
+		SELECT DISTINCT "user"
+		FROM "prosodyarchive"
+		WHERE "host"=? AND "store"=?;
+		]];
+		return engine:select(select_sql, host, self.store);
+	end);
+	if not ok then error(result); end
+	return iterator(result);
+end
+
 local stores = {
 	keyval = keyval_store;
 	map = map_store;
