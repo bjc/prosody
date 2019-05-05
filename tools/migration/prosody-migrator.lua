@@ -174,6 +174,12 @@ local migration_runner = async.runner(function (job)
 					local data, err = origin:get(user);
 					assert(not err, err);
 					assert(destination:set(user, data));
+				elseif typ == "archive" then
+					local iter, err = origin:find(user);
+					assert(iter, err);
+					for id, item, when, with in iter do
+						assert(destination:append(user, id, item, when, with));
+					end
 				else
 					error("Don't know how to migrate data of type '"..typ.."'.");
 				end
