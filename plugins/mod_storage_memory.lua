@@ -90,9 +90,14 @@ end
 function archive_store:find(username, query)
 	local items = self.store[username or NULL];
 	if not items then
-		return function () end, 0;
+		if query then
+			if query.total then
+				return function () end, 0;
+			end
+		end
+		return function () end;
 	end
-	local count = #items;
+	local count = nil;
 	local i = 0;
 	if query then
 		items = array():append(items);
@@ -116,11 +121,13 @@ function archive_store:find(username, query)
 				return item.when <= query["end"];
 			end);
 		end
-		count = #items;
+		if query.total then
+			count = #items;
+		end
 		if query.reverse then
 			items:reverse();
 			if query.before then
-				for j = 1, count do
+				for j = 1, #items do
 					if (items[j].key or tostring(j)) == query.before then
 						i = j;
 						break;
@@ -128,7 +135,7 @@ function archive_store:find(username, query)
 				end
 			end
 		elseif query.after then
-			for j = 1, count do
+			for j = 1, #items do
 				if (items[j].key or tostring(j)) == query.after then
 					i = j;
 					break;

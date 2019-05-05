@@ -124,11 +124,14 @@ function archive:find(username, query)
 	if not items then
 		if err then
 			return items, err;
-		else
-			return function () end, 0;
+		elseif query then
+			if query.total then
+				return function () end, 0;
+			end
 		end
+		return function () end;
 	end
-	local count = #items;
+	local count = nil;
 	local i = 0;
 	if query then
 		items = array(items);
@@ -152,11 +155,13 @@ function archive:find(username, query)
 				return item.when <= query["end"];
 			end);
 		end
-		count = #items;
+		if query.total then
+			count = #items;
+		end
 		if query.reverse then
 			items:reverse();
 			if query.before then
-				for j = 1, count do
+				for j = 1, #items do
 					if (items[j].key or tostring(j)) == query.before then
 						i = j;
 						break;
@@ -164,7 +169,7 @@ function archive:find(username, query)
 				end
 			end
 		elseif query.after then
-			for j = 1, count do
+			for j = 1, #items do
 				if (items[j].key or tostring(j)) == query.after then
 					i = j;
 					break;
