@@ -142,7 +142,11 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
-		origin.send(st.error_reply(stanza, "cancel", "internal-server-error", err));
+		if err == "item-not-found" then
+			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
+		else
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+		end
 		return true;
 	end
 	local total = tonumber(err);
