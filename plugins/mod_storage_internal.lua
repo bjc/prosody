@@ -211,6 +211,10 @@ function archive:summary(username, query)
 	return summary;
 end
 
+function archive:users()
+	return datamanager.users(host, self.store, "list");
+end
+
 function archive:delete(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	if not query or next(query) == nil then
