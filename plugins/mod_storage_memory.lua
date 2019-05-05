@@ -91,6 +91,9 @@ function archive_store:find(username, query)
 	local items = self.store[username or NULL];
 	if not items then
 		if query then
+			if query.before or query.after then
+				return nil, "item-not-found";
+			end
 			if query.total then
 				return function () end, 0;
 			end
