@@ -114,6 +114,11 @@ function console:process_line(session, line)
 
 	session.env._ = line;
 
+	if not useglobalenv and commands[line:lower()] then
+		commands[line:lower()](session, line);
+		return;
+	end
+
 	local chunkname = "=console";
 	local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
 	local chunk, err = envload("return "..line, chunkname, env);
@@ -129,11 +134,6 @@ function console:process_line(session, line)
 	end
 
 	local ranok, taskok, message = pcall(chunk);
-
-	if not (ranok or message or useglobalenv) and commands[line:lower()] then
-		commands[line:lower()](session, line);
-		return;
-	end
 
 	if not ranok then
 		session.print("Fatal error while running command, it did not complete");
