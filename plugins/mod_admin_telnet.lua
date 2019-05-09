@@ -62,6 +62,9 @@ end
 
 function runner_callbacks:error(err)
 	module:log("error", "Traceback[telnet]: %s", err);
+
+	self.data.print("Fatal error while running command, it did not complete");
+	self.data.print("Error: "..tostring(err));
 end
 
 
@@ -133,13 +136,7 @@ function console:process_line(session, line)
 		end
 	end
 
-	local ranok, taskok, message = pcall(chunk);
-
-	if not ranok then
-		session.print("Fatal error while running command, it did not complete");
-		session.print("Error: "..taskok);
-		return;
-	end
+	local taskok, message = chunk();
 
 	if not message then
 		session.print("Result: "..tostring(taskok));
