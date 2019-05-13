@@ -153,74 +153,8 @@ do
       SYSCONFDIR_SET=yes
       ;;
    --ostype)
-	# TODO make this a switch?
       OSPRESET="$value"
-      if [ "$OSPRESET" = "debian" ]; then
-         if [ "$LUA_SUFFIX_SET" != "yes" ]; then
-            LUA_SUFFIX="5.1";
-            LUA_SUFFIX_SET=yes
-         fi
-         if [ "$RUNWITH_SET" != "yes" ]; then
-            RUNWITH="lua$LUA_SUFFIX";
-            RUNWITH_SET=yes
-         fi
-         LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
-         LUA_INCDIR_SET=yes
-         CFLAGS="$CFLAGS -ggdb"
-      fi
-      if [ "$OSPRESET" = "macosx" ]; then
-         LUA_INCDIR=/usr/local/include;
-         LUA_INCDIR_SET=yes
-         LUA_LIBDIR=/usr/local/lib
-         LUA_LIBDIR_SET=yes
-         CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
-         LDFLAGS="-bundle -undefined dynamic_lookup"
-      fi
-      if [ "$OSPRESET" = "linux" ]; then
-         LUA_INCDIR=/usr/local/include;
-         LUA_INCDIR_SET=yes
-         LUA_LIBDIR=/usr/local/lib
-         LUA_LIBDIR_SET=yes
-         CFLAGS="$CFLAGS -ggdb"
-      fi
-      if [ "$OSPRESET" = "freebsd" ] || [ "$OSPRESET" = "openbsd" ]; then
-         LUA_INCDIR="/usr/local/include/lua51"
-         LUA_INCDIR_SET=yes
-         CFLAGS="-Wall -fPIC -I/usr/local/include"
-         LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-         LUA_SUFFIX="51"
-         LUA_SUFFIX_SET=yes
-         LUA_DIR=/usr/local
-         LUA_DIR_SET=yes
-         CC=cc
-         LD=ld
-      fi
-      if [ "$OSPRESET" = "openbsd" ]; then
-         LUA_INCDIR="/usr/local/include";
-         LUA_INCDIR_SET="yes"
-      fi
-      if [ "$OSPRESET" = "netbsd" ]; then
-         LUA_INCDIR="/usr/pkg/include/lua-5.1"
-         LUA_INCDIR_SET=yes
-         LUA_LIBDIR="/usr/pkg/lib/lua/5.1"
-         LUA_LIBDIR_SET=yes
-         CFLAGS="-Wall -fPIC -I/usr/pkg/include"
-         LDFLAGS="-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib -shared"
-      fi
-      if [ "$OSPRESET" = "pkg-config" ]; then
-         if [ "$LUA_SUFFIX_SET" != "yes" ]; then
-            LUA_SUFFIX="5.1";
-            LUA_SUFFIX_SET=yes
-         fi
-         LUA_CF="$(pkg-config --cflags-only-I lua$LUA_SUFFIX)"
-         LUA_CF="${LUA_CF#*-I}"
-         LUA_CF="${LUA_CF%% *}"
-         if [ "$LUA_CF" != "" ]; then
-            LUA_INCDIR="$LUA_CF"
-            LUA_INCDIR_SET=yes
-         fi
-         CFLAGS="$CFLAGS"
-      fi
+      OSPRESET_SET="yes"
       ;;
    --libdir)
       LIBDIR="$value"
@@ -318,6 +252,76 @@ do
    esac
    shift
 done
+
+if [ "$OSPRESET_SET" = "yes" ]; then
+	# TODO make this a switch?
+   if [ "$OSPRESET" = "debian" ]; then
+      if [ "$LUA_SUFFIX_SET" != "yes" ]; then
+         LUA_SUFFIX="5.1";
+         LUA_SUFFIX_SET=yes
+      fi
+      if [ "$RUNWITH_SET" != "yes" ]; then
+         RUNWITH="lua$LUA_SUFFIX";
+         RUNWITH_SET=yes
+      fi
+      LUA_INCDIR="/usr/include/lua$LUA_SUFFIX"
+      LUA_INCDIR_SET=yes
+      CFLAGS="$CFLAGS -ggdb"
+   fi
+   if [ "$OSPRESET" = "macosx" ]; then
+      LUA_INCDIR=/usr/local/include;
+      LUA_INCDIR_SET=yes
+      LUA_LIBDIR=/usr/local/lib
+      LUA_LIBDIR_SET=yes
+      CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
+      LDFLAGS="-bundle -undefined dynamic_lookup"
+   fi
+   if [ "$OSPRESET" = "linux" ]; then
+      LUA_INCDIR=/usr/local/include;
+      LUA_INCDIR_SET=yes
+      LUA_LIBDIR=/usr/local/lib
+      LUA_LIBDIR_SET=yes
+      CFLAGS="$CFLAGS -ggdb"
+   fi
+   if [ "$OSPRESET" = "freebsd" ] || [ "$OSPRESET" = "openbsd" ]; then
+      LUA_INCDIR="/usr/local/include/lua51"
+      LUA_INCDIR_SET=yes
+      CFLAGS="-Wall -fPIC -I/usr/local/include"
+      LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
+      LUA_SUFFIX="51"
+      LUA_SUFFIX_SET=yes
+      LUA_DIR=/usr/local
+      LUA_DIR_SET=yes
+      CC=cc
+      LD=ld
+   fi
+   if [ "$OSPRESET" = "openbsd" ]; then
+      LUA_INCDIR="/usr/local/include";
+      LUA_INCDIR_SET="yes"
+   fi
+   if [ "$OSPRESET" = "netbsd" ]; then
+      LUA_INCDIR="/usr/pkg/include/lua-5.1"
+      LUA_INCDIR_SET=yes
+      LUA_LIBDIR="/usr/pkg/lib/lua/5.1"
+      LUA_LIBDIR_SET=yes
+      CFLAGS="-Wall -fPIC -I/usr/pkg/include"
+      LDFLAGS="-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib -shared"
+   fi
+   if [ "$OSPRESET" = "pkg-config" ]; then
+      if [ "$LUA_SUFFIX_SET" != "yes" ]; then
+         LUA_SUFFIX="5.1";
+         LUA_SUFFIX_SET=yes
+      fi
+      LUA_CF="$(pkg-config --cflags-only-I lua$LUA_SUFFIX)"
+      LUA_CF="${LUA_CF#*-I}"
+      LUA_CF="${LUA_CF%% *}"
+      if [ "$LUA_CF" != "" ]; then
+         LUA_INCDIR="$LUA_CF"
+         LUA_INCDIR_SET=yes
+      fi
+      CFLAGS="$CFLAGS"
+   fi
+fi
 
 if [ "$PREFIX_SET" = "yes" ] && [ ! "$SYSCONFDIR_SET" = "yes" ]
 then
