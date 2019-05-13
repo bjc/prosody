@@ -259,10 +259,14 @@ if [ "$OSPRESET_SET" = "yes" ]; then
       CFLAGS="$CFLAGS -ggdb"
    fi
    if [ "$OSPRESET" = "macosx" ]; then
-      LUA_INCDIR=/usr/local/include;
-      LUA_INCDIR_SET=yes
-      LUA_LIBDIR=/usr/local/lib
-      LUA_LIBDIR_SET=yes
+      if [ "$LUA_INCDIR_SET" != "yes" ]; then
+         LUA_INCDIR=/usr/local/include;
+         LUA_INCDIR_SET=yes
+      fi
+      if [ "$LUA_LIBDIR_SET" != "yes" ]; then
+         LUA_LIBDIR=/usr/local/lib
+         LUA_LIBDIR_SET=yes
+      fi
       CFLAGS="$CFLAGS -mmacosx-version-min=10.3"
       LDFLAGS="-bundle -undefined dynamic_lookup"
    fi
