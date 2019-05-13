@@ -390,6 +390,14 @@ function archive_store:delete(username, query)
 		else
 			args[#args+1] = query.truncate;
 			local unlimited = "ALL";
+			sql_query = [[
+			DELETE FROM "prosodyarchive"
+			WHERE "sort_id" IN (
+				SELECT "sort_id" FROM "prosodyarchive"
+				WHERE %s
+				ORDER BY "sort_id" %s
+				LIMIT %s OFFSET ?
+			);]];
 			if engine.params.driver == "SQLite3" then
 				sql_query = [[
 				DELETE FROM "prosodyarchive"
@@ -407,15 +415,6 @@ function archive_store:delete(username, query)
 					LIMIT %s OFFSET ?
 				) AS limiter on result.sort_id = limiter.sort_id;]];
 				unlimited = "18446744073709551615";
-			else
-				sql_query = [[
-				DELETE FROM "prosodyarchive"
-				WHERE "sort_id" IN (
-					SELECT "sort_id" FROM "prosodyarchive"
-					WHERE %s
-					ORDER BY "sort_id" %s
-					LIMIT %s OFFSET ?
-				);]];
 			end
 			sql_query = string.format(sql_query, t_concat(where, " AND "),
 				query.reverse and "ASC" or "DESC", unlimited);
