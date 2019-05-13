@@ -330,7 +330,7 @@ USpoofChecker *icu_spoofcheck;
 #endif
 
 /* initialize global ICU stringprep profiles */
-void init_icu() {
+void init_icu(void) {
 	UErrorCode err = U_ZERO_ERROR;
 	utrace_setLevel(UTRACE_VERBOSE);
 	icu_nameprep = usprep_openByType(USPREP_RFC3491_NAMEPREP, &err);
