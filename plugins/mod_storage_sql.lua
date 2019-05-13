@@ -399,12 +399,14 @@ function archive_store:delete(username, query)
 				LIMIT %s OFFSET ?
 			);]];
 			if engine.params.driver == "SQLite3" then
-				sql_query = [[
-				DELETE FROM "prosodyarchive"
-				WHERE %s
-				ORDER BY "sort_id" %s
-				LIMIT %s OFFSET ?;
-				]];
+				if engine._have_delete_limit then
+					sql_query = [[
+					DELETE FROM "prosodyarchive"
+					WHERE %s
+					ORDER BY "sort_id" %s
+					LIMIT %s OFFSET ?;
+					]];
+				end
 				unlimited = "-1";
 			elseif engine.params.driver == "MySQL" then
 				sql_query = [[
@@ -619,6 +621,13 @@ function module.load()
 				if upgrade_table(engine, params, false) then
 					module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 					return false, "database upgrade needed";
+				end
+				if engine.params.driver == "SQLite3" then
+					for row in engine:select("PRAGMA compile_options") do
+						if row[1] == "ENABLE_UPDATE_DELETE_LIMIT" then
+							engine._have_delete_limit = true;
+						end
+					end
 				end
 			end
 		end);
