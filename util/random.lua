@@ -14,7 +14,11 @@ local urandom, urandom_err = io.open("/dev/urandom", "r");
 local function bytes(n)
 	local data, err = urandom:read(n);
 	if not data then
-		error("Unable to retrieve data from secure random number generator (/dev/urandom): "..tostring(err));
+		if err then
+			error("Unable to retrieve data from secure random number generator (/dev/urandom): "..tostring(err));
+		else
+			error("Secure random number generator (/dev/urandom) returned an end-of-file condition");
+		end
 	end
 	return data;
 end
