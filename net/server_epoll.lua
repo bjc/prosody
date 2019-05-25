@@ -162,7 +162,7 @@ function interface:on(what, ...)
 	local ok, err = pcall(listener, self, ...);
 	if not ok then
 		log("error", "Error calling on%s: %s", what, err);
-		return;
+		return nil, err;
 	end
 	return err;
 end
