@@ -61,6 +61,10 @@ local default_config = { __index = {
 	-- Maximum and minimum amount of time to sleep waiting for events (adjusted for pending timers)
 	max_wait = 86400;
 	min_wait = 1e-06;
+
+	-- EXPERIMENTAL
+	-- Whether to kill connections in case of callback errors.
+	fatal_errors = false;
 }};
 local cfg = default_config.__index;
 
@@ -162,6 +166,10 @@ function interface:on(what, ...)
 	local ok, err = pcall(listener, self, ...);
 	if not ok then
 		log("error", "Error calling on%s: %s", what, err);
+		if cfg.fatal_errors then
+			log("debug", "Closing %s due to error in listener", self);
+			self:destroy();
+		end
 		return nil, err;
 	end
 	return err;
