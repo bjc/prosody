@@ -108,6 +108,10 @@ module:hook("csi-client-active", function (event)
 	disable_optimizations(session);
 end);
 
+module:hook("pre-resource-unbind", function (event)
+	local session = event.session;
+	disable_optimizations(session);
+end);
 
 module:hook("c2s-ondrain", function (event)
 	local session = event.session;
