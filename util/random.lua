@@ -12,7 +12,15 @@ if ok then return crand; end
 local urandom, urandom_err = io.open("/dev/urandom", "r");
 
 local function bytes(n)
-	return urandom:read(n);
+	local data, err = urandom:read(n);
+	if not data then
+		if err then
+			error("Unable to retrieve data from secure random number generator (/dev/urandom): "..tostring(err));
+		else
+			error("Secure random number generator (/dev/urandom) returned an end-of-file condition");
+		end
+	end
+	return data;
 end
 
 if not urandom then

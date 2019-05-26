@@ -245,7 +245,6 @@ end
 --- Port listener
 function listener.onconnect(conn)
 	local session = sm_new_session(conn);
-	sessions[conn] = session;
 
 	session.log("info", "Client connected");
 
@@ -306,6 +305,8 @@ function listener.onconnect(conn)
 	end
 
 	session.dispatch_stanza = stream_callbacks.handlestanza;
+
+	sessions[conn] = session;
 end
 
 function listener.onincoming(conn, data)
