@@ -348,8 +348,14 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of users from dates that fall
 	-- outside the cleanup range.
 
+	local last_date = require "util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
 	function schedule_cleanup(username, date)
-		cleanup_map:set(date or datestamp(), username, true);
+		date = date or datestamp();
+		if last_date:get(username) == date then return end
+		local ok = cleanup_map:set(date, username, true);
+		if ok then
+			last_date:set(username, date);
+		end
 	end
 
 	cleanup_runner = require "util.async".runner(function ()
