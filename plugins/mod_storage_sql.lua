@@ -367,7 +367,7 @@ function archive_store:find(username, query)
 	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
 		return noop, total;
 	end
-	local ok, result = engine:transaction(function()
+	local ok, result, err = engine:transaction(function()
 		local sql_query = [[
 		SELECT "key", "type", "value", "when", "with"
 		FROM "prosodyarchive"
@@ -407,7 +407,8 @@ function archive_store:find(username, query)
 			and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
 		return engine:select(sql_query, unpack(args));
 	end);
-	if not ok then return ok, result end
+	if not ok then return ok, result; end
+	if not result then return nil, err; end
 	return function()
 		local row = result();
 		if row ~= nil then
