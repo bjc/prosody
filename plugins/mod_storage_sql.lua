@@ -336,7 +336,7 @@ local function archive_where_id_range(query, args, where)
 	]];
 	if query.after then  -- keys better be unique!
 		local after_id = nil;
-		for row in engine:select(id_lookup_sql, query.after, host, user or "", store) do
+		for row in engine:select(id_lookup_sql, query.after, args[1], args[2], args[3]) do
 			after_id = row[1];
 		end
 		if not after_id then
@@ -347,7 +347,7 @@ local function archive_where_id_range(query, args, where)
 	end
 	if query.before then
 		local before_id = nil;
-		for row in engine:select(id_lookup_sql, query.after, host, user or "", store) do
+		for row in engine:select(id_lookup_sql, query.after, args[1], args[2], args[3]) do
 			before_id = row[1];
 		end
 		if not before_id then
