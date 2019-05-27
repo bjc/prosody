@@ -44,7 +44,7 @@ function handle_announcement(event)
 		return; -- Not an announcement
 	end
 
-	if not is_admin(stanza.attr.from) then
+	if not is_admin(stanza.attr.from, host) then
 		-- Not an admin? Not allowed!
 		module:log("warn", "Non-admin '%s' tried to send server announcement", stanza.attr.from);
 		return;
