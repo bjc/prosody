@@ -458,8 +458,14 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of rooms from dates that fall
 	-- outside the cleanup range.
 
+	local last_date = require "util.cache".new(module:get_option_number("muc_log_cleanup_date_cache_size", 1000));
 	function schedule_cleanup(roomname, date)
-		cleanup_map:set(date or datestamp(), roomname, true);
+		date = date or datestamp();
+		if last_date:get(roomname) == date then return end
+		local ok = cleanup_map:set(date, roomname, true);
+		if ok then
+			last_date:set(roomname, date);
+		end
 	end
 
 	cleanup_runner = require "util.async".runner(function ()
