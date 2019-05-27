@@ -43,7 +43,6 @@ local archive = module:open_store(archive_store, "archive");
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
-
 if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
 		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
@@ -375,9 +374,15 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of users from dates that fall
 	-- outside the cleanup range.
 
+	local last_date = require "util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
 	function schedule_cleanup(username, date)
-		cleanup_map:set(date or datestamp(), username, true);
+		date = date or datestamp();
+		if last_date:get(username) == date then return end
+		local ok = cleanup_map:set(date, username, true);
+		if ok then
+			last_date:set(username, date);
 		end
+	end
 	local cleanup_time = module:measure("cleanup", "times");
 
 	cleanup_runner = require "util.async".runner(function ()
