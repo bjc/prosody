@@ -153,7 +153,7 @@ end
 local archive_item_limit = module:get_option_number("storage_archive_item_limit");
 local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
--- luacheck: ignore 512 431/user 431/store
+-- luacheck: ignore 512 431/user 431/store 431/err
 local map_store = {};
 map_store.__index = map_store;
 map_store.remove = {};
