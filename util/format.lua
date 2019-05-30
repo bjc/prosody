@@ -7,9 +7,12 @@ local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
 local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local type = type;
 local dump = require "util.serialization".new("debug");
-local num_type = math.type;
+local num_type = math.type or function (n)
+	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
+end
 
-local expects_integer = num_type and { c = true, d = true, i = true, o = true, u = true, X = true, x = true, } or {};
+-- In Lua 5.3+ these formats throw an error if given a float
+local expects_integer = { c = true, d = true, i = true, o = true, u = true, X = true, x = true, };
 
 local function format(formatstring, ...)
 	local args = pack(...);
