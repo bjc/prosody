@@ -238,6 +238,9 @@ function engine:transaction(...)
 end
 function engine:_create_index(index)
 	local sql = "CREATE INDEX \""..index.name.."\" ON \""..index.table.."\" (";
+	if self.params.driver ~= "MySQL" then
+		sql = sql:gsub("^CREATE INDEX", "%1 IF NOT EXISTS");
+	end
 	for i=1,#index do
 		sql = sql.."\""..index[i].."\"";
 		if i ~= #index then sql = sql..", "; end
@@ -256,6 +259,9 @@ function engine:_create_index(index)
 end
 function engine:_create_table(table)
 	local sql = "CREATE TABLE \""..table.name.."\" (";
+	do
+		sql = sql:gsub("^CREATE TABLE", "%1 IF NOT EXISTS");
+	end
 	for i,col in ipairs(table.c) do
 		local col_type = col.type;
 		if col_type == "MEDIUMTEXT" and self.params.driver ~= "MySQL" then
