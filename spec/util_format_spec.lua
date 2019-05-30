@@ -12,6 +12,7 @@ describe("util.format", function()
 			assert.equal("[true]", format("%d", true));
 			assert.equal("% [true]", format("%%", true));
 			assert.equal("{ }", format("%q", { }));
+			assert.equal("[1.5]", format("%d", 1.5));
 		end);
 	end);
 end);
