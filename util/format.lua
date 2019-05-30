@@ -7,6 +7,9 @@ local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
 local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local type = type;
 local dump = require "util.serialization".new("debug");
+local num_type = math.type;
+
+local expects_integer = num_type and { c = true, d = true, i = true, o = true, u = true, X = true, x = true, } or {};
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -41,6 +44,9 @@ local function format(formatstring, ...)
 			elseif option == "s" then
 				args[i] = tostring(arg);
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
+				args[i] = tostring(arg);
+				spec = "[%s]";
+			elseif expects_integer[option] and num_type(arg) ~= "integer" then
 				args[i] = tostring(arg);
 				spec = "[%s]";
 			end
