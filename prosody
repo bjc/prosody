@@ -90,6 +90,7 @@ end
 loop();
 
 prosody.log("info", "Shutting down...");
+prosody.log("debug", "Shutdown reason is: %s", prosody.shutdown_reason or "not specified");
 cleanup();
 prosody.events.fire_event("server-stopped");
 prosody.log("info", "Shutdown complete");
