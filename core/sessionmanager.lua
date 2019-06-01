@@ -129,7 +129,7 @@ local function make_authenticated(session, username)
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s_unbound";
 	end
-	session.log("info", "Authenticated as %s@%s", username or "(unknown)", session.host or "(unknown)");
+	session.log("info", "Authenticated as %s@%s", username, session.host or "(unknown)");
 	return true;
 end
 
