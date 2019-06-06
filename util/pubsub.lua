@@ -6,6 +6,7 @@ local service_mt = {};
 local default_config = {
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
+	subscriber_filter = function (subs) return subs end;
 	itemcheck = function () return true; end;
 	get_affiliation = function () end;
 	normalize_jid = function (jid) return jid; end;
@@ -567,6 +568,7 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 end
 
 function service:broadcast(event, node, subscribers, item, actor, node_obj)
+	subscribers = self.config.subscriber_filter(subscribers, node, event);
 	return self.config.broadcaster(event, node, subscribers, item, actor, node_obj, self);
 end
 
