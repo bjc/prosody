@@ -87,8 +87,23 @@ local command = table.remove(arg, 1);
 
 function commands.test()
 	show_message [[Well, hello there!]]
-	--show_message [[Enabled Plugins: ], modulemanager.get_modules_for_host()]
 	show_warning("Trying to peek at the plugin directory: '%s'", modulemanager.get_modules_for_host())
+end
+
+function commands.local_plugins()
+	local directory = "./plugins"
+    local i, t, popen = 0, {}, io.popen
+    local pfile = popen('ls -a "'..directory..'"')
+    for filename in pfile:lines() do
+		if filename == "." or filename == ".." then
+			i = i + 1
+		else
+			i = i + 1
+			t[i] = filename
+			show_warning("%s", t[i])
+        end
+    end
+    pfile:close()
 end
 
 function commands.adduser(arg)
