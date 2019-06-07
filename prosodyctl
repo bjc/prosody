@@ -85,9 +85,10 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
-function commands.test()
-	show_message [[Well, hello there!]]
-	show_warning("Trying to peek at the plugin directory: '%s'", modulemanager.get_modules_for_host())
+function commands.enabled_plugins()
+	for module in modulemanager.get_modules_for_host() do
+		show_warning("%s", module)
+	end
 end
 
 function commands.local_plugins()
