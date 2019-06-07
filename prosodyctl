@@ -85,6 +85,10 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
+function commands.test()
+	show_message [[Well, hello there!]]
+end
+
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
