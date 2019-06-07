@@ -87,6 +87,8 @@ local command = table.remove(arg, 1);
 
 function commands.test()
 	show_message [[Well, hello there!]]
+	--show_message [[Enabled Plugins: ], modulemanager.get_modules_for_host()]
+	show_warning("Trying to peek at the plugin directory: '%s'", modulemanager.get_modules_for_host())
 end
 
 function commands.adduser(arg)
