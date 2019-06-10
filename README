@@ -12,6 +12,7 @@ rapidly prototype new protocols.
 Homepage:        https://prosody.im/
 Download:        https://prosody.im/download
 Documentation:   https://prosody.im/doc/
+Issue tracker:   https://issues.prosody.im/
 
 Jabber/XMPP Chat:
                Address:
@@ -26,9 +27,6 @@ Mailing lists:
                Development discussion:
                  https://groups.google.com/group/prosody-dev
                
-               Issue tracker changes:
-                 https://groups.google.com/group/prosody-issues
-
 ## Installation
 
 See the accompanying INSTALL file for help on building Prosody from source. Alternatively 

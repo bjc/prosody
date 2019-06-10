@@ -13,6 +13,7 @@ local tostring, pairs, setmetatable
     = tostring, pairs, setmetatable;
 
 local logger_init = require "util.logger".init;
+local sessionlib = require "util.session";
 
 local log = logger_init("s2smanager");
 
@@ -26,18 +27,26 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function new_incoming(conn)
-	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
-	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
-	incoming_s2s[session] = true;
-	return session;
+	local host_session = sessionlib.new("s2sin");
+	sessionlib.set_id(host_session);
+	sessionlib.set_logger(host_session);
+	sessionlib.set_conn(host_session, conn);
+	host_session.direction = "incoming";
+	host_session.hosts = {};
+	incoming_s2s[host_session] = true;
+	return host_session;
 end
 
 local function new_outgoing(from_host, to_host)
-	local host_session = { to_host = to_host, from_host = from_host, host = from_host,
-		               notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+	local host_session = sessionlib.new("s2sout");
+	sessionlib.set_id(host_session);
+	sessionlib.set_logger(host_session);
+	host_session.to_host = to_host;
+	host_session.from_host = from_host;
+	host_session.host = from_host;
+	host_session.notopen = true;
+	host_session.direction = "outgoing";
 	hosts[from_host].s2sout[to_host] = host_session;
-	local conn_name = "s2sout"..tostring(host_session):match("[a-f0-9]*$");
-	host_session.log = logger_init(conn_name);
 	return host_session;
 end
 
@@ -49,6 +58,9 @@ local resting_session = { -- Resting, not dead
 		end;
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
+		end;
+		reset_stream = function (session)
+			session.log("debug", "Attempt to reset stream of already-closed session");
 		end;
 		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
