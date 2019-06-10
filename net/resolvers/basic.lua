@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local inet_pton = require "util.net".pton;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };

@@ -22,6 +22,7 @@ local prosody = _G.prosody;
 
 local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
 local jid_bare, jid_split, jid_join = import("util.jid", "bare", "prepped_split", "join");
@@ -30,6 +31,8 @@ local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
 local envloadfile = require "util.envload".envloadfile;
 local has_pposix, pposix = pcall(require, "util.pposix");
+local async = require "util.async";
+local serialize = require "util.serialization".new({ fatal = false, unquoted = true});
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -47,6 +50,21 @@ end
 
 console = {};
 
+local runner_callbacks = {};
+
+function runner_callbacks:ready()
+	self.data.conn:resume();
+end
+
+function runner_callbacks:waiting()
+	self.data.conn:pause();
+end
+
+function runner_callbacks:error(err)
+	module:log("error", "Traceback[telnet]: %s", err);
+end
+
+
 function console:new_session(conn)
 	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
@@ -61,6 +79,11 @@ function console:new_session(conn)
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
+
+	session.thread = async.runner(function (line)
+		console:process_line(session, line);
+		session.send(string.char(0));
+	end, runner_callbacks, session);
 
 	-- Load up environment with helper objects
 	for name, t in pairs(def_env) do
@@ -150,8 +173,7 @@ function console_listener.onincoming(conn, data)
 
 	for line in data:gmatch("[^\n]*[\n\004]") do
 		if session.closed then return end
-		console:process_line(session, line);
-		session.send(string.char(0));
+		session.thread:run(line);
 	end
 	session.partial_data = data:match("[^\n]+$");
 end
@@ -228,6 +250,7 @@ function commands.help(session, data)
 		print [[c2s:show_secure() - Show all encrypted client connections]]
 		print [[c2s:show_tls() - Show TLS cipher info for encrypted sessions]]
 		print [[c2s:close(jid) - Close all sessions for the specified JID]]
+		print [[c2s:closeall() - Close all active c2s connections ]]
 	elseif section == "s2s" then
 		print [[s2s:show(domain) - Show all s2s connections for the given domain (or all if no domain given)]]
 		print [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
@@ -458,7 +481,12 @@ function def_env.module:list(hosts)
 			end
 		else
 			for _, name in ipairs(modules) do
-				print("    "..name);
+				local status, status_text = modulemanager.get_module(host, name).module:get_status();
+				local status_summary = "";
+				if status == "warn" or status == "error" then
+					status_summary = (" (%s: %s)"):format(status, status_text);
+				end
+				print(("    %s%s"):format(name, status_summary));
 			end
 		end
 	end
@@ -474,9 +502,12 @@ function def_env.config:load(filename, format)
 	return true, "Config loaded";
 end
 
-function def_env.config:get(host, section, key)
+function def_env.config:get(host, key)
+	if key == nil then
+		host, key = "*", host;
+	end
 	local config_get = require "core.configmanager".get
-	return true, tostring(config_get(host, section, key));
+	return true, serialize(config_get(host, key));
 end
 
 function def_env.config:reload()
@@ -520,6 +551,15 @@ local function session_flags(session, line)
 	if session.remote then
 		line[#line+1] = "(remote)";
 	end
+	if session.is_bidi then
+		line[#line+1] = "(bidi)";
+	end
+	if session.bosh_version then
+		line[#line+1] = "(bosh)";
+	end
+	if session.websocket_request then
+		line[#line+1] = "(websocket)";
+	end
 	return table.concat(line, " ");
 end
 
@@ -557,6 +597,7 @@ end
 
 local function show_c2s(callback)
 	local c2s = array.collect(values(module:shared"/*/c2s/sessions"));
+	c2s:append(array.collect(values(module:shared"/*/bosh/sessions")));
 	c2s:sort(function(a, b)
 		if a.host == b.host then
 			if a.username == b.username then
@@ -571,7 +612,9 @@ local function show_c2s(callback)
 end
 
 function def_env.c2s:count()
-	return true, "Total: "..  iterators.count(values(module:shared"/*/c2s/sessions")) .." clients";
+	local c2s_count = iterators.count(values(module:shared"/*/c2s/sessions"))
+	local bosh_count = iterators.count(values(module:shared"/*/bosh/sessions"))
+	return true, "Total: "..  c2s_count + bosh_count .." clients";
 end
 
 function def_env.c2s:show(match_jid, annotate)
@@ -624,6 +667,16 @@ function def_env.c2s:close(match_jid)
 			count = count + 1;
 			session:close();
 		end
+	end);
+	return true, "Total: "..count.." sessions closed";
+end
+
+function def_env.c2s:closeall()
+	local count = 0;
+	--luacheck: ignore 212/jid
+	show_c2s(function (jid, session)
+		count = count + 1;
+		session:close();
 	end);
 	return true, "Total: "..count.." sessions closed";
 end
@@ -1062,13 +1115,33 @@ end
 def_env.xmpp = {};
 
 local st = require "util.stanza";
-function def_env.xmpp:ping(localhost, remotehost)
-	if prosody.hosts[localhost] then
-		module:send(st.iq{ from=localhost, to=remotehost, type="get", id="ping" }
-				:tag("ping", {xmlns="urn:xmpp:ping"}), prosody.hosts[localhost]);
-		return true, "Sent ping";
+local new_id = require "util.id".medium;
+function def_env.xmpp:ping(localhost, remotehost, timeout)
+	localhost = select(2, jid_split(localhost));
+	remotehost = select(2, jid_split(remotehost));
+	if not localhost then
+		return nil, "Invalid sender hostname";
+	elseif not prosody.hosts[localhost] then
+		return nil, "No such local host";
+	end
+	if not remotehost then
+		return nil, "Invalid destination hostname";
+	elseif prosody.hosts[remotehost] then
+		return nil, "Both hosts are local";
+	end
+	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
+			:tag("ping", {xmlns="urn:xmpp:ping"});
+	local ret, err;
+	local wait, done = async.waiter();
+	module:context(localhost):send_iq(iq, nil, timeout)
+		:next(function (ret_) ret = ret_; end,
+			function (err_) err = err_; end)
+		:finally(done);
+	wait();
+	if ret then
+		return true, "pong from " .. ret.stanza.attr.from;
 	else
-		return nil, "No such host";
+		return false, tostring(err);
 	end
 end
 
@@ -1207,7 +1280,7 @@ local function format_stat(type, value, ref_value)
 	--do return tostring(value) end
 	if type == "duration" then
 		if ref_value < 0.001 then
-			return ("%d µs"):format(value*1000000);
+			return ("%g µs"):format(value*1000000);
 		elseif ref_value < 0.9 then
 			return ("%0.2f ms"):format(value*1000);
 		end
@@ -1495,7 +1568,7 @@ function def_env.stats:show(filter)
 	local stats, changed, extra = require "core.statsmanager".get_stats();
 	local available, displayed = 0, 0;
 	local displayed_stats = new_stats_context(self);
-	for name, value in pairs(stats) do
+	for name, value in iterators.sorted_pairs(stats) do
 		available = available + 1;
 		if not filter or name:match(filter) then
 			displayed = displayed + 1;

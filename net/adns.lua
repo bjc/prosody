@@ -14,7 +14,7 @@ local log = require "util.logger".init("adns");
 local coroutine, tostring, pcall = coroutine, tostring, pcall;
 local setmetatable = setmetatable;
 
-local function dummy_send(sock, data, i, j) return (j-i)+1; end
+local function dummy_send(sock, data, i, j) return (j-i)+1; end -- luacheck: ignore 212
 
 local _ENV = nil;
 -- luacheck: std none
@@ -29,8 +29,7 @@ local function new_async_socket(sock, resolver)
 	local peername = "<unknown>";
 	local listener = {};
 	local handler = {};
-	local err;
-	function listener.onincoming(conn, data)
+	function listener.onincoming(conn, data) -- luacheck: ignore 212/conn
 		if data then
 			resolver:feed(handler, data);
 		end
@@ -46,9 +45,12 @@ local function new_async_socket(sock, resolver)
 			resolver:servfail(conn); -- Let the magic commence
 		end
 	end
-	handler, err = server.wrapclient(sock, "dns", 53, listener);
-	if not handler then
-		return nil, err;
+	do
+		local err;
+		handler, err = server.wrapclient(sock, "dns", 53, listener);
+		if not handler then
+			return nil, err;
+		end
 	end
 
 	handler.settimeout = function () end
@@ -89,7 +91,7 @@ function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 			end)(resolver:peek(qname, qtype, qclass));
 end
 
-function query_methods:cancel(call_handler, reason)
+function query_methods:cancel(call_handler, reason) -- luacheck: ignore 212/reason
 	log("warn", "Cancelling DNS lookup for %s", tostring(self[4]));
 	self[1].cancel(self[2], self[3], self[4], self[5], call_handler);
 end

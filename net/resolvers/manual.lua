@@ -1,5 +1,6 @@
 local methods = {};
 local resolver_mt = { __index = methods };
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 -- Find the next target to connect to, and
 -- pass it to cb()

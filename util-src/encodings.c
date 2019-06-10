@@ -268,6 +268,7 @@ static const luaL_Reg Reg_utf8[] = {
 #include <unicode/usprep.h>
 #include <unicode/ustring.h>
 #include <unicode/utrace.h>
+#include <unicode/uspoof.h>
 
 static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) {
 	size_t input_len;
@@ -321,15 +322,23 @@ UStringPrepProfile *icu_nameprep;
 UStringPrepProfile *icu_nodeprep;
 UStringPrepProfile *icu_resourceprep;
 UStringPrepProfile *icu_saslprep;
+USpoofChecker *icu_spoofcheck;
+
+#if (U_ICU_VERSION_MAJOR_NUM < 58)
+/* COMPAT */
+#define USPOOF_CONFUSABLE (USPOOF_SINGLE_SCRIPT_CONFUSABLE | USPOOF_MIXED_SCRIPT_CONFUSABLE | USPOOF_WHOLE_SCRIPT_CONFUSABLE)
+#endif
 
 /* initialize global ICU stringprep profiles */
-void init_icu() {
+void init_icu(void) {
 	UErrorCode err = U_ZERO_ERROR;
 	utrace_setLevel(UTRACE_VERBOSE);
 	icu_nameprep = usprep_openByType(USPREP_RFC3491_NAMEPREP, &err);
 	icu_nodeprep = usprep_openByType(USPREP_RFC3920_NODEPREP, &err);
 	icu_resourceprep = usprep_openByType(USPREP_RFC3920_RESOURCEPREP, &err);
 	icu_saslprep = usprep_openByType(USPREP_RFC4013_SASLPREP, &err);
+	icu_spoofcheck = uspoof_open(&err);
+	uspoof_setChecks(icu_spoofcheck, USPOOF_CONFUSABLE, &err);
 
 	if(U_FAILURE(err)) {
 		fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
@@ -477,6 +486,40 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 	}
 }
 
+static int Lskeleton(lua_State *L) {
+	size_t len;
+	int32_t ulen, dest_len, output_len;
+	const char *s = luaL_checklstring(L, 1, &len);
+	UErrorCode err = U_ZERO_ERROR;
+	UChar ustr[1024];
+	UChar dest[1024];
+	char output[1024];
+
+	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
+
+	if(U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	dest_len = uspoof_getSkeleton(icu_spoofcheck, 0, ustr, ulen, dest, 1024, &err);
+
+	if(U_FAILURE(err)) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
+
+	if(U_SUCCESS(err)) {
+		lua_pushlstring(L, output, output_len);
+		return 1;
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
 #else /* USE_STRINGPREP_ICU */
 /****************** libidn ********************/
 
@@ -557,6 +600,13 @@ LUALIB_API int luaopen_util_encodings(lua_State *L) {
 	lua_newtable(L);
 	luaL_setfuncs(L, Reg_utf8, 0);
 	lua_setfield(L, -2, "utf8");
+
+#ifdef USE_STRINGPREP_ICU
+	lua_newtable(L);
+	lua_pushcfunction(L, Lskeleton);
+	lua_setfield(L, -2, "skeleton");
+	lua_setfield(L, -2, "confusable");
+#endif
 
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");

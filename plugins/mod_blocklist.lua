@@ -159,7 +159,7 @@ local function edit_blocklist(event)
 	local blocklist = cache[username] or get_blocklist(username);
 
 	local new_blocklist = {
-		-- We set the [false] key to someting as a signal not to migrate privacy lists
+		-- We set the [false] key to something as a signal not to migrate privacy lists
 		[false] = blocklist[false] or { created = now; };
 	};
 	if type(blocklist[false]) == "table" then

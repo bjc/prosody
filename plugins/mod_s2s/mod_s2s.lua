@@ -595,8 +595,7 @@ local function initialize_session(session)
 		if data then
 			local ok, err = stream:feed(data);
 			if ok then return; end
-			log("warn", "Received invalid XML: %s", data);
-			log("warn", "Problem was: %s", err);
+			log("debug", "Received invalid XML (%s) %d bytes: %q", tostring(err), #data, data:sub(1, 300));
 			session:close("not-well-formed");
 		end
 	end
@@ -739,6 +738,9 @@ module:provides("net", {
 	listener = listener;
 	default_port = 5269;
 	encryption = "starttls";
+	ssl_config = { -- FIXME This is not used atm, see mod_tls
+		verify = { "peer", "client_once", };
+	};
 	multiplex = {
 		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:server%1.*>";
 	};

@@ -4,12 +4,13 @@ local logger = require "util.logger";
 local function new_session(typ)
 	local session = {
 		type = typ .. "_unauthed";
+		base_type = typ;
 	};
 	return session;
 end
 
 local function set_id(session)
-	local id = session.type .. tostring(session):match("%x+$"):lower();
+	local id = session.base_type .. tostring(session):match("%x+$"):lower();
 	session.id = id;
 	return session;
 end
