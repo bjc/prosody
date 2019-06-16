@@ -159,7 +159,7 @@ local function get_broadcaster(username)
 		end
 
 		for jid in pairs(jids) do
-			module:log("debug", "Sending notification to %s from %s: %s", jid, user_bare, tostring(item));
+			module:log("debug", "Sending notification to %s from %s for node %s", jid, user_bare, node);
 			message.attr.to = jid;
 			module:send(message);
 		end
