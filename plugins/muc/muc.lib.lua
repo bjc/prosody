@@ -391,7 +391,11 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	end
 	self:publicise_occupant_status(new_occupant or occupant, x);
 	if is_last_session then
-		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+		module:fire_event("muc-occupant-left", {
+				room = self;
+				nick = occupant.nick;
+				occupant = occupant;
+			});
 	end
 	return true;
 end
@@ -868,7 +872,11 @@ function room_mt:clear(x)
 	end
 	for occupant in pairs(occupants_updated) do
 		self:publicise_occupant_status(occupant, x);
-		module:fire_event("muc-occupant-left", { room = self; nick = occupant.nick; occupant = occupant;});
+		module:fire_event("muc-occupant-left", {
+				room = self;
+				nick = occupant.nick;
+				occupant = occupant;
+			});
 	end
 end
 
@@ -1316,7 +1324,11 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		for occupant, old_role in pairs(occupants_updated) do
 			self:publicise_occupant_status(occupant, x, nil, actor, reason);
 			if occupant.role == nil then
-				module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+				module:fire_event("muc-occupant-left", {
+						room = self;
+						nick = occupant.nick;
+						occupant = occupant;
+					});
 			elseif is_semi_anonymous and
 				(old_role == "moderator" and occupant.role ~= "moderator") or
 				(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
@@ -1432,7 +1444,11 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	self:save_occupant(occupant);
 	self:publicise_occupant_status(occupant, x, nil, actor, reason);
 	if role == nil then
-		module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
+		module:fire_event("muc-occupant-left", {
+				room = self;
+				nick = occupant.nick;
+				occupant = occupant;
+			});
 	end
 	return true;
 end
