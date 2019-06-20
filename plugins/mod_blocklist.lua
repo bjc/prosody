@@ -128,6 +128,7 @@ local function edit_blocklist(event)
 	-- > only if the contact is allowed to receive presence notifications [...]
 	-- So contacts we need to do that for are added to the set below.
 	local send_unavailable = is_blocking and {};
+	local send_available = not is_blocking and {};
 
 	-- Because blocking someone currently also blocks the ability to reject
 	-- subscription requests, we'll preemptively reject such
@@ -147,6 +148,8 @@ local function edit_blocklist(event)
 			elseif is_contact_pending_in(username, module.host, jid) then
 				remove_pending[jid] = true;
 			end
+		elseif is_contact_subscribed(username, module.host, jid) then
+			send_available[jid] = true;
 		end
 	end
 
@@ -202,6 +205,11 @@ local function edit_blocklist(event)
 			end
 			save_roster(username, module.host, roster);
 			-- Not much we can do about save failing here
+		end
+	else
+		local user_bare = username .. "@" .. module.host;
+		for jid in pairs(send_available) do
+			module:send(st.presence({ type = "probe", to = user_bare, from = jid }));
 		end
 	end
 
