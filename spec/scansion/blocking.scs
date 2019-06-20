@@ -132,6 +132,12 @@ Romeo sends:
 	  </unblock>
 	</iq>
 
+Juliet receives:
+	<presence to="${Juliet's JID}" from="${Romeo's full JID}">
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
 Romeo receives:
 	<iq type="result" id="lx3"/>
 
