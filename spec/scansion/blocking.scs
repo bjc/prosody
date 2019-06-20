@@ -127,7 +127,7 @@ Romeo sends:
 
 Juliet receives:
 	<presence to="${Juliet's JID}" from="${Romeo's full JID}">
-	  <x xmlns="vcard-temp:x:update"/>
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
 	</presence>
 
 Romeo receives:
