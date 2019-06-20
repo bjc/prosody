@@ -17,9 +17,7 @@ Romeo sends:
 	<presence/>
 
 Romeo receives:
-	<presence from="${Romeo's full JID}">
-	  <x xmlns="vcard-temp:x:update"/>
-	</presence>
+	<presence from="${Romeo's full JID}"/>
 
 Juliet connects
 
@@ -27,9 +25,7 @@ Juliet sends:
 	<presence/>
 
 Juliet receives:
-	<presence from="${Juliet's full JID}">
-	  <x xmlns="vcard-temp:x:update"/>
-	</presence>
+	<presence from="${Juliet's full JID}"/>
 
 # They add each other
 Romeo sends:
@@ -47,7 +43,6 @@ Juliet sends:
 Romeo receives:
 	<presence from="${Juliet's full JID}" to="${Romeo's JID}">
 	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
-	  <x xmlns="vcard-temp:x:update"/>
 	</presence>
 
 Juliet sends:
@@ -65,13 +60,11 @@ Romeo sends:
 Juliet receives:
 	<presence from="${Romeo's full JID}" to="${Juliet's JID}">
 	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
-	  <x xmlns="vcard-temp:x:update"/>
 	</presence>
 
 Romeo receives:
 	<presence from="${Juliet's full JID}" to="${Romeo's JID}">
 	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
-	  <x xmlns="vcard-temp:x:update"/>
 	</presence>
 
 # They can now talk
@@ -134,7 +127,6 @@ Romeo sends:
 
 Juliet receives:
 	<presence to="${Juliet's JID}" from="${Romeo's full JID}">
-	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
 	  <x xmlns="vcard-temp:x:update"/>
 	</presence>
 
