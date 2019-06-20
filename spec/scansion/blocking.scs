@@ -1,0 +1,168 @@
+# XEP-0191: Blocking Command
+
+[Client] Romeo
+	jid: blocker@localhost
+	password: password
+
+[Client] Juliet
+	jid: blockee@localhost
+	password: password
+
+-----
+
+# The parties connect
+Romeo connects
+
+Romeo sends:
+	<presence/>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}">
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+Juliet connects
+
+Juliet sends:
+	<presence/>
+
+Juliet receives:
+	<presence from="${Juliet's full JID}">
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+# They add each other
+Romeo sends:
+	<presence type="subscribe" to="${Juliet's JID}"/>
+
+Romeo receives:
+	<presence from="${Juliet's JID}" to="${Romeo's JID}" type="unavailable"/>
+
+Juliet receives:
+	<presence type="subscribe" to="${Juliet's JID}" from="${Romeo's JID}"/>
+
+Juliet sends:
+	<presence type="subscribed" to="${Romeo's JID}"/>
+
+Romeo receives:
+	<presence from="${Juliet's full JID}" to="${Romeo's JID}">
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+Juliet sends:
+	<presence type="subscribe" to="${Romeo's JID}"/>
+
+Juliet receives:
+	<presence from="${Romeo's JID}" to="${Juliet's JID}" type="unavailable"/>
+
+Romeo receives:
+	<presence type="subscribe" to="${Romeo's JID}" from="${Juliet's JID}"/>
+
+Romeo sends:
+	<presence type="subscribed" to="${Juliet's JID}"/>
+
+Juliet receives:
+	<presence from="${Romeo's full JID}" to="${Juliet's JID}">
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+Romeo receives:
+	<presence from="${Juliet's full JID}" to="${Romeo's JID}">
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+# They can now talk
+Juliet sends:
+	<message type="chat" to="${Romeo's JID}">
+	  <body>ohai</body>
+	</message>
+
+Romeo receives:
+	<message type="chat" to="${Romeo's JID}" from="${Juliet's full JID}">
+	  <body>ohai</body>
+	</message>
+
+# And now to the blockining
+
+Romeo sends:
+	<iq type="set" id="lx2">
+	  <block xmlns="urn:xmpp:blocking">
+	    <item jid="${Juliet's JID}"/>
+	  </block>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="lx2"/>
+
+Juliet receives:
+	<presence type="unavailable" to="${Juliet's JID}" from="${Romeo's full JID}"/>
+
+# Can"t talk anymore
+Romeo sends:
+	<message type="chat" to="${Juliet's JID}">
+	  <body>hello?</body>
+	</message>
+
+Romeo receives:
+	<message type="error" from="${Juliet's JID}">
+	  <error type="cancel">
+	    <not-acceptable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+	    <text xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">You have blocked this JID</text>
+	    <blocked xmlns="urn:xmpp:blocking:errors"/>
+	  </error>
+	</message>
+
+Juliet sends:
+	<message type="chat" to="${Romeo's JID}"/>
+
+Juliet receives:
+	<message type="error" from="${Romeo's JID}">
+	  <error type="cancel">
+	    <service-unavailable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+	  </error>
+	</message>
+
+Romeo sends:
+	<iq type="set" id="lx3">
+	  <unblock xmlns="urn:xmpp:blocking">
+	    <item jid="${Juliet's JID}"/>
+	  </unblock>
+	</iq>
+
+Juliet receives:
+	<presence to="${Juliet's JID}" from="${Romeo's full JID}">
+	  <delay xmlns="urn:xmpp:delay" stamp="{scansion:any}" from="localhost"/>
+	  <x xmlns="vcard-temp:x:update"/>
+	</presence>
+
+Romeo receives:
+	<iq type="result" id="lx3"/>
+
+# Can talk again
+Romeo sends:
+	<message type="chat" to="${Juliet's JID}">
+	  <body>hello!</body>
+	</message>
+
+Juliet receives:
+	<message type="chat" to="${Juliet's JID}" from="${Romeo's full JID}">
+	  <body>hello!</body>
+	</message>
+
+# Bye
+Juliet disconnects
+
+Juliet sends:
+	<presence type="unavailable"/>
+
+Romeo receives:
+	<presence from="${Juliet's full JID}" to="${Romeo's JID}" type="unavailable"/>
+
+Romeo disconnects
+
+Romeo sends:
+	<presence type="unavailable"/>
+
