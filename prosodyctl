@@ -85,6 +85,41 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
+function commands.list(arg)
+  -- Need to think about the case with many flags
+  local flag="--tree="
+  -- I'm considering the flag is the first, but there can be many flags
+  if arg[1] and arg[1]:sub(1, #flag) == flag then
+    local dir = arg[1]:match("=(.+)$")
+    -- These extra double brackets allow us to correctly process names with spaces
+    os.execute("luarocks list --tree=".."'"..dir.."'")
+  else
+    os.execute("luarocks list --tree="..prosody.paths.data.."/rocks")
+  end
+end
+
+function commands.enabled_plugins()
+	for module in modulemanager.get_modules_for_host() do
+		show_warning("%s", module)
+	end
+end
+
+function commands.local_plugins()
+	local directory = "./plugins"
+    local i, t, popen = 0, {}, io.popen
+    local pfile = popen('ls -a "'..directory..'"')
+    for filename in pfile:lines() do
+		if filename == "." or filename == ".." then
+			i = i + 1
+		else
+			i = i + 1
+			t[i] = filename
+			show_warning("%s", t[i])
+        end
+    end
+    pfile:close()
+end
+
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
