@@ -87,7 +87,7 @@ local command = table.remove(arg, 1);
 
 function commands.list(arg)
   -- Need to think about the case with many flags
-  local flag="--tree="
+  local flag = "--tree="
   -- I'm considering the flag is the first, but there can be many flags
   if arg[1] and arg[1]:sub(1, #flag) == flag then
     local dir = arg[1]:match("=(.+)$")
@@ -96,6 +96,22 @@ function commands.list(arg)
   else
     os.execute("luarocks list --tree="..prosody.paths.data.."/rocks")
   end
+end
+
+function commands.admin_add(arg)
+  local modules, tree, server, refresh = "", "", "", ""
+  for i, _ in ipairs(arg) do
+    if arg[i]:sub(1, #"--tree=") == "--tree=" then
+      tree = arg[i].." "
+    elseif arg[i]:sub(1, #"--server=") == "--server=" then
+      server = arg[i].." "
+    elseif arg[i]:sub(1, #"--no-refresh") == "--no-refresh" then
+      refresh = arg[i].." "
+    else
+      modules=modules..arg[i].." "
+    end
+  end
+  os.execute("luarocks-admin "..tree.."add "..server..refresh..modules)
 end
 
 function commands.enabled_plugins()
