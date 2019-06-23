@@ -25,8 +25,7 @@ local dialback_secret = sha256_hash(module:get_option_string("dialback_secret", 
 local dwd = module:get_option_boolean("dialback_without_dialback", false);
 
 --- Helper to check that a session peer's certificate is valid
-function check_cert_status(session)
-	local host = session.direction == "outgoing" and session.to_host or session.from_host
+function check_cert_status(session, host)
 	local conn = session.conn:socket()
 	local cert
 	if conn.getpeercertificate then
