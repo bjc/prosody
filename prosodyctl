@@ -98,7 +98,7 @@ function commands.list(arg)
   end
 end
 
-function commands.admin_add(arg)
+function admin_operation(operation, arg)
   local modules, tree, server, refresh = "", "", "", ""
   for i, _ in ipairs(arg) do
     if arg[i]:sub(1, #"--tree=") == "--tree=" then
@@ -111,7 +111,7 @@ function commands.admin_add(arg)
       modules=modules..arg[i].." "
     end
   end
-  os.execute("luarocks-admin "..tree.."add "..server..refresh..modules)
+  os.execute("luarocks-admin "..tree..operation..server..refresh..modules)
 end
 
 function commands.enabled_plugins()
