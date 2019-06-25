@@ -114,6 +114,10 @@ function admin_operation(operation, arg)
   os.execute("luarocks-admin "..tree..operation..server..refresh..modules)
 end
 
+function commands.admin_add(arg)
+  admin_operation("add ", arg)
+end
+
 function commands.enabled_plugins()
 	for module in modulemanager.get_modules_for_host() do
 		show_warning("%s", module)
