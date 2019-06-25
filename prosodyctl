@@ -99,11 +99,11 @@ function commands.list(arg)
 end
 
 function commands.admin_add(arg)
-  admin_operation("add ", arg)
+  prosodyctl.admin_operation("add ", arg)
 end
 
 function commands.admin_remove(arg)
-  admin_operation("remove ", arg)
+  prosodyctl.admin_operation("remove ", arg)
 end
 
 function commands.enabled_plugins()
