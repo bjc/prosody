@@ -10,7 +10,6 @@
 -- prosodyctl - command-line controller for Prosody XMPP server
 
 -- Will be modified by configure script if run --
-
 CFG_SOURCEDIR=CFG_SOURCEDIR or os.getenv("PROSODY_SRCDIR");
 CFG_CONFIGDIR=CFG_CONFIGDIR or os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=CFG_PLUGINDIR or os.getenv("PROSODY_PLUGINDIR");
@@ -93,17 +92,21 @@ function commands.list(arg)
     local dir = arg[1]:match("=(.+)$")
     -- These extra double brackets allow us to correctly process names with spaces
     os.execute("luarocks list --tree=".."'"..dir.."'")
+    return 0;
   else
     os.execute("luarocks list --tree="..prosody.paths.data.."/rocks")
+    return 0;
   end
 end
 
 function commands.admin_add(arg)
   prosodyctl.admin_operation("add ", arg)
+  return 0;
 end
 
 function commands.admin_remove(arg)
   prosodyctl.admin_operation("remove ", arg)
+  return 0;
 end
 
 function commands.enabled_plugins()
@@ -126,6 +129,7 @@ function commands.local_plugins()
         end
     end
     pfile:close()
+    return 0
 end
 
 function commands.adduser(arg)
