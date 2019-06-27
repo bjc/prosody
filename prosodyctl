@@ -85,6 +85,10 @@ local commands = {};
 local command = table.remove(arg, 1);
 
 function commands.list(arg)
+  if not arg[1] or arg[1] == "--help" then
+		show_usage([[list]], [[Shows installed rocks]]);
+		return 1;
+	end
   -- Need to think about the case with many flags
   local flag = "--tree="
   -- I'm considering the flag is the first, but there can be many flags
@@ -109,13 +113,21 @@ function commands.admin_remove(arg)
   return 0;
 end
 
-function commands.enabled_plugins()
+function commands.enabled_plugins(arg)
+  if arg[1] == "--help" then
+    show_usage([[enabled_plugins]], [[Shows plugins currently enabled on prosody]]);
+    return 1;
+	end
 	for module in modulemanager.get_modules_for_host() do
 		show_warning("%s", module)
 	end
 end
 
-function commands.local_plugins()
+function commands.local_plugins(arg)
+  if arg[1] == "--help" then
+    show_usage([[local_plugins]], [[Shows plugins currently available for prosody, locally]]);
+    return 1;
+	end
 	local directory = "./plugins"
     local i, t, popen = 0, {}, io.popen
     local pfile = popen('ls -a "'..directory..'"')
@@ -1397,7 +1409,8 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:\n");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-		local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
+		local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about", "local_plugins", "enabled_plugins",
+      "admin_add", "admin_remove", "list", };
 
 		local done = {};
 
