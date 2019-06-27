@@ -279,6 +279,11 @@ local function reload()
 end
 
 local function admin_operation(operation, arg)
+  if arg[1] == "--help" then
+    print(" admin-"..operation)
+    print("    "..operation.."plugins from a server (repository)")
+    return 1;
+	end
   local modules, tree, server, refresh = "", "", "", ""
   for i, _ in ipairs(arg) do
     if arg[i]:sub(1, #"--tree=") == "--tree=" then
