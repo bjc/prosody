@@ -185,6 +185,14 @@ local node_metadata_form = dataform {
 		type = "text-single";
 		name = "pubsub#type";
 	};
+	{
+		type = "text-single";
+		name = "pubsub#access_model";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#publish_model";
+	};
 };
 
 local service_method_feature_map = {
@@ -258,6 +266,8 @@ function _M.handle_disco_info_node(event, service)
 			["pubsub#title"] = node_obj.config.title;
 			["pubsub#description"] = node_obj.config.description;
 			["pubsub#type"] = node_obj.config.payload_type;
+			["pubsub#access_model"] = node_obj.config.access_model;
+			["pubsub#publish_model"] = node_obj.config.publish_model;
 		}, "result"));
 	end
 end
