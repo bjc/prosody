@@ -3,12 +3,20 @@
 --
 
 local tostring = tostring;
-local select = select;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
+local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local type = type;
+local dump = require "util.serialization".new("debug");
+local num_type = math.type or function (n)
+	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
+end
+
+-- In Lua 5.3+ these formats throw an error if given a float
+local expects_integer = { c = true, d = true, i = true, o = true, u = true, X = true, x = true, };
 
 local function format(formatstring, ...)
-	local args, args_length = { ... }, select('#', ...);
+	local args = pack(...);
+	local args_length = args.n;
 
 	-- format specifier spec:
 	-- 1. Start: '%%'
@@ -28,15 +36,20 @@ local function format(formatstring, ...)
 		if spec ~= "%%" then
 			i = i + 1;
 			local arg = args[i];
-			if arg == nil then -- special handling for nil
-				arg = "<nil>"
-				args[i] = "<nil>";
-			end
 
 			local option = spec:sub(-1);
-			if option == "q" or option == "s" then -- arg should be string
+			if arg == nil then
+				args[i] = "nil";
+				spec = "<%s>";
+			elseif option == "q" then
+				args[i] = dump(arg);
+				spec = "%s";
+			elseif option == "s" then
 				args[i] = tostring(arg);
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
+				args[i] = tostring(arg);
+				spec = "[%s]";
+			elseif expects_integer[option] and num_type(arg) ~= "integer" then
 				args[i] = tostring(arg);
 				spec = "[%s]";
 			end

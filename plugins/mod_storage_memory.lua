@@ -8,6 +8,8 @@ local new_id = require "util.id".medium;
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});
 
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+
 local memory = setmetatable({}, {
 	__index = function(t, k)
 		local store = module:shared(k)
@@ -51,6 +53,12 @@ archive_store.__index = archive_store;
 
 archive_store.users = _users;
 
+archive_store.caps = {
+	total = true;
+	quota = archive_item_limit;
+	truncate = true;
+};
+
 function archive_store:append(username, key, value, when, with)
 	if is_stanza(value) then
 		value = st.preserialize(value);
@@ -70,6 +78,8 @@ function archive_store:append(username, key, value, when, with)
 	end
 	if a[key] then
 		table.remove(a, a[key]);
+	elseif #a >= archive_item_limit then
+		return nil, "quota-limit";
 	end
 	local i = #a+1;
 	a[i] = v;
@@ -80,9 +90,17 @@ end
 function archive_store:find(username, query)
 	local items = self.store[username or NULL];
 	if not items then
-		return function () end, 0;
+		if query then
+			if query.before or query.after then
+				return nil, "item-not-found";
+			end
+			if query.total then
+				return function () end, 0;
+			end
+		end
+		return function () end;
 	end
-	local count = #items;
+	local count = nil;
 	local i = 0;
 	if query then
 		items = array():append(items);
@@ -106,23 +124,35 @@ function archive_store:find(username, query)
 				return item.when <= query["end"];
 			end);
 		end
-		count = #items;
+		if query.total then
+			count = #items;
+		end
 		if query.reverse then
 			items:reverse();
 			if query.before then
-				for j = 1, count do
+				local found = false;
+				for j = 1, #items do
 					if (items[j].key or tostring(j)) == query.before then
+						found = true;
 						i = j;
 						break;
 					end
 				end
+				if not found then
+					return nil, "item-not-found";
+				end
 			end
 		elseif query.after then
-			for j = 1, count do
+			local found = false;
+			for j = 1, #items do
 				if (items[j].key or tostring(j)) == query.after then
+					found = true;
 					i = j;
 					break;
 				end
+			end
+			if not found then
+				return nil, "item-not-found";
 			end
 		end
 		if query.limit and #items - i > query.limit then
@@ -135,6 +165,16 @@ function archive_store:find(username, query)
 		if not item then return; end
 		return item.key, item.value(), item.when, item.with;
 	end, count;
+end
+
+function archive_store:summary(username, query)
+	local iter, err = self:find(username, query)
+	if not iter then return iter, err; end
+	local summary = {};
+	for _, _, _, with in iter do
+		summary[with] = (summary[with] or 0) + 1;
+	end
+	return summary;
 end
 
 

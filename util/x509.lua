@@ -20,6 +20,7 @@
 
 local nameprep = require "util.encodings".stringprep.nameprep;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local idna_to_unicode = require "util.encodings".idna.to_unicode;
 local base64 = require "util.encodings".base64;
 local log = require "util.logger".init("x509");
 local s_format = string.format;
@@ -216,6 +217,32 @@ local function verify_identity(host, service, cert)
 	return false
 end
 
+-- TODO Support other SANs
+local function get_identities(cert) --> set of names
+	if cert.setencode then
+		cert:setencode("utf8");
+	end
+
+	local names = {};
+
+	local ext = cert:extensions();
+	local sans = ext[oid_subjectaltname];
+	if sans and sans["dNSName"] then
+		for i = 1, #sans["dNSName"] do
+			names[ idna_to_unicode(sans["dNSName"][i]) ] = true;
+		end
+	end
+
+	local subject = cert:subject();
+	for i = 1, #subject do
+		local dn = subject[i];
+		if dn.oid == oid_commonname and nameprep(dn.value) then
+			names[dn.value] = true;
+		end
+	end
+	return names;
+end
+
 local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n"..
 "([0-9A-Za-z+/=\r\n]*)\r?\n%-%-%-%-%-END %1%-%-%-%-%-";
 
@@ -237,6 +264,7 @@ end
 
 return {
 	verify_identity = verify_identity;
+	get_identities = get_identities;
 	pem2der = pem2der;
 	der2pem = der2pem;
 };

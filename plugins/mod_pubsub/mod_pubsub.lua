@@ -75,7 +75,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	local msg_type = node_obj and node_obj.config.message_type or "headline";
 	local message = st.message({ from = module.host, type = msg_type, id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
-			:tag(kind, { node = node })
+			:tag(kind, { node = node });
 
 	if item then
 		message:add_child(item);
@@ -101,11 +101,12 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 end
 
 local max_max_items = module:get_option_number("pubsub_max_items", 256);
-function check_node_config(node, actor, new_config) -- luacheck: ignore 212/actor 212/node
+function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
 	if (new_config["max_items"] or 1) > max_max_items then
 		return false;
 	end
-	if new_config["access_model"] ~= "whitelist" and new_config["access_model"] ~= "open" then
+	if new_config["access_model"] ~= "whitelist"
+	and new_config["access_model"] ~= "open" then
 		return false;
 	end
 	return true;

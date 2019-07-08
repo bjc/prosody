@@ -49,6 +49,9 @@ local function promise_settle(promise, new_state, new_next, cbs, value)
 	for _, cb in ipairs(cbs) do
 		cb(value);
 	end
+	-- No need to keep references to callbacks
+	promise._pending_on_fulfilled = nil;
+	promise._pending_on_rejected = nil;
 	return true;
 end
 

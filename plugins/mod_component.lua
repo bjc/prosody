@@ -49,6 +49,7 @@ function module.add_host(module)
 	local send;
 
 	local function on_destroy(session, err) --luacheck: ignore 212/err
+		module:set_status("warn", err and ("Disconnected: "..err) or "Disconnected");
 		env.connected = false;
 		env.session = false;
 		send = nil;
@@ -102,6 +103,7 @@ function module.add_host(module)
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
 		module:fire_event("component-authenticated", { session = session });
+		module:set_status("info", "Connected");
 
 		return true;
 	end
@@ -310,7 +312,7 @@ function listener.onconnect(conn)
 	function session.data(_, data)
 		local ok, err = stream:feed(data);
 		if ok then return; end
-		module:log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+		log("debug", "Received invalid XML (%s) %d bytes: %q", tostring(err), #data, data:sub(1, 300));
 		session:close("not-well-formed");
 	end
 

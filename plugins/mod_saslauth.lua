@@ -248,7 +248,7 @@ module:hook("stream-features", function(event)
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
 		origin.sasl_handler = sasl_handler;
 		if origin.encrypted then
-			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
+			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
 				local socket = origin.conn:socket();
@@ -275,7 +275,8 @@ module:hook("stream-features", function(event)
 		if mechanisms[1] then
 			features:add_child(mechanisms);
 		elseif not next(sasl_mechanisms) then
-			log("warn", "No available SASL mechanisms, verify that the configured authentication module is working");
+			local authmod = module:get_option_string("authentication", "internal_plain");
+			log("error", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
 		else
 			log("warn", "All available authentication mechanisms are either disabled or not suitable for an insecure connection");
 		end

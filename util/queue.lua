@@ -52,17 +52,19 @@ local function new(size, allow_wrapping)
 			return t[tail];
 		end;
 		items = function (self)
-			--luacheck: ignore 431/t
-			return function (t, pos)
-				if pos >= t:count() then
+			return function (_, pos)
+				if pos >= items then
 					return nil;
 				end
 				local read_pos = tail + pos;
-				if read_pos > t.size then
+				if read_pos > self.size then
 					read_pos = (read_pos%size);
 				end
-				return pos+1, t._items[read_pos];
+				return pos+1, t[read_pos];
 			end, self, 0;
+		end;
+		consume = function (self)
+			return self.pop, self;
 		end;
 	};
 end

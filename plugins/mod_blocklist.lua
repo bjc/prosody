@@ -162,7 +162,7 @@ local function edit_blocklist(event)
 	local blocklist = cache[username] or get_blocklist(username);
 
 	local new_blocklist = {
-		-- We set the [false] key to someting as a signal not to migrate privacy lists
+		-- We set the [false] key to something as a signal not to migrate privacy lists
 		[false] = blocklist[false] or { created = now; };
 	};
 	if type(blocklist[false]) == "table" then
@@ -189,6 +189,7 @@ local function edit_blocklist(event)
 
 	if is_blocking then
 		for jid in pairs(send_unavailable) do
+			-- Check that this JID isn't already blocked, i.e. this is not a change
 			if not blocklist[jid] then
 				for _, session in pairs(sessions[username].sessions) do
 					if session.presence then

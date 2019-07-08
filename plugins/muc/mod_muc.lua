@@ -453,7 +453,7 @@ for event_name, method in pairs {
 
 		if room == nil then
 			-- Watch presence to create rooms
-			if stanza.attr.type == nil and stanza.name == "presence" then
+			if stanza.attr.type == nil and stanza.name == "presence" and stanza:get_child("x", "http://jabber.org/protocol/muc") then
 				room = muclib.new_room(room_jid);
 				return room:handle_first_presence(origin, stanza);
 			elseif stanza.attr.type ~= "error" then
