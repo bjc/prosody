@@ -272,10 +272,15 @@ local function deserialize(str)
 	return ret;
 end
 
+local default = new();
 return {
 	new = new;
 	serialize = function (x, opt)
-		return new(opt)(x);
+		if opt == nil then
+			return default(x);
+		else
+			return new(opt)(x);
+		end
 	end;
 	deserialize = deserialize;
 };
