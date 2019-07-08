@@ -83,7 +83,7 @@ local jid_split = require "util.jid".prepped_split;
 local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
-local command = arg[1];
+local command = table.remove(arg, 1);
 
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
@@ -222,7 +222,7 @@ function commands.start(arg)
 	end
 
 	--luacheck: ignore 411/ret
-	local ok, ret = prosodyctl.start(prosody.paths.source);
+	local ok, ret = prosodyctl.start(prosody.paths.source, arg[-1]);
 	if ok then
 		local daemonize = configmanager.get("*", "daemonize");
 		if daemonize == nil then
@@ -363,6 +363,13 @@ function commands.about(arg)
 				.."\n  ";
 		end)));
 	print("");
+	local have_pposix, pposix = pcall(require, "util.pposix");
+	if have_pposix and pposix.uname then
+		print("# Operating system");
+		local uname, err = pposix.uname();
+		print(uname and uname.sysname .. " " .. uname.release or "Unknown POSIX", err or "");
+		print("");
+	end
 	print("# Lua environment");
 	print("Lua version:             ", _G._VERSION);
 	print("");
@@ -811,7 +818,7 @@ function commands.check(arg)
 		print("Checking config...");
 		local deprecated = set.new({
 			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
-			"vcard_compatibility",
+			"vcard_compatibility", "cross_domain_bosh", "cross_domain_websocket"
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
@@ -1305,8 +1312,6 @@ local command_runner = async.runner(function ()
 			end
 		end
 
-		table.remove(arg, 1);
-
 		local module = modulemanager.get_module("*", module_name);
 		if not module then
 			show_message("Failed to load module '"..module_name.."': Unknown error");
@@ -1370,7 +1375,7 @@ local command_runner = async.runner(function ()
 		os.exit(0);
 	end
 
-	os.exit(commands[command]({ select(2, unpack(arg)) }));
+	os.exit(commands[command](arg));
 end, watchers);
 
 command_runner:run(true);

@@ -10,6 +10,9 @@
 
 local hashes = require "util.hashes"
 
-return { md5 = hashes.hmac_md5,
-	 sha1 = hashes.hmac_sha1,
-	 sha256 = hashes.hmac_sha256 };
+return {
+	md5 = hashes.hmac_md5,
+	sha1 = hashes.hmac_sha1,
+	sha256 = hashes.hmac_sha256,
+	sha512 = hashes.hmac_sha512,
+};

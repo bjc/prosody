@@ -4,7 +4,7 @@
 -- This file is MIT/X11 licensed.
 
 if module:get_host_type() ~= "component" then
-	module:log("error", "mod_%s should be loaded only on a MUC component, not normal hosts", module.name);
+	module:log_status("error", "mod_%s should be loaded only on a MUC component, not normal hosts", module.name);
 	return;
 end
 
@@ -21,6 +21,7 @@ local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local dataform = require "util.dataforms".new;
+local get_form_type = require "util.dataforms".get_type;
 
 local mod_muc = module:depends"muc";
 local get_room_from_jid = mod_muc.get_room_from_jid;
@@ -31,6 +32,9 @@ local time_now = os.time;
 local m_min = math.min;
 local timestamp, timestamp_parse, datestamp = import( "util.datetime", "datetime", "parse", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
+
+local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
+local cleanup_interval = module:get_option_number("muc_log_cleanup_interval", 4 * 60 * 60);
 
 local default_history_length = 20;
 local max_history_length = module:get_option_number("max_history_messages", math.huge);
@@ -49,6 +53,8 @@ local log_by_default = module:get_option_boolean("muc_log_by_default", true);
 local archive_store = "muc_log";
 local archive = module:open_store(archive_store, "archive");
 
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+
 if archive.name == "null" or not archive.find then
 	if not archive.find then
 		module:log("error", "Attempt to open archive storage returned a driver without archive API support");
@@ -63,12 +69,15 @@ end
 
 local function archiving_enabled(room)
 	if log_all_rooms then
+		module:log("debug", "Archiving all rooms");
 		return true;
 	end
 	local enabled = room._data.archiving;
 	if enabled == nil then
+		module:log("debug", "Default is %s (for %s)", log_by_default, room.jid);
 		return log_by_default;
 	end
+	module:log("debug", "Logging in room %s is %s", room.jid, enabled);
 	return enabled;
 end
 
@@ -135,7 +144,11 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	local qstart, qend;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
-		local err;
+		local form_type, err = get_form_type(form);
+		if form_type ~= xmlns_mam then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Unexpected FORM_TYPE, expected '"..xmlns_mam.."'"));
+			return true;
+		end
 		form, err = query_form:data(form);
 		if err then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", select(2, next(err))));
@@ -176,7 +189,11 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
-		origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+		if err == "item-not-found" then
+			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
+		else
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+		end
 		return true;
 	end
 	local total = tonumber(err);
@@ -352,7 +369,29 @@ local function save_to_history(self, stanza)
 	end
 
 	-- And stash it
-	local id = archive:append(room_node, nil, stored_stanza, time_now(), with);
+	local time = time_now();
+	local id, err = archive:append(room_node, nil, stored_stanza, time, with);
+
+	if not id and err == "quota-limit" then
+		if type(cleanup_after) == "number" then
+			module:log("debug", "Room '%s' over quota, cleaning archive", room_node);
+			local cleaned = archive:delete(room_node, {
+				["end"] = (os.time() - cleanup_after);
+			});
+			if cleaned then
+				id, err = archive:append(room_node, nil, stored_stanza, time, with);
+			end
+		end
+		if not id and (archive.caps and archive.caps.truncate) then
+			module:log("debug", "User '%s' over quota, truncating archive", room_node);
+			local truncated = archive:delete(room_node, {
+				truncate = archive_item_limit - 1;
+			});
+			if truncated then
+				id, err = archive:append(room_node, nil, stored_stanza, time, with);
+			end
+		end
+	end
 
 	if id then
 		schedule_cleanup(room_node);
@@ -393,9 +432,6 @@ module:hook("muc-disco#info", function(event)
 end);
 
 -- Cleanup
-
-local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
-local cleanup_interval = module:get_option_number("muc_log_cleanup_interval", 4 * 60 * 60);
 
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("muc_log_cleanup");

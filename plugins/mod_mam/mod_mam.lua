@@ -40,6 +40,9 @@ local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://ja
 local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
+local cleanup_after = module:get_option_string("archive_expires_after", "1w");
+local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
 if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
 		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
@@ -138,7 +141,11 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
-		origin.send(st.error_reply(stanza, "cancel", "internal-server-error", err));
+		if err == "item-not-found" then
+			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
+		else
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+		end
 		return true;
 	end
 	local total = tonumber(err);
@@ -295,7 +302,28 @@ local function message_handler(event, c2s)
 		log("debug", "Archiving stanza: %s", stanza:top_tag());
 
 		-- And stash it
-		local ok = archive:append(store_user, nil, clone_for_storage, time_now(), with);
+		local time = time_now();
+		local ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+		if not ok and err == "quota-limit" then
+			if type(cleanup_after) == "number" then
+				module:log("debug", "User '%s' over quota, cleaning archive", store_user);
+				local cleaned = archive:delete(store_user, {
+					["end"] = (os.time() - cleanup_after);
+				});
+				if cleaned then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+			if not ok and (archive.caps and archive.caps.truncate) then
+				module:log("debug", "User '%s' over quota, truncating archive", store_user);
+				local truncated = archive:delete(store_user, {
+					truncate = archive_item_limit - 1;
+				});
+				if truncated then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+		end
 		if ok then
 			local clone_for_other_handlers = st.clone(stanza);
 			local id = ok;
@@ -321,8 +349,6 @@ end
 module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
 module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
-local cleanup_after = module:get_option_string("archive_expires_after", "1w");
-local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
@@ -357,8 +383,10 @@ if cleanup_after ~= "never" then
 			last_date:set(username, date);
 		end
 	end
+	local cleanup_time = module:measure("cleanup", "times");
 
 	cleanup_runner = require "util.async".runner(function ()
+		local cleanup_done = cleanup_time();
 		local users = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do
@@ -386,6 +414,7 @@ if cleanup_after ~= "never" then
 			end
 		end
 		module:log("info", "Deleted %d expired messages for %d users", sum, num_users);
+		cleanup_done();
 	end);
 
 	cleanup_task = module:add_timer(1, function ()

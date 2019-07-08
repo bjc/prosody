@@ -1,12 +1,38 @@
 local data_path = "../../data";
 
+local vhost = {
+	"accounts",
+	"account_details",
+	"roster",
+	"vcard",
+	"private",
+	"blocklist",
+	"privacy",
+	"archive-archive",
+	"offline-archive",
+	"pubsub_nodes",
+	-- "pubsub_*-archive",
+	"pep",
+	-- "pep_*-archive",
+}
+local muc = {
+	"persistent",
+	"config",
+	"state",
+	"muc_log-archive",
+};
+
 input {
-	type = "prosody_files";
+	hosts = {
+		["example.com"] = vhost;
+		["conference.example.com"] = muc;
+	};
+	type = "internal";
 	path = data_path;
 }
 
 output {
-	type = "prosody_sql";
+	type = "sql";
 	driver = "SQLite3";
 	database = data_path.."/prosody.sqlite";
 }
@@ -14,11 +40,11 @@ output {
 --[[
 
 input {
-	type = "prosody_files";
+	type = "internal";
 	path = data_path;
 }
 output {
-	type = "prosody_sql";
+	type = "sql";
 	driver = "SQLite3";
 	database = data_path.."/prosody.sqlite";
 }

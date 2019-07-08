@@ -14,6 +14,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local pairs = pairs;
 local next = next;
 local type = type;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 local calculate_hash = require "util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
 local bare_sessions = prosody.bare_sessions;

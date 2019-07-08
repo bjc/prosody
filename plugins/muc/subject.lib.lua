@@ -94,6 +94,12 @@ module:hook("muc-occupant-groupchat", function(event)
 	local stanza = event.stanza;
 	local subject = stanza:get_child("subject");
 	if subject then
+		if stanza:get_child("body") or stanza:get_child("thread") then
+			-- Note: A message with a <subject/> and a <body/> or a <subject/> and
+			-- a <thread/> is a legitimate message, but it SHALL NOT be interpreted
+			-- as a subject change.
+			return;
+		end
 		local room = event.room;
 		local occupant = event.occupant;
 		-- Role check for subject changes

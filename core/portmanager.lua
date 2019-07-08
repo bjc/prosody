@@ -10,6 +10,7 @@ local set = require "util.set";
 local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
 local type, tonumber, tostring, ipairs = type, tonumber, tostring, ipairs;
+local pairs = pairs;
 
 local prosody = prosody;
 local fire_event = prosody.events.fire_event;
@@ -95,7 +96,7 @@ local function activate(service_name)
 		   }
 	bind_ports = set.new(type(bind_ports) ~= "table" and { bind_ports } or bind_ports );
 
-	local mode, ssl = listener.default_mode or default_mode;
+	local mode = listener.default_mode or default_mode;
 	local hooked_ports = {};
 
 	for interface in bind_interfaces do
@@ -107,13 +108,13 @@ local function activate(service_name)
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port,
 					active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
 			else
-				local err;
+				local ssl, cfg, err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
 					local global_ssl_config = config.get("*", "ssl") or {};
 					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
 					log("debug", "Creating context for direct TLS service %s on port %d", service_info.name, port);
-					ssl, err = certmanager.create_context(service_info.name.." port "..port, "server",
+					ssl, err, cfg = certmanager.create_context(service_info.name.." port "..port, "server",
 						prefix_ssl_config[interface],
 						prefix_ssl_config[port],
 						prefix_ssl_config,
@@ -127,7 +128,12 @@ local function activate(service_name)
 				end
 				if not err then
 					-- Start listening on interface+port
-					local handler, err = server.addserver(interface, port_number, listener, mode, ssl);
+					local handler, err = server.listen(interface, port_number, listener, {
+						read_size = mode,
+						tls_ctx = ssl,
+						tls_direct = service_info.encryption == "ssl";
+						sni_hosts = {},
+					});
 					if not handler then
 						log("error", "Failed to open server port %d on %s, %s", port_number, interface,
 							error_to_friendly_message(service_name, port_number, err));
@@ -137,6 +143,7 @@ local function activate(service_name)
 						active_services:add(service_name, interface, port_number, {
 							server = handler;
 							service = service_info;
+							tls_cfg = cfg;
 						});
 					end
 				end
@@ -222,13 +229,52 @@ end
 
 -- Event handlers
 
+local function add_sni_host(host, service)
+	-- local global_ssl_config = config.get(host, "ssl") or {};
+	for name, interface, port, n, active_service --luacheck: ignore 213
+		in active_services:iter(service, nil, nil, nil) do
+		if active_service.server.hosts and active_service.tls_cfg then
+			-- local config_prefix = (active_service.config_prefix or name).."_";
+			-- if config_prefix == "_" then
+				-- config_prefix = "";
+			-- end
+			-- local prefix_ssl_config = config.get(host, config_prefix.."ssl") or global_ssl_config;
+			-- FIXME only global 'ssl' settings are mixed in here
+			-- TODO per host and per service settings should be merged in,
+			-- without overriding the per-host certificate
+			local ssl, err, cfg = certmanager.create_context(host, "server");
+			if ssl then
+				active_service.server.hosts[host] = ssl;
+				if not active_service.tls_cfg.certificate then
+					active_service.server.tls_ctx = ssl;
+					active_service.tls_cfg = cfg;
+				end
+			else
+				log("error", "err = %q", err);
+			end
+		end
+	end
+end
 prosody.events.add_handler("item-added/net-provider", function (event)
 	local item = event.item;
 	register_service(item.name, item);
+	for host in pairs(prosody.hosts) do
+		add_sni_host(host, item.name);
+	end
 end);
 prosody.events.add_handler("item-removed/net-provider", function (event)
 	local item = event.item;
 	unregister_service(item.name, item);
+end);
+
+prosody.events.add_handler("host-activated", add_sni_host);
+prosody.events.add_handler("host-deactivated", function (host)
+	for name, interface, port, n, active_service --luacheck: ignore 213
+		in active_services:iter(nil, nil, nil, nil) do
+		if active_service.tls_cfg then
+			active_service.server.hosts[host] = nil;
+		end
+	end
 end);
 
 return {

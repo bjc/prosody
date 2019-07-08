@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };

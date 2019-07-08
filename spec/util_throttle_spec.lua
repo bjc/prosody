@@ -88,7 +88,7 @@ describe("util.throttle", function()
 				later(0.1);
 				a:update();
 			end
-			assert(math.abs(a.balance - 1) < 0.0001); -- incremental updates cause rouding errors
+			assert(math.abs(a.balance - 1) < 0.0001); -- incremental updates cause rounding errors
 		end);
 	end);
 

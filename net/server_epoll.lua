@@ -38,7 +38,10 @@ local default_config = { __index = {
 	read_timeout = 14 * 60;
 
 	-- How long to wait for a socket to become writable after queuing data to send
-	send_timeout = 60;
+	send_timeout = 180;
+
+	-- How long to wait for a socket to become writable after creation
+	connect_timeout = 20;
 
 	-- Some number possibly influencing how many pending connections can be accepted
 	tcp_backlog = 128;
@@ -102,7 +105,7 @@ local function runtimers(next_delay, min_wait)
 		if peek > now then
 			next_delay = peek - now;
 			break;
-	end
+		end
 
 		local _, timer, id = timers:pop();
 		local ok, ret = pcall(timer[2], now);
@@ -110,10 +113,10 @@ local function runtimers(next_delay, min_wait)
 			local next_time = now+ret;
 			timer[1] = next_time;
 			timers:insert(timer, next_time);
-	end
+		end
 
 		peek = timers:peek();
-			end
+	end
 	if peek == nil then
 		return next_delay;
 	end
@@ -159,6 +162,7 @@ function interface:on(what, ...)
 	local ok, err = pcall(listener, self, ...);
 	if not ok then
 		log("error", "Error calling on%s: %s", what, err);
+		return;
 	end
 	return err;
 end
@@ -407,8 +411,10 @@ function interface:write(data)
 	else
 		self.writebuffer = { data };
 	end
-	self:setwritetimeout();
-	self:set(nil, true);
+	if not self._write_lock then
+		self:setwritetimeout();
+		self:set(nil, true);
+	end
 	return #data;
 end
 interface.send = interface.write;
@@ -483,6 +489,13 @@ function interface:tlshandskake()
 		end
 		conn:settimeout(0);
 		self.conn = conn;
+		if conn.sni then
+			if self.servername then
+				conn:sni(self.servername);
+			elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
+				conn:sni(self._server.hosts, true);
+			end
+		end
 		self:on("starttls");
 		self.ondrain = nil;
 		self.onwritable = interface.tlshandskake;
@@ -555,12 +568,14 @@ function interface:onacceptable()
 	client:init();
 	if self.tls_direct then
 		client:starttls(self.tls_ctx);
+	else
+		client:onconnect();
 	end
 end
 
 -- Initialization
 function interface:init()
-	self:setwritetimeout();
+	self:setwritetimeout(cfg.connect_timeout);
 	return self:add(true, true);
 end
 
@@ -588,16 +603,28 @@ function interface:pausefor(t)
 	end);
 end
 
+function interface:pause_writes()
+	self._write_lock = true;
+	self:setwritetimeout(false);
+	self:set(nil, false);
+end
+
+function interface:resume_writes()
+	self._write_lock = nil;
+	if self.writebuffer[1] then
+		self:setwritetimeout();
+		self:set(nil, true);
+	end
+end
+
 -- Connected!
 function interface:onconnect()
-	if self.conn and not self.peername and self.conn.getpeername then
-		self.peername, self.peerport = self.conn:getpeername();
-	end
+	self:updatenames();
 	self.onconnect = noop;
 	self:on("connect");
 end
 
-local function addserver(addr, port, listeners, read_size, tls_ctx)
+local function listen(addr, port, listeners, config)
 	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
 	if not conn then return conn, err; end
 	conn:settimeout(0);
@@ -605,15 +632,25 @@ local function addserver(addr, port, listeners, read_size, tls_ctx)
 		conn = conn;
 		created = gettime();
 		listeners = listeners;
-		read_size = read_size;
+		read_size = config and config.read_size;
 		onreadable = interface.onacceptable;
-		tls_ctx = tls_ctx;
-		tls_direct = tls_ctx and true or false;
+		tls_ctx = config and config.tls_ctx;
+		tls_direct = config and config.tls_direct;
+		hosts = config and config.sni_hosts;
 		sockname = addr;
 		sockport = port;
 	}, interface_mt);
 	server:add(true, false);
 	return server;
+end
+
+-- COMPAT
+local function addserver(addr, port, listeners, read_size, tls_ctx)
+	return listen(addr, port, listeners, {
+		read_size = read_size;
+		tls_ctx = tls_ctx;
+		tls_direct = tls_ctx and true or false;
+	});
 end
 
 -- COMPAT
@@ -752,6 +789,7 @@ return {
 	addserver = addserver;
 	addclient = addclient;
 	add_task = addtimer;
+	listen = listen;
 	at = at;
 	loop = loop;
 	closeall = closeall;

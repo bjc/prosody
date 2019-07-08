@@ -51,18 +51,18 @@ end
 local default_filter_set = {};
 
 function default_filter_set.bytes_in(bytes, session)
-  local sess_throttle = session.throttle;
-  if sess_throttle then
-    local ok, balance, outstanding = sess_throttle:poll(#bytes, true);
+	local sess_throttle = session.throttle;
+	if sess_throttle then
+		local ok, balance, outstanding = sess_throttle:poll(#bytes, true);
 		if not ok then
-      session.log("debug", "Session over rate limit (%d) with %d (by %d), pausing", sess_throttle.max, #bytes, outstanding);
+			session.log("debug", "Session over rate limit (%d) with %d (by %d), pausing", sess_throttle.max, #bytes, outstanding);
 			outstanding = ceil(outstanding);
 			session.conn:pause(); -- Read no more data from the connection until there is no outstanding data
 			local outstanding_data = bytes:sub(-outstanding);
 			bytes = bytes:sub(1, #bytes-outstanding);
 			timer.add_task(limits_resolution, function ()
 				if not session.conn then return; end
-        if sess_throttle:peek(#outstanding_data) then
+				if sess_throttle:peek(#outstanding_data) then
 					session.log("debug", "Resuming paused session");
 					session.conn:resume();
 				end
@@ -95,4 +95,21 @@ end
 
 function module.unload()
 	filters.remove_filter_hook(filter_hook);
+end
+
+function module.add_host(module)
+	local unlimited_jids = module:get_option_inherited_set("unlimited_jids", {});
+
+	if not unlimited_jids:empty() then
+		module:hook("authentication-success", function (event)
+			local session = event.session;
+			local session_type = session.type:match("^[^_]+");
+			local jid = session.username .. "@" .. session.host;
+			if unlimited_jids:contains(jid) then
+				local filter_set = type_filters[session_type];
+				filters.remove_filter(session, "bytes/in", filter_set.bytes_in);
+				session.throttle = nil;
+			end
+		end);
+	end
 end

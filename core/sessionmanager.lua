@@ -21,6 +21,7 @@ local config_get = require "core.configmanager".get;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local generate_identifier = require "util.id".short;
+local sessionlib = require "util.session";
 
 local initialize_filters = require "util.filters".initialize;
 local gettime = require "socket".gettime;
@@ -29,23 +30,34 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function new_session(conn)
-	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
+	local session = sessionlib.new("c2s");
+	sessionlib.set_id(session);
+	sessionlib.set_logger(session);
+	sessionlib.set_conn(session, conn);
+
+	session.conntime = gettime();
 	local filter = initialize_filters(session);
 	local w = conn.write;
+
+	function session.rawsend(t)
+		t = filter("bytes/out", tostring(t));
+		if t then
+			local ret, err = w(conn, t);
+			if not ret then
+				session.log("debug", "Error writing to connection: %s", tostring(err));
+				return false, err;
+			end
+		end
+		return true;
+	end
+
 	session.send = function (t)
 		session.log("debug", "Sending[%s]: %s", session.type, t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
 		if t.name then
 			t = filter("stanzas/out", t);
 		end
 		if t then
-			t = filter("bytes/out", tostring(t));
-			if t then
-				local ret, err = w(conn, t);
-				if not ret then
-					session.log("debug", "Error writing to connection: %s", tostring(err));
-					return false, err;
-				end
-			end
+			return session.rawsend(t);
 		end
 		return true;
 	end
@@ -117,7 +129,7 @@ local function make_authenticated(session, username)
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s_unbound";
 	end
-	session.log("info", "Authenticated as %s@%s", username or "(unknown)", session.host or "(unknown)");
+	session.log("info", "Authenticated as %s@%s", username, session.host or "(unknown)");
 	return true;
 end
 
