@@ -183,12 +183,12 @@ local function on_node_creation(event)
 end
 
 function get_pep_service(username)
-	module:log("debug", "get_pep_service(%q)", username);
 	local user_bare = jid_join(username, host);
 	local service = services[username];
 	if service then
 		return service;
 	end
+	module:log("debug", "Creating pubsub service for user %q", username);
 	service = pubsub.new({
 		pep_username = username;
 		node_defaults = {
