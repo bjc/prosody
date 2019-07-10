@@ -1,7 +1,7 @@
 local error_mt = { __name = "error" };
 
 function error_mt:__tostring()
-	return ("error<%s:%s:%s>"):format(self.type, self.condition, self.text);
+	return ("error<%s:%s:%s>"):format(self.type, self.condition, self.text or "");
 end
 
 local function is_err(e)
