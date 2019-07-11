@@ -197,7 +197,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	end
 
 	-- That's all folks!
-	module:log("debug", "Archive query id=%s completed", qid or stanza.attr.id);
+	module:log("debug", "Archive query id=%s completed, %d items returned", qid or stanza.attr.id, #results);
 
 	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
