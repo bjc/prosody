@@ -118,7 +118,8 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query id=%s with=%s when=%s...%s",
+	module:log("debug", "Archive query by %s id=%s with=%s when=%s...%s",
+		origin.username,
 		qid or "-",
 		qwith or "*",
 		qstart and timestamp(qstart) or "",
