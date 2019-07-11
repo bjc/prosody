@@ -131,6 +131,9 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local reverse = qset and qset.before or false;
 	local before, after = qset and qset.before, qset and qset.after;
 	if type(before) ~= "string" then before = nil; end
+	if qset then
+		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
+	end
 
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
