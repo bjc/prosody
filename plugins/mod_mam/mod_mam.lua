@@ -118,10 +118,11 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query, id %s with %s from %s until %s",
-		tostring(qid), qwith or "anyone",
-		qstart and timestamp(qstart) or "the dawn of time",
-		qend and timestamp(qend) or "now");
+	module:log("debug", "Archive query id=%s with=%s when=%s...%s",
+		qid or "-",
+		qwith or "*",
+		qstart and timestamp(qstart) or "",
+		qend and timestamp(qend) or "");
 
 	-- RSM stuff
 	local qset = rsm.get(query);
