@@ -143,6 +143,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
+		module:log("debug", "Archive query id=%s failed: %s", qid or stanza.attr.id, err);
 		if err == "item-not-found" then
 			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
 		else
