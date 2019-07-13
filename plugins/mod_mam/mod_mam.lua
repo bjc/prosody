@@ -206,7 +206,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 				first = first, last = last, count = total }));
 
 	-- That's all folks!
-	module:log("debug", "Archive query id=%s completed, %d items returned", qid or stanza.attr.id, #results);
+	module:log("debug", "Archive query id=%s completed, %d items returned", qid or stanza.attr.id, complete and count or count - 1);
 	return true;
 end);
 
