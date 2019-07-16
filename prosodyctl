@@ -84,6 +84,35 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
+-- This function receives no arguments. It clones all the plugins from prosody's plugin repository
+function commands.get_modules(arg)
+  if arg[1] == "--help" then
+		show_usage([[get_modules]], [[Downloads all available modules]]);
+    return 1
+  end
+  if os.execute '[ -e "./downloaded_modules" ]' then
+    print("The modules have already been imported")
+    print("Do you want to re-import?(Y/N)")
+    local answer = io.read()
+    if answer == "Y" then
+      print("Deleting previous imports")
+      os.execute("rm -rf downloaded_modules")
+      print("Downloading plugins")
+      os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
+      print("Done!")
+      return 0
+    else
+      print("We keep what we have then!")
+      return 0
+    end
+  else
+    print("Getting all the available modules")
+    os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
+    print("Done!")
+    return 0
+  end
+end
+
 function commands.list(arg)
   if not arg[1] or arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
