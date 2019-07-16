@@ -129,6 +129,17 @@ function commands.write_rockspec(arg)
   return 0
 end
 
+-- Command to install a rockspec with local sources
+-- The module is installed at the plugins folder
+function commands.make(arg)
+  if arg[1] == "--help" then
+    show_usage([[make]], [[Installs a module with sources available locally]]);
+    return 1
+  end
+  os.execute("cd downloaded_modules/"..arg[1].." && luarocks --tree='../../plugins' make "..arg[1].."-scm-1.rockspec")
+  return 0
+end
+
 function commands.list(arg)
   if not arg[1] or arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
