@@ -113,6 +113,22 @@ function commands.get_modules(arg)
   end
 end
 
+-- Function to write rockspecs from a module at working_directory/downloaded_modules
+-- Receives the module's name as an argument
+-- The rockspec is saved inside its module's folder
+function commands.write_rockspec(arg)
+  if arg[1] == "--help" then
+    show_usage([[write_rockspec]], [[Picks up a module and writes an initial rockspec]]);
+    return 1
+  end
+  print("Writing rockspec for "..arg[1])
+  os.execute("luarocks write_rockspec "..arg[1].." ./downloaded_modules/"..arg[1])
+  print("Rockspec created! Moving it into the ./downloaded_modules/"..arg[1].." folder")
+  os.execute("mv "..arg[1].."-scm-1.rockspec ./downloaded_modules/"..arg[1])
+  print("Done!")
+  return 0
+end
+
 function commands.list(arg)
   if not arg[1] or arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
