@@ -140,6 +140,19 @@ function commands.make(arg)
   return 0
 end
 
+-- Command to remove a rockspec
+-- Receives as an argument the name of the plugin to be removed from the plugins folder
+function commands.remove(arg)
+  if arg[1] == "--help" then
+    show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
+    return 1
+  end
+  print("Removing "..arg[1].." from ./plugins")
+  os.execute("luarocks --tree='./plugins' remove "..arg[1])
+  print("Done!")
+  return 0
+end
+
 function commands.list(arg)
   if not arg[1] or arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
