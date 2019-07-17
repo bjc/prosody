@@ -147,10 +147,20 @@ function commands.remove(arg)
     show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
     return 1
   end
-  print("Removing "..arg[1].." from ./plugins")
-  os.execute("luarocks --tree='./plugins' remove "..arg[1])
-  print("Done!")
-  return 0
+  local flag = "--tree="
+  -- I'm considering the flag is the first, but there can be many flags
+  if arg[1] and arg[1]:sub(1, #flag) == flag then
+    local dir = arg[1]:match("=(.+)$")
+    print("Removing module "..arg[2].." at "..dir..", from luarocks repo")
+    -- These extra double brackets allow us to correctly process names with spaces
+    os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
+    return 0;
+  else
+    print("Removing "..arg[1].." from ./plugins")
+    os.execute("luarocks --tree='"..prosody.paths.plugins.."' remove "..arg[1])
+    print("Done!")
+    return 0
+  end
 end
 
 function commands.install(arg)
