@@ -164,7 +164,7 @@ function commands.install(arg)
 end
 
 function commands.list(arg)
-  if not arg[1] or arg[1] == "--help" then
+  if arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
@@ -174,10 +174,10 @@ function commands.list(arg)
   if arg[1] and arg[1]:sub(1, #flag) == flag then
     local dir = arg[1]:match("=(.+)$")
     -- These extra double brackets allow us to correctly process names with spaces
-    os.execute("luarocks list --tree=".."'"..dir.."'")
+    os.execute("luarocks list --tree='"..dir.."'")
     return 0;
   else
-    os.execute("luarocks list --tree="..prosody.paths.data.."/rocks")
+    os.execute("luarocks list --tree="..prosody.paths.plugins)
     return 0;
   end
 end
