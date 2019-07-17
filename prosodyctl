@@ -153,6 +153,16 @@ function commands.remove(arg)
   return 0
 end
 
+function commands.install(arg)
+  if arg[1] == "--help" then
+    show_usage([[make]], [[Installs a rockspec/rock from a specified server]]);
+    return 1
+  end
+  print("Installing module "..arg[1].." locally, from luarocks repo")
+  os.execute("luarocks --tree='./plugins' install "..arg[1])
+  return 0
+end
+
 function commands.list(arg)
   if not arg[1] or arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
