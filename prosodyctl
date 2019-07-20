@@ -86,137 +86,137 @@ local command = table.remove(arg, 1);
 
 -- This function receives no arguments. It clones all the plugins from prosody's plugin repository
 function commands.get_modules(arg)
-  if arg[1] == "--help" then
+	if arg[1] == "--help" then
 		show_usage([[get_modules]], [[Downloads all available modules]]);
-    return 1;
-  end
-  if os.execute '[ -e "./downloaded_modules" ]' then
-    print("The modules have already been imported")
-    print("Do you want to re-import?(Y/N)")
-    local answer = io.read()
-    if answer == "Y" then
-      print("Deleting previous imports")
-      os.execute("rm -rf downloaded_modules")
-      print("Downloading plugins")
-      os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
-      print("Done!")
-      return 0;
-    else
-      print("We keep what we have then!")
-      return 0;
-    end
-  else
-    print("Getting all the available modules")
-    os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
-    print("Done!")
-    return 0;
-  end
+		return 1;
+	end
+	if os.execute '[ -e "./downloaded_modules" ]' then
+		print("The modules have already been imported")
+		print("Do you want to re-import?(Y/N)")
+		local answer = io.read()
+		if answer == "Y" then
+			print("Deleting previous imports")
+			os.execute("rm -rf downloaded_modules")
+			print("Downloading plugins")
+			os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
+			print("Done!")
+			return 0;
+		else
+			print("We keep what we have then!")
+			return 0;
+		end
+	else
+		print("Getting all the available modules")
+		os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
+		print("Done!")
+		return 0;
+	end
 end
 
 -- Function to write rockspecs from a module at working_directory/downloaded_modules
 -- Receives the module's name as an argument
 -- The rockspec is saved inside its module's folder
 function commands.write_rockspec(arg)
-  if arg[1] == "--help" then
-    show_usage([[write_rockspec]], [[Picks up a module and writes an initial rockspec]]);
-    return 1;
-  end
-  print("Writing rockspec for "..arg[1])
-  os.execute("luarocks write_rockspec "..arg[1].." ./downloaded_modules/"..arg[1])
-  print("Rockspec created! Moving it into the ./downloaded_modules/"..arg[1].." folder")
-  os.execute("mv "..arg[1].."-scm-1.rockspec ./downloaded_modules/"..arg[1])
-  print("Done!")
-  return 0;
+	if arg[1] == "--help" then
+		show_usage([[write_rockspec]], [[Picks up a module and writes an initial rockspec]]);
+		return 1;
+	end
+	print("Writing rockspec for "..arg[1])
+	os.execute("luarocks write_rockspec "..arg[1].." ./downloaded_modules/"..arg[1])
+	print("Rockspec created! Moving it into the ./downloaded_modules/"..arg[1].." folder")
+	os.execute("mv "..arg[1].."-scm-1.rockspec ./downloaded_modules/"..arg[1])
+	print("Done!")
+	return 0;
 end
 
 -- Command to install a rockspec with local sources
 -- The module is installed at the plugins folder
 function commands.make(arg)
-  if arg[1] == "--help" then
-    show_usage([[make]], [[Installs a module with sources available locally]]);
-    return 1;
-  end
-  os.execute("cd downloaded_modules/"..arg[1].." && luarocks --tree='../../plugins' make "..arg[1].."-scm-1.rockspec")
-  return 0;
+	if arg[1] == "--help" then
+		show_usage([[make]], [[Installs a module with sources available locally]]);
+		return 1;
+	end
+	os.execute("cd downloaded_modules/"..arg[1].." && luarocks --tree='../../plugins' make "..arg[1].."-scm-1.rockspec")
+	return 0;
 end
 
 -- Command to remove a rockspec
 -- Receives as an argument the name of the plugin to be removed from the plugins folder
 function commands.remove(arg)
-  if arg[1] == "--help" then
-    show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
-    return 1;
-  end
-  local flag = "--tree="
-  -- I'm considering the flag is the first, but there can be many flags
-  if arg[1] and arg[1]:sub(1, #flag) == flag then
-    local dir = arg[1]:match("=(.+)$")
-    print("Removing module "..arg[2].." at "..dir..", from luarocks repo")
-    -- These extra double brackets allow us to correctly process names with spaces
-    os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
-    return 0;
-  else
-    print("Removing "..arg[1].." from ./plugins")
-    os.execute("luarocks --tree='"..prosody.paths.plugins.."' remove "..arg[1])
-    print("Done!")
-    return 0;
-  end
+	if arg[1] == "--help" then
+		show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
+		return 1;
+	end
+	local flag = "--tree="
+	-- I'm considering the flag is the first, but there can be many flags
+	if arg[1] and arg[1]:sub(1, #flag) == flag then
+		local dir = arg[1]:match("=(.+)$")
+		print("Removing module "..arg[2].." at "..dir..", from luarocks repo")
+		-- These extra double brackets allow us to correctly process names with spaces
+		os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
+		return 0;
+	else
+		print("Removing "..arg[1].." from ./plugins")
+		os.execute("luarocks --tree='"..prosody.paths.plugins.."' remove "..arg[1])
+		print("Done!")
+		return 0;
+	end
 end
 
 function commands.install(arg)
-  if arg[1] == "--help" then
-    show_usage([[make]], [[Installs a rockspec/rock from a specified server]]);
-    return 1;
-  end
-  -- Need to think about the case with many flags
-  local flag = "--tree="
-  -- I'm considering the flag is the first, but there can be many flags
-  if arg[1] and arg[1]:sub(1, #flag) == flag then
-    local dir = arg[1]:match("=(.+)$")
-    print("Installing module "..arg[2].." at "..dir..", from luarocks repo")
-    -- These extra double brackets allow us to correctly process names with spaces
-    os.execute("luarocks install --tree='"..dir.."' "..arg[2])
-    return 0;
-  else
-    print("Installing module "..arg[1].." locally, from luarocks repo")
-    os.execute("luarocks --tree='"..prosody.paths.plugins.."' install "..arg[1])
-    return 0;
-  end
+	if arg[1] == "--help" then
+		show_usage([[make]], [[Installs a rockspec/rock from a specified server]]);
+		return 1;
+	end
+	-- Need to think about the case with many flags
+	local flag = "--tree="
+	-- I'm considering the flag is the first, but there can be many flags
+	if arg[1] and arg[1]:sub(1, #flag) == flag then
+		local dir = arg[1]:match("=(.+)$")
+		print("Installing module "..arg[2].." at "..dir..", from luarocks repo")
+		-- These extra double brackets allow us to correctly process names with spaces
+		os.execute("luarocks install --tree='"..dir.."' "..arg[2])
+		return 0;
+	else
+		print("Installing module "..arg[1].." locally, from luarocks repo")
+		os.execute("luarocks --tree='"..prosody.paths.plugins.."' install "..arg[1])
+		return 0;
+	end
 end
 
 function commands.list(arg)
-  if arg[1] == "--help" then
+	if arg[1] == "--help" then
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-  -- Need to think about the case with many flags
-  local flag = "--tree="
-  -- I'm considering the flag is the first, but there can be many flags
-  if arg[1] and arg[1]:sub(1, #flag) == flag then
-    local dir = arg[1]:match("=(.+)$")
-    -- These extra double brackets allow us to correctly process names with spaces
-    os.execute("luarocks list --tree='"..dir.."'")
-    return 0;
-  else
-    os.execute("luarocks list --tree="..prosody.paths.plugins)
-    return 0;
-  end
+	-- Need to think about the case with many flags
+	local flag = "--tree="
+	-- I'm considering the flag is the first, but there can be many flags
+	if arg[1] and arg[1]:sub(1, #flag) == flag then
+		local dir = arg[1]:match("=(.+)$")
+		-- These extra double brackets allow us to correctly process names with spaces
+		os.execute("luarocks list --tree='"..dir.."'")
+		return 0;
+	else
+		os.execute("luarocks list --tree="..prosody.paths.plugins)
+		return 0;
+	end
 end
 
 function commands.admin_add(arg)
-  prosodyctl.admin_operation("add ", arg)
-  return 0;
+	prosodyctl.admin_operation("add ", arg)
+	return 0;
 end
 
 function commands.admin_remove(arg)
-  prosodyctl.admin_operation("remove ", arg)
-  return 0;
+	prosodyctl.admin_operation("remove ", arg)
+	return 0;
 end
 
 function commands.enabled_plugins(arg)
-  if arg[1] == "--help" then
-    show_usage([[enabled_plugins]], [[Shows plugins currently enabled on prosody]]);
-    return 1;
+	if arg[1] == "--help" then
+		show_usage([[enabled_plugins]], [[Shows plugins currently enabled on prosody]]);
+		return 1;
 	end
 	for module in modulemanager.get_modules_for_host() do
 		show_warning("%s", module)
@@ -224,24 +224,24 @@ function commands.enabled_plugins(arg)
 end
 
 function commands.local_plugins(arg)
-  if arg[1] == "--help" then
-    show_usage([[local_plugins]], [[Shows plugins currently available for prosody, locally]]);
-    return 1;
+	if arg[1] == "--help" then
+		show_usage([[local_plugins]], [[Shows plugins currently available for prosody, locally]]);
+		return 1;
 	end
 	local directory = "./plugins"
-    local i, t, popen = 0, {}, io.popen
-    local pfile = popen('ls -a "'..directory..'"')
-    for filename in pfile:lines() do
+	local i, t, popen = 0, {}, io.popen
+	local pfile = popen('ls -a "'..directory..'"')
+	for filename in pfile:lines() do
 		if filename == "." or filename == ".." then
 			i = i + 1
 		else
 			i = i + 1
 			t[i] = filename
 			show_warning("%s", t[i])
-        end
-    end
-    pfile:close()
-    return 0;
+		end
+	end
+	pfile:close()
+	return 0;
 end
 
 function commands.adduser(arg)
