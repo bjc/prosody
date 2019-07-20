@@ -285,6 +285,7 @@ function handle_request(event)
 	end);
 
 	add_filter(session, "stanzas/out", function(stanza)
+		stanza = st.clone(stanza);
 		local attr = stanza.attr;
 		attr.xmlns = attr.xmlns or xmlns_client;
 		if stanza.name:find("^stream:") then
