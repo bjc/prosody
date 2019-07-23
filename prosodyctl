@@ -175,11 +175,13 @@ function commands.install(arg)
 		local dir = arg[1]:match("=(.+)$")
 		print("Installing module "..arg[2].." at "..dir)
 		-- These extra double brackets allow us to correctly process names with spaces
-		os.execute("luarocks install --tree='"..dir.."' "..arg[2])
+		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' install "..arg[2])
 		return 0;
 	else
 		print("Installing module "..arg[1].." at "..prosody.paths.plugins)
-		os.execute("luarocks --tree='"..prosody.paths.plugins.."' install "..arg[1])
+		-- I've build a local server to upload some new rockspecs, like mod_smacks'. We can replace this server by one from
+		-- prosody's, where we can oficially disbrute rocks/rockspecs for all modules
+		os.execute("luarocks --tree='"..prosody.paths.plugins.."' --server='http://localhost/' install "..arg[1])
 		return 0;
 	end
 end
