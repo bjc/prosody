@@ -165,7 +165,7 @@ end
 
 function commands.install(arg)
 	if arg[1] == "--help" then
-		show_usage([[make]], [[Installs a rockspec/rock from a specified server]]);
+		show_usage([[make]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
 	-- Need to think about the case with many flags
@@ -173,12 +173,12 @@ function commands.install(arg)
 	-- I'm considering the flag is the first, but there can be many flags
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
 		local dir = arg[1]:match("=(.+)$")
-		print("Installing module "..arg[2].." at "..dir..", from luarocks repo")
+		print("Installing module "..arg[2].." at "..dir)
 		-- These extra double brackets allow us to correctly process names with spaces
 		os.execute("luarocks install --tree='"..dir.."' "..arg[2])
 		return 0;
 	else
-		print("Installing module "..arg[1].." locally, from luarocks repo")
+		print("Installing module "..arg[1].." at "..prosody.paths.plugins)
 		os.execute("luarocks --tree='"..prosody.paths.plugins.."' install "..arg[1])
 		return 0;
 	end
