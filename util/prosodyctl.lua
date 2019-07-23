@@ -39,6 +39,16 @@ local function show_usage(usage, desc)
 	end
 end
 
+local function show_module_configuration_help(mod_name)
+	print("Done.")
+	print("If you installed a prosody plugin, don't forget to add its name under the 'modules_enabled' section inside your configuration file.")
+	print("Depending on the module, there might be further configuration steps required.")
+	print("")
+	print("More info about: ")
+	print("	modules_enabled: https://prosody.im/doc/modules_enabled")
+	print("	"..mod_name..": https://modules.prosody.im/"..mod_name..".html")
+end
+
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
 	local ok, char;
@@ -303,6 +313,7 @@ return {
 	show_message = show_message;
 	show_warning = show_message;
 	show_usage = show_usage;
+	show_module_configuration_help = show_module_configuration_help;
 	getchar = getchar;
 	getline = getline;
 	getpass = getpass;
