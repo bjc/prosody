@@ -85,6 +85,43 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
+function commands.magic(arg)
+		--print("Getting all the available modules")
+		--os.execute("hg clone https://hg.prosody.im/prosody-modules/ downloaded_modules")
+		local i, popen = 0, io.popen
+		local flag = "mod_"
+		os.execute("mkdir repository")
+    local pfile = popen('ls -a "'..arg[1]..'"')
+    for filename in pfile:lines() do
+        i = i + 1
+				if filename:sub(1, #flag) == flag then
+					local file = io.open("repository/"..filename.."-scm-1.rockspec", "w")
+					file:write('package = "'..filename..'"', '\n')
+					file:write('version = "scm-1"', '\n')
+					file:write('source = {', '\n')
+					file:write('\turl = "hg+https://hg.prosody.im/prosody-modules",', '\n')
+					file:write('\tdir = "prosody-modules"', '\n')
+					file:write('}', '\n')
+					file:write('description = {', '\n')
+					file:write('\thomepage = "https://prosody.im/",', '\n')
+					file:write('\tlicense = "MIT"', '\n')
+					file:write('}', '\n')
+					file:write('dependencies = {', '\n')
+					file:write('\t"lua >= 5.1"', '\n')
+					file:write('}', '\n')
+					file:write('build = {', '\n')
+					file:write('\ttype = "builtin",', '\n')
+					file:write('\tmodules = {', '\n')
+					file:write('\t\t["'..filename..'.'..filename..'"] = "'..filename..'/'..filename..'.lua"', '\n')
+					file:write('\t}', '\n')
+					file:write('}', '\n')
+					file:close()
+				end
+    end
+    pfile:close()
+		os.execute("cd repository/ && luarocks-admin make_manifest ./ && chmod -R 644 ./*")
+end
+
 -- This function receives no arguments. It clones all the plugins from prosody's plugin repository
 function commands.get_modules(arg)
 	if arg[1] == "--help" then
