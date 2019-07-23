@@ -694,6 +694,7 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
 		return nil, "invalid socket type";
 	end
 	local conn, err = create();
+	if not conn then return conn, err; end
 	local ok, err = conn:settimeout(0);
 	if not ok then return ok, err; end
 	local ok, err = conn:setpeername(addr, port);
