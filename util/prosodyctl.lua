@@ -288,27 +288,6 @@ local function reload()
 	return true;
 end
 
-local function admin_operation(operation, arg)
-	if arg[1] == "--help" then
-		print(" admin-"..operation)
-		print("    "..operation.."plugins from a server (repository)")
-		return 1;
-	end
-	local modules, tree, server, refresh = "", "", "", ""
-	for i, _ in ipairs(arg) do
-		if arg[i]:sub(1, #"--tree=") == "--tree=" then
-			tree = arg[i].." "
-		elseif arg[i]:sub(1, #"--server=") == "--server=" then
-			server = arg[i].." "
-		elseif arg[i]:sub(1, #"--no-refresh") == "--no-refresh" then
-			refresh = arg[i].." "
-		else
-			modules=modules..arg[i].." "
-		end
-	end
-	os.execute("luarocks-admin "..tree..operation..server..refresh..modules)
-end
-
 return {
 	show_message = show_message;
 	show_warning = show_message;
@@ -329,5 +308,4 @@ return {
 	start = start;
 	stop = stop;
 	reload = reload;
-  admin_operation = admin_operation;
 };
