@@ -160,27 +160,6 @@ function commands.enabled_plugins(arg)
 	end
 end
 
-function commands.local_plugins(arg)
-	if arg[1] == "--help" then
-		show_usage([[local_plugins]], [[Shows plugins currently available for prosody, locally]]);
-		return 1;
-	end
-	local directory = "./plugins"
-	local i, t, popen = 0, {}, io.popen
-	local pfile = popen('ls -a "'..directory..'"')
-	for filename in pfile:lines() do
-		if filename == "." or filename == ".." then
-			i = i + 1
-		else
-			i = i + 1
-			t[i] = filename
-			show_warning("%s", t[i])
-		end
-	end
-	pfile:close()
-	return 0;
-end
-
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
@@ -1446,8 +1425,8 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:\n");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-		local commands_order = { "install", "remove", "list", "enabled_plugins", "local_plugins","adduser", "passwd", "deluser", "start", "stop", "restart",
-			"reload", "about", "list" };
+		local commands_order = { "install", "remove", "list", "enabled_plugins", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
+			"about", "list" };
 
 		local done = {};
 
