@@ -288,6 +288,14 @@ local function reload()
 	return true;
 end
 
+local function get_path_custom_plugins(plugin_paths)
+		-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
+	-- luacheck: ignore 512
+	for path in plugin_paths:gmatch("[^;]+") do
+		return path
+	end
+end
+
 return {
 	show_message = show_message;
 	show_warning = show_message;
@@ -308,4 +316,5 @@ return {
 	start = start;
 	stop = stop;
 	reload = reload;
+	get_path_custom_plugins = get_path_custom_plugins;
 };
