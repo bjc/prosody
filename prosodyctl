@@ -85,17 +85,6 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
--- Command to install a rockspec with local sources
--- The module is installed at the plugins folder
-function commands.make(arg)
-	if arg[1] == "--help" then
-		show_usage([[make]], [[Installs a module with sources available locally]]);
-		return 1;
-	end
-	os.execute("cd downloaded_modules/"..arg[1].." && luarocks --tree='../../plugins' make "..arg[1].."-scm-1.rockspec")
-	return 0;
-end
-
 -- Command to remove a rockspec
 -- Receives as an argument the name of the plugin to be removed from the plugins folder
 function commands.remove(arg)
@@ -161,16 +150,6 @@ function commands.list(arg)
 		os.execute("luarocks list --tree="..prosody.paths.plugins)
 		return 0;
 	end
-end
-
-function commands.admin_add(arg)
-	prosodyctl.admin_operation("add ", arg)
-	return 0;
-end
-
-function commands.admin_remove(arg)
-	prosodyctl.admin_operation("remove ", arg)
-	return 0;
 end
 
 function commands.enabled_plugins(arg)
