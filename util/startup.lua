@@ -227,11 +227,23 @@ end
 
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
+	local installer_plugin_paths = config.get("*", "installer_plugin_paths") or {"custom_plugins"};
 	if custom_plugin_paths then
 		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
+		prosody.paths.plugins = CFG_PLUGINDIR;
+	end
+	if installer_plugin_paths then
+		for path, _ in ipairs(installer_plugin_paths) do
+			if os.execute('[ -d "'..installer_plugin_paths[path]..'" ]') ~= 0 then
+				os.execute("mkdir "..installer_plugin_paths[path])
+			end
+		end
+		local path_sep = package.config:sub(3,3);
+		-- luacheck: ignore 111
+		CFG_PLUGINDIR = table.concat(installer_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
 end
