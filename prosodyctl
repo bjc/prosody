@@ -85,29 +85,6 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 local commands = {};
 local command = table.remove(arg, 1);
 
--- Command to remove a rockspec
--- Receives as an argument the name of the plugin to be removed from the plugins folder
-function commands.remove(arg)
-	if arg[1] == "--help" then
-		show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
-		return 1;
-	end
-	local flag = "--tree="
-	-- I'm considering the flag is the first, but there can be many flags
-	if arg[1] and arg[1]:sub(1, #flag) == flag then
-		local dir = arg[1]:match("=(.+)$")
-		print("Removing module "..arg[2].." at "..dir)
-		-- These extra double brackets allow us to correctly process names with spaces
-		os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
-		return 0;
-	else
-		print("Removing "..arg[1].." from "..prosody.paths.plugins)
-		os.execute("luarocks --tree='"..prosody.paths.plugins.."' remove "..arg[1])
-		print("Done!")
-		return 0;
-	end
-end
-
 function commands.install(arg)
 	if arg[1] == "--help" then
 		show_usage([[make]], [[Installs a prosody/luarocks plugin]]);
@@ -129,6 +106,29 @@ function commands.install(arg)
 		-- prosody's, where we can oficially disbrute rocks/rockspecs for all modules
 		os.execute("luarocks --tree='"..prosody.paths.plugins.."' --server='http://localhost/' install "..arg[1])
 		show_module_configuration_help(arg[1]);
+		return 0;
+	end
+end
+
+-- Command to remove a rockspec
+-- Receives as an argument the name of the plugin to be removed from the plugins folder
+function commands.remove(arg)
+	if arg[1] == "--help" then
+		show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
+		return 1;
+	end
+	local flag = "--tree="
+	-- I'm considering the flag is the first, but there can be many flags
+	if arg[1] and arg[1]:sub(1, #flag) == flag then
+		local dir = arg[1]:match("=(.+)$")
+		print("Removing module "..arg[2].." at "..dir)
+		-- These extra double brackets allow us to correctly process names with spaces
+		os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
+		return 0;
+	else
+		print("Removing "..arg[1].." from "..prosody.paths.plugins)
+		os.execute("luarocks --tree='"..prosody.paths.plugins.."' remove "..arg[1])
+		print("Done!")
 		return 0;
 	end
 end
