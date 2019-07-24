@@ -90,13 +90,11 @@ function commands.install(arg)
 		show_usage([[make]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	-- Need to think about the case with many flags
+	-- I'm considering this optional flag comes first
 	local flag = "--tree="
-	-- I'm considering the flag is the first, but there can be many flags
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
 		local dir = arg[1]:match("=(.+)$")
 		print("Installing module "..arg[2].." at "..dir)
-		-- These extra double brackets allow us to correctly process names with spaces
 		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' install "..arg[2])
 		show_module_configuration_help(arg[2]);
 		return 0;
@@ -110,19 +108,16 @@ function commands.install(arg)
 	end
 end
 
--- Command to remove a rockspec
--- Receives as an argument the name of the plugin to be removed from the plugins folder
 function commands.remove(arg)
 	if arg[1] == "--help" then
 		show_usage([[make]], [[Removes a module installed in the wroking directory's plugins folder]]);
 		return 1;
 	end
 	local flag = "--tree="
-	-- I'm considering the flag is the first, but there can be many flags
+	-- I'm considering this optional flag comes first
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
 		local dir = arg[1]:match("=(.+)$")
 		print("Removing module "..arg[2].." at "..dir)
-		-- These extra double brackets allow us to correctly process names with spaces
 		os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
 		return 0;
 	else
@@ -138,12 +133,10 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	-- Need to think about the case with many flags
 	local flag = "--tree="
-	-- I'm considering the flag is the first, but there can be many flags
+	-- I'm considering this optional flag comes first
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
 		local dir = arg[1]:match("=(.+)$")
-		-- These extra double brackets allow us to correctly process names with spaces
 		os.execute("luarocks list --tree='"..dir.."'")
 		return 0;
 	else
