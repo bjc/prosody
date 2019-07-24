@@ -813,6 +813,7 @@ return {
 	-- libevent emulation
 	event = { EV_READ = "r", EV_WRITE = "w", EV_READWRITE = "rw", EV_LEAVE = -1 };
 	addevent = function (fd, mode, callback)
+		log("warn", "Using deprecated libevent emulation, please update code to use watchfd API instead");
 		local function onevent(self)
 			local ret = self:callback();
 			if ret == -1 then
