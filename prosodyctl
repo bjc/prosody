@@ -90,12 +90,7 @@ function commands.install(arg)
 		show_usage([[make]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	local installer_plugin_path
-	-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
-	for path in prosody.paths.plugins:gmatch("[^;]+") do
-		installer_plugin_path = path
-		break
-	end
+	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
 	-- I'm considering this optional flag comes first
 	local flag = "--tree="
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
@@ -120,10 +115,7 @@ function commands.remove(arg)
 		return 1;
 	end
 	-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
-	for path in prosody.paths.plugins:gmatch("[^;]+") do
-		installer_plugin_path = path
-		break
-	end
+	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
 	local flag = "--tree="
 	-- I'm considering this optional flag comes first
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
@@ -145,10 +137,7 @@ function commands.list(arg)
 		return 1;
 	end
 	-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
-	for path in prosody.paths.plugins:gmatch("[^;]+") do
-		installer_plugin_path = path
-		break
-	end
+	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
 	local flag = "--tree="
 	-- I'm considering this optional flag comes first
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
