@@ -1426,7 +1426,7 @@ local command_runner = async.runner(function ()
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
 		local commands_order = { "install", "remove", "list", "enabled_plugins", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
-			"about", "list" };
+			"about" };
 
 		local done = {};
 
