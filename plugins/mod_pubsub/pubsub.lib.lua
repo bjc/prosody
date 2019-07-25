@@ -328,14 +328,9 @@ function handlers.get_items(origin, stanza, items, service)
 	for _, id in ipairs(results) do
 		data:add_child(results[id]);
 	end
-	local reply;
-	if data then
-		reply = st.reply(stanza)
-			:tag("pubsub", { xmlns = xmlns_pubsub })
-				:add_child(data);
-	else
-		reply = pubsub_error_reply(stanza, "item-not-found");
-	end
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub })
+			:add_child(data);
 	origin.send(reply);
 	return true;
 end
