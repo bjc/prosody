@@ -14,7 +14,8 @@ local pcall = pcall;
 local type = type;
 local next = next;
 local pairs = pairs;
-local log = require "util.logger".init("server_epoll");
+local logger = require "util.logger";
+local log = logger.init("server_epoll");
 local socket = require "socket";
 local luasec = require "ssl";
 local gettime = require "util.time".now;
@@ -23,6 +24,7 @@ local createtable = require "util.table".create;
 local inet = require "util.net";
 local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
+local new_id = require "util.id".medium;
 
 local poller = require "util.poll"
 local EEXIST = poller.EEXIST;
@@ -145,6 +147,15 @@ function interface_mt:__tostring()
 	return ("FD %d"):format(self:getfd());
 end
 
+interface.log = log;
+function interface:debug(msg, ...) --luacheck: ignore 212/self
+	self.log("debug", msg, ...);
+end
+
+function interface:error(msg, ...) --luacheck: ignore 212/self
+	self.log("error", msg, ...);
+end
+
 -- Replace the listener and tell the old one
 function interface:setlistener(listeners, data)
 	self:on("detach");
@@ -155,20 +166,21 @@ end
 -- Call a listener callback
 function interface:on(what, ...)
 	if not self.listeners then
-		log("error", "%s has no listeners", self);
+		self:debug("Interface is missing listener callbacks");
 		return;
 	end
 	local listener = self.listeners["on"..what];
 	if not listener then
-		-- log("debug", "Missing listener 'on%s'", what); -- uncomment for development and debugging
+		-- self:debug("Missing listener 'on%s'", what); -- uncomment for development and debugging
 		return;
 	end
 	local ok, err = pcall(listener, self, ...);
 	if not ok then
-		log("error", "Error calling on%s: %s", what, err);
 		if cfg.fatal_errors then
-			log("debug", "Closing %s due to error in listener", self);
+			self:debug("Closing due to error calling on%s: %s", what, err);
 			self:destroy();
+		else
+			self:debug("Error calling on%s: %s", what, err);
 		end
 		return nil, err;
 	end
@@ -281,15 +293,15 @@ function interface:add(r, w)
 	local ok, err, errno = poll:add(fd, r, w);
 	if not ok then
 		if errno == EEXIST then
-			log("debug", "%s already registered!", self);
+			self:debug("FD already registered in poller! (EEXIST)");
 			return self:set(r, w); -- So try to change its flags
 		end
-		log("error", "Could not register %s: %s(%d)", self, err, errno);
+		self:debug("Could not register in poller: %s(%d)", err, errno);
 		return ok, err;
 	end
 	self._wantread, self._wantwrite = r, w;
 	fds[fd] = self;
-	log("debug", "Watching %s", self);
+	self:debug("Registered in poller");
 	return true;
 end
 
@@ -302,7 +314,7 @@ function interface:set(r, w)
 	if w == nil then w = self._wantwrite; end
 	local ok, err, errno = poll:set(fd, r, w);
 	if not ok then
-		log("error", "Could not update poller state %s: %s(%d)", self, err, errno);
+		self:debug("Could not update poller state: %s(%d)", err, errno);
 		return ok, err;
 	end
 	self._wantread, self._wantwrite = r, w;
@@ -319,12 +331,12 @@ function interface:del()
 	end
 	local ok, err, errno = poll:del(fd);
 	if not ok and errno ~= ENOENT then
-		log("error", "Could not unregister %s: %s(%d)", self, err, errno);
+		self:debug("Could not unregister: %s(%d)", err, errno);
 		return ok, err;
 	end
 	self._wantread, self._wantwrite = nil, nil;
 	fds[fd] = nil;
-	log("debug", "Unwatched %s", self);
+	self:debug("Unregistered from poller");
 	return true;
 end
 
@@ -432,10 +444,10 @@ function interface:close()
 	if self.writebuffer and self.writebuffer[1] then
 		self:set(false, true); -- Flush final buffer contents
 		self.write, self.send = noop, noop; -- No more writing
-		log("debug", "Close %s after writing", self);
+		self:debug("Close after writing");
 		self.ondrain = interface.close;
 	else
-		log("debug", "Close %s now", self);
+		self:debug("Closing now");
 		self.write, self.send = noop, noop;
 		self.close = noop;
 		self:on("disconnect");
@@ -464,7 +476,7 @@ function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
 	if self.writebuffer and self.writebuffer[1] then
-		log("debug", "Start TLS on %s after write", self);
+		self:debug("Start TLS after write");
 		self.ondrain = interface.starttls;
 		self:set(nil, true); -- make sure wantwrite is set
 	else
@@ -474,7 +486,7 @@ function interface:starttls(tls_ctx)
 		self.onwritable = interface.tlshandskake;
 		self.onreadable = interface.tlshandskake;
 		self:set(true, true);
-		log("debug", "Prepare to start TLS on %s", self);
+		self:debug("Prepared to start TLS");
 	end
 end
 
@@ -483,12 +495,12 @@ function interface:tlshandskake()
 	self:setreadtimeout(false);
 	if not self._tls then
 		self._tls = true;
-		log("debug", "Start TLS on %s now", self);
+		self:debug("Starting TLS now");
 		self:del();
 		local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
 		if not ok then
 			conn, err = ok, conn;
-			log("error", "Failed to initialize TLS: %s", err);
+			self:debug("Failed to initialize TLS: %s", err);
 		end
 		if not conn then
 			self:on("disconnect", err);
@@ -512,22 +524,22 @@ function interface:tlshandskake()
 	end
 	local ok, err = self.conn:dohandshake();
 	if ok then
-		log("debug", "TLS handshake on %s complete", self);
+		self:debug("TLS handshake complete");
 		self.onwritable = nil;
 		self.onreadable = nil;
 		self:on("status", "ssl-handshake-complete");
 		self:setwritetimeout();
 		self:set(true, true);
 	elseif err == "wantread" then
-		log("debug", "TLS handshake on %s to wait until readable", self);
+		self:debug("TLS handshake to wait until readable");
 		self:set(true, false);
 		self:setreadtimeout(cfg.ssl_handshake_timeout);
 	elseif err == "wantwrite" then
-		log("debug", "TLS handshake on %s to wait until writable", self);
+		self:debug("TLS handshake to wait until writable");
 		self:set(false, true);
 		self:setwritetimeout(cfg.ssl_handshake_timeout);
 	else
-		log("debug", "TLS handshake error on %s: %s", self, err);
+		self:debug("TLS handshake error: %s", err);
 		self:on("disconnect", err);
 		self:destroy();
 	end
@@ -544,6 +556,7 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luas
 		writebuffer = {};
 		tls_ctx = tls_ctx or (server and server.tls_ctx);
 		tls_direct = server and server.tls_direct;
+		log = logger.init(("conn%s"):format(new_id()));
 	}, interface_mt);
 
 	conn:updatenames();
@@ -567,12 +580,12 @@ end
 function interface:onacceptable()
 	local conn, err = self.conn:accept();
 	if not conn then
-		log("debug", "Error accepting new client: %s, server will be paused for %ds", err, cfg.accept_retry_interval);
+		self:debug("Error accepting new client: %s, server will be paused for %ds", err, cfg.accept_retry_interval);
 		self:pausefor(cfg.accept_retry_interval);
 		return;
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners);
-	log("debug", "New connection %s", tostring(client));
+	client:debug("New connection %s on server %s", client, self);
 	client:init();
 	if self.tls_direct then
 		client:starttls(self.tls_ctx);
@@ -647,7 +660,9 @@ local function listen(addr, port, listeners, config)
 		hosts = config and config.sni_hosts;
 		sockname = addr;
 		sockport = port;
+		log = logger.init(("serv%s"):format(new_id()));
 	}, interface_mt);
+	server:debug("Server %s created", server);
 	server:add(true, false);
 	return server;
 end
@@ -705,6 +720,7 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
 	if tls_ctx then
 		client:starttls(tls_ctx);
 	end
+	client:debug("Client %s created", client);
 	return client, conn;
 end
 
@@ -723,6 +739,7 @@ local function watchfd(fd, onreadable, onwritable)
 		end;
 		-- Otherwise it'll need to be something LuaSocket-compatible
 	end
+	conn.log = logger.init(("fdwatch%s"):format(new_id()));
 	conn:add(onreadable, onwritable);
 	return conn;
 end;
@@ -833,6 +850,7 @@ return {
 				fds[fd] = nil;
 			end;
 		}, interface_mt);
+		conn.log = logger.init(("fdwatch%d"):format(conn:getfd()));
 		local ok, err = conn:add(mode == "r" or mode == "rw", mode == "w" or mode == "rw");
 		if not ok then return ok, err; end
 		return conn;
