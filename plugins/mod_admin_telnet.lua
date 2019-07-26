@@ -592,12 +592,16 @@ local function get_jid(session)
 	return jid_join("["..ip.."]:"..clientport, session.host or "["..serverip.."]:"..serverport);
 end
 
-local function show_c2s(callback)
+local function get_c2s()
 	local c2s = array.collect(values(prosody.full_sessions));
 	c2s:append(array.collect(values(module:shared"/*/c2s/sessions")));
 	c2s:append(array.collect(values(module:shared"/*/bosh/sessions")));
 	c2s:unique();
-	c2s:sort(function(a, b)
+	return c2s;
+end
+
+local function show_c2s(callback)
+	get_c2s():sort(function(a, b)
 		if a.host == b.host then
 			if a.username == b.username then
 				return (a.resource or "") > (b.resource or "");
