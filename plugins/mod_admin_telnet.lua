@@ -246,6 +246,7 @@ function commands.help(session, data)
 		print [[c2s:show_insecure() - Show all unencrypted client connections]]
 		print [[c2s:show_secure() - Show all encrypted client connections]]
 		print [[c2s:show_tls() - Show TLS cipher info for encrypted sessions]]
+		print [[c2s:count() - Count sessions without listing them]]
 		print [[c2s:close(jid) - Close all sessions for the specified JID]]
 		print [[c2s:closeall() - Close all active c2s connections ]]
 	elseif section == "s2s" then
