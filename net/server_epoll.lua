@@ -9,7 +9,6 @@
 local t_insert = table.insert;
 local t_concat = table.concat;
 local setmetatable = setmetatable;
-local tostring = tostring;
 local pcall = pcall;
 local type = type;
 local next = next;
