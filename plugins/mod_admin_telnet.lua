@@ -615,9 +615,8 @@ local function show_c2s(callback)
 end
 
 function def_env.c2s:count()
-	local c2s_count = iterators.count(values(module:shared"/*/c2s/sessions"))
-	local bosh_count = iterators.count(values(module:shared"/*/bosh/sessions"))
-	return true, "Total: "..  c2s_count + bosh_count .." clients";
+	local c2s = get_c2s();
+	return true, "Total: "..  #c2s .." clients";
 end
 
 function def_env.c2s:show(match_jid, annotate)
