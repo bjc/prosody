@@ -226,23 +226,29 @@ function startup.setup_datadir()
 end
 
 function startup.setup_plugindir()
+	--require "lfs".currentdir()
+	--local current_directory = lfs.currentdir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
-	local installer_plugin_paths = config.get("*", "installer_plugin_paths") or {"custom_plugins"};
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	local path_sep = package.config:sub(3,3);
 	if custom_plugin_paths then
-		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
-	for path, _ in ipairs(installer_plugin_paths) do
-		if os.execute('[ -d "'..installer_plugin_paths[path]..'" ]') ~= 0 then
-			os.execute("mkdir "..installer_plugin_paths[path])
-		end
-	end
-	local path_sep = package.config:sub(3,3);
-	-- luacheck: ignore 111
-	CFG_PLUGINDIR = table.concat(installer_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
+	-- Checking if the folder exists. If it doesn't, we create it
+	--[[if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
+		os.execute("mkdir "..installer_plugin_path)
+	end]]
+	--[[if not string.find(package.path, current_directory..installer_plugin_path[path]) then
+		--os.execute("ls -la "..current_directory..path_sep..installer_plugin_paths[path])
+		package.path = package.path..path_sep..current_directory..installer_plugin_path.."/?.lua"..path_sep..path_sep
+		package.path = package.path..current_directory..installer_plugin_path.."/?/init.lua"..path_sep..path_sep
+		package.cpath = package.cpath..path_sep..current_directory..installer_plugin_path.."/?.lua"
+		package.cpath = package.cpath..path_sep..current_directory..installer_plugin_path.."/?/init.lua"
+	end]]
+	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
