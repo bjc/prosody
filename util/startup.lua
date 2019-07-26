@@ -226,8 +226,8 @@ function startup.setup_datadir()
 end
 
 function startup.setup_plugindir()
-	--require "lfs".currentdir()
-	--local current_directory = lfs.currentdir()
+	--local lfs_currentdir = require "lfs".currentdir()
+	--local current_directory = lfs_currentdir
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
@@ -238,9 +238,9 @@ function startup.setup_plugindir()
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
 	-- Checking if the folder exists. If it doesn't, we create it
-	--[[if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
+	if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
 		os.execute("mkdir "..installer_plugin_path)
-	end]]
+	end
 	--[[if not string.find(package.path, current_directory..installer_plugin_path[path]) then
 		--os.execute("ls -la "..current_directory..path_sep..installer_plugin_paths[path])
 		package.path = package.path..path_sep..current_directory..installer_plugin_path.."/?.lua"..path_sep..path_sep
