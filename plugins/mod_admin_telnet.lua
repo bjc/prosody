@@ -239,6 +239,7 @@ function commands.help(session, data)
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[port - Commands to manage ports the server is listening on]]
 		print [[dns - Commands to manage and inspect the internal DNS resolver]]
+		print [[xmpp - Commands for sending XMPP stanzas]]
 		print [[config - Reloading the configuration, etc.]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
@@ -282,6 +283,8 @@ function commands.help(session, data)
 		print [[dns:setnameserver(nameserver) - Replace the list of name servers with the supplied one]]
 		print [[dns:purge() - Clear the DNS cache]]
 		print [[dns:cache() - Show cached records]]
+	elseif section == "xmpp" then
+		print [[xmpp:ping(localhost, remotehost) -- Sends a ping to a remote XMPP server and reports the response]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 	elseif section == "console" then
