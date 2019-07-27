@@ -226,28 +226,44 @@ function startup.setup_datadir()
 end
 
 function startup.setup_plugindir()
-	--local lfs_currentdir = require "lfs".currentdir()
-	--local current_directory = lfs_currentdir
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	-- This variable separates different paths, like this "," here -> /usr;/home
 	local path_sep = package.config:sub(3,3);
+	-- This variable is the separator between directories, in a path, like the "/" here -> /home/path/to/somewhere
+	local dir_sep = package.config:sub(1,1);
 	if custom_plugin_paths then
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
-	-- Checking if the folder exists. If it doesn't, we create it
-	if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
-		os.execute("mkdir "..installer_plugin_path)
+	-- Checks if installer_plugin_path is a relative paths and makes it an absolute path
+	if installer_plugin_path:sub(1,1) ~= "/" then
+		-- Works fine when executing prosody from source (configure and make only)
+		-- Probably wont be the best install directory, when using a package installation
+		local lfs_currentdir = require "lfs".currentdir();
+		local current_directory = lfs_currentdir;
+		-- Some normalization
+		installer_plugin_path = installer_plugin_path:gsub("^%.%"..dir_sep.."+", "");
+		installer_plugin_path = current_directory..dir_sep..installer_plugin_path;
 	end
-	--[[if not string.find(package.path, current_directory..installer_plugin_path[path]) then
-		--os.execute("ls -la "..current_directory..path_sep..installer_plugin_paths[path])
-		package.path = package.path..path_sep..current_directory..installer_plugin_path.."/?.lua"..path_sep..path_sep
-		package.path = package.path..current_directory..installer_plugin_path.."/?/init.lua"..path_sep..path_sep
-		package.cpath = package.cpath..path_sep..current_directory..installer_plugin_path.."/?.lua"
-		package.cpath = package.cpath..path_sep..current_directory..installer_plugin_path.."/?/init.lua"
-	end]]
+	-- Checking if the folder exists. If it doesn't, we create it, but we need permissions to do so
+	if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
+		os.execute("mkdir "..installer_plugin_path);
+	end
+	-- Developers may have add these custom paths to their LUA_PATH/LUA_CPATH variables, before running prosody
+	-- Therefore, I'll just check if the paths we are about to add aren't already at package.(path/cpath)
+	if not string.match(package.path, installer_plugin_path) then
+		local lua_version = _VERSION:match(" (.+)$")
+		-- I'm assuming there's good reason not to hard code any separator
+		-- This next line is unnecessary, but I think it makes the code more readable and neat
+		local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep
+		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
+		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
+		package.cpath = package.cpath..path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.lua";
+	end
+	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
