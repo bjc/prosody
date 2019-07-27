@@ -666,23 +666,32 @@ function def_env.c2s:show_tls(match_jid)
 	return self:show(match_jid, tls_info);
 end
 
-function def_env.c2s:close(match_jid)
+local function build_reason(text, condition)
+	if text or condition then
+		return {
+			text = text,
+			condition = condition or "undefined-condition",
+		};
+	end
+end
+
+function def_env.c2s:close(match_jid, text, condition)
 	local count = 0;
 	show_c2s(function (jid, session)
 		if jid == match_jid or jid_bare(jid) == match_jid then
 			count = count + 1;
-			session:close();
+			session:close(build_reason(text, condition));
 		end
 	end);
 	return true, "Total: "..count.." sessions closed";
 end
 
-function def_env.c2s:closeall()
+function def_env.c2s:closeall(text, condition)
 	local count = 0;
 	--luacheck: ignore 212/jid
 	show_c2s(function (jid, session)
 		count = count + 1;
-		session:close();
+		session:close(build_reason(text, condition));
 	end);
 	return true, "Total: "..count.." sessions closed";
 end
@@ -887,7 +896,7 @@ function def_env.s2s:showcert(domain)
 		.." presented by "..domain..".");
 end
 
-function def_env.s2s:close(from, to)
+function def_env.s2s:close(from, to, text, condition)
 	local print, count = self.session.print, 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 
@@ -905,19 +914,19 @@ function def_env.s2s:close(from, to)
 		if (match_id and match_id == id)
 		or (session.from_host == from and session.to_host == to) then
 			print(("Closing connection from %s to %s [%s]"):format(session.from_host, session.to_host, id));
-			(session.close or s2smanager.destroy_session)(session);
+			(session.close or s2smanager.destroy_session)(session, build_reason(text, condition));
 			count = count + 1 ;
 		end
 	end
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
 end
 
-function def_env.s2s:closeall(host)
+function def_env.s2s:closeall(host, text, condition)
 	local count = 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	for _,session in pairs(s2s_sessions) do
 		if not host or session.from_host == host or session.to_host == host then
-			session:close();
+			session:close(build_reason(text, condition));
 			count = count + 1;
 		end
 	end
