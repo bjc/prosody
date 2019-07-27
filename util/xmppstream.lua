@@ -64,6 +64,8 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 
 	local stream_default_ns = stream_callbacks.default_ns;
 
+	local stream_lang = "en";
+
 	local stack = {};
 	local chardata, stanza = {};
 	local stanza_size = 0;
@@ -101,6 +103,7 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 			if session.notopen then
 				if tagname == stream_tag then
 					non_streamns_depth = 0;
+					stream_lang = attr["xml:lang"] or stream_lang;
 					if cb_streamopened then
 						if lxp_supports_bytecount then
 							cb_handleprogress(stanza_size);
@@ -178,6 +181,9 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 					cb_handleprogress(stanza_size);
 				end
 				stanza_size = 0;
+				if stanza.attr["xml:lang"] == nil then
+					stanza.attr["xml:lang"] = stream_lang;
+				end
 				if tagname ~= stream_error_tag then
 					cb_handlestanza(session, stanza);
 				else
