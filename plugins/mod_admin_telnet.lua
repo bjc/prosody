@@ -910,7 +910,7 @@ function def_env.s2s:close(from, to, text, condition)
 	end
 
 	for _, session in pairs(s2s_sessions) do
-		local id = session.type..tostring(session):match("[a-f0-9]+$");
+		local id = session.id or (session.type..tostring(session):match("[a-f0-9]+$"));
 		if (match_id and match_id == id)
 		or (session.from_host == from and session.to_host == to) then
 			print(("Closing connection from %s to %s [%s]"):format(session.from_host, session.to_host, id));
