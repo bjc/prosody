@@ -172,6 +172,7 @@ static int Lset(lua_State *L) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
+		return 3;
 	}
 
 	if(!lua_isnoneornil(L, 3)) {
@@ -229,6 +230,7 @@ static int Ldel(lua_State *L) {
 		lua_pushnil(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
+		return 3;
 	}
 
 	FD_CLR(fd, &state->wantread);
