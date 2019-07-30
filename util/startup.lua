@@ -251,9 +251,9 @@ function startup.add_global_prosody_functions()
 		local ok, level, err = config.load(prosody.config_file);
 		if not ok then
 			if level == "parser" then
-				log("error", "There was an error parsing the configuration file: %s", tostring(err));
+				log("error", "There was an error parsing the configuration file: %s", err);
 			elseif level == "file" then
-				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+				log("error", "Couldn't read the config file when trying to reload: %s", err);
 			end
 		else
 			prosody.events.fire_event("config-reloaded", {
