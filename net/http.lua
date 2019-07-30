@@ -40,7 +40,7 @@ local listener = { default_port = 80, default_mode = "*a" };
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); return err; end
 local function log_if_failed(req, ret, ...)
 	if not ret then
-		log("error", "Request '%s': error in callback: %s", req.id, tostring((...)));
+		log("error", "Request '%s': error in callback: %s", req.id, (...));
 		if not req.suppress_errors then
 			error(...);
 		end
@@ -150,7 +150,7 @@ function listener.onincoming(conn, data)
 	local request = requests[conn];
 
 	if not request then
-		log("warn", "Received response from connection %s with no request attached!", tostring(conn));
+		log("warn", "Received response from connection %s with no request attached!", conn);
 		return;
 	end
 
