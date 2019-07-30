@@ -127,7 +127,7 @@ function route_to_existing_session(event)
 		elseif host.type == "local" or host.type == "component" then
 			log("error", "Trying to send a stanza to ourselves??")
 			log("error", "Traceback: %s", traceback());
-			log("error", "Stanza: %s", tostring(stanza));
+			log("error", "Stanza: %s", stanza);
 			return false;
 		else
 			-- FIXME
@@ -151,7 +151,7 @@ function route_to_new_session(event)
 	-- Store in buffer
 	host_session.bounce_sendq = bounce_sendq;
 	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
-	log("debug", "stanza [%s] queued until connection complete", tostring(stanza.name));
+	log("debug", "stanza [%s] queued until connection complete", stanza.name);
 	s2sout.initiate_connection(host_session);
 	if (not host_session.connecting) and (not host_session.conn) then
 		log("warn", "Connection to %s failed already, destroying session...", to_host);
@@ -595,7 +595,7 @@ local function initialize_session(session)
 		if data then
 			local ok, err = stream:feed(data);
 			if ok then return; end
-			log("debug", "Received invalid XML (%s) %d bytes: %q", tostring(err), #data, data:sub(1, 300));
+			log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
 			session:close("not-well-formed");
 		end
 	end

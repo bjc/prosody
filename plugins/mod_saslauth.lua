@@ -14,7 +14,6 @@ local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
-local tostring = tostring;
 
 local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", false));
 local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
@@ -77,7 +76,7 @@ local function sasl_process_cdata(session, stanza)
 	local status, ret, err_msg = session.sasl_handler:process(text);
 	status, ret, err_msg = handle_status(session, status, ret, err_msg);
 	local s = build_reply(status, ret, err_msg);
-	log("debug", "sasl reply: %s", tostring(s));
+	log("debug", "sasl reply: %s", s);
 	session.send(s);
 	return true;
 end

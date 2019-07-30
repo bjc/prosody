@@ -251,7 +251,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	end
 
 	-- That's all folks!
-	module:log("debug", "Archive query %s completed", tostring(qid));
+	module:log("debug", "Archive query %s completed", qid);
 
 	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
@@ -291,7 +291,7 @@ module:hook("muc-get-history", function (event)
 	local data, err = archive:find(jid_split(room_jid), query);
 
 	if not data then
-		module:log("error", "Could not fetch history: %s", tostring(err));
+		module:log("error", "Could not fetch history: %s", err);
 		return
 	end
 
@@ -317,7 +317,7 @@ module:hook("muc-get-history", function (event)
 			maxchars = maxchars - chars;
 		end
 		history[i], i = item, i+1;
-		-- module:log("debug", tostring(item));
+		-- module:log("debug", item);
 	end
 	function event.next_stanza()
 		i = i - 1;

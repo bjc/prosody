@@ -224,13 +224,13 @@ local function shall_store(user, who)
 	end
 	local prefs = get_prefs(user);
 	local rule = prefs[who];
-	module:log("debug", "%s's rule for %s is %s", user, who, tostring(rule));
+	module:log("debug", "%s's rule for %s is %s", user, who, rule);
 	if rule ~= nil then
 		return rule;
 	end
 	-- Below could be done by a metatable
 	local default = prefs[false];
-	module:log("debug", "%s's default rule is %s", user, tostring(default));
+	module:log("debug", "%s's default rule is %s", user, default);
 	if default == "roster" then
 		return has_in_roster(user, who);
 	end

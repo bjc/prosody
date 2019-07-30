@@ -127,7 +127,7 @@ function stream_callbacks.error(session, error, data)
 		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
-		(session.log or log)("debug", "Client XML parse error: %s", tostring(data));
+		(session.log or log)("debug", "Client XML parse error: %s", data);
 		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
@@ -289,7 +289,7 @@ function listener.onconnect(conn)
 			if data then
 				local ok, err = stream:feed(data);
 				if not ok then
-					log("debug", "Received invalid XML (%s) %d bytes: %q", tostring(err), #data, data:sub(1, 300));
+					log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
 					session:close("not-well-formed");
 				end
 			end

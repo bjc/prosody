@@ -32,7 +32,7 @@ local function parse_burst(burst, sess_type)
 	end
 	local n_burst = tonumber(burst);
 	if not n_burst then
-		module:log("error", "Unable to parse burst for %s: %q, using default burst interval (%ds)", sess_type, tostring(burst), default_burst);
+		module:log("error", "Unable to parse burst for %s: %q, using default burst interval (%ds)", sess_type, burst, default_burst);
 	end
 	return n_burst or default_burst;
 end
