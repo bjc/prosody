@@ -113,7 +113,7 @@ function websocket_listeners.onincoming(conn, buffer, err) -- luacheck: ignore 2
 				frame.MASK = true; -- RFC 6455 6.1.5: If the data is being sent by the client, the frame(s) MUST be masked
 				conn:write(frames.build(frame));
 			elseif frame.opcode == 0xA then -- Pong frame
-				log("debug", "Received unexpected pong frame: " .. tostring(frame.data));
+				log("debug", "Received unexpected pong frame: %s", frame.data);
 			else
 				return fail(s, 1002, "Reserved opcode");
 			end
