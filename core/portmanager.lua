@@ -9,7 +9,7 @@ local set = require "util.set";
 
 local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;
-local type, tonumber, tostring, ipairs = type, tonumber, tostring, ipairs;
+local type, tonumber, ipairs = type, tonumber, ipairs;
 local pairs = pairs;
 
 local prosody = prosody;
