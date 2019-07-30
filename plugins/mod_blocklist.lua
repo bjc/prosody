@@ -67,7 +67,7 @@ local function migrate_privacy_list(username)
 		if item.type == "jid" and item.action == "deny" then
 			local jid = jid_prep(item.value);
 			if not jid then
-				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
+				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, item.value);
 			else
 				migrated_data[jid] = true;
 			end

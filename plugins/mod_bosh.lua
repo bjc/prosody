@@ -78,7 +78,7 @@ end);
 
 -- Used to respond to idle sessions (those with waiting requests)
 function on_destroy_request(request)
-	log("debug", "Request destroyed: %s", tostring(request));
+	log("debug", "Request destroyed: %s", request);
 	local session = sessions[request.context.sid];
 	if session then
 		local requests = session.requests;
@@ -115,7 +115,7 @@ function session_timeout(now, session, context, reason) -- luacheck: ignore 212/
 end
 
 function handle_POST(event)
-	log("debug", "Handling new request %s: %s\n----------", tostring(event.request), tostring(event.request.body));
+	log("debug", "Handling new request %s: %s\n----------", event.request, event.request.body);
 
 	local request, response = event.request, event.response;
 	response.on_destroy = on_destroy_request;
@@ -224,7 +224,7 @@ local function bosh_reset_stream(session) session.notopen = true; end
 
 local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
 local function bosh_close_stream(session, reason)
-	(session.log or log)("info", "BOSH client disconnected: %s", tostring((reason and reason.condition or reason) or "session close"));
+	(session.log or log)("info", "BOSH client disconnected: %s", (reason and reason.condition or reason) or "session close");
 
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams });
@@ -249,7 +249,7 @@ local function bosh_close_stream(session, reason)
 				close_reply = reason;
 			end
 		end
-		log("info", "Disconnecting client, <stream:error> is: %s", tostring(close_reply));
+		log("info", "Disconnecting client, <stream:error> is: %s", close_reply);
 	end
 
 	local response_body = tostring(close_reply);
@@ -275,7 +275,7 @@ function stream_callbacks.streamopened(context, attr)
 		local to_host = nameprep(attr.to);
 		local wait = tonumber(attr.wait);
 		if not to_host then
-			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
+			log("debug", "BOSH client tried to connect to invalid host: %s", attr.to);
 			report_bad_host();
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
@@ -283,7 +283,7 @@ function stream_callbacks.streamopened(context, attr)
 			return;
 		end
 		if not rid or (not attr.wait or not wait or wait < 0 or wait % 1 ~= 0) then
-			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
+			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", attr.rid, attr.wait);
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
 			response:send(tostring(close_reply));
@@ -329,7 +329,7 @@ function stream_callbacks.streamopened(context, attr)
 				s.attr.xmlns = "jabber:client";
 			end
 			s = filter("stanzas/out", s);
-			--log("debug", "Sending BOSH data: %s", tostring(s));
+			--log("debug", "Sending BOSH data: %s", s);
 			if not s then return true end
 			t_insert(session.send_buffer, tostring(s));
 
@@ -432,7 +432,7 @@ function stream_callbacks.streamopened(context, attr)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(tostring(err), 2)); end
+local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(err, 2)); end
 
 function runner_callbacks:error(err) -- luacheck: ignore 212/self
 	return handleerr(err);

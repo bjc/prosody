@@ -80,7 +80,7 @@ local function session_close(session, reason)
 					stream_error = reason;
 				end
 			end
-			log("debug", "Disconnecting client, <stream:error> is: %s", tostring(stream_error));
+			log("debug", "Disconnecting client, <stream:error> is: %s", stream_error);
 			session.send(stream_error);
 		end
 
