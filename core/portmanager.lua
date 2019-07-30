@@ -103,7 +103,7 @@ local function activate(service_name)
 		for port in bind_ports do
 			local port_number = tonumber(port);
 			if not port_number then
-				log("error", "Invalid port number specified for service '%s': %s", service_info.name, tostring(port));
+				log("error", "Invalid port number specified for service '%s': %s", service_info.name, port);
 			elseif #active_services:search(nil, interface, port_number) > 0 then
 				log("error", "Multiple services configured to listen on the same port ([%s]:%d): %s, %s", interface, port,
 					active_services:search(nil, interface, port)[1][1].service.name or "<unnamed>", service_name or "<unnamed>");
