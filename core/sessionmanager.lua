@@ -44,7 +44,7 @@ local function new_session(conn)
 		if t then
 			local ret, err = w(conn, t);
 			if not ret then
-				session.log("debug", "Error writing to connection: %s", tostring(err));
+				session.log("debug", "Error writing to connection: %s", err);
 				return false, err;
 			end
 		end
@@ -85,8 +85,8 @@ local function retire_session(session)
 		end
 	end
 
-	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); return false; end
-	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", data); return false; end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", data); end
 	session.thread = { run = function (_, data) return session.data(data) end };
 	return setmetatable(session, resting_session);
 end
