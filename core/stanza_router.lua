@@ -199,7 +199,7 @@ function core_route_stanza(origin, stanza)
 	else
 		local host_session = hosts[from_host];
 		if not host_session then
-			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
+			log("error", "No hosts[from_host] (please report): %s", stanza);
 		else
 			local xmlns = stanza.attr.xmlns;
 			stanza.attr.xmlns = nil;
