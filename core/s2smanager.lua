@@ -9,8 +9,7 @@
 
 
 local hosts = prosody.hosts;
-local tostring, pairs, setmetatable
-    = tostring, pairs, setmetatable;
+local pairs, setmetatable = pairs, setmetatable;
 
 local logger_init = require "util.logger".init;
 local sessionlib = require "util.session";
@@ -84,9 +83,8 @@ end
 
 local function destroy_session(session, reason)
 	if session.destroyed then return; end
-	(session.log or log)("debug", "Destroying "..tostring(session.direction)
-		.." session "..tostring(session.from_host).."->"..tostring(session.to_host)
-		..(reason and (": "..reason) or ""));
+	local log = session.log or log;
+	log("debug", "Destroying %s session %s->%s%s%s", session.direction, session.from_host, session.to_host, reason and ": " or "", reason or "");
 
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
