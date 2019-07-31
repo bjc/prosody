@@ -312,7 +312,11 @@ local function call_luarocks(operation, mod, dir)
 	elseif operation == "remove" then
 		show_message("Removing %s from %s", mod, dir);
 	end
-	os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+	if operation == "list" then
+		os.execute("luarocks list --tree='"..dir.."'")
+	else
+		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+	end
 	if operation == "install" then
 		show_module_configuration_help(mod);
 	end
