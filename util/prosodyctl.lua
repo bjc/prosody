@@ -301,9 +301,9 @@ local function check_flags(arg)
 	-- There might not be any argument when the list command is calling this function
 	if arg[1] and arg[1]:sub(1, #flag) == flag then
 		local dir = arg[1]:match("=(.+)$")
-		return true, arg[2], dir;
+		return true, arg[#arg-1], dir;
 	end
-	return false, arg[1]
+	return false, arg[#arg-1];
 end
 
 local function call_luarocks(operation, mod, dir)
