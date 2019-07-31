@@ -126,16 +126,14 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
-	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
-	local flag = "--tree="
-	-- I'm considering this optional flag comes first
-	if arg[1] and arg[1]:sub(1, #flag) == flag then
-		local dir = arg[1]:match("=(.+)$")
-		os.execute("luarocks list --tree='"..dir.."'")
+	local operation = "list";
+	local tree, mod, dir = check_flags(arg);
+	if tree then
+		call_luarocks(operation, mod, dir);
 		return 0;
 	else
-		os.execute("luarocks list --tree="..installer_plugin_path)
+		dir = get_path_custom_plugins(prosody.paths.plugins);
+		call_luarocks(operation, mod, dir);
 		return 0;
 	end
 end
