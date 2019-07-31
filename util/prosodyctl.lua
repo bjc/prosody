@@ -306,6 +306,12 @@ local function check_flags(arg)
 	return false, arg[1]
 end
 
+local function call_luarocks(operation, mod, dir)
+		show_message("Installing %s at %s", mod, dir);
+		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+		show_module_configuration_help(mod);
+end
+
 return {
 	show_message = show_message;
 	show_warning = show_message;
@@ -328,4 +334,5 @@ return {
 	reload = reload;
 	get_path_custom_plugins = get_path_custom_plugins;
 	check_flags = check_flags;
+	call_luarocks = call_luarocks;
 };
