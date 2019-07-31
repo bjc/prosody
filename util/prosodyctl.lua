@@ -322,6 +322,19 @@ local function call_luarocks(operation, mod, dir)
 	end
 end
 
+local function execute_command(arg)
+	local operation = arg[#arg]
+	local tree, mod, dir = check_flags(arg);
+	if tree then
+		call_luarocks(operation, mod, dir);
+		return 0;
+	else
+		dir = get_path_custom_plugins(prosody.paths.plugins);
+		call_luarocks(operation, mod, dir);
+		return 0;
+	end
+end
+
 return {
 	show_message = show_message;
 	show_warning = show_message;
@@ -345,4 +358,5 @@ return {
 	get_path_custom_plugins = get_path_custom_plugins;
 	check_flags = check_flags;
 	call_luarocks = call_luarocks;
+	execute_command = execute_command;
 };
