@@ -112,16 +112,6 @@ function commands.list(arg)
 	execute_command(arg);
 end
 
-function commands.enabled_plugins(arg)
-	if arg[1] == "--help" then
-		show_usage([[enabled_plugins]], [[Shows plugins currently enabled on prosody]]);
-		return 1;
-	end
-	for module in modulemanager.get_modules_for_host() do
-		show_warning("%s", module)
-	end
-end
-
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
 		show_usage([[adduser JID]], [[Create the specified user account in Prosody]]);
@@ -1387,7 +1377,7 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:\n");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-		local commands_order = { "install", "remove", "list", "enabled_plugins", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
+		local commands_order = { "install", "remove", "list", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
 			"about" };
 
 		local done = {};
