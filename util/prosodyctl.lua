@@ -292,8 +292,18 @@ local function get_path_custom_plugins(plugin_paths)
 		-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
 	-- luacheck: ignore 512
 	for path in plugin_paths:gmatch("[^;]+") do
-		return path
+		return path;
 	end
+end
+
+local function check_flags(arg)
+	local flag = "--tree=";
+	-- There might not be any argument when the list command is calling this function
+	if arg[1] and arg[1]:sub(1, #flag) == flag then
+		local dir = arg[1]:match("=(.+)$")
+		return true, arg[2], dir;
+	end
+	return false, arg[1]
 end
 
 return {
@@ -317,4 +327,5 @@ return {
 	stop = stop;
 	reload = reload;
 	get_path_custom_plugins = get_path_custom_plugins;
+	check_flags = check_flags;
 };
