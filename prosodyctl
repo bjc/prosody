@@ -109,17 +109,14 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the wroking directory's plugins folder]]);
 		return 1;
 	end
-	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
-	local flag = "--tree="
-	-- I'm considering this optional flag comes first
-	if arg[1] and arg[1]:sub(1, #flag) == flag then
-		local dir = arg[1]:match("=(.+)$")
-		show_message("Removing module %s at %s", arg[2], dir)
-		os.execute("luarocks remove --tree='"..dir.."' "..arg[2])
+	local operation = "remove";
+	local tree, mod, dir = check_flags(arg);
+	if tree then
+		call_luarocks(operation, mod, dir);
 		return 0;
 	else
-		show_message("Removing %s from %s", arg[1], installer_plugin_path)
-		os.execute("luarocks --tree='"..installer_plugin_path.."' remove "..arg[1])
+		dir = get_path_custom_plugins(prosody.paths.plugins);
+		call_luarocks(operation, mod, dir);
 		return 0;
 	end
 end
