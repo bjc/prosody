@@ -76,7 +76,9 @@ local show_usage = prosodyctl.show_usage;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
-local show_module_configuration_help = prosodyctl.show_module_configuration_help;
+local check_flags = prosodyctl.check_flags;
+local call_luarocks = prosodyctl.call_luarocks;
+local get_path_custom_plugins = prosodyctl.get_path_custom_plugins;
 
 local jid_split = require "util.jid".prepped_split;
 
@@ -90,21 +92,14 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
-	-- I'm considering this optional flag comes first
-	local flag = "--tree="
-	if arg[1] and arg[1]:sub(1, #flag) == flag then
-		local dir = arg[1]:match("=(.+)$")
-		show_message("Installing module %s at %s", arg[2], dir)
-		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' install "..arg[2])
-		show_module_configuration_help(arg[2]);
+	local operation = "install";
+	local tree, mod, dir = check_flags(arg);
+	if tree then
+		call_luarocks(operation, mod, dir);
 		return 0;
 	else
-		show_message("Installing module %s at %s", arg[1], installer_plugin_path)
-		-- I've build a local server to upload some new rockspecs, like mod_smacks'. We can replace this server by one from
-		-- prosody's, where we can oficially disbrute rocks/rockspecs for all modules
-		os.execute("luarocks --tree='"..installer_plugin_path.."' --server='http://localhost/' install "..arg[1])
-		show_module_configuration_help(arg[1]);
+		dir = get_path_custom_plugins(prosody.paths.plugins);
+		call_luarocks(operation, mod, dir);
 		return 0;
 	end
 end
