@@ -307,9 +307,15 @@ local function check_flags(arg)
 end
 
 local function call_luarocks(operation, mod, dir)
+	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
-		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+	elseif operation == "remove" then
+		show_message("Removing %s from %s", mod, dir);
+	end
+	os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+	if operation == "install" then
 		show_module_configuration_help(mod);
+	end
 end
 
 return {
