@@ -76,9 +76,7 @@ local show_usage = prosodyctl.show_usage;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
-local check_flags = prosodyctl.check_flags;
-local call_luarocks = prosodyctl.call_luarocks;
-local get_path_custom_plugins = prosodyctl.get_path_custom_plugins;
+local execute_command = prosodyctl.execute_command;
 
 local jid_split = require "util.jid".prepped_split;
 
@@ -92,16 +90,8 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	local operation = "install";
-	local tree, mod, dir = check_flags(arg);
-	if tree then
-		call_luarocks(operation, mod, dir);
-		return 0;
-	else
-		dir = get_path_custom_plugins(prosody.paths.plugins);
-		call_luarocks(operation, mod, dir);
-		return 0;
-	end
+	table.insert(arg, "install");
+	execute_command(arg);
 end
 
 function commands.remove(arg)
@@ -109,16 +99,8 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the wroking directory's plugins folder]]);
 		return 1;
 	end
-	local operation = "remove";
-	local tree, mod, dir = check_flags(arg);
-	if tree then
-		call_luarocks(operation, mod, dir);
-		return 0;
-	else
-		dir = get_path_custom_plugins(prosody.paths.plugins);
-		call_luarocks(operation, mod, dir);
-		return 0;
-	end
+	table.insert(arg, "remove");
+	execute_command(arg);
 end
 
 function commands.list(arg)
@@ -126,16 +108,8 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	local operation = "list";
-	local tree, mod, dir = check_flags(arg);
-	if tree then
-		call_luarocks(operation, mod, dir);
-		return 0;
-	else
-		dir = get_path_custom_plugins(prosody.paths.plugins);
-		call_luarocks(operation, mod, dir);
-		return 0;
-	end
+	table.insert(arg, "list");
+	execute_command(arg);
 end
 
 function commands.enabled_plugins(arg)
