@@ -114,7 +114,6 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the wroking directory's plugins folder]]);
 		return 1;
 	end
-	-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
 	local installer_plugin_path = prosodyctl.get_path_custom_plugins(prosody.paths.plugins)
 	local flag = "--tree="
 	-- I'm considering this optional flag comes first
