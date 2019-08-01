@@ -77,12 +77,19 @@ local function bounce_sendq(session, reason)
 			(session.log or log)("error", "Attempting to close the dummy origin of s2s error replies, please report this! Traceback: %s", traceback());
 		end;
 	};
+	-- FIXME Allow for more specific error conditions
+	-- TODO use util.error ?
+	local error_type = "cancel";
+	local condition = "remote-server-not-found";
+	if session.had_stream then -- set when a stream is opened by the remote
+		error_type, condition = "wait", "remote-server-timeout";
+	end
 	for i, data in ipairs(sendq) do
 		local reply = data[2];
 		if reply and not(reply.attr.xmlns) and bouncy_stanzas[reply.name] then
 			reply.attr.type = "error";
-			reply:tag("error", {type = "cancel", by = session.from_host})
-				:tag("remote-server-not-found", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
+			reply:tag("error", {type = error_type, by = session.from_host})
+				:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
 			if reason then
 				reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"})
 					:text("Server-to-server connection failed: "..reason):up();
@@ -301,6 +308,7 @@ end
 
 function stream_callbacks._streamopened(session, attr)
 	session.version = tonumber(attr.version) or 0;
+	session.had_stream = true; -- Had a stream opened at least once
 
 	-- TODO: Rename session.secure to session.encrypted
 	if session.secure == false then
