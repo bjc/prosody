@@ -240,11 +240,13 @@ function startup.setup_plugindir()
 	require "lfs".mkdir(installer_plugin_path)
 	-- Checking for duplicates
 	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
+	local lua_version = _VERSION:match(" (.+)$")
+	local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep
 	if not string.match(package.path, installer_plugin_path) then
-		local lua_version = _VERSION:match(" (.+)$")
-		local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep
 		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
 		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
+	end
+	if not string.match(package.path, installer_plugin_path) then
 		package.cpath = package.cpath..path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.lua";
 	end
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
