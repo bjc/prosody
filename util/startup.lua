@@ -238,16 +238,8 @@ function startup.setup_plugindir()
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
-	-- Checks if installer_plugin_path is a relative paths and makes it an absolute path
-	if installer_plugin_path:sub(1,1) ~= "/" then
-		-- Works fine when executing prosody from source (configure and make only)
-		-- Probably wont be the best install directory, when using a package installation
-		local lfs_currentdir = require "lfs".currentdir();
-		local current_directory = lfs_currentdir;
-		-- Some normalization
-		installer_plugin_path = installer_plugin_path:gsub("^%.%"..dir_sep.."+", "");
-		installer_plugin_path = current_directory..dir_sep..installer_plugin_path;
-	end
+	local current_directory = require "lfs".currentdir();
+	installer_plugin_path = config.resolve_relative_path(current_directory, installer_plugin_path);
 	-- Checking if the folder exists. If it doesn't, we create it, but we need permissions to do so
 	if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
 		os.execute("mkdir "..installer_plugin_path);
