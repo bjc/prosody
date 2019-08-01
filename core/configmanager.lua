@@ -15,6 +15,7 @@ local envload = require"util.envload".envload;
 local deps = require"util.dependencies";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
+local complement_lua_path = require"util.paths".complement_lua_path;
 local path_sep = package.config:sub(1,1);
 local get_traceback_table = require "util.debug".get_traceback_table;
 
@@ -26,6 +27,7 @@ local _ENV = nil;
 -- luacheck: std none
 
 _M.resolve_relative_path = resolve_relative_path; -- COMPAT
+_M.complement_lua_path = complement_lua_path;
 
 local parser = nil;
 
