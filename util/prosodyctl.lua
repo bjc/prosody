@@ -289,7 +289,7 @@ local function reload()
 end
 
 local function get_path_custom_plugins(plugin_paths)
-		-- I'm considering that we are using just one path to custom plugins, and it is the first in prosody.paths.plugins, for now
+		-- I'm considering that the custom plugins' path is the first one at prosody.paths.plugins
 	-- luacheck: ignore 512
 	for path in plugin_paths:gmatch("[^;]+") do
 		return path;
