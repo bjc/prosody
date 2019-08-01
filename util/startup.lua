@@ -236,8 +236,7 @@ function startup.setup_plugindir()
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
-	local current_directory = require "lfs".currentdir();
-	installer_plugin_path = config.resolve_relative_path(current_directory, installer_plugin_path);
+	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
 	require "lfs".mkdir(installer_plugin_path)
 	-- Checking for duplicates
 	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
