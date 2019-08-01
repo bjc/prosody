@@ -240,10 +240,7 @@ function startup.setup_plugindir()
 	end
 	local current_directory = require "lfs".currentdir();
 	installer_plugin_path = config.resolve_relative_path(current_directory, installer_plugin_path);
-	-- Checking if the folder exists. If it doesn't, we create it, but we need permissions to do so
-	if os.execute('[ -d "'..installer_plugin_path..'" ]') ~= 0 then
-		os.execute("mkdir "..installer_plugin_path);
-	end
+	require "lfs".mkdir(installer_plugin_path)
 	-- Developers may have add these custom paths to their LUA_PATH/LUA_CPATH variables, before running prosody
 	-- Therefore, I'll just check if the paths we are about to add aren't already at package.(path/cpath)
 	if not string.match(package.path, installer_plugin_path) then
