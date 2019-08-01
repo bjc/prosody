@@ -228,9 +228,7 @@ end
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
-	-- This variable separates different paths, like this "," here -> /usr;/home
 	local path_sep = package.config:sub(3,3);
-	-- This variable is the separator between directories, in a path, like the "/" here -> /home/path/to/somewhere
 	local dir_sep = package.config:sub(1,1);
 	if custom_plugin_paths then
 		-- path1;path2;path3;defaultpath...
@@ -241,18 +239,15 @@ function startup.setup_plugindir()
 	local current_directory = require "lfs".currentdir();
 	installer_plugin_path = config.resolve_relative_path(current_directory, installer_plugin_path);
 	require "lfs".mkdir(installer_plugin_path)
-	-- Developers may have add these custom paths to their LUA_PATH/LUA_CPATH variables, before running prosody
-	-- Therefore, I'll just check if the paths we are about to add aren't already at package.(path/cpath)
+	-- Checking for duplicates
+	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
 	if not string.match(package.path, installer_plugin_path) then
 		local lua_version = _VERSION:match(" (.+)$")
-		-- I'm assuming there's good reason not to hard code any separator
-		-- This next line is unnecessary, but I think it makes the code more readable and neat
 		local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep
 		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
 		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
 		package.cpath = package.cpath..path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.lua";
 	end
-	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
