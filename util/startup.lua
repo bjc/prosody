@@ -229,7 +229,6 @@ function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
-	local dir_sep = package.config:sub(1,1);
 	if custom_plugin_paths then
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
@@ -237,18 +236,8 @@ function startup.setup_plugindir()
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
 	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
-	require "lfs".mkdir(installer_plugin_path)
-	-- Checking for duplicates
-	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
-	local lua_version = _VERSION:match(" (.+)$")
-	local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep
-	if not string.match(package.path, installer_plugin_path) then
-		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
-		package.path = package.path..path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
-	end
-	if not string.match(package.path, installer_plugin_path) then
-		package.cpath = package.cpath..path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.lua";
-	end
+	require "lfs".mkdir(installer_plugin_path);
+	config.complement_lua_path(installer_plugin_path);
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
