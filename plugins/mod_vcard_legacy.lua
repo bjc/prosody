@@ -110,6 +110,10 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 				if uri and uri:sub(1, 5) == "xmpp:" then
 					vcard_temp:text_tag("JABBERID", uri:sub(6))
 				end
+			elseif tag.name == "org" then
+				vcard_temp:tag("ORG")
+					:text_tag("ORGNAME", tag:get_child_text("text"))
+				:up();
 			end
 		end
 	end
