@@ -98,7 +98,7 @@ function stanza_mt:query(xmlns)
 end
 
 function stanza_mt:body(text, attr)
-	return self:tag("body", attr):text(text);
+	return self:text_tag("body", text, attr);
 end
 
 function stanza_mt:text_tag(name, text, attr, namespaces)
@@ -417,7 +417,7 @@ local function message(attr, body)
 	if not body then
 		return new_stanza("message", attr);
 	else
-		return new_stanza("message", attr):tag("body"):text(body):up();
+		return new_stanza("message", attr):text_tag("body", body);
 	end
 end
 local function iq(attr)
@@ -449,7 +449,7 @@ local function error_reply(orig, error_type, condition, error_message)
 	t.attr.type = "error";
 	t:tag("error", {type = error_type}) --COMPAT: Some day xmlns:stanzas goes here
 	:tag(condition, xmpp_stanzas_attr):up();
-	if error_message then t:tag("text", xmpp_stanzas_attr):text(error_message):up(); end
+	if error_message then t:text_tag("text", error_message, xmpp_stanzas_attr); end
 	return t; -- stanza ready for adding app-specific errors
 end
 
