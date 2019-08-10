@@ -428,7 +428,9 @@ end
 module:add_feature(xmlns_mam);
 
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var=xmlns_mam}):up();
+	if archiving_enabled(event.room) then
+		event.reply:tag("feature", {var=xmlns_mam}):up();
+	end
 end);
 
 -- Cleanup
