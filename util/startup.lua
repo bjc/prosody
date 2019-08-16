@@ -231,7 +231,7 @@ function startup.setup_plugindir()
 	local path_sep = package.config:sub(3,3);
 	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
 	require "lfs".mkdir(installer_plugin_path);
-	config.complement_lua_path(installer_plugin_path);
+	require"util.paths".complement_lua_path(installer_plugin_path);
 	if custom_plugin_paths then
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
