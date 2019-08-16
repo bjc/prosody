@@ -96,7 +96,7 @@ end
 
 function commands.remove(arg)
 	if arg[1] == "--help" then
-		show_usage([[remove]], [[Removes a module installed in the wroking directory's plugins folder]]);
+		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
 		return 1;
 	end
 	table.insert(arg, "remove");
