@@ -53,7 +53,7 @@ function path_util.complement_lua_path(installer_plugin_path)
 		package.path = package.path..lua_path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
 	end
 	if not string.match(package.path, installer_plugin_path) then
-		package.cpath = package.cpath..lua_path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.lua";
+		package.cpath = package.cpath..lua_path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.so";
 	end
 end
 
