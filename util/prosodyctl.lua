@@ -296,16 +296,6 @@ local function get_path_custom_plugins(plugin_paths)
 	end
 end
 
-local function check_flags(arg)
-	local flag = "--tree=";
-	-- There might not be any argument when the list command is calling this function
-	if arg[1] and arg[1]:sub(1, #flag) == flag then
-		local dir = arg[1]:match("=(.+)$")
-		return true, arg[#arg-1], dir;
-	end
-	return false, arg[#arg-1];
-end
-
 local function call_luarocks(operation, mod, dir)
 	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
@@ -319,19 +309,6 @@ local function call_luarocks(operation, mod, dir)
 	end
 	if operation == "install" then
 		show_module_configuration_help(mod);
-	end
-end
-
-local function execute_command(arg)
-	local operation = arg[#arg]
-	local tree, mod, dir = check_flags(arg);
-	if tree then
-		call_luarocks(operation, mod, dir);
-		return 0;
-	else
-		dir = get_path_custom_plugins(prosody.paths.plugins);
-		call_luarocks(operation, mod, dir);
-		return 0;
 	end
 end
 
@@ -356,7 +333,5 @@ return {
 	stop = stop;
 	reload = reload;
 	get_path_custom_plugins = get_path_custom_plugins;
-	check_flags = check_flags;
 	call_luarocks = call_luarocks;
-	execute_command = execute_command;
 };
