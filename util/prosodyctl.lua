@@ -296,7 +296,8 @@ local function get_path_custom_plugins(plugin_paths)
 	end
 end
 
-local function call_luarocks(operation, mod, dir)
+local function call_luarocks(mod, operation)
+	local dir = get_path_custom_plugins(prosody.paths.plugins);
 	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
 	elseif operation == "remove" then
