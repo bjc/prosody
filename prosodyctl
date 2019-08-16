@@ -76,7 +76,7 @@ local show_usage = prosodyctl.show_usage;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
-local execute_command = prosodyctl.execute_command;
+local call_luarocks = prosodyctl.call_luarocks;
 
 local jid_split = require "util.jid".prepped_split;
 
@@ -90,8 +90,7 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	table.insert(arg, "install");
-	execute_command(arg);
+	call_luarocks(arg[1], "install")
 end
 
 function commands.remove(arg)
@@ -99,8 +98,7 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
 		return 1;
 	end
-	table.insert(arg, "remove");
-	execute_command(arg);
+	call_luarocks(arg[1], "remove")
 end
 
 function commands.list(arg)
@@ -108,8 +106,7 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	table.insert(arg, "list");
-	execute_command(arg);
+	call_luarocks(arg[1], "list")
 end
 
 function commands.adduser(arg)
