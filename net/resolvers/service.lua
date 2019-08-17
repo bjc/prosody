@@ -33,7 +33,11 @@ function methods:next(cb)
 
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
-	dns_resolver:lookup(function (answer)
+	dns_resolver:lookup(function (answer, err)
+		if not answer and not err then
+			-- net.adns returns nil if there are zero records or nxdomain
+			answer = {};
+		end
 		if answer then
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
