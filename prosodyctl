@@ -10,7 +10,6 @@
 -- prosodyctl - command-line controller for Prosody XMPP server
 
 -- Will be modified by configure script if run --
-
 CFG_SOURCEDIR=CFG_SOURCEDIR or os.getenv("PROSODY_SRCDIR");
 CFG_CONFIGDIR=CFG_CONFIGDIR or os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=CFG_PLUGINDIR or os.getenv("PROSODY_PLUGINDIR");
@@ -77,6 +76,7 @@ local show_usage = prosodyctl.show_usage;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
+local call_luarocks = prosodyctl.call_luarocks;
 
 local jid_split = require "util.jid".prepped_split;
 
@@ -84,6 +84,30 @@ local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) *
 -----------------------
 local commands = {};
 local command = table.remove(arg, 1);
+
+function commands.install(arg)
+	if arg[1] == "--help" then
+		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "install")
+end
+
+function commands.remove(arg)
+	if arg[1] == "--help" then
+		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "remove")
+end
+
+function commands.list(arg)
+	if arg[1] == "--help" then
+		show_usage([[list]], [[Shows installed rocks]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "list")
+end
 
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
@@ -1358,7 +1382,8 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:\n");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-		local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
+		local commands_order = { "install", "remove", "list", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
+			"about" };
 
 		local done = {};
 

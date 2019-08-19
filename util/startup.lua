@@ -227,13 +227,19 @@ end
 
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	local path_sep = package.config:sub(3,3);
+	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	require "lfs".mkdir(installer_plugin_path);
+	require"util.paths".complement_lua_path(installer_plugin_path);
 	if custom_plugin_paths then
-		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
+	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
+	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
 function startup.chdir()
