@@ -23,6 +23,7 @@ local accounts = module:open_store("accounts");
 
 local hash_name = module:get_option_string("password_hash", "SHA-1");
 local get_auth_db = assert(scram_hashers[hash_name], "SCRAM-"..hash_name.." not supported by SASL library");
+local scram_name = "scram_"..hash_name:gsub("%-","_"):lower();
 
 -- Default; can be set per-user
 local default_iteration_count = 4096;
@@ -117,7 +118,7 @@ function provider.get_sasl_handler()
 		plain_test = function(_, username, password, realm)
 			return usermanager.test_password(username, realm, password), true;
 		end,
-		["scram_"..hash_name:gsub("%-","_"):lower()] = function(_, username)
+		[scram_name] = function(_, username)
 			local credentials = accounts:get(username);
 			if not credentials then return; end
 			if credentials.password then
