@@ -374,22 +374,21 @@ function api:send_iq(stanza, origin, timeout)
 				type = "wait", condition = "resource-constraint",
 				text = "evicted from iq tracking cache"
 			}));
-			self:unhook(iq.result_event, iq.result_handler);
-			self:unhook(iq.error_event, iq.error_handler);
 		end);
 		self._iq_cache = iq_cache;
 	end
-	return promise.new(function (resolve, reject)
-		local event_type;
-		if stanza.attr.from == self.host then
-			event_type = "host";
-		else -- assume bare since we can't hook full jids
-			event_type = "bare";
-		end
-		local result_event = "iq-result/"..event_type.."/"..stanza.attr.id;
-		local error_event = "iq-error/"..event_type.."/"..stanza.attr.id;
-		local cache_key = event_type.."/"..stanza.attr.id;
 
+	local event_type;
+	if stanza.attr.from == self.host then
+		event_type = "host";
+	else -- assume bare since we can't hook full jids
+		event_type = "bare";
+	end
+	local result_event = "iq-result/"..event_type.."/"..stanza.attr.id;
+	local error_event = "iq-error/"..event_type.."/"..stanza.attr.id;
+	local cache_key = event_type.."/"..stanza.attr.id;
+
+	local p = promise.new(function (resolve, reject)
 		local function result_handler(event)
 			if event.stanza.attr.from == stanza.attr.to then
 				resolve(event);
@@ -420,15 +419,11 @@ function api:send_iq(stanza, origin, timeout)
 				type = "wait", condition = "remote-server-timeout",
 				text = "IQ stanza timed out",
 			}));
-			self:unhook(result_event, result_handler);
-			self:unhook(error_event, error_handler);
-			iq_cache:set(cache_key, nil);
 		end);
 
 		local ok = iq_cache:set(cache_key, {
 			reject = reject, resolve = resolve,
 			timeout_handle = timeout_handle,
-			result_event = result_event, error_event = error_event,
 			result_handler = result_handler, error_handler = error_handler;
 		});
 
@@ -442,6 +437,18 @@ function api:send_iq(stanza, origin, timeout)
 
 		self:send(stanza, origin);
 	end);
+
+	p:finally(function ()
+		local iq = iq_cache:get(cache_key);
+		if iq then
+			self:unhook(result_event, iq.result_handler);
+			self:unhook(error_event, iq.error_handler);
+			iq.timeout_handle:stop();
+			iq_cache:set(cache_key, nil);
+		end
+	end);
+
+	return p;
 end
 
 function api:broadcast(jids, stanza, iter)
