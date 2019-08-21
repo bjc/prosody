@@ -407,7 +407,7 @@ function api:send_iq(stanza, origin, timeout)
 		if iq_cache:get(cache_key) then
 			reject(errutil.new({
 				type = "modify", condition = "conflict",
-				text = "iq stanza id attribute already used",
+				text = "IQ stanza id attribute already used",
 			}));
 			return;
 		end
