@@ -446,12 +446,14 @@ function archive_store:summary(username, query)
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result end
-	local summary = {};
+	local counts = {};
 	for row in result do
 		local with, count = row[1], row[2];
-		summary[with] = count;
+		counts[with] = count;
 	end
-	return summary;
+	return {
+		counts = counts;
+	};
 end
 
 function archive_store:delete(username, query)
