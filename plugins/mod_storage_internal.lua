@@ -220,17 +220,20 @@ function archive:summary(username, query)
 	local counts = {};
 	local earliest = {};
 	local latest = {};
-	for _, _, when, with in iter do
+	local body = {};
+	for _, stanza, when, with in iter do
 		counts[with] = (counts[with] or 0) + 1;
 		if earliest[with] == nil then
 			earliest[with] = when;
 		end
 		latest[with] = when;
+		body[with] = stanza:get_child_text("body") or body[with];
 	end
 	return {
 		counts = counts;
 		earliest = earliest;
 		latest = latest;
+		body = body;
 	};
 end
 
