@@ -171,11 +171,14 @@ function archive_store:summary(username, query)
 	local iter, err = self:find(username, query)
 	if not iter then return iter, err; end
 	local counts = {};
-	for _, _, _, with in iter do
+	local latest = {};
+	for _, _, when, with in iter do
 		counts[with] = (counts[with] or 0) + 1;
+		latest[with] = when;
 	end
 	return {
 		counts = counts;
+		latest = latest;
 	};
 end
 
