@@ -116,6 +116,14 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 				:up();
 			end
 		end
+	else
+		local ok, _, nick_item = pep_service:get_last_item("http://jabber.org/protocol/nick", stanza.attr.from);
+		if ok and nick_item then
+			local nickname = nick_item:get_child_text("nick", "http://jabber.org/protocol/nick");
+			if nickname then
+				vcard_temp:text_tag("NICKNAME", nickname);
+			end
+		end
 	end
 
 	local meta_ok, avatar_meta = pep_service:get_items("urn:xmpp:avatar:metadata", stanza.attr.from);
