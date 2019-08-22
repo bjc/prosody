@@ -424,7 +424,7 @@ function archive_store:summary(username, query)
 	local user,store = username,self.store;
 	local ok, result = engine:transaction(function()
 		local sql_query = [[
-		SELECT DISTINCT "with", COUNT(*), MAX("when")
+		SELECT DISTINCT "with", COUNT(*), MIN("when"), MAX("when")
 		FROM "prosodyarchive"
 		WHERE %s
 		GROUP BY "with"
@@ -447,14 +447,16 @@ function archive_store:summary(username, query)
 	end);
 	if not ok then return ok, result end
 	local counts = {};
-	local latest = {};
+	local earliest, latest = {}, {};
 	for row in result do
 		local with, count = row[1], row[2];
 		counts[with] = count;
-		latest[with] = row[3];
+		earliest[with] = row[3];
+		latest[with] = row[4];
 	end
 	return {
 		counts = counts;
+		earliest = earliest;
 		latest = latest;
 	};
 end
