@@ -320,7 +320,6 @@ function stream_callbacks._streamopened(session, attr)
 			session.compressed = info.compression;
 		else
 			(session.log or log)("info", "Stream encrypted");
-			session.compressed = sock.compression and sock:compression(); --COMPAT mw/luasec-hg
 		end
 	end
 

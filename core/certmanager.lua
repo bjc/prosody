@@ -148,13 +148,6 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if luasec_version < 5 and ssl_x509 then
-	-- COMPAT mw/luasec-hg
-	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
-		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
-	end
-end
-
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
