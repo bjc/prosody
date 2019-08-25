@@ -20,7 +20,6 @@ end
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl_context = ssl.context or softreq"ssl.context";
-local ssl_x509 = ssl.x509 or softreq"ssl.x509";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
