@@ -15,8 +15,7 @@ local function get_reserved_nicks(room)
 	end
 	module:log("debug", "Refreshing reserved nicks...");
 	local reserved_nicks = {};
-	for jid in room:each_affiliation() do
-		local data = room._affiliation_data[jid];
+	for jid, _, data in room:each_affiliation() do
 		local nick = data and data.reserved_nickname;
 		module:log("debug", "Refreshed for %s: %s", jid, nick);
 		if nick then
