@@ -123,8 +123,8 @@ local core_defaults = {
 		"P-521",
 	};
 	ciphers = {      -- Enabled ciphers in order of preference:
-		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
 		"HIGH+kEECDH", -- Ephemeral Elliptic curve Diffie-Hellman key exchange
+		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
 		"HIGH",        -- Other "High strength" ciphers
 		               -- Disabled cipher suites:
 		"!PSK",        -- Pre-Shared Key - not used for XMPP
