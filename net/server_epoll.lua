@@ -66,6 +66,9 @@ local default_config = { __index = {
 	-- EXPERIMENTAL
 	-- Whether to kill connections in case of callback errors.
 	fatal_errors = false;
+
+	-- Attempt writes instantly
+	opportunistic_writes = false;
 }};
 local cfg = default_config.__index;
 
@@ -413,6 +416,7 @@ function interface:onwritable()
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
 		end
+		self:set(nil, true);
 		self:setwritetimeout();
 	end
 	if err == "wantwrite" or err == "timeout" then
@@ -439,6 +443,10 @@ function interface:write(data)
 		self.writebuffer = { data };
 	end
 	if not self._write_lock then
+		if cfg.opportunistic_writes then
+			self:onwritable();
+			return #data;
+		end
 		self:setwritetimeout();
 		self:set(nil, true);
 	end
