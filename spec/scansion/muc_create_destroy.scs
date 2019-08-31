@@ -1,0 +1,242 @@
+# MUC creation, basic messages and destruction
+
+[Client] Romeo
+	jid: romeo@localhost/mK0dD6Ha
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost/lVwkim_k
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="garden@conference.localhost/romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from="garden@conference.localhost/romeo">
+		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<status code="201"/>
+			<item affiliation="owner" jid="${Romeo's full JID}" role="moderator"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message from="garden@conference.localhost" type="groupchat">
+		<subject/>
+	</message>
+
+Romeo sends:
+	<iq to="garden@conference.localhost" id="lx3" type="set">
+		<query xmlns="http://jabber.org/protocol/muc#owner">
+			<x type="submit" xmlns="jabber:x:data"/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="lx3" type="result" from="garden@conference.localhost"/>
+
+Juliet connects
+
+Romeo sends:
+	<message to="garden@conference.localhost" type="groupchat" id="rm1">
+		<body>Where are thou my Juliet?</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="garden@conference.localhost/romeo" id="rm1">
+		<body>Where are thou my Juliet?</body>
+	</message>
+
+Juliet sends:
+	<presence to="garden@conference.localhost/juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="garden@conference.localhost/romeo">
+		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="owner" role="moderator"/>
+		</x>
+	</presence>
+
+Juliet receives:
+	<presence from="garden@conference.localhost/juliet">
+		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="none" jid="${Juliet's full JID}" role="participant"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Juliet receives:
+	<message from="garden@conference.localhost/romeo" id="rm1" type="groupchat">
+		<body>Where are thou my Juliet?</body>
+		<delay stamp="{scansion:any}" xmlns="urn:xmpp:delay" from="conference.localhost"/>
+		<x stamp="{scansion:any}" xmlns="jabber:x:delay" from="conference.localhost"/>
+	</message>
+
+Juliet receives:
+	<message from="garden@conference.localhost" type="groupchat">
+		<subject/>
+	</message>
+
+Romeo receives:
+	<presence from="garden@conference.localhost/juliet">
+		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="none" jid="${Juliet's full JID}" role="participant"/>
+		</x>
+	</presence>
+
+Juliet sends:
+	<message to="garden@conference.localhost" type="groupchat" id="jm1">
+		<body>/me jumps out from behind a tree</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="jm1" from="garden@conference.localhost/juliet">
+		<body>/me jumps out from behind a tree</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="jm1" from="garden@conference.localhost/juliet">
+		<body>/me jumps out from behind a tree</body>
+	</message>
+
+Juliet sends:
+	<message to="garden@conference.localhost" type="groupchat" id="jm2">
+		<body>Here I am!</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="jm2" from="garden@conference.localhost/juliet">
+		<body>Here I am!</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="jm2" from="garden@conference.localhost/juliet">
+		<body>Here I am!</body>
+	</message>
+
+Romeo sends:
+	<message to="garden@conference.localhost" type="groupchat" id="rm2">
+		<body>What is this place?</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="rm2" from="garden@conference.localhost/romeo">
+		<body>What is this place?</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="rm2" from="garden@conference.localhost/romeo">
+		<body>What is this place?</body>
+	</message>
+
+Juliet sends:
+	<message to="garden@conference.localhost" type="groupchat" id="jm3">
+		<body>I think we&apos;re in a script!</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="jm3" from="garden@conference.localhost/juliet">
+		<body>I think we&apos;re in a script!</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="jm3" from="garden@conference.localhost/juliet">
+		<body>I think we&apos;re in a script!</body>
+	</message>
+
+Romeo sends:
+	<message to="garden@conference.localhost" type="groupchat" id="rm3">
+		<body>Oh no! Does that mean our love is not real?!</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="rm3" from="garden@conference.localhost/romeo">
+		<body>Oh no! Does that mean our love is not real?!</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="rm3" from="garden@conference.localhost/romeo">
+		<body>Oh no! Does that mean our love is not real?!</body>
+	</message>
+
+Juliet sends:
+	<message to="garden@conference.localhost" type="groupchat" id="jm4">
+		<body>I refuse to accept this! Let&apos;s burn this place to the ground!</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="jm4" from="garden@conference.localhost/juliet">
+		<body>I refuse to accept this! Let&apos;s burn this place to the ground!</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="jm4" from="garden@conference.localhost/juliet">
+		<body>I refuse to accept this! Let&apos;s burn this place to the ground!</body>
+	</message>
+
+Romeo sends:
+	<message to="garden@conference.localhost" type="groupchat" id="rm4">
+		<body>Yes!</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" id="rm4" from="garden@conference.localhost/romeo">
+		<body>Yes!</body>
+	</message>
+
+Juliet receives:
+	<message type="groupchat" id="rm4" from="garden@conference.localhost/romeo">
+		<body>Yes!</body>
+	</message>
+
+Romeo sends:
+	<iq to="garden@conference.localhost" id="lx4" type="set">
+		<query xmlns="http://jabber.org/protocol/muc#owner">
+			<destroy>
+				<reason>We refuse to live in this fantasy!</reason>
+			</destroy>
+		</query>
+	</iq>
+
+Juliet receives:
+	<presence from="garden@conference.localhost/juliet" type="unavailable">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<destroy>
+				<reason>We refuse to live in this fantasy!</reason>
+			</destroy>
+			<item affiliation="none" jid="${Juliet's full JID}" role="none"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<presence from="garden@conference.localhost/romeo" type="unavailable">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<destroy>
+				<reason>We refuse to live in this fantasy!</reason>
+			</destroy>
+			<item affiliation="owner" jid="${Romeo's full JID}" role="none"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<iq id="lx4" type="result" from="garden@conference.localhost"/>
+
+Juliet disconnects
+
+Romeo disconnects
+
+# recording ended on 2019-08-31T13:45:32Z
