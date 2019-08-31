@@ -560,7 +560,7 @@ function interface:tlshandskake()
 	end
 end
 
-local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luasocket object -> interface object
+local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) -- luasocket object -> interface object
 	client:settimeout(0);
 	local conn = setmetatable({
 		conn = client;
@@ -572,6 +572,7 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx) -- luas
 		tls_ctx = tls_ctx or (server and server.tls_ctx);
 		tls_direct = server and server.tls_direct;
 		log = logger.init(("conn%s"):format(new_id()));
+		extra = extra;
 	}, interface_mt);
 
 	conn:updatenames();
@@ -701,8 +702,8 @@ local function addserver(addr, port, listeners, read_size, tls_ctx)
 end
 
 -- COMPAT
-local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx)
-	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx);
+local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx, extra)
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra);
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
@@ -715,7 +716,7 @@ local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx)
 end
 
 -- New outgoing TCP connection
-local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
+local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	local create;
 	if not typ then
 		local n = inet_pton(addr);
@@ -738,7 +739,7 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ)
 	if not ok then return ok, err; end
 	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
-	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx)
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
 	local ok, err = client:init();
 	if not ok then return ok, err; end
 	if tls_ctx then

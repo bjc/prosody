@@ -479,7 +479,7 @@ end
 
 -- End of client interface methods
 
-local function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
+local function handleclient( client, ip, port, server, pattern, listener, sslctx, extra )  -- creates an client interface
 	--vdebug("creating client interfacce...")
 	local interface = {
 		type = "client";
@@ -515,6 +515,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 		_serverport = (server and server:port() or nil),
 		_sslctx = sslctx; -- parameters
 		_usingssl = false;  -- client is using ssl;
+		extra = extra;
 	}
 	if not has_luasec then interface.starttls = false; end
 	interface.id = tostring(interface):match("%x+$");
@@ -749,14 +750,14 @@ local function addserver( addr, port, listener, pattern, sslctx )  -- TODO: chec
 	});
 end
 
-local function wrapclient( client, ip, port, listeners, pattern, sslctx )
-	local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
+local function wrapclient( client, ip, port, listeners, pattern, sslctx, extra )
+	local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx, extra )
 	interface:_start_connection(sslctx)
 	return interface, client
 	--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 end
 
-local function addclient( addr, serverport, listener, pattern, sslctx, typ )
+local function addclient( addr, serverport, listener, pattern, sslctx, typ, extra )
 	if sslctx and not has_luasec then
 		debug "need luasec, but not available"
 		return nil, "luasec not found"
@@ -783,7 +784,7 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 	local res, err = client:setpeername( addr, serverport )  -- connect
 	if res or ( err == "timeout" ) then
 		local ip, port = client:getsockname( )
-		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
+		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, extra )
 		debug( "new connection id:", interface.id )
 		return interface, err
 	else
