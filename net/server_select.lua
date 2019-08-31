@@ -266,7 +266,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx, ssldi
 	return handler
 end
 
-wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx, ssldirect ) -- this function wraps a client to a handler object
+wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx, ssldirect, extra ) -- this function wraps a client to a handler object
 
 	if socket:getfd() >= _maxfd then
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
@@ -315,6 +315,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	--// public methods of the object //--
 
 	local handler = bufferqueue -- saves a table ^_^
+
+	handler.extra = extra
 
 	handler.dispatch = function( )
 		return dispatch
@@ -1005,8 +1007,8 @@ end
 
 --// EXPERIMENTAL //--
 
-local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx )
-	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, sslctx)
+local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx, extra )
+	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, sslctx, extra)
 	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
@@ -1025,7 +1027,7 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	return handler, socket
 end
 
-local addclient = function( address, port, listeners, pattern, sslctx, typ )
+local addclient = function( address, port, listeners, pattern, sslctx, typ, extra )
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
@@ -1062,7 +1064,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	client:settimeout( 0 )
 	local ok, err = client:setpeername( address, port )
 	if ok or err == "timeout" or err == "Operation already in progress" then
-		return wrapclient( client, address, port, listeners, pattern, sslctx )
+		return wrapclient( client, address, port, listeners, pattern, sslctx, extra )
 	else
 		return nil, err
 	end
