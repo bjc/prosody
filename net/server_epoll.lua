@@ -575,6 +575,12 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 		extra = extra;
 	}, interface_mt);
 
+	if extra then
+		if extra.servername then
+			conn.servername = extra.servername;
+		end
+	end
+
 	conn:updatenames();
 	return conn;
 end
