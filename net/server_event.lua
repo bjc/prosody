@@ -516,6 +516,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 		_sslctx = sslctx; -- parameters
 		_usingssl = false;  -- client is using ssl;
 		extra = extra;
+		servername = extra and extra.servername;
 	}
 	if not has_luasec then interface.starttls = false; end
 	interface.id = tostring(interface):match("%x+$");

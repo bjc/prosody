@@ -317,6 +317,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local handler = bufferqueue -- saves a table ^_^
 
 	handler.extra = extra
+	if extra then
+		handler.servername = extra.servername
+	end
 
 	handler.dispatch = function( )
 		return dispatch
