@@ -139,11 +139,6 @@ function route_to_existing_session(event)
 			log("error", "Stanza: %s", stanza);
 			return false;
 		else
-			-- FIXME
-			if host.from_host ~= from_host then
-				log("error", "WARNING! This might, possibly, be a bug, but it might not...");
-				log("error", "We are going to send from %s instead of %s", host.from_host, from_host);
-			end
 			if host.sends2s(stanza) then
 				return true;
 			end
