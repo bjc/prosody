@@ -111,8 +111,8 @@ function core_process_stanza(origin, stanza)
 		stanza.attr.from = from;
 	end
 
-	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
-		if origin.type == "s2sin" and not origin.dummy then
+	if (origin.type == "s2sin" or origin.type == "s2sout" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
+		if (origin.type == "s2sin" or origin.type == "s2sout") and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
 				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
