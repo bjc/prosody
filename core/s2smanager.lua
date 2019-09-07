@@ -47,6 +47,7 @@ local function new_outgoing(from_host, to_host)
 	host_session.notopen = true;
 	host_session.direction = "outgoing";
 	host_session.outgoing = true;
+	host_session.hosts = {};
 	hosts[from_host].s2sout[to_host] = host_session;
 	return host_session;
 end
