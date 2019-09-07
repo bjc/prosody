@@ -216,6 +216,10 @@ function mark_connected(session)
 		end
 
 	else
+		if session.outgoing and not hosts[to].s2sout[from] then
+			session.log("debug", "Setting up to handle route from %s to %s", to, from);
+			hosts[to].s2sout[from] = session; -- luacheck: ignore 122
+		end
 		local host_session = hosts[to];
 		session.send = function(stanza)
 			return host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
