@@ -552,7 +552,7 @@ local function session_flags(session, line)
 	if session.remote then
 		line[#line+1] = "(remote)";
 	end
-	if session.is_bidi then
+	if session.is_bidi or session.bidi_session then
 		line[#line+1] = "(bidi)";
 	end
 	if session.bosh_version then
