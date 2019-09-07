@@ -208,6 +208,13 @@ function mark_connected(session)
 	if session.type == "s2sout" then
 		fire_global_event("s2sout-established", event_data);
 		hosts[from].events.fire_event("s2sout-established", event_data);
+
+		if session.incoming then
+			session.send = function(stanza)
+				return hosts[from].events.fire_event("route/remote", { from_host = from, to_host = to, stanza = stanza });
+			end;
+		end
+
 	else
 		local host_session = hosts[to];
 		session.send = function(stanza)
