@@ -31,6 +31,7 @@ local function new_incoming(conn)
 	sessionlib.set_logger(host_session);
 	sessionlib.set_conn(host_session, conn);
 	host_session.direction = "incoming";
+	host_session.incoming = true;
 	host_session.hosts = {};
 	incoming_s2s[host_session] = true;
 	return host_session;
@@ -45,6 +46,7 @@ local function new_outgoing(from_host, to_host)
 	host_session.host = from_host;
 	host_session.notopen = true;
 	host_session.direction = "outgoing";
+	host_session.outgoing = true;
 	hosts[from_host].s2sout[to_host] = host_session;
 	return host_session;
 end
