@@ -228,13 +228,6 @@ function mark_connected(session)
 			end
 			session.sendq = nil;
 		end
-
-		if session.resolver then
-			session.resolver._resolver:closeall()
-		end
-		session.resolver = nil;
-		session.ip_hosts = nil;
-		session.srv_hosts = nil;
 	end
 end
 
