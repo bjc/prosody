@@ -249,15 +249,13 @@ function make_authenticated(event)
 		session.type = "s2sout";
 	elseif session.type == "s2sin_unauthed" then
 		session.type = "s2sin";
-		if host then
-			if not session.hosts[host] then session.hosts[host] = {}; end
-			session.hosts[host].authed = true;
-		end
-	elseif session.type == "s2sin" and host then
+	elseif session.type ~= "s2sin" and session.type ~= "s2sout" then
+		return false;
+	end
+
+	if session.incoming and host then
 		if not session.hosts[host] then session.hosts[host] = {}; end
 		session.hosts[host].authed = true;
-	else
-		return false;
 	end
 	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
 
