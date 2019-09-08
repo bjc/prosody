@@ -10,6 +10,7 @@ TRUNK
 -   mod\_mimicking
 -   Rewritten migrator
 -   SCRAM-SHA-256
+-   Bi-directional server-to-server (XEP-0288)
 
 0.11.0
 ======
