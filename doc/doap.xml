@@ -374,6 +374,12 @@
         </supports>
         <supports>
           <SupportedXep>
+            <xep rdf:resource="https://xmpp.org/extensions/xep-288.html"/>
+            <since>0.12</since>
+          </SupportedXep>
+        </supports>
+        <supports>
+          <SupportedXep>
             <xep rdf:resource="https://xmpp.org/extensions/xep-0292.html"/>
             <since>0.11</since>
           </SupportedXep>
