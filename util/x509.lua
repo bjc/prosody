@@ -236,8 +236,11 @@ local function get_identities(cert) --> set of names
 	local subject = cert:subject();
 	for i = 1, #subject do
 		local dn = subject[i];
-		if dn.oid == oid_commonname and nameprep(dn.value) then
-			names[dn.value] = true;
+		if dn.oid == oid_commonname then
+			local name = nameprep(dn.value);
+			if name then
+				names[name] = true;
+			end
 		end
 	end
 	return names;
