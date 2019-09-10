@@ -341,7 +341,30 @@ void init_icu(void) {
 	icu_saslprep = usprep_openByType(USPREP_RFC4013_SASLPREP, &err);
 	icu_spoofcheck = uspoof_open(&err);
 	uspoof_setChecks(icu_spoofcheck, USPOOF_CONFUSABLE, &err);
-	icu_idna2008 = uidna_openUTS46(UIDNA_USE_STD3_RULES, &err);
+	int options = UIDNA_DEFAULT;
+#if 0
+	/* COMPAT with future Unicode versions */
+	options |= UIDNA_ALLOW_UNASSIGNED;
+#endif
+#if 1
+	/* Forbid eg labels starting with _ */
+	options |= UIDNA_USE_STD3_RULES;
+#endif
+#if 0
+	/* TODO determine if we need this */
+	options |= UIDNA_CHECK_BIDI;
+#endif
+#if 0
+	/* UTS46 makes it sound like these are the responsibility of registrars */
+	options |= UIDNA_CHECK_CONTEXTJ;
+	options |= UIDNA_CHECK_CONTEXTO;
+#endif
+#if 0
+	/* This disables COMPAT with IDNA 2003 */
+	options |= UIDNA_NONTRANSITIONAL_TO_ASCII;
+	options |= UIDNA_NONTRANSITIONAL_TO_UNICODE;
+#endif
+	icu_idna2008 = uidna_openUTS46(options, &err);
 
 	if(U_FAILURE(err)) {
 		fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
