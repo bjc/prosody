@@ -23,7 +23,9 @@ local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local idna_to_unicode = require "util.encodings".idna.to_unicode;
 local base64 = require "util.encodings".base64;
 local log = require "util.logger".init("x509");
+local mt = require "util.multitable";
 local s_format = string.format;
+local ipairs = ipairs;
 
 local _ENV = nil;
 -- luacheck: std none
@@ -218,18 +220,43 @@ local function verify_identity(host, service, cert)
 end
 
 -- TODO Support other SANs
-local function get_identities(cert) --> set of names
+local function get_identities(cert) --> map of names to sets of services
 	if cert.setencode then
 		cert:setencode("utf8");
 	end
 
-	local names = {};
+	local names = mt.new();
 
 	local ext = cert:extensions();
 	local sans = ext[oid_subjectaltname];
-	if sans and sans["dNSName"] then
-		for i = 1, #sans["dNSName"] do
-			names[ idna_to_unicode(sans["dNSName"][i]) ] = true;
+	if sans then
+		if sans["dNSName"] then -- Valid for any service
+			for _, name in ipairs(sans["dNSName"]) do
+				name = idna_to_unicode(nameprep(name));
+				if name then
+					names:set(name, "*", true);
+				end
+			end
+		end
+		if sans[oid_xmppaddr] then
+			for _, name in ipairs(sans[oid_xmppaddr]) do
+				name = nameprep(name);
+				if name then
+					names:set(name, "xmpp-client", true);
+					names:set(name, "xmpp-server", true);
+				end
+			end
+		end
+		if sans[oid_dnssrv] then
+			for _, srvname in ipairs(sans[oid_dnssrv]) do
+				local srv, name = srvname:match("^_([^.]+)%.(.*)");
+				if srv then
+					name = nameprep(name);
+					if name then
+						names:set(name, srv, true);
+					end
+				end
+			end
 		end
 	end
 
@@ -239,11 +266,11 @@ local function get_identities(cert) --> set of names
 		if dn.oid == oid_commonname then
 			local name = nameprep(dn.value);
 			if name and idna_to_ascii(name) then
-				names[name] = true;
+				names:set("*", name, true);
 			end
 		end
 	end
-	return names;
+	return names.data;
 end
 
 local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n"..
