@@ -238,7 +238,7 @@ local function get_identities(cert) --> set of names
 		local dn = subject[i];
 		if dn.oid == oid_commonname then
 			local name = nameprep(dn.value);
-			if name then
+			if name and idna_to_ascii(name) then
 				names[name] = true;
 			end
 		end
