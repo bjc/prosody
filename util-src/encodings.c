@@ -269,6 +269,7 @@ static const luaL_Reg Reg_utf8[] = {
 #include <unicode/ustring.h>
 #include <unicode/utrace.h>
 #include <unicode/uspoof.h>
+#include <unicode/uidna.h>
 
 static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) {
 	size_t input_len;
@@ -323,6 +324,7 @@ UStringPrepProfile *icu_nodeprep;
 UStringPrepProfile *icu_resourceprep;
 UStringPrepProfile *icu_saslprep;
 USpoofChecker *icu_spoofcheck;
+UIDNA *icu_idna2008;
 
 #if (U_ICU_VERSION_MAJOR_NUM < 58)
 /* COMPAT */
@@ -339,6 +341,7 @@ void init_icu(void) {
 	icu_saslprep = usprep_openByType(USPREP_RFC4013_SASLPREP, &err);
 	icu_spoofcheck = uspoof_open(&err);
 	uspoof_setChecks(icu_spoofcheck, USPOOF_CONFUSABLE, &err);
+	icu_idna2008 = uidna_openUTS46(UIDNA_USE_STD3_RULES, &err);
 
 	if(U_FAILURE(err)) {
 		fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
@@ -434,9 +437,10 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 		return 1;
 	}
 
-	dest_len = uidna_IDNToASCII(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
+	UIDNAInfo info = UIDNA_INFO_INITIALIZER;
+	dest_len = uidna_nameToASCII(icu_idna2008, ustr, ulen, dest, 256, &info, &err);
 
-	if(U_FAILURE(err)) {
+	if(U_FAILURE(err) || info.errors) {
 		lua_pushnil(L);
 		return 1;
 	} else {
@@ -468,9 +472,10 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 		return 1;
 	}
 
-	dest_len = uidna_IDNToUnicode(ustr, ulen, dest, 1024, UIDNA_USE_STD3_RULES, NULL, &err);
+	UIDNAInfo info = UIDNA_INFO_INITIALIZER;
+	dest_len = uidna_nameToUnicode(icu_idna2008, ustr, ulen, dest, 1024, &info, &err);
 
-	if(U_FAILURE(err)) {
+	if(U_FAILURE(err) || info.errors) {
 		lua_pushnil(L);
 		return 1;
 	} else {
