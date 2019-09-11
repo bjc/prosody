@@ -26,6 +26,7 @@ server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer
 -- CORS settigs
 local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "OPTIONS" });
 local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
+local opt_credentials = module:get_option_boolean("access_control_allow_credentials", false);
 local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
 
 local function get_http_event(host, app_path, key)
@@ -89,11 +90,14 @@ function moduleapi.http_url(module, app_name, default_path)
 	return "http://disabled.invalid/";
 end
 
-local function apply_cors_headers(response, methods, headers, max_age, origin)
+local function apply_cors_headers(response, methods, headers, max_age, allow_credentials, origin)
 	response.headers.access_control_allow_methods = tostring(methods);
 	response.headers.access_control_allow_headers = tostring(headers);
 	response.headers.access_control_max_age = tostring(max_age)
 	response.headers.access_control_allow_origin = origin or "*";
+	if allow_credentials then
+		response.headers.access_control_allow_credentials = "true";
+	end
 end
 
 function module.add_host(module)
@@ -119,7 +123,7 @@ function module.add_host(module)
 
 		local function cors_handler(event_data)
 			local request, response = event_data.request, event_data.response;
-			apply_cors_headers(response, app_methods, opt_headers, opt_max_age, request.headers.origin);
+			apply_cors_headers(response, app_methods, opt_headers, opt_max_age, opt_credentials, request.headers.origin);
 		end
 
 		local function options_handler(event_data)
