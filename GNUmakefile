@@ -73,6 +73,7 @@ test:
 	$(BUSTED) --lua=$(RUNWITH)
 
 integration-test: all
+	$(MKDIR) data
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
 	$(SCANSION) -d ./spec/scansion; R=$$? \
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
