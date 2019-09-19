@@ -415,12 +415,15 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
+        <xmpp:version>0.6.3</xmpp:version>
         <xmpp:since>0.10</xmpp:since>
+        <xmpp:note>mod_mam, mod_muc_mam</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0318.html"/>
+        <xmpp:version>0.2</xmpp:version>
         <xmpp:since>0.9</xmpp:since>
         <xmpp:note>refers to inclusion of delay stamp in presence</xmpp:note>
       </xmpp:SupportedXep>
@@ -428,25 +431,32 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0352.html"/>
+        <xmpp:version>0.3.0</xmpp:version>
         <xmpp:since>0.11</xmpp:since>
       </xmpp:SupportedXep>
     </implements>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0384.html"/>
-        <xmpp:note>via XEP-0163</xmpp:note>
+        <xmpp:note>via XEP-0163, XEP-0222</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0398.html"/>
+        <xmpp:version>0.2.1</xmpp:version>
         <xmpp:since>0.11</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_vcard_legacy</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0410.html"/>
+        <xmpp:version>1.0.1</xmpp:version>
         <xmpp:since>0.11</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>Server Optimization</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
   </Project>
