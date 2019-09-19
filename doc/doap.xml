@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xml:lang="en">
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#" xml:lang="en">
   <Project xmlns="http://usefulinc.com/ns/doap#">
     <name>Prosody IM</name>
     <shortdesc>Lightweight XMPP server</shortdesc>
@@ -51,383 +51,379 @@
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6122"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6455"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7395"/>
-    <software xmlns="https://linkmauve.fr/ns/xmpp-doap#">
-      <Server>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0004.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0009.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0012.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0016.html"/>
-            <since>0.7</since>
-            <until>0.10</until>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0030.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0045.html"/>
-            <since>0.3</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0049.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0050.html"/>
-            <since>0.8</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0054.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0060.html"/>
-            <since>0.9</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0065.html"/>
-            <since>0.7</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0068.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0077.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0078.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0080.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0082.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0084.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0090.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0091.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0092.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0106.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0107.html"/>
-            <node>via XEP-0163</node>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0108.html"/>
-            <node>via XEP-0163</node>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0114.html"/>
-            <since>0.4</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0115.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0118.html"/>
-            <node>via XEP-0163</node>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0124.html"/>
-            <since>0.2</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0126.html"/>
-            <until>0.10</until>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0128.html"/>
-            <since>0.9</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0133.html"/>
-            <since>0.7</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0138.html"/>
-            <since>0.6</since>
-            <until>0.10</until>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0153.html"/>
-            <note>via XEP-0398</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0157.html"/>
-            <since>0.10</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0160.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0163.html"/>
-            <since>0.5</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0170.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0172.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0175.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0178.html"/>
-            <since>0.9</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0182.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0185.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0189.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0191.html"/>
-            <since>0.10</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0194.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0195.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0196.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0197.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0199.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0202.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0203.html"/>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0206.html"/>
-            <since>0.2</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0212.html"/>
-            <note>required level</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0220.html"/>
-            <since>0.1</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0227.html"/>
-            <since>0.7</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0237.html"/>
-            <since>0.4</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0280.html"/>
-            <since>0.10</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-288.html"/>
-            <since>0.12</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0292.html"/>
-            <since>0.11</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0302.html"/>
-            <note>Core Server</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
-            <since>0.10</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0318.html"/>
-            <since>0.9</since>
-            <note>refers to inclusion of delay stamp in presence</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0352.html"/>
-            <since>0.11</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0384.html"/>
-            <note>via XEP-0163</note>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0398.html"/>
-            <since>0.11</since>
-          </SupportedXep>
-        </supports>
-        <supports>
-          <SupportedXep>
-            <xep rdf:resource="https://xmpp.org/extensions/xep-0410.html"/>
-            <since>0.11</since>
-          </SupportedXep>
-        </supports>
-      </Server>
-    </software>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0004.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0009.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0012.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0016.html"/>
+        <xmpp:since>0.7</xmpp:since>
+        <until>0.10</until>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0030.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0045.html"/>
+        <xmpp:since>0.3</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0049.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0050.html"/>
+        <xmpp:since>0.8</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0054.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0060.html"/>
+        <xmpp:since>0.9</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0065.html"/>
+        <xmpp:since>0.7</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0068.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0077.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0078.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0080.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0082.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0084.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0090.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0091.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0092.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0106.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0107.html"/>
+        <node>via XEP-0163</node>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0108.html"/>
+        <node>via XEP-0163</node>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0114.html"/>
+        <xmpp:since>0.4</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0115.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0118.html"/>
+        <node>via XEP-0163</node>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0124.html"/>
+        <xmpp:since>0.2</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0126.html"/>
+        <until>0.10</until>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0128.html"/>
+        <xmpp:since>0.9</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0133.html"/>
+        <xmpp:since>0.7</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0138.html"/>
+        <xmpp:since>0.6</xmpp:since>
+        <until>0.10</until>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0153.html"/>
+        <xmpp:note>via XEP-0398</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0157.html"/>
+        <xmpp:since>0.10</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0160.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0163.html"/>
+        <xmpp:since>0.5</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0170.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0172.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0175.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0178.html"/>
+        <xmpp:since>0.9</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0182.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0185.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0189.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0191.html"/>
+        <xmpp:since>0.10</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0194.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0195.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0196.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0197.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0199.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0202.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0203.html"/>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0206.html"/>
+        <xmpp:since>0.2</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0212.html"/>
+        <xmpp:note>required level</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0220.html"/>
+        <xmpp:since>0.1</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0227.html"/>
+        <xmpp:since>0.7</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0237.html"/>
+        <xmpp:since>0.4</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0280.html"/>
+        <xmpp:since>0.10</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-288.html"/>
+        <xmpp:since>0.12</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0292.html"/>
+        <xmpp:since>0.11</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0302.html"/>
+        <xmpp:note>Core Server</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
+        <xmpp:since>0.10</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0318.html"/>
+        <xmpp:since>0.9</xmpp:since>
+        <xmpp:note>refers to inclusion of delay stamp in presence</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0352.html"/>
+        <xmpp:since>0.11</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0384.html"/>
+        <xmpp:note>via XEP-0163</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0398.html"/>
+        <xmpp:since>0.11</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0410.html"/>
+        <xmpp:since>0.11</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
   </Project>
 </rdf:RDF>
