@@ -70,7 +70,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0016.html"/>
         <xmpp:since>0.7</xmpp:since>
-        <until>0.10</until>
+        <xmpp:until>0.10</xmpp:until>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -204,7 +204,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0126.html"/>
-        <until>0.10</until>
+        <xmpp:until>0.10</xmpp:until>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -223,7 +223,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0138.html"/>
         <xmpp:since>0.6</xmpp:since>
-        <until>0.10</until>
+        <xmpp:until>0.10</xmpp:until>
       </xmpp:SupportedXep>
     </implements>
     <implements>
