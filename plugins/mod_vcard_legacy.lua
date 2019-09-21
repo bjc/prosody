@@ -300,13 +300,19 @@ local function inject_xep153(event)
 	if stanza.attr.type then return end
 	local pep_service = mod_pep.get_pep_service(username);
 
-	stanza:remove_children("x", "vcard-temp:x:update");
-	local x_update = st.stanza("x", { xmlns = "vcard-temp:x:update" }):tag("photo");
+	local x_update = stanza:get_child("x", "vcard-temp:x:update");
+	if not x_update then
+		x_update = st.stanza("x", { xmlns = "vcard-temp:x:update" }):tag("photo");
+		stanza:add_direct_child(x_update);
+	elseif x_update:get_child("photo") then
+		return; -- XEP implies that these should be left alone
+	else
+		x_update:tag("photo");
+	end
 	local ok, avatar_hash = pep_service:get_last_item("urn:xmpp:avatar:metadata", true);
 	if ok and avatar_hash then
 		x_update:text(avatar_hash);
 	end
-	stanza:add_direct_child(x_update);
 end
 
 module:hook("pre-presence/full", inject_xep153, 1);
