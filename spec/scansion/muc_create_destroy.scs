@@ -19,7 +19,8 @@ Romeo sends:
 
 Romeo receives:
 	<presence from="garden@conference.localhost/romeo">
-		<x xmlns="vcard-temp:x:update"/>
+			<photo/>
+		</x>
 		<x xmlns="http://jabber.org/protocol/muc#user">
 			<status code="201"/>
 			<item affiliation="owner" jid="${Romeo's full JID}" role="moderator"/>
@@ -61,7 +62,9 @@ Juliet sends:
 
 Juliet receives:
 	<presence from="garden@conference.localhost/romeo">
-		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="vcard-temp:x:update">
+			<photo/>
+		</x>
 		<x xmlns="http://jabber.org/protocol/muc#user">
 			<item affiliation="owner" role="moderator"/>
 		</x>
@@ -69,7 +72,9 @@ Juliet receives:
 
 Juliet receives:
 	<presence from="garden@conference.localhost/juliet">
-		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="vcard-temp:x:update">
+			<photo/>
+		</x>
 		<x xmlns="http://jabber.org/protocol/muc#user">
 			<item affiliation="none" jid="${Juliet's full JID}" role="participant"/>
 			<status code="110"/>
@@ -90,7 +95,9 @@ Juliet receives:
 
 Romeo receives:
 	<presence from="garden@conference.localhost/juliet">
-		<x xmlns="vcard-temp:x:update"/>
+		<x xmlns="vcard-temp:x:update">
+			<photo/>
+		</x>
 		<x xmlns="http://jabber.org/protocol/muc#user">
 			<item affiliation="none" jid="${Juliet's full JID}" role="participant"/>
 		</x>
