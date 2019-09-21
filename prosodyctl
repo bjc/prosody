@@ -1142,17 +1142,21 @@ function commands.check(arg)
 
 			if modules:contains("proxy65") then
 				local proxy65_target = configmanager.get(host, "proxy65_address") or host;
-				local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
-				local prob = {};
-				if not A then
-					table.insert(prob, "A");
-				end
-				if v6_supported and not AAAA then
-					table.insert(prob, "AAAA");
-				end
-				if #prob > 0 then
-					print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/")
-					.." record. Create one or set 'proxy65_address' to the correct host/IP.");
+				if type(proxy65_target) == "string" then
+					local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
+					local prob = {};
+					if not A then
+						table.insert(prob, "A");
+					end
+					if v6_supported and not AAAA then
+						table.insert(prob, "AAAA");
+					end
+					if #prob > 0 then
+						print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/")
+						.." record. Create one or set 'proxy65_address' to the correct host/IP.");
+					end
+				else
+					print("    proxy65_address for "..host.." should be set to a string, unable to perform DNS check");
 				end
 			end
 
