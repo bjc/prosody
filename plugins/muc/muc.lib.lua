@@ -444,6 +444,22 @@ module:hook("muc-occupant-pre-change", function(event)
 	end
 end, 1);
 
+module:hook("muc-occupant-pre-join", function(event)
+	local nick = jid_resource(event.occupant.nick);
+	if not resourceprep(nick, true) then -- strict
+		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation"));
+		return true;
+	end
+end, 2);
+
+module:hook("muc-occupant-pre-change", function(event)
+	local nick = jid_resource(event.dest_occupant.nick);
+	if not resourceprep(nick, true) then -- strict
+		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation"));
+		return true;
+	end
+end, 2);
+
 function room_mt:handle_first_presence(origin, stanza)
 	local real_jid = stanza.attr.from;
 	local dest_jid = stanza.attr.to;
