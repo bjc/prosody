@@ -218,14 +218,14 @@ function engine:_transaction(func, ...)
 	end
 end
 function engine:transaction(...)
-	local ok, ret = self:_transaction(...);
+	local ok, ret, b, c = self:_transaction(...);
 	if not ok then
 		local conn = self.conn;
 		if not conn or not conn:ping() then
 			log("debug", "Database connection was closed. Will reconnect and retry.");
 			self.conn = nil;
 			log("debug", "Retrying SQL transaction [%s]", (...));
-			ok, ret = self:_transaction(...);
+			ok, ret, b, c = self:_transaction(...);
 			log("debug", "SQL transaction retry %s", ok and "succeeded" or "failed");
 		else
 			log("debug", "SQL connection is up, so not retrying");
@@ -234,7 +234,7 @@ function engine:transaction(...)
 			log("error", "Error in SQL transaction: %s", ret);
 		end
 	end
-	return ok, ret;
+	return ok, ret, b, c;
 end
 function engine:_create_index(index)
 	local sql = "CREATE INDEX \""..index.name.."\" ON \""..index.table.."\" (";
