@@ -81,7 +81,7 @@ local function flush_buffer(data, session)
 end
 
 function enable_optimizations(session)
-	if session.conn and session.conn and session.conn.pause_writes then
+	if session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
 		filters.add_filter(session, "stanzas/out", manage_buffer);
 		filters.add_filter(session, "bytes/in", flush_buffer);
@@ -91,7 +91,7 @@ function enable_optimizations(session)
 end
 
 function disable_optimizations(session)
-	if session.conn and session.conn and session.conn.resume_writes then
+	if session.conn and session.conn.resume_writes then
 		filters.remove_filter(session, "stanzas/out", manage_buffer);
 		filters.remove_filter(session, "bytes/in", flush_buffer);
 		session.conn:resume_writes();
@@ -115,7 +115,7 @@ end);
 
 module:hook("c2s-ondrain", function (event)
 	local session = event.session;
-	if session.state == "inactive" and session.conn and session.conn and session.conn.pause_writes then
+	if session.state == "inactive" and session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
 		session.log("debug", "Buffer flushed, resuming inactive mode (queue size was %d)", session.csi_counter);
 		session.csi_counter = 0;
