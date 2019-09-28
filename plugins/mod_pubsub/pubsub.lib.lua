@@ -638,14 +638,13 @@ function handlers.set_retract(origin, stanza, retract, service)
 end
 
 function handlers.owner_set_purge(origin, stanza, purge, service)
-	local node, notify = purge.attr.node, purge.attr.notify;
-	notify = (notify == "1") or (notify == "true");
+	local node = purge.attr.node;
 	local reply;
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
-	local ok, ret = service:purge(node, stanza.attr.from, notify);
+	local ok, ret = service:purge(node, stanza.attr.from, true);
 	if ok then
 		reply = st.reply(stanza);
 	else
