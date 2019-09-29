@@ -1148,13 +1148,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	end
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
-	local ret, err;
-	local wait, done = async.waiter();
-	module:context(localhost):send_iq(iq, nil, timeout)
-		:next(function (ret_) ret = ret_; end,
-			function (err_) err = err_; end)
-		:finally(done);
-	wait();
+	local ret, err = async.wait(module:context(localhost):send_iq(iq, nil, timeout));
 	if ret then
 		return true, "pong from " .. ret.stanza.attr.from;
 	else
