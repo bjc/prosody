@@ -168,7 +168,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	module:fire_event("user-registering", user);
 	if not user.allowed then
 		log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
-		session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
+		session.send(st.error_reply(stanza, user.error_type or "modify", user.error_condition or "not-acceptable", user.reason));
 		return true;
 	end
 
