@@ -630,10 +630,12 @@ function interface:init()
 end
 
 function interface:pause()
+	self:debug("Pause reading");
 	return self:set(false);
 end
 
 function interface:resume()
+	self:debug("Resume reading");
 	return self:set(true);
 end
 
@@ -663,12 +665,14 @@ function interface:setlimit(Bps)
 end
 
 function interface:pause_writes()
+	self:debug("Pause writes");
 	self._write_lock = true;
 	self:setwritetimeout(false);
 	self:set(nil, false);
 end
 
 function interface:resume_writes()
+	self:debug("Resume writes");
 	self._write_lock = nil;
 	if self.writebuffer[1] then
 		self:setwritetimeout();
@@ -678,6 +682,7 @@ end
 
 -- Connected!
 function interface:onconnect()
+	self:debug("Connected");
 	self:updatenames();
 	self.onconnect = noop;
 	self:on("connect");
@@ -784,6 +789,7 @@ end;
 
 -- Dump all data from one connection into another
 local function link(from, to)
+	from:debug("Linking to %s", to.id);
 	from.listeners = setmetatable({
 		onincoming = function (_, data)
 			from:pause();
