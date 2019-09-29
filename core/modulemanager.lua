@@ -23,8 +23,24 @@ local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
 
-local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s", "s2s_auth_certs"};
-local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s", "s2s_bidi"};
+local autoload_modules = {
+	prosody.platform,
+	"presence",
+	"message",
+	"iq",
+	"offline",
+	"c2s",
+	"s2s",
+	"s2s_auth_certs",
+};
+local component_inheritable_modules = {
+	"tls",
+	"saslauth",
+	"dialback",
+	"iq",
+	"s2s",
+	"s2s_bidi",
+};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
