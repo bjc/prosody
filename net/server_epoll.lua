@@ -791,7 +791,7 @@ local function watchfd(fd, onreadable, onwritable)
 end;
 
 -- Dump all data from one connection into another
-local function link(from, to)
+local function link(from, to, read_size)
 	from:debug("Linking to %s", to.id);
 	from.listeners = setmetatable({
 		onincoming = function (_, data)
@@ -804,6 +804,7 @@ local function link(from, to)
 			from:resume();
 		end,
 	}, {__index=to.listeners});
+	from:set_mode(read_size);
 	from:set(true, nil);
 	to:set(nil, true);
 end
