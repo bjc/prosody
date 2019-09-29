@@ -269,6 +269,6 @@ end
 return {
 	get_hash = get_scram_hasher;
 	hashers = auth_db_getters;
-	getAuthenticationDatabaseSHA1 = get_scram_hasher(hashes.sha1, hashes.sha256, hashes.pbkdf2_hmac_sha1);
+	getAuthenticationDatabaseSHA1 = get_scram_hasher(hashes.sha1, hashes.hmac_sha1, hashes.pbkdf2_hmac_sha1); -- COMPAT
 	init = init;
 }
