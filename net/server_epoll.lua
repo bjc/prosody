@@ -795,10 +795,10 @@ local function link(from, to, read_size)
 	from:debug("Linking to %s", to.id);
 	function from:onincoming(data)
 		self:pause();
-			to:write(data);
+		to:write(data);
 	end
 	function to:ondrain() -- luacheck: ignore 212/self
-			from:resume();
+		from:resume();
 	end
 	from:set_mode(read_size);
 	from:set(true, nil);
