@@ -777,6 +777,7 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 		return true;
 	end
 	log("debug", "%s sent private message stanza to %s (%s)", from, to, o_data.jid);
+	stanza = muc_util.filter_muc_x(st.clone(stanza));
 	stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
 	stanza.attr.from = current_nick;
 	self:route_to_occupant(o_data, stanza)
