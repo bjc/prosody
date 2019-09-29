@@ -24,7 +24,11 @@ module:hook("message/offline/handle", function(event)
 		node = origin.username;
 	end
 
-	return offline_messages:append(node, nil, stanza, os.time(), "");
+	local ok = offline_messages:append(node, nil, stanza, os.time(), "");
+	if ok then
+		module:log("debug", "Saved to offline storage: %s", stanza:top_tag());
+	end
+	return ok;
 end, -1);
 
 module:hook("message/offline/broadcast", function(event)
