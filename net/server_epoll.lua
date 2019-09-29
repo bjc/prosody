@@ -13,6 +13,7 @@ local pcall = pcall;
 local type = type;
 local next = next;
 local pairs = pairs;
+local ipairs = ipairs;
 local traceback = debug.traceback;
 local logger = require "util.logger";
 local log = logger.init("server_epoll");
@@ -583,6 +584,19 @@ function interface:tlshandshake()
 				conn:sni(self.servername);
 			elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
 				conn:sni(self._server.hosts, true);
+			end
+		end
+		if self.extra and self.extra.tlsa and conn.settlsa then
+			-- TODO Error handling
+			if not conn:setdane(self.servername or self.extra.dane_hostname) then
+				self:debug("Could not enable DANE on connection");
+			else
+				self:debug("Enabling DANE with %d TLSA records", #self.extra.tlsa);
+				self:noise("DANE hostname is %q", self.servername or self.extra.dane_hostname);
+				for _, tlsa in ipairs(self.extra.tlsa) do
+					self:noise("TLSA: %q", tlsa);
+					conn:settlsa(tlsa.use, tlsa.select, tlsa.match, tlsa.data);
+				end
 			end
 		end
 		self:on("starttls");
