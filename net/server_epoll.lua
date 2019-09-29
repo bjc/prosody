@@ -567,6 +567,7 @@ end
 
 local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) -- luasocket object -> interface object
 	client:settimeout(0);
+	local conn_id = ("conn%s"):format(new_id());
 	local conn = setmetatable({
 		conn = client;
 		_server = server;
@@ -576,7 +577,8 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 		writebuffer = {};
 		tls_ctx = tls_ctx or (server and server.tls_ctx);
 		tls_direct = server and server.tls_direct;
-		log = logger.init(("conn%s"):format(new_id()));
+		id = conn_id;
+		log = logger.init(conn_id);
 		extra = extra;
 	}, interface_mt);
 
