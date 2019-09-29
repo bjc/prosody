@@ -797,7 +797,7 @@ local function link(from, to, read_size)
 		self:pause();
 			to:write(data);
 	end
-	function to:ondrain()
+	function to:ondrain() -- luacheck: ignore 212/self
 			from:resume();
 	end
 	from:set_mode(read_size);
