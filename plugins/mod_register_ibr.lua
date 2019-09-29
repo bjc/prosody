@@ -25,6 +25,7 @@ end);
 local account_details = module:open_store("account_details");
 
 local field_map = {
+	FORM_TYPE = { name = "FORM_TYPE", type = "hidden", value = "jabber:iq:register" };
 	username = { name = "username", type = "text-single", label = "Username", required = true };
 	password = { name = "password", type = "text-private", label = "Password", required = true };
 	nick = { name = "nick", type = "text-single", label = "Nickname" };
@@ -50,6 +51,7 @@ local registration_form = dataform_new{
 	title = title;
 	instructions = instructions;
 
+	field_map.FORM_TYPE;
 	field_map.username;
 	field_map.password;
 };
