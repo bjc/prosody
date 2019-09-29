@@ -189,6 +189,11 @@ function interface:on(what, ...)
 	return err;
 end
 
+-- Allow this one to be overridden
+function interface:onincoming(...)
+	return self:on("incoming", ...);
+end
+
 -- Return the file descriptor number
 function interface:getfd()
 	if self.conn then
@@ -360,7 +365,7 @@ function interface:onreadable()
 	local data, err, partial = self.conn:receive(self.read_size or cfg.read_size);
 	if data then
 		self:onconnect();
-		self:on("incoming", data);
+		self:onincoming(data);
 	else
 		if err == "wantread" then
 			self:set(true, nil);
@@ -371,7 +376,7 @@ function interface:onreadable()
 		end
 		if partial and partial ~= "" then
 			self:onconnect();
-			self:on("incoming", partial, err);
+			self:onincoming(partial, err);
 		end
 		if err ~= "timeout" then
 			self:on("disconnect", err);
