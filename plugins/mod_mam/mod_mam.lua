@@ -93,6 +93,8 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local query = stanza.tags[1];
 	local qid = query.attr.queryid;
 
+	origin.mam_requested = true;
+
 	get_prefs(origin.username, true);
 
 	-- Search query parameters
