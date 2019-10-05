@@ -95,10 +95,10 @@ function enable_optimizations(session)
 end
 
 function disable_optimizations(session)
+	session.csi_flushing = nil;
+	filters.remove_filter(session, "stanzas/out", manage_buffer);
+	filters.remove_filter(session, "bytes/in", flush_buffer);
 	if session.conn and session.conn.resume_writes then
-		session.csi_flushing = nil;
-		filters.remove_filter(session, "stanzas/out", manage_buffer);
-		filters.remove_filter(session, "bytes/in", flush_buffer);
 		session.conn:resume_writes();
 	end
 end
