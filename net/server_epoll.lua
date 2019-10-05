@@ -668,6 +668,9 @@ function interface:setlimit(Bps)
 end
 
 function interface:pause_writes()
+	if self._write_lock then
+		return
+	end
 	self:debug("Pause writes");
 	self._write_lock = true;
 	self:setwritetimeout(false);
@@ -675,6 +678,9 @@ function interface:pause_writes()
 end
 
 function interface:resume_writes()
+	if not self._write_lock then
+		return
+	end
 	self:debug("Resume writes");
 	self._write_lock = nil;
 	if self.writebuffer[1] then
