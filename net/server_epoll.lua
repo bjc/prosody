@@ -420,6 +420,7 @@ function interface:onwritable()
 		self:ondrain(); -- Be aware of writes in ondrain
 		return;
 	elseif partial then
+		self:debug("Sent %d out of %d buffered bytes", partial, #data);
 		buffer[1] = data:sub(partial+1);
 		for i = #buffer, 2, -1 do
 			buffer[i] = nil;
