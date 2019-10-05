@@ -93,6 +93,9 @@ local function destroy_session(session, reason)
 		hosts[session.from_host].s2sout[session.to_host] = nil;
 		session:bounce_sendq(reason);
 	elseif session.direction == "incoming" then
+		if session.outgoing then
+			hosts[session.from_host].s2sout[session.to_host] = nil;
+		end
 		incoming_s2s[session] = nil;
 	end
 
