@@ -548,8 +548,8 @@ function interface:tlshandskake()
 	end
 	local ok, err = self.conn:dohandshake();
 	if ok then
-		if self.conn.info then
-			local info = self.conn:info();
+		local info = self.conn.info and self.conn:info();
+		if type(info) == "table" then
 			self:debug("TLS handshake complete (%s with %s)", info.protocol, info.cipher);
 		else
 			self:debug("TLS handshake complete");
