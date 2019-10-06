@@ -548,7 +548,12 @@ function interface:tlshandskake()
 	end
 	local ok, err = self.conn:dohandshake();
 	if ok then
-		self:debug("TLS handshake complete");
+		if self.conn.info then
+			local info = self.conn:info();
+			self:debug("TLS handshake complete (%s with %s)", info.protocol, info.cipher);
+		else
+			self:debug("TLS handshake complete");
+		end
 		self.onwritable = nil;
 		self.onreadable = nil;
 		self:on("status", "ssl-handshake-complete");
