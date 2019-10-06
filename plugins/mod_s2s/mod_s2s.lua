@@ -184,7 +184,10 @@ function module.add_host(module)
 			return true;
 		elseif not session.dialback_verifying then
 			session.log("warn", "No SASL EXTERNAL offer and Dialback doesn't seem to be enabled, giving up");
-			session:close();
+			session:close({
+					condition = "unsupported-feature",
+					text = "No viable authentication method offered",
+				});
 			return false;
 		end
 	end, -1);
