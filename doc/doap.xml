@@ -51,6 +51,8 @@
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6122"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6455"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7395"/>
+    <!-- Added in hg:0bbbc9042361 released in 0.6.0 -->
+    <implements rdf:resource="https://datatracker.ietf.org/doc/draft-cridland-xmpp-session/"/>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0004.html"/>
