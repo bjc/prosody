@@ -33,6 +33,7 @@ local envloadfile = require "util.envload".envloadfile;
 local has_pposix, pposix = pcall(require, "util.pposix");
 local async = require "util.async";
 local serialize = require "util.serialization".new({ fatal = false, unquoted = true});
+local time = require "util.time";
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -1148,9 +1149,10 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	end
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
+	local time_start = time.now();
 	local ret, err = async.wait(module:context(localhost):send_iq(iq, nil, timeout));
 	if ret then
-		return true, "pong from " .. ret.stanza.attr.from;
+		return true, ("pong from %s in %gs"):format(ret.stanza.attr.from, time.now() - time_start);
 	else
 		return false, tostring(err);
 	end
