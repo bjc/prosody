@@ -190,7 +190,7 @@ local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db)
 			end
 
 			local nonce = clientnonce .. generate_uuid();
-			local server_first_message = "r="..nonce..",s="..base64.encode(salt)..",i="..iteration_count;
+			local server_first_message = ("r=%s,s=%s,i=%d"):format(nonce, base64.encode(salt), iteration_count);
 			self.state = {
 				gs2_header = gs2_header;
 				gs2_cbind_name = gs2_cbind_name;
