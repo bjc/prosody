@@ -196,13 +196,13 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0107.html"/>
-        <node>via XEP-0163</node>
+        <xmpp:note>via XEP-0163</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0108.html"/>
-        <node>via XEP-0163</node>
+        <xmpp:note>via XEP-0163</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -221,7 +221,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0118.html"/>
-        <node>via XEP-0163</node>
+        <xmpp:note>via XEP-0163</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
