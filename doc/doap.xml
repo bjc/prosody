@@ -480,6 +480,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0380.html"/>
+        <xmpp:version>0.3.0</xmpp:version>
+        <xmpp:since>0.11</xmpp:since>
+        <xmpp:note>Used in context of XEP-0352</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0384.html"/>
         <xmpp:note>via XEP-0163, XEP-0222</xmpp:note>
       </xmpp:SupportedXep>
