@@ -399,6 +399,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0227.html"/>
         <xmpp:since>0.7</xmpp:since>
+        <xmpp:note>Used in migrator tools</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
