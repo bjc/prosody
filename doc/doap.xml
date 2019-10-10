@@ -407,6 +407,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0237.html"/>
         <xmpp:since>0.4</xmpp:since>
+        <xmpp:note>implied by rfc6121</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
