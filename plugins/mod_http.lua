@@ -154,7 +154,11 @@ function module.add_host(module)
 					module:hook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
 				end
 				if not app_handlers[event_name] then
-					app_handlers[event_name] = handler;
+					app_handlers[event_name] = {
+						main = handler;
+						cors = cors_handler;
+						options = options_handler;
+					};
 					module:hook_object_event(server, event_name, handler);
 					module:hook_object_event(server, event_name, cors_handler, 1);
 					module:hook_object_event(server, options_event_name, options_handler, -1);
@@ -176,8 +180,11 @@ function module.add_host(module)
 	local function http_app_removed(event)
 		local app_handlers = apps[event.item.name];
 		apps[event.item.name] = nil;
-		for event_name, handler in pairs(app_handlers) do
-			module:unhook_object_event(server, event_name, handler);
+		for event_name, handlers in pairs(app_handlers) do
+			module:unhook_object_event(server, event_name, handlers.main);
+			module:unhook_object_event(server, event_name, handlers.cors);
+			local options_event_name = event_name:gsub("^%S+", "OPTIONS");
+			module:unhook_object_event(server, options_event_name, handlers.options);
 		end
 	end
 
