@@ -57,12 +57,14 @@ local function new_registry(config)
 			end;
 		end;
 		rate = function (name)
-			local since, n = time(), 0;
+			local since, n, total = time(), 0, 0;
 			registry[name..":rate"] = function ()
+				total = total + n;
 				local t = time();
 				local stats = {
 					rate = n/(t-since);
 					count = n;
+					total = total;
 				};
 				since, n = t, 0;
 				return "rate", stats.rate, stats;
