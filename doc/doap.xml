@@ -46,6 +46,7 @@
         <foaf:homepage>https://www.zash.se/</foaf:homepage>
       </foaf:Person>
     </maintainer>
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc5802"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6120"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6121"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6122"/>
