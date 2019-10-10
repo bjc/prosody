@@ -415,7 +415,7 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-288.html"/>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0288.html"/>
         <xmpp:since>0.12</xmpp:since>
       </xmpp:SupportedXep>
     </implements>
