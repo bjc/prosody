@@ -314,7 +314,7 @@ end
 function _M.send_response(response, body)
 	if response.finished then return; end
 	body = body or response.body or "";
-	response.headers.content_length = #body;
+	response.headers.content_length = ("%d"):format(#body);
 	if response.is_head_request then
 		return _M.send_head_response(response)
 	end
