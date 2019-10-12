@@ -229,6 +229,11 @@ function handle_request(conn, request, finish_cb)
 	local payload = { request = request, response = response };
 	log("debug", "Firing event: %s", global_event);
 	local result = events.fire_event(global_event, payload);
+	if result == nil and is_head_request then
+		local global_head_event = "GET "..request.path:match("[^?]*");
+		log("debug", "Firing event: %s", global_head_event);
+		result = events.fire_event(global_head_event, payload);
+	end
 	if result == nil then
 		if not hosts[host] then
 			if hosts[default_host] then
@@ -249,6 +254,12 @@ function handle_request(conn, request, finish_cb)
 		local host_event = request.method.." "..host..request.path:match("[^?]*");
 		log("debug", "Firing event: %s", host_event);
 		result = events.fire_event(host_event, payload);
+
+		if result == nil and is_head_request then
+			local host_head_event = "GET "..host..request.path:match("[^?]*");
+			log("debug", "Firing event: %s", host_head_event);
+			result = events.fire_event(host_head_event, payload);
+		end
 	end
 	if result ~= nil then
 		if result ~= true then
