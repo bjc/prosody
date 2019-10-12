@@ -775,10 +775,10 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
 	local ok, err = client:init();
 	if not ok then return ok, err; end
+	client:debug("Client %s created", client);
 	if tls_ctx then
 		client:starttls(tls_ctx);
 	end
-	client:debug("Client %s created", client);
 	return client, conn;
 end
 
