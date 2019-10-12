@@ -775,6 +775,10 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	if not ok and err ~= "timeout" then return ok, err; end
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
 	local ok, err = client:init();
+	if not client.peername then
+		-- otherwise not set until connected
+		client.peername, client.peerport = addr, port;
+	end
 	if not ok then return ok, err; end
 	client:debug("Client %s created", client);
 	if tls_ctx then
