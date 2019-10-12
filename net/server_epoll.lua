@@ -698,8 +698,8 @@ end
 
 -- Connected!
 function interface:onconnect()
-	self:debug("Connected");
 	self:updatenames();
+	self:debug("Connected (%s)", self);
 	self.onconnect = noop;
 	self:on("connect");
 end
