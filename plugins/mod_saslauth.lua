@@ -66,7 +66,6 @@ local function sasl_process_cdata(session, stanza)
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
-		--log("debug", "AUTH: %s", text:gsub("[%z\001-\008\011\012\014-\031]", " "));
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
