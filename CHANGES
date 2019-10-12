@@ -11,6 +11,7 @@ TRUNK
 -   Rewritten migrator
 -   SCRAM-SHA-256
 -   Bi-directional server-to-server (XEP-0288)
+-   Built-in HTTP server now handles HEAD requests
 
 0.11.0
 ======
