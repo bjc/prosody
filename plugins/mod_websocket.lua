@@ -136,7 +136,7 @@ function handle_request(event)
 
 	conn.starttls = false; -- Prevent mod_tls from believing starttls can be done
 
-	if not request.headers.sec_websocket_key then
+	if not request.headers.sec_websocket_key or request.method ~= "GET" then
 		response.headers.content_type = "text/html";
 		return [[<!DOCTYPE html><html><head><title>Websocket</title></head><body>
 			<p>It works! Now point your WebSocket client to this URL to connect to Prosody.</p>
