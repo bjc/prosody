@@ -194,8 +194,11 @@ function handle_request(conn, request, finish_cb)
 		response_conn_header = httpversion == "1.1" and "close" or nil
 	end
 
+	local is_head_request = request.method == "HEAD";
+
 	local response = {
 		request = request;
+		is_head_request = is_head_request;
 		status_code = 200;
 		headers = { date = date_header, connection = response_conn_header };
 		persistent = persistent;
@@ -291,16 +294,29 @@ local function prepare_header(response)
 	return output;
 end
 _M.prepare_header = prepare_header;
+function _M.send_head_response(response)
+	if response.finished then return; end
+	local output = prepare_header(response);
+	response.conn:write(t_concat(output));
+	response:done();
+end
 function _M.send_response(response, body)
 	if response.finished then return; end
 	body = body or response.body or "";
 	response.headers.content_length = #body;
+	if response.is_head_request then
+		return _M.send_head_response(response)
+	end
 	local output = prepare_header(response);
 	t_insert(output, body);
 	response.conn:write(t_concat(output));
 	response:done();
 end
 function _M.send_file(response, f)
+	if response.is_head_request then
+		if f.close then f:close(); end
+		return _M.send_head_response(response);
+	end
 	if response.finished then return; end
 	local chunked = not response.headers.content_length;
 	if chunked then response.headers.transfer_encoding = "chunked"; end
