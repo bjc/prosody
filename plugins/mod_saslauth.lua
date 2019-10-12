@@ -75,7 +75,6 @@ local function sasl_process_cdata(session, stanza)
 	local status, ret, err_msg = session.sasl_handler:process(text);
 	status, ret, err_msg = handle_status(session, status, ret, err_msg);
 	local s = build_reply(status, ret, err_msg);
-	log("debug", "sasl reply: %s", s);
 	session.send(s);
 	return true;
 end
