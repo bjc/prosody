@@ -127,7 +127,7 @@ local function serve(opts)
 			local content_type = ext and mime_map[ext];
 			response_headers.content_type = content_type;
 			if attr.size > cache_max_file_size then
-				response_headers.content_length = attr.size;
+				response_headers.content_length = ("%d"):format(attr.size);
 				log("debug", "%d > cache_max_file_size", attr.size);
 				return response:send_file(f);
 			else
