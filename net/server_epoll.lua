@@ -521,6 +521,7 @@ function interface:tlshandskake()
 		self._tls = true;
 		self:debug("Starting TLS now");
 		self:del();
+		self:updatenames(); -- Can't getpeer/sockname after wrap()
 		local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
 		if not ok then
 			conn, err = ok, conn;
