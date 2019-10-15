@@ -295,20 +295,20 @@ module:hook("stream-features", function(event)
 
 		local authmod = module:get_option_string("authentication", "internal_plain");
 		if available_mechanisms:empty() then
-			log("error", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
+			log("warn", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
 			return;
 		end
 
 		if not origin.secure and not available_insecure:empty() then
 			if not available_disabled:empty() then
-				log("error", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s) or disabled (%s)",
+				log("warn", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s) or disabled (%s)",
 					authmod, available_insecure, available_disabled);
 			else
-				log("error", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s)",
+				log("warn", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s)",
 					authmod, available_insecure);
 			end
 		elseif not available_disabled:empty() then
-			log("error", "All SASL mechanisms provided by authentication module '%s' are disabled (%s)",
+			log("warn", "All SASL mechanisms provided by authentication module '%s' are disabled (%s)",
 				authmod, available_disabled);
 		end
 
