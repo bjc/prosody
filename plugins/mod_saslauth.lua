@@ -250,11 +250,16 @@ module:hook("stream-features", function(event)
 			if sasl_handler.add_cb_handler then
 				local socket = origin.conn:socket();
 				if socket.getpeerfinished then
+					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
+				else
+					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
 				sasl_handler["userdata"] = {
 					["tls-unique"] = socket;
 				};
+			else
+				log("debug", "Channel binding not supported by SASL handler");
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
