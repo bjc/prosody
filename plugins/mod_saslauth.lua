@@ -12,6 +12,7 @@ local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
+local set = require "util.set";
 
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 
@@ -264,15 +265,32 @@ module:hook("stream-features", function(event)
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
 		local sasl_mechanisms = sasl_handler:mechanisms()
+		local available_mechanisms = set.new();
 		for mechanism in pairs(sasl_mechanisms) do
-			if disabled_mechanisms:contains(mechanism) then
-				log("debug", "Not offering disabled mechanism %s", mechanism);
-			elseif not origin.secure and insecure_mechanisms:contains(mechanism) then
-				log("debug", "Not offering mechanism %s on insecure connection", mechanism);
-			else
-				log("debug", "Offering mechanism %s", mechanism);
+			available_mechanisms:add(mechanism);
+		end
+		log("debug", "SASL mechanisms supported by handler: %s", available_mechanisms);
+
+		local usable_mechanisms = available_mechanisms - disabled_mechanisms;
+
+		local available_disabled = set.intersection(available_mechanisms, disabled_mechanisms);
+		if not available_disabled:empty() then
+			log("debug", "Not offering disabled mechanisms: %s", available_disabled);
+		end
+
+		local available_insecure = set.intersection(available_mechanisms, insecure_mechanisms);
+		if not origin.secure and not available_insecure:empty() then
+			log("debug", "Session is not secure, not offering insecure mechanisms: %s", available_insecure);
+			usable_mechanisms = usable_mechanisms - insecure_mechanisms;
+		end
+
+		if not usable_mechanisms:empty() then
+			log("debug", "Offering usable mechanisms: %s", usable_mechanisms);
+			for mechanism in available_mechanisms do
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
+			features:add_child(mechanisms);
+			return;
 		end
 		if mechanisms[1] then
 			features:add_child(mechanisms);
