@@ -261,10 +261,10 @@ function interface:setreadtimeout(t)
 	else
 		self._readtimeout = addtimer(t, function ()
 			if self:on("readtimeout") then
-				self:debug("Read timeout, handled");
+				self:debug("Read timeout handled");
 				return cfg.read_timeout;
 			else
-				self:debug("Read timeout, fatal");
+				self:debug("Read timeout not handled, disconnecting");
 				self:on("disconnect", "read timeout");
 				self:destroy();
 			end
