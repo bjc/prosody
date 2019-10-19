@@ -468,7 +468,7 @@ function interface:close()
 	if self.writebuffer and self.writebuffer[1] then
 		self:set(false, true); -- Flush final buffer contents
 		self.write, self.send = noop, noop; -- No more writing
-		self:debug("Close after writing");
+		self:debug("Close after writing remaining buffered data");
 		self.ondrain = interface.close;
 	else
 		self:debug("Closing now");
