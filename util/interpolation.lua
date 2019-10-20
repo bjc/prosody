@@ -32,7 +32,7 @@ local function new_render(pat, escape, funcs)
 		-- assert(type(values) == "table", "bad argument #2 to 'render' (table expected)");
 		return (s_gsub(template, pat, function (block)
 			block = s_sub(block, 2, -2);
-			local name, opt, e = s_match(block, "^([%a_][%w_.]*)(%p?)()");
+			local name, raw, opt, e = s_match(block, "^([%a_][%w_.]*)(!?)(%p?)()");
 			if not name then return end
 			local value = values[name];
 			if not value and name:find(".", 2, true) then
@@ -45,7 +45,7 @@ local function new_render(pat, escape, funcs)
 			if funcs then
 				while value ~= nil and opt == '|' do
 					local f;
-					f, opt, e = s_match(block, "^([%a_][%w_.]*)(%p?)()", e);
+					f, raw, opt, e = s_match(block, "^([%a_][%w_.]*)(!?)(%p?)()", e);
 					f = funcs[f];
 					if f then value = f(value); end
 				end
@@ -70,7 +70,7 @@ local function new_render(pat, escape, funcs)
 				if type(value) ~= "string" then
 					value = tostring(value);
 				end
-				if opt ~= '!' then
+				if raw ~= '!' then
 					return escape(value);
 				end
 				return value;
