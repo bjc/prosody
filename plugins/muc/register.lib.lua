@@ -136,7 +136,19 @@ local function handle_register_iq(room, origin, stanza)
 			return true;
 		end
 		local form_tag = query:get_child("x", "jabber:x:data");
-		local reg_data = form_tag and registration_form:data(form_tag);
+		if not form_tag then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
+			return true;
+		end
+		local form_type, err = dataforms.get_type(form_tag);
+		if not form_type then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error with form: "..err));
+			return true;
+		elseif form_type ~= "http://jabber.org/protocol/muc#register" then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
+			return true;
+		end
+		local reg_data = registration_form:data(form_tag);
 		if not reg_data then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
 			return true;
