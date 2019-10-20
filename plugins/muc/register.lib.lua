@@ -47,8 +47,6 @@ module:hook("muc-set-affiliation", function (event)
 	event.room._reserved_nicks = nil;
 end);
 
-module:add_feature("jabber:iq:register");
-
 module:hook("muc-disco#info", function (event)
 	event.reply:tag("feature", { var = "jabber:iq:register" }):up();
 end);
