@@ -3,7 +3,7 @@
   <Project xmlns="http://usefulinc.com/ns/doap#">
     <name>Prosody IM</name>
     <shortdesc>Lightweight XMPP server</shortdesc>
-    <description/>
+    <description>Prosody is a server for Jabber/XMPP written in Lua. It aims to be easy to use and light on resources. For developers, it aims to give a flexible system on which to rapidly develop added functionality or rapidly prototype new protocols.</description>
     <created>2008-08-22</created>
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-xmpp"/>
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-jabber"/>
