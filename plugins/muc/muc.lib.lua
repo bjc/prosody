@@ -218,13 +218,13 @@ end
 
 -- Broadcasts an occupant's presence to the whole room
 -- Takes the x element that goes into the stanzas
-function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
+function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, prev_role, force_unavailable)
 	local base_x = x.base or x;
 	-- Build real jid and (optionally) occupant jid template presences
 	local base_presence do
 		-- Try to use main jid's presence
 		local pr = occupant:get_presence();
-		if pr and (occupant.role ~= nil or pr.attr.type == "unavailable") then
+		if pr and (occupant.role ~= nil or pr.attr.type == "unavailable") and not force_unavailable then
 			base_presence = st.clone(pr);
 		else -- user is leaving but didn't send a leave presence. make one for them
 			base_presence = st.presence {from = occupant.nick; type = "unavailable";};
@@ -280,6 +280,8 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 		self_p = st.clone(base_presence):add_child(self_x);
 	end
 
+	local broadcast_roles = self:get_presence_broadcast();
+
 	-- General populace
 	for occupant_nick, n_occupant in self:each_occupant() do
 		if occupant_nick ~= occupant.nick then
@@ -291,7 +293,13 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason)
 			else
 				pr = get_anon_p();
 			end
-			self:route_to_occupant(n_occupant, pr);
+			if broadcast_roles[occupant.role or "none"] or force_unavailable then
+				self:route_to_occupant(n_occupant, pr);
+			elseif prev_role and broadcast_roles[prev_role] then
+				pr.attr.type = 'unavailable';
+				self:route_to_occupant(n_occupant, pr);
+			end
+
 		end
 	end
 
@@ -315,6 +323,7 @@ function room_mt:send_occupant_list(to, filter)
 	local to_bare = jid_bare(to);
 	local is_anonymous = false;
 	local whois = self:get_whois();
+	local broadcast_roles = self:get_presence_broadcast();
 	if whois ~= "anyone" then
 		local affiliation = self:get_affiliation(to);
 		if affiliation ~= "admin" and affiliation ~= "owner" then
@@ -331,7 +340,9 @@ function room_mt:send_occupant_list(to, filter)
 			local pres = st.clone(occupant:get_presence());
 			pres.attr.to = to;
 			pres:add_child(x);
-			self:route_stanza(pres);
+			if to_bare == occupant.bare_jid or broadcast_roles[occupant.role or "none"] then
+				self:route_stanza(pres);
+			end
 		end
 	end
 end
@@ -1442,9 +1453,11 @@ function room_mt:set_role(actor, occupant_jid, role, reason)
 	if not role then
 		x:tag("status", {code = "307"}):up();
 	end
+
+	local prev_role = occupant.role;
 	occupant.role = role;
 	self:save_occupant(occupant);
-	self:publicise_occupant_status(occupant, x, nil, actor, reason);
+	self:publicise_occupant_status(occupant, x, nil, actor, reason, prev_role);
 	if role == nil then
 		module:fire_event("muc-occupant-left", {
 				room = self;
