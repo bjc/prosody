@@ -86,6 +86,12 @@ room_mt.get_registered_nick = register.get_registered_nick;
 room_mt.get_registered_jid = register.get_registered_jid;
 room_mt.handle_register_iq = register.handle_register_iq;
 
+local presence_broadcast = module:require "muc/presence_broadcast";
+room_mt.get_presence_broadcast = presence_broadcast.get;
+room_mt.set_presence_broadcast = presence_broadcast.set;
+room_mt.get_valid_broadcast_roles = presence_broadcast.get_valid_broadcast_roles;
+
+
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
@@ -263,6 +269,7 @@ local function set_room_defaults(room, lang)
 	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
 	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
 	room:set_language(lang or module:get_option_string("muc_room_default_language"));
+	room:set_presence_broadcast(module:get_option("muc_room_default_presence_broadcast", room:get_presence_broadcast()));
 end
 
 function create_room(room_jid, config)
