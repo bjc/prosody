@@ -10,6 +10,13 @@ Hello, world!
 local expect3 = [[
 Hi, YOU!
 ]];
+local template_array = [[
+{foo#{idx}. {item}
+}]]
+local expect_array = [[
+1. HELLO
+2. WORLD
+]]
 
 describe("util.interpolation", function ()
 	it("renders", function ()
@@ -17,5 +24,6 @@ describe("util.interpolation", function ()
 		assert.equal(expect1, render(template, { greet = "Hello", name = "world" }));
 		assert.equal(expect2, render(template, { greet = "Hello" }));
 		assert.equal(expect3, render(template, { name = "you" }));
+		assert.equal(expect_array, render(template_array, { foo = { "Hello", "World" } }));
 	end);
 end);
