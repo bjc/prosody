@@ -7,6 +7,7 @@ local st = require "util.stanza";
 local it = require "util.iterators";
 local uuid_generate = require "util.uuid".generate;
 local dataform = require"util.dataforms".new;
+local errors = require "util.error";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
@@ -34,6 +35,9 @@ local pubsub_errors = {
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
+	if not e and errors.is_err(error) then
+		e = { error.type, error.condition, error.text, error.pubsub_condition };
+	end
 	local reply = st.error_reply(stanza, t_unpack(e, 1, 3));
 	if e[4] then
 		reply:tag(e[4], { xmlns = xmlns_pubsub_errors }):up();
