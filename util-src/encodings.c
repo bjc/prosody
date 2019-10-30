@@ -296,8 +296,11 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 	}
 
 	/* strict */
-	if(lua_toboolean(L, 2)) {
-		flags = 0;
+	if(!lua_isnoneornil(L, 2)) {
+		luaL_checktype(L, 2, LUA_TBOOLEAN);
+		if(lua_toboolean(L, 2)) {
+			flags = 0;
+		}
 	}
 
 	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
@@ -413,8 +416,11 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 	s = check_utf8(L, 1, &len);
 
 	/* strict */
-	if(lua_toboolean(L, 2)) {
-		flags = STRINGPREP_NO_UNASSIGNED;
+	if(!lua_isnoneornil(L, 2)) {
+		luaL_checktype(L, 2, LUA_TBOOLEAN);
+		if(lua_toboolean(L, 2)) {
+			flags = STRINGPREP_NO_UNASSIGNED;
+		}
 	}
 
 	if(s == NULL || len >= 1024 || len != strlen(s)) {
