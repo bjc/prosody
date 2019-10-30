@@ -83,7 +83,7 @@ function core_process_stanza(origin, stanza)
 		if full_sessions[to] or bare_sessions[to] or hosts[to] then
 			node, host = jid_split(to); -- TODO only the host is needed, optimize
 		else
-			node, host, resource = jid_prepped_split(to, origin.type == "c2s");
+			node, host, resource = jid_prepped_split(to);
 			if not host then
 				log("warn", "Received stanza with invalid destination JID: %s", to);
 				if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
