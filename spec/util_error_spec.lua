@@ -16,11 +16,13 @@ describe("util.error", function ()
 					["fail"] = {
 						type = "wait",
 						condition = "internal-server-error",
+						code = 555;
 					};
 				};
 				local err = errors.new("fail", { traceback = "in some file, somewhere" }, templates);
 				assert.equal("wait", err.type);
 				assert.equal("internal-server-error", err.condition);
+				assert.equal(555, err.code);
 				assert.same({ traceback = "in some file, somewhere" }, err.context);
 			end);
 		end);
