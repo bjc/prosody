@@ -134,7 +134,7 @@ end
 
 -- Server control
 local function adduser(params)
-	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
+	local user, host, password = nodeprep(params.user, true), nameprep(params.host), params.password;
 	if not user then
 		return false, "invalid-username";
 	elseif not host then
