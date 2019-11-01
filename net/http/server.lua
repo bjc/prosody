@@ -199,7 +199,7 @@ local function handle_result(request, response, result)
 			end
 		end
 	end
-	response:send(body);
+	return response:send(body);
 end
 
 function _M.hijack_response(response, listener) -- luacheck: ignore
