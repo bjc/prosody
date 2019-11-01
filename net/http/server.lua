@@ -13,6 +13,7 @@ local traceback = debug.traceback;
 local tostring = tostring;
 local cache = require "util.cache";
 local codes = require "net.http.codes";
+local promise = require "util.promise";
 local errors = require "util.error";
 local blocksize = 2^16;
 
@@ -191,6 +192,13 @@ local function handle_result(request, response, result)
 		body = result;
 	elseif errors.is_err(result) then
 		body = events.fire_event("http-error", { request = request, response = response, code = result.code, error = result });
+	elseif promise.is_promise(result) then
+		result:next(function (ret)
+			handle_result(request, response, ret);
+		end, function (err)
+			handle_result(request, response, err);
+		end);
+		return true;
 	elseif result_type == "table" then
 		for k, v in pairs(result) do
 			if k ~= "headers" then
