@@ -144,7 +144,7 @@ function commands.adduser(arg)
 
 	if ok then return 0; end
 
-	show_message(msg)
+	show_message(error_messages[msg])
 	return 1;
 end
 
