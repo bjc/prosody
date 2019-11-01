@@ -170,6 +170,38 @@ local headerfix = setmetatable({}, {
 	end
 });
 
+local function handle_result(request, response, result)
+	if result == nil then
+		result = 404;
+	end
+
+	if result == true then
+		return;
+	end
+
+	local body;
+	local result_type = type(result);
+	if result_type == "number" then
+		response.status_code = result;
+		if result >= 400 then
+			body = events.fire_event("http-error", { request = request, response = response, code = result });
+		end
+	elseif result_type == "string" then
+		body = result;
+	elseif result_type == "table" then
+		for k, v in pairs(result) do
+			if k ~= "headers" then
+				response[k] = v;
+			else
+				for header_name, header_value in pairs(v) do
+					response.headers[header_name] = header_value;
+				end
+			end
+		end
+	end
+	response:send(body);
+end
+
 function _M.hijack_response(response, listener) -- luacheck: ignore
 	error("TODO");
 end
@@ -261,39 +293,10 @@ function handle_request(conn, request, finish_cb)
 			result = events.fire_event(host_head_event, payload);
 		end
 	end
-	if result ~= nil then
-		if result ~= true then
-			local body;
-			local result_type = type(result);
-			if result_type == "number" then
-				response.status_code = result;
-				if result >= 400 then
-					payload.code = result;
-					body = events.fire_event("http-error", payload);
-				end
-			elseif result_type == "string" then
-				body = result;
-			elseif result_type == "table" then
-				for k, v in pairs(result) do
-					if k ~= "headers" then
-						response[k] = v;
-					else
-						for header_name, header_value in pairs(v) do
-							response.headers[header_name] = header_value;
-						end
-					end
-				end
-			end
-			response:send(body);
-		end
-		return;
-	end
 
-	-- if handler not called, return 404
-	response.status_code = 404;
-	payload.code = 404;
-	response:send(events.fire_event("http-error", payload));
+	return handle_result(request, response, result);
 end
+
 local function prepare_header(response)
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
 	local headers = response.headers;
