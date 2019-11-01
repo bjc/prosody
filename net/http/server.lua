@@ -13,6 +13,7 @@ local traceback = debug.traceback;
 local tostring = tostring;
 local cache = require "util.cache";
 local codes = require "net.http.codes";
+local errors = require "util.error";
 local blocksize = 2^16;
 
 local _M = {};
@@ -188,6 +189,8 @@ local function handle_result(request, response, result)
 		end
 	elseif result_type == "string" then
 		body = result;
+	elseif errors.is_err(result) then
+		body = events.fire_event("http-error", { request = request, response = response, code = result.code, error = result });
 	elseif result_type == "table" then
 		for k, v in pairs(result) do
 			if k ~= "headers" then
