@@ -155,7 +155,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	local username, password = nodeprep(data.username), data.password;
+	local username, password = nodeprep(data.username, true), data.password;
 	data.username, data.password = nil, nil;
 	local host = module.host;
 	if not username or username == "" then
