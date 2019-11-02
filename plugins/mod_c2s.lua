@@ -56,6 +56,11 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 
 function stream_callbacks.streamopened(session, attr)
 	local send = session.send;
+	if not attr.to then
+		session:close{ condition = "improper-addressing",
+			text = "A 'to' attribute is required on stream headers" };
+		return;
+	end
 	local host = nameprep(attr.to);
 	if not host then
 		session:close{ condition = "improper-addressing",
