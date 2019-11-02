@@ -107,6 +107,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		elseif not from then
 			origin:close("improper-addressing");
+			return true;
 		end
 
 		if dwd and origin.secure then
