@@ -18,6 +18,11 @@ function methods:next(cb)
 		return;
 	end
 
+	if not self.hostname then
+		-- FIXME report IDNA error
+		cb(nil);
+	end
+
 	local targets = {};
 	local n = 2;
 	local function ready()
