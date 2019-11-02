@@ -283,12 +283,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 
 	UErrorCode err = U_ZERO_ERROR;
 
-	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
-		return 1;
-	}
-
-	input = lua_tolstring(L, 1, &input_len);
+	input = luaL_checklstring(L, 1, &input_len);
 
 	if(input_len >= 1024) {
 		lua_pushnil(L);
@@ -407,11 +402,6 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 	char string[1024];
 	int ret;
 	Stringprep_profile_flags flags = 0;
-
-	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
-		return 1;
-	}
 
 	s = check_utf8(L, 1, &len);
 
