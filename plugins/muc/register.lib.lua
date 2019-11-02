@@ -53,7 +53,7 @@ end);
 
 local registration_form = dataforms.new {
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#register" },
-	{ name = "muc#register_roomnick", type = "text-single", label = "Nickname"},
+	{ name = "muc#register_roomnick", type = "text-single", required = true, label = "Nickname"},
 };
 
 local function enforce_nick_policy(event)
