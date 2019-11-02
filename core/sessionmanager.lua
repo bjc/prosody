@@ -150,7 +150,7 @@ local function bind_resource(session, resource)
 		resource = event_payload.resource;
 	end
 
-	resource = resourceprep(resource);
+	resource = resourceprep(resource or "");
 	resource = resource ~= "" and resource or generate_identifier();
 	--FIXME: Randomly-generated resources must be unique per-user, and never conflict with existing
 
