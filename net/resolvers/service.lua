@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
+local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
@@ -23,6 +24,11 @@ function methods:next(cb)
 			end
 		end);
 		return;
+	end
+
+	if not self.hostname then
+		-- FIXME report IDNA error
+		cb(nil);
 	end
 
 	local targets = {};
@@ -63,7 +69,7 @@ end
 
 local function new(hostname, service, conn_type, extra)
 	return setmetatable({
-		hostname = hostname;
+		hostname = idna_to_ascii(hostname);
 		service = service;
 		conn_type = conn_type or "tcp";
 		extra = extra;
