@@ -272,6 +272,15 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session request
 		context.notopen = nil; -- Signals that we accept this opening tag
 
+		if not attr.to then
+			log("debug", "BOSH client tried to connect without specifying a host");
+			report_bad_host();
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
 		local to_host = nameprep(attr.to);
 		local wait = tonumber(attr.wait);
 		if not to_host then
