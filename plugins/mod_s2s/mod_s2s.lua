@@ -327,7 +327,9 @@ function stream_callbacks._streamopened(session, attr)
 		-- Send a reply stream header
 
 		-- Validate to/from
-		local to, from = nameprep(attr.to), nameprep(attr.from);
+		local to, from = attr.to, attr.from;
+		if to then to = nameprep(attr.to); end
+		if from then from = nameprep(attr.from); end
 		if not to and attr.to then -- COMPAT: Some servers do not reliably set 'to' (especially on stream restarts)
 			session:close({ condition = "improper-addressing", text = "Invalid 'to' address" });
 			return;
