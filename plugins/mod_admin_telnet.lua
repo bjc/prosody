@@ -538,6 +538,12 @@ local function session_flags(session, line)
 	if session.cert_identity_status == "valid" then
 		line[#line+1] = "(authenticated)";
 	end
+	if session.dialback_key then
+		line[#line+1] = "(dialback)";
+	end
+	if session.external_auth then
+		line[#line+1] = "(SASL)";
+	end
 	if session.secure then
 		line[#line+1] = "(encrypted)";
 	end
