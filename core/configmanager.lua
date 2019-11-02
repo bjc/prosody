@@ -141,7 +141,11 @@ do
 			if not name then
 				error("Host must have a name", 2);
 			end
-			name = nameprep(name);
+			local prepped_name = nameprep(name);
+			if not prepped_name then
+				error(format("Name of Host %q contains forbidden characters", name), 0);
+			end
+			name = prepped_name;
 			if rawget(config_table, name) and rawget(config_table[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config_table[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -162,7 +166,11 @@ do
 			if not name then
 				error("Component must have a name", 2);
 			end
-			name = nameprep(name);
+			local prepped_name = nameprep(name);
+			if not prepped_name then
+				error(format("Name of Component %q contains forbidden characters", name), 0);
+			end
+			name = prepped_name;
 			if rawget(config_table, name) and rawget(config_table[name], "defined")
 				and not rawget(config_table[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
