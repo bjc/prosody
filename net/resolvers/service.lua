@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
+local idna_to_ascii = require "util.encodings".idna.to_ascii;
 
 local methods = {};
 local resolver_mt = { __index = methods };
@@ -58,7 +59,7 @@ end
 
 local function new(hostname, service, conn_type, extra)
 	return setmetatable({
-		hostname = hostname;
+		hostname = idna_to_ascii(hostname);
 		service = service;
 		conn_type = conn_type or "tcp";
 		extra = extra;
