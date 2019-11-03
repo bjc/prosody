@@ -71,6 +71,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0012.html"/>
+        <xmpp:version>2.0</xmpp:version>
         <xmpp:since>0.1</xmpp:since>
         <xmpp:note>mod_lastactivity and mod_uptime</xmpp:note>
         <xmpp:status>complete</xmpp:status>
