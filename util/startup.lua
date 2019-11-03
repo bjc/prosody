@@ -34,7 +34,8 @@ function startup.read_config()
 		if file then
 			file:close();
 			prosody.config_file = filename;
-			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$"); -- luacheck: ignore 111
+			prosody.paths.config = filename:match("^(.*)[\\/][^\\/]*$");
+			CFG_CONFIGDIR = prosody.paths.config; -- luacheck: ignore 111
 			break;
 		end
 	end
@@ -244,8 +245,14 @@ end
 
 function startup.chdir()
 	if prosody.installed then
+		local lfs = require "lfs";
+		-- Ensure paths are absolute, not relative to the working directory which we're about to change
+		local cwd = lfs.currentdir();
+		prosody.paths.source = config.resolve_relative_path(cwd, prosody.paths.source);
+		prosody.paths.config = config.resolve_relative_path(cwd, prosody.paths.config);
+		prosody.paths.data = config.resolve_relative_path(cwd, prosody.paths.data);
 		-- Change working directory to data path.
-		require "lfs".chdir(prosody.paths.data);
+		lfs.chdir(prosody.paths.data);
 	end
 end
 
