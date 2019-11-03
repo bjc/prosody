@@ -33,7 +33,8 @@ function startup.read_config()
 		if file then
 			file:close();
 			prosody.config_file = filename;
-			CFG_CONFIGDIR = filename:match("^(.*)[\\/][^\\/]*$"); -- luacheck: ignore 111
+			prosody.paths.config = filename:match("^(.*)[\\/][^\\/]*$");
+			CFG_CONFIGDIR = prosody.paths.config; -- luacheck: ignore 111
 			break;
 		end
 	end
