@@ -196,7 +196,7 @@ local function handle_result(request, response, result)
 		result:next(function (ret)
 			handle_result(request, response, ret);
 		end, function (err)
-			handle_result(request, response, err);
+			handle_result(request, response, err or 500);
 		end);
 		return true;
 	elseif result_type == "table" then
