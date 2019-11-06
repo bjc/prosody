@@ -1,7 +1,7 @@
 local array = require "util.array";
 describe("util.array", function ()
 	describe("creation", function ()
-		describe("from tablle", function ()
+		describe("from table", function ()
 			it("works", function ()
 				local a = array({"a", "b", "c"});
 				assert.same({"a", "b", "c"}, a);
