@@ -392,6 +392,12 @@ local function session_flags(session, line)
 	if session.cert_identity_status == "valid" then
 		flags[#flags+1] = "authenticated";
 	end
+	if session.dialback_key then
+		flags[#flags+1] = "dialback";
+	end
+	if session.external_auth then
+		flags[#flags+1] = "SASL";
+	end
 	if session.secure then
 		flags[#flags+1] = "encrypted";
 	end
@@ -404,6 +410,12 @@ local function session_flags(session, line)
 	if session.ip and session.ip:match(":") then
 		flags[#flags+1] = "IPv6";
 	end
+	if session.incoming and session.outgoing then
+		flags[#flags+1] = "bidi";
+	elseif session.is_bidi or session.bidi_session then
+		flags[#flags+1] = "bidi";
+	end
+
 	line[#line+1] = "("..t_concat(flags, ", ")..")";
 
 	return t_concat(line, " ");
