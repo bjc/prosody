@@ -22,6 +22,7 @@ function methods:next(cb)
 	if not self.hostname then
 		-- FIXME report IDNA error
 		cb(nil);
+		return;
 	end
 
 	local targets = {};
