@@ -240,7 +240,9 @@ end
 function startup.setup_plugin_install_path()
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
+	-- TODO Figure out what this should be relative to, because CWD could be anywhere
 	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	-- TODO Can probably move directory creation to the install command
 	require "lfs".mkdir(installer_plugin_path);
 	require"util.paths".complement_lua_path(installer_plugin_path);
 	-- luacheck: ignore 111
@@ -539,7 +541,7 @@ function startup.prosodyctl()
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.setup_plugindir();
-	startup.setup_plugin_install_path();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
@@ -565,7 +567,7 @@ function startup.prosody()
 	startup.init_logging();
 	startup.load_libraries();
 	startup.setup_plugindir();
-	startup.setup_plugin_install_path();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.add_global_prosody_functions();
