@@ -228,17 +228,22 @@ end
 
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
-	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
-	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
-	require "lfs".mkdir(installer_plugin_path);
-	require"util.paths".complement_lua_path(installer_plugin_path);
 	if custom_plugin_paths then
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
+end
+
+function startup.setup_plugin_install_path()
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	local path_sep = package.config:sub(3,3);
+	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	require "lfs".mkdir(installer_plugin_path);
+	require"util.paths".complement_lua_path(installer_plugin_path);
+	-- luacheck: ignore 111
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
@@ -534,6 +539,7 @@ function startup.prosodyctl()
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.setup_plugindir();
+	startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
@@ -559,6 +565,7 @@ function startup.prosody()
 	startup.init_logging();
 	startup.load_libraries();
 	startup.setup_plugindir();
+	startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.add_global_prosody_functions();
