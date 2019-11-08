@@ -48,11 +48,11 @@ function path_util.complement_lua_path(installer_plugin_path)
 	local lua_path_sep = package.config:sub(3,3);
 	local dir_sep = package.config:sub(1,1);
 	local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep;
-	if not string.match(package.path, installer_plugin_path) then
+	if not string.find(package.path, installer_plugin_path, 1, true) then
 		package.path = package.path..lua_path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
 		package.path = package.path..lua_path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
 	end
-	if not string.match(package.path, installer_plugin_path) then
+	if not string.find(package.path, installer_plugin_path, 1, true) then
 		package.cpath = package.cpath..lua_path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.so";
 	end
 end
