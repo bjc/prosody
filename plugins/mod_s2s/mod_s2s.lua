@@ -29,6 +29,7 @@ local fire_global_event = prosody.events.fire_event;
 local runner = require "util.async".runner;
 local connect = require "net.connect".connect;
 local service = require "net.resolvers.service";
+local errors = require "util.error";
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
@@ -83,8 +84,14 @@ local function bounce_sendq(session, reason)
 	-- TODO use util.error ?
 	local error_type = "cancel";
 	local condition = "remote-server-not-found";
+	local reason_text;
 	if session.had_stream then -- set when a stream is opened by the remote
 		error_type, condition = "wait", "remote-server-timeout";
+	end
+	if errors.is_err(reason) then
+		error_type, condition, reason_text = reason.type, reason.condition, reason.text;
+	elseif type(reason) == "string" then
+		reason_text = reason;
 	end
 	for i, data in ipairs(sendq) do
 		local reply = data[2];
@@ -92,9 +99,9 @@ local function bounce_sendq(session, reason)
 			reply.attr.type = "error";
 			reply:tag("error", {type = error_type, by = session.from_host})
 				:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
-			if reason then
+			if reason_text then
 				reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"})
-					:text("Server-to-server connection failed: "..reason):up();
+					:text("Server-to-server connection failed: "..reason_text):up();
 			end
 			core_process_stanza(dummy, reply);
 		end
