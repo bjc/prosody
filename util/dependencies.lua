@@ -90,7 +90,7 @@ local function check_dependencies()
 			}, "SSL/TLS support will not be available");
 	end
 
-	local bit = _G.bit32 or softreq"bit";
+	local bit = softreq"util.bitcompat";
 
 	if not bit then
 		missingdep("lua-bitops", {
