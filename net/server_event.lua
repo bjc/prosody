@@ -463,10 +463,6 @@ end
 function interface_mt:ontimeout()
 end
 function interface_mt:onreadtimeout()
-	self.fatalerror = "timeout during receiving"
-	debug( "connection failed:", self.fatalerror )
-	self:_close()
-	self.eventread = nil
 end
 function interface_mt:ondrain()
 end
