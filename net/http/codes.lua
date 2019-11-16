@@ -82,5 +82,5 @@ local response_codes = {
 	-- [512-599] = "Unassigned";
 };
 
-for k,v in pairs(response_codes) do response_codes[k] = k.." "..v; end
+for k,v in pairs(response_codes) do response_codes[k] = ("%03d %s"):format(k, v); end
 return setmetatable(response_codes, { __index = function(_, k) return k.." Unassigned"; end })

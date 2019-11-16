@@ -12,9 +12,9 @@ local st = require "util.stanza";
 local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
+local set = require "util.set";
 
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
-local tostring = tostring;
 
 local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", false));
 local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
@@ -67,7 +67,6 @@ local function sasl_process_cdata(session, stanza)
 	local text = stanza[1];
 	if text then
 		text = base64.decode(text);
-		--log("debug", "AUTH: %s", text:gsub("[%z\001-\008\011\012\014-\031]", " "));
 		if not text then
 			session.sasl_handler = nil;
 			session.send(build_reply("failure", "incorrect-encoding"));
@@ -77,7 +76,6 @@ local function sasl_process_cdata(session, stanza)
 	local status, ret, err_msg = session.sasl_handler:process(text);
 	status, ret, err_msg = handle_status(session, status, ret, err_msg);
 	local s = build_reply(status, ret, err_msg);
-	log("debug", "sasl reply: %s", tostring(s));
 	session.send(s);
 	return true;
 end
@@ -248,37 +246,72 @@ module:hook("stream-features", function(event)
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
 		origin.sasl_handler = sasl_handler;
 		if origin.encrypted then
-			-- check wether LuaSec has the nifty binding to the function needed for tls-unique
+			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
 				local socket = origin.conn:socket();
 				if socket.getpeerfinished then
+					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
+				else
+					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
 				sasl_handler["userdata"] = {
 					["tls-unique"] = socket;
 				};
+			else
+				log("debug", "Channel binding not supported by SASL handler");
 			end
 		end
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
 		local sasl_mechanisms = sasl_handler:mechanisms()
+		local available_mechanisms = set.new();
 		for mechanism in pairs(sasl_mechanisms) do
-			if disabled_mechanisms:contains(mechanism) then
-				log("debug", "Not offering disabled mechanism %s", mechanism);
-			elseif not origin.secure and insecure_mechanisms:contains(mechanism) then
-				log("debug", "Not offering mechanism %s on insecure connection", mechanism);
-			else
-				log("debug", "Offering mechanism %s", mechanism);
+			available_mechanisms:add(mechanism);
+		end
+		log("debug", "SASL mechanisms supported by handler: %s", available_mechanisms);
+
+		local usable_mechanisms = available_mechanisms - disabled_mechanisms;
+
+		local available_disabled = set.intersection(available_mechanisms, disabled_mechanisms);
+		if not available_disabled:empty() then
+			log("debug", "Not offering disabled mechanisms: %s", available_disabled);
+		end
+
+		local available_insecure = set.intersection(available_mechanisms, insecure_mechanisms);
+		if not origin.secure and not available_insecure:empty() then
+			log("debug", "Session is not secure, not offering insecure mechanisms: %s", available_insecure);
+			usable_mechanisms = usable_mechanisms - insecure_mechanisms;
+		end
+
+		if not usable_mechanisms:empty() then
+			log("debug", "Offering usable mechanisms: %s", usable_mechanisms);
+			for mechanism in available_mechanisms do
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
-		end
-		if mechanisms[1] then
 			features:add_child(mechanisms);
-		elseif not next(sasl_mechanisms) then
-			log("warn", "No available SASL mechanisms, verify that the configured authentication module is working");
-		else
-			log("warn", "All available authentication mechanisms are either disabled or not suitable for an insecure connection");
+			return;
 		end
+
+		local authmod = module:get_option_string("authentication", "internal_plain");
+		if available_mechanisms:empty() then
+			log("warn", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
+			return;
+		end
+
+		if not origin.secure and not available_insecure:empty() then
+			if not available_disabled:empty() then
+				log("warn", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s) or disabled (%s)",
+					authmod, available_insecure, available_disabled);
+			else
+				log("warn", "All SASL mechanisms provided by authentication module '%s' are forbidden on insecure connections (%s)",
+					authmod, available_insecure);
+			end
+		elseif not available_disabled:empty() then
+			log("warn", "All SASL mechanisms provided by authentication module '%s' are disabled (%s)",
+				authmod, available_disabled);
+		end
+
 	else
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();

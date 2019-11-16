@@ -201,31 +201,31 @@ function engine:_transaction(func, ...)
 		if not ok then return ok, err; end
 	end
 	--assert(not self.__transaction, "Recursive transactions not allowed");
-	log("debug", "SQL transaction begin [%s]", tostring(func));
+	log("debug", "SQL transaction begin [%s]", func);
 	self.__transaction = true;
 	local success, a, b, c = xpcall(func, handleerr, ...);
 	self.__transaction = nil;
 	if success then
-		log("debug", "SQL transaction success [%s]", tostring(func));
+		log("debug", "SQL transaction success [%s]", func);
 		local ok, err = self.conn:commit();
 		-- LuaDBI doesn't actually return an error message here, just a boolean
 		if not ok then return ok, err or "commit failed"; end
 		return success, a, b, c;
 	else
-		log("debug", "SQL transaction failure [%s]: %s", tostring(func), a.err);
+		log("debug", "SQL transaction failure [%s]: %s", func, a.err);
 		if self.conn then self.conn:rollback(); end
 		return success, a.err;
 	end
 end
 function engine:transaction(...)
-	local ok, ret = self:_transaction(...);
+	local ok, ret, b, c = self:_transaction(...);
 	if not ok then
 		local conn = self.conn;
 		if not conn or not conn:ping() then
 			log("debug", "Database connection was closed. Will reconnect and retry.");
 			self.conn = nil;
-			log("debug", "Retrying SQL transaction [%s]", tostring((...)));
-			ok, ret = self:_transaction(...);
+			log("debug", "Retrying SQL transaction [%s]", (...));
+			ok, ret, b, c = self:_transaction(...);
 			log("debug", "SQL transaction retry %s", ok and "succeeded" or "failed");
 		else
 			log("debug", "SQL connection is up, so not retrying");
@@ -234,7 +234,7 @@ function engine:transaction(...)
 			log("error", "Error in SQL transaction: %s", ret);
 		end
 	end
-	return ok, ret;
+	return ok, ret, b, c;
 end
 function engine:_create_index(index)
 	local sql = "CREATE INDEX \""..index.name.."\" ON \""..index.table.."\" (";

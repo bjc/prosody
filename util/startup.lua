@@ -7,6 +7,7 @@ local logger = require "util.logger";
 local log = logger.init("startup");
 
 local config = require "core.configmanager";
+local config_warnings;
 
 local dependencies = require "util.dependencies";
 
@@ -65,6 +66,8 @@ function startup.read_config()
 		print("**************************");
 		print("");
 		os.exit(1);
+	elseif err and #err > 0 then
+		config_warnings = err;
 	end
 	prosody.config_loaded = true;
 end
@@ -97,8 +100,13 @@ function startup.init_logging()
 	end);
 end
 
-function startup.log_dependency_warnings()
+function startup.log_startup_warnings()
 	dependencies.log_warnings();
+	if config_warnings then
+		for _, warning in ipairs(config_warnings) do
+			log("warn", "Configuration warning: %s", warning);
+		end
+	end
 end
 
 function startup.sanity_check()
@@ -220,13 +228,26 @@ end
 
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
+	local path_sep = package.config:sub(3,3);
 	if custom_plugin_paths then
-		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
+end
+
+function startup.setup_plugin_install_path()
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	local path_sep = package.config:sub(3,3);
+	-- TODO Figure out what this should be relative to, because CWD could be anywhere
+	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	-- TODO Can probably move directory creation to the install command
+	require "lfs".mkdir(installer_plugin_path);
+	require"util.paths".complement_lua_path(installer_plugin_path);
+	-- luacheck: ignore 111
+	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
+	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
 function startup.chdir()
@@ -250,9 +271,9 @@ function startup.add_global_prosody_functions()
 		local ok, level, err = config.load(prosody.config_file);
 		if not ok then
 			if level == "parser" then
-				log("error", "There was an error parsing the configuration file: %s", tostring(err));
+				log("error", "There was an error parsing the configuration file: %s", err);
 			elseif level == "file" then
-				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+				log("error", "Couldn't read the config file when trying to reload: %s", err);
 			end
 		else
 			prosody.events.fire_event("config-reloaded", {
@@ -520,12 +541,13 @@ function startup.prosodyctl()
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.setup_plugindir();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
 	startup.switch_user();
 	startup.check_dependencies();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.check_unwriteable();
 	startup.load_libraries();
 	startup.init_http_client();
@@ -545,12 +567,13 @@ function startup.prosody()
 	startup.init_logging();
 	startup.load_libraries();
 	startup.setup_plugindir();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.add_global_prosody_functions();
 	startup.read_version();
 	startup.log_greeting();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.load_secondary_libraries();
 	startup.init_http_client();
 	startup.init_data_store();

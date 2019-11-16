@@ -246,9 +246,25 @@ local function ready()
 	return pcall(checkthread);
 end
 
+local function wait(promise)
+	local async_wait, async_done = waiter();
+	local ret, err = nil, nil;
+	promise:next(
+		function (r) ret = r; end,
+		function (e) err = e; end)
+		:finally(async_done);
+	async_wait();
+	if ret then
+		return ret;
+	else
+		return nil, err;
+	end
+end
+
 return {
 	ready = ready;
 	waiter = waiter;
 	guarder = guarder;
 	runner = runner;
+	wait = wait;
 };

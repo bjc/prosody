@@ -20,7 +20,6 @@ end
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl_context = ssl.context or softreq"ssl.context";
-local ssl_x509 = ssl.x509 or softreq"ssl.x509";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
@@ -106,7 +105,7 @@ local core_defaults = {
 	capath = "/etc/ssl/certs";
 	depth = 9;
 	protocol = "tlsv1+";
-	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
+	verify = "none";
 	options = {
 		cipher_server_preference = luasec_has.options.cipher_server_preference;
 		no_ticket = luasec_has.options.no_ticket;
@@ -123,8 +122,8 @@ local core_defaults = {
 		"P-521",
 	};
 	ciphers = {      -- Enabled ciphers in order of preference:
-		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
 		"HIGH+kEECDH", -- Ephemeral Elliptic curve Diffie-Hellman key exchange
+		"HIGH+kEDH",   -- Ephemeral Diffie-Hellman key exchange, if a 'dhparam' file is set
 		"HIGH",        -- Other "High strength" ciphers
 		               -- Disabled cipher suites:
 		"!PSK",        -- Pre-Shared Key - not used for XMPP
@@ -148,13 +147,6 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if luasec_version < 5 and ssl_x509 then
-	-- COMPAT mw/luasec-hg
-	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
-		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
-	end
-end
-
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
@@ -177,8 +169,10 @@ local function create_context(host, mode, ...)
 	local user_ssl_config = cfg:final();
 
 	if mode == "server" then
-		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
-		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.certificate then
+			log("info", "No certificate present in SSL/TLS configuration for %s. SNI will be required.", host);
+		end
+		if user_ssl_config.certificate and not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	end
 
 	for option in pairs(path_options) do

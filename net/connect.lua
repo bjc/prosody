@@ -38,7 +38,7 @@ local function attempt_connection(p)
 		p:log("debug", "Next target to try is %s:%d", ip, port);
 		local conn, err = server.addclient(ip, port, pending_connection_listeners, p.options.pattern or "*a", p.options.sslctx, conn_type, extra);
 		if not conn then
-			log("debug", "Connection attempt failed immediately: %s", tostring(err));
+			log("debug", "Connection attempt failed immediately: %s", err);
 			p.last_error = err or "unknown reason";
 			return attempt_connection(p);
 		end
