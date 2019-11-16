@@ -14,6 +14,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local pairs = pairs;
 local next = next;
 local type = type;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 local calculate_hash = require "util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
 local bare_sessions = prosody.bare_sessions;
@@ -229,13 +230,13 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function(event)
 				return true;
 			else --invalid request
 				session.send(st.error_reply(stanza, 'modify', 'bad-request'));
-				module:log("debug", "Invalid request: %s", tostring(payload));
+				module:log("debug", "Invalid request: %s", payload);
 				return true;
 			end
 		else --no presence subscription
 			session.send(st.error_reply(stanza, 'auth', 'not-authorized')
 				:tag('presence-subscription-required', {xmlns='http://jabber.org/protocol/pubsub#errors'}));
-			module:log("debug", "Unauthorized request: %s", tostring(payload));
+			module:log("debug", "Unauthorized request: %s", payload);
 			return true;
 		end
 	end

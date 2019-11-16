@@ -49,6 +49,7 @@ function module.add_host(module)
 	local send;
 
 	local function on_destroy(session, err) --luacheck: ignore 212/err
+		module:set_status("warn", err and ("Disconnected: "..err) or "Disconnected");
 		env.connected = false;
 		env.session = false;
 		send = nil;
@@ -102,6 +103,7 @@ function module.add_host(module)
 		module:log("info", "External component successfully authenticated");
 		session.send(st.stanza("handshake"));
 		module:fire_event("component-authenticated", { session = session });
+		module:set_status("info", "Connected");
 
 		return true;
 	end
@@ -165,11 +167,11 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.error(session, error, data)
 	if session.destroyed then return; end
-	module:log("warn", "Error processing component stream: %s", tostring(error));
+	module:log("warn", "Error processing component stream: %s", error);
 	if error == "no-stream" then
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
-		session.log("warn", "External component %s XML parse error: %s", tostring(session.host), tostring(data));
+		session.log("warn", "External component %s XML parse error: %s", session.host, data);
 		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
@@ -206,7 +208,7 @@ function stream_callbacks.streamclosed(session)
 	session:close();
 end
 
-local function handleerr(err) log("error", "Traceback[component]: %s", traceback(tostring(err), 2)); end
+local function handleerr(err) log("error", "Traceback[component]: %s", traceback(err, 2)); end
 function stream_callbacks.handlestanza(session, stanza)
 	-- Namespaces are icky.
 	if not stanza.attr.xmlns and stanza.name == "handshake" then
@@ -266,10 +268,10 @@ local function session_close(session, reason)
 					if reason.extra then
 						stanza:add_child(reason.extra);
 					end
-					module:log("info", "Disconnecting component, <stream:error> is: %s", tostring(stanza));
+					module:log("info", "Disconnecting component, <stream:error> is: %s", stanza);
 					session.send(stanza);
 				elseif reason.name then -- a stanza
-					module:log("info", "Disconnecting component, <stream:error> is: %s", tostring(reason));
+					module:log("info", "Disconnecting component, <stream:error> is: %s", reason);
 					session.send(reason);
 				end
 			end
@@ -310,7 +312,7 @@ function listener.onconnect(conn)
 	function session.data(_, data)
 		local ok, err = stream:feed(data);
 		if ok then return; end
-		module:log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+		log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
 		session:close("not-well-formed");
 	end
 
@@ -325,7 +327,7 @@ end
 function listener.ondisconnect(conn, err)
 	local session = sessions[conn];
 	if session then
-		(session.log or log)("info", "component disconnected: %s (%s)", tostring(session.host), tostring(err));
+		(session.log or log)("info", "component disconnected: %s (%s)", session.host, err);
 		if session.host then
 			module:context(session.host):fire_event("component-disconnected", { session = session, reason = err });
 		end

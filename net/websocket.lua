@@ -113,7 +113,7 @@ function websocket_listeners.onincoming(conn, buffer, err) -- luacheck: ignore 2
 				frame.MASK = true; -- RFC 6455 6.1.5: If the data is being sent by the client, the frame(s) MUST be masked
 				conn:write(frames.build(frame));
 			elseif frame.opcode == 0xA then -- Pong frame
-				log("debug", "Received unexpected pong frame: " .. tostring(frame.data));
+				log("debug", "Received unexpected pong frame: %s", frame.data);
 			else
 				return fail(s, 1002, "Reserved opcode");
 			end
@@ -131,7 +131,7 @@ end
 function websocket_methods:close(code, reason)
 	if self.readyState < 2 then
 		code = code or 1000;
-		log("debug", "closing WebSocket with code %i: %s" , code , tostring(reason));
+		log("debug", "closing WebSocket with code %i: %s" , code , reason);
 		self.readyState = 2;
 		local conn = self.conn;
 		conn:write(frames.build_close(code, reason, true));
@@ -245,7 +245,7 @@ local function connect(url, ex, listeners)
 		   or (protocol and not protocol[r.headers["sec-websocket-protocol"]])
 		   then
 			s.readyState = 3;
-			log("warn", "WebSocket connection to %s failed: %s", url, tostring(b));
+			log("warn", "WebSocket connection to %s failed: %s", url, b);
 			if s.onerror then s:onerror("connecting-failed"); end
 			return;
 		end

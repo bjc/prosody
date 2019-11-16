@@ -1,5 +1,6 @@
 local events = require "util.events";
 local cache = require "util.cache";
+local errors = require "util.error";
 
 local service_mt = {};
 
@@ -510,7 +511,7 @@ local function check_preconditions(node_config, required_config)
 	end
 	for config_field, value in pairs(required_config) do
 		if node_config[config_field] ~= value then
-			return false;
+			return false, config_field;
 		end
 	end
 	return true;
@@ -546,8 +547,13 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 		node_obj = self.nodes[node];
 	elseif requested_config and not requested_config._defaults_only then
 		-- Check that node has the requested config before we publish
-		if not check_preconditions(node_obj.config, requested_config) then
-			return false, "precondition-not-met";
+		local ok, field = check_preconditions(node_obj.config, requested_config);
+		if not ok then
+			local err = errors.new({
+				type = "cancel", condition = "conflict", text = "Field does not match: "..field;
+			});
+			err.pubsub_condition = "precondition-not-met";
+			return false, err;
 		end
 	end
 	if not self.config.itemcheck(item) then

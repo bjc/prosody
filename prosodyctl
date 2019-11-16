@@ -10,7 +10,6 @@
 -- prosodyctl - command-line controller for Prosody XMPP server
 
 -- Will be modified by configure script if run --
-
 CFG_SOURCEDIR=CFG_SOURCEDIR or os.getenv("PROSODY_SRCDIR");
 CFG_CONFIGDIR=CFG_CONFIGDIR or os.getenv("PROSODY_CFGDIR");
 CFG_PLUGINDIR=CFG_PLUGINDIR or os.getenv("PROSODY_PLUGINDIR");
@@ -77,13 +76,38 @@ local show_usage = prosodyctl.show_usage;
 local show_yesno = prosodyctl.show_yesno;
 local show_prompt = prosodyctl.show_prompt;
 local read_password = prosodyctl.read_password;
+local call_luarocks = prosodyctl.call_luarocks;
 
 local jid_split = require "util.jid".prepped_split;
 
 local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
-local command = arg[1];
+local command = table.remove(arg, 1);
+
+function commands.install(arg)
+	if arg[1] == "--help" then
+		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "install")
+end
+
+function commands.remove(arg)
+	if arg[1] == "--help" then
+		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "remove")
+end
+
+function commands.list(arg)
+	if arg[1] == "--help" then
+		show_usage([[list]], [[Shows installed rocks]]);
+		return 1;
+	end
+	call_luarocks(arg[1], "list")
+end
 
 function commands.adduser(arg)
 	if not arg[1] or arg[1] == "--help" then
@@ -120,7 +144,7 @@ function commands.adduser(arg)
 
 	if ok then return 0; end
 
-	show_message(msg)
+	show_message(error_messages[msg])
 	return 1;
 end
 
@@ -222,7 +246,15 @@ function commands.start(arg)
 	end
 
 	--luacheck: ignore 411/ret
-	local ok, ret = prosodyctl.start(prosody.paths.source);
+	local lua;
+	do
+		local i = 0;
+		repeat
+			i = i - 1;
+		until arg[i-1] == nil
+		lua = arg[i];
+	end
+	local ok, ret = prosodyctl.start(prosody.paths.source, lua);
 	if ok then
 		local daemonize = configmanager.get("*", "daemonize");
 		if daemonize == nil then
@@ -363,6 +395,13 @@ function commands.about(arg)
 				.."\n  ";
 		end)));
 	print("");
+	local have_pposix, pposix = pcall(require, "util.pposix");
+	if have_pposix and pposix.uname then
+		print("# Operating system");
+		local uname, err = pposix.uname();
+		print(uname and uname.sysname .. " " .. uname.release or "Unknown POSIX", err or "");
+		print("");
+	end
 	print("# Lua environment");
 	print("Lua version:             ", _G._VERSION);
 	print("");
@@ -811,7 +850,7 @@ function commands.check(arg)
 		print("Checking config...");
 		local deprecated = set.new({
 			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
-			"vcard_compatibility",
+			"vcard_compatibility", "cross_domain_bosh", "cross_domain_websocket"
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
@@ -1309,8 +1348,6 @@ local command_runner = async.runner(function ()
 			end
 		end
 
-		table.remove(arg, 1);
-
 		local module = modulemanager.get_module("*", module_name);
 		if not module then
 			show_message("Failed to load module '"..module_name.."': Unknown error");
@@ -1349,7 +1386,8 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:\n");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
-		local commands_order = { "adduser", "passwd", "deluser", "start", "stop", "restart", "reload", "about" };
+		local commands_order = { "install", "remove", "list", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
+			"about" };
 
 		local done = {};
 
@@ -1374,7 +1412,7 @@ local command_runner = async.runner(function ()
 		os.exit(0);
 	end
 
-	os.exit(commands[command]({ select(2, unpack(arg)) }));
+	os.exit(commands[command](arg));
 end, watchers);
 
 command_runner:run(true);

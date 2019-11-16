@@ -1,7 +1,8 @@
 cache = true
 codes = true
-ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log", "143/table", "113/unpack" }
+ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log", }
 
+std = "lua53c"
 max_line_length = 150
 
 read_globals = {
@@ -33,7 +34,6 @@ files["plugins/"] = {
 		"module.name",
 		"module.host",
 		"module._log",
-		"module.log",
 		"module.event_handlers",
 		"module.reloading",
 		"module.saved_state",
@@ -64,12 +64,15 @@ files["plugins/"] = {
 		"module.get_option_scalar",
 		"module.get_option_set",
 		"module.get_option_string",
+		"module.get_status",
 		"module.handle_items",
 		"module.hook",
 		"module.hook_global",
 		"module.hook_object_event",
 		"module.hook_tag",
 		"module.load_resource",
+		"module.log",
+		"module.log_status",
 		"module.measure",
 		"module.measure_event",
 		"module.measure_global_event",
@@ -79,7 +82,9 @@ files["plugins/"] = {
 		"module.remove_item",
 		"module.require",
 		"module.send",
+		"module.send_iq",
 		"module.set_global",
+		"module.set_status",
 		"module.shared",
 		"module.unhook",
 		"module.unhook_object_event",
@@ -126,43 +131,42 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 	unused_secondaries = false
 
 	local exclude_files = {
-	"doc/net.server.lua";
+		"doc/net.server.lua";
 
-	"fallbacks/bit.lua";
-	"fallbacks/lxp.lua";
+		"fallbacks/bit.lua";
+		"fallbacks/lxp.lua";
 
-	"net/adns.lua";
-	"net/cqueues.lua";
-	"net/dns.lua";
-	"net/server_select.lua";
+		"net/cqueues.lua";
+		"net/dns.lua";
+		"net/server_select.lua";
 
-	"plugins/mod_storage_sql1.lua";
+		"plugins/mod_storage_sql1.lua";
 
-	"spec/core_configmanager_spec.lua";
-	"spec/core_moduleapi_spec.lua";
-	"spec/net_http_parser_spec.lua";
-	"spec/util_events_spec.lua";
-	"spec/util_http_spec.lua";
-	"spec/util_ip_spec.lua";
-	"spec/util_multitable_spec.lua";
-	"spec/util_rfc6724_spec.lua";
-	"spec/util_throttle_spec.lua";
-	"spec/util_xmppstream_spec.lua";
+		"spec/core_configmanager_spec.lua";
+		"spec/core_moduleapi_spec.lua";
+		"spec/net_http_parser_spec.lua";
+		"spec/util_events_spec.lua";
+		"spec/util_http_spec.lua";
+		"spec/util_ip_spec.lua";
+		"spec/util_multitable_spec.lua";
+		"spec/util_rfc6724_spec.lua";
+		"spec/util_throttle_spec.lua";
+		"spec/util_xmppstream_spec.lua";
 
-	"tools/ejabberd2prosody.lua";
-	"tools/ejabberdsql2prosody.lua";
-	"tools/erlparse.lua";
-	"tools/jabberd14sql2prosody.lua";
-	"tools/migration/migrator.cfg.lua";
-	"tools/migration/migrator/jabberd14.lua";
-	"tools/migration/migrator/mtools.lua";
-	"tools/migration/migrator/prosody_files.lua";
-	"tools/migration/migrator/prosody_sql.lua";
-	"tools/migration/prosody-migrator.lua";
-	"tools/openfire2prosody.lua";
-	"tools/xep227toprosody.lua";
+		"tools/ejabberd2prosody.lua";
+		"tools/ejabberdsql2prosody.lua";
+		"tools/erlparse.lua";
+		"tools/jabberd14sql2prosody.lua";
+		"tools/migration/migrator.cfg.lua";
+		"tools/migration/migrator/jabberd14.lua";
+		"tools/migration/migrator/mtools.lua";
+		"tools/migration/migrator/prosody_files.lua";
+		"tools/migration/migrator/prosody_sql.lua";
+		"tools/migration/prosody-migrator.lua";
+		"tools/openfire2prosody.lua";
+		"tools/xep227toprosody.lua";
 
-	"util/sasl/digest-md5.lua";
+		"util/sasl/digest-md5.lua";
 	}
 	for _, file in ipairs(exclude_files) do
 		files[file] = { only = {} }
