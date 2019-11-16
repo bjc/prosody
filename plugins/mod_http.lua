@@ -7,7 +7,9 @@
 --
 
 module:set_global();
-module:depends("http_errors");
+pcall(function ()
+	module:depends("http_errors");
+end);
 
 local portmanager = require "core.portmanager";
 local moduleapi = require "core.moduleapi";
