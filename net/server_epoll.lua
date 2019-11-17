@@ -802,7 +802,8 @@ local function watchfd(fd, onreadable, onwritable)
 		end;
 		-- Otherwise it'll need to be something LuaSocket-compatible
 	end
-	conn.log = logger.init(("fdwatch%s"):format(new_id()));
+	conn.id = new_id();
+	conn.log = logger.init(("fdwatch%s"):format(conn.id));
 	conn:add(onreadable, onwritable);
 	return conn;
 end;
@@ -911,7 +912,8 @@ return {
 				fds[fd] = nil;
 			end;
 		}, interface_mt);
-		conn.log = logger.init(("fdwatch%d"):format(conn:getfd()));
+		conn.id = conn:getfd();
+		conn.log = logger.init(("fdwatch%d"):format(conn.id));
 		local ok, err = conn:add(mode == "r" or mode == "rw", mode == "w" or mode == "rw");
 		if not ok then return ok, err; end
 		return conn;
