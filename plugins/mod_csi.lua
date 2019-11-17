@@ -3,7 +3,7 @@ local xmlns_csi = "urn:xmpp:csi:0";
 local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
 
 module:hook("stream-features", function (event)
-	if event.origin.username then
+	if event.origin.username and prosody.hosts[module.host].events._handlers["csi-client-active"] then
 		event.features:add_child(csi_feature);
 	end
 end);
