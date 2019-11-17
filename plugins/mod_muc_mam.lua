@@ -166,10 +166,11 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query id %s from %s until %s)",
-		tostring(qid),
-		qstart and timestamp(qstart) or "the dawn of time",
-		qend and timestamp(qend) or "now");
+	module:log("debug", "Archive query by %s id=%s when=%s...%s",
+		origin.username,
+		qid or stanza.attr.id,
+		qstart and timestamp(qstart) or "",
+		qend and timestamp(qend) or "");
 
 	-- RSM stuff
 	local qset = rsm.get(query);
@@ -178,6 +179,9 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 
 	local before, after = qset and qset.before, qset and qset.after;
 	if type(before) ~= "string" then before = nil; end
+	if qset then
+		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
+	end
 
 	-- Load all the data!
 	local data, err = archive:find(room_node, {
@@ -189,6 +193,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
+		module:log("debug", "Archive query id=%s failed: %s", qid or stanza.attr.id, err);
 		if err == "item-not-found" then
 			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
 		else
@@ -250,13 +255,14 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		first, last = last, first;
 	end
 
-	-- That's all folks!
-	module:log("debug", "Archive query %s completed", qid);
 
 	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
 			:add_child(rsm.generate {
 				first = first, last = last, count = total }));
+
+	-- That's all folks!
+	module:log("debug", "Archive query id=%s completed, %d items returned", qid or stanza.attr.id, complete and count or count - 1);
 	return true;
 end);
 
