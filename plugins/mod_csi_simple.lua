@@ -116,7 +116,7 @@ end);
 module:hook("pre-resource-unbind", function (event)
 	local session = event.session;
 	disable_optimizations(session);
-end);
+end, 1);
 
 module:hook("c2s-ondrain", function (event)
 	local session = event.session;
