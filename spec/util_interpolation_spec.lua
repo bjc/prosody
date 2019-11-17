@@ -41,6 +41,7 @@ describe("util.interpolation", function ()
 		assert.equal(expect3, render(template, { name = "you" }));
 		assert.equal(expect_array, render(template_array, { foo = { "Hello", "World" } }));
 		assert.equal(expect_func_pipe, render(template_func_pipe, { foo = { "c", "a", "d", "b", } }));
+		-- assert.equal("", render(template_func_pipe, { foo = nil })); -- FIXME
 		assert.equal(expect_map, render(template_map, { foo = { foo = "bar" } }));
 	end);
 end);
