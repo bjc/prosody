@@ -533,7 +533,7 @@ local function session_close(session, reason, remote_reason)
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
-		if reason == nil and not session.notopen and session.type == "s2sin" then
+		if reason == nil and not session.notopen and session.incoming then
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
