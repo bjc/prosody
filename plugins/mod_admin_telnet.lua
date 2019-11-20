@@ -584,6 +584,12 @@ local function tls_info(session, line)
 		else
 			line[#line+1] = "(cipher info unavailable)";
 		end
+		if sock.getsniname then
+			local name = sock:getsniname();
+			if name then
+				line[#line+1] = ("(SNI:%q)"):format(name);
+			end
+		end
 	else
 		line[#line+1] = "(insecure)";
 	end
