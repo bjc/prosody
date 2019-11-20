@@ -590,6 +590,12 @@ local function tls_info(session, line)
 				line[#line+1] = ("(SNI:%q)"):format(name);
 			end
 		end
+		if sock.getalpn then
+			local proto = sock:getalpn();
+			if proto then
+				line[#line+1] = ("(ALPN:%q)"):format(proto);
+			end
+		end
 	else
 		line[#line+1] = "(insecure)";
 	end
