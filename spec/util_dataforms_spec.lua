@@ -423,6 +423,8 @@ describe("util.dataforms", function ()
 				name = "number",
 				type = "text-single",
 				datatype = "xs:integer",
+				range_min = -10,
+				range_max = 10,
 			},
 		};
 
@@ -434,6 +436,13 @@ describe("util.dataforms", function ()
 		it("integer error handling works", function ()
 			local d,e = f:data(f:form({number = "nan"}));
 			assert.not_equal(1, d.number);
+			assert.table(e);
+			assert.string(e.number);
+		end);
+
+		it("works", function ()
+			local d,e = f:data(f:form({number = 100}));
+			assert.not_equal(100, d.number);
 			assert.table(e);
 			assert.string(e.number);
 		end);
