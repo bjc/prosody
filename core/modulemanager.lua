@@ -63,6 +63,11 @@ local function get_modules_for_host(host)
 		modules:add("admin_telnet");
 	end
 
+	if modules:contains("vcard") and modules:contains("vcard_legacy") then
+		log("error", "The mod_vcard_legacy plugin replaces mod_vcard but both are enabled. Please update your config.");
+		modules:remove("vcard");
+	end
+
 	return modules, component;
 end
 
