@@ -524,6 +524,9 @@ function room_mt:handle_normal_presence(origin, stanza)
 			log("debug", "no occupant found for %s; creating new occupant object for %s", dest_jid, real_jid);
 			is_first_dest_session = true;
 			dest_occupant = self:new_occupant(bare_jid, dest_jid);
+			if orig_occupant then
+				dest_occupant.role = orig_occupant.role;
+			end
 		else
 			is_first_dest_session = false;
 		end
