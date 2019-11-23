@@ -117,7 +117,7 @@ function module.add_host(module)
 				if jid_compare(jid, acl) then allow = true; break; end
 			end
 			if allow then break; end
-			module:log("warn", "Denying use of proxy for %s", tostring(stanza.attr.from));
+			module:log("warn", "Denying use of proxy for %s", stanza.attr.from);
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
 		end

@@ -81,8 +81,14 @@ function handle_normal_presence(origin, stanza)
 				res.presence.attr.to = nil;
 			end
 		end
-		for jid in pairs(roster[false].pending) do -- resend incoming subscription requests
-			origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+		for jid, pending_request in pairs(roster[false].pending) do -- resend incoming subscription requests
+			if type(pending_request) == "table" then
+				local subscribe = st.deserialize(pending_request);
+				subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
+				origin.send(subscribe);
+			else
+				origin.send(st.presence({type="subscribe", from=jid}));
+			end
 		end
 		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
@@ -226,7 +232,7 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 		else
 			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
-				if rostermanager.set_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
 				end -- TODO else return error, unable to save
 			end

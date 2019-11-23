@@ -25,13 +25,17 @@
 #define _DEFAULT_SOURCE
 #endif
 #endif
+
 #if defined(__APPLE__)
 #ifndef _DARWIN_C_SOURCE
 #define _DARWIN_C_SOURCE
 #endif
 #endif
+
+#if ! defined(__FreeBSD__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#endif
 #endif
 
 #include <stdlib.h>

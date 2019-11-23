@@ -98,7 +98,7 @@ function stanza_mt:query(xmlns)
 end
 
 function stanza_mt:body(text, attr)
-	return self:tag("body", attr):text(text);
+	return self:text_tag("body", text, attr);
 end
 
 function stanza_mt:text_tag(name, text, attr, namespaces)
@@ -270,6 +270,34 @@ function stanza_mt:find(path)
 	until not self
 end
 
+local function _clone(stanza, only_top)
+	local attr, tags = {}, {};
+	for k,v in pairs(stanza.attr) do attr[k] = v; end
+	local old_namespaces, namespaces = stanza.namespaces;
+	if old_namespaces then
+		namespaces = {};
+		for k,v in pairs(old_namespaces) do namespaces[k] = v; end
+	end
+	local new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
+	if not only_top then
+		for i=1,#stanza do
+			local child = stanza[i];
+			if child.name then
+				child = _clone(child);
+				t_insert(tags, child);
+			end
+			t_insert(new, child);
+		end
+	end
+	return setmetatable(new, stanza_mt);
+end
+
+local function clone(stanza, only_top)
+	if not is_stanza(stanza) then
+		error("bad argument to clone: expected stanza, got "..type(stanza));
+	end
+	return _clone(stanza, only_top);
+end
 
 local escape_table = { ["'"] = "&apos;", ["\""] = "&quot;", ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" };
 local function xml_escape(str) return (s_gsub(str, "['&<>\"]", escape_table)); end
@@ -310,11 +338,8 @@ function stanza_mt.__tostring(t)
 end
 
 function stanza_mt.top_tag(t)
-	local attr_string = "";
-	if t.attr then
-		for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(" %s='%s'", k, xml_escape(tostring(v))); end end
-	end
-	return s_format("<%s%s>", t.name, attr_string);
+	local top_tag_clone = clone(t, true);
+	return tostring(top_tag_clone):sub(1,-3)..">";
 end
 
 function stanza_mt.get_text(t)
@@ -388,43 +413,22 @@ local function deserialize(serialized)
 	end
 end
 
-local function _clone(stanza)
-	local attr, tags = {}, {};
-	for k,v in pairs(stanza.attr) do attr[k] = v; end
-	local old_namespaces, namespaces = stanza.namespaces;
-	if old_namespaces then
-		namespaces = {};
-		for k,v in pairs(old_namespaces) do namespaces[k] = v; end
-	end
-	local new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
-	for i=1,#stanza do
-		local child = stanza[i];
-		if child.name then
-			child = _clone(child);
-			t_insert(tags, child);
-		end
-		t_insert(new, child);
-	end
-	return setmetatable(new, stanza_mt);
-end
-
-local function clone(stanza)
-	if not is_stanza(stanza) then
-		error("bad argument to clone: expected stanza, got "..type(stanza));
-	end
-	return _clone(stanza);
-end
-
 local function message(attr, body)
 	if not body then
 		return new_stanza("message", attr);
 	else
-		return new_stanza("message", attr):tag("body"):text(body):up();
+		return new_stanza("message", attr):text_tag("body", body);
 	end
 end
 local function iq(attr)
-	if not (attr and attr.id) then
+	if not attr then
+		error("iq stanzas require id and type attributes");
+	end
+	if not attr.id then
 		error("iq stanzas require an id attribute");
+	end
+	if not attr.type then
+		error("iq stanzas require a type attribute");
 	end
 	return new_stanza("iq", attr);
 end
@@ -445,7 +449,7 @@ local function error_reply(orig, error_type, condition, error_message)
 	t.attr.type = "error";
 	t:tag("error", {type = error_type}) --COMPAT: Some day xmlns:stanzas goes here
 	:tag(condition, xmpp_stanzas_attr):up();
-	if error_message then t:tag("text", xmpp_stanzas_attr):text(error_message):up(); end
+	if error_message then t:text_tag("text", error_message, xmpp_stanzas_attr); end
 	return t; -- stanza ready for adding app-specific errors
 end
 

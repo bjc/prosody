@@ -105,6 +105,23 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 					vcard_temp:tag("WORK"):up();
 				end
 				vcard_temp:up();
+			elseif tag.name == "impp" then
+				local uri = tag:get_child_text("uri");
+				if uri and uri:sub(1, 5) == "xmpp:" then
+					vcard_temp:text_tag("JABBERID", uri:sub(6))
+				end
+			elseif tag.name == "org" then
+				vcard_temp:tag("ORG")
+					:text_tag("ORGNAME", tag:get_child_text("text"))
+				:up();
+			end
+		end
+	else
+		local ok, _, nick_item = pep_service:get_last_item("http://jabber.org/protocol/nick", stanza.attr.from);
+		if ok and nick_item then
+			local nickname = nick_item:get_child_text("nick", "http://jabber.org/protocol/nick");
+			if nickname then
+				vcard_temp:text_tag("NICKNAME", nickname);
 			end
 		end
 	end
@@ -216,6 +233,10 @@ function vcard_to_pep(vcard_temp)
 				vcard4:text_tag("text", "work");
 			end
 			vcard4:up():up():up();
+		elseif tag.name == "JABBERID" then
+			vcard4:tag("impp")
+				:text_tag("uri", "xmpp:" .. tag:get_text())
+			:up();
 		elseif tag.name == "PHOTO" then
 			local avatar_type = tag:get_child_text("TYPE");
 			local avatar_payload = tag:get_child_text("BINVAL");
