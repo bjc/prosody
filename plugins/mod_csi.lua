@@ -21,3 +21,12 @@ end
 module:hook("stanza/"..xmlns_csi..":active", refire_event("csi-client-active"));
 module:hook("stanza/"..xmlns_csi..":inactive", refire_event("csi-client-inactive"));
 
+function module.load()
+	if prosody.hosts[module.host].events._handlers["csi-client-active"] then
+		module:set_status("core", "CSI handler module loaded");
+	else
+		module:set_status("warn", "No CSI handler module loaded");
+	end
+end
+module:hook("module-loaded", module.load);
+module:hook("module-unloaded", module.load);
