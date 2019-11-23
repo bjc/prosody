@@ -45,20 +45,20 @@ local function bare(jid)
 	return host;
 end
 
-local function prepped_split(jid)
+local function prepped_split(jid, strict)
 	local node, host, resource = split(jid);
 	if host and host ~= "." then
 		if sub(host, -1, -1) == "." then -- Strip empty root label
 			host = sub(host, 1, -2);
 		end
-		host = nameprep(host);
+		host = nameprep(host, strict);
 		if not host then return; end
 		if node then
-			node = nodeprep(node);
+			node = nodeprep(node, strict);
 			if not node then return; end
 		end
 		if resource then
-			resource = resourceprep(resource);
+			resource = resourceprep(resource, strict);
 			if not resource then return; end
 		end
 		return node, host, resource;
@@ -77,8 +77,8 @@ local function join(node, host, resource)
 	return host;
 end
 
-local function prep(jid)
-	local node, host, resource = prepped_split(jid);
+local function prep(jid, strict)
+	local node, host, resource = prepped_split(jid, strict);
 	return join(node, host, resource);
 end
 

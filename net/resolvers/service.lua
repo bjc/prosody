@@ -1,6 +1,7 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };
@@ -39,7 +40,11 @@ function methods:next(cb)
 
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
-	dns_resolver:lookup(function (answer)
+	dns_resolver:lookup(function (answer, err)
+		if not answer and not err then
+			-- net.adns returns nil if there are zero records or nxdomain
+			answer = {};
+		end
 		if answer then
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then

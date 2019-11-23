@@ -83,7 +83,7 @@ end
 setmetatable(stylemap, { __index = function(_, style)
 	if type(style) == "string" and style:find("%x%x%x%x%x%x") == 1 then
 		local g = style:sub(7) == " background" and "48;5;" or "38;5;";
-		return g .. color(hex2rgb(style));
+		return format("%s%d", g, color(hex2rgb(style)));
 	end
 end } );
 

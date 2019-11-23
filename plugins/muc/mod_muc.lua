@@ -86,7 +86,14 @@ room_mt.get_registered_nick = register.get_registered_nick;
 room_mt.get_registered_jid = register.get_registered_jid;
 room_mt.handle_register_iq = register.handle_register_iq;
 
+local presence_broadcast = module:require "muc/presence_broadcast";
+room_mt.get_presence_broadcast = presence_broadcast.get;
+room_mt.set_presence_broadcast = presence_broadcast.set;
+room_mt.get_valid_broadcast_roles = presence_broadcast.get_valid_broadcast_roles;
+
+
 local jid_split = require "util.jid".split;
+local jid_prep = require "util.jid".prep;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local cache = require "util.cache";
@@ -263,9 +270,13 @@ local function set_room_defaults(room, lang)
 	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
 	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
 	room:set_language(lang or module:get_option_string("muc_room_default_language"));
+	room:set_presence_broadcast(module:get_option("muc_room_default_presence_broadcast", room:get_presence_broadcast()));
 end
 
 function create_room(room_jid, config)
+	if jid_bare(room_jid) ~= room_jid or not jid_prep(room_jid, true) then
+		return nil, "invalid-jid";
+	end
 	local exists = get_room_from_jid(room_jid);
 	if exists then
 		return nil, "room-exists";
@@ -453,7 +464,11 @@ for event_name, method in pairs {
 
 		if room == nil then
 			-- Watch presence to create rooms
-			if stanza.attr.type == nil and stanza.name == "presence" then
+			if not jid_prep(room_jid, true) then
+				origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
+				return true;
+			end
+			if stanza.attr.type == nil and stanza.name == "presence" and stanza:get_child("x", "http://jabber.org/protocol/muc") then
 				room = muclib.new_room(room_jid);
 				return room:handle_first_presence(origin, stanza);
 			elseif stanza.attr.type ~= "error" then
