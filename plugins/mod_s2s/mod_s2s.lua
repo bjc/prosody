@@ -194,7 +194,7 @@ function module.add_host(module)
 			session:close({
 					condition = "unsupported-feature",
 					text = "No viable authentication method offered",
-				});
+				}, nil, "No viable authentication method offered by remote server");
 			return false;
 		end
 	end, -1);
@@ -255,7 +255,7 @@ function make_authenticated(event)
 				condition = "policy-violation",
 				text = "Encrypted server-to-server communication is required but was not "
 				       ..((session.direction == "outgoing" and "offered") or "used")
-			});
+			}, nil, "Could not establish encrypted connection to remote server");
 		end
 	end
 	if hosts[host] then
@@ -608,7 +608,7 @@ local function initialize_session(session)
 			local ok, err = stream:feed(data);
 			if ok then return; end
 			log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
-			session:close("not-well-formed");
+			session:close("not-well-formed", nil, "Received invalid XML from remote server");
 		end
 	end
 
@@ -738,9 +738,10 @@ function check_auth_policy(event)
 	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		module:log("warn", "Forbidding insecure connection to/from %s", host or session.ip or "(unknown host)");
 		if session.direction == "incoming" then
-			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host });
+			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host },
+				nil, "Remote server's certificate is invalid, expired, or not trusted");
 		else -- Close outgoing connections without warning
-			session:close(false);
+			session:close(false, nil, "Remote server's certificate is invalid, expired, or not trusted");
 		end
 		return false;
 	end
