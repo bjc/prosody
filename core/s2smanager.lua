@@ -84,14 +84,14 @@ local function retire_session(session, reason)
 	return setmetatable(session, resting_session);
 end
 
-local function destroy_session(session, reason)
+local function destroy_session(session, reason, bounce_reason)
 	if session.destroyed then return; end
 	local log = session.log or log;
 	log("debug", "Destroying %s session %s->%s%s%s", session.direction, session.from_host, session.to_host, reason and ": " or "", reason or "");
 
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
-		session:bounce_sendq(reason);
+		session:bounce_sendq(bounce_reason or reason);
 	elseif session.direction == "incoming" then
 		if session.outgoing then
 			hosts[session.to_host].s2sout[session.from_host] = nil;
