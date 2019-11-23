@@ -1,0 +1,127 @@
+# MUC: Change nickname
+# Make sure a role is not reset, see #1466
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+				<field var='muc#roomconfig_moderatedroom'>
+					<value>1</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result"/>
+
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item role='moderator' xmlns='http://jabber.org/protocol/muc#user' affiliation='owner'/>
+		</x>
+	</presence>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's full JID}" affiliation='none' role='visitor'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item affiliation="none" role="visitor" jid="${Juliet's full JID}"/>
+		</x>
+	</presence>
+
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+				<field var='muc#roomconfig_moderatedroom'>
+					<value>0</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result"/>
+
+Juliet receives:
+	<message type='groupchat' from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status xmlns='http://jabber.org/protocol/muc#user' code='104'/>
+		</x>
+	</message>
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet2">
+	</presence>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Juliet' type='unavailable'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='303'/>
+			<item nick='Juliet2' jid="${Juliet's full JID}" affiliation='none' role='visitor'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Juliet receives:
+	<presence from='room@conference.localhost/Juliet2'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's full JID}" affiliation='none' role='visitor'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
