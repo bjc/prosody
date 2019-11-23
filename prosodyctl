@@ -933,6 +933,10 @@ function commands.check(arg)
 				print("    For more information see https://prosody.im/doc/storage");
 			end
 		end
+		if all_modules:contains("vcard") and all_modules:contains("vcard_legacy") then
+			print("    Both mod_vcard_legacy and mod_vcard are enabled but they conflict");
+			print("    with each other. Remove one.");
+		end
 		for host, host_config in pairs(config) do --luacheck: ignore 213/host
 			if type(rawget(host_config, "storage")) == "string" and rawget(host_config, "default_storage") then
 				print("");
