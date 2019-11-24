@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local inet_pton = require "util.net".pton;
+local inet_ntop = require "util.net".ntop;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 
 local methods = {};
@@ -63,6 +64,7 @@ local function new(hostname, port, conn_type, extra)
 		is_ip = inet_pton(hostname:sub(2,-2));
 	end
 	if is_ip then
+		hostname = inet_ntop(is_ip);
 		if #is_ip == 16 then
 			targets = { { conn_type.."6", hostname, port, extra } };
 		elseif #is_ip == 4 then
