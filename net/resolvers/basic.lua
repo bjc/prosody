@@ -59,6 +59,9 @@ local function new(hostname, port, conn_type, extra)
 	local targets = nil;
 
 	local is_ip = inet_pton(hostname);
+	if not is_ip and hostname:sub(1,1) == '[' then
+		is_ip = inet_pton(hostname:sub(2,-2));
+	end
 	if is_ip then
 		if #is_ip == 16 then
 			targets = { { conn_type.."6", hostname, port, extra } };
