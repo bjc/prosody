@@ -1,5 +1,6 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
+local inet_pton = require "util.net".pton;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
@@ -69,6 +70,14 @@ function methods:next(cb)
 end
 
 local function new(hostname, service, conn_type, extra)
+	local is_ip = inet_pton(hostname);
+	if not is_ip and hostname:sub(1,1) == '[' then
+		is_ip = inet_pton(hostname:sub(2,-2));
+	end
+	if is_ip and extra and extra.default_port then
+		return basic.new(hostname, extra.default_port, conn_type, extra);
+	end
+
 	return setmetatable({
 		hostname = idna_to_ascii(hostname);
 		service = service;
