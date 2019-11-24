@@ -34,16 +34,6 @@ function methods:next(cb)
 		self:next(cb);
 	end
 
-	local is_ip = inet_pton(self.hostname);
-	if is_ip then
-		if #is_ip == 16 then
-			cb(self.conn_type.."6", self.hostname, self.port, self.extra);
-		elseif #is_ip == 4 then
-			cb(self.conn_type.."4", self.hostname, self.port, self.extra);
-		end
-		return;
-	end
-
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
 	dns_resolver:lookup(function (answer)
@@ -66,11 +56,27 @@ function methods:next(cb)
 end
 
 local function new(hostname, port, conn_type, extra)
+	local ascii_host = idna_to_ascii(hostname);
+	local targets = nil;
+
+	local is_ip = inet_pton(hostname);
+	if not is_ip and hostname:sub(1,1) == '[' then
+		is_ip = inet_pton(hostname:sub(2,-2));
+	end
+	if is_ip then
+		if #is_ip == 16 then
+			targets = { { conn_type.."6", hostname, port, extra } };
+		elseif #is_ip == 4 then
+			targets = { { conn_type.."4", hostname, port, extra } };
+		end
+	end
+
 	return setmetatable({
-		hostname = idna_to_ascii(hostname);
+		hostname = ascii_host;
 		port = port;
 		conn_type = conn_type or "tcp";
 		extra = extra;
+		targets = targets;
 	}, resolver_mt);
 end
 
