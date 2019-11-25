@@ -447,7 +447,7 @@ local function reply(orig)
 end
 
 local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };
-local function error_reply(orig, error_type, condition, error_message)
+local function error_reply(orig, error_type, condition, error_message, error_by)
 	if not is_stanza(orig) then
 		error("bad argument to error_reply: expected stanza, got "..type(orig));
 	elseif orig.attr.type == "error" then
@@ -455,7 +455,10 @@ local function error_reply(orig, error_type, condition, error_message)
 	end
 	local t = reply(orig);
 	t.attr.type = "error";
-	t:tag("error", {type = error_type}) --COMPAT: Some day xmlns:stanzas goes here
+	if t.attr.from == error_by then
+		error_by = nil;
+	end
+	t:tag("error", {type = error_type, by = error_by}) --COMPAT: Some day xmlns:stanzas goes here
 	:tag(condition, xmpp_stanzas_attr):up();
 	if error_message then t:text_tag("text", error_message, xmpp_stanzas_attr); end
 	return t; -- stanza ready for adding app-specific errors
