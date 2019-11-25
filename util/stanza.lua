@@ -434,6 +434,9 @@ local function iq(attr)
 end
 
 local function reply(orig)
+	if not is_stanza(orig) then
+		error("bad argument to reply: expected stanza, got "..type(orig));
+	end
 	return new_stanza(orig.name,
 		orig.attr and {
 			to = orig.attr.from,
