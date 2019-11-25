@@ -438,7 +438,7 @@ local function reply(orig)
 		error("bad argument to reply: expected stanza, got "..type(orig));
 	end
 	return new_stanza(orig.name,
-		orig.attr and {
+		{
 			to = orig.attr.from,
 			from = orig.attr.to,
 			id = orig.attr.id,
