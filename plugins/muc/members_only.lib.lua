@@ -113,7 +113,7 @@ module:hook("muc-occupant-pre-join", function(event)
 		local stanza = event.stanza;
 		local affiliation = room:get_affiliation(stanza.attr.from);
 		if valid_affiliations[affiliation or "none"] <= valid_affiliations.none then
-			local reply = st.error_reply(stanza, "auth", "registration-required"):up();
+			local reply = st.error_reply(stanza, "auth", "registration-required", nil, room.jid):up();
 			reply.tags[1].attr.code = "407";
 			event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 			return true;
@@ -131,7 +131,7 @@ module:hook("muc-pre-invite", function(event)
 		local inviter_affiliation = room:get_affiliation(stanza.attr.from) or "none";
 		local required_affiliation = room._data.allow_member_invites and "member" or "admin";
 		if valid_affiliations[inviter_affiliation] < valid_affiliations[required_affiliation] then
-			event.origin.send(st.error_reply(stanza, "auth", "forbidden"));
+			event.origin.send(st.error_reply(stanza, "auth", "forbidden", nil, room.jid));
 			return true;
 		end
 	end
