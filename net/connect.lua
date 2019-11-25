@@ -2,6 +2,10 @@ local server = require "net.server";
 local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
 
+-- TODO Respect use_ipv4, use_ipv6
+-- FIXME Error propagation from resolvers doesn't work
+-- TODO Try to share DNS resolver object and close it afterwards
+
 local pending_connection_methods = {};
 local pending_connection_mt = {
 	__name = "pending_connection";
