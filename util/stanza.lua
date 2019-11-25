@@ -448,6 +448,9 @@ end
 
 local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };
 local function error_reply(orig, error_type, condition, error_message)
+	if not is_stanza(orig) then
+		error("bad argument to error_reply: expected stanza, got "..type(orig));
+	end
 	local t = reply(orig);
 	t.attr.type = "error";
 	t:tag("error", {type = error_type}) --COMPAT: Some day xmlns:stanzas goes here

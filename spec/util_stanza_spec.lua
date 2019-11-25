@@ -214,6 +214,12 @@ describe("util.stanza", function()
 			assert.are.equal(#r.tags, 1);
 			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
 		end);
+
+		it("should reject not-stanzas", function ()
+			assert.has.error_match(function ()
+				st.error_reply(not "a stanza", "modify", "bad-request");
+			end, "expected stanza");
+		end);
 	end);
 
 	describe("should reject #invalid", function ()
