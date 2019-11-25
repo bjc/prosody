@@ -191,7 +191,7 @@ end
 
 local function handle_broken_room(room, origin, stanza)
 	module:log("debug", "Returning error from broken room %s", room.jid);
-	origin.send(st.error_reply(stanza, "wait", "internal-server-error"));
+	origin.send(st.error_reply(stanza, "wait", "internal-server-error", nil, room.jid));
 	return true;
 end
 

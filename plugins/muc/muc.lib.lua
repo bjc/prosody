@@ -422,7 +422,7 @@ module:hook("muc-occupant-pre-join", function(event)
 	local room, stanza = event.room, event.stanza;
 	local affiliation = room:get_affiliation(stanza.attr.from);
 	if affiliation == "outcast" then
-		local reply = st.error_reply(stanza, "auth", "forbidden"):up();
+		local reply = st.error_reply(stanza, "auth", "forbidden", nil, room.jid):up();
 		reply.tags[1].attr.code = "403";
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
@@ -430,24 +430,27 @@ module:hook("muc-occupant-pre-join", function(event)
 end, -10);
 
 module:hook("muc-occupant-pre-join", function(event)
+	local room = event.room;
 	local nick = jid_resource(event.occupant.nick);
 	if not nick:find("%S") then
-		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden"));
+		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden", room.jid));
 		return true;
 	end
 end, 1);
 
 module:hook("muc-occupant-pre-change", function(event)
+	local room = event.room;
 	if not jid_resource(event.dest_occupant.nick):find("%S") then
-		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden"));
+		event.origin.send(st.error_reply(event.stanza, "modify", "not-allowed", "Invisible Nicknames are forbidden", room.jid));
 		return true;
 	end
 end, 1);
 
 module:hook("muc-occupant-pre-join", function(event)
+	local room = event.room;
 	local nick = jid_resource(event.occupant.nick);
 	if not resourceprep(nick, true) then -- strict
-		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation"));
+		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation", room.jid));
 		return true;
 	end
 end, 2);
@@ -455,7 +458,7 @@ end, 2);
 module:hook("muc-occupant-pre-change", function(event)
 	local nick = jid_resource(event.dest_occupant.nick);
 	if not resourceprep(nick, true) then -- strict
-		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation"));
+		event.origin.send(st.error_reply(event.stanza, "modify", "jid-malformed", "Nickname must pass strict validation", room.jid));
 		return true;
 	end
 end, 2);
@@ -530,7 +533,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 	if orig_occupant == nil and not muc_x and stanza.attr.type == nil then
 		module:log("debug", "Attempted join without <x>, possibly desynced");
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found",
-			"You are not currently connected to this chat"));
+			"You are not currently connected to this chat", self.jid));
 		return true;
 	end
 
@@ -592,7 +595,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		and bare_jid ~= jid_bare(dest_occupant.bare_jid) then
 		-- new nick or has different bare real jid
 		log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
-		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+		local reply = st.error_reply(stanza, "cancel", "conflict", nil, self.jid):up();
 		reply.tags[1].attr.code = "409";
 		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
@@ -721,7 +724,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 		return self:handle_normal_presence(origin, stanza);
 	elseif type ~= 'result' then -- bad type
 		if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
-			origin.send(st.error_reply(stanza, "modify", "bad-request")); -- FIXME correct error?
+			origin.send(st.error_reply(stanza, "modify", "bad-request", nil, self.jid)); -- FIXME correct error?
 		end
 	end
 	return true;
@@ -756,11 +759,11 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 	else -- Type is "get" or "set"
 		local current_nick = self:get_occupant_jid(from);
 		if not current_nick then
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat", self.jid));
 			return true;
 		end
 		if not occupant then -- recipient not in room
-			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+			origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room", self.jid));
 			return true;
 		end
 		-- XEP-0410 MUC Self-Ping #1220
@@ -789,12 +792,12 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	if not current_nick then -- not in room
 		if type ~= "error" then
-			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
+			origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat", self.jid));
 		end
 		return true;
 	end
 	if type == "groupchat" then -- groupchat messages not allowed in PM
-		origin.send(st.error_reply(stanza, "modify", "bad-request"));
+		origin.send(st.error_reply(stanza, "modify", "bad-request", nil, self.jid));
 		return true;
 	elseif type == "error" and is_kickable_error(stanza) then
 		log("debug", "%s kicked from %s for sending an error message", current_nick, self.jid);
@@ -803,7 +806,7 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 
 	local o_data = self:get_occupant_by_nick(to);
 	if not o_data then
-		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room"));
+		origin.send(st.error_reply(stanza, "cancel", "item-not-found", "Recipient not in room", self.jid));
 		return true;
 	end
 	log("debug", "%s sent private message stanza to %s (%s)", from, to, o_data.jid);
