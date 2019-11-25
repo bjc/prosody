@@ -355,7 +355,7 @@ end, 1);
 module:hook("muc-room-pre-create", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if not track_room(event.room) then
-		origin.send(st.error_reply(stanza, "wait", "resource-constraint"));
+		origin.send(st.error_reply(stanza, "wait", "resource-constraint", nil, module.host));
 		return true;
 	end
 end, -1000);
@@ -406,7 +406,7 @@ do
 				restrict_room_creation == "local" and
 				select(2, jid_split(user_jid)) == host_suffix
 			) then
-				origin.send(st.error_reply(stanza, "cancel", "not-allowed", "Room creation is restricted"));
+				origin.send(st.error_reply(stanza, "cancel", "not-allowed", "Room creation is restricted", module.host));
 				return true;
 			end
 		end);
@@ -451,7 +451,7 @@ for event_name, method in pairs {
 				room = nil;
 			else
 				if stanza.attr.type ~= "error" then
-					local reply = st.error_reply(stanza, "cancel", "gone", room._data.reason)
+					local reply = st.error_reply(stanza, "cancel", "gone", room._data.reason, module.host)
 					if room._data.newjid then
 						local uri = "xmpp:"..room._data.newjid.."?join";
 						reply:get_child("error"):child_with_name("gone"):text(uri);
@@ -465,20 +465,20 @@ for event_name, method in pairs {
 		if room == nil then
 			-- Watch presence to create rooms
 			if not jid_prep(room_jid, true) then
-				origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
+				origin.send(st.error_reply(stanza, "modify", "jid-malformed", nil, module.host));
 				return true;
 			end
 			if stanza.attr.type == nil and stanza.name == "presence" and stanza:get_child("x", "http://jabber.org/protocol/muc") then
 				room = muclib.new_room(room_jid);
 				return room:handle_first_presence(origin, stanza);
 			elseif stanza.attr.type ~= "error" then
-				origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
+				origin.send(st.error_reply(stanza, "cancel", "item-not-found", nil, module.host));
 				return true;
 			else
 				return;
 			end
 		elseif room == false then -- Error loading room
-			origin.send(st.error_reply(stanza, "wait", "resource-constraint"));
+			origin.send(st.error_reply(stanza, "wait", "resource-constraint", nil, module.host));
 			return true;
 		end
 		return room[method](room, origin, stanza);
