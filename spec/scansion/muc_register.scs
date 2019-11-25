@@ -177,7 +177,7 @@ Rosaline sends:
 
 Rosaline receives:
 	<presence type='error' from='room@conference.localhost/Juliet'>
-		<error type='cancel'>
+		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
 		<x xmlns='http://jabber.org/protocol/muc'/>
@@ -288,7 +288,7 @@ Rosaline sends:
 
 Rosaline receives:
 	<presence type='error' from='room@conference.localhost/Juliet'>
-		<error type='cancel'>
+		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
 		<x xmlns='http://jabber.org/protocol/muc'/>
