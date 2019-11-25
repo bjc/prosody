@@ -450,6 +450,8 @@ local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };
 local function error_reply(orig, error_type, condition, error_message)
 	if not is_stanza(orig) then
 		error("bad argument to error_reply: expected stanza, got "..type(orig));
+	elseif orig.attr.type == "error" then
+		error("bad argument to error_reply: got stanza of type error which must not be replied to");
 	end
 	local t = reply(orig);
 	t.attr.type = "error";

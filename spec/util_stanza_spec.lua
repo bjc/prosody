@@ -220,6 +220,16 @@ describe("util.stanza", function()
 				st.error_reply(not "a stanza", "modify", "bad-request");
 			end, "expected stanza");
 		end);
+
+		it("should reject stanzas of type error", function ()
+			assert.has.error_match(function ()
+				st.error_reply(st.message({type="error"}), "cancel", "conflict");
+			end, "got stanza of type error");
+			assert.has.error_match(function ()
+				st.error_reply(st.error_reply(st.message({type="chat"}), "modify", "forbidden"), "cancel", "service-unavailable");
+			end, "got stanza of type error");
+		end);
+
 	end);
 
 	describe("should reject #invalid", function ()
