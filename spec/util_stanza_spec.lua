@@ -170,6 +170,12 @@ describe("util.stanza", function()
 			assert.are.equal(r.attr.type, "result");
 			assert.are.equal(#r.tags, 0, "A reply should not include children of the original stanza");
 		end);
+
+		it("should reject not-stanzas", function ()
+			assert.has.error_match(function ()
+				st.reply(not "a stanza");
+			end, "expected stanza");
+		end);
 	end);
 
 	describe("#error_reply()", function()
