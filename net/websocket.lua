@@ -23,6 +23,7 @@ local websockets = {};
 local websocket_listeners = {};
 function websocket_listeners.ondisconnect(conn, err)
 	local s = websockets[conn];
+	if not s then return; end
 	websockets[conn] = nil;
 	if s.close_timer then
 		timer.stop(s.close_timer);
