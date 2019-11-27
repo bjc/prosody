@@ -30,6 +30,7 @@ local runner = require "util.async".runner;
 local connect = require "net.connect".connect;
 local service = require "net.resolvers.service";
 local errors = require "util.error";
+local set = require "util.set";
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
@@ -725,6 +726,25 @@ function listener.onattach(conn, data)
 	end
 end
 
+-- Complete the sentence "Your certificate " with what's wrong
+local function friendly_cert_error(session) --> string
+	if session.cert_chain_status == "invalid" then
+		if session.cert_chain_errors then
+			local cert_errors = set.new(session.cert_chain_errors[1]);
+			if cert_errors:contains("certificate has expired") then
+				return "has expired";
+			elseif cert_errors:contains("self signed certificate") then
+				return "is self-signed";
+			end
+		end
+		return "is not trusted"; -- for some other reason
+	elseif session.cert_identity_status == "invalid" then
+		return "is not valid for this name";
+	end
+	-- this should normally be unreachable except if no s2s auth module was loaded
+	return "could not be validated";
+end
+
 function check_auth_policy(event)
 	local host, session = event.host, event.session;
 	local must_secure = secure_auth;
@@ -737,11 +757,12 @@ function check_auth_policy(event)
 
 	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		module:log("warn", "Forbidding insecure connection to/from %s", host or session.ip or "(unknown host)");
+		local reason = friendly_cert_error(session);
 		if session.direction == "incoming" then
-			session:close({ condition = "not-authorized", text = "Your server's certificate is invalid, expired, or not trusted by "..session.to_host },
-				nil, "Remote server's certificate is invalid, expired, or not trusted");
+			session:close({ condition = "not-authorized", text = "Your server's certificate "..reason },
+				nil, "Remote server's certificate "..reason);
 		else -- Close outgoing connections without warning
-			session:close(false, nil, "Remote server's certificate is invalid, expired, or not trusted");
+			session:close(false, nil, "Remote server's certificate "..reason);
 		end
 		return false;
 	end
