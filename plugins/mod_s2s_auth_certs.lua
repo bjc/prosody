@@ -27,6 +27,7 @@ module:hook("s2s-check-certificate", function(event)
 			log("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
 		end
 		session.cert_chain_status = "invalid";
+		session.cert_chain_errors = errors;
 	else
 		log("debug", "certificate chain validation result: valid");
 		session.cert_chain_status = "valid";
