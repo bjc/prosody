@@ -758,12 +758,13 @@ function check_auth_policy(event)
 	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		module:log("warn", "Forbidding insecure connection to/from %s", host or session.ip or "(unknown host)");
 		local reason = friendly_cert_error(session);
-		if session.direction == "incoming" then
-			session:close({ condition = "not-authorized", text = "Your server's certificate "..reason },
-				nil, "Remote server's certificate "..reason);
-		else -- Close outgoing connections without warning
-			session:close(false, nil, "Remote server's certificate "..reason);
-		end
+		-- XEP-0178 recommends closing outgoing connections without warning
+		-- but does not give a rationale for this.
+		-- In practice most cases are configuration mistakes or forgotten
+		-- certificate renewals. We think it's better to let the other party
+		-- know about the problem so that they can fix it.
+		session:close({ condition = "not-authorized", text = "Your server's certificate "..reason },
+			nil, "Remote server's certificate "..reason);
 		return false;
 	end
 end
