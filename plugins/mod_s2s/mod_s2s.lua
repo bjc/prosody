@@ -190,6 +190,13 @@ function module.add_host(module)
 			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
 			mark_connected(session);
 			return true;
+		elseif require_encryption and not session.secure then
+			session.log("warn", "Encrypted server-to-server communication is required but was not offered by %s", session.to_host);
+			session:close({
+					condition = "policy-violation",
+					text = "Encrypted server-to-server communication is required but was not offered",
+				}, nil, "Could not establish encrypted connection to remote server");
+			return false;
 		elseif not session.dialback_verifying then
 			session.log("warn", "No SASL EXTERNAL offer and Dialback doesn't seem to be enabled, giving up");
 			session:close({
