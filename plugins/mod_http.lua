@@ -242,6 +242,7 @@ module:provides("net", {
 	default_port = 5281;
 	encryption = "ssl";
 	multiplex = {
+		protocol = "http/1.1";
 		pattern = "^[A-Z]";
 	};
 });

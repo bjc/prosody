@@ -374,6 +374,7 @@ module:provides("net", {
 	default_port = 5222;
 	encryption = "starttls";
 	multiplex = {
+		protocol = "xmpp-client";
 		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:client%1.*>";
 	};
 });
