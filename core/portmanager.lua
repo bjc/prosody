@@ -245,10 +245,6 @@ local function add_sni_host(host, service)
 			local ssl, err, cfg = certmanager.create_context(host, "server");
 			if ssl then
 				active_service.server.hosts[host] = ssl;
-				if not active_service.tls_cfg.certificate then
-					active_service.server.tls_ctx = ssl;
-					active_service.tls_cfg = cfg;
-				end
 			else
 				log("error", "err = %q", err);
 			end
