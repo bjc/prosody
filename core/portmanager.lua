@@ -230,19 +230,14 @@ end
 -- Event handlers
 
 local function add_sni_host(host, service)
-	-- local global_ssl_config = config.get(host, "ssl") or {};
 	for name, interface, port, n, active_service --luacheck: ignore 213
 		in active_services:iter(service, nil, nil, nil) do
 		if active_service.server.hosts and active_service.tls_cfg then
-			-- local config_prefix = (active_service.config_prefix or name).."_";
-			-- if config_prefix == "_" then
-				-- config_prefix = "";
-			-- end
-			-- local prefix_ssl_config = config.get(host, config_prefix.."ssl") or global_ssl_config;
-			-- FIXME only global 'ssl' settings are mixed in here
-			-- TODO per host and per service settings should be merged in,
-			-- without overriding the per-host certificate
-			local ssl, err, cfg = certmanager.create_context(host, "server");
+			local config_prefix = (active_service.config_prefix or name).."_";
+			if config_prefix == "_" then config_prefix = ""; end
+			local prefix_ssl_config = config.get(host, config_prefix.."ssl");
+			local autocert = certmanager.find_host_cert(host);
+			local ssl, err, cfg = certmanager.create_context(host, "server", prefix_ssl_config, autocert, active_service.tls_cfg);
 			if ssl then
 				active_service.server.hosts[host] = ssl;
 			else
