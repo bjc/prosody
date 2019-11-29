@@ -285,7 +285,7 @@ local function new(options)
 end
 
 local default_http = new({
-	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" }, alpn = "http/1.1" };
 	suppress_errors = true;
 });
 
