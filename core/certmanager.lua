@@ -252,4 +252,5 @@ return {
 	create_context = create_context;
 	reload_ssl_config = reload_ssl_config;
 	find_cert = find_cert;
+	find_host_cert = find_host_cert;
 };
