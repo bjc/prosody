@@ -13,6 +13,7 @@ TRUNK
 -   Bi-directional server-to-server (XEP-0288)
 -   Built-in HTTP server now handles HEAD requests
 -   MUC presence broadcast controls
+-   ALPN support in mod\_net\_multiplex
 
 0.11.0
 ======

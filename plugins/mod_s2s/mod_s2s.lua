@@ -796,6 +796,7 @@ module:provides("net", {
 		verify = { "peer", "client_once", };
 	};
 	multiplex = {
+		protocol = "xmpp-server";
 		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:server%1.*>";
 	};
 });
