@@ -48,10 +48,9 @@ function listener.onconnect(conn)
 	local sock = conn:socket();
 	if sock.getalpn then
 		local selected_proto = sock:getalpn();
-		module:log("debug", "ALPN selected is %s", selected_proto);
 		local service = service_by_protocol[selected_proto];
 		if service then
-			module:log("debug", "Routing incoming connection to %s", service.name);
+			module:log("debug", "Routing incoming connection to %s based on ALPN %q", service.name, selected_proto);
 			local next_listener = service.listener;
 			conn:setlistener(next_listener);
 			local onconnect = next_listener.onconnect;
