@@ -173,7 +173,7 @@ function module.add_host(module)
 		end
 		local services = portmanager.get_active_services();
 		if services:get("https") or services:get("http") then
-			module:log("debug", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
+			module:log("info", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
 		else
 			module:log("warn", "Not listening on any ports, '%s' will be unreachable", app_name);
 		end
