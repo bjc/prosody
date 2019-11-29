@@ -196,14 +196,14 @@ function module.add_host(module)
 					condition = "policy-violation",
 					text = "Encrypted server-to-server communication is required but was not offered",
 				}, nil, "Could not establish encrypted connection to remote server");
-			return false;
+			return true;
 		elseif not session.dialback_verifying then
 			session.log("warn", "No SASL EXTERNAL offer and Dialback doesn't seem to be enabled, giving up");
 			session:close({
 					condition = "unsupported-feature",
 					text = "No viable authentication method offered",
 				}, nil, "No viable authentication method offered by remote server");
-			return false;
+			return true;
 		end
 	end, -1);
 end
