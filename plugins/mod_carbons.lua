@@ -74,17 +74,7 @@ local function message_handler(event, c2s)
 		return
 	end
 
-	-- Create the carbon copy and wrap it as per the Stanza Forwarding XEP
-	local copy = st.clone(stanza);
-	if c2s and not orig_to then
-		stanza.attr.to = bare_from;
-	end
-	copy.attr.xmlns = "jabber:client";
-	local carbon = st.message{ from = bare_jid, type = orig_type, }
-		:tag(c2s and "sent" or "received", { xmlns = xmlns_carbons })
-			:tag("forwarded", { xmlns = xmlns_forward })
-				:add_child(copy):reset();
-
+	local carbon;
 	user_sessions = user_sessions and user_sessions.sessions;
 	for _, session in pairs(user_sessions) do
 		-- Carbons are sent to resources that have enabled it
@@ -93,6 +83,20 @@ local function message_handler(event, c2s)
 		and session ~= target_session
 		-- and isn't among the top resources that would receive the message per standard routing rules
 		and (c2s or session.priority ~= top_priority) then
+			if not carbon then
+				-- Create the carbon copy and wrap it as per the Stanza Forwarding XEP
+				local copy = st.clone(stanza);
+				if c2s and not orig_to then
+					stanza.attr.to = bare_from;
+				end
+				copy.attr.xmlns = "jabber:client";
+				carbon = st.message{ from = bare_jid, type = orig_type, }
+					:tag(c2s and "sent" or "received", { xmlns = xmlns_carbons })
+						:tag("forwarded", { xmlns = xmlns_forward })
+							:add_child(copy):reset();
+
+			end
+
 			carbon.attr.to = session.full_jid;
 			module:log("debug", "Sending carbon to %s", session.full_jid);
 			session.send(carbon);
