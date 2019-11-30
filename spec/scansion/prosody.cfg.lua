@@ -9,7 +9,7 @@ modules_enabled = {
 		"roster"; -- Allow users to have a roster. Recommended ;)
 		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 		--"tls"; -- Add support for secure TLS on c2s/s2s connections
-		"dialback"; -- s2s dialback support
+		--"dialback"; -- s2s dialback support
 		"disco"; -- Service discovery
 
 	-- Not essential, but recommended
@@ -53,6 +53,9 @@ modules_enabled = {
 		--"scansion_record"; -- Records things that happen in scansion test case format
 }
 
+modules_disabled = {
+	"s2s";
+}
 certificate = "certs"
 
 allow_registration = false
