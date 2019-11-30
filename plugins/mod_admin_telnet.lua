@@ -964,11 +964,15 @@ function def_env.host:deactivate(hostname, reason)
 	return hostmanager.deactivate(hostname, reason);
 end
 
+local function compare_hosts(a, b)
+	return a:gsub("%P", string.reverse):reverse() < b:gsub("%P", string.reverse):reverse();
+end
+
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
 	local type;
-	for host, host_session in iterators.sorted_pairs(prosody.hosts) do
+	for host, host_session in iterators.sorted_pairs(prosody.hosts, compare_hosts) do
 		i = i + 1;
 		type = host_session.type;
 		if type == "local" then
