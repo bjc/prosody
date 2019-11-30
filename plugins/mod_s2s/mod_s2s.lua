@@ -764,7 +764,7 @@ function check_auth_policy(event)
 
 	if must_secure and (session.cert_chain_status ~= "valid" or session.cert_identity_status ~= "valid") then
 		local reason = friendly_cert_error(session);
-		module:log("warn", "Forbidding insecure connection to/from %s because its certificate %s", host or session.ip or "(unknown host)", reason);
+		session.log("warn", "Forbidding insecure connection to/from %s because its certificate %s", host or session.ip or "(unknown host)", reason);
 		-- XEP-0178 recommends closing outgoing connections without warning
 		-- but does not give a rationale for this.
 		-- In practice most cases are configuration mistakes or forgotten
