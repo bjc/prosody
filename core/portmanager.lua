@@ -241,7 +241,7 @@ local function add_sni_host(host, service)
 			if ssl then
 				active_service.server.hosts[host] = ssl;
 			else
-				log("error", "err = %q", err);
+				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			end
 		end
 	end
