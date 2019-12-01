@@ -164,8 +164,8 @@ static lua_Hook Hsig = NULL;
 static int Hmask = 0;
 static int Hcount = 0;
 
-int signals[MAX_PENDING_SIGNALS];
-int nsig = 0;
+static int signals[MAX_PENDING_SIGNALS];
+static int nsig = 0;
 
 static void sighook(lua_State *L, lua_Debug *ar) {
 	(void)ar;

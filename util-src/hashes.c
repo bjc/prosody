@@ -35,8 +35,8 @@ typedef unsigned __int32 uint32_t;
 #define HMAC_IPAD 0x36363636
 #define HMAC_OPAD 0x5c5c5c5c
 
-const char *hex_tab = "0123456789abcdef";
-void toHex(const unsigned char *in, int length, unsigned char *out) {
+static const char *hex_tab = "0123456789abcdef";
+static void toHex(const unsigned char *in, int length, unsigned char *out) {
 	int i;
 
 	for(i = 0; i < length; i++) {
