@@ -216,7 +216,7 @@ static const char *utf8_decode(const char *o, int *val) {
  * Check that a string is valid UTF-8
  * Returns NULL if not
  */
-const char *check_utf8(lua_State *L, int idx, size_t *l) {
+static const char *check_utf8(lua_State *L, int idx, size_t *l) {
 	size_t pos, len;
 	const char *s = luaL_checklstring(L, idx, &len);
 	pos = 0;
@@ -323,12 +323,12 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 	}
 }
 
-UStringPrepProfile *icu_nameprep;
-UStringPrepProfile *icu_nodeprep;
-UStringPrepProfile *icu_resourceprep;
-UStringPrepProfile *icu_saslprep;
-USpoofChecker *icu_spoofcheck;
-UIDNA *icu_idna2008;
+static UStringPrepProfile *icu_nameprep;
+static UStringPrepProfile *icu_nodeprep;
+static UStringPrepProfile *icu_resourceprep;
+static UStringPrepProfile *icu_saslprep;
+static USpoofChecker *icu_spoofcheck;
+static UIDNA *icu_idna2008;
 
 #if (U_ICU_VERSION_MAJOR_NUM < 58)
 /* COMPAT */
@@ -336,7 +336,7 @@ UIDNA *icu_idna2008;
 #endif
 
 /* initialize global ICU stringprep profiles */
-void init_icu(void) {
+static void init_icu(void) {
 	UErrorCode err = U_ZERO_ERROR;
 	utrace_setLevel(UTRACE_VERBOSE);
 	icu_nameprep = usprep_openByType(USPREP_RFC3491_NAMEPREP, &err);
