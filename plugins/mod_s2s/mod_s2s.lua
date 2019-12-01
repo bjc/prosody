@@ -507,26 +507,21 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			if type(reason) == "string" then -- assume stream error
-				log("debug", "Disconnecting %s[%s], <stream:error> is: %s", session.host or session.ip or "(unknown host)", session.type, reason);
-				session.sends2s(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
-			elseif type(reason) == "table" then
-				if reason.condition then
-					local stanza = st.stanza("stream:error"):tag(reason.condition, stream_xmlns_attr):up();
-					if reason.text then
-						stanza:tag("text", stream_xmlns_attr):text(reason.text):up();
-					end
-					if reason.extra then
-						stanza:add_child(reason.extra);
-					end
-					log("debug", "Disconnecting %s[%s], <stream:error> is: %s",
-					session.host or session.ip or "(unknown host)", session.type, stanza);
-					session.sends2s(stanza);
-				elseif st.is_stanza(reason) then
-					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
-						session.from_host or "(unknown host)", session.to_host or "(unknown host)",
-						session.type, reason);
-					session.sends2s(reason);
+				reason = st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
+			elseif type(reason) == "table" and not st.is_stanza(reason) then
+				local stanza = st.stanza("stream:error"):tag(reason.condition or "undefined-condition", stream_xmlns_attr):up();
+				if reason.text then
+					stanza:tag("text", stream_xmlns_attr):text(reason.text):up();
 				end
+				if reason.extra then
+					stanza:add_child(reason.extra);
+				end
+			end
+			if st.is_stanza(reason) then
+				-- to and from are never unknown on outgoing connections
+				log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
+					session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
+				session.sends2s(reason);
 			end
 		end
 
