@@ -371,7 +371,7 @@ static void init_icu(void) {
 	icu_idna2008 = uidna_openUTS46(options, &err);
 
 	if(U_FAILURE(err)) {
-		fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName((UErrorCode)err));
+		fprintf(stderr, "[c] util.encodings: error: %s\n", u_errorName(err));
 	}
 }
 
