@@ -692,6 +692,10 @@ function listener.ondisconnect(conn, err)
 	if session then
 		sessions[conn] = nil;
 		(session.log or log)("debug", "s2s disconnected: %s->%s (%s)", session.from_host, session.to_host, err or "connection closed");
+		if session.secure == false and err then
+			-- TODO util.error-ify this
+			err = "Error during negotiation of encrypted connection: "..err;
+		end
 		s2s_destroy_session(session, err);
 	end
 end
