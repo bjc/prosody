@@ -521,7 +521,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 					log("debug", "Disconnecting %s[%s], <stream:error> is: %s",
 					session.host or session.ip or "(unknown host)", session.type, stanza);
 					session.sends2s(stanza);
-				elseif reason.name then -- a stanza
+				elseif st.is_stanza(reason) then
 					log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
 						session.from_host or "(unknown host)", session.to_host or "(unknown host)",
 						session.type, reason);
