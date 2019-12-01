@@ -23,7 +23,6 @@ local function add_service(service)
 	elseif not protocol_name then
 		module:log("debug", "Service %q is not multiplex-capable", service.name);
 	end
-	module:log("info", "available_protocols = %q", available_protocols);
 end
 module:hook("service-added", function (event) add_service(event.service); end);
 module:hook("service-removed", function (event)
