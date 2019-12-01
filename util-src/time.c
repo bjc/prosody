@@ -5,18 +5,18 @@
 #include <time.h>
 #include <lua.h>
 
-lua_Number tv2number(struct timespec *tv) {
+static lua_Number tv2number(struct timespec *tv) {
 	return tv->tv_sec + tv->tv_nsec * 1e-9;
 }
 
-int lc_time_realtime(lua_State *L) {
+static int lc_time_realtime(lua_State *L) {
 	struct timespec t;
 	clock_gettime(CLOCK_REALTIME, &t);
 	lua_pushnumber(L, tv2number(&t));
 	return 1;
 }
 
-int lc_time_monotonic(lua_State *L) {
+static int lc_time_monotonic(lua_State *L) {
 	struct timespec t;
 	clock_gettime(CLOCK_MONOTONIC, &t);
 	lua_pushnumber(L, tv2number(&t));
