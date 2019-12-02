@@ -286,7 +286,7 @@ module:hook("stream-features", function(event)
 
 		if not usable_mechanisms:empty() then
 			log("debug", "Offering usable mechanisms: %s", usable_mechanisms);
-			for mechanism in available_mechanisms do
+			for mechanism in usable_mechanisms do
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 			features:add_child(mechanisms);
