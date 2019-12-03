@@ -516,6 +516,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 				if reason.extra then
 					stanza:add_child(reason.extra);
 				end
+				reason = stanza;
 			end
 			if st.is_stanza(reason) then
 				-- to and from are never unknown on outgoing connections
