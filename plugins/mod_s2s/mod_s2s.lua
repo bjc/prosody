@@ -123,33 +123,33 @@ function route_to_existing_session(event)
 		return false;
 	end
 	local host = hosts[from_host].s2sout[to_host];
-	if host then
-		-- We have a connection to this host already
-		if host.type == "s2sout_unauthed" and (stanza.name ~= "db:verify" or not host.dialback_key) then
-			(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
+	if not host then return end
 
-			-- Queue stanza until we are able to send it
-			local queued_item = {
-				tostring(stanza),
-				stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza);
-			};
-			if host.sendq then
-				t_insert(host.sendq, queued_item);
-			else
-				-- luacheck: ignore 122
-				host.sendq = { queued_item };
-			end
-			host.log("debug", "stanza [%s] queued ", stanza.name);
-			return true;
-		elseif host.type == "local" or host.type == "component" then
-			log("error", "Trying to send a stanza to ourselves??")
-			log("error", "Traceback: %s", traceback());
-			log("error", "Stanza: %s", stanza);
-			return false;
+	-- We have a connection to this host already
+	if host.type == "s2sout_unauthed" and (stanza.name ~= "db:verify" or not host.dialback_key) then
+		(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
+
+		-- Queue stanza until we are able to send it
+		local queued_item = {
+			tostring(stanza),
+			stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza);
+		};
+		if host.sendq then
+			t_insert(host.sendq, queued_item);
 		else
-			if host.sends2s(stanza) then
-				return true;
-			end
+			-- luacheck: ignore 122
+			host.sendq = { queued_item };
+		end
+		host.log("debug", "stanza [%s] queued ", stanza.name);
+		return true;
+	elseif host.type == "local" or host.type == "component" then
+		log("error", "Trying to send a stanza to ourselves??")
+		log("error", "Traceback: %s", traceback());
+		log("error", "Stanza: %s", stanza);
+		return false;
+	else
+		if host.sends2s(stanza) then
+			return true;
 		end
 	end
 end
