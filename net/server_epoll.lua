@@ -660,6 +660,7 @@ function interface:pausefor(t)
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
 		self:set(true);
+		self:debug("Resuming after pause, connection is %s", not self.conn and "missing" or self.conn:dirty() and "dirty" or "clean");
 		if self.conn and self.conn:dirty() then
 			self:onreadable();
 		end
