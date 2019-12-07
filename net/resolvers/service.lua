@@ -4,6 +4,9 @@ local inet_pton = require "util.net".pton;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
+-- FIXME #1428 Reuse DNS resolver object (pass to basic resorver)
+-- FIXME #1429 Close DNS resolver object when done
+
 local methods = {};
 local resolver_mt = { __index = methods };
 
