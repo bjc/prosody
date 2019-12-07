@@ -13,6 +13,7 @@ local sm_bind_resource = require "core.sessionmanager".bind_resource;
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 local set = require "util.set";
+local errors = require "util.error";
 
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
 
@@ -102,13 +103,19 @@ module:hook_tag(xmlns_sasl, "failure", function (session, stanza)
 			break;
 		end
 	end
-	if text and condition then
-		condition = condition .. ": " .. text;
-	end
-	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, condition);
+	local err = errors.new({
+			-- TODO type = what?
+			text = text,
+			condition = condition,
+		}, {
+			session = session,
+			stanza = stanza,
+		});
+
+	module:log("info", "SASL EXTERNAL with %s failed: %s", session.to_host, err);
 
 	session.external_auth = "failed"
-	session.external_auth_failure_reason = condition;
+	session.external_auth_failure_reason = err;
 end, 500)
 
 module:hook_tag(xmlns_sasl, "failure", function (session, stanza) -- luacheck: ignore 212/stanza
