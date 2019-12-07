@@ -120,7 +120,10 @@ end, 500)
 
 module:hook_tag(xmlns_sasl, "failure", function (session, stanza) -- luacheck: ignore 212/stanza
 	session.log("debug", "No fallback from SASL EXTERNAL failure, giving up");
-	session:close(nil, session.external_auth_failure_reason);
+	session:close(nil, session.external_auth_failure_reason, errors.new({
+				type = "wait", condition = "remote-server-timeout",
+				text = "Could not authenticate to remote server",
+		}, { session = session, sasl_failure = session.external_auth_failure_reason, }));
 	return true;
 end, 90)
 
