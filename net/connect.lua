@@ -4,6 +4,7 @@ local new_id = require "util.id".short;
 
 -- TODO Respect use_ipv4, use_ipv6
 -- TODO #1246 Happy Eyeballs
+-- FIXME RFC 6724
 -- FIXME Error propagation from resolvers doesn't work
 -- FIXME #1428 Reuse DNS resolver object between service and basic resolver
 -- FIXME #1429 Close DNS resolver object when done
