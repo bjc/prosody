@@ -8,6 +8,13 @@ local function is_err(e)
 	return getmetatable(e) == error_mt;
 end
 
+-- Do we want any more well-known fields?
+-- Or could we just copy all fields from `e`?
+-- Sometimes you want variable details in the `text`, how to handle that?
+-- Translations?
+-- Should the `type` be restricted to the stanza error types or free-form?
+-- What to set `type` to for stream errors or SASL errors? Those don't have a 'type' attr.
+
 local function new(e, context, registry)
 	local template = (registry and registry[e]) or e or {};
 	return setmetatable({
