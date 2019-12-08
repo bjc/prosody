@@ -17,7 +17,8 @@ local logger = require "util.logger";
 local log = logger.init("server_epoll");
 local socket = require "socket";
 local luasec = require "ssl";
-local gettime = require "util.time".now;
+local realtime = require "util.time".now;
+local monotonic = require "util.time".monotonic;
 local indexedbheap = require "util.indexedbheap";
 local createtable = require "util.table".create;
 local inet = require "util.net";
@@ -86,14 +87,14 @@ local function closetimer(t)
 end
 
 local function reschedule(t, time)
-	time = gettime() + time;
+	time = monotonic() + time;
 	t[1] = time;
 	timers:reprioritize(t.id, time);
 end
 
 -- Add relative timer
 local function addtimer(timeout, f)
-	local time = gettime() + timeout;
+	local time = monotonic() + timeout;
 	local timer = { time, f, close = closetimer, reschedule = reschedule, id = nil };
 	timer.id = timers:insert(timer, time);
 	return timer;
@@ -103,19 +104,20 @@ end
 -- Return time until next timeout
 local function runtimers(next_delay, min_wait)
 	-- Any timers at all?
-	local now = gettime();
+	local elapsed = monotonic();
+	local now = realtime();
 	local peek = timers:peek();
 	while peek do
 
-		if peek > now then
-			next_delay = peek - now;
+		if peek > elapsed then
+			next_delay = peek - elapsed;
 			break;
 		end
 
 		local _, timer, id = timers:pop();
 		local ok, ret = pcall(timer[2], now);
 		if ok and type(ret) == "number"  then
-			local next_time = now+ret;
+			local next_time = elapsed+ret;
 			timer[1] = next_time;
 			timers:insert(timer, next_time);
 		end
@@ -578,7 +580,7 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 	local conn = setmetatable({
 		conn = client;
 		_server = server;
-		created = gettime();
+		created = realtime();
 		listeners = listeners;
 		read_size = read_size or (server and server.read_size);
 		writebuffer = {};
@@ -708,7 +710,7 @@ local function listen(addr, port, listeners, config)
 	conn:settimeout(0);
 	local server = setmetatable({
 		conn = conn;
-		created = gettime();
+		created = realtime();
 		listeners = listeners;
 		read_size = config and config.read_size;
 		onreadable = interface.onacceptable;
