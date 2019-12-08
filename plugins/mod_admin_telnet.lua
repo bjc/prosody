@@ -1265,7 +1265,6 @@ function def_env.debug:events(host, event)
 end
 
 function def_env.debug:timers()
-	local socket = require "socket";
 	local print = self.session.print;
 	local add_task = require"util.timer".add_task;
 	local h, params = add_task.h, add_task.params;
@@ -1293,7 +1292,7 @@ function def_env.debug:timers()
 	if h then
 		local next_time = h:peek();
 		if next_time then
-			return true, os.date("Next event at %F %T (in %%.6fs)", next_time):format(next_time - socket.gettime());
+			return true, os.date("Next event at %F %T (in %%.6fs)", next_time):format(next_time - time.now());
 		end
 	end
 	return true;
