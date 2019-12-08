@@ -90,16 +90,12 @@ local function reschedule(t, time)
 	timers:reprioritize(t.id, time);
 end
 
--- Add absolute timer
-local function at(time, f)
+-- Add relative timer
+local function addtimer(timeout, f)
+	local time = gettime() + timeout;
 	local timer = { time, f, close = closetimer, reschedule = reschedule, id = nil };
 	timer.id = timers:insert(timer, time);
 	return timer;
-end
-
--- Add relative timer
-local function addtimer(timeout, f)
-	return at(gettime() + timeout, f);
 end
 
 -- Run callbacks of expired timers
@@ -879,7 +875,6 @@ return {
 	addclient = addclient;
 	add_task = addtimer;
 	listen = listen;
-	at = at;
 	loop = loop;
 	closeall = closeall;
 	setquitting = setquitting;
