@@ -86,6 +86,7 @@ local function closetimer(t)
 end
 
 local function reschedule(t, time)
+	time = gettime() + time;
 	t[1] = time;
 	timers:reprioritize(t.id, time);
 end
@@ -253,7 +254,7 @@ function interface:setreadtimeout(t)
 	end
 	t = t or cfg.read_timeout;
 	if self._readtimeout then
-		self._readtimeout:reschedule(gettime() + t);
+		self._readtimeout:reschedule(t);
 	else
 		self._readtimeout = addtimer(t, function ()
 			if self:on("readtimeout") then
@@ -279,7 +280,7 @@ function interface:setwritetimeout(t)
 	end
 	t = t or cfg.send_timeout;
 	if self._writetimeout then
-		self._writetimeout:reschedule(gettime() + t);
+		self._writetimeout:reschedule(t);
 	else
 		self._writetimeout = addtimer(t, function ()
 			self:debug("Write timeout");
