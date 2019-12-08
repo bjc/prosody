@@ -266,7 +266,7 @@ local function get_identities(cert) --> map of names to sets of services
 		if dn.oid == oid_commonname then
 			local name = nameprep(dn.value);
 			if name and idna_to_ascii(name) then
-				names:set("*", name, true);
+				names:set(name, "*", true);
 			end
 		end
 	end
