@@ -142,7 +142,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 
 		"plugins/mod_storage_sql1.lua";
 
-		"spec/core_configmanager_spec.lua";
 		"spec/core_moduleapi_spec.lua";
 		"spec/net_http_parser_spec.lua";
 		"spec/util_events_spec.lua";
