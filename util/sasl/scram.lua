@@ -125,6 +125,7 @@ local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db)
 			local client_first_message = message;
 
 			-- TODO: fail if authzid is provided, since we don't support them yet
+			-- luacheck: ignore 211/authzid
 			local gs2_header, gs2_cbind_flag, gs2_cbind_name, authzid, client_first_message_bare, username, clientnonce
 				= s_match(client_first_message, "^(([pny])=?([^,]*),([^,]*),)(m?=?[^,]*,?n=([^,]*),r=([^,]*),?.*)$");
 
