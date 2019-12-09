@@ -143,14 +143,11 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"plugins/mod_storage_sql1.lua";
 
 		"spec/core_moduleapi_spec.lua";
-		"spec/net_http_parser_spec.lua";
-		"spec/util_events_spec.lua";
 		"spec/util_http_spec.lua";
 		"spec/util_ip_spec.lua";
 		"spec/util_multitable_spec.lua";
 		"spec/util_rfc6724_spec.lua";
 		"spec/util_throttle_spec.lua";
-		"spec/util_xmppstream_spec.lua";
 
 		"tools/ejabberd2prosody.lua";
 		"tools/ejabberdsql2prosody.lua";
