@@ -506,23 +506,23 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 			end
 		end
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
+			local stream_error;
 			if type(reason) == "string" then -- assume stream error
-				reason = st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
+				stream_error = st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
 			elseif type(reason) == "table" and not st.is_stanza(reason) then
-				local stanza = st.stanza("stream:error"):tag(reason.condition or "undefined-condition", stream_xmlns_attr):up();
+				stream_error = st.stanza("stream:error"):tag(reason.condition or "undefined-condition", stream_xmlns_attr):up();
 				if reason.text then
-					stanza:tag("text", stream_xmlns_attr):text(reason.text):up();
+					stream_error:tag("text", stream_xmlns_attr):text(reason.text):up();
 				end
 				if reason.extra then
-					stanza:add_child(reason.extra);
+					stream_error:add_child(reason.extra);
 				end
-				reason = stanza;
 			end
-			if st.is_stanza(reason) then
+			if st.is_stanza(stream_error) then
 				-- to and from are never unknown on outgoing connections
 				log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
 					session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
-				session.sends2s(reason);
+				session.sends2s(stream_error);
 			end
 		end
 
