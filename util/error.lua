@@ -21,7 +21,7 @@ local function new(e, context, registry)
 		type = template.type or "cancel";
 		condition = template.condition or "undefined-condition";
 		text = template.text;
-		code = template.code or 500;
+		code = template.code;
 
 		context = context or template.context or { _error_id = e };
 	}, error_mt);
