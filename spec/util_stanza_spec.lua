@@ -1,5 +1,6 @@
 
 local st = require "util.stanza";
+local errors = require "util.error";
 
 describe("util.stanza", function()
 	describe("#preserialize()", function()
@@ -229,6 +230,22 @@ describe("util.stanza", function()
 			assert.has.error_match(function ()
 				st.error_reply(st.error_reply(st.message({type="chat"}), "modify", "forbidden"), "cancel", "service-unavailable");
 			end, "got stanza of type error");
+		end);
+
+		it("should accept util.error objects", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
+			local e = errors.new({ type = "modify", condition = "not-acceptable", text = "Bork bork bork" });
+			local r = st.error_reply(s, e);
+
+			assert.are.equal(r.name, s.name);
+			assert.are.equal(r.id, s.id);
+			assert.are.equal(r.attr.to, s.attr.from);
+			assert.are.equal(r.attr.from, s.attr.to);
+			assert.are.equal(r.attr.type, "error");
+			assert.are.equal(r.tags[1].name, "error");
+			assert.are.equal(r.tags[1].attr.type, e.type);
+			assert.are.equal(r.tags[1].tags[1].name, e.condition);
+			assert.are.equal(r.tags[1].tags[2]:get_text(), e.text);
 		end);
 
 	end);
