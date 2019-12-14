@@ -191,7 +191,7 @@ local function handle_result(request, response, result)
 	elseif result_type == "string" then
 		body = result;
 	elseif errors.is_err(result) then
-		body = events.fire_event("http-error", { request = request, response = response, code = result.code, error = result });
+		body = events.fire_event("http-error", { request = request, response = response, code = result.code or 500, error = result });
 	elseif promise.is_promise(result) then
 		result:next(function (ret)
 			handle_result(request, response, ret);
