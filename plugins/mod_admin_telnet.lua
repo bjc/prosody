@@ -965,7 +965,7 @@ function def_env.host:deactivate(hostname, reason)
 end
 
 local function compare_hosts(a, b)
-	return a:gsub("%P", string.reverse):reverse() < b:gsub("%P", string.reverse):reverse();
+	return a:gsub("%P+", string.reverse):reverse() < b:gsub("%P+", string.reverse):reverse();
 end
 
 function def_env.host:list()
