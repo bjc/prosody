@@ -781,8 +781,8 @@ function def_env.s2s:show(match_jid, annotate)
 
 	-- Sort by local host, then remote host
 	table.sort(s2s_list, function(a,b)
-		if a.l == b.l then return a.r < b.r; end
-		return a.l < b.l;
+		if a.l == b.l then return _sort_hosts(a.r, b.r); end
+		return _sort_hosts(a.l, b.l);
 	end);
 	local lasthost;
 	for _, sess_lines in ipairs(s2s_list) do
