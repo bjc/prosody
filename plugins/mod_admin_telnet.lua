@@ -630,7 +630,7 @@ local function show_c2s(callback)
 			end
 			return (a.username or "") > (b.username or "");
 		end
-		return (a.host or "") > (b.host or "");
+		return _sort_hosts(a.host or "", b.host or "");
 	end):map(function (session)
 		callback(get_jid(session), session)
 	end);
