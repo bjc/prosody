@@ -466,16 +466,7 @@ function def_env.module:reload(name, hosts)
 end
 
 function def_env.module:list(hosts)
-	if hosts == nil then
-		hosts = array.collect(keys(prosody.hosts));
-		table.insert(hosts, 1, "*");
-	end
-	if type(hosts) == "string" then
-		hosts = { hosts };
-	end
-	if type(hosts) ~= "table" then
-		return false, "Please supply a host or a list of hosts you would like to see";
-	end
+	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
 
 	local print = self.session.print;
 	for _, host in ipairs(hosts) do
