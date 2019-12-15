@@ -433,7 +433,7 @@ end
 local function _sort_hosts(a, b)
 	if a == "*" then return true
 	elseif b == "*" then return false
-	else return a < b; end
+	else return a:gsub("[^.]+", string.reverse):reverse() < b:gsub("[^.]+", string.reverse):reverse(); end
 end
 
 function def_env.module:reload(name, hosts)
@@ -964,15 +964,11 @@ function def_env.host:deactivate(hostname, reason)
 	return hostmanager.deactivate(hostname, reason);
 end
 
-local function compare_hosts(a, b)
-	return a:gsub("[^.]+", string.reverse):reverse() < b:gsub("[^.]+", string.reverse):reverse();
-end
-
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
 	local type;
-	for host, host_session in iterators.sorted_pairs(prosody.hosts, compare_hosts) do
+	for host, host_session in iterators.sorted_pairs(prosody.hosts, _sort_hosts) do
 		i = i + 1;
 		type = host_session.type;
 		if type == "local" then
