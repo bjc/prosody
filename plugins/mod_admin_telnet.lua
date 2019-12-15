@@ -364,7 +364,7 @@ end
 
 def_env.module = {};
 
-local function get_hosts_set(hosts, module)
+local function get_hosts_set(hosts)
 	if type(hosts) == "table" then
 		if hosts[1] then
 			return set.new(hosts);
@@ -374,17 +374,23 @@ local function get_hosts_set(hosts, module)
 	elseif type(hosts) == "string" then
 		return set.new { hosts };
 	elseif hosts == nil then
-		local hosts_set = set.new(array.collect(keys(prosody.hosts)))
-			/ function (host) return (prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module)) and host or nil; end;
-		if module and modulemanager.get_module("*", module) then
-			hosts_set:add("*");
-		end
-		return hosts_set;
+		return set.new(array.collect(keys(prosody.hosts)));
 	end
 end
 
+-- Hosts with a module or all virtualhosts if no module given
+-- matching modules_enabled in the global section
+local function get_hosts_with_module(hosts, module)
+	local hosts_set = get_hosts_set(hosts)
+	/ function (host) return (prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module)) and host or nil; end;
+	if module and modulemanager.get_module("*", module) then
+		hosts_set:add("*");
+	end
+	return hosts_set;
+end
+
 function def_env.module:load(name, hosts, config)
-	hosts = get_hosts_set(hosts);
+	hosts = get_hosts_with_module(hosts);
 
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0;
@@ -411,7 +417,7 @@ function def_env.module:load(name, hosts, config)
 end
 
 function def_env.module:unload(name, hosts)
-	hosts = get_hosts_set(hosts, name);
+	hosts = get_hosts_with_module(hosts, name);
 
 	-- Unload the module for each host
 	local ok, err, count = true, nil, 0;
@@ -437,7 +443,7 @@ local function _sort_hosts(a, b)
 end
 
 function def_env.module:reload(name, hosts)
-	hosts = array.collect(get_hosts_set(hosts, name)):sort(_sort_hosts)
+	hosts = array.collect(get_hosts_with_module(hosts, name)):sort(_sort_hosts)
 
 	-- Reload the module for each host
 	local ok, err, count = true, nil, 0;
