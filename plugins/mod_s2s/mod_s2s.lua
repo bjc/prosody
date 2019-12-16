@@ -438,20 +438,6 @@ function stream_callbacks._streamopened(session, attr)
 			end
 		end
 
-		-- Send unauthed buffer
-		-- (stanzas which are fine to send before dialback)
-		-- Note that this is *not* the stanza queue (which
-		-- we can only send if auth succeeds) :)
-		local send_buffer = session.send_buffer;
-		if send_buffer and #send_buffer > 0 then
-			log("debug", "Sending s2s send_buffer now...");
-			for i, data in ipairs(send_buffer) do
-				session.sends2s(tostring(data));
-				send_buffer[i] = nil;
-			end
-		end
-		session.send_buffer = nil;
-
 		-- If server is pre-1.0, don't wait for features, just do dialback
 		if session.version < 1.0 then
 			if not session.dialback_verifying then
