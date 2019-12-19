@@ -181,8 +181,10 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end
-		core_post_stanza(origin, stanza);
-		send_presence_of_available_resources(node, host, to_bare, origin);
+		if rostermanager.is_contact_subscribed(node, host, to_bare) then
+			core_post_stanza(origin, stanza);
+			send_presence_of_available_resources(node, host, to_bare, origin);
+		end
 		if rostermanager.is_user_subscribed(node, host, to_bare) then
 			core_post_stanza(origin, st.presence({ type = "probe", from = from_bare, to = to_bare }));
 		end
@@ -228,6 +230,12 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			-- Sending presence is not clearly stated in the RFC, but it seems appropriate
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
 				core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- TODO send last activity
+			end
+		elseif rostermanager.is_contact_preapproved(node, host, from_bare) then
+			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
+					core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"}), true);
+				end -- TODO else return error, unable to save
 			end
 		else
 			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- acknowledging receipt

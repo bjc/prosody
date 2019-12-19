@@ -1,0 +1,74 @@
+# server supports contact subscription pre-approval (RFC 6121 3.4)
+
+[Client] Alice
+	jid: preappove-a@localhost
+	password: password
+
+[Client] Bob
+	jid: preapprove-b@localhost
+	password: password
+
+---------
+
+Alice connects
+
+Alice sends:
+	<presence/>
+
+Alice receives:
+	<presence/>
+
+Alice sends:
+	<presence to="${Bob's JID}" type="subscribed"/>
+
+Bob connects
+
+Bob sends:
+	<iq type="get" id="roster1">
+		<query xmlns="jabber:iq:roster"/>
+	</iq>
+
+Bob receives:
+	<iq type="result" id="roster1">
+		<query xmlns="jabber:iq:roster" ver="{scansion:any}">
+		</query>
+	</iq>
+
+Bob sends:
+	<presence/>
+
+Bob receives:
+	<presence from="${Bob's full JID}"/>
+	
+Bob sends:
+	<presence to="${Alice's JID}" type="subscribe" />
+
+Bob receives:
+	<iq type='set' id='{scansion:any}'>
+		<query ver='1' xmlns='jabber:iq:roster'>
+			<item jid="${Alice's JID}" subscription='none' ask='subscribe' />
+		</query>
+	</iq>
+
+	                                                    
+
+Bob receives:
+	<presence from="${Alice's JID}" type="subscribed" />
+
+Bob disconnects
+
+Alice sends:
+	<iq type="get" id="roster1">
+		<query xmlns="jabber:iq:roster"/>
+	</iq>
+
+Alice receives:
+	<iq type="result" id="roster1">
+		<query xmlns="jabber:iq:roster" ver="{scansion:any}">
+			<item jid="${Bob's JID}" subscription="from" />
+		</query>
+	</iq>
+
+Alice disconnects
+
+Bob disconnects
