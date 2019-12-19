@@ -328,7 +328,7 @@ Romeo receives:
 	</iq>
 
 # Romeo updates his own registration
-	
+
 Romeo sends:
 	<iq id='jw81b36f' to='room@conference.localhost' type='get'>
 		<query xmlns='jabber:iq:register'/>
