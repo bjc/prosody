@@ -32,7 +32,7 @@ Juliet connects
 -- 			<subscribe node="princely_musings" jid="${Romeo's full JID}"/>
 -- 		</pubsub>
 -- 	</iq>
--- 
+--
 -- Juliet receives:
 -- 	<iq type="error"/>
 

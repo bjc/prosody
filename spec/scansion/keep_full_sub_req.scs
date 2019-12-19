@@ -30,7 +30,7 @@ Bob sends:
 
 Bob receives:
 	<presence from="${Bob's full JID}"/>
-	
+
 Bob receives:
 	<presence from="${Alice's JID}" type="subscribe">
 		<preauth xmlns="urn:xmpp:pars:0" token="1tMFqYDdKhfe2pwp" />

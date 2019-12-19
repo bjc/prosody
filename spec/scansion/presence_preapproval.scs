@@ -39,7 +39,7 @@ Bob sends:
 
 Bob receives:
 	<presence from="${Bob's full JID}"/>
-	
+
 Bob sends:
 	<presence to="${Alice's JID}" type="subscribe" />
 
@@ -50,7 +50,7 @@ Bob receives:
 		</query>
 	</iq>
 
-	                                                    
+
 
 Bob receives:
 	<presence from="${Alice's JID}" type="subscribed" />
