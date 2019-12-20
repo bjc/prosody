@@ -42,6 +42,6 @@ function uptime_command_handler ()
 	return { info = uptime_text(), status = "completed" };
 end
 
-local descriptor = adhoc_new("Get uptime", "uptime", uptime_command_handler);
+local descriptor = adhoc_new("Get uptime", "uptime", uptime_command_handler, "any");
 
 module:provides("adhoc", descriptor);
