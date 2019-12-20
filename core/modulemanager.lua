@@ -246,7 +246,8 @@ local function do_reload_module(host, name)
 
 	local saved;
 	if module_has_method(mod, "save") then
-		local ok, ret, err = call_module_method(mod, "save");
+		-- FIXME What goes in 'err' here?
+		local ok, ret, err = call_module_method(mod, "save"); -- luacheck: ignore 211/err
 		if ok then
 			saved = ret;
 		else
