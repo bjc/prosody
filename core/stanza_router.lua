@@ -28,7 +28,7 @@ local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 
 		local st_type = stanza.attr.type;
 		if st_type == "error" or (name == "iq" and st_type == "result") then
 			if st_type == "error" then
-				local err_type, err_condition, err_message = stanza:get_error();
+				local err_type, err_condition, err_message = stanza:get_error(); -- luacheck: ignore 211/err_message
 				log("debug", "Discarding unhandled error %s (%s, %s) from %s: %s",
 					name, err_type, err_condition or "unknown condition", origin_type, stanza:top_tag());
 			else
