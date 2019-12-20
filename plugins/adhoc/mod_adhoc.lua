@@ -26,7 +26,7 @@ module:hook("host-disco-info-node", function (event)
 		if (command.permission == "admin" and privileged)
 		    or (command.permission == "global_admin" and global_admin)
 		    or (command.permission == "local_user" and hostname == module.host)
-		    or (command.permission == "user") then
+		    or (command.permission == "any") then
 			reply:tag("identity", { name = command.name,
 			    category = "automation", type = "command-node" }):up();
 			reply:tag("feature", { var = xmlns_cmd }):up();
@@ -57,7 +57,7 @@ module:hook("host-disco-items-node", function (event)
 		if (command.permission == "admin" and admin)
 		    or (command.permission == "global_admin" and global_admin)
 		    or (command.permission == "local_user" and hostname == module.host)
-		    or (command.permission == "user") then
+		    or (command.permission == "any") then
 			reply:tag("item", { name = command.name,
 			    node = node, jid = module:get_host() });
 			reply:up();
