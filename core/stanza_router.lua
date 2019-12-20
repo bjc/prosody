@@ -12,6 +12,7 @@ local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
+local jid_host = require "util.jid".host;
 local jid_prepped_split = require "util.jid".prepped_split;
 
 local full_sessions = _G.prosody.full_sessions;
@@ -81,7 +82,7 @@ function core_process_stanza(origin, stanza)
 	local to_bare, from_bare;
 	if to then
 		if full_sessions[to] or bare_sessions[to] or hosts[to] then
-			node, host = jid_split(to); -- TODO only the host is needed, optimize
+			host = jid_host(to);
 		else
 			node, host, resource = jid_prepped_split(to);
 			if not host then
@@ -186,8 +187,8 @@ function core_post_stanza(origin, stanza, preevents)
 end
 
 function core_route_stanza(origin, stanza)
-	local node, host, resource = jid_split(stanza.attr.to);
-	local from_node, from_host, from_resource = jid_split(stanza.attr.from);
+	local host = jid_host(stanza.attr.to);
+	local from_host = jid_host(stanza.attr.from);
 
 	-- Auto-detect origin if not specified
 	origin = origin or hosts[from_host];
