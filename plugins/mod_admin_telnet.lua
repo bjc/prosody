@@ -288,6 +288,7 @@ function commands.help(session, data)
 		print [[xmpp:ping(localhost, remotehost) -- Sends a ping to a remote XMPP server and reports the response]]
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
+		print [[config:get([host,] option) - Show the value of a config option.]]
 	elseif section == "console" then
 		print [[Hey! Welcome to Prosody's admin console.]]
 		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
