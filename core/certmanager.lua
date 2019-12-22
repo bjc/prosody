@@ -247,6 +247,64 @@ local core_defaults = {
 	dane = configmanager.get("*", "use_dane");
 }
 
+local mozilla_ssl_configs = {
+	-- As of 2019-12-22
+	modern = {
+		protocol = "tlsv1_3";
+		options = { cipher_server_preference = false };
+		ciphers = "DEFAULT"; -- TLS 1.3 uses 'ciphersuites' rather than these
+	};
+	intermediate = {
+		protocol = "tlsv1_2+";
+		dhparam = nil; -- ffdhe2048.txt
+		options = { cipher_server_preference = false };
+		ciphers = {
+			"ECDHE-ECDSA-AES128-GCM-SHA256";
+			"ECDHE-RSA-AES128-GCM-SHA256";
+			"ECDHE-ECDSA-AES256-GCM-SHA384";
+			"ECDHE-RSA-AES256-GCM-SHA384";
+			"ECDHE-ECDSA-CHACHA20-POLY1305";
+			"ECDHE-RSA-CHACHA20-POLY1305";
+			"DHE-RSA-AES128-GCM-SHA256";
+			"DHE-RSA-AES256-GCM-SHA384";
+		};
+	};
+	old = {
+		protocol = "tlsv1+";
+		dhparam = nil; -- openssl dhparam 1024
+		options = { cipher_server_preference = true };
+		ciphers = {
+			"ECDHE-ECDSA-AES128-GCM-SHA256";
+			"ECDHE-RSA-AES128-GCM-SHA256";
+			"ECDHE-ECDSA-AES256-GCM-SHA384";
+			"ECDHE-RSA-AES256-GCM-SHA384";
+			"ECDHE-ECDSA-CHACHA20-POLY1305";
+			"ECDHE-RSA-CHACHA20-POLY1305";
+			"DHE-RSA-AES128-GCM-SHA256";
+			"DHE-RSA-AES256-GCM-SHA384";
+			"DHE-RSA-CHACHA20-POLY1305";
+			"ECDHE-ECDSA-AES128-SHA256";
+			"ECDHE-RSA-AES128-SHA256";
+			"ECDHE-ECDSA-AES128-SHA";
+			"ECDHE-RSA-AES128-SHA";
+			"ECDHE-ECDSA-AES256-SHA384";
+			"ECDHE-RSA-AES256-SHA384";
+			"ECDHE-ECDSA-AES256-SHA";
+			"ECDHE-RSA-AES256-SHA";
+			"DHE-RSA-AES128-SHA256";
+			"DHE-RSA-AES256-SHA256";
+			"AES128-GCM-SHA256";
+			"AES256-GCM-SHA384";
+			"AES128-SHA256";
+			"AES256-SHA256";
+			"AES128-SHA";
+			"AES256-SHA";
+			"DES-CBC3-SHA";
+		};
+	};
+};
+
+
 if luasec_has.curves then
 	for i = #core_defaults.curveslist, 1, -1 do
 		if not luasec_has.curves[ core_defaults.curveslist[i] ] then
@@ -279,6 +337,8 @@ local function create_context(host, mode, ...)
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
 	cfg:apply(global_ssl_config);
+	local preset = configmanager.get("*", "ssl_preset") or "intermediate";
+	cfg:apply(mozilla_ssl_configs[preset]);
 
 	for i = select('#', ...), 1, -1 do
 		cfg:apply(select(i, ...));

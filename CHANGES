@@ -26,6 +26,7 @@ TRUNK
 -   SCRAM-SHA-256
 -   Direct TLS (including https) certificates updated on reload
 -   Pluggable authorization providers (mod_authz_)
+-   Easy use of Mozilla TLS recommendations presets
 
 ### HTTP
 
