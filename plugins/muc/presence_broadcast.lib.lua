@@ -65,7 +65,7 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_presencebroadcast";
 		type = "list-multi";
-		label = "Roles for which Presence is Broadcasted";
+		label = "Only show participants with roles:";
 		value = values;
 		options = valid_roles;
 	});
