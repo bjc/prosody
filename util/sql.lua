@@ -335,6 +335,9 @@ function engine:set_encoding() -- to UTF-8
 		local ok, actual_charset = self:transaction(function ()
 			return self:select"SHOW SESSION VARIABLES LIKE 'character_set_client'";
 		end);
+		if not ok then
+			return false, "Failed to detect connection encoding";
+		end
 		local charset_ok = true;
 		for row in actual_charset do
 			if row[2] ~= charset then
