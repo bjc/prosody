@@ -164,6 +164,15 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 		debug( "fatal error while ssl wrapping:", err )
 		return false
 	end
+
+	if self.conn.sni then
+		if self.servername then
+			self.conn:sni(self.servername);
+		elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
+			self.conn:sni(self._server.hosts, true);
+		end
+	end
+
 	self.conn:settimeout( 0 )  -- set non blocking
 	local handshakecallback = coroutine_wrap(function( event )
 		local _, err
@@ -253,6 +262,7 @@ end
 
 --TODO: Deprecate
 function interface_mt:lock_read(switch)
+	log("warn", ":lock_read is deprecated, use :pasue() and :resume()");
 	if switch then
 		return self:pause();
 	else
@@ -272,6 +282,19 @@ function interface_mt:resume()
 	end
 end
 
+function interface_mt:pause_writes()
+	return self:_lock(self.nointerface, self.noreading, true);
+end
+
+function interface_mt:resume_writes()
+	self:_lock(self.nointerface, self.noreading, false);
+	if self.writecallback and not self.eventwrite then
+		self.eventwrite = addevent( base, self.conn, EV_WRITE, self.writecallback, cfg.WRITE_TIMEOUT );  -- register callback
+		return true;
+	end
+end
+
+
 function interface_mt:counter(c)
 	if c then
 		self._connections = self._connections + c
@@ -281,7 +304,7 @@ end
 
 -- Public methods
 function interface_mt:write(data)
-	if self.nowriting then return nil, "locked" end
+	if self.nointerface then return nil, "locked"; end
 	--vdebug( "try to send data to client, id/data:", self.id, data )
 	data = tostring( data )
 	local len = #data
@@ -293,7 +316,7 @@ function interface_mt:write(data)
 	end
 	t_insert(self.writebuffer, data) -- new buffer
 	self.writebufferlen = total
-	if not self.eventwrite then  -- register new write event
+	if not self.eventwrite and not self.nowriting  then  -- register new write event
 		--vdebug( "register new write event" )
 		self.eventwrite = addevent( base, self.conn, EV_WRITE, self.writecallback, cfg.WRITE_TIMEOUT )
 	end
@@ -440,10 +463,6 @@ end
 function interface_mt:ontimeout()
 end
 function interface_mt:onreadtimeout()
-	self.fatalerror = "timeout during receiving"
-	debug( "connection failed:", self.fatalerror )
-	self:_close()
-	self.eventread = nil
 end
 function interface_mt:ondrain()
 end
@@ -456,7 +475,7 @@ end
 
 -- End of client interface methods
 
-local function handleclient( client, ip, port, server, pattern, listener, sslctx )  -- creates an client interface
+local function handleclient( client, ip, port, server, pattern, listener, sslctx, extra )  -- creates an client interface
 	--vdebug("creating client interfacce...")
 	local interface = {
 		type = "client";
@@ -492,6 +511,8 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 		_serverport = (server and server:port() or nil),
 		_sslctx = sslctx; -- parameters
 		_usingssl = false;  -- client is using ssl;
+		extra = extra;
+		servername = extra and extra.servername;
 	}
 	if not has_luasec then interface.starttls = false; end
 	interface.id = tostring(interface):match("%x+$");
@@ -635,7 +656,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 	return interface
 end
 
-local function handleserver( server, addr, port, pattern, listener, sslctx )  -- creates an server interface
+local function handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- creates a server interface
 	debug "creating server interface..."
 	local interface = {
 		_connections = 0;
@@ -651,6 +672,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 
 		_ip = addr, _port = port, _pattern = pattern,
 		_sslctx = sslctx;
+		hosts = {};
 	}
 	interface.id = tostring(interface):match("%x+$");
 	interface.readcallback = function( event )  -- server handler, called on incoming connections
@@ -670,6 +692,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 			end
 		end
 		--vdebug("max connection check ok, accepting...")
+		-- luacheck: ignore 231/err
 		local client, err = server:accept()    -- try to accept; TODO: check err
 		while client do
 			if interface._connections >= cfg.MAX_CONNECTIONS then
@@ -681,7 +704,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 			interface._connections = interface._connections + 1  -- increase connection count
 			local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 			--vdebug( "client id:", clientinterface, "startssl:", startssl )
-			if has_luasec and sslctx then
+			if has_luasec and startssl then
 				clientinterface:starttls(sslctx, true)
 			else
 				clientinterface:_start_session( true )
@@ -700,9 +723,9 @@ local function handleserver( server, addr, port, pattern, listener, sslctx )  --
 	return interface
 end
 
-local function addserver( addr, port, listener, pattern, sslctx, startssl )  -- TODO: check arguments
-	--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
-	if sslctx and not has_luasec then
+local function listen(addr, port, listener, config)
+	config = config or {}
+	if config.sslctx and not has_luasec then
 		debug "fatal error: luasec not found"
 		return nil, "luasec not found"
 	end
@@ -711,19 +734,28 @@ local function addserver( addr, port, listener, pattern, sslctx, startssl )  -- 
 		debug( "creating server socket on "..addr.." port "..port.." failed:", err )
 		return nil, err
 	end
-	local interface = handleserver( server, addr, port, pattern, listener, sslctx, startssl )  -- new server handler
+	local interface = handleserver( server, addr, port, config.read_size, listener, config.tls_ctx, config.tls_direct)  -- new server handler
 	debug( "new server created with id:", tostring(interface))
 	return interface
 end
 
-local function wrapclient( client, ip, port, listeners, pattern, sslctx )
-	local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx )
+local function addserver( addr, port, listener, pattern, sslctx )  -- TODO: check arguments
+	--vdebug( "creating new tcp server with following parameters:", addr or "nil", port or "nil", sslctx or "nil", startssl or "nil")
+	return listen( addr, port, listener, {
+		read_size = pattern,
+		tls_ctx = sslctx,
+		tls_direct = not not sslctx,
+	});
+end
+
+local function wrapclient( client, ip, port, listeners, pattern, sslctx, extra )
+	local interface = handleclient( client, ip, port, nil, pattern, listeners, sslctx, extra )
 	interface:_start_connection(sslctx)
 	return interface, client
 	--function handleclient( client, ip, port, server, pattern, listener, _, sslctx )  -- creates an client interface
 end
 
-local function addclient( addr, serverport, listener, pattern, sslctx, typ )
+local function addclient( addr, serverport, listener, pattern, sslctx, typ, extra )
 	if sslctx and not has_luasec then
 		debug "need luasec, but not available"
 		return nil, "luasec not found"
@@ -749,8 +781,9 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ )
 	client:settimeout( 0 )  -- set nonblocking
 	local res, err = client:setpeername( addr, serverport )  -- connect
 	if res or ( err == "timeout" ) then
+		-- luacheck: ignore 211/port
 		local ip, port = client:getsockname( )
-		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx )
+		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, extra )
 		debug( "new connection id:", interface.id )
 		return interface, err
 	else
@@ -876,6 +909,7 @@ return {
 	event_base = base,
 	addevent = newevent,
 	addserver = addserver,
+	listen = listen,
 	addclient = addclient,
 	wrapclient = wrapclient,
 	setquitting = setquitting,

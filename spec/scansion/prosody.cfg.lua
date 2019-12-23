@@ -8,16 +8,17 @@ modules_enabled = {
 	-- Generally required
 		"roster"; -- Allow users to have a roster. Recommended ;)
 		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
-		"tls"; -- Add support for secure TLS on c2s/s2s connections
-		"dialback"; -- s2s dialback support
+		--"tls"; -- Add support for secure TLS on c2s/s2s connections
+		--"dialback"; -- s2s dialback support
 		"disco"; -- Service discovery
 
 	-- Not essential, but recommended
 		"carbons"; -- Keep multiple clients in sync
-		"pep"; -- Enables users to publish their mood, activity, playing music and more
+		"pep"; -- Enables users to publish their avatar, mood, activity, playing music and more
 		"private"; -- Private XML storage (for room bookmarks, etc.)
 		"blocklist"; -- Allow users to block communications with other users
-		"vcard"; -- Allow users to set vCards
+		"vcard4"; -- User profiles (stored in PEP)
+		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
 
 	-- Nice to have
 		"version"; -- Replies to server version requests
@@ -26,6 +27,11 @@ modules_enabled = {
 		"ping"; -- Replies to XMPP pings with pongs
 		"register"; -- Allow users to register on this server using a client and change passwords
 		"mam"; -- Store messages in an archive and allow users to access it
+		--"csi_simple"; -- Simple Mobile optimizations
+
+	-- Admin interfaces
+		--"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
+		--"admin_telnet"; -- Opens telnet console interface on localhost port 5582
 
 	-- HTTP modules
 		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
@@ -47,6 +53,9 @@ modules_enabled = {
 		--"scansion_record"; -- Records things that happen in scansion test case format
 }
 
+modules_disabled = {
+	"s2s";
+}
 certificate = "certs"
 
 allow_registration = false

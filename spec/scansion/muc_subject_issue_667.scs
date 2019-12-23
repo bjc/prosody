@@ -1,0 +1,129 @@
+# #667 MUC message with subject and body SHALL NOT be interpreted as a subject change
+
+[Client] Romeo
+	password: password
+	jid: romeo@localhost
+
+-----
+
+Romeo connects
+
+# and creates a room
+Romeo sends:
+	<presence to="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<status code="201"/>
+			<item affiliation="owner" role="moderator" jid="${Romeo's full JID}"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+# the default (empty) subject
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost">
+		<subject/>
+	</message>
+
+# this should be treated as a normal message
+Romeo sends:
+	<message to="issue667@conference.localhost" type="groupchat">
+		<subject>Greetings</subject>
+		<body>Hello everyone</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Greetings</subject>
+		<body>Hello everyone</body>
+	</message>
+
+# Resync
+Romeo sends:
+	<presence to="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+# Presences
+Romeo receives:
+	<presence from="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="owner" role="moderator" jid="${Romeo's full JID}"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Greetings</subject>
+		<body>Hello everyone</body>
+	</message>
+
+# the still empty subject
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost">
+		<subject/>
+	</message>
+
+# this is a subject change
+Romeo sends:
+	<message to="issue667@conference.localhost" type="groupchat">
+		<subject>Something to talk about</subject>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Something to talk about</subject>
+	</message>
+
+# a message without <subject>
+Romeo sends:
+	<message to="issue667@conference.localhost" type="groupchat">
+		<body>Lorem ipsum dolor sit amet</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<body>Lorem ipsum dolor sit amet</body>
+	</message>
+
+# Resync
+Romeo sends:
+	<presence to="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+# Presences
+Romeo receives:
+	<presence from="issue667@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<item affiliation="owner" role="moderator" jid="${Romeo's full JID}"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+# History
+# These have delay tags but we ignore those for now
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Greetings</subject>
+		<body>Hello everyone</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<body>Lorem ipsum dolor sit amet</body>
+	</message>
+
+# Finally, the topic
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>Something to talk about</subject>
+	</message>
+
+Romeo disconnects
+

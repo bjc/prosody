@@ -36,7 +36,7 @@
 
 /* Enumerate all locally configured IP addresses */
 
-const char *const type_strings[] = {
+static const char *const type_strings[] = {
 	"both",
 	"ipv4",
 	"ipv6",

@@ -24,11 +24,16 @@ module:hook("message/offline/handle", function(event)
 		node = origin.username;
 	end
 
-	return offline_messages:append(node, nil, stanza, os.time(), "");
+	local ok = offline_messages:append(node, nil, stanza, os.time(), "");
+	if ok then
+		module:log("debug", "Saved to offline storage: %s", stanza:top_tag());
+	end
+	return ok;
 end, -1);
 
 module:hook("message/offline/broadcast", function(event)
 	local origin = event.origin;
+	origin.log("debug", "Broadcasting offline messages");
 
 	local node, host = origin.username, origin.host;
 
@@ -38,6 +43,9 @@ module:hook("message/offline/broadcast", function(event)
 		stanza:tag("delay", {xmlns = "urn:xmpp:delay", from = host, stamp = datetime.datetime(when)}):up(); -- XEP-0203
 		origin.send(stanza);
 	end
-	offline_messages:delete(node);
+	local ok = offline_messages:delete(node);
+	if type(ok) == "number" and ok > 0 then
+		origin.log("debug", "%d offline messages consumed");
+	end
 	return true;
 end, -1);

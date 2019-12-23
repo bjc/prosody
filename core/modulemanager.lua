@@ -23,8 +23,24 @@ local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
 
-local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s", "s2s_auth_certs"};
-local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s"};
+local autoload_modules = {
+	prosody.platform,
+	"presence",
+	"message",
+	"iq",
+	"offline",
+	"c2s",
+	"s2s",
+	"s2s_auth_certs",
+};
+local component_inheritable_modules = {
+	"tls",
+	"saslauth",
+	"dialback",
+	"iq",
+	"s2s",
+	"s2s_bidi",
+};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
@@ -174,6 +190,7 @@ local function do_load_module(host, module_name, state)
 	local mod, err = pluginloader.load_code(module_name, nil, pluginenv);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		api_instance:set_status("error", "Failed to load (see log)");
 		return nil, err;
 	end
 
@@ -187,6 +204,7 @@ local function do_load_module(host, module_name, state)
 			ok, err = call_module_method(pluginenv, "load");
 			if not ok then
 				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+				api_instance:set_status("warn", "Error during load (see log)");
 			end
 		end
 		api_instance.reloading, api_instance.saved_state = nil, nil;
@@ -209,6 +227,9 @@ local function do_load_module(host, module_name, state)
 	if not ok then
 		modulemap[api_instance.host][module_name] = nil;
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
+		api_instance:set_status("warn", "Error during load (see log)");
+	else
+		api_instance:set_status("core", "Loaded", false);
 	end
 	return ok and pluginenv, err;
 end
@@ -225,7 +246,8 @@ local function do_reload_module(host, name)
 
 	local saved;
 	if module_has_method(mod, "save") then
-		local ok, ret, err = call_module_method(mod, "save");
+		-- FIXME What goes in 'err' here?
+		local ok, ret, err = call_module_method(mod, "save"); -- luacheck: ignore 211/err
 		if ok then
 			saved = ret;
 		else

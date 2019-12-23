@@ -20,7 +20,6 @@ if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
-local format = require "util.format".format;
 local lfs = require "lfs";
 local stat = lfs.attributes;
 
@@ -112,19 +111,6 @@ local function write_pidfile()
 		end
 	end
 end
-
-local syslog_opened;
-function syslog_sink_maker(config) -- luacheck: ignore 212/config
-	if not syslog_opened then
-		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
-		syslog_opened = true;
-	end
-	local syslog = pposix.syslog_log;
-	return function (name, level, message, ...)
-		syslog(level, name, format(message, ...));
-	end;
-end
-require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
 local daemonize = module:get_option("daemonize", prosody.installed);
 

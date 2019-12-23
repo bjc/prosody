@@ -39,6 +39,16 @@ local function show_usage(usage, desc)
 	end
 end
 
+local function show_module_configuration_help(mod_name)
+	print("Done.")
+	print("If you installed a prosody plugin, don't forget to add its name under the 'modules_enabled' section inside your configuration file.")
+	print("Depending on the module, there might be further configuration steps required.")
+	print("")
+	print("More info about: ")
+	print("	modules_enabled: https://prosody.im/doc/modules_enabled")
+	print("	"..mod_name..": https://modules.prosody.im/"..mod_name..".html")
+end
+
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
 	local ok, char;
@@ -124,7 +134,7 @@ end
 
 -- Server control
 local function adduser(params)
-	local user, host, password = nodeprep(params.user), nameprep(params.host), params.password;
+	local user, host, password = nodeprep(params.user, true), nameprep(params.host), params.password;
 	if not user then
 		return false, "invalid-username";
 	elseif not host then
@@ -200,7 +210,7 @@ local function getpid()
 		return false, "pidfile-read-failed", err;
 	end
 
-	local locked, err = lfs.lock(file, "w");
+	local locked, err = lfs.lock(file, "w"); -- luacheck: ignore 211/err
 	if locked then
 		file:close();
 		return false, "pidfile-not-locked";
@@ -217,7 +227,7 @@ local function getpid()
 end
 
 local function isrunning()
-	local ok, pid, err = getpid();
+	local ok, pid, err = getpid(); -- luacheck: ignore 211/err
 	if not ok then
 		if pid == "pidfile-read-failed" or pid == "pidfile-not-locked" then
 			-- Report as not running, since we can't open the pidfile
@@ -229,7 +239,8 @@ local function isrunning()
 	return true, signal.kill(pid, 0) == 0;
 end
 
-local function start(source_dir)
+local function start(source_dir, lua)
+	lua = lua and lua .. " " or "";
 	local ok, ret = isrunning();
 	if not ok then
 		return ok, ret;
@@ -238,9 +249,9 @@ local function start(source_dir)
 		return false, "already-running";
 	end
 	if not source_dir then
-		os.execute("./prosody");
+		os.execute(lua .. "./prosody");
 	else
-		os.execute(source_dir.."/../../bin/prosody");
+		os.execute(lua .. source_dir.."/../../bin/prosody");
 	end
 	return true;
 end
@@ -277,10 +288,36 @@ local function reload()
 	return true;
 end
 
+local function get_path_custom_plugins(plugin_paths)
+		-- I'm considering that the custom plugins' path is the first one at prosody.paths.plugins
+	-- luacheck: ignore 512
+	for path in plugin_paths:gmatch("[^;]+") do
+		return path;
+	end
+end
+
+local function call_luarocks(mod, operation)
+	local dir = get_path_custom_plugins(prosody.paths.plugins);
+	if operation == "install" then
+		show_message("Installing %s at %s", mod, dir);
+	elseif operation == "remove" then
+		show_message("Removing %s from %s", mod, dir);
+	end
+	if operation == "list" then
+		os.execute("luarocks list --tree='"..dir.."'")
+	else
+		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+	end
+	if operation == "install" then
+		show_module_configuration_help(mod);
+	end
+end
+
 return {
 	show_message = show_message;
 	show_warning = show_message;
 	show_usage = show_usage;
+	show_module_configuration_help = show_module_configuration_help;
 	getchar = getchar;
 	getline = getline;
 	getpass = getpass;
@@ -296,4 +333,6 @@ return {
 	start = start;
 	stop = stop;
 	reload = reload;
+	get_path_custom_plugins = get_path_custom_plugins;
+	call_luarocks = call_luarocks;
 };

@@ -79,6 +79,7 @@ if stats then
 			if stats.get_stats then
 				changed_stats, stats_extra = {}, {};
 				for stat_name, getter in pairs(stats.get_stats()) do
+					-- luacheck: ignore 211/type
 					local type, value, extra = getter();
 					local old_value = latest_stats[stat_name];
 					latest_stats[stat_name] = value;
@@ -97,6 +98,7 @@ if stats then
 		end
 		timer.add_task(stats_interval, collect);
 		prosody.events.add_handler("server-started", function () collect() end, -1);
+		prosody.events.add_handler("server-stopped", function () collect() end, -1);
 	else
 		log("debug", "Statistics enabled using %s provider, collection is disabled", stats_provider_name);
 	end

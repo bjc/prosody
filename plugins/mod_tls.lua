@@ -35,9 +35,10 @@ local host = hosts[module.host];
 
 local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
 local ssl_cfg_c2s, ssl_cfg_s2sout, ssl_cfg_s2sin;
+local err_c2s, err_s2sin, err_s2sout;
 
 function module.load()
-	local NULL, err = {};
+	local NULL = {};
 	local modhost = module.host;
 	local parent = modhost:match("%.(.*)$");
 
@@ -53,16 +54,20 @@ function module.load()
 	local host_s2s   = rawgetopt(modhost, "s2s_ssl") or parent_s2s;
 
 	module:log("debug", "Creating context for c2s");
-	ssl_ctx_c2s, err, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
-	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err); end
+	local request_client_certs = { verify = { "peer", "client_once", }; };
 
 	module:log("debug", "Creating context for s2sout");
-	ssl_ctx_s2sout, err, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s); -- for outgoing server connections
-	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", err); end
+	ssl_ctx_c2s, err_c2s, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
+	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err_c2s); end
 
 	module:log("debug", "Creating context for s2sin");
-	ssl_ctx_s2sin, err, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s); -- for incoming server connections
-	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", err); end
+	-- for outgoing server connections
+	ssl_ctx_s2sout, err_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s, request_client_certs);
+	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", err_s2sout); end
+
+	-- for incoming server connections
+	ssl_ctx_s2sin, err_s2sin, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s, request_client_certs);
+	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", err_s2sin); end
 end
 
 module:hook_global("config-reloaded", module.load);
@@ -77,12 +82,21 @@ local function can_do_tls(session)
 		return session.ssl_ctx;
 	end
 	if session.type == "c2s_unauthed" then
+		if not ssl_ctx_c2s and c2s_require_encryption then
+			session.log("error", "No TLS context available for c2s. Earlier error was: %s", err_c2s);
+		end
 		session.ssl_ctx = ssl_ctx_c2s;
 		session.ssl_cfg = ssl_cfg_c2s;
 	elseif session.type == "s2sin_unauthed" and allow_s2s_tls then
+		if not ssl_ctx_s2sin and s2s_require_encryption then
+			session.log("error", "No TLS context available for s2sin. Earlier error was: %s", err_s2sin);
+		end
 		session.ssl_ctx = ssl_ctx_s2sin;
 		session.ssl_cfg = ssl_cfg_s2sin;
 	elseif session.direction == "outgoing" and allow_s2s_tls then
+		if not ssl_ctx_s2sout and s2s_require_encryption then
+			session.log("error", "No TLS context available for s2sout. Earlier error was: %s", err_s2sout);
+		end
 		session.ssl_ctx = ssl_ctx_s2sout;
 		session.ssl_cfg = ssl_cfg_s2sout;
 	else

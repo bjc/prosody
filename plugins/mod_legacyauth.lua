@@ -78,8 +78,10 @@ module:hook("stanza/iq/jabber:iq:auth:query", function(event)
 					session:close(); -- FIXME undo resource bind and auth instead of closing the session?
 					return true;
 				end
+				session.send(st.reply(stanza));
+			else
+				session.send(st.error_reply(stanza, "auth", "not-authorized", err));
 			end
-			session.send(st.reply(stanza));
 		else
 			session.send(st.error_reply(stanza, "auth", "not-authorized"));
 		end

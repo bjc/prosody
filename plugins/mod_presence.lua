@@ -81,8 +81,14 @@ function handle_normal_presence(origin, stanza)
 				res.presence.attr.to = nil;
 			end
 		end
-		for jid in pairs(roster[false].pending) do -- resend incoming subscription requests
-			origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+		for jid, pending_request in pairs(roster[false].pending) do -- resend incoming subscription requests
+			if type(pending_request) == "table" then
+				local subscribe = st.deserialize(pending_request);
+				subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
+				origin.send(subscribe);
+			else
+				origin.send(st.presence({type="subscribe", from=jid}));
+			end
 		end
 		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
@@ -175,8 +181,10 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end
-		core_post_stanza(origin, stanza);
-		send_presence_of_available_resources(node, host, to_bare, origin);
+		if rostermanager.is_contact_subscribed(node, host, to_bare) then
+			core_post_stanza(origin, stanza);
+			send_presence_of_available_resources(node, host, to_bare, origin);
+		end
 		if rostermanager.is_user_subscribed(node, host, to_bare) then
 			core_post_stanza(origin, st.presence({ type = "probe", from = from_bare, to = to_bare }));
 		end
@@ -184,6 +192,8 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		-- 1. send unavailable
 		-- 2. route stanza
 		-- 3. roster push (subscription = from or both)
+		-- luacheck: ignore 211/pending_in
+		-- Is pending_in meant to be used?
 		local success, pending_in, subscribed = rostermanager.unsubscribed(node, host, to_bare);
 		if success then
 			if subscribed then
@@ -223,10 +233,16 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
 				core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- TODO send last activity
 			end
+		elseif rostermanager.is_contact_preapproved(node, host, from_bare) then
+			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
+					core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"}), true);
+				end -- TODO else return error, unable to save
+			end
 		else
 			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
-				if rostermanager.set_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
 				end -- TODO else return error, unable to save
 			end

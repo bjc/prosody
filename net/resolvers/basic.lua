@@ -2,9 +2,15 @@ local adns = require "net.adns";
 local inet_pton = require "util.net".pton;
 local inet_ntop = require "util.net".ntop;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };
+
+-- TODO Respect use_ipv4, use_ipv6
+-- FIXME RFC 6724
+-- FIXME #1428 Reuse DNS resolver object (from service resolver)
+-- FIXME #1429 Close DNS resolver object when done
 
 -- Find the next target to connect to, and
 -- pass it to cb()

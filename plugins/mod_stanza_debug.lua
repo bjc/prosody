@@ -1,18 +1,17 @@
 module:set_global();
 
-local tostring = tostring;
 local filters = require "util.filters";
 
 local function log_send(t, session)
 	if t and t ~= "" and t ~= " " then
-		session.log("debug", "SEND: %s", tostring(t));
+		session.log("debug", "SEND: %s", t);
 	end
 	return t;
 end
 
 local function log_recv(t, session)
 	if t and t ~= "" and t ~= " " then
-		session.log("debug", "RECV: %s", tostring(t));
+		session.log("debug", "RECV: %s", t);
 	end
 	return t;
 end
