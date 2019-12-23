@@ -53,7 +53,7 @@ local default_filter_set = {};
 function default_filter_set.bytes_in(bytes, session)
 	local sess_throttle = session.throttle;
 	if sess_throttle then
-		local ok, balance, outstanding = sess_throttle:poll(#bytes, true);
+		local ok, _, outstanding = sess_throttle:poll(#bytes, true);
 		if not ok then
 			session.log("debug", "Session over rate limit (%d) with %d (by %d), pausing", sess_throttle.max, #bytes, outstanding);
 			outstanding = ceil(outstanding);
