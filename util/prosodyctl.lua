@@ -210,7 +210,7 @@ local function getpid()
 		return false, "pidfile-read-failed", err;
 	end
 
-	local locked, err = lfs.lock(file, "w");
+	local locked, err = lfs.lock(file, "w"); -- luacheck: ignore 211/err
 	if locked then
 		file:close();
 		return false, "pidfile-not-locked";
@@ -227,7 +227,7 @@ local function getpid()
 end
 
 local function isrunning()
-	local ok, pid, err = getpid();
+	local ok, pid, err = getpid(); -- luacheck: ignore 211/err
 	if not ok then
 		if pid == "pidfile-read-failed" or pid == "pidfile-not-locked" then
 			-- Report as not running, since we can't open the pidfile
