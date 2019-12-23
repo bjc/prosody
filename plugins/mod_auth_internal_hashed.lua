@@ -68,6 +68,9 @@ function provider.set_password(username, password)
 		account.salt = generate_uuid();
 		account.iteration_count = max(account.iteration_count or 0, default_iteration_count);
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
+		if not valid then
+			return valid, stored_key;
+		end
 		local stored_key_hex = to_hex(stored_key);
 		local server_key_hex = to_hex(server_key);
 
@@ -99,6 +102,9 @@ function provider.create_user(username, password)
 	end
 	local salt = generate_uuid();
 	local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, salt, default_iteration_count);
+	if not valid then
+		return valid, stored_key;
+	end
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
 	return accounts:set(username, {
