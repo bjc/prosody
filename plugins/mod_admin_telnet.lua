@@ -125,6 +125,7 @@ function console:process_line(session, line)
 
 	local chunkname = "=console";
 	local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
+	-- luacheck: ignore 311/err
 	local chunk, err = envload("return "..line, chunkname, env);
 	if not chunk then
 		chunk, err = envload(line, chunkname, env);
@@ -1427,7 +1428,7 @@ end
 
 function stats_methods:cfgraph()
 	for _, stat_info in ipairs(self) do
-		local name, type, value, data = unpack(stat_info, 1, 4);
+		local name, type, value, data = unpack(stat_info, 1, 4); -- luacheck: ignore 211
 		local function print(s)
 			table.insert(stat_info.output, s);
 		end
@@ -1493,7 +1494,7 @@ end
 
 function stats_methods:histogram()
 	for _, stat_info in ipairs(self) do
-		local name, type, value, data = unpack(stat_info, 1, 4);
+		local name, type, value, data = unpack(stat_info, 1, 4); -- luacheck: ignore 211
 		local function print(s)
 			table.insert(stat_info.output, s);
 		end
@@ -1593,6 +1594,7 @@ local function new_stats_context(self)
 end
 
 function def_env.stats:show(filter)
+	-- luacheck: ignore 211/changed
 	local stats, changed, extra = require "core.statsmanager".get_stats();
 	local available, displayed = 0, 0;
 	local displayed_stats = new_stats_context(self);
