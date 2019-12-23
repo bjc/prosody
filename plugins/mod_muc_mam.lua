@@ -459,6 +459,8 @@ if cleanup_after ~= "never" then
 			if ok then
 				num_rooms = num_rooms + 1;
 				sum = sum + (tonumber(ok) or 0);
+			else
+				module:log("error", "Could not delete messages for room '%s': %s", room, err);
 			end
 		end
 		module:log("info", "Deleted %d expired messages for %d rooms", sum, num_rooms);
