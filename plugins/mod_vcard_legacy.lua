@@ -38,7 +38,7 @@ local simple_map = {
 module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local pep_service = mod_pep.get_pep_service(jid_split(stanza.attr.to) or origin.username);
-	local ok, id, vcard4_item = pep_service:get_last_item("urn:xmpp:vcard4", stanza.attr.from);
+	local ok, _, vcard4_item = pep_service:get_last_item("urn:xmpp:vcard4", stanza.attr.from);
 
 	local vcard_temp = st.stanza("vCard", { xmlns = "vcard-temp" });
 	if ok and vcard4_item then
