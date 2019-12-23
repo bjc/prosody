@@ -25,6 +25,7 @@ local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local dataform = require "util.dataforms".new;
+local get_form_type = require "util.dataforms".get_type;
 local host = module.host;
 
 local rm_load_roster = require "core.rostermanager".load_roster;
@@ -101,7 +102,14 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local qwith, qstart, qend;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
-		local err;
+		local form_type, err = get_form_type(form);
+		if not form_type then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid dataform: "..err));
+			return true;
+		elseif form_type ~= xmlns_mam then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Unexpected FORM_TYPE, expected '"..xmlns_mam.."'"));
+			return true;
+		end
 		form, err = query_form:data(form);
 		if err then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", select(2, next(err))));
