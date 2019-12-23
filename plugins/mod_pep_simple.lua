@@ -85,6 +85,7 @@ local function publish_all(user, recipient, session)
 	if d and notify then
 		for node in pairs(notify) do
 			if d[node] then
+				-- luacheck: ignore id
 				local id, item = unpack(d[node]);
 				session.send(st.message({from=user, to=recipient, type='headline'})
 					:tag('event', {xmlns='http://jabber.org/protocol/pubsub#event'})
