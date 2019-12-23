@@ -7,6 +7,7 @@ local service_mt = {};
 local default_config = {
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
+	subscriber_filter = function (subs) return subs end;
 	itemcheck = function () return true; end;
 	get_affiliation = function () end;
 	normalize_jid = function (jid) return jid; end;
@@ -500,7 +501,7 @@ function service:delete(node, actor) --> ok, err
 	end
 
 	self.events.fire_event("node-deleted", { service = self, node = node, actor = actor });
-	self.config.broadcaster("delete", node, node_obj.subscribers, nil, actor, node_obj, self);
+	self:broadcast("delete", node, node_obj.subscribers, nil, actor, node_obj);
 	return true;
 end
 
@@ -568,8 +569,13 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 	local event_data = { service = self, node = node, actor = actor, id = id, item = item };
 	self.events.fire_event("item-published/"..node, event_data);
 	self.events.fire_event("item-published", event_data);
-	self.config.broadcaster("items", node, node_obj.subscribers, item, actor, node_obj, self);
+	self:broadcast("items", node, node_obj.subscribers, item, actor, node_obj);
 	return true;
+end
+
+function service:broadcast(event, node, subscribers, item, actor, node_obj)
+	subscribers = self.config.subscriber_filter(subscribers, node, event);
+	return self.config.broadcaster(event, node, subscribers, item, actor, node_obj, self);
 end
 
 function service:retract(node, actor, id, retract) --> ok, err
@@ -588,7 +594,7 @@ function service:retract(node, actor, id, retract) --> ok, err
 	end
 	self.events.fire_event("item-retracted", { service = self, node = node, actor = actor, id = id });
 	if retract then
-		self.config.broadcaster("retract", node, node_obj.subscribers, retract, actor, node_obj, self);
+		self:broadcast("retract", node, node_obj.subscribers, retract, actor, node_obj);
 	end
 	return true
 end
@@ -610,7 +616,7 @@ function service:purge(node, actor, notify) --> ok, err
 	end
 	self.events.fire_event("node-purged", { service = self, node = node, actor = actor });
 	if notify then
-		self.config.broadcaster("purge", node, node_obj.subscribers, nil, actor, node_obj, self);
+		self:broadcast("purge", node, node_obj.subscribers, nil, actor, node_obj);
 	end
 	return true
 end
