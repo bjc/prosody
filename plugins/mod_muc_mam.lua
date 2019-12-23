@@ -354,7 +354,7 @@ end, 0);
 
 -- Handle messages
 local function save_to_history(self, stanza)
-	local room_node, room_host = jid_split(self.jid);
+	local room_node = jid_split(self.jid);
 
 	local stored_stanza = stanza;
 
