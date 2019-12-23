@@ -33,7 +33,9 @@ if not mime_map then
 	module:shared("/*/http_files/mime").types = mime_map;
 
 	local mime_types, err = open(module:get_option_path("mime_types_file", "/etc/mime.types", "config"), "r");
-	if mime_types then
+	if not mime_types then
+		module:log("debug", "Could not open MIME database: %s", err);
+	else
 		local mime_data = mime_types:read("*a");
 		mime_types:close();
 		setmetatable(mime_map, {
