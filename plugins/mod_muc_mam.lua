@@ -460,6 +460,7 @@ if cleanup_after ~= "never" then
 				num_rooms = num_rooms + 1;
 				sum = sum + (tonumber(ok) or 0);
 			else
+				cleanup_map:set(cut_off, room, true);
 				module:log("error", "Could not delete messages for room '%s': %s", room, err);
 			end
 		end
