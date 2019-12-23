@@ -281,7 +281,8 @@ function service:set_affiliation(node, actor, jid, affiliation) --> ok, err
 	node_obj.affiliations[jid] = affiliation;
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self, node_obj);
+		-- TODO pass the error from storage to caller eg wrapped in an util.error
+		local ok, err = save_node_to_store(self, node_obj); -- luacheck: ignore 211/err
 		if not ok then
 			node_obj.affiliations[jid] = old_affiliation;
 			return ok, "internal-server-error";
@@ -345,7 +346,8 @@ function service:add_subscription(node, actor, jid, options) --> ok, err
 	end
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self, node_obj);
+		-- TODO pass the error from storage to caller eg wrapped in an util.error
+		local ok, err = save_node_to_store(self, node_obj); -- luacheck: ignore 211/err
 		if not ok then
 			node_obj.subscribers[jid] = old_subscription;
 			self.subscriptions[normal_jid][jid][node] = old_subscription and true or nil;
@@ -397,7 +399,8 @@ function service:remove_subscription(node, actor, jid) --> ok, err
 	end
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self, node_obj);
+		-- TODO pass the error from storage to caller eg wrapped in an util.error
+		local ok, err = save_node_to_store(self, node_obj); -- luacheck: ignore 211/err
 		if not ok then
 			node_obj.subscribers[jid] = old_subscription;
 			self.subscriptions[normal_jid][jid][node] = old_subscription and true or nil;
@@ -455,7 +458,8 @@ function service:create(node, actor, options) --> ok, err
 	};
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self, self.nodes[node]);
+		-- TODO pass the error from storage to caller eg wrapped in an util.error
+		local ok, err = save_node_to_store(self, self.nodes[node]); -- luacheck: ignore 211/err
 		if not ok then
 			self.nodes[node] = nil;
 			return ok, "internal-server-error";
@@ -774,7 +778,8 @@ function service:set_node_config(node, actor, new_config) --> ok, err
 	node_obj.config = new_config;
 
 	if self.config.nodestore then
-		local ok, err = save_node_to_store(self, node_obj);
+		-- TODO pass the error from storage to caller eg wrapped in an util.error
+		local ok, err = save_node_to_store(self, node_obj); -- luacheck: ignore 211/err
 		if not ok then
 			node_obj.config = old_config;
 			return ok, "internal-server-error";
