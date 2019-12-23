@@ -145,7 +145,10 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
 		local form_type, err = get_form_type(form);
-		if form_type ~= xmlns_mam then
+		if not form_type then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid dataform: "..err));
+			return true;
+		elseif form_type ~= xmlns_mam then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Unexpected FORM_TYPE, expected '"..xmlns_mam.."'"));
 			return true;
 		end
