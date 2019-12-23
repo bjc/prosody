@@ -119,6 +119,7 @@ describe("storagemanager", function ()
 
 				describe("can be queried", function ()
 					it("for all items", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {});
 						assert.truthy(data);
 						local count = 0;
@@ -135,6 +136,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by JID", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							with = "contact@example.com";
 						});
@@ -153,6 +155,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by time (end)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["end"] = test_time;
 						});
@@ -171,6 +174,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by time (start)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["start"] = test_time;
 						});
@@ -189,6 +193,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by time (start+end)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["start"] = test_time;
 							["end"] = test_time+1;
@@ -239,6 +244,7 @@ describe("storagemanager", function ()
 				end);
 
 				it("can be purged", function ()
+					-- luacheck: ignore 211/err
 					local ok, err = archive:delete("user");
 					assert.truthy(ok);
 					local data, err = archive:find("user", {
