@@ -305,6 +305,8 @@ local function message_handler(event, c2s)
 			event.stanza = clone_for_other_handlers;
 			schedule_cleanup(store_user);
 			module:fire_event("archive-message-added", { origin = origin, stanza = clone_for_storage, for_user = store_user, id = id });
+		else
+			log("error", "Could not archive stanza: %s", err);
 		end
 	else
 		log("debug", "Not archiving stanza: %s (prefs)", stanza:top_tag());
