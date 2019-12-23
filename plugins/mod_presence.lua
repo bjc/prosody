@@ -192,6 +192,8 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		-- 1. send unavailable
 		-- 2. route stanza
 		-- 3. roster push (subscription = from or both)
+		-- luacheck: ignore 211/pending_in
+		-- Is pending_in meant to be used?
 		local success, pending_in, subscribed = rostermanager.unsubscribed(node, host, to_bare);
 		if success then
 			if subscribed then
