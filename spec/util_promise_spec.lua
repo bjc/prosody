@@ -248,6 +248,30 @@ describe("util.promise", function ()
 			assert.spy(cb3).was_called(1);
 			assert.spy(cb3).was_called_with("goodbye");
 		end);
+
+		it("ordinary values", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return "hello"
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with("hello");
+		end);
+
+		it("nil", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with(nil);
+		end);
 	end);
 
 	describe("race()", function ()

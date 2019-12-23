@@ -56,6 +56,11 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 
 function stream_callbacks.streamopened(session, attr)
 	local send = session.send;
+	if not attr.to then
+		session:close{ condition = "improper-addressing",
+			text = "A 'to' attribute is required on stream headers" };
+		return;
+	end
 	local host = nameprep(attr.to);
 	if not host then
 		session:close{ condition = "improper-addressing",
@@ -97,7 +102,6 @@ function stream_callbacks.streamopened(session, attr)
 			session.compressed = info.compression;
 		else
 			(session.log or log)("info", "Stream encrypted");
-			session.compressed = sock.compression and sock:compression(); --COMPAT mw/luasec-hg
 		end
 	end
 
@@ -106,7 +110,13 @@ function stream_callbacks.streamopened(session, attr)
 	if features.tags[1] or session.full_jid then
 		send(features);
 	else
-		(session.log or log)("warn", "No stream features to offer");
+		if session.secure then
+			-- Normally STARTTLS would be offered
+			(session.log or log)("warn", "No stream features to offer on secure session. Check authentication settings.");
+		else
+			-- Here SASL should be offered
+			(session.log or log)("warn", "No stream features to offer on insecure session. Check encryption and security settings.");
+		end
 		session:close{ condition = "undefined-condition", text = "No stream features to proceed with" };
 	end
 end
@@ -121,7 +131,7 @@ function stream_callbacks.error(session, error, data)
 		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
 		session:close("invalid-namespace");
 	elseif error == "parse-error" then
-		(session.log or log)("debug", "Client XML parse error: %s", tostring(data));
+		(session.log or log)("debug", "Client XML parse error: %s", data);
 		session:close("not-well-formed");
 	elseif error == "stream-error" then
 		local condition, text = "undefined-condition";
@@ -251,8 +261,6 @@ function listener.onconnect(conn)
 		local sock = conn:socket();
 		if sock.info then
 			session.compressed = sock:info"compression";
-		elseif sock.compression then
-			session.compressed = sock:compression(); --COMPAT mw/luasec-hg
 		end
 	end
 
@@ -283,7 +291,7 @@ function listener.onconnect(conn)
 			if data then
 				local ok, err = stream:feed(data);
 				if not ok then
-					log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
+					log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
 					session:close("not-well-formed");
 				end
 			end
@@ -327,6 +335,13 @@ function listener.onreadtimeout(conn)
 	end
 end
 
+function listener.ondrain(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("c2s-ondrain", { session = session });
+	end
+end
+
 local function keepalive(event)
 	local session = event.session;
 	if not session.notopen then
@@ -359,6 +374,7 @@ module:provides("net", {
 	default_port = 5222;
 	encryption = "starttls";
 	multiplex = {
+		protocol = "xmpp-client";
 		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:client%1.*>";
 	};
 });

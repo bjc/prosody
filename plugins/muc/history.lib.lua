@@ -48,16 +48,18 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_historylength";
 		type = "text-single";
+		datatype = "xs:integer";
 		label = "Maximum number of history messages returned by room";
 		desc = "Specify the maximum number of previous messages that should be sent to users when they join the room";
-		value = tostring(get_historylength(event.room));
+		value = get_historylength(event.room);
 	});
 	table.insert(event.form, {
 		name = 'muc#roomconfig_defaulthistorymessages',
 		type = 'text-single',
+		datatype = "xs:integer";
 		label = 'Default number of history messages returned by room',
 		desc = "Specify the number of previous messages sent to new users when they join the room";
-		value = tostring(get_defaulthistorymessages(event.room))
+		value = get_defaulthistorymessages(event.room);
 	});
 end, 70-5);
 

@@ -21,6 +21,7 @@ MKDIR_PRIVATE=$(MKDIR) -m750
 
 LUACHECK=luacheck
 BUSTED=busted
+SCANSION=scansion
 
 .PHONY: all test coverage clean install
 
@@ -70,6 +71,13 @@ clean:
 
 test:
 	$(BUSTED) --lua=$(RUNWITH)
+
+integration-test: all
+	$(MKDIR) data
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
+	$(SCANSION) -d ./spec/scansion; R=$$? \
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
+	exit $$R
 
 coverage:
 	-rm -- luacov.*

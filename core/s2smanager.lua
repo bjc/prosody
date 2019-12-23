@@ -9,10 +9,10 @@
 
 
 local hosts = prosody.hosts;
-local tostring, pairs, setmetatable
-    = tostring, pairs, setmetatable;
+local pairs, setmetatable = pairs, setmetatable;
 
 local logger_init = require "util.logger".init;
+local sessionlib = require "util.session";
 
 local log = logger_init("s2smanager");
 
@@ -26,18 +26,29 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function new_incoming(conn)
-	local session = { conn = conn, type = "s2sin_unauthed", direction = "incoming", hosts = {} };
-	session.log = logger_init("s2sin"..tostring(session):match("[a-f0-9]+$"));
-	incoming_s2s[session] = true;
-	return session;
+	local host_session = sessionlib.new("s2sin");
+	sessionlib.set_id(host_session);
+	sessionlib.set_logger(host_session);
+	sessionlib.set_conn(host_session, conn);
+	host_session.direction = "incoming";
+	host_session.incoming = true;
+	host_session.hosts = {};
+	incoming_s2s[host_session] = true;
+	return host_session;
 end
 
 local function new_outgoing(from_host, to_host)
-	local host_session = { to_host = to_host, from_host = from_host, host = from_host,
-		               notopen = true, type = "s2sout_unauthed", direction = "outgoing" };
+	local host_session = sessionlib.new("s2sout");
+	sessionlib.set_id(host_session);
+	sessionlib.set_logger(host_session);
+	host_session.to_host = to_host;
+	host_session.from_host = from_host;
+	host_session.host = from_host;
+	host_session.notopen = true;
+	host_session.direction = "outgoing";
+	host_session.outgoing = true;
+	host_session.hosts = {};
 	hosts[from_host].s2sout[to_host] = host_session;
-	local conn_name = "s2sout"..tostring(host_session):match("[a-f0-9]*$");
-	host_session.log = logger_init(conn_name);
 	return host_session;
 end
 
@@ -49,6 +60,9 @@ local resting_session = { -- Resting, not dead
 		end;
 		close = function (session)
 			session.log("debug", "Attempt to close already-closed session");
+		end;
+		reset_stream = function (session)
+			session.log("debug", "Attempt to reset stream of already-closed session");
 		end;
 		filter = function (type, data) return data; end; --luacheck: ignore 212/type
 	}; resting_session.__index = resting_session;
@@ -63,23 +77,25 @@ local function retire_session(session, reason)
 
 	session.destruction_reason = reason;
 
-	function session.send(data) log("debug", "Discarding data sent to resting session: %s", tostring(data)); end
-	function session.data(data) log("debug", "Discarding data received from resting session: %s", tostring(data)); end
+	function session.send(data) log("debug", "Discarding data sent to resting session: %s", data); end
+	function session.data(data) log("debug", "Discarding data received from resting session: %s", data); end
 	session.thread = { run = function (_, data) return session.data(data) end };
 	session.sends2s = session.send;
 	return setmetatable(session, resting_session);
 end
 
-local function destroy_session(session, reason)
+local function destroy_session(session, reason, bounce_reason)
 	if session.destroyed then return; end
-	(session.log or log)("debug", "Destroying "..tostring(session.direction)
-		.." session "..tostring(session.from_host).."->"..tostring(session.to_host)
-		..(reason and (": "..reason) or ""));
+	local log = session.log or log;
+	log("debug", "Destroying %s session %s->%s%s%s", session.direction, session.from_host, session.to_host, reason and ": " or "", reason or "");
 
 	if session.direction == "outgoing" then
 		hosts[session.from_host].s2sout[session.to_host] = nil;
-		session:bounce_sendq(reason);
+		session:bounce_sendq(bounce_reason or reason);
 	elseif session.direction == "incoming" then
+		if session.outgoing then
+			hosts[session.to_host].s2sout[session.from_host] = nil;
+		end
 		incoming_s2s[session] = nil;
 	end
 

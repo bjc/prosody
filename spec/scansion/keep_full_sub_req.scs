@@ -1,0 +1,58 @@
+# server MUST keep a record of the complete presence stanza comprising the subscription request (#689)
+
+[Client] Alice
+	jid: pars-a@localhost
+	password: password
+
+[Client] Bob
+	jid: pars-b@localhost
+	password: password
+
+[Client] Bob's phone
+	jid: pars-b@localhost/phone
+	password: password
+
+---------
+
+Alice connects
+
+Alice sends:
+	<presence to="${Bob's JID}" type="subscribe">
+		<preauth xmlns="urn:xmpp:pars:0" token="1tMFqYDdKhfe2pwp" />
+	</presence>
+
+Alice disconnects
+
+Bob connects
+
+Bob sends:
+	<presence/>
+
+Bob receives:
+	<presence from="${Bob's full JID}"/>
+
+Bob receives:
+	<presence from="${Alice's JID}" type="subscribe">
+		<preauth xmlns="urn:xmpp:pars:0" token="1tMFqYDdKhfe2pwp" />
+	</presence>
+
+Bob disconnects
+
+# Works if they reconnect too
+
+Bob's phone connects
+
+Bob's phone sends:
+	<presence/>
+
+Bob's phone receives:
+	<presence from="${Bob's phone's full JID}"/>
+
+
+Bob's phone receives:
+	<presence from="${Alice's JID}" type="subscribe">
+		<preauth xmlns="urn:xmpp:pars:0" token="1tMFqYDdKhfe2pwp" />
+	</presence>
+
+Bob's phone disconnects
+

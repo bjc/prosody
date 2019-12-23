@@ -36,12 +36,13 @@ end
 
 local function load_resource(plugin, resource)
 	resource = resource or "mod_"..plugin..".lua";
-
+	local lua_version = _VERSION:match(" (.+)$");
 	local names = {
 		"mod_"..plugin..dir_sep..plugin..dir_sep..resource; -- mod_hello/hello/mod_hello.lua
 		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
 		plugin..dir_sep..resource;                          -- hello/mod_hello.lua
 		resource;                                           -- mod_hello.lua
+		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep.."mod_"..plugin..dir_sep..resource;
 	};
 
 	return load_file(names);

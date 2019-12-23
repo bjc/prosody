@@ -25,6 +25,7 @@ end);
 local account_details = module:open_store("account_details");
 
 local field_map = {
+	FORM_TYPE = { name = "FORM_TYPE", type = "hidden", value = "jabber:iq:register" };
 	username = { name = "username", type = "text-single", label = "Username", required = true };
 	password = { name = "password", type = "text-private", label = "Password", required = true };
 	nick = { name = "nick", type = "text-single", label = "Nickname" };
@@ -50,6 +51,7 @@ local registration_form = dataform_new{
 	title = title;
 	instructions = instructions;
 
+	field_map.FORM_TYPE;
 	field_map.username;
 	field_map.password;
 };
@@ -153,7 +155,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	local username, password = nodeprep(data.username), data.password;
+	local username, password = nodeprep(data.username, true), data.password;
 	data.username, data.password = nil, nil;
 	local host = module.host;
 	if not username or username == "" then
@@ -166,7 +168,15 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	module:fire_event("user-registering", user);
 	if not user.allowed then
 		log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
-		session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
+		local error_type, error_condition, reason;
+		local err = user.error;
+		if err then
+			error_type, error_condition, reason = err.type, err.condition, err.text;
+		else
+			-- COMPAT pre-util.error
+			error_type, error_condition, reason = user.error_type, user.error_condition, user.reason;
+		end
+		session.send(st.error_reply(stanza, error_type or "modify", error_condition or "not-acceptable", reason));
 		return true;
 	end
 
@@ -176,14 +186,13 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	-- TODO unable to write file, file may be locked, etc, what's the correct error?
-	local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
-	if usermanager_create_user(username, password, host) then
+	local created, err = usermanager_create_user(username, password, host);
+	if created then
 		data.registered = os.time();
 		if not account_details:set(username, data) then
 			log("debug", "Could not store extra details");
 			usermanager_delete_user(username, host);
-			session.send(error_reply);
+			session.send(st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk."));
 			return true;
 		end
 		session.send(st.reply(stanza)); -- user created!
@@ -192,8 +201,8 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 			username = username, host = host, source = "mod_register",
 			session = session });
 	else
-		log("debug", "Could not create user");
-		session.send(error_reply);
+		log("debug", "Could not create user", err);
+		session.send(st.error_reply(stanza, "cancel", "feature-not-implemented", err));
 	end
 	return true;
 end);

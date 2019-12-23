@@ -9,7 +9,7 @@
 local select = select;
 local t_insert = table.insert;
 local pairs, next, type = pairs, next, type;
-local unpack = table.unpack or unpack; --luacheck: ignore 113 143
+local unpack = table.unpack or unpack; --luacheck: ignore 113
 
 local _ENV = nil;
 -- luacheck: std none

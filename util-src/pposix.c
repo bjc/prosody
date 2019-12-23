@@ -25,13 +25,17 @@
 #define _DEFAULT_SOURCE
 #endif
 #endif
+
 #if defined(__APPLE__)
 #ifndef _DARWIN_C_SOURCE
 #define _DARWIN_C_SOURCE
 #endif
 #endif
+
+#if ! defined(__FreeBSD__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#endif
 #endif
 
 #include <stdlib.h>
@@ -133,7 +137,7 @@ static int lc_daemonize(lua_State *L) {
 
 /* Syslog support */
 
-const char *const facility_strings[] = {
+static const char *const facility_strings[] = {
 	"auth",
 #if !(defined(sun) || defined(__sun))
 	"authpriv",
@@ -159,7 +163,7 @@ const char *const facility_strings[] = {
 	"uucp",
 	NULL
 };
-int facility_constants[] =	{
+static int facility_constants[] =	{
 	LOG_AUTH,
 #if !(defined(sun) || defined(__sun))
 	LOG_AUTHPRIV,
@@ -195,9 +199,9 @@ int facility_constants[] =	{
        constant.
    " -- syslog manpage
 */
-char *syslog_ident = NULL;
+static char *syslog_ident = NULL;
 
-int lc_syslog_open(lua_State *L) {
+static int lc_syslog_open(lua_State *L) {
 	int facility = luaL_checkoption(L, 2, "daemon", facility_strings);
 	facility = facility_constants[facility];
 
@@ -213,7 +217,7 @@ int lc_syslog_open(lua_State *L) {
 	return 0;
 }
 
-const char *const level_strings[] = {
+static const char *const level_strings[] = {
 	"debug",
 	"info",
 	"notice",
@@ -221,7 +225,7 @@ const char *const level_strings[] = {
 	"error",
 	NULL
 };
-int level_constants[] = 	{
+static int level_constants[] = 	{
 	LOG_DEBUG,
 	LOG_INFO,
 	LOG_NOTICE,
@@ -229,7 +233,7 @@ int level_constants[] = 	{
 	LOG_CRIT,
 	-1
 };
-int lc_syslog_log(lua_State *L) {
+static int lc_syslog_log(lua_State *L) {
 	int level = level_constants[luaL_checkoption(L, 1, "notice", level_strings)];
 
 	if(lua_gettop(L) == 3) {
@@ -241,7 +245,7 @@ int lc_syslog_log(lua_State *L) {
 	return 0;
 }
 
-int lc_syslog_close(lua_State *L) {
+static int lc_syslog_close(lua_State *L) {
 	(void)L;
 	closelog();
 
@@ -253,7 +257,7 @@ int lc_syslog_close(lua_State *L) {
 	return 0;
 }
 
-int lc_syslog_setmask(lua_State *L) {
+static int lc_syslog_setmask(lua_State *L) {
 	int level_idx = luaL_checkoption(L, 1, "notice", level_strings);
 	int mask = 0;
 
@@ -267,24 +271,24 @@ int lc_syslog_setmask(lua_State *L) {
 
 /* getpid */
 
-int lc_getpid(lua_State *L) {
+static int lc_getpid(lua_State *L) {
 	lua_pushinteger(L, getpid());
 	return 1;
 }
 
 /* UID/GID functions */
 
-int lc_getuid(lua_State *L) {
+static int lc_getuid(lua_State *L) {
 	lua_pushinteger(L, getuid());
 	return 1;
 }
 
-int lc_getgid(lua_State *L) {
+static int lc_getgid(lua_State *L) {
 	lua_pushinteger(L, getgid());
 	return 1;
 }
 
-int lc_setuid(lua_State *L) {
+static int lc_setuid(lua_State *L) {
 	int uid = -1;
 
 	if(lua_gettop(L) < 1) {
@@ -342,7 +346,7 @@ int lc_setuid(lua_State *L) {
 	return 2;
 }
 
-int lc_setgid(lua_State *L) {
+static int lc_setgid(lua_State *L) {
 	int gid = -1;
 
 	if(lua_gettop(L) < 1) {
@@ -400,7 +404,7 @@ int lc_setgid(lua_State *L) {
 	return 2;
 }
 
-int lc_initgroups(lua_State *L) {
+static int lc_initgroups(lua_State *L) {
 	int ret;
 	gid_t gid;
 	struct passwd *p;
@@ -464,7 +468,7 @@ int lc_initgroups(lua_State *L) {
 	return 2;
 }
 
-int lc_umask(lua_State *L) {
+static int lc_umask(lua_State *L) {
 	char old_mode_string[7];
 	mode_t old_mode = umask(strtoul(luaL_checkstring(L, 1), NULL, 8));
 
@@ -475,7 +479,7 @@ int lc_umask(lua_State *L) {
 	return 1;
 }
 
-int lc_mkdir(lua_State *L) {
+static int lc_mkdir(lua_State *L) {
 	int ret = mkdir(luaL_checkstring(L, 1), S_IRUSR | S_IWUSR | S_IXUSR
 	                | S_IRGRP | S_IWGRP | S_IXGRP
 	                | S_IROTH | S_IXOTH); /* mode 775 */
@@ -500,7 +504,7 @@ int lc_mkdir(lua_State *L) {
  *	Example usage:
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
-int string2resource(const char *s) {
+static int string2resource(const char *s) {
 	if(!strcmp(s, "CORE")) {
 		return RLIMIT_CORE;
 	}
@@ -550,7 +554,7 @@ int string2resource(const char *s) {
 	return -1;
 }
 
-rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
+static rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
 		case LUA_TSTRING:
 
@@ -571,7 +575,7 @@ rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	}
 }
 
-int lc_setrlimit(lua_State *L) {
+static int lc_setrlimit(lua_State *L) {
 	struct rlimit lim;
 	int arguments = lua_gettop(L);
 	int rid = -1;
@@ -610,7 +614,7 @@ int lc_setrlimit(lua_State *L) {
 	return 1;
 }
 
-int lc_getrlimit(lua_State *L) {
+static int lc_getrlimit(lua_State *L) {
 	int arguments = lua_gettop(L);
 	const char *resource = NULL;
 	int rid = -1;
@@ -655,13 +659,13 @@ int lc_getrlimit(lua_State *L) {
 	return 3;
 }
 
-int lc_abort(lua_State *L) {
+static int lc_abort(lua_State *L) {
 	(void)L;
 	abort();
 	return 0;
 }
 
-int lc_uname(lua_State *L) {
+static int lc_uname(lua_State *L) {
 	struct utsname uname_info;
 
 	if(uname(&uname_info) != 0) {
@@ -688,7 +692,7 @@ int lc_uname(lua_State *L) {
 	return 1;
 }
 
-int lc_setenv(lua_State *L) {
+static int lc_setenv(lua_State *L) {
 	const char *var = luaL_checkstring(L, 1);
 	const char *value;
 
@@ -717,7 +721,7 @@ int lc_setenv(lua_State *L) {
 }
 
 #ifdef WITH_MALLINFO
-int lc_meminfo(lua_State *L) {
+static int lc_meminfo(lua_State *L) {
 	struct mallinfo info = mallinfo();
 	lua_createtable(L, 0, 5);
 	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
@@ -745,7 +749,7 @@ int lc_meminfo(lua_State *L) {
  * Attempt to allocate space first
  * Truncate to original size on failure
  */
-int lc_atomic_append(lua_State *L) {
+static int lc_atomic_append(lua_State *L) {
 	int err;
 	size_t len;
 

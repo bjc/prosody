@@ -6,24 +6,26 @@
 --
 
 local format, char = string.format, string.char;
-local pairs, ipairs, tonumber = pairs, ipairs, tonumber;
+local pairs, ipairs = pairs, ipairs;
 local t_insert, t_concat = table.insert, table.concat;
 
+local url_codes = {};
+for i = 0, 255 do
+	local c = char(i);
+	local u = format("%%%02x", i);
+	url_codes[c] = u;
+	url_codes[u] = c;
+	url_codes[u:upper()] = c;
+end
 local function urlencode(s)
-	return s and (s:gsub("[^a-zA-Z0-9.~_-]", function (c) return format("%%%02x", c:byte()); end));
+	return s and (s:gsub("[^a-zA-Z0-9.~_-]", url_codes));
 end
 local function urldecode(s)
-	return s and (s:gsub("%%(%x%x)", function (c) return char(tonumber(c,16)); end));
+	return s and (s:gsub("%%%x%x", url_codes));
 end
 
 local function _formencodepart(s)
-	return s and (s:gsub("%W", function (c)
-		if c ~= " " then
-			return format("%%%02x", c:byte());
-		else
-			return "+";
-		end
-	end));
+	return s and (urlencode(s):gsub("%%20", "+"));
 end
 
 local function formencode(form)

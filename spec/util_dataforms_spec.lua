@@ -110,7 +110,7 @@ describe("util.dataforms", function ()
 		xform = some_form:form();
 	end);
 
-	it("works", function ()
+	it("XML serialization looks like it should", function ()
 		assert.truthy(xform);
 		assert.truthy(st.is_stanza(xform));
 		assert.equal("x", xform.name);
@@ -316,7 +316,7 @@ describe("util.dataforms", function ()
 	end);
 
 	describe(":data", function ()
-		it("works", function ()
+		it("returns something", function ()
 			assert.truthy(some_form:data(xform));
 		end);
 	end);
@@ -402,7 +402,7 @@ describe("util.dataforms", function ()
 		end);
 	end);
 
-	describe("validation", function ()
+	describe("datatype validation", function ()
 		local f = dataforms.new {
 			{
 				name = "number",
@@ -411,12 +411,12 @@ describe("util.dataforms", function ()
 			},
 		};
 
-		it("works", function ()
+		it("integer roundtrip works", function ()
 			local d = f:data(f:form({number = 1}));
 			assert.equal(1, d.number);
 		end);
 
-		it("works", function ()
+		it("integer error handling works", function ()
 			local d,e = f:data(f:form({number = "nan"}));
 			assert.not_equal(1, d.number);
 			assert.table(e);

@@ -12,6 +12,7 @@ local hosts = _G.prosody.hosts;
 local tostring = tostring;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
+local jid_host = require "util.jid".host;
 local jid_prepped_split = require "util.jid".prepped_split;
 
 local full_sessions = _G.prosody.full_sessions;
@@ -27,7 +28,7 @@ local function handle_unhandled_stanza(host, origin, stanza) --luacheck: ignore 
 		local st_type = stanza.attr.type;
 		if st_type == "error" or (name == "iq" and st_type == "result") then
 			if st_type == "error" then
-				local err_type, err_condition, err_message = stanza:get_error();
+				local err_type, err_condition, err_message = stanza:get_error(); -- luacheck: ignore 211/err_message
 				log("debug", "Discarding unhandled error %s (%s, %s) from %s: %s",
 					name, err_type, err_condition or "unknown condition", origin_type, stanza:top_tag());
 			else
@@ -81,7 +82,7 @@ function core_process_stanza(origin, stanza)
 	local to_bare, from_bare;
 	if to then
 		if full_sessions[to] or bare_sessions[to] or hosts[to] then
-			node, host = jid_split(to); -- TODO only the host is needed, optimize
+			host = jid_host(to);
 		else
 			node, host, resource = jid_prepped_split(to);
 			if not host then
@@ -111,8 +112,8 @@ function core_process_stanza(origin, stanza)
 		stanza.attr.from = from;
 	end
 
-	if (origin.type == "s2sin" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
-		if origin.type == "s2sin" and not origin.dummy then
+	if (origin.type == "s2sin" or origin.type == "s2sout" or origin.type == "c2s" or origin.type == "component") and xmlns == nil then
+		if (origin.type == "s2sin" or origin.type == "s2sout") and not origin.dummy then
 			local host_status = origin.hosts[from_host];
 			if not host_status or not host_status.authed then -- remote server trying to impersonate some other server?
 				log("warn", "Received a stanza claiming to be from %s, over a stream authed for %s!", from_host, origin.from_host);
@@ -186,8 +187,8 @@ function core_post_stanza(origin, stanza, preevents)
 end
 
 function core_route_stanza(origin, stanza)
-	local node, host, resource = jid_split(stanza.attr.to);
-	local from_node, from_host, from_resource = jid_split(stanza.attr.from);
+	local host = jid_host(stanza.attr.to);
+	local from_host = jid_host(stanza.attr.from);
 
 	-- Auto-detect origin if not specified
 	origin = origin or hosts[from_host];
@@ -199,7 +200,7 @@ function core_route_stanza(origin, stanza)
 	else
 		local host_session = hosts[from_host];
 		if not host_session then
-			log("error", "No hosts[from_host] (please report): %s", tostring(stanza));
+			log("error", "No hosts[from_host] (please report): %s", stanza);
 		else
 			local xmlns = stanza.attr.xmlns;
 			stanza.attr.xmlns = nil;

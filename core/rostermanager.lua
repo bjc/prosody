@@ -12,6 +12,7 @@
 local log = require "util.logger".init("rostermanager");
 
 local new_id = require "util.id".short;
+local new_cache = require "util.cache".new;
 
 local pairs = pairs;
 local tostring = tostring;
@@ -111,6 +112,23 @@ local function load_roster(username, host)
 	else -- Attempt to load roster for non-loaded user
 		log("debug", "load_roster: loading for offline user: %s", jid);
 	end
+	local roster_cache = hosts[host] and hosts[host].roster_cache;
+	if not roster_cache then
+		if hosts[host] then
+			roster_cache = new_cache(1024);
+			hosts[host].roster_cache = roster_cache;
+		end
+	else
+		roster = roster_cache:get(jid);
+		if roster then
+			log("debug", "load_roster: cache hit");
+			roster_cache:set(jid, roster);
+			if user then user.roster = roster; end
+			return roster;
+		else
+			log("debug", "load_roster: cache miss, loading from storage");
+		end
+	end
 	local roster_store = storagemanager.open(host, "roster", "keyval");
 	local data, err = roster_store:get(username);
 	roster = data or {};
@@ -133,6 +151,10 @@ local function load_roster(username, host)
 	end
 	if not err then
 		hosts[host].events.fire_event("roster-load", { username = username, host = host, roster = roster });
+	end
+	if roster_cache and not user then
+		log("debug", "load_roster: caching loaded roster");
+		roster_cache:set(jid, roster);
 	end
 	return roster, err;
 end
@@ -263,21 +285,26 @@ end
 
 function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
-	return roster[false].pending[jid];
+	return roster[false].pending[jid] ~= nil;
 end
-local function set_contact_pending_in(username, host, jid)
+local function set_contact_pending_in(username, host, jid, stanza)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	if item and (item.subscription == "from" or item.subscription == "both") then
 		return; -- false
 	end
-	roster[false].pending[jid] = true;
+	roster[false].pending[jid] = st.is_stanza(stanza) and st.preserialize(stanza) or true;
 	return save_roster(username, host, roster, jid);
 end
 function is_contact_pending_out(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	return item and item.ask;
+end
+local function is_contact_preapproved(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	return item and (item.approved == "true");
 end
 local function set_contact_pending_out(username, host, jid) -- subscribe
 	local roster = load_roster(username, host);
@@ -309,9 +336,10 @@ local function unsubscribe(username, host, jid)
 	return save_roster(username, host, roster, jid);
 end
 local function subscribed(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+
 	if is_contact_pending_in(username, host, jid) then
-		local roster = load_roster(username, host);
-		local item = roster[jid];
 		if not item then -- FIXME should roster item be auto-created?
 			item = {subscription = "none", groups = {}};
 			roster[jid] = item;
@@ -323,7 +351,17 @@ local function subscribed(username, host, jid)
 		end
 		roster[false].pending[jid] = nil;
 		return save_roster(username, host, roster, jid);
-	end -- TODO else implement optional feature pre-approval (ask = subscribed)
+	elseif not item or item.subscription == "none" or item.subscription == "to" then
+		-- Contact is not subscribed and has not sent a subscription request.
+		-- We store a pre-approval as per RFC6121 3.4
+		if not item then
+			item = {subscription = "none", groups = {}};
+			roster[jid] = item;
+		end
+		item.approved = "true";
+		log("debug", "Storing preapproval for %s", jid);
+		return save_roster(username, host, roster, jid);
+	end
 end
 local function unsubscribed(username, host, jid)
 	local roster = load_roster(username, host);
@@ -381,6 +419,7 @@ return {
 	set_contact_pending_in = set_contact_pending_in;
 	is_contact_pending_out = is_contact_pending_out;
 	set_contact_pending_out = set_contact_pending_out;
+	is_contact_preapproved = is_contact_preapproved;
 	unsubscribe = unsubscribe;
 	subscribed = subscribed;
 	unsubscribed = unsubscribed;

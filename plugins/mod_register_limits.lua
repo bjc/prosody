@@ -13,6 +13,7 @@ local ip_util = require "util.ip";
 local new_ip = ip_util.new_ip;
 local match_ip = ip_util.match;
 local parse_cidr = ip_util.parse_cidr;
+local errors = require "util.error";
 
 local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
 local whitelist_only = module:get_option_boolean("whitelist_registration_only");
@@ -54,6 +55,24 @@ local function ip_in_set(set, ip)
 	return false;
 end
 
+local err_registry = {
+	blacklisted = {
+		text = "Your IP address is blacklisted";
+		type = "auth";
+		condition = "forbidden";
+	};
+	not_whitelisted = {
+		text = "Your IP address is not whitelisted";
+		type = "auth";
+		condition = "forbidden";
+	};
+	throttled = {
+		reason = "Too many registrations from this IP address recently";
+		type = "wait";
+		condition = "policy-violation";
+	};
+}
+
 module:hook("user-registering", function (event)
 	local session = event.session;
 	local ip = event.ip or session and session.ip;
@@ -63,16 +82,22 @@ module:hook("user-registering", function (event)
 	elseif ip_in_set(blacklisted_ips, ip) then
 		log("debug", "Registration disallowed by blacklist");
 		event.allowed = false;
-		event.reason = "Your IP address is blacklisted";
+		event.error = errors.new("blacklisted", err_registry, event);
 	elseif (whitelist_only and not ip_in_set(whitelisted_ips, ip)) then
 		log("debug", "Registration disallowed by whitelist");
 		event.allowed = false;
-		event.reason = "Your IP address is not whitelisted";
+		event.error = errors.new("not_whitelisted", err_registry, event);
 	elseif throttle_max and not ip_in_set(whitelisted_ips, ip) then
 		if not check_throttle(ip) then
 			log("debug", "Registrations over limit for ip %s", ip or "?");
 			event.allowed = false;
-			event.reason = "Too many registrations from this IP address recently";
+			event.error = errors.new("throttle", err_registry, event);
 		end
+	end
+	if event.error then
+		-- COMPAT pre-util.error
+		event.reason = event.error.text;
+		event.error_type = event.error.type;
+		event.error_condition = event.error.condition;
 	end
 end);

@@ -101,13 +101,14 @@ describe("util.pubsub", function ()
 			assert(service:publish("node", true, "1", "item 1", { myoption = true }));
 
 			local ok, config = assert(service:get_node_config("node", true));
+			assert.truthy(ok);
 			assert.equals(true, config.myoption);
 		end);
 
 		it("fails to publish to a node with differing config", function ()
 			local ok, err = service:publish("node", true, "1", "item 2", { myoption = false });
 			assert.falsy(ok);
-			assert.equals("precondition-not-met", err);
+			assert.equals("precondition-not-met", err.pubsub_condition);
 		end);
 
 		it("allows to publish to a node with differing config when only defaults are suggested", function ()
@@ -229,6 +230,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should be the default", function ()
 				local ok, config = service:get_node_config("test", true);
+				assert.truthy(ok);
 				assert.equal("open", config.access_model);
 			end);
 			it("should allow anyone to subscribe", function ()
@@ -250,6 +252,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should be present in the configuration", function ()
 				local ok, config = service:get_node_config("test", true);
+				assert.truthy(ok);
 				assert.equal("whitelist", config.access_model);
 			end);
 			it("should not allow anyone to subscribe", function ()
@@ -294,6 +297,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should be the default", function ()
 				local ok, config = service:get_node_config("test", true);
+				assert.truthy(ok);
 				assert.equal("publishers", config.publish_model);
 			end);
 			it("should not allow anyone to publish", function ()
@@ -304,6 +308,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should allow publishers to publish", function ()
 				assert(service:set_affiliation("test", true, "mypublisher", "publisher"));
+				-- luacheck: ignore 211/err
 				local ok, err = service:publish("test", "mypublisher", "item1", "foo");
 				assert.is_true(ok);
 			end);
@@ -342,6 +347,7 @@ describe("util.pubsub", function ()
 			end);
 			it("should allow publishers to publish without a subscription", function ()
 				assert(service:set_affiliation("test", true, "mypublisher", "publisher"));
+				-- luacheck: ignore 211/err
 				local ok, err = service:publish("test", "mypublisher", "item1", "foo");
 				assert.is_true(ok);
 			end);

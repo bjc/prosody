@@ -24,7 +24,7 @@ local t_concat = table.concat;
 local envloadfile = require"util.envload".envloadfile;
 local serialize = require "util.serialization".serialize;
 local lfs = require "lfs";
--- Extract directory seperator from package.config (an undocumented string that comes with lua)
+-- Extract directory separator from package.config (an undocumented string that comes with lua)
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" )
 
 local prosody = prosody;
@@ -157,7 +157,8 @@ end
 
 local function atomic_store(filename, data)
 	local scratch = filename.."~";
-	local f, ok, msg, errno;
+	local f, ok, msg, errno; -- luacheck: ignore errno
+	-- TODO return util.error with code=errno?
 
 	f, msg, errno = io_open(scratch, "w");
 	if not f then

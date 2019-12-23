@@ -79,7 +79,7 @@ Juliet's phone receives:
 	<message from="${Romeo's full JID}" type="chat">
 		<body>Hello Juliet, are you there?</body>
 		<delay xmlns='urn:xmpp:delay' from='localhost' stamp='{scansion:any}' />
-	</message>	
+	</message>
 
 # Romeo sends another bare-JID message, it should be delivered
 # instantly to Juliet's phone
@@ -92,7 +92,7 @@ Romeo sends:
 Juliet's phone receives:
 	<message from="${Romeo's full JID}" type="chat">
 		<body>Oh, hi!</body>
-	</message>	
+	</message>
 
 # Juliet's laptop goes online, but with a negative priority
 
@@ -122,7 +122,7 @@ Romeo sends:
 Juliet's phone receives:
 	<message from="${Romeo's full JID}" type="chat">
 		<body>How are you?</body>
-	</message>	
+	</message>
 
 # Romeo sends direct to Juliet's full JID, and she should receive it
 

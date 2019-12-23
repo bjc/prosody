@@ -2,6 +2,13 @@ local server = require "net.server";
 local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
 
+-- TODO Respect use_ipv4, use_ipv6
+-- TODO #1246 Happy Eyeballs
+-- FIXME RFC 6724
+-- FIXME Error propagation from resolvers doesn't work
+-- FIXME #1428 Reuse DNS resolver object between service and basic resolver
+-- FIXME #1429 Close DNS resolver object when done
+
 local pending_connection_methods = {};
 local pending_connection_mt = {
 	__name = "pending_connection";
@@ -38,7 +45,7 @@ local function attempt_connection(p)
 		p:log("debug", "Next target to try is %s:%d", ip, port);
 		local conn, err = server.addclient(ip, port, pending_connection_listeners, p.options.pattern or "*a", p.options.sslctx, conn_type, extra);
 		if not conn then
-			log("debug", "Connection attempt failed immediately: %s", tostring(err));
+			log("debug", "Connection attempt failed immediately: %s", err);
 			p.last_error = err or "unknown reason";
 			return attempt_connection(p);
 		end
