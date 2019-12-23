@@ -63,7 +63,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if buftable then buf, buftable = t_concat(buf), false; end
 					local index = buf:find("\r\n\r\n", nil, true);
 					if not index then return; end -- not enough data
-					local method, path, httpversion, status_code, reason_phrase;
+					-- FIXME was reason_phrase meant to be passed on somewhere?
+					local method, path, httpversion, status_code, reason_phrase; -- luacheck: ignore reason_phrase
 					local first_line;
 					local headers = {};
 					for line in buf:sub(1,index+1):gmatch("([^\r\n]+)\r\n") do -- parse request
