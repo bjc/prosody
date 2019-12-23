@@ -79,6 +79,7 @@ if stats then
 			if stats.get_stats then
 				changed_stats, stats_extra = {}, {};
 				for stat_name, getter in pairs(stats.get_stats()) do
+					-- luacheck: ignore 211/type
 					local type, value, extra = getter();
 					local old_value = latest_stats[stat_name];
 					latest_stats[stat_name] = value;
