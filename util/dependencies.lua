@@ -13,7 +13,8 @@ if not softreq "luarocks.loader" then -- LuaRocks 2.x
 	softreq "luarocks.require"; -- LuaRocks <1.x
 end
 
-local function missingdep(name, sources, msg)
+local function missingdep(name, sources, msg, err) -- luacheck: ignore err
+	-- TODO print something about the underlying error, useful for debugging
 	print("");
 	print("**************************");
 	print("Prosody was unable to find "..tostring(name));
@@ -44,25 +45,25 @@ local function check_dependencies()
 
 	local fatal;
 
-	local lxp = softreq "lxp"
+	local lxp, err = softreq "lxp"
 
 	if not lxp then
 		missingdep("luaexpat", {
 				["Debian/Ubuntu"] = "sudo apt-get install lua-expat";
 				["luarocks"] = "luarocks install luaexpat";
 				["Source"] = "http://matthewwild.co.uk/projects/luaexpat/";
-			});
+			}, nil, err);
 		fatal = true;
 	end
 
-	local socket = softreq "socket"
+	local socket, err = softreq "socket"
 
 	if not socket then
 		missingdep("luasocket", {
 				["Debian/Ubuntu"] = "sudo apt-get install lua-socket";
 				["luarocks"] = "luarocks install luasocket";
 				["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
-			});
+			}, nil, err);
 		fatal = true;
 	elseif not socket.tcp4 then
 		-- COMPAT LuaSocket before being IP-version agnostic
@@ -76,28 +77,28 @@ local function check_dependencies()
 			["luarocks"] = "luarocks install luafilesystem";
 			["Debian/Ubuntu"] = "sudo apt-get install lua-filesystem";
 			["Source"] = "http://www.keplerproject.org/luafilesystem/";
-		});
+		}, nil, err);
 		fatal = true;
 	end
 
-	local ssl = softreq "ssl"
+	local ssl, err = softreq "ssl"
 
 	if not ssl then
 		missingdep("LuaSec", {
 				["Debian/Ubuntu"] = "sudo apt-get install lua-sec";
 				["luarocks"] = "luarocks install luasec";
 				["Source"] = "https://github.com/brunoos/luasec";
-			}, "SSL/TLS support will not be available");
+			}, "SSL/TLS support will not be available", err);
 	end
 
-	local bit = softreq"util.bitcompat";
+	local bit, err = softreq"util.bitcompat";
 
 	if not bit then
 		missingdep("lua-bitops", {
 			["Debian/Ubuntu"] = "sudo apt-get install lua-bitop";
 			["luarocks"] = "luarocks install luabitop";
 			["Source"] = "http://bitop.luajit.org/";
-		}, "WebSocket support will not be available");
+		}, "WebSocket support will not be available", err);
 	end
 
 	local encodings, err = softreq "util.encodings"
