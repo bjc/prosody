@@ -388,6 +388,7 @@ if cleanup_after ~= "never" then
 				num_users = num_users + 1;
 				sum = sum + (tonumber(ok) or 0);
 			else
+				cleanup_map:set(cut_off, user, true);
 				module:log("error", "Could not delete messages for user '%s': %s", user, err);
 			end
 		end
