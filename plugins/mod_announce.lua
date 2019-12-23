@@ -38,6 +38,7 @@ end
 -- Old <message>-based jabberd-style announcement sending
 function handle_announcement(event)
 	local stanza = event.stanza;
+	-- luacheck: ignore 211/node
 	local node, host, resource = jid.split(stanza.attr.to);
 
 	if resource ~= "announce/online" then
