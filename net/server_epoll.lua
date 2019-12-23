@@ -114,7 +114,7 @@ local function runtimers(next_delay, min_wait)
 			break;
 		end
 
-		local _, timer, id = timers:pop();
+		local _, timer = timers:pop();
 		local ok, ret = pcall(timer[2], now);
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
