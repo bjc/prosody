@@ -448,7 +448,7 @@ function startup.switch_user()
 				print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 			else
 				-- Make sure the Prosody user can read the config
-				local conf, err, errno = io.open(prosody.config_file);
+				local conf, err, errno = io.open(prosody.config_file); --luacheck: ignore 211/errno
 				if conf then
 					conf:close();
 				else
