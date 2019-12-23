@@ -157,7 +157,8 @@ end
 
 local function atomic_store(filename, data)
 	local scratch = filename.."~";
-	local f, ok, msg, errno;
+	local f, ok, msg, errno; -- luacheck: ignore errno
+	-- TODO return util.error with code=errno?
 
 	f, msg, errno = io_open(scratch, "w");
 	if not f then
