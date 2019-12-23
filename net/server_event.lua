@@ -692,6 +692,7 @@ local function handleserver( server, addr, port, pattern, listener, sslctx, star
 			end
 		end
 		--vdebug("max connection check ok, accepting...")
+		-- luacheck: ignore 231/err
 		local client, err = server:accept()    -- try to accept; TODO: check err
 		while client do
 			if interface._connections >= cfg.MAX_CONNECTIONS then
@@ -780,6 +781,7 @@ local function addclient( addr, serverport, listener, pattern, sslctx, typ, extr
 	client:settimeout( 0 )  -- set nonblocking
 	local res, err = client:setpeername( addr, serverport )  -- connect
 	if res or ( err == "timeout" ) then
+		-- luacheck: ignore 211/port
 		local ip, port = client:getsockname( )
 		local interface = wrapclient( client, ip, serverport, listener, pattern, sslctx, extra )
 		debug( "new connection id:", interface.id )
