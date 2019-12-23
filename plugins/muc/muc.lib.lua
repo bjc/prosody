@@ -844,10 +844,12 @@ function room_mt:process_form(origin, stanza)
 	if form.attr.type == "cancel" then
 		origin.send(st.reply(stanza));
 	elseif form.attr.type == "submit" then
+		-- luacheck: ignore 231/errors
 		local fields, errors, present;
 		if form.tags[1] == nil then -- Instant room
 			fields, present = {}, {};
 		else
+			-- FIXME handle form errors
 			fields, errors, present = self:get_form_layout(stanza.attr.from):data(form);
 			if fields.FORM_TYPE ~= "http://jabber.org/protocol/muc#roomconfig" then
 				origin.send(st.error_reply(stanza, "cancel", "bad-request", "Form is not of type room configuration"));
