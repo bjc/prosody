@@ -357,6 +357,8 @@ local function save_to_history(self, stanza)
 	if id then
 		schedule_cleanup(room_node);
 		stanza:add_direct_child(st.stanza("stanza-id", { xmlns = xmlns_st_id, by = self.jid, id = id }));
+	else
+		module:log("error", "Could not archive stanza: %s", err);
 	end
 end
 
