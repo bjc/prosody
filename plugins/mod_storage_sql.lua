@@ -281,7 +281,7 @@ function archive_store:append(username, key, value, when, with)
 		VALUES (?,?,?,?,?,?,?,?);
 		]];
 		if key then
-			local result, err = engine:delete(delete_sql, host, user or "", store, key);
+			local result = engine:delete(delete_sql, host, user or "", store, key);
 			if result then
 				item_count = item_count - result:affected();
 			end
