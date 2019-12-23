@@ -91,21 +91,6 @@ local function nodestore(username)
 		return data, err;
 	end
 	function store:set(node, data)
-		if data then
-			-- Save the data without subscriptions
-			local subscribers = {};
-			for jid, sub in pairs(data.subscribers) do
-				if type(sub) ~= "table" or not sub.presence then
-					subscribers[jid] = sub;
-				end
-			end
-			data = {
-				name = data.name;
-				config = data.config;
-				affiliations = data.affiliations;
-				subscribers = subscribers;
-			};
-		end
 		return node_config:set(username, node, data);
 	end
 	function store:users()
@@ -167,18 +152,23 @@ local function get_broadcaster(username)
 	return simple_broadcast;
 end
 
-local function on_node_creation(event)
-	local service = event.service;
-	local node = event.node;
-	local username = service.config.pep_username;
-
-	local service_recipients = recipients[username];
-	if not service_recipients then return; end
-
-	for recipient, nodes in pairs(service_recipients) do
-		if nodes:contains(node) then
-			service:add_subscription(node, recipient, recipient, { presence = true });
+local function get_subscriber_filter(username)
+	return function (jids, node)
+		local broadcast_to = {};
+		for jid, opts in pairs(jids) do
+			broadcast_to[jid] = opts;
 		end
+
+		local service_recipients = recipients[username];
+		if service_recipients then
+			local service = services[username];
+			for recipient, nodes in pairs(service_recipients) do
+				if nodes:contains(node) and service:may(node, recipient, "subscribe") then
+					broadcast_to[recipient] = true;
+				end
+			end
+		end
+		return broadcast_to;
 	end
 end
 
@@ -203,6 +193,7 @@ function get_pep_service(username)
 		nodestore = nodestore(username);
 		itemstore = simple_itemstore(username);
 		broadcaster = get_broadcaster(username);
+		subscriber_filter = get_subscriber_filter(username);
 		itemcheck = is_item_stanza;
 		get_affiliation = function (jid)
 			if jid_bare(jid) == user_bare then
@@ -239,11 +230,6 @@ function get_pep_service(username)
 	module:add_item("pep-service", { service = service, jid = user_bare });
 	return service;
 end
-
-module:hook("item-added/pep-service", function (event)
-	local service = event.item.service;
-	module:hook_object_event(service.events, "node-created", on_node_creation);
-end);
 
 function handle_pubsub_iq(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -308,12 +294,9 @@ local function update_subscriptions(recipient, service_name, nodes)
 	end
 
 	local service = get_pep_service(service_name);
-	for node in current - nodes do
-		service:remove_subscription(node, recipient, recipient);
-	end
 
 	for node in nodes - current do
-		if service:add_subscription(node, recipient, recipient, { presence = true }) then
+		if service:may(node, recipient, "subscribe") then
 			resend_last_item(recipient, node, service);
 		end
 	end
