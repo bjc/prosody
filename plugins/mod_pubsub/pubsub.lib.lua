@@ -810,6 +810,7 @@ local function archive_itemstore(archive, config, user, node)
 		end
 		module:log("debug", "Listed items %s", data);
 		return it.reverse(function()
+			-- luacheck: ignore 211/when
 			local id, payload, when, publisher = data();
 			if id == nil then
 				return;
