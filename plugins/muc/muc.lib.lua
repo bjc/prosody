@@ -385,7 +385,7 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	local real_jid = stanza.attr.from;
 	local occupant = self:get_occupant_by_real_jid(real_jid);
 	if occupant == nil then return nil; end
-	local type, condition, text = stanza:get_error();
+	local _, condition, text = stanza:get_error();
 	local error_message = "Kicked: "..(condition and condition:gsub("%-", " ") or "presence error");
 	if text and self:get_whois() == "anyone" then
 		error_message = error_message..": "..text;
@@ -1254,7 +1254,7 @@ function room_mt:route_stanza(stanza) -- luacheck: ignore 212
 end
 
 function room_mt:get_affiliation(jid)
-	local node, host, resource = jid_split(jid);
+	local node, host = jid_split(jid);
 	-- Affiliations are granted, revoked, and maintained based on the user's bare JID.
 	local bare = node and node.."@"..host or host;
 	local result = self._affiliations[bare];
@@ -1277,7 +1277,7 @@ end
 function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 	if not actor then return nil, "modify", "not-acceptable"; end;
 
-	local node, host, resource = jid_split(jid);
+	local node, host = jid_split(jid);
 	if not host then return nil, "modify", "not-acceptable"; end
 	jid = jid_join(node, host); -- Bare
 	local is_host_only = node == nil;
@@ -1571,7 +1571,7 @@ function _M.restore_room(frozen, state)
 	else
 		-- New storage format
 		for jid, data in pairs(frozen) do
-			local node, host, resource = jid_split(jid);
+			local _, host, resource = jid_split(jid);
 			if host:sub(1,1) ~= "_" and not resource and type(data) == "string" then
 				-- bare jid: affiliation
 				room._affiliations[jid] = data;
