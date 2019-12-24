@@ -352,7 +352,7 @@ local function save_to_history(self, stanza)
 	end
 
 	-- And stash it
-	local id = archive:append(room_node, nil, stored_stanza, time_now(), with);
+	local id, err = archive:append(room_node, nil, stored_stanza, time_now(), with);
 
 	if id then
 		schedule_cleanup(room_node);
