@@ -297,7 +297,7 @@ local function message_handler(event, c2s)
 		log("debug", "Archiving stanza: %s", stanza:top_tag());
 
 		-- And stash it
-		local ok = archive:append(store_user, nil, clone_for_storage, time_now(), with);
+		local ok, err = archive:append(store_user, nil, clone_for_storage, time_now(), with);
 		if ok then
 			local clone_for_other_handlers = st.clone(stanza);
 			local id = ok;
