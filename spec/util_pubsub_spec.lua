@@ -483,4 +483,30 @@ describe("util.pubsub", function ()
 
 	end);
 
+	describe("subscriber filter", function ()
+		it("works", function ()
+			local filter = spy.new(function (subs)
+				return {["modified"] = true};
+			end);
+			local broadcaster = spy.new(function (notif_type, node_name, subscribers, item) -- luacheck: ignore 212
+			end);
+			local service = pubsub.new({
+					subscriber_filter = filter;
+					broadcaster = broadcaster;
+				});
+
+			local ok = service:create("node", true);
+			assert.truthy(ok);
+
+			local ok = service:add_subscription("node", true, "someone");
+			assert.truthy(ok);
+
+			local ok = service:publish("node", true, "1", "item");
+			assert.truthy(ok);
+			-- TODO how to match table arguments?
+			assert.spy(filter).was_called();
+			assert.spy(broadcaster).was_called();
+		end);
+	end);
+
 end);
