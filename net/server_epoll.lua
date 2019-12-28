@@ -408,7 +408,7 @@ function interface:onwritable()
 	self:onconnect();
 	if not self.conn then return; end -- could have been closed in onconnect
 	local buffer = self.writebuffer;
-	local data = t_concat(buffer);
+	local data = #buffer == 1 and buffer[1] or t_concat(buffer);
 	local ok, err, partial = self.conn:send(data);
 	if ok then
 		self:set(nil, false);
