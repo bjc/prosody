@@ -73,7 +73,7 @@ module:hook_object_event(server, "http-error", function (event)
 	if event.response then
 		event.response.headers.content_type = "text/html; charset=utf-8";
 	end
-	return get_page(event.code, (show_private and event.private_message) or event.message);
+	return get_page(event.code, (show_private and event.private_message) or event.message or (event.error and event.error.text));
 end);
 
 module:hook_object_event(server, "http-error", function (event)
