@@ -485,7 +485,7 @@ describe("util.pubsub", function ()
 
 	describe("subscriber filter", function ()
 		it("works", function ()
-			local filter = spy.new(function (subs)
+			local filter = spy.new(function (subs) -- luacheck: ignore 212/subs
 				return {["modified"] = true};
 			end);
 			local broadcaster = spy.new(function (notif_type, node_name, subscribers, item) -- luacheck: ignore 212
