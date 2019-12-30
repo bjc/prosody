@@ -15,7 +15,7 @@ local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local st = require "util.stanza";
 local cache = require "util.cache";
-local errutil = require "util.error";
+local errors = require "util.error";
 local promise = require "util.promise";
 local time_now = require "util.time".now;
 local format = require "util.format".format;
@@ -370,7 +370,7 @@ function api:send_iq(stanza, origin, timeout)
 	local iq_cache = self._iq_cache;
 	if not iq_cache then
 		iq_cache = cache.new(256, function (_, iq)
-			iq.reject(errutil.new({
+			iq.reject(errors.new({
 				type = "wait", condition = "resource-constraint",
 				text = "evicted from iq tracking cache"
 			}));
@@ -398,13 +398,13 @@ function api:send_iq(stanza, origin, timeout)
 
 		local function error_handler(event)
 			if event.stanza.attr.from == stanza.attr.to then
-				reject(errutil.from_stanza(event.stanza, event));
+				reject(errors.from_stanza(event.stanza, event));
 				return true;
 			end
 		end
 
 		if iq_cache:get(cache_key) then
-			reject(errutil.new({
+			reject(errors.new({
 				type = "modify", condition = "conflict",
 				text = "IQ stanza id attribute already used",
 			}));
@@ -415,7 +415,7 @@ function api:send_iq(stanza, origin, timeout)
 		self:hook(error_event, error_handler);
 
 		local timeout_handle = self:add_timer(timeout or 120, function ()
-			reject(errutil.new({
+			reject(errors.new({
 				type = "wait", condition = "remote-server-timeout",
 				text = "IQ stanza timed out",
 			}));
@@ -428,7 +428,7 @@ function api:send_iq(stanza, origin, timeout)
 		});
 
 		if not ok then
-			reject(errutil.new({
+			reject(errors.new({
 				type = "wait", condition = "internal-server-error",
 				text = "Could not store IQ tracking data"
 			}));
