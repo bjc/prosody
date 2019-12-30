@@ -398,7 +398,7 @@ function api:send_iq(stanza, origin, timeout)
 
 		local function error_handler(event)
 			if event.stanza.attr.from == stanza.attr.to then
-				reject(errutil.from_stanza(event.stanza), event);
+				reject(errutil.from_stanza(event.stanza, event));
 				return true;
 			end
 		end
