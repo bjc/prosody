@@ -129,11 +129,12 @@ function module.add_host(module)
 		local app_handlers = apps[app_name];
 
 		local app_methods = opt_methods;
+		local app_headers = opt_headers;
 		local app_credentials = opt_credentials;
 
 		local function cors_handler(event_data)
 			local request, response = event_data.request, event_data.response;
-			apply_cors_headers(response, app_methods, opt_headers, opt_max_age, app_credentials, request.headers.origin);
+			apply_cors_headers(response, app_methods, app_headers, opt_max_age, app_credentials, request.headers.origin);
 		end
 
 		local function options_handler(event_data)
@@ -145,6 +146,15 @@ function module.add_host(module)
 			local cors = event.item.cors;
 			if cors.credentials ~= nil then
 				app_credentials = cors.credentials;
+			end
+			if cors.headers then
+				for header, enable in pairs(cors.headers) do
+					if enable and not app_headers:contains(header) then
+						app_headers = app_headers + set.new { header };
+					elseif not enable and app_headers:contains(header) then
+						app_headers = app_headers - set.new { header };
+					end
+				end
 			end
 		end
 
