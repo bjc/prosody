@@ -934,6 +934,7 @@ function commands.check(arg)
 			end
 		end
 		if all_modules:contains("vcard") and all_modules:contains("vcard_legacy") then
+			print("");
 			print("    Both mod_vcard_legacy and mod_vcard are enabled but they conflict");
 			print("    with each other. Remove one.");
 		end
