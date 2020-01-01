@@ -93,6 +93,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
 					if len and len > bodylimit then error = true; return error_cb("content-length-limit-exceeded"); end
+					-- TODO ask a callback whether to proceed in case of large requests or Expect: 100-continue
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
 						if not have_body then len = 0; end
