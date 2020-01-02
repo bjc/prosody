@@ -236,6 +236,7 @@ function handle_request(event)
 			return;
 		elseif opcode == 0x9 then -- Ping frame
 			frame.opcode = 0xA;
+			frame.MASK = false; -- Clients send masked frames, servers don't, see #1484
 			conn:write(build_frame(frame));
 			return "";
 		elseif opcode == 0xA then -- Pong frame, MAY be sent unsolicited, eg as keepalive
