@@ -43,6 +43,26 @@ describe("net.websocket.frames", function ()
 			["RSV3"] = false;
 			["key"] = { 0x20, 0x20, 0x20, 0x20, };
 		};
+		ping = {
+			["opcode"] = 0x9;
+			["length"] = 4;
+			["data"] = "ping";
+			["FIN"] = true;
+			["MASK"] = false;
+			["RSV1"] = false;
+			["RSV2"] = false;
+			["RSV3"] = false;
+		};
+		pong = {
+			["opcode"] = 0xa;
+			["length"] = 4;
+			["data"] = "pong";
+			["FIN"] = true;
+			["MASK"] = false;
+			["RSV1"] = false;
+			["RSV2"] = false;
+			["RSV3"] = false;
+		};
 	}
 
 	describe("build", function ()
@@ -52,6 +72,8 @@ describe("net.websocket.frames", function ()
 			assert.equal("\0\5hello", build(test_frames.simple_data));
 			assert.equal("\128\0", build(test_frames.simple_fin));
 			assert.equal("\128\133    HELLO", build(test_frames.masked_data));
+			assert.equal("\137\4ping", build(test_frames.ping));
+			assert.equal("\138\4pong", build(test_frames.pong));
 		end);
 	end);
 
@@ -62,6 +84,8 @@ describe("net.websocket.frames", function ()
 			assert.same(test_frames.simple_data, parse("\0\5hello"));
 			assert.same(test_frames.simple_fin, parse("\128\0"));
 			assert.same(test_frames.masked_data, parse("\128\133    HELLO"));
+			assert.same(test_frames.ping, parse("\137\4ping"));
+			assert.same(test_frames.pong, parse("\138\4pong"));
 		end);
 	end);
 
