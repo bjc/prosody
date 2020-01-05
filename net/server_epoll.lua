@@ -13,6 +13,7 @@ local pcall = pcall;
 local type = type;
 local next = next;
 local pairs = pairs;
+local traceback = debug.traceback;
 local logger = require "util.logger";
 local log = logger.init("server_epoll");
 local socket = require "socket";
@@ -25,6 +26,7 @@ local inet = require "util.net";
 local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 local new_id = require "util.id".medium;
+local xpcall = require "util.xpcall".xpcall;
 
 local poller = require "util.poll"
 local EEXIST = poller.EEXIST;
@@ -175,7 +177,7 @@ function interface:on(what, ...)
 		-- self:debug("Missing listener 'on%s'", what); -- uncomment for development and debugging
 		return;
 	end
-	local ok, err = pcall(listener, self, ...);
+	local ok, err = xpcall(listener, traceback, self, ...);
 	if not ok then
 		if cfg.fatal_errors then
 			self:debug("Closing due to error calling on%s: %s", what, err);
