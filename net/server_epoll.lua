@@ -66,6 +66,10 @@ local default_config = { __index = {
 	max_wait = 86400;
 	min_wait = 1e-06;
 
+	-- Enable extra noisy debug logging
+	-- TODO disable once considered stable
+	verbose = true;
+
 	-- EXPERIMENTAL
 	-- Whether to kill connections in case of callback errors.
 	fatal_errors = false;
@@ -155,6 +159,13 @@ function interface:debug(msg, ...) --luacheck: ignore 212/self
 	self.log("debug", msg, ...);
 end
 
+interface.noise = interface.debug;
+function interface:noise(msg, ...) --luacheck: ignore 212/self
+	if cfg.verbose then
+		return self:debug(msg, ...);
+	end
+end
+
 function interface:error(msg, ...) --luacheck: ignore 212/self
 	self.log("error", msg, ...);
 end
@@ -174,7 +185,7 @@ function interface:on(what, ...)
 	end
 	local listener = self.listeners["on"..what];
 	if not listener then
-		-- self:debug("Missing listener 'on%s'", what); -- uncomment for development and debugging
+		self:noise("Missing listener 'on%s'", what); -- uncomment for development and debugging
 		return;
 	end
 	local ok, err = xpcall(listener, traceback, self, ...);
@@ -262,7 +273,7 @@ function interface:setreadtimeout(t)
 	else
 		self._readtimeout = addtimer(t, function ()
 			if self:on("readtimeout") then
-				self:debug("Read timeout handled");
+				self:noise("Read timeout handled");
 				return cfg.read_timeout;
 			else
 				self:debug("Read timeout not handled, disconnecting");
@@ -287,7 +298,7 @@ function interface:setwritetimeout(t)
 		self._writetimeout:reschedule(t);
 	else
 		self._writetimeout = addtimer(t, function ()
-			self:debug("Write timeout");
+			self:noise("Write timeout");
 			self:on("disconnect", "write timeout");
 			self:destroy();
 		end);
@@ -312,7 +323,7 @@ function interface:add(r, w)
 	end
 	self._wantread, self._wantwrite = r, w;
 	fds[fd] = self;
-	self:debug("Registered in poller");
+	self:noise("Registered in poller");
 	return true;
 end
 
@@ -347,7 +358,7 @@ function interface:del()
 	end
 	self._wantread, self._wantwrite = nil, nil;
 	fds[fd] = nil;
-	self:debug("Unregistered from poller");
+	self:noise("Unregistered from poller");
 	return true;
 end
 
@@ -562,15 +573,15 @@ function interface:tlshandskake()
 		self:setwritetimeout();
 		self:set(true, true);
 	elseif err == "wantread" then
-		self:debug("TLS handshake to wait until readable");
+		self:noise("TLS handshake to wait until readable");
 		self:set(true, false);
 		self:setreadtimeout(cfg.ssl_handshake_timeout);
 	elseif err == "wantwrite" then
-		self:debug("TLS handshake to wait until writable");
+		self:noise("TLS handshake to wait until writable");
 		self:set(false, true);
 		self:setwritetimeout(cfg.ssl_handshake_timeout);
 	else
-		self:debug("TLS handshake error: %s", err);
+		self:error("TLS handshake error: %s", err);
 		self:on("disconnect", err);
 		self:destroy();
 	end
@@ -641,18 +652,18 @@ function interface:init()
 end
 
 function interface:pause()
-	self:debug("Pause reading");
+	self:noise("Pause reading");
 	return self:set(false);
 end
 
 function interface:resume()
-	self:debug("Resume reading");
+	self:noise("Resume reading");
 	return self:set(true);
 end
 
 -- Pause connection for some time
 function interface:pausefor(t)
-	self:debug("Pause for %fs", t);
+	self:noise("Pause for %fs", t);
 	if self._pausefor then
 		self._pausefor:close();
 	end
@@ -661,7 +672,7 @@ function interface:pausefor(t)
 	self._pausefor = addtimer(t, function ()
 		self._pausefor = nil;
 		self:set(true);
-		self:debug("Resuming after pause, connection is %s", not self.conn and "missing" or self.conn:dirty() and "dirty" or "clean");
+		self:noise("Resuming after pause, connection is %s", not self.conn and "missing" or self.conn:dirty() and "dirty" or "clean");
 		if self.conn and self.conn:dirty() then
 			self:onreadable();
 		end
@@ -680,7 +691,7 @@ function interface:pause_writes()
 	if self._write_lock then
 		return
 	end
-	self:debug("Pause writes");
+	self:noise("Pause writes");
 	self._write_lock = true;
 	self:setwritetimeout(false);
 	self:set(nil, false);
@@ -690,7 +701,7 @@ function interface:resume_writes()
 	if not self._write_lock then
 		return
 	end
-	self:debug("Resume writes");
+	self:noise("Resume writes");
 	self._write_lock = nil;
 	if self.writebuffer[1] then
 		self:setwritetimeout();
