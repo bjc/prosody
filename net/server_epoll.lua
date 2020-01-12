@@ -180,7 +180,7 @@ end
 -- Call a listener callback
 function interface:on(what, ...)
 	if not self.listeners then
-		self:debug("Interface is missing listener callbacks");
+		self:error("Interface is missing listener callbacks");
 		return;
 	end
 	local listener = self.listeners["on"..what];
