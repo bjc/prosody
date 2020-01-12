@@ -191,7 +191,7 @@ function interface:on(what, ...)
 	local ok, err = xpcall(listener, traceback, self, ...);
 	if not ok then
 		if cfg.fatal_errors then
-			self:debug("Closing due to error calling on%s: %s", what, err);
+			self:error("Closing due to error calling on%s: %s", what, err);
 			self:destroy();
 		else
 			self:debug("Error calling on%s: %s", what, err);
