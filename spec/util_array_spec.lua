@@ -43,6 +43,7 @@ describe("util.array", function ()
 					local b = array({ "c", "d" });
 					assert.truthy(a1 == a2);
 					assert.falsy(a1 == b);
+					assert.falsy(a1 == { "a", "b" }, "Behavior of metatables changed in Lua 5.3");
 				end);
 			end);
 
