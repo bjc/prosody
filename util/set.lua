@@ -8,6 +8,7 @@
 
 local ipairs, pairs, setmetatable, next, tostring =
       ipairs, pairs, setmetatable, next, tostring;
+local getmetatable = getmetatable;
 local t_concat = table.concat;
 
 local _ENV = nil;
@@ -146,6 +147,11 @@ function set_mt.__div(set, func)
 	return new_set;
 end
 function set_mt.__eq(set1, set2)
+	if getmetatable(set1) ~= set_mt or getmetatable(set2) ~= set_mt then
+		-- Lua 5.3+ calls this if both operands are tables, even if metatables differ
+		return false;
+	end
+
 	set1, set2 = set1._items, set2._items;
 	for item in pairs(set1) do
 		if not set2[item] then
