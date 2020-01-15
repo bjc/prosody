@@ -19,8 +19,14 @@ local ip_mt = {
 		return ret;
 	end,
 	__tostring = function (ip) return ip.addr; end,
-	__eq = function (ipA, ipB) return ipA.packed == ipB.packed; end
 };
+ip_mt.__eq = function (ipA, ipB)
+	if getmetatable(ipA) ~= ip_mt or getmetatable(ipB) ~= ip_mt then
+		-- Lua 5.3+ calls this if both operands are tables, even if metatables differ
+		return false;
+	end
+	return ipA.packed == ipB.packed;
+end
 
 local hex2bits = {
 	["0"] = "0000", ["1"] = "0001", ["2"] = "0010", ["3"] = "0011",
