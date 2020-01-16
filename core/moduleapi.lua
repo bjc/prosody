@@ -19,6 +19,7 @@ local errors = require "util.error";
 local promise = require "util.promise";
 local time_now = require "util.time".now;
 local format = require "util.format".format;
+local jid_node = require "util.jid".node;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -379,7 +380,7 @@ function api:send_iq(stanza, origin, timeout)
 	end
 
 	local event_type;
-	if stanza.attr.from == self.host then
+	if not jid_node(stanza.attr.from) then
 		event_type = "host";
 	else -- assume bare since we can't hook full jids
 		event_type = "bare";
