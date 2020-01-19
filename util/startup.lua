@@ -70,12 +70,11 @@ function startup.read_config()
 	local filenames = {};
 
 	local filename;
-	if arg[1] == "--config" and arg[2] then
-		table.insert(filenames, arg[2]);
+	if prosody.opts.config then
+		table.insert(filenames, prosody.opts.config);
 		if CFG_CONFIGDIR then
-			table.insert(filenames, CFG_CONFIGDIR.."/"..arg[2]);
+			table.insert(filenames, CFG_CONFIGDIR.."/"..prosody.opts.config);
 		end
-		table.remove(arg, 1); table.remove(arg, 1);
 	elseif os.getenv("PROSODY_CONFIG") then -- Passed by prosodyctl
 			table.insert(filenames, os.getenv("PROSODY_CONFIG"));
 	else
@@ -459,8 +458,7 @@ function startup.switch_user()
 			os.exit(1);
 		end
 		prosody.current_uid = pposix.getuid();
-		local arg_root = arg[1] == "--root";
-		if arg_root then table.remove(arg, 1); end
+		local arg_root = prosody.opts.root;
 		if prosody.current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
 			-- We haz root!
 			local desired_user = config.get("*", "prosody_user") or "prosody";
@@ -569,6 +567,7 @@ end
 
 -- prosodyctl only
 function startup.prosodyctl()
+	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
 	startup.force_console_logging();
@@ -589,6 +588,7 @@ end
 function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
+	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
 	startup.init_logging();
