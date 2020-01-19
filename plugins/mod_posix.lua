@@ -126,7 +126,12 @@ function syslog_sink_maker(config) -- luacheck: ignore 212/config
 end
 require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
 
-local daemonize = module:get_option("daemonize", prosody.installed);
+local daemonize = prosody.opts.daemonize;
+
+if daemonize == nil then
+	-- Fall back to config file if not specified on command-line
+	daemonize = module:get_option("daemonize", prosody.installed);
+end
 
 local function remove_log_sinks()
 	local lm = require "core.loggingmanager";
