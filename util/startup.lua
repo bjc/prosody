@@ -63,7 +63,6 @@ function startup.parse_args()
 			end
 		end
 		parsed_opts[param_k] = param_v;
-		print("ARG", param_k, param_v);
 	end
 	prosody.opts = parsed_opts;
 end
