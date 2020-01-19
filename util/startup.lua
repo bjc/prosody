@@ -18,6 +18,7 @@ local value_params = { config = true };
 
 function startup.parse_args()
 	local parsed_opts = {};
+	prosody.opts = parsed_opts;
 
 	if #arg == 0 then
 		return;
@@ -64,9 +65,7 @@ function startup.parse_args()
 			end
 		end
 		parsed_opts[param_k] = param_v;
-		print("ARG", param_k, param_v);
 	end
-	prosody.opts = parsed_opts;
 end
 
 function startup.read_config()
