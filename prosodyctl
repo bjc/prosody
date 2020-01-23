@@ -198,11 +198,25 @@ function commands.deluser(arg)
 	return 1;
 end
 
+local function service_command_warning(command)
+	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
+		show_warning("WARNING: Use of prosodyctl start/stop/restart/reload is not recommended");
+		show_warning("         if Prosody is managed by an init system - use that directly instead.");
+		if lfs.attributes("/etc/systemd") then
+			show_warning("         e.g. systemctl %s prosody", command);
+		elseif lfs.attributes("/etc/init.d/prosody") then
+			show_warning("         e.g. /etc/init.d/prosody %s", command);
+		end
+		show_warning("");
+	end
+end
+
 function commands.start(arg)
 	if arg[1] == "--help" then
 		show_usage([[start]], [[Start Prosody]]);
 		return 1;
 	end
+	service_command_warning("start");
 	local ok, ret = prosodyctl.isrunning();
 	if not ok then
 		show_message(error_messages[ret]);
@@ -293,6 +307,8 @@ function commands.stop(arg)
 		return 1;
 	end
 
+	service_command_warning("stop");
+
 	if not prosodyctl.isrunning() then
 		show_message("Prosody is not running");
 		return 1;
@@ -327,6 +343,8 @@ function commands.restart(arg)
 		show_usage([[restart]], [[Restart a running Prosody server]]);
 		return 1;
 	end
+
+	service_command_warning("restart");
 
 	commands.stop(arg);
 	return commands.start(arg);
@@ -420,6 +438,8 @@ function commands.reload(arg)
 		show_usage([[reload]], [[Reload Prosody's configuration and re-open log files]]);
 		return 1;
 	end
+
+	service_command_warning("reload");
 
 	if not prosodyctl.isrunning() then
 		show_message("Prosody is not running");
