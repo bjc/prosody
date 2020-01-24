@@ -1074,36 +1074,49 @@ end
 
 def_env.dns = {};
 local adns = require"net.adns";
-local dns = require"net.dns";
+
+local function get_resolver(session)
+	local resolver = session.dns_resolver;
+	if not resolver then
+		resolver = adns.resolver();
+		session.dns_resolver = resolver;
+	end
+	return resolver;
+end
 
 function def_env.dns:lookup(name, typ, class)
+	local resolver = get_resolver(self.session);
 	local ret = "Query sent";
 	local print = self.session.print;
 	local function handler(...)
 		ret = "Got response";
 		print(...);
 	end
-	adns.lookup(handler, name, typ, class);
+	resolver:lookup(handler, name, typ, class);
 	return true, ret;
 end
 
 function def_env.dns:addnameserver(...)
-	dns._resolver:addnameserver(...)
+	local resolver = get_resolver(self.session);
+	resolver._resolver:addnameserver(...)
 	return true
 end
 
 function def_env.dns:setnameserver(...)
-	dns._resolver:setnameserver(...)
+	local resolver = get_resolver(self.session);
+	resolver._resolver:setnameserver(...)
 	return true
 end
 
 function def_env.dns:purge()
-	dns.purge()
+	local resolver = get_resolver(self.session);
+	resolver._resolver:purge()
 	return true
 end
 
 function def_env.dns:cache()
-	return true, "Cache:\n"..tostring(dns.cache())
+	local resolver = get_resolver(self.session);
+	return true, "Cache:\n"..tostring(resolver._resolver.cache)
 end
 
 def_env.http = {};
