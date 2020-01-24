@@ -2,12 +2,16 @@ local server = require "net.server";
 local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
 
--- TODO Respect use_ipv4, use_ipv6
 -- TODO #1246 Happy Eyeballs
 -- FIXME RFC 6724
 -- FIXME Error propagation from resolvers doesn't work
 -- FIXME #1428 Reuse DNS resolver object between service and basic resolver
 -- FIXME #1429 Close DNS resolver object when done
+
+local default_connector_options = {
+	use_ipv4 = true;
+	use_ipv6 = true;
+};
 
 local pending_connection_methods = {};
 local pending_connection_mt = {
@@ -78,19 +82,24 @@ function pending_connection_listeners.ondisconnect(conn, reason)
 	attempt_connection(p);
 end
 
-local function connect(target_resolver, listeners, options, data)
-	local p = setmetatable({
-		id = new_id();
-		target_resolver = target_resolver;
-		listeners = assert(listeners);
-		options = options or {};
-		data = data;
-	}, pending_connection_mt);
+local function new_connector(connector_options)
+	local function connect(target_resolver, listeners, options, data)
+		local p = setmetatable({
+			id = new_id();
+			target_resolver = target_resolver;
+			listeners = assert(listeners);
+			options = options or {};
+			data = data;
+			connector_options = connector_options or default_connector_options;
+		}, pending_connection_mt);
 
-	p:log("debug", "Starting connection process");
-	attempt_connection(p);
+		p:log("debug", "Starting connection process");
+		attempt_connection(p);
+	end
+	return connect;
 end
 
 return {
-	connect = connect;
+	connect = new_connector(default_connector_options);
+	new_connector = new_connector;
 };
