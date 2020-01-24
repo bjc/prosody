@@ -27,7 +27,7 @@ local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
 local fire_global_event = prosody.events.fire_event;
 local runner = require "util.async".runner;
-local connect = require "net.connect".connect;
+local new_connector = require "net.connect".new_connector;
 local service = require "net.resolvers.service";
 local errors = require "util.error";
 local set = require "util.set";
@@ -50,6 +50,11 @@ local runner_callbacks = {};
 local listener = {};
 
 local log = module._log;
+
+local connect = new_connector({
+	use_ipv4 = module:get_option_boolean("use_ipv4", true);
+	use_ipv6 = module:get_option_boolean("use_ipv6", true);
+});
 
 module:hook("stats-update", function ()
 	local count = 0;
