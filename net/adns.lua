@@ -8,6 +8,7 @@
 
 local server = require "net.server";
 local new_resolver = require "net.dns".resolver;
+local promise = require "util.promise";
 
 local log = require "util.logger".init("adns");
 
@@ -89,6 +90,18 @@ function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 					log("error", "Error in DNS response handler: %s", err);
 				end
 			end)(resolver:peek(qname, qtype, qclass));
+end
+
+function async_resolver_methods:lookup_promise(qname, qtype, qclass)
+	return promise.new(function (resolve, reject)
+		local function handler(answer)
+			if not answer then
+				return reject();
+			end
+			resolve(answer);
+		end
+		self:lookup(handler, qname, qtype, qclass);
+	end);
 end
 
 function query_methods:cancel(call_handler, reason) -- luacheck: ignore 212/reason
