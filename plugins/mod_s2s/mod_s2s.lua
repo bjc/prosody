@@ -51,6 +51,12 @@ local listener = {};
 
 local log = module._log;
 
+local s2s_service_options = {
+	default_port = 5269;
+	use_ipv4 = module:get_option_boolean("use_ipv4", true);
+	use_ipv6 = module:get_option_boolean("use_ipv6", true);
+};
+
 module:hook("stats-update", function ()
 	local count = 0;
 	local ipv6 = 0;
@@ -165,7 +171,7 @@ function route_to_new_session(event)
 	host_session.bounce_sendq = bounce_sendq;
 	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
-	connect(service.new(to_host, "xmpp-server", "tcp", { default_port = 5269 }), listener, nil, { session = host_session });
+	connect(service.new(to_host, "xmpp-server", "tcp", s2s_service_options), listener, nil, { session = host_session });
 	return true;
 end
 
