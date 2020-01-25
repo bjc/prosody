@@ -43,7 +43,7 @@ function methods:next(cb)
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
 
-	if self.connector_options.use_ipv4 ~= false then
+	if not self.extra or self.extra.use_ipv4 ~= false then
 		dns_resolver:lookup(function (answer)
 			if answer then
 				for _, record in ipairs(answer) do
@@ -54,7 +54,7 @@ function methods:next(cb)
 		end, self.hostname, "A", "IN");
 	end
 
-	if self.connector_options.use_ipv6 ~= false then
+	if not self.extra or self.extra.use_ipv6 ~= false then
 		dns_resolver:lookup(function (answer)
 			if answer then
 				for _, record in ipairs(answer) do
