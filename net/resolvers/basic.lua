@@ -42,23 +42,28 @@ function methods:next(cb)
 
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
-	dns_resolver:lookup(function (answer)
-		if answer then
-			for _, record in ipairs(answer) do
-				table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
-			end
-		end
-		ready();
-	end, self.hostname, "A", "IN");
 
-	dns_resolver:lookup(function (answer)
-		if answer then
-			for _, record in ipairs(answer) do
-				table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
+	if self.connector_options.use_ipv4 ~= false then
+		dns_resolver:lookup(function (answer)
+			if answer then
+				for _, record in ipairs(answer) do
+					table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
+				end
 			end
-		end
-		ready();
-	end, self.hostname, "AAAA", "IN");
+			ready();
+		end, self.hostname, "A", "IN");
+	end
+
+	if self.connector_options.use_ipv6 ~= false then
+		dns_resolver:lookup(function (answer)
+			if answer then
+				for _, record in ipairs(answer) do
+					table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
+				end
+			end
+			ready();
+		end, self.hostname, "AAAA", "IN");
+	end
 end
 
 local function new(hostname, port, conn_type, extra)
