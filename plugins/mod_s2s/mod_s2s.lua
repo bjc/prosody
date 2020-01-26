@@ -487,6 +487,9 @@ end
 
 --- Session methods
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
+-- reason: stream error to send to the remote server
+-- remote_reason: stream error received from the remote server
+-- bounce_reason: stanza error to pass to bounce_sendq beacuse stream- and stanza errors are different
 local function session_close(session, reason, remote_reason, bounce_reason)
 	local log = session.log or log;
 	if session.conn then
