@@ -249,9 +249,9 @@ local function start(source_dir, lua)
 		return false, "already-running";
 	end
 	if not source_dir then
-		os.execute(lua .. "./prosody");
+		os.execute(lua .. "./prosody -D");
 	else
-		os.execute(lua .. source_dir.."/../../bin/prosody");
+		os.execute(lua .. source_dir.."/../../bin/prosody -D");
 	end
 	return true;
 end
