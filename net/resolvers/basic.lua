@@ -52,6 +52,8 @@ function methods:next(cb)
 			end
 			ready();
 		end, self.hostname, "A", "IN");
+	else
+		ready();
 	end
 
 	if not self.extra or self.extra.use_ipv6 ~= false then
@@ -63,6 +65,8 @@ function methods:next(cb)
 			end
 			ready();
 		end, self.hostname, "AAAA", "IN");
+	else
+		ready();
 	end
 end
 
