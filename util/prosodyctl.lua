@@ -238,9 +238,9 @@ local function start(source_dir)
 		return false, "already-running";
 	end
 	if not source_dir then
-		os.execute("./prosody");
+		os.execute("./prosody -D");
 	else
-		os.execute(source_dir.."/../../bin/prosody");
+		os.execute(source_dir.."/../../bin/prosody -D");
 	end
 	return true;
 end
