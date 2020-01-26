@@ -871,7 +871,7 @@ function commands.check(arg)
 		print("Checking config...");
 		local deprecated = set.new({
 			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
-			"vcard_compatibility", "cross_domain_bosh", "cross_domain_websocket"
+			"vcard_compatibility", "cross_domain_bosh", "cross_domain_websocket", "daemonize",
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
