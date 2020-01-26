@@ -116,7 +116,11 @@ local daemonize = prosody.opts.daemonize;
 
 if daemonize == nil then
 	-- Fall back to config file if not specified on command-line
-	daemonize = module:get_option("daemonize", prosody.installed);
+	daemonize = module:get_option_boolean("daemonize", nil);
+	if daemonize ~= nil then
+		module:log("warn", "The 'daemonize' option has been deprecated, specify -D or -F on the command line instead.");
+		-- TODO: Write some docs and include a link in the warning.
+	end
 end
 
 local function remove_log_sinks()
