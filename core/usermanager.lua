@@ -55,6 +55,12 @@ local provider_mt = { __index = new_null_provider() };
 
 local function initialize_host(host)
 	local host_session = hosts[host];
+
+	local authz_provider_name = config.get(host, "authorization") or "internal";
+
+	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
+	host_session.authz = authz_mod or global_authz_provider;
+
 	if host_session.type ~= "local" then return; end
 
 	host_session.events.add_handler("item-added/auth-provider", function (event)
@@ -84,10 +90,6 @@ local function initialize_host(host)
 		modulemanager.load(host, "auth_"..auth_provider);
 	end
 
-	local authz_provider_name = config.get(host, "authorization") or "internal";
-
-	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
-	host_session.authz = authz_mod or global_authz_provider;
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
 
