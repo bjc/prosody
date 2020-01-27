@@ -56,7 +56,7 @@ local provider_mt = { __index = new_null_provider() };
 local function initialize_host(host)
 	local host_session = hosts[host];
 
-	local authz_provider_name = config.get(host, "authorization") or "internal";
+	local authz_provider_name = config.get(host, "authorization") or "config";
 
 	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
 	host_session.authz = authz_mod or global_authz_provider;
