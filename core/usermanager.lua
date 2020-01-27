@@ -9,12 +9,13 @@
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
-local ipairs = ipairs;
 local jid_bare = require "util.jid".bare;
+local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local sasl_new = require "util.sasl".new;
 local storagemanager = require "core.storagemanager";
+local set = require "util.set";
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
@@ -33,6 +34,22 @@ local function new_null_provider()
 		__index = function(self, method) return dummy; end --luacheck: ignore 212
 	});
 end
+
+local global_admins_config = config.get("*", "admins");
+if type(global_admins_config) ~= "table" then
+	global_admins_config = nil; -- TODO: factor out moduleapi magic config handling and use it here
+end
+local global_admins = set.new(global_admins_config) / jid_prep;
+
+local admin_role = { ["prosody:admin"] = true };
+local global_authz_provider = {
+	get_user_roles = function (user) end; --luacheck: ignore 212/user
+	get_jid_roles = function (jid)
+		if global_admins:contains(jid) then
+			return admin_role;
+		end
+	end;
+};
 
 local provider_mt = { __index = new_null_provider() };
 
@@ -66,6 +83,11 @@ local function initialize_host(host)
 	if auth_provider ~= "null" then
 		modulemanager.load(host, "auth_"..auth_provider);
 	end
+
+	local authz_provider_name = config.get(host, "authorization") or "internal";
+
+	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
+	host_session.authz = authz_mod or global_authz_provider;
 end;
 prosody.events.add_handler("host-activated", initialize_host, 100);
 
@@ -120,38 +142,18 @@ local function is_admin(jid, host)
 	jid = jid_bare(jid);
 	host = host or "*";
 
-	local host_admins = config.get(host, "admins");
-	local global_admins = config.get("*", "admins");
+	local actor_user, actor_host = jid_split(jid);
+	local roles;
 
-	if host_admins and host_admins ~= global_admins then
-		if type(host_admins) == "table" then
-			for _,admin in ipairs(host_admins) do
-				if jid_prep(admin) == jid then
-					return true;
-				end
-			end
-		elseif host_admins then
-			log("error", "Option 'admins' for host '%s' is not a list", host);
-		end
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+
+	if actor_host == host then -- Local user
+		roles = authz_provider.get_user_roles(actor_user);
+	else -- Remote user/JID
+		roles = authz_provider.get_jid_roles(jid);
 	end
 
-	if global_admins then
-		if type(global_admins) == "table" then
-			for _,admin in ipairs(global_admins) do
-				if jid_prep(admin) == jid then
-					return true;
-				end
-			end
-		elseif global_admins then
-			log("error", "Global option 'admins' is not a list");
-		end
-	end
-
-	-- Still not an admin, check with auth provider
-	if host ~= "*" and hosts[host].users and hosts[host].users.is_admin then
-		return hosts[host].users.is_admin(jid);
-	end
-	return false;
+	return roles and roles["prosody:admin"];
 end
 
 return {
