@@ -589,6 +589,7 @@ end
 
 -- prosodyctl only
 function startup.prosodyctl()
+	prosody.process_type = "prosodyctl";
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
@@ -611,6 +612,7 @@ end
 function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
+	prosody.process_type = "prosody";
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
