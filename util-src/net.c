@@ -46,8 +46,8 @@ static const char *const type_strings[] = {
 static int lc_local_addresses(lua_State *L) {
 #ifndef _WIN32
 	/* Link-local IPv4 addresses; see RFC 3927 and RFC 5735 */
-	const long ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
-	const long ip4_mask      = htonl(0xffff0000);
+	const uint32_t ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
+	const uint32_t ip4_mask      = htonl(0xffff0000);
 	struct ifaddrs *addr = NULL, *a;
 #endif
 	int n = 1;
