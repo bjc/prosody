@@ -299,7 +299,7 @@ function interface:setwritetimeout(t)
 	else
 		self._writetimeout = addtimer(t, function ()
 			self:noise("Write timeout");
-			self:on("disconnect", "write timeout");
+			self:on("disconnect", self._connected and "write timeout" or "connection timeout");
 			self:destroy();
 		end);
 	end
@@ -711,6 +711,7 @@ end
 
 -- Connected!
 function interface:onconnect()
+	self._connected = true;
 	self:updatenames();
 	self:debug("Connected (%s)", self);
 	self.onconnect = noop;
