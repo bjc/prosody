@@ -580,20 +580,20 @@ local function tls_info(session, line)
 		if sock and sock.info then
 			local info = sock:info();
 			line[#line+1] = ("(%s with %s)"):format(info.protocol, info.cipher);
+			if sock.getsniname then
+				local name = sock:getsniname();
+				if name then
+					line[#line+1] = ("(SNI:%q)"):format(name);
+				end
+			end
+			if sock.getalpn then
+				local proto = sock:getalpn();
+				if proto then
+					line[#line+1] = ("(ALPN:%q)"):format(proto);
+				end
+			end
 		else
 			line[#line+1] = "(cipher info unavailable)";
-		end
-		if sock.getsniname then
-			local name = sock:getsniname();
-			if name then
-				line[#line+1] = ("(SNI:%q)"):format(name);
-			end
-		end
-		if sock.getalpn then
-			local proto = sock:getalpn();
-			if proto then
-				line[#line+1] = ("(ALPN:%q)"):format(proto);
-			end
 		end
 	else
 		line[#line+1] = "(insecure)";
