@@ -122,13 +122,14 @@ local function destroy_session(session, err)
 	retire_session(session);
 end
 
-local function make_authenticated(session, username)
+local function make_authenticated(session, username, scope)
 	username = nodeprep(username);
 	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s_unbound";
 	end
+	session.auth_scope = scope;
 	session.log("info", "Authenticated as %s@%s", username, session.host or "(unknown)");
 	return true;
 end
