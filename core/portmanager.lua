@@ -170,7 +170,7 @@ end
 local function register_service(service_name, service_info)
 	table.insert(services[service_name], service_info);
 
-	if not active_services:get(service_name) then
+	if not active_services:get(service_name) and prosody.process_type == "prosody" then
 		log("debug", "No active service for %s, activating...", service_name);
 		local ok, err = activate(service_name);
 		if not ok then
