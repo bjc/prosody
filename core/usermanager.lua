@@ -137,7 +137,7 @@ local function get_provider(host)
 	return hosts[host].users;
 end
 
-local function is_admin(jid, host)
+local function get_roles(jid, host)
 	if host and not hosts[host] then return false; end
 	if type(jid) ~= "string" then return false; end
 
@@ -155,6 +155,11 @@ local function is_admin(jid, host)
 		roles = authz_provider.get_jid_roles(jid);
 	end
 
+	return roles;
+end
+
+local function is_admin(jid, host)
+	local roles = get_roles(jid, host);
 	return roles and roles["prosody:admin"];
 end
 
@@ -170,5 +175,6 @@ return {
 	users = users;
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
+	get_roles = get_roles;
 	is_admin = is_admin;
 };
