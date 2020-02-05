@@ -172,7 +172,14 @@ function core_post_stanza(origin, stanza, preevents)
 		end
 	end
 
-	local event_data = {origin=origin, stanza=stanza};
+	local event_data = {origin=origin, stanza=stanza, to_self=to_self};
+
+	local result = hosts[origin.host].events.fire_event("pre-stanza", event_data);
+	if result ~= nil then
+		log("debug", "Stanza rejected by pre-stanza handler: %s", event_data.reason or "unknown reason");
+		return;
+	end
+
 	if preevents then -- c2s connection
 		if hosts[origin.host].events.fire_event('pre-'..stanza.name..to_type, event_data) then return; end -- do preprocessing
 	end
