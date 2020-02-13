@@ -111,7 +111,8 @@ local function is_admin(jid)
 	return um_is_admin(jid, module.host);
 end
 
-do -- Monkey patch to make server admins room owners
+if module:get_option_boolean("component_admins_as_room_owners", true) then
+	-- Monkey patch to make server admins room owners
 	local _get_affiliation = room_mt.get_affiliation;
 	function room_mt:get_affiliation(jid)
 		if is_admin(jid) then return "owner"; end
