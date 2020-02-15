@@ -581,7 +581,7 @@ function interface:tlshandskake()
 		self:set(false, true);
 		self:setwritetimeout(cfg.ssl_handshake_timeout);
 	else
-		self:error("TLS handshake error: %s", err);
+		self:debug("TLS handshake error: %s", err);
 		self:on("disconnect", err);
 		self:destroy();
 	end
