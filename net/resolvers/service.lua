@@ -14,14 +14,17 @@ local resolver_mt = { __index = methods };
 -- pass it to cb()
 function methods:next(cb)
 	if self.targets then
-		if #self.targets == 0 then
-			cb(nil);
-			return;
+		if not self.resolver then
+			if #self.targets == 0 then
+				cb(nil);
+				return;
+			end
+			local next_target = table.remove(self.targets, 1);
+			self.resolver = basic.new(unpack(next_target, 1, 4));
 		end
-		local next_target = table.remove(self.targets, 1);
-		self.resolver = basic.new(unpack(next_target, 1, 4));
 		self.resolver:next(function (...)
 			if ... == nil then
+				self.resolver = nil;
 				self:next(cb);
 			else
 				cb(...);
