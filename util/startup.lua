@@ -5,6 +5,7 @@ local startup = {};
 local prosody = { events = require "util.events".new() };
 local logger = require "util.logger";
 local log = logger.init("startup");
+local parse_args = require "util.argparse".parse;
 
 local config = require "core.configmanager";
 local config_warnings;
@@ -17,55 +18,10 @@ local short_params = { D = "daemonize", F = "no-daemonize" };
 local value_params = { config = true };
 
 function startup.parse_args()
-	local parsed_opts = {};
-	prosody.opts = parsed_opts;
-
-	if #arg == 0 then
-		return;
-	end
-	while true do
-		local raw_param = arg[1];
-		if not raw_param then
-			break;
-		end
-
-		local prefix = raw_param:match("^%-%-?");
-		if not prefix then
-			break;
-		elseif prefix == "--" and raw_param == "--" then
-			table.remove(arg, 1);
-			break;
-		end
-		local param = table.remove(arg, 1):sub(#prefix+1);
-		if #param == 1 then
-			param = short_params[param];
-		end
-
-		if not param then
-			print("Unknown command-line option: "..tostring(param));
-			print("Perhaps you meant to use prosodyctl instead?");
-			os.exit(1);
-		end
-
-		local param_k, param_v;
-		if value_params[param] then
-			param_k, param_v = param, table.remove(arg, 1);
-			if not param_v then
-				print("Expected a value to follow command-line option: "..raw_param);
-				os.exit(1);
-			end
-		else
-			param_k, param_v = param:match("^([^=]+)=(.+)$");
-			if not param_k then
-				if param:match("^no%-") then
-					param_k, param_v = param:sub(4), false;
-				else
-					param_k, param_v = param, true;
-				end
-			end
-		end
-		parsed_opts[param_k] = param_v;
-	end
+	prosody.opts = parse_args(arg, {
+			short_params = short_params,
+			value_params = value_params,
+		});
 end
 
 function startup.read_config()
