@@ -727,15 +727,15 @@ function module.load()
 					module:log("error", "Old database format detected. Please run: prosodyctl mod_%s upgrade", module.name);
 					return false, "database upgrade needed";
 				end
-				if engine.params.driver == "SQLite3" then
-					for row in engine:select("PRAGMA compile_options") do
-						if row[1] == "ENABLE_UPDATE_DELETE_LIMIT" then
-							engine._have_delete_limit = true;
-						end
-					end
-				end
 			end
 		end);
+		if engine.params.driver == "SQLite3" then
+			for row in engine:select("PRAGMA compile_options") do
+				if row[1] == "ENABLE_UPDATE_DELETE_LIMIT" then
+					engine._have_delete_limit = true;
+				end
+			end
+		end
 		engines[sql.db2uri(params)] = engine;
 	end
 
