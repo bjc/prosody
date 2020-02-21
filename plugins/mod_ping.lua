@@ -11,7 +11,8 @@ local st = require "util.stanza";
 module:add_feature("urn:xmpp:ping");
 
 local function ping_handler(event)
-	return event.origin.send(st.reply(event.stanza));
+	event.origin.send(st.reply(event.stanza));
+	return true;
 end
 
 module:hook("iq-get/bare/urn:xmpp:ping:ping", ping_handler);
