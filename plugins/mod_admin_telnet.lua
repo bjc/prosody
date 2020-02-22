@@ -384,7 +384,12 @@ end
 -- matching modules_enabled in the global section
 local function get_hosts_with_module(hosts, module)
 	local hosts_set = get_hosts_set(hosts)
-	/ function (host) return (prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module)) and host or nil; end;
+	/ function (host)
+			if prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module) then
+				return host;
+			end;
+			return nil;
+		end;
 	if module and modulemanager.get_module("*", module) then
 		hosts_set:add("*");
 	end
