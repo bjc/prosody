@@ -385,10 +385,24 @@ end
 local function get_hosts_with_module(hosts, module)
 	local hosts_set = get_hosts_set(hosts)
 	/ function (host)
-			if prosody.hosts[host].type == "local" or module and modulemanager.is_loaded(host, module) then
-				return host;
+			if module then
+				-- Module given, filter in hosts with this module loaded
+				if modulemanager.is_loaded(host, module) then
+					return host;
+				else
+					return nil;
+				end
+			end
+			if not hosts then
+				-- No hosts given, filter in VirtualHosts
+				if prosody.hosts[host].type == "local" then
+					return host;
+				else
+					return nil
+				end
 			end;
-			return nil;
+			-- No module given, but hosts are, don't filter at all
+			return host;
 		end;
 	if module and modulemanager.get_module("*", module) then
 		hosts_set:add("*");
