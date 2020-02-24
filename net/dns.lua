@@ -13,7 +13,7 @@
 
 
 local socket = require "socket";
-local timer = require "util.timer";
+local have_timer, timer = pcall(require, "util.timer");
 local new_ip = require "util.ip".new_ip;
 local have_util_net, util_net = pcall(require, "util.net");
 
@@ -871,7 +871,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		set(self.wanted, qclass, qtype, qname, co, true);
 	end
 	
-	if timer and self.timeout then
+	if have_timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
 		timer.add_task(self.timeout, function ()
