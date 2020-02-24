@@ -13,7 +13,7 @@ describe("util.jwt", function ()
 		local key = "secret";
 		local token = jwt.sign("wrong", { payload = "this" });
 		assert.string(token);
-		local ok, err = jwt.verify(key, token);
+		local ok = jwt.verify(key, token);
 		assert.falsy(ok)
 	end);
 end);
