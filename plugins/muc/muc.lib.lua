@@ -814,7 +814,9 @@ function room_mt:handle_message_to_occupant(origin, stanza)
 	stanza = muc_util.filter_muc_x(st.clone(stanza));
 	stanza:tag("x", { xmlns = "http://jabber.org/protocol/muc#user" }):up();
 	stanza.attr.from = current_nick;
-	self:route_to_occupant(o_data, stanza)
+	if module:fire_event("muc-private-message", { room = self, origin = origin, stanza = stanza }) ~= false then
+		self:route_to_occupant(o_data, stanza)
+	end
 	-- TODO: Remove x tag?
 	stanza.attr.from = from;
 	return true;
