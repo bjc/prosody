@@ -320,7 +320,7 @@ local type_map = {
 
 local function users(host, store, typ) -- luacheck: ignore 431/store
 	typ = type_map[typ or "keyval"];
-	local store_dir = format("%s/%s/%s", data_path, encode(host), store);
+	local store_dir = format("%s/%s/%s", data_path, encode(host), store_encode(store));
 
 	local mode, err = lfs.attributes(store_dir, "mode");
 	if not mode then
