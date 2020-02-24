@@ -1241,10 +1241,10 @@ end
 
 def_env.http = {};
 
-function def_env.http:list()
+function def_env.http:list(hosts)
 	local print = self.session.print;
 
-	for host in pairs(prosody.hosts) do
+	for host in get_hosts_set(hosts) do
 		local http_apps = modulemanager.get_items("http-provider", host);
 		if #http_apps > 0 then
 			local http_host = module:context(host):get_option_string("http_host");
