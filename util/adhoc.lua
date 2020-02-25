@@ -2,7 +2,7 @@
 
 local function new_simple_form(form, result_handler)
 	return function(self, data, state)
-		if state then
+		if state or data.form then
 			if data.action == "cancel" then
 				return { status = "canceled" };
 			end
@@ -16,7 +16,7 @@ end
 
 local function new_initial_data_form(form, initial_data, result_handler)
 	return function(self, data, state)
-		if state then
+		if state or data.form then
 			if data.action == "cancel" then
 				return { status = "canceled" };
 			end
