@@ -335,11 +335,14 @@ local function save_to_history(self, stanza)
 	if stanza.name == "message" and self:get_whois() == "anyone" then
 		stored_stanza = st.clone(stanza);
 		stored_stanza.attr.to = nil;
-		local actor = jid_bare(self._occupants[stanza.attr.from].jid);
-		local affiliation = self:get_affiliation(actor) or "none";
-		local role = self:get_role(actor) or self:get_default_role(affiliation);
-		stored_stanza:add_direct_child(st.stanza("x", { xmlns = xmlns_muc_user })
-			:tag("item", { affiliation = affiliation; role = role; jid = actor }));
+		local occupant = self._occupants[stanza.attr.from];
+		if occupant then
+			local actor = jid_bare(occupant.jid);
+			local affiliation = self:get_affiliation(actor) or "none";
+			local role = self:get_role(actor) or self:get_default_role(affiliation);
+			stored_stanza:add_direct_child(st.stanza("x", { xmlns = xmlns_muc_user })
+				:tag("item", { affiliation = affiliation; role = role; jid = actor }));
+		end
 	end
 
 	-- Policy check
