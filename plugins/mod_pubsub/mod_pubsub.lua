@@ -112,7 +112,7 @@ function check_node_config(node, actor, new_config) -- luacheck: ignore 212/acto
 end
 
 function is_item_stanza(item)
-	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
+	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item" and #item.tags == 1;
 end
 
 module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
