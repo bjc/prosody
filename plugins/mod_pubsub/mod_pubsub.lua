@@ -112,7 +112,7 @@ function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node
 end
 
 function is_item_stanza(item)
-	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item";
+	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item" and #item.tags == 1;
 end
 
 -- Compose a textual representation of Atom payloads
