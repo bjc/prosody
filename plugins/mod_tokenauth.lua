@@ -30,7 +30,7 @@ function create_jid_token(actor_jid, token_jid, token_scope, token_ttl)
 	};
 
 	local token_id = id.long();
-	local token = base64.encode("1;"..token_username.."@"..token_host..";"..token_id);
+	local token = base64.encode("1;"..jid.join(token_username, token_host)..";"..token_id);
 	token_store:set(token_username, token_id, token_info);
 
 	return token, token_info;
