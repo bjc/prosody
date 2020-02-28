@@ -18,6 +18,7 @@ function create_jid_token(actor_jid, token_jid, token_scope, token_ttl)
 
 	local token_info = {
 		owner = actor_jid;
+		created = os.time();
 		expires = token_ttl and (os.time() + token_ttl) or nil;
 		jid = token_jid;
 		session = {
