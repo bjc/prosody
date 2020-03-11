@@ -230,6 +230,50 @@ function map_store:set_keys(username, keydatas)
 	return result;
 end
 
+function map_store:find_key(key)
+	if type(key) ~= "string" or key == "" then
+		return nil, "find_key only supports non-empty string keys";
+	end
+	local ok, result = engine:transaction(function()
+		local query = [[
+		SELECT "user", "type", "value"
+		FROM "prosody"
+		WHERE "host"=? AND "store"=? AND "key"=?
+		]];
+
+		local data;
+		for row in engine:select(query, host, self.store, key) do
+			local key_data, err = deserialize(row[2], row[3]);
+			assert(key_data ~= nil, err);
+			if data == nil then
+				data = {};
+			end
+			data[row[1]] = key_data;
+		end
+
+		return data;
+
+	end);
+	if not ok then return nil, result; end
+	return result;
+end
+
+function map_store:delete_key(key)
+	if type(key) ~= "string" or key == "" then
+		return nil, "delete_key only supports non-empty string keys";
+	end
+	local ok, result = engine:transaction(function()
+		local delete_sql = [[
+		DELETE FROM "prosody"
+		WHERE "host"=? AND "store"=? AND "key"=?;
+		]];
+		engine:delete(delete_sql, host, self.store, key);
+		return true;
+	end);
+	if not ok then return nil, result; end
+	return result;
+end
+
 local archive_store = {}
 archive_store.caps = {
 	total = true;
