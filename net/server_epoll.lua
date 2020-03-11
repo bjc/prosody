@@ -102,7 +102,7 @@ local function runtimers(next_delay, min_wait)
 		if peek > now then
 			next_delay = peek - now;
 			break;
-	end
+		end
 
 		local _, timer, id = timers:pop();
 		local ok, ret = pcall(timer[2], now);
@@ -110,10 +110,10 @@ local function runtimers(next_delay, min_wait)
 			local next_time = now+ret;
 			timer[1] = next_time;
 			timers:insert(timer, next_time);
-	end
+		end
 
 		peek = timers:peek();
-			end
+	end
 	if peek == nil then
 		return next_delay;
 	end
