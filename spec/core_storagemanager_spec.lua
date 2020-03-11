@@ -64,6 +64,7 @@ describe("storagemanager", function ()
 
 			local sql_it = backend_config.sql and it or pending;
 
+
 			describe("key-value stores", function ()
 				-- These tests rely on being executed in order, disable any order
 				-- randomization for this block
@@ -156,7 +157,7 @@ describe("storagemanager", function ()
 					assert.is_function(store.delete_key);
 					assert(store:set("user9999b", "foo", "hello"));
 
-					local ret, err = store:delete_key("bar");
+					assert(store:delete_key("bar"));
 					-- Ensure key was deleted
 					do
 						local ret, err = store:get("user9999b", "bar");
