@@ -114,47 +114,47 @@ describe("storagemanager", function ()
 				end);
 
 				it("may find all users with a specific key", function ()
-					assert.is_function(store.find_key);
+					assert.is_function(store.get_all);
 					assert(store:set("user9999b", "bar", "bar"));
 					assert(store:set("user9999c", "foo", "blah"));
-					local ret, err = store:find_key("foo");
+					local ret, err = store:get_all("foo");
 					assert.is_nil(err);
 					assert.same({ user9999 = "bar", user9999c = "blah" }, ret);
 				end);
 
-				it("rejects empty or non-string keys to find_key", function ()
-					assert.is_function(store.find_key);
+				it("rejects empty or non-string keys to get_all", function ()
+					assert.is_function(store.get_all);
 					do
-						local ret, err = store:find_key("");
+						local ret, err = store:get_all("");
 						assert.is_nil(ret);
 						assert.is_not_nil(err);
 					end
 					do
-						local ret, err = store:find_key(true);
+						local ret, err = store:get_all(true);
 						assert.is_nil(ret);
 						assert.is_not_nil(err);
 					end
 				end);
 
-				it("rejects empty or non-string keys to delete_key", function ()
-					assert.is_function(store.delete_key);
+				it("rejects empty or non-string keys to delete_all", function ()
+					assert.is_function(store.delete_all);
 					do
-						local ret, err = store:delete_key("");
+						local ret, err = store:delete_all("");
 						assert.is_nil(ret);
 						assert.is_not_nil(err);
 					end
 					do
-						local ret, err = store:delete_key(true);
+						local ret, err = store:delete_all(true);
 						assert.is_nil(ret);
 						assert.is_not_nil(err);
 					end
 				end);
 
 				it("may delete all instances of a specific key", function ()
-					assert.is_function(store.delete_key);
+					assert.is_function(store.delete_all);
 					assert(store:set("user9999b", "foo", "hello"));
 
-					assert(store:delete_key("bar"));
+					assert(store:delete_all("bar"));
 					-- Ensure key was deleted
 					do
 						local ret, err = store:get("user9999b", "bar");

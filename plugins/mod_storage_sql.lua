@@ -230,9 +230,9 @@ function map_store:set_keys(username, keydatas)
 	return result;
 end
 
-function map_store:find_key(key)
+function map_store:get_all(key)
 	if type(key) ~= "string" or key == "" then
-		return nil, "find_key only supports non-empty string keys";
+		return nil, "get_all only supports non-empty string keys";
 	end
 	local ok, result = engine:transaction(function()
 		local query = [[
@@ -258,9 +258,9 @@ function map_store:find_key(key)
 	return result;
 end
 
-function map_store:delete_key(key)
+function map_store:delete_all(key)
 	if type(key) ~= "string" or key == "" then
-		return nil, "delete_key only supports non-empty string keys";
+		return nil, "delete_all only supports non-empty string keys";
 	end
 	local ok, result = engine:transaction(function()
 		local delete_sql = [[
