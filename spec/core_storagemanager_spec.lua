@@ -90,6 +90,44 @@ describe("storagemanager", function ()
 				end);
 			end);
 
+			describe("map stores", function ()
+				-- These tests rely on being executed in order, disable any order
+				-- randomization for this block
+				randomize(false);
+
+				local store, kv_store;
+				it("may be opened", function ()
+					store = assert(sm.open(test_host, "test-map", "map"));
+				end);
+
+				it("may be opened as a keyval store", function ()
+					kv_store = assert(sm.open(test_host, "test-map", "keyval"));
+				end);
+
+				it("may set a specific key for a user", function ()
+					assert(store:set("user9999", "foo", "bar"));
+					assert.same(kv_store:get("user9999"), { foo = "bar" });
+				end);
+
+				it("may get a specific key for a user", function ()
+					assert.equal("bar", store:get("user9999", "foo"));
+				end);
+
+				it("may remove data for a user", function ()
+					assert(store:set("user9999", "foo", nil));
+					do
+						local ret, err = store:get("user9999", "foo");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+					do
+						local ret, err = kv_store:get("user9999");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+				end);
+			end);
+
 			describe("archive stores", function ()
 				randomize(false);
 
