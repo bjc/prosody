@@ -486,7 +486,8 @@ if cleanup_after ~= "never" then
 
 	local cleanup_time = module:measure("cleanup", "times");
 
-	cleanup_runner = require "util.async".runner(function ()
+	local async = require "util.async";
+	cleanup_runner = async.runner(function ()
 		local cleanup_done = cleanup_time();
 		local rooms = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
@@ -516,6 +517,9 @@ if cleanup_after ~= "never" then
 				cleanup_map:set(cut_off, room, true);
 				module:log("error", "Could not delete messages for room '%s': %s", room, err);
 			end
+			local wait, done = async.waiter();
+			module:add_timer(0.01, done);
+			wait();
 		end
 		module:log("info", "Deleted %d expired messages for %d rooms", sum, num_rooms);
 		cleanup_done();
