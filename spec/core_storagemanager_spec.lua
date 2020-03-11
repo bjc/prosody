@@ -62,9 +62,6 @@ describe("storagemanager", function ()
 			sm.initialize_host(test_host);
 			assert(mm.load(test_host, "storage_"..backend_config.storage));
 
-			local sql_it = backend_config.sql and it or pending;
-
-
 			describe("key-value stores", function ()
 				-- These tests rely on being executed in order, disable any order
 				-- randomization for this block
@@ -116,7 +113,7 @@ describe("storagemanager", function ()
 					assert.equal("bar", store:get("user9999", "foo"));
 				end);
 
-				sql_it("may find all users with a specific key", function ()
+				it("may find all users with a specific key", function ()
 					assert.is_function(store.find_key);
 					assert(store:set("user9999b", "bar", "bar"));
 					assert(store:set("user9999c", "foo", "blah"));
@@ -125,7 +122,7 @@ describe("storagemanager", function ()
 					assert.same({ user9999 = "bar", user9999c = "blah" }, ret);
 				end);
 
-				sql_it("rejects empty or non-string keys to find_key", function ()
+				it("rejects empty or non-string keys to find_key", function ()
 					assert.is_function(store.find_key);
 					do
 						local ret, err = store:find_key("");
@@ -139,7 +136,7 @@ describe("storagemanager", function ()
 					end
 				end);
 
-				sql_it("rejects empty or non-string keys to delete_key", function ()
+				it("rejects empty or non-string keys to delete_key", function ()
 					assert.is_function(store.delete_key);
 					do
 						local ret, err = store:delete_key("");
@@ -153,7 +150,7 @@ describe("storagemanager", function ()
 					end
 				end);
 
-				sql_it("may delete all instances of a specific key", function ()
+				it("may delete all instances of a specific key", function ()
 					assert.is_function(store.delete_key);
 					assert(store:set("user9999b", "foo", "hello"));
 
