@@ -9,7 +9,7 @@
 
 local st = require "util.stanza";
 
-local valid_roles = { "visitor", "participant", "moderator" };
+local valid_roles = { "none", "visitor", "participant", "moderator" };
 local default_broadcast = {
 	visitor = true;
 	participant = true;

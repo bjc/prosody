@@ -333,7 +333,9 @@ function room_mt:send_occupant_list(to, filter)
 			end
 		end
 	end
+	local broadcast_bare_jids = {}; -- Track which bare JIDs we have sent presence for
 	for occupant_jid, occupant in self:each_occupant() do
+		broadcast_bare_jids[occupant.bare_jid] = true;
 		if filter == nil or filter(occupant_jid, occupant) then
 			local x = st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
 			self:build_item_list(occupant, x, is_anonymous and to_bare ~= occupant.bare_jid); -- can always see your own jids
@@ -341,6 +343,25 @@ function room_mt:send_occupant_list(to, filter)
 			pres.attr.to = to;
 			pres:add_child(x);
 			if to_bare == occupant.bare_jid or broadcast_roles[occupant.role or "none"] then
+				self:route_stanza(pres);
+			end
+		end
+	end
+	if broadcast_roles.none then
+		-- Broadcast stanzas for affiliated users not currently in the MUC
+		for affiliated_jid, affiliation, affiliation_data in self:each_affiliation() do
+			local nick = affiliation_data and affiliation_data.reserved_nickname;
+			if (nick or not is_anonymous) and not broadcast_bare_jids[affiliated_jid]
+			and (filter == nil or filter(affiliated_jid, nil)) then
+				local from = nick and (self.jid.."/"..nick) or self.jid;
+				local pres = st.presence({ to = to, from = from, type = "unavailable" })
+					:tag("x", { xmlns = 'http://jabber.org/protocol/muc#user' })
+						:tag("item", {
+							affiliation = affiliation;
+							role = "none";
+							nick = nick;
+							jid = not is_anonymous and affiliated_jid or nil }):up()
+						:up();
 				self:route_stanza(pres);
 			end
 		end
@@ -670,7 +691,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 			-- Send occupant list to newly joined or desynced user
 			self:send_occupant_list(real_jid, function(nick, occupant) -- luacheck: ignore 212
 				-- Don't include self
-				return occupant:get_presence(real_jid) == nil;
+				return (not occupant) or occupant:get_presence(real_jid) == nil;
 			end)
 		end
 		local dest_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
@@ -1378,7 +1399,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 				-- Send everyone else's presences (as jid visibility has changed)
 				for real_jid in occupant:each_session() do
 					self:send_occupant_list(real_jid, function(occupant_jid, occupant) --luacheck: ignore 212 433
-						return occupant.bare_jid ~= jid;
+						return (not occupant) or occupant.bare_jid ~= jid;
 					end);
 				end
 			end
