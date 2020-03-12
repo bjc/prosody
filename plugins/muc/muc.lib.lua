@@ -1449,6 +1449,7 @@ function room_mt:freeze(live)
 		frozen = {
 			_jid = self.jid;
 			_data = self._data;
+			_affiliation_data = self._affiliation_data;
 		};
 		for user, affiliation in pairs(self._affiliations) do
 			frozen[user] = affiliation;
