@@ -908,12 +908,13 @@ function room_mt:clear(x)
 	x = x or st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
 	local occupants_updated = {};
 	for nick, occupant in self:each_occupant() do -- luacheck: ignore 213
+		local prev_role = occupant.role;
 		occupant.role = nil;
 		self:save_occupant(occupant);
-		occupants_updated[occupant] = true;
+		occupants_updated[occupant] = prev_role;
 	end
-	for occupant in pairs(occupants_updated) do
-		self:publicise_occupant_status(occupant, x);
+	for occupant, prev_role in pairs(occupants_updated) do
+		self:publicise_occupant_status(occupant, x, nil, nil, nil, prev_role);
 		module:fire_event("muc-occupant-left", {
 				room = self;
 				nick = occupant.nick;
