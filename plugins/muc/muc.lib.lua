@@ -1536,7 +1536,7 @@ function _M.new_room(jid, config)
 	}, room_mt);
 end
 
-local new_format = module:get_option_boolean("new_muc_storage_format", false);
+local new_format = module:get_option_boolean("new_muc_storage_format", true);
 
 function room_mt:freeze(live)
 	local frozen, state;
