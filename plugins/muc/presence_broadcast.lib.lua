@@ -11,7 +11,6 @@ local st = require "util.stanza";
 
 local valid_roles = { "visitor", "participant", "moderator" };
 local default_broadcast = {
-	none = true;
 	visitor = true;
 	participant = true;
 	moderator = true;
@@ -23,9 +22,6 @@ end
 
 local function set_presence_broadcast(room, broadcast_roles)
 	broadcast_roles = broadcast_roles or default_broadcast;
-
-	-- Ensure that unavailable presence is always sent when role changes to none
-	broadcast_roles.none = true;
 
 	local changed = false;
 	local old_broadcast_roles = get_presence_broadcast(room);
