@@ -392,6 +392,7 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	end
 	occupant:set_session(real_jid, st.presence({type="unavailable"})
 		:tag('status'):text(error_message));
+	local orig_role = occupant.role;
 	local is_last_session = occupant.jid == real_jid;
 	if is_last_session then
 		occupant.role = nil;
@@ -401,7 +402,7 @@ function room_mt:handle_kickable(origin, stanza) -- luacheck: ignore 212
 	if is_last_session then
 		x:tag("status", {code = "333"});
 	end
-	self:publicise_occupant_status(new_occupant or occupant, x);
+	self:publicise_occupant_status(new_occupant or occupant, x, nil, nil, nil, orig_role);
 	if is_last_session then
 		module:fire_event("muc-occupant-left", {
 				room = self;
@@ -605,6 +606,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 	-- Send presence stanza about original occupant
 	if orig_occupant ~= nil and orig_occupant ~= dest_occupant then
 		local orig_x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user";});
+		local orig_role = orig_occupant.role;
 		local dest_nick;
 		if dest_occupant == nil then -- Session is leaving
 			log("debug", "session %s is leaving occupant %s", real_jid, orig_occupant.nick);
@@ -647,7 +649,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		end
 
 		self:save_occupant(orig_occupant);
-		self:publicise_occupant_status(orig_occupant, orig_x, dest_nick);
+		self:publicise_occupant_status(orig_occupant, orig_x, dest_nick, nil, nil, orig_role);
 
 		if is_last_orig_session then
 			module:fire_event("muc-occupant-left", {
@@ -679,7 +681,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		if nick_changed then
 			self_x:tag("status", {code="210"}):up();
 		end
-		self:publicise_occupant_status(dest_occupant, {base=dest_x,self=self_x});
+		self:publicise_occupant_status(dest_occupant, {base=dest_x,self=self_x}, nil, nil, nil, orig_occupant and orig_occupant.role or nil);
 
 		if orig_occupant ~= nil and orig_occupant ~= dest_occupant and not is_last_orig_session then
 			-- If user is swapping and wasn't last original session
@@ -1362,7 +1364,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 
 	if next(occupants_updated) ~= nil then
 		for occupant, old_role in pairs(occupants_updated) do
-			self:publicise_occupant_status(occupant, x, nil, actor, reason);
+			self:publicise_occupant_status(occupant, x, nil, actor, reason, old_role);
 			if occupant.role == nil then
 				module:fire_event("muc-occupant-left", {
 						room = self;
