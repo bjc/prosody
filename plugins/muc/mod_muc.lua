@@ -105,6 +105,7 @@ module:depends("disco");
 module:add_identity("conference", "text", module:get_option_string("name", "Prosody Chatrooms"));
 module:add_feature("http://jabber.org/protocol/muc");
 module:depends "muc_unique"
+module:require "muc/hats";
 module:require "muc/lock";
 
 local function is_admin(jid)
