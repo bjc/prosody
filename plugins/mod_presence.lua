@@ -30,6 +30,14 @@ local recalc_resource_map = require "util.presence".recalc_resource_map;
 
 local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
 
+local pre_approval_stream_feature = st.stanza("sub", {xmlns="urn:xmpp:features:pre-approval"});
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if origin.username then
+		features:add_child(pre_approval_stream_feature);
+	end
+end);
+
 function handle_normal_presence(origin, stanza)
 	if ignore_presence_priority then
 		local priority = stanza:get_child("priority");
