@@ -476,6 +476,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0317.html"/>
+        <xmpp:version>0.1</xmpp:version>
+        <xmpp:status>planned</xmpp:status>
+        <xmpp:since>0.12</xmpp:since>
+        <xmpp:note>muc/hats</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0318.html"/>
         <xmpp:version>0.2</xmpp:version>
         <xmpp:since>0.9</xmpp:since>
