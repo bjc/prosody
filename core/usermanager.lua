@@ -149,7 +149,7 @@ local function get_roles(jid, host)
 
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
 
-	if actor_host == host then -- Local user
+	if actor_user and actor_host == host then -- Local user
 		roles = authz_provider.get_user_roles(actor_user);
 	else -- Remote user/JID
 		roles = authz_provider.get_jid_roles(jid);
