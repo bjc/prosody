@@ -499,6 +499,7 @@ do -- Ad-hoc commands
 	local t_concat = table.concat;
 	local adhoc_new = module:require "adhoc".new;
 	local adhoc_initial = require "util.adhoc".new_initial_data_form;
+	local adhoc_simple = require "util.adhoc".new_simple_form;
 	local array = require "util.array";
 	local dataforms_new = require "util.dataforms".new;
 
@@ -529,4 +530,46 @@ do -- Ad-hoc commands
 		"http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");
 
 	module:provides("adhoc", destroy_rooms_desc);
+
+
+	local set_affiliation_layout = dataforms_new {
+		-- FIXME wordsmith title, instructions, labels etc
+		title = "Set affiliation";
+
+		{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/muc#set-affiliation" };
+		{ name = "room", type = "jid-single", required = true, label = "Room"};
+		{ name = "jid", type = "jid-single", required = true, label = "JID"};
+		{ name = "affiliation", type = "list-single", required = true, label = "Affiliation",
+			options = { "owner"; "admin"; "member"; "none"; "outcast"; },
+		};
+		{ name = "reason", type = "text-single", "Reason", }
+	};
+
+	local set_affiliation_handler = adhoc_simple(set_affiliation_layout, function (fields, errors)
+		if errors then
+			local errmsg = {};
+			for field, err in pairs(errors) do
+				errmsg[#errmsg + 1] = field .. ": " .. err;
+			end
+			return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
+		end
+
+		local room = get_room_from_jid(fields.room);
+		if not room then
+			return { status = "canceled", error = { message =  "No such room"; }; };
+		end
+		local ok, err, condition = room:set_affiliation(true, fields.jid, fields.affiliation, fields.reason);
+
+		if not ok then
+			return { status = "canceled", error = { message =  "Affiliation change failed: "..err..":"..condition; }; };
+		end
+
+		return { status = "completed", info = "Affiliation updated",
+		};
+	end);
+
+	local set_affiliation_desc = adhoc_new("Set affiliation in room",
+		"http://prosody.im/protocol/muc#set-affiliation", set_affiliation_handler, "admin");
+
+	module:provides("adhoc", set_affiliation_desc);
 end
