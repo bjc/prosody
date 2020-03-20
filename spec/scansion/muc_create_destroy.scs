@@ -8,6 +8,10 @@
 	jid: juliet@localhost/lVwkim_k
 	password: password
 
+[Client] Admin
+	jid: admin@localhost/DfNgg9VE
+	password: password
+
 -----
 
 Romeo connects
@@ -245,6 +249,69 @@ Romeo receives:
 
 Juliet disconnects
 
+Romeo sends:
+	<presence to="elsewhere@conference.localhost/romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from="elsewhere@conference.localhost/romeo">
+		<x xmlns="vcard-temp:x:update">
+			<photo/>
+		</x>
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<status code="201"/>
+			<item affiliation="owner" jid="${Romeo's full JID}" role="moderator"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message from="elsewhere@conference.localhost" type="groupchat">
+		<subject/>
+	</message>
+
+Romeo sends:
+	<iq to="elsewhere@conference.localhost" id="lx5" type="set">
+		<query xmlns="http://jabber.org/protocol/muc#owner">
+			<x type="submit" xmlns="jabber:x:data"/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="lx5" type="result" from="elsewhere@conference.localhost"/>
+
+Admin connects
+
+Admin sends:
+	<iq id="destroy" type="set" to="conference.localhost">
+		<command xmlns="http://jabber.org/protocol/commands" node="http://prosody.im/protocol/muc#destroy">
+			<x xmlns="jabber:x:data">
+				<field var="rooms">
+					<value>elsewhere@conference.localhost</value>
+				</field>
+			</x>
+		</command>
+	</iq>
+
+Romeo receives:
+	<presence from="elsewhere@conference.localhost/romeo" type="unavailable">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<destroy/>
+			<item affiliation="owner" jid="${Romeo's full JID}" role="none"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
 Romeo disconnects
+
+Admin receives:
+	<iq id="destroy" type="result" from="conference.localhost">
+		<command xmlns="http://jabber.org/protocol/commands" node="http://prosody.im/protocol/muc#destroy" status="completed" sessionid="{scansion:any}">
+			<note type="info">The following rooms were destroyed:&#10;elsewhere@conference.localhost</note>
+		</command>
+	</iq>
+
+Admin disconnects
 
 # recording ended on 2019-08-31T13:45:32Z
