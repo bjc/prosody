@@ -436,7 +436,16 @@ function api:send_iq(stanza, origin, timeout)
 			return;
 		end
 
-		self:send(stanza, origin);
+		local wrapped_origin = setmetatable({
+				-- XXX Needed in some cases for replies to work correctly when sending queries internally.
+				send = function (stanza)
+					resolve({ stanza = stanza });
+				end;
+			}, {
+				__index = origin or hosts[self.host];
+			});
+
+		self:send(stanza, wrapped_origin);
 	end);
 
 	p:finally(function ()
