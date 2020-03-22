@@ -649,6 +649,7 @@ local function create_table(engine) -- luacheck: ignore 431/engine
 		Index { name="prosodyarchive_index", unique = engine.params.driver ~= "MySQL", "host", "user", "store", "key" };
 		Index { name="prosodyarchive_with_when", "host", "user", "store", "with", "when" };
 		Index { name="prosodyarchive_when", "host", "user", "store", "when" };
+		Index { name="prosodyarchive_sort", "host", "user", "store", "sort_id" };
 	};
 	engine:transaction(function()
 		ProsodyArchiveTable:create(engine);
