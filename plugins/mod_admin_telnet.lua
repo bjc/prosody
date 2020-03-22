@@ -528,11 +528,14 @@ local function tls_info(session, line)
 	common_info(session, line);
 	if session.secure then
 		local sock = session.conn and session.conn.socket and session.conn:socket();
-		if sock and sock.info then
-			local info = sock:info();
-			line[#line+1] = ("(%s with %s)"):format(info.protocol, info.cipher);
-		else
-			line[#line+1] = "(cipher info unavailable)";
+		if sock then
+			local info = sock.info and sock:info();
+			if info then
+				line[#line+1] = ("(%s with %s)"):format(info.protocol, info.cipher);
+			else
+				-- TLS session might not be ready yet
+				line[#line+1] = "(cipher info unavailable)";
+			end
 		end
 	else
 		line[#line+1] = "(insecure)";
