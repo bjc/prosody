@@ -438,8 +438,8 @@ function api:send_iq(stanza, origin, timeout)
 
 		local wrapped_origin = setmetatable({
 				-- XXX Needed in some cases for replies to work correctly when sending queries internally.
-				send = function (stanza)
-					resolve({ stanza = stanza });
+				send = function (reply)
+					resolve({ stanza = reply });
 				end;
 			}, {
 				__index = origin or hosts[self.host];
