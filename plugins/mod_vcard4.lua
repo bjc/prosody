@@ -14,9 +14,9 @@ module:hook("iq-get/bare/urn:ietf:params:xml:ns:vcard-4.0:vcard", function (even
 	local ok, id, item = pep_service:get_last_item("urn:xmpp:vcard4", stanza.attr.from);
 	if ok and item then
 		origin.send(st.reply(stanza):add_child(item.tags[1]));
-	elseif item == "item-not-found" or not id then
+	elseif id == "item-not-found" or not id then
 		origin.send(st.error_reply(stanza, "cancel", "item-not-found"));
-	elseif item == "forbidden" then
+	elseif id == "forbidden" then
 		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 	else
 		origin.send(st.error_reply(stanza, "modify", "undefined-condition"));
