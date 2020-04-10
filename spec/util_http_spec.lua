@@ -89,4 +89,23 @@ describe("util.http", function()
 			assert.equal("/foo/", http.normalize_path("/foo/", true));
 		end);
 	end);
+
+	describe("contains_token", function ()
+		it("is present in field", function ()
+			assert.is_true(http.contains_token("foo", "foo"));
+			assert.is_true(http.contains_token("foo, bar", "foo"));
+			assert.is_true(http.contains_token("foo,bar", "foo"));
+			assert.is_true(http.contains_token("bar,  foo,baz", "foo"));
+		end);
+
+		it("is absent from field", function ()
+			assert.is_false(http.contains_token("bar", "foo"));
+			assert.is_false(http.contains_token("fooo", "foo"));
+			assert.is_false(http.contains_token("foo o,bar", "foo"));
+		end);
+
+		it("is weird", function ()
+			assert.is_(http.contains_token("fo o", "foo"));
+		end);
+	end);
 end);
