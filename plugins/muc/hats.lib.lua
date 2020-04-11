@@ -1,11 +1,12 @@
 local st = require "util.stanza";
+local muc_util = module:require "muc/util";
 
 local xmlns_hats = "xmpp:prosody.im/protocol/hats:1";
 
-module:hook("muc-broadcast-presence", function (event)
-	-- Strip any hats claimed by the client (to prevent spoofing)
-	event.stanza:remove_children("hats", xmlns_hats);
+-- Strip any hats claimed by the client (to prevent spoofing)
+muc_util.add_filtered_namespace(xmlns_hats);
 
+module:hook("muc-build-occupant-presence", function (event)
 	local aff_data = event.room:get_affiliation_data(event.occupant.bare_jid);
 	local hats = aff_data and aff_data.hats;
 	if not hats then return; end
