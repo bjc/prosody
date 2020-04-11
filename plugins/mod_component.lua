@@ -132,7 +132,7 @@ function module.add_host(module)
 			end
 			module:log("warn", "Component not connected, bouncing error for: %s", stanza:top_tag());
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable"));
+				event.origin.send(st.error_reply(stanza, "wait", "service-unavailable", "Component unavailable", module.host));
 			end
 		end
 		return true;
