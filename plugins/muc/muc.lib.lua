@@ -237,6 +237,7 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, pre
 		occupant = occupant; nick = nick; actor = actor;
 		reason = reason;
 	}
+	module:fire_event("muc-build-occupant-presence", event);
 	module:fire_event("muc-broadcast-presence", event);
 
 	-- Allow muc-broadcast-presence listeners to change things
@@ -342,6 +343,7 @@ function room_mt:send_occupant_list(to, filter)
 			local pres = st.clone(occupant:get_presence());
 			pres.attr.to = to;
 			pres:add_child(x);
+			module:fire_event("muc-build-occupant-presence", { room = self, occupant = occupant, stanza = pres });
 			if to_bare == occupant.bare_jid or broadcast_roles[occupant.role or "none"] then
 				self:route_stanza(pres);
 			end
