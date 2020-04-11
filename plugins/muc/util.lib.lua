@@ -41,18 +41,22 @@ function _M.is_kickable_error(stanza)
 	return kickable_error_conditions[cond];
 end
 
-local muc_x_filters = {
-	["http://jabber.org/protocol/muc"] = true;
-	["http://jabber.org/protocol/muc#user"] = true;
-}
-local function muc_x_filter(tag)
-	if muc_x_filters[tag.attr.xmlns] then
+local filtered_namespaces = module:shared("filtered-namespaces");
+filtered_namespaces["http://jabber.org/protocol/muc"] = true;
+filtered_namespaces["http://jabber.org/protocol/muc#user"] = true;
+
+local function muc_ns_filter(tag)
+	if filtered_namespaces[tag.attr.xmlns] then
 		return nil;
 	end
 	return tag;
 end
 function _M.filter_muc_x(stanza)
-	return stanza:maptags(muc_x_filter);
+	return stanza:maptags(muc_ns_filter);
+end
+
+function _M.add_filtered_namespace(xmlns)
+	filtered_namespaces[xmlns] = true;
 end
 
 function _M.only_with_min_role(role)
