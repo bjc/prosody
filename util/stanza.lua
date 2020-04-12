@@ -511,6 +511,36 @@ else
 	stanza_mt.pretty_top_tag = stanza_mt.top_tag;
 end
 
+function stanza_mt.indent(t, level, indent)
+	if #t == 0 or (#t == 1 and type(t[1]) == "string") then
+		-- Empty nodes wouldn't have any indentation
+		-- Text-only nodes are preserved as to not alter the text content
+		-- Optimization: Skip clone of these since we don't alter them
+		return t;
+	end
+
+	indent = indent or "\t";
+	level = level or 1;
+	local tag = clone(t, true);
+
+	for child in t:children() do
+		if type(child) == "string" then
+			-- Already indented text would look weird but let's ignore that for now.
+			if child:find("%S") then
+				tag:text("\n" .. indent:rep(level));
+				tag:text(child);
+			end
+		elseif is_stanza(child) then
+			tag:text("\n" .. indent:rep(level));
+			tag:add_direct_child(child:indent(level+1, indent));
+		end
+	end
+	-- before the closing tag
+	tag:text("\n" .. indent:rep((level-1)));
+
+	return tag;
+end
+
 return {
 	stanza_mt = stanza_mt;
 	stanza = new_stanza;

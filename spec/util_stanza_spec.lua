@@ -459,4 +459,12 @@ describe("util.stanza", function()
 			assert.equal("true", s2.attr["my-awesome-ns\1bar"]);
 		end);
 	end);
+
+	describe("indent", function ()
+		local s = st.stanza("foo"):text("\n"):tag("bar"):tag("baz"):up():text_tag("cow", "moo");
+		assert.equal("<foo>\n\t<bar>\n\t\t<baz/>\n\t\t<cow>moo</cow>\n\t</bar>\n</foo>", tostring(s:indent()));
+		assert.equal("<foo>\n  <bar>\n    <baz/>\n    <cow>moo</cow>\n  </bar>\n</foo>", tostring(s:indent(1, "  ")));
+		assert.equal("<foo>\n\t\t<bar>\n\t\t\t<baz/>\n\t\t\t<cow>moo</cow>\n\t\t</bar>\n\t</foo>", tostring(s:indent(2, "\t")));
+	end);
+
 end);
