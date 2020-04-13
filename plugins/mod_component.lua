@@ -132,7 +132,8 @@ function module.add_host(module)
 			end
 			module:log("warn", "Component not connected, bouncing error for: %s", stanza:top_tag());
 			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
-				event.origin.send(st.error_reply(stanza, "wait", "remote-server-timeout", "Component unavailable", module.host));
+				event.origin.send(st.error_reply(stanza, "wait", "remote-server-timeout", "Component unavailable", module.host)
+					:tag("not-connected", { xmlns = "xmpp:prosody.im/protocol/component" }));
 			end
 		end
 		return true;
