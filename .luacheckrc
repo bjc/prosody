@@ -160,8 +160,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"tools/migration/prosody-migrator.lua";
 		"tools/openfire2prosody.lua";
 		"tools/xep227toprosody.lua";
-
-		"util/sasl/digest-md5.lua";
 	}
 	for _, file in ipairs(exclude_files) do
 		files[file] = { only = {} }
