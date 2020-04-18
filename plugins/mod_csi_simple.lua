@@ -1,4 +1,4 @@
--- Copyright (C) 2016-2018 Kim Alvefur
+-- Copyright (C) 2016-2020 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -12,6 +12,8 @@ local dt = require "util.datetime";
 local filters = require "util.filters";
 
 local queue_size = module:get_option_number("csi_queue_size", 256);
+
+local important_payloads = module:get_option_set("csi_important_payloads", { });
 
 module:hook("csi-is-stanza-important", function (event)
 	local stanza = event.stanza;
@@ -45,6 +47,11 @@ module:hook("csi-is-stanza-important", function (event)
 		end
 		if stanza:get_child("encryption", "urn:xmpp:eme:0") then
 			return true;
+		end
+		for important in important_payloads do
+			if stanza:find(important) then
+				return true;
+			end
 		end
 		return false;
 	end
