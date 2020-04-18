@@ -28,7 +28,9 @@ clean:
 prosody-migrator.install: prosody-migrator.lua
 	sed "1s/\blua\b/$(RUNWITH)/; \
 		s|^CFG_SOURCEDIR=.*;$$|CFG_SOURCEDIR='$(INSTALLEDSOURCE)';|; \
-		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|;" \
+		s|^CFG_CONFIGDIR=.*;$$|CFG_CONFIGDIR='$(INSTALLEDCONFIG)';|; \
+		s|^CFG_DATADIR=.*;$$|CFG_DATADIR='$(INSTALLEDDATA)';|; \
+		s|^CFG_PLUGINDIR=.*;$$|CFG_PLUGINDIR='$(INSTALLEDMODULES)/';|;" \
 			< prosody-migrator.lua > prosody-migrator.install
 
 migrator.cfg.lua.install: migrator.cfg.lua
