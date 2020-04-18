@@ -17,7 +17,6 @@ all: prosody-migrator.install migrator.cfg.lua.install prosody-migrator.lua
 install: prosody-migrator.install migrator.cfg.lua.install
 	install -d $(BIN) $(CONFIG) $(SOURCE)
 	install -d $(MAN)/man1
-	install -d $(SOURCE)/migrator
 	install -m755 ./prosody-migrator.install $(BIN)/prosody-migrator
 	test -e $(CONFIG)/migrator.cfg.lua || install -m644 migrator.cfg.lua.install $(CONFIG)/migrator.cfg.lua
 
