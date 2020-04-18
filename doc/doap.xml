@@ -431,6 +431,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0249.html"/>
+        <xmpp:version>1.2</xmpp:version>
+        <xmpp:since>0.12</xmpp:since>
+        <xmpp:note>mod_csi_simple</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0280.html"/>
         <xmpp:version>0.12.1</xmpp:version>
         <xmpp:status>complete</xmpp:status>
