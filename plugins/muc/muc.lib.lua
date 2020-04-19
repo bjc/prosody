@@ -216,9 +216,10 @@ local function can_see_real_jids(whois, occupant)
 	end
 end
 
+
 -- Broadcasts an occupant's presence to the whole room
 -- Takes the x element that goes into the stanzas
-function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, prev_role, force_unavailable)
+function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, prev_role, force_unavailable, recipient)
 	local base_x = x.base or x;
 	-- Build real jid and (optionally) occupant jid template presences
 	local base_presence do
@@ -238,7 +239,9 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, pre
 		reason = reason;
 	}
 	module:fire_event("muc-build-occupant-presence", event);
-	module:fire_event("muc-broadcast-presence", event);
+	if not recipient then
+		module:fire_event("muc-broadcast-presence", event);
+	end
 
 	-- Allow muc-broadcast-presence listeners to change things
 	nick = event.nick;
@@ -281,19 +284,27 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, pre
 		self_p = st.clone(base_presence):add_child(self_x);
 	end
 
-	local broadcast_roles = self:get_presence_broadcast();
+	local function get_p(rec_occupant)
+		local pr;
+		if can_see_real_jids(whois, rec_occupant) then
+			pr = get_full_p();
+		elseif occupant.bare_jid == rec_occupant.bare_jid then
+			pr = self_p;
+		else
+			pr = get_anon_p();
+		end
+		return pr
+	end
 
+	if recipient then
+		return self:route_to_occupant(recipient, get_p(recipient));
+	end
+
+	local broadcast_roles = self:get_presence_broadcast();
 	-- General populace
 	for occupant_nick, n_occupant in self:each_occupant() do
 		if occupant_nick ~= occupant.nick then
-			local pr;
-			if can_see_real_jids(whois, n_occupant) then
-				pr = get_full_p();
-			elseif occupant.bare_jid == n_occupant.bare_jid then
-				pr = self_p;
-			else
-				pr = get_anon_p();
-			end
+			local pr = get_p(n_occupant);
 			if broadcast_roles[occupant.role or "none"] or force_unavailable then
 				self:route_to_occupant(n_occupant, pr);
 			elseif prev_role and broadcast_roles[prev_role] then
@@ -323,18 +334,8 @@ end
 
 function room_mt:send_occupant_list(to, filter)
 	local to_bare = jid_bare(to);
-	local is_anonymous = false;
-	local whois = self:get_whois();
 	local broadcast_roles = self:get_presence_broadcast();
-	if whois ~= "anyone" then
-		local affiliation = self:get_affiliation(to);
-		if affiliation ~= "admin" and affiliation ~= "owner" then
-			local occupant = self:get_occupant_by_real_jid(to);
-			if not (occupant and can_see_real_jids(whois, occupant)) then
-				is_anonymous = true;
-			end
-		end
-	end
+	local is_anonymous = self:is_anonymous_for(to);
 	local broadcast_bare_jids = {}; -- Track which bare JIDs we have sent presence for
 	for occupant_jid, occupant in self:each_occupant() do
 		broadcast_bare_jids[occupant.bare_jid] = true;
@@ -549,6 +550,52 @@ function room_mt:handle_first_presence(origin, stanza)
 	return true;
 end
 
+
+function room_mt:is_anonymous_for(jid)
+	local is_anonymous = false;
+	local whois = self:get_whois();
+	if whois ~= "anyone" then
+		local affiliation = self:get_affiliation(jid);
+		if affiliation ~= "admin" and affiliation ~= "owner" then
+			local occupant = self:get_occupant_by_real_jid(jid);
+			if not (occupant and can_see_real_jids(whois, occupant)) then
+				is_anonymous = true;
+			end
+		end
+	end
+	return is_anonymous;
+end
+
+
+function room_mt:build_unavailable_presence(from_muc_jid, to_jid)
+	local nick = jid_resource(from_muc_jid);
+	local from_jid = self:get_registered_jid(nick);
+	if (not from_jid) then
+		module:log("debug", "Received presence probe for unavailable nickname that's not registered");
+		return;
+	end
+	local is_anonymous = self:is_anonymous_for(to_jid);
+	local affiliation = self:get_affiliation(from_jid) or "none";
+	local pr = st.presence({ to = to_jid, from = from_muc_jid, type = "unavailable" })
+		:tag("x", { xmlns = 'http://jabber.org/protocol/muc#user' })
+			:tag("item", {
+				affiliation = affiliation;
+				role = "none";
+				nick = nick;
+				jid = not is_anonymous and from_jid or nil }):up()
+			:up();
+
+	local x = pr:get_child("x", "http://jabber.org/protocol/muc");
+	local event = {
+		room = self; stanza = pr; x = x;
+		bare_jid = from_jid;
+		nick = nick;
+	}
+	module:fire_event("muc-build-occupant-presence", event);
+	return event.stanza;
+end
+
+
 function room_mt:handle_normal_presence(origin, stanza)
 	local type = stanza.attr.type;
 	local real_jid = stanza.attr.from;
@@ -568,6 +615,20 @@ function room_mt:handle_normal_presence(origin, stanza)
 	if type == "unavailable" then
 		if orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 		-- dest_occupant = nil
+	elseif type == "probe" then
+		local occupant = self:get_occupant_by_nick(stanza.attr.to);
+		if occupant == nil then
+			local from_muc_jid = stanza.attr.to;
+			local to_jid = real_jid;
+			local pr = self:build_unavailable_presence(from_muc_jid, to_jid);
+			if pr then
+				self:route_stanza(pr);
+			end
+			return true;
+		end
+		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
+		self:publicise_occupant_status(occupant, x, nil, nil, nil, nil, false, orig_occupant);
+		return true;
 	elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
 		log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
 		dest_occupant = orig_occupant;
@@ -747,7 +808,7 @@ function room_mt:handle_presence_to_occupant(origin, stanza)
 	local type = stanza.attr.type;
 	if type == "error" then -- error, kick em out!
 		return self:handle_kickable(origin, stanza)
-	elseif type == nil or type == "unavailable" then
+	elseif type == nil or type == "unavailable" or type == "probe" then
 		return self:handle_normal_presence(origin, stanza);
 	elseif type ~= 'result' then -- bad type
 		if type ~= 'visible' and type ~= 'invisible' then -- COMPAT ejabberd can broadcast or forward XEP-0018 presences
