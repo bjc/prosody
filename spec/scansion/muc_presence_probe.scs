@@ -1,0 +1,115 @@
+# #1535 Let MUCs respond to presence probes
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Juliet
+	jid: user2@localhost
+	password: password
+
+[Client] Mercutio
+	jid: user3@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='room@conference.localhost'><subject/></message>
+
+# Disable presences for non-mods
+Romeo sends:
+	<iq id='config1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#owner'>
+			<x xmlns='jabber:x:data' type='submit'>
+				<field var='FORM_TYPE'>
+					<value>http://jabber.org/protocol/muc#roomconfig</value>
+				</field>
+				<field var='muc#roomconfig_presencebroadcast'>
+					<value>moderator</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="config1" from="room@conference.localhost" type="result">
+	</iq>
+
+# Juliet connects, and joins the room
+Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Juliet">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" />
+
+Juliet receives:
+	<presence from="room@conference.localhost/Juliet" />
+
+# Romeo probes Juliet
+
+Romeo sends:
+	<presence to="room@conference.localhost/Juliet" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Juliet'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Juliet's full JID}" affiliation='none' role='participant'/>
+		</x>
+	</presence>
+
+# Romeo makes Mercutio a member and registers his nickname
+
+Romeo sends:
+	<iq id='member1' to='room@conference.localhost' type='set'>
+		<query xmlns='http://jabber.org/protocol/muc#admin'>
+			<item affiliation='member' jid="${Mercutio's JID}" nick="Mercutio"/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<message from='room@conference.localhost'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Mercutio's JID}" affiliation='member' />
+		</x>
+	</message>
+
+Romeo receives:
+	<iq from='room@conference.localhost' id='member1' type='result'/>
+
+
+# Romeo probes Mercutio, even though he's unavailable
+
+Romeo sends:
+	<presence to="room@conference.localhost/Mercutio" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Mercutio' type="unavailable">
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item nick="Mercutio" affiliation='member' role='none' jid="${Mercutio's JID}" />
+		</x>
+	</presence>
