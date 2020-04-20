@@ -323,7 +323,7 @@ local function message_handler(event, c2s)
 
 	-- Check with the users preferences
 	if shall_store(store_user, with) then
-		log("debug", "Archiving stanza: %s", stanza:top_tag());
+		log("debug", "Archiving stanza: %s (%s)", stanza:top_tag(), why);
 
 		-- And stash it
 		local time = time_now();
