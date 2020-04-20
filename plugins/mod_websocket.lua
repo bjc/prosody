@@ -130,6 +130,12 @@ local function filter_open_close(data)
 
 	return data;
 end
+
+local default_get_response_body = [[<!DOCTYPE html><html><head><title>Websocket</title></head><body>
+<p>It works! Now point your WebSocket client to this URL to connect to Prosody.</p>
+</body></html>]]
+local websocket_get_response_body = module:get_option_string("websocket_get_response_body", default_get_response_body)
+
 function handle_request(event)
 	local request, response = event.request, event.response;
 	local conn = response.conn;
@@ -138,9 +144,7 @@ function handle_request(event)
 
 	if not request.headers.sec_websocket_key or request.method ~= "GET" then
 		response.headers.content_type = "text/html";
-		return [[<!DOCTYPE html><html><head><title>Websocket</title></head><body>
-			<p>It works! Now point your WebSocket client to this URL to connect to Prosody.</p>
-			</body></html>]];
+		return websocket_get_response_body;
 	end
 
 	local wants_xmpp = contains_token(request.headers.sec_websocket_protocol or "", "xmpp");

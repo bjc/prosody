@@ -511,14 +511,16 @@ function stream_callbacks.error(context, error)
 	end
 end
 
+local GET_response_body = [[<html><body>
+	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
+	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+	</body></html>]];
+
 local GET_response = {
 	headers = {
 		content_type = "text/html";
 	};
-	body = [[<html><body>
-	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
-	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
-	</body></html>]];
+	body = module:get_option_string("bosh_get_response_body", GET_response_body);
 };
 
 module:depends("http");
