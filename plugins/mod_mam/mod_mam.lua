@@ -292,6 +292,11 @@ local function should_store(stanza) --> boolean, reason: string
 		-- Since we can't know what an encrypted message contains, we assume it's important
 		return true, "encrypted";
 	end
+	if stanza:get_child(nil, "urn:xmpp:receipts") then
+		-- If it's important enough to ask for a receipt then it's important enough to archive
+		-- and the same applies to the receipt
+		return true, "receipt";
+	end
 	if stanza:get_child("x", "jabber:x:conference")
 	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
 		return true, "invite";
