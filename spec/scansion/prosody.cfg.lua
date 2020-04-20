@@ -1,5 +1,16 @@
 --luacheck: ignore
 
+-- Mock time functions to simplify tests
+function _G.os.time()
+	return 1219439344;
+end
+package.preload["util.time"] = function ()
+	return {
+		now = function () return 1219439344.1; end;
+		monotonic = function () return 0.1; end;
+	}
+end
+
 admins = { "admin@localhost" }
 
 use_libevent = true
