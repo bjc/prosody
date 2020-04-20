@@ -284,6 +284,18 @@ local function should_store(stanza) --> boolean, reason: string
 	if stanza:get_child("body") then
 		return true, "body";
 	end
+	if stanza:get_child("subject") then
+		-- XXX Who would send a message with a subject but with a body?
+		return true, "subject";
+	end
+	if stanza:get_child("encryption", "urn:xmpp:eme:0") then
+		-- Since we can't know what an encrypted message contains, we assume it's important
+		return true, "encrypted";
+	end
+	if stanza:get_child("x", "jabber:x:conference")
+	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
+		return true, "invite";
+	end
 
 	return true, "default";
 end
