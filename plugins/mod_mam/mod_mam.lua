@@ -264,11 +264,8 @@ local function strip_stanza_id(stanza, user)
 end
 
 local function should_store(stanza) --> boolean, reason: string
-	local orig_type = stanza.attr.type or "normal";
-	-- We store chat messages or normal messages that have a body
-	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
-		return false, "type";
-	end
+	local st_type = stanza.attr.type or "normal";
+	local st_to_full = (stanza.attr.to or ""):find("/");
 
 	-- or if hints suggest we shouldn't
 	if not stanza:get_child("store", "urn:xmpp:hints") then -- No hint telling us we should store
@@ -276,6 +273,17 @@ local function should_store(stanza) --> boolean, reason: string
 			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
 			return false, "hint";
 		end
+	end
+	if st_type == "headline" then
+		-- Headline messages are ephemeral by definition
+		return false, "headline";
+	end
+	if st_type == "groupchat" and st_to_full then
+		-- MUC messages always go to the full JID, usually archived by the MUC
+		return false, "groupchat";
+	end
+	if stanza:get_child("body") then
+		return true, "body";
 	end
 
 	return true, "default";
