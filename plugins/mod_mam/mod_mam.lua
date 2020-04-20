@@ -266,6 +266,9 @@ end
 local function should_store(stanza) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
 	local st_to_full = (stanza.attr.to or ""):find("/");
+	if st_type == "error" then
+		st_to_full = (stanza.attr.from or ""):find("/");
+	end
 
 	if st_type == "headline" then
 		-- Headline messages are ephemeral by definition
