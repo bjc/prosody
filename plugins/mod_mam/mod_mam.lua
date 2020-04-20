@@ -267,13 +267,6 @@ local function should_store(stanza) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
 	local st_to_full = (stanza.attr.to or ""):find("/");
 
-	-- or if hints suggest we shouldn't
-	if not stanza:get_child("store", "urn:xmpp:hints") then -- No hint telling us we should store
-		if stanza:get_child("no-permanent-store", "urn:xmpp:hints")
-			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
-			return false, "hint";
-		end
-	end
 	if st_type == "headline" then
 		-- Headline messages are ephemeral by definition
 		return false, "headline";
@@ -281,6 +274,12 @@ local function should_store(stanza) --> boolean, reason: string
 	if st_type == "groupchat" and st_to_full then
 		-- MUC messages always go to the full JID, usually archived by the MUC
 		return false, "groupchat";
+	end
+	if stanza:get_child("no-permanent-store", "urn:xmpp:hints") then
+		return false, "hint";
+	end
+	if stanza:get_child("store", "urn:xmpp:hints") then
+		return true, "hint";
 	end
 	if stanza:get_child("body") then
 		return true, "body";
