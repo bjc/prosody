@@ -1,0 +1,21 @@
+# XEP-0012: Last Activity / mod_uptime
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id='a' type='get' to='localhost'>
+		<query xmlns='jabber:iq:last'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='a' from='localhost'>
+		<query xmlns='jabber:iq:last' seconds='0'/>
+	</iq>
+
+Romeo disconnects
