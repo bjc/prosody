@@ -288,7 +288,7 @@ local function should_store(stanza) --> boolean, reason: string
 		return true, "body";
 	end
 	if stanza:get_child("subject") then
-		-- XXX Who would send a message with a subject but with a body?
+		-- XXX Who would send a message with a subject but without a body?
 		return true, "subject";
 	end
 	if stanza:get_child("encryption", "urn:xmpp:eme:0") then
