@@ -305,7 +305,9 @@ local function should_store(stanza) --> boolean, reason: string
 		return true, "invite";
 	end
 
-	return true, "default";
+	 -- The IM-NG thing to do here would be to return `not st_to_full`
+	 -- One day ...
+	return false, "default";
 end
 
 -- Handle messages
