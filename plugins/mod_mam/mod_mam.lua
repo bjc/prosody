@@ -269,6 +269,8 @@ local function should_store(stanza) --> boolean, reason: string
 	if st_type == "error" then
 		st_to_full = (stanza.attr.from or ""):find("/");
 	end
+	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
+	-- for more accurate MUC / type=groupchat check
 
 	if st_type == "headline" then
 		-- Headline messages are ephemeral by definition
@@ -277,7 +279,7 @@ local function should_store(stanza) --> boolean, reason: string
 	if st_type == "error" then
 		return true, "bounce";
 	end
-	if st_type == "groupchat" and st_to_full then
+	if st_type == "groupchat" then
 		-- MUC messages always go to the full JID, usually archived by the MUC
 		return false, "groupchat";
 	end
