@@ -265,10 +265,6 @@ end
 
 local function should_store(stanza) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
-	local st_to_full = (stanza.attr.to or ""):find("/");
-	if st_type == "error" then
-		st_to_full = (stanza.attr.from or ""):find("/");
-	end
 	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
 	-- for more accurate MUC / type=groupchat check
 
