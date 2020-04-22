@@ -35,3 +35,21 @@ describe("PBKDF2-HMAC-SHA1", function ()
 	end);
 end);
 
+describe("PBKDF2-HMAC-SHA256", function ()
+	it("test vector 1", function ()
+		local P = "password";
+		local S = "salt";
+		local c = 1
+		local DK = "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b";
+		assert.equal(DK, hex.to(hashes.pbkdf2_hmac_sha256(P, S, c)));
+	end);
+	it("test vector 2", function ()
+		local P = "password";
+		local S = "salt";
+		local c = 2
+		local DK = "ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43";
+		assert.equal(DK, hex.to(hashes.pbkdf2_hmac_sha256(P, S, c)));
+	end);
+end);
+
+
