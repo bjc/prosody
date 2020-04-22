@@ -312,8 +312,8 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, pre
 	else
 		-- use their own presences as templates
 		for full_jid, pr in occupant:each_session() do
-			module:fire_event("muc-build-occupant-presence", { room = self, occupant = occupant, stanza = pr });
 			pr = st.clone(pr);
+			module:fire_event("muc-build-occupant-presence", { room = self, occupant = occupant, stanza = pr });
 			pr.attr.to = full_jid;
 			pr:add_child(self_x);
 			self:route_stanza(pr);
