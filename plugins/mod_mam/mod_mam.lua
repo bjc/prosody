@@ -274,6 +274,9 @@ local function should_store(stanza) --> boolean, reason: string
 		-- Headline messages are ephemeral by definition
 		return false, "headline";
 	end
+	if st_type == "error" then
+		return true, "bounce";
+	end
 	if st_type == "groupchat" and st_to_full then
 		-- MUC messages always go to the full JID, usually archived by the MUC
 		return false, "groupchat";
