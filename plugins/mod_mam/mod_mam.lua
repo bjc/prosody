@@ -301,6 +301,9 @@ local function should_store(stanza) --> boolean, reason: string
 		-- and the same applies to the receipt
 		return true, "receipt";
 	end
+	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
+		return true, "marker";
+	end
 	if stanza:get_child("x", "jabber:x:conference")
 	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
 		return true, "invite";
