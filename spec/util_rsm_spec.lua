@@ -77,6 +77,13 @@ describe("util.rsm", function ()
 			assert.same(test:get_child_text("before"), res:get_child_text("before"));
 		end);
 
+		it("handles floats", function ()
+			local r1 = rsm.generate({ max = 10.0, count = 100.0, first = { index = 1.0, "foo" } });
+			assert.equal("10", r1:get_child_text("max"));
+			assert.equal("100", r1:get_child_text("count"));
+			assert.equal("1", r1:get_child("first").attr.index);
+		end);
+
 	end);
 end);
 
