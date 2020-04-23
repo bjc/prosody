@@ -100,9 +100,7 @@ Juliet receives:
 				<field type='hidden' var='FORM_TYPE'>
 					<value>http://jabber.org/protocol/muc#register</value>
 				</field>
-				<field type='text-single' label='Nickname' var='muc#register_roomnick'>
-					<required/>
-				</field>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
 			</x>
 		</query>
 	</iq>
@@ -341,9 +339,7 @@ Romeo receives:
 				<field type='hidden' var='FORM_TYPE'>
 					<value>http://jabber.org/protocol/muc#register</value>
 				</field>
-				<field type='text-single' label='Nickname' var='muc#register_roomnick'>
-					<required/>
-				</field>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
 			</x>
 		</query>
 	</iq>
