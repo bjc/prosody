@@ -11,8 +11,13 @@
 
 local stanza = require"util.stanza".stanza;
 local tostring, tonumber = tostring, tonumber;
+local s_format = string.format;
 local type = type;
 local pairs = pairs;
+
+local function inttostr(n)
+	return s_format("%d", n);
+end
 
 local xmlns_rsm = 'http://jabber.org/protocol/rsm';
 
@@ -45,7 +50,7 @@ end
 local element_generators = setmetatable({
 	first = function(st, data)
 		if type(data) == "table" then
-			st:tag("first", { index = data.index }):text(data[1]):up();
+			st:tag("first", { index = inttostr(data.index) }):text(data[1]):up();
 		else
 			st:tag("first"):text(tostring(data)):up();
 		end
