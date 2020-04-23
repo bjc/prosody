@@ -91,7 +91,7 @@ module:hook("user-registering", function (event)
 		if not check_throttle(ip) then
 			log("debug", "Registrations over limit for ip %s", ip or "?");
 			event.allowed = false;
-			event.error = errors.new("throttle", event, err_registry);
+			event.error = errors.new("throttled", event, err_registry);
 		end
 	end
 	if event.error then
