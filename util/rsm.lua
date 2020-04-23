@@ -10,7 +10,7 @@
 --
 
 local stanza = require"util.stanza".stanza;
-local tostring, tonumber = tostring, tonumber;
+local tonumber = tonumber;
 local s_format = string.format;
 local type = type;
 local pairs = pairs;
@@ -52,14 +52,14 @@ local element_generators = setmetatable({
 		if type(data) == "table" then
 			st:tag("first", { index = inttostr(data.index) }):text(data[1]):up();
 		else
-			st:tag("first"):text(tostring(data)):up();
+			st:tag("first"):text(data):up();
 		end
 	end;
 	before = function(st, data)
 		if data == true then
 			st:tag("before"):up();
 		else
-			st:tag("before"):text(tostring(data)):up();
+			st:tag("before"):text(data):up();
 		end
 	end;
 	max = function (st, data)
@@ -71,7 +71,7 @@ local element_generators = setmetatable({
 }, {
 	__index = function(_, name)
 		return function(st, data)
-			st:tag(name):text(tostring(data)):up();
+			st:tag(name):text(data):up();
 		end
 	end;
 });
