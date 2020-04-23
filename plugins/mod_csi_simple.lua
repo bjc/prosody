@@ -48,6 +48,9 @@ module:hook("csi-is-stanza-important", function (event)
 		if stanza:get_child("encryption", "urn:xmpp:eme:0") then
 			return true;
 		end
+		if stanza:get_child("x", "jabber:x:conference") or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
+			return true;
+		end
 		for important in important_payloads do
 			if stanza:find(important) then
 				return true;

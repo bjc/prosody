@@ -129,7 +129,7 @@ static int Lpbkdf2_sha256(lua_State *L) {
 		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
+	lua_pushlstring(L, (char *)out, SHA256_DIGEST_LENGTH);
 	return 1;
 }
 

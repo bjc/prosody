@@ -1,5 +1,16 @@
 --luacheck: ignore
 
+-- Mock time functions to simplify tests
+function _G.os.time()
+	return 1219439344;
+end
+package.preload["util.time"] = function ()
+	return {
+		now = function () return 1219439344.1; end;
+		monotonic = function () return 0.1; end;
+	}
+end
+
 admins = { "admin@localhost" }
 
 use_libevent = true
@@ -48,6 +59,7 @@ modules_enabled = {
 		--"motd"; -- Send a message to users when they log in
 		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
+		"lastactivity";
 
 	-- Useful for testing
 		--"scansion_record"; -- Records things that happen in scansion test case format
@@ -83,6 +95,8 @@ log = "*console"
 pidfile = "prosody.pid"
 
 VirtualHost "localhost"
+
+hide_os_type = true -- absense tested for in version.scs
 
 Component "conference.localhost" "muc"
 	storage = "memory"

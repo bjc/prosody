@@ -263,11 +263,65 @@ local function strip_stanza_id(stanza, user)
 	return stanza;
 end
 
+local function should_store(stanza) --> boolean, reason: string
+	local st_type = stanza.attr.type or "normal";
+	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
+	-- for more accurate MUC / type=groupchat check
+
+	if st_type == "headline" then
+		-- Headline messages are ephemeral by definition
+		return false, "headline";
+	end
+	if st_type == "error" then
+		return true, "bounce";
+	end
+	if st_type == "groupchat" then
+		-- MUC messages always go to the full JID, usually archived by the MUC
+		return false, "groupchat";
+	end
+	if stanza:get_child("no-store", "urn:xmpp:hints")
+	or stanza:get_child("no-permanent-store", "urn:xmpp:hints") then
+		-- XXX Experimental XEP
+		return false, "hint";
+	end
+	if stanza:get_child("store", "urn:xmpp:hints") then
+		return true, "hint";
+	end
+	if stanza:get_child("body") then
+		return true, "body";
+	end
+	if stanza:get_child("subject") then
+		-- XXX Who would send a message with a subject but without a body?
+		return true, "subject";
+	end
+	if stanza:get_child("encryption", "urn:xmpp:eme:0") then
+		-- Since we can't know what an encrypted message contains, we assume it's important
+		-- XXX Experimental XEP
+		return true, "encrypted";
+	end
+	if stanza:get_child(nil, "urn:xmpp:receipts") then
+		-- If it's important enough to ask for a receipt then it's important enough to archive
+		-- and the same applies to the receipt
+		return true, "receipt";
+	end
+	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
+		-- XXX Experimental XEP
+		return true, "marker";
+	end
+	if stanza:get_child("x", "jabber:x:conference")
+	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
+		return true, "invite";
+	end
+
+	 -- The IM-NG thing to do here would be to return `not st_to_full`
+	 -- One day ...
+	return false, "default";
+end
+
 -- Handle messages
 local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
 	local log = c2s and origin.log or module._log;
-	local orig_type = stanza.attr.type or "normal";
 	local orig_from = stanza.attr.from;
 	local orig_to = stanza.attr.to or orig_from;
 	-- Stanza without 'to' are treated as if it was to their own bare jid
@@ -280,19 +334,10 @@ local function message_handler(event, c2s)
 	-- Filter out <stanza-id> that claim to be from us
 	event.stanza = strip_stanza_id(stanza, store_user);
 
-	-- We store chat messages or normal messages that have a body
-	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
-		log("debug", "Not archiving stanza: %s (type)", stanza:top_tag());
+	local should, why = should_store(stanza);
+	if not should then
+		log("debug", "Not archiving stanza: %s (%s)", stanza:top_tag(), why);
 		return;
-	end
-
-	-- or if hints suggest we shouldn't
-	if not stanza:get_child("store", "urn:xmpp:hints") then -- No hint telling us we should store
-		if stanza:get_child("no-permanent-store", "urn:xmpp:hints")
-			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
-			log("debug", "Not archiving stanza: %s (hint)", stanza:top_tag());
-			return;
-		end
 	end
 
 	local clone_for_storage;
@@ -315,7 +360,7 @@ local function message_handler(event, c2s)
 
 	-- Check with the users preferences
 	if shall_store(store_user, with) then
-		log("debug", "Archiving stanza: %s", stanza:top_tag());
+		log("debug", "Archiving stanza: %s (%s)", stanza:top_tag(), why);
 
 		-- And stash it
 		local time = time_now();
