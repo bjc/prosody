@@ -198,7 +198,7 @@ Juliet receives:
 Romeo receives:
 	<message from='room@conference.localhost'>
 		<x xmlns='http://jabber.org/protocol/muc#user' scansion:strict='true'>
-			<item jid="${Juliet's JID}" />
+			<item jid="${Juliet's JID}" affiliation='none' />
 		</x>
 	</message>
 
