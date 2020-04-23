@@ -61,7 +61,13 @@ local element_generators = setmetatable({
 		else
 			st:tag("before"):text(tostring(data)):up();
 		end
-	end
+	end;
+	max = function (st, data)
+		st:tag("max"):text(inttostr(data)):up();
+	end;
+	count = function (st, data)
+		st:tag("count"):text(inttostr(data)):up();
+	end;
 }, {
 	__index = function(_, name)
 		return function(st, data)
