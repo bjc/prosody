@@ -143,7 +143,7 @@ end
 
 -- actor is the attribute table
 local function add_item(x, affiliation, role, jid, nick, actor_nick, actor_jid, reason)
-	x:tag("item", {affiliation = affiliation; role = role; jid = jid; nick = nick;})
+	x:tag("item", {affiliation = affiliation or "none"; role = role; jid = jid; nick = nick;})
 	if actor_nick or actor_jid then
 		x:tag("actor", {nick = actor_nick; jid = actor_jid;}):up()
 	end
