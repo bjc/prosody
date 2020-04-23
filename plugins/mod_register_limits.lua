@@ -67,7 +67,7 @@ local err_registry = {
 		condition = "forbidden";
 	};
 	throttled = {
-		reason = "Too many registrations from this IP address recently";
+		text = "Too many registrations from this IP address recently";
 		type = "wait";
 		condition = "policy-violation";
 	};
