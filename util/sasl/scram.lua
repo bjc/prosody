@@ -112,7 +112,7 @@ local function get_scram_hasher(H, HMAC, Hi)
 	end
 end
 
-local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db)
+local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db, expect_cb)
 	local profile_name = "scram_" .. hashprep(hash_name);
 	local function scram_hash(self, message)
 		local support_channel_binding = false;
@@ -141,6 +141,10 @@ local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db)
 
 			if gs2_cbind_flag == "n" then
 				-- "n" -> client doesn't support channel binding.
+				if expect_cb then
+					log("debug", "Client unexpectedly doesn't support channel binding");
+					-- XXX Is it sensible to abort if the client starts -PLUS but doesn't use channel binding?
+				end
 				support_channel_binding = false;
 			end
 
@@ -260,7 +264,7 @@ local function init(registerMechanism)
 		-- register channel binding equivalent
 		registerMechanism("SCRAM-"..hash_name.."-PLUS",
 			{"plain", "scram_"..(hashprep(hash_name))},
-			scram_gen(hash_name:lower(), hash, hmac_hash, get_auth_db), {"tls-unique"});
+			scram_gen(hash_name:lower(), hash, hmac_hash, get_auth_db, true), {"tls-unique"});
 	end
 
 	registerSCRAMMechanism("SHA-1", hashes.sha1, hashes.hmac_sha1, hashes.pbkdf2_hmac_sha1);
