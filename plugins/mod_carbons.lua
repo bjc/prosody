@@ -20,6 +20,32 @@ end
 module:hook("iq-set/self/"..xmlns_carbons..":disable", toggle_carbons);
 module:hook("iq-set/self/"..xmlns_carbons..":enable", toggle_carbons);
 
+local function should_copy(stanza, c2s, user_bare)
+	local st_type = stanza.attr.type or "normal";
+	if stanza:get_child("private", xmlns_carbons) then
+		return false, "private";
+	end
+
+	if stanza:get_child("no-copy", "urn:xmpp:hints") then
+		return false, "hint";
+	end
+
+	if not c2s and and stanza.attr.to ~= user_bare and stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
+		-- MUC PMs are normally sent to full JIDs
+		return false, "muc-pm";
+	end
+
+	if st_type == "chat" then
+		return true, "type";
+	end
+
+	if st_type == "normal" and stanza:get_child("body") then
+		return true, "type";
+	end
+
+	return false, "default";
+end
+
 local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
 	local orig_type = stanza.attr.type or "normal";
@@ -27,10 +53,6 @@ local function message_handler(event, c2s)
 	local bare_from = jid_bare(orig_from);
 	local orig_to = stanza.attr.to;
 	local bare_to = jid_bare(orig_to);
-
-	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body"))) then
-		return -- Only chat type messages
-	end
 
 	-- Stanza sent by a local client
 	local bare_jid = bare_from; -- JID of the local user
@@ -56,22 +78,16 @@ local function message_handler(event, c2s)
 		return -- No use in sending carbons to an offline user
 	end
 
-	if stanza:get_child("private", xmlns_carbons) then
-		if not c2s then
+	local should, why = should_copy(stanza, c2s, bare_jid);
+
+	if not should then
+		module:log("debug", "Not copying stanza: %s (%s)", stanza:top_tag(), why);
+	elseif why == "private" and not c2s then
 			stanza:maptags(function(tag)
 				if not ( tag.attr.xmlns == xmlns_carbons and tag.name == "private" ) then
 					return tag;
 				end
 			end);
-		end
-		module:log("debug", "Message tagged private, ignoring");
-		return
-	elseif stanza:get_child("no-copy", "urn:xmpp:hints") then
-		module:log("debug", "Message has no-copy hint, ignoring");
-		return
-	elseif not c2s and bare_jid ~= orig_to and stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
-		module:log("debug", "MUC PM, ignoring");
-		return
 	end
 
 	local carbon;
