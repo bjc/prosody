@@ -37,7 +37,7 @@ local ssl_ctx_c2s, ssl_ctx_s2sout, ssl_ctx_s2sin;
 local ssl_cfg_c2s, ssl_cfg_s2sout, ssl_cfg_s2sin;
 local err_c2s, err_s2sin, err_s2sout;
 
-function module.load()
+function module.load(reload)
 	local NULL = {};
 	local modhost = module.host;
 	local parent = modhost:match("%.(.*)$");
@@ -68,6 +68,12 @@ function module.load()
 	-- for incoming server connections
 	ssl_ctx_s2sin, err_s2sin, ssl_cfg_s2sin = create_context(host.host, "server", host_s2s, host_ssl, global_s2s, request_client_certs);
 	if not ssl_ctx_s2sin then module:log("error", "Error creating contexts for s2sin: %s", err_s2sin); end
+
+	if reload then
+		module:log("info", "Certificates reloaded");
+	else
+		module:log("info", "Certificates loaded");
+	end
 end
 
 module:hook_global("config-reloaded", module.load);
