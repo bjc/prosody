@@ -20,6 +20,10 @@ module:hook("csi-is-stanza-important", function (event)
 	if not st.is_stanza(stanza) then
 		return true;
 	end
+	if stanza.attr.xmlns ~= nil then
+		-- stream errors, stream management etc
+		return true;
+	end
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
