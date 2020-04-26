@@ -65,8 +65,9 @@ module:hook("csi-is-stanza-important", function (event)
 			end
 		end
 		return false;
+	elseif st_name == "iq" then
+		return true;
 	end
-	return true;
 end, -1);
 
 local function with_timestamp(stanza, from)
