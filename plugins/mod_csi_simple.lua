@@ -18,6 +18,7 @@ local important_payloads = module:get_option_set("csi_important_payloads", { });
 module:hook("csi-is-stanza-important", function (event)
 	local stanza = event.stanza;
 	if not st.is_stanza(stanza) then
+		-- whitespace pings etc
 		return true;
 	end
 	if stanza.attr.xmlns ~= nil then
