@@ -43,6 +43,10 @@ local function should_copy(stanza, c2s, user_bare)
 		return true, "type";
 	end
 
+	if st_type == "error" and not c2s and not (stanza.attr.from or ""):find("/") then
+		return true, "bounce";
+	end
+
 	return false, "default";
 end
 
