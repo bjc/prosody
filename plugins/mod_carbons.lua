@@ -47,6 +47,12 @@ local function should_copy(stanza, c2s, user_bare)
 		return true, "bounce";
 	end
 
+	for archived in stanza:childtags("stanza-id", "urn:xmpp:sid:0") do
+		if archived and archived.attr.by == user_bare then
+			return true, "archived";
+		end
+	end
+
 	return false, "default";
 end
 
