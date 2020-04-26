@@ -23,6 +23,9 @@ module:hook("csi-is-stanza-important", function (event)
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
+	if st_type == "error" then
+		return true;
+	end
 	if st_name == "presence" then
 		if st_type == nil or st_type == "unavailable" then
 			return false;
