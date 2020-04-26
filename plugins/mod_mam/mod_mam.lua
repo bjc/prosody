@@ -263,7 +263,7 @@ local function strip_stanza_id(stanza, user)
 	return stanza;
 end
 
-local function should_store(stanza) --> boolean, reason: string
+local function should_store(stanza, c2s) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
 	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
 	-- for more accurate MUC / type=groupchat check
@@ -272,7 +272,8 @@ local function should_store(stanza) --> boolean, reason: string
 		-- Headline messages are ephemeral by definition
 		return false, "headline";
 	end
-	if st_type == "error" then
+	if st_type == "error" and not c2s then
+		-- Store delivery failure notifications so you know if your own messages were not delivered
 		return true, "bounce";
 	end
 	if st_type == "groupchat" then
@@ -334,7 +335,7 @@ local function message_handler(event, c2s)
 	-- Filter out <stanza-id> that claim to be from us
 	event.stanza = strip_stanza_id(stanza, store_user);
 
-	local should, why = should_store(stanza);
+	local should, why = should_store(stanza, c2s);
 	if not should then
 		log("debug", "Not archiving stanza: %s (%s)", stanza:top_tag(), why);
 		return;
