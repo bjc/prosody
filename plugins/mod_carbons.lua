@@ -30,7 +30,7 @@ local function should_copy(stanza, c2s, user_bare)
 		return false, "hint";
 	end
 
-	if not c2s and and stanza.attr.to ~= user_bare and stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
+	if not c2s and stanza.attr.to ~= user_bare and stanza:get_child("x", "http://jabber.org/protocol/muc#user") then
 		-- MUC PMs are normally sent to full JIDs
 		return false, "muc-pm";
 	end
