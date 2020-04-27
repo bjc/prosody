@@ -92,6 +92,7 @@ local function message_handler(event, c2s)
 
 	if not should then
 		module:log("debug", "Not copying stanza: %s (%s)", stanza:top_tag(), why);
+		return;
 	elseif why == "private" and not c2s then
 			stanza:maptags(function(tag)
 				if not ( tag.attr.xmlns == xmlns_carbons and tag.name == "private" ) then
