@@ -303,7 +303,8 @@ function commands.help(session, data)
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 		print [[config:get([host,] option) - Show the value of a config option.]]
-	elseif section == "stats" then -- TODO describe how this works
+	elseif section == "stats" then -- luacheck: ignore 542
+		-- TODO describe how stats:show() works
 	elseif section == "debug" then
 		print [[debug:logevents(host) - Enable logging of fired events on host]]
 		print [[debug:events(host, event) - Show registered event handlers]]
