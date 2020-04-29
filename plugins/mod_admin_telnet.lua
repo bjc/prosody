@@ -330,6 +330,11 @@ end
 
 --luacheck: ignore 212/self
 
+def_env.output = {};
+function def_env.output:configure(opts)
+	self.session.serialize = serialization.new(opts);
+end
+
 def_env.server = {};
 
 function def_env.server:insane_reload()
