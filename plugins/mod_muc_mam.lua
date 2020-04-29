@@ -309,7 +309,7 @@ module:hook("muc-get-history", function (event)
 	return true;
 end, 1);
 
-module:hook("muc-broadcast-messages", function (event)
+module:hook("muc-broadcast-message", function (event)
 	local room, stanza = event.room, event.stanza;
 
 	-- Filter out <stanza-id> that claim to be from us
