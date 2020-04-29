@@ -32,7 +32,8 @@ local envload = require "util.envload".envload;
 local envloadfile = require "util.envload".envloadfile;
 local has_pposix, pposix = pcall(require, "util.pposix");
 local async = require "util.async";
-local serialize = require "util.serialization".new({ fatal = false, unquoted = true});
+local serialization = require "util.serialization";
+local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 
 local commands = module:shared("commands")
@@ -80,6 +81,7 @@ function console:new_session(conn)
 				end
 				w("| "..table.concat(t, "\t").."\n");
 			end;
+			serialize = serialization.new({ fatal = false, unquoted = true, maxdepth = 2});
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
@@ -141,7 +143,10 @@ function console:process_line(session, line)
 	local taskok, message = chunk();
 
 	if not message then
-		session.print("Result: "..tostring(taskok));
+		if type(taskok) ~= "string" then
+			taskok = session.serialize(taskok);
+		end
+		session.print("Result: "..taskok);
 		return;
 	elseif (not taskok) and message then
 		session.print("Command completed with a problem");
@@ -149,7 +154,11 @@ function console:process_line(session, line)
 		return;
 	end
 
-	session.print("OK: "..tostring(message));
+	if type(message) ~= "string" then
+		message = session.serialize(message);
+	end
+
+	session.print("OK: "..message);
 end
 
 local sessions = {};
@@ -527,7 +536,7 @@ function def_env.config:get(host, key)
 		host, key = "*", host;
 	end
 	local config_get = require "core.configmanager".get
-	return true, serialize(config_get(host, key));
+	return true, serialize_config(config_get(host, key));
 end
 
 function def_env.config:reload()
