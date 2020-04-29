@@ -244,6 +244,7 @@ function commands.help(session, data)
 		print [[]]
 		print [[c2s - Commands to manage local client-to-server sessions]]
 		print [[s2s - Commands to manage sessions between this server and others]]
+		print [[http - Commands to inspect HTTP services]] -- XXX plural but there is only one so far
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[user - Commands to create and delete users, and change their passwords]]
@@ -267,6 +268,8 @@ function commands.help(session, data)
 		print [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
 		print [[s2s:close(from, to) - Close a connection from one domain to another]]
 		print [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
+	elseif section == "http" then
+		print [[http:list(hosts) - Show HTTP endpoints]]
 	elseif section == "module" then
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
