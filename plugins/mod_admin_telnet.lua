@@ -330,9 +330,18 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 --luacheck: ignore 212/self
+local serialize_defaults = module:get_option("console_prettyprint_settings", { fatal = false, unquoted = true, maxdepth = 2})
 
 def_env.output = {};
 function def_env.output:configure(opts)
+	if type(opts) ~= "table" then
+		opts = { preset = opts };
+	end
+	for k,v in pairs(serialize_defaults) do
+		if opts[k] == nil then
+			opts[k] = v;
+		end
+	end
 	self.session.serialize = serialization.new(opts);
 end
 
