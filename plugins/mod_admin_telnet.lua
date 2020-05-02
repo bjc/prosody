@@ -145,10 +145,10 @@ function console:process_line(session, line)
 	local taskok, message = chunk();
 
 	if not message then
-		if type(taskok) ~= "string" then
+		if type(taskok) ~= "string" and useglobalenv then
 			taskok = session.serialize(taskok);
 		end
-		session.print("Result: "..taskok);
+		session.print("Result: "..tostring(taskok));
 		return;
 	elseif (not taskok) and message then
 		session.print("Command completed with a problem");
@@ -156,11 +156,7 @@ function console:process_line(session, line)
 		return;
 	end
 
-	if type(message) ~= "string" then
-		message = session.serialize(message);
-	end
-
-	session.print("OK: "..message);
+	session.print("OK: "..tostring(message));
 end
 
 local sessions = {};
