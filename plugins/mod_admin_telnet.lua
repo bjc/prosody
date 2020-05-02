@@ -81,7 +81,7 @@ function console:new_session(conn)
 				end
 				w("| "..table.concat(t, "\t").."\n");
 			end;
-			serialize = serialization.new({ fatal = false, unquoted = true, maxdepth = 2});
+			serialize = tostring;
 			disconnect = function () conn:close(); end;
 			};
 	session.env = setmetatable({}, default_env_mt);
@@ -97,6 +97,8 @@ function console:new_session(conn)
 			session.env[name] = setmetatable({ session = session }, { __index = t });
 		end
 	end
+
+	session.env.output:configure();
 
 	return session;
 end
