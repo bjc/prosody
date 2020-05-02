@@ -152,7 +152,7 @@ local function handle_register_iq(room, origin, stanza)
 			return true;
 		end
 		-- Is the nickname valid?
-		local desired_nick = resourceprep(reg_data["muc#register_roomnick"]);
+		local desired_nick = resourceprep(reg_data["muc#register_roomnick"], true);
 		if not desired_nick then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid Nickname"));
 			return true;
