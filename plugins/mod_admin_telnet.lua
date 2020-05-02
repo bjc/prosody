@@ -335,6 +335,10 @@ function def_env.output:configure(opts)
 	if type(opts) ~= "table" then
 		opts = { preset = opts };
 	end
+	if not opts.fallback then
+		-- XXX Error message passed to fallback is lost, does it matter?
+		opts.fallback = tostring;
+	end
 	for k,v in pairs(serialize_defaults) do
 		if opts[k] == nil then
 			opts[k] = v;
